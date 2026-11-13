@@ -39,7 +39,7 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   ],
   ["clock-chart/demos/clock-chart-week.tsx", ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"]],
   // Link's router demo shows `render` composing the docs app's own router link.
-  ["link/demos/link-next.tsx", ["next/link"]],
+  ["link/demos/link-router.tsx", ["next/link"]],
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],

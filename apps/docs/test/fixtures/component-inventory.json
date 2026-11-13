@@ -14,7 +14,12 @@
   "action-bar": {
     "title": "Action Bar",
     "rsc": "client",
-    "demos": ["action-bar-basic.tsx", "action-bar-pagination.tsx"]
+    "demos": [
+      "action-bar-demo.tsx",
+      "action-bar-above-footer.tsx",
+      "action-bar-narrow.tsx",
+      "action-bar-count-text.tsx"
+    ]
   },
   "alert": {
     "title": "Alert",
@@ -52,7 +57,16 @@
   "aspect-ratio": {
     "title": "Aspect Ratio",
     "rsc": "server",
-    "demos": ["aspect-ratio-basic.tsx", "aspect-ratio-ratios.tsx", "aspect-ratio-portrait.tsx"]
+    "demos": [
+      "aspect-ratio-demo.tsx",
+      "aspect-ratio-square.tsx",
+      "aspect-ratio-four-three.tsx",
+      "aspect-ratio-three-four.tsx",
+      "aspect-ratio-three-two.tsx",
+      "aspect-ratio-two-three.tsx",
+      "aspect-ratio-nine-sixteen.tsx",
+      "aspect-ratio-custom.tsx"
+    ]
   },
   "attachment": {
     "title": "Attachment",
@@ -90,7 +104,29 @@
   "badge": {
     "title": "Badge",
     "rsc": "server",
-    "demos": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"]
+    "demos": [
+      "badge-demo.tsx",
+      "badge-secondary.tsx",
+      "badge-destructive.tsx",
+      "badge-success.tsx",
+      "badge-warning.tsx",
+      "badge-info.tsx",
+      "badge-soft-destructive.tsx",
+      "badge-soft-success.tsx",
+      "badge-soft-warning.tsx",
+      "badge-soft-info.tsx",
+      "badge-outline.tsx",
+      "badge-outline-secondary.tsx",
+      "badge-outline-destructive.tsx",
+      "badge-outline-success.tsx",
+      "badge-outline-warning.tsx",
+      "badge-outline-info.tsx",
+      "badge-muted.tsx",
+      "badge-accent.tsx",
+      "badge-card.tsx",
+      "badge-small.tsx",
+      "badge-large.tsx"
+    ]
   },
   "bar-chart": {
     "title": "Bar Chart",
@@ -174,9 +210,10 @@
     "title": "Button Group",
     "rsc": "client",
     "demos": [
-      "button-group-basic.tsx",
+      "button-group-demo.tsx",
       "button-group-vertical.tsx",
-      "button-group-split-button.tsx",
+      "button-group-separator.tsx",
+      "button-group-horizontal-separator.tsx",
       "button-group-text.tsx",
       "button-group-nested.tsx"
     ]
@@ -291,7 +328,7 @@
   "code": {
     "title": "Code",
     "rsc": "server",
-    "demos": ["code-basic.tsx", "code-scroll.tsx"]
+    "demos": ["code-demo.tsx", "code-named-region.tsx"]
   },
   "collapsible": {
     "title": "Collapsible",
@@ -331,7 +368,26 @@
   "confirm-button": {
     "title": "Confirm Button",
     "rsc": "client",
-    "demos": ["confirm-button-destructive.tsx", "confirm-button-success.tsx", "confirm-button-icon.tsx"]
+    "demos": [
+      "confirm-button-demo.tsx",
+      "confirm-button-outline.tsx",
+      "confirm-button-secondary.tsx",
+      "confirm-button-ghost.tsx",
+      "confirm-button-link.tsx",
+      "confirm-button-destructive.tsx",
+      "confirm-button-success.tsx",
+      "confirm-button-extra-small.tsx",
+      "confirm-button-small.tsx",
+      "confirm-button-large.tsx",
+      "confirm-button-icon.tsx",
+      "confirm-button-icon-extra-small.tsx",
+      "confirm-button-icon-small.tsx",
+      "confirm-button-icon-large.tsx",
+      "confirm-button-icon-inline.tsx",
+      "confirm-button-pending.tsx",
+      "confirm-button-visually-disabled.tsx",
+      "confirm-button-disabled.tsx"
+    ]
   },
   "data-table": {
     "title": "Data Table",
@@ -432,7 +488,15 @@
   "emoji": {
     "title": "Emoji",
     "rsc": "server",
-    "demos": ["emoji-faces.tsx", "emoji-labeled.tsx", "emoji-sizing.tsx"]
+    "demos": [
+      "emoji-demo.tsx",
+      "emoji-slightly-frowning-face.tsx",
+      "emoji-neutral-face.tsx",
+      "emoji-loudly-crying-face.tsx",
+      "emoji-partying-face.tsx",
+      "emoji-label.tsx",
+      "emoji-beside-text.tsx"
+    ]
   },
   "empty": {
     "title": "Empty",
@@ -564,7 +628,14 @@
   "kbd": {
     "title": "Kbd",
     "rsc": "server",
-    "demos": ["kbd-keys.tsx", "kbd-combination.tsx", "kbd-input-group.tsx"]
+    "demos": [
+      "kbd-demo.tsx",
+      "kbd-in-a-sentence.tsx",
+      "kbd-combination.tsx",
+      "kbd-glyph.tsx",
+      "kbd-icon.tsx",
+      "kbd-shortcut-hint.tsx"
+    ]
   },
   "line-chart": {
     "title": "Line Chart",
@@ -587,13 +658,19 @@
     "title": "Link",
     "rsc": "client",
     "demos": [
-      "link-basic.tsx",
-      "link-running-text.tsx",
-      "link-underline.tsx",
-      "link-colors.tsx",
+      "link-demo.tsx",
+      "link-foreground.tsx",
+      "link-primary.tsx",
+      "link-brand.tsx",
+      "link-muted.tsx",
+      "link-error.tsx",
+      "link-underline-hover.tsx",
+      "link-no-underline.tsx",
+      "link-normal-weight.tsx",
+      "link-bold.tsx",
+      "link-truncate.tsx",
       "link-external.tsx",
-      "link-next.tsx",
-      "link-truncate.tsx"
+      "link-router.tsx"
     ]
   },
   "list-detail": {
@@ -609,7 +686,14 @@
   "loader": {
     "title": "Loader",
     "rsc": "server",
-    "demos": ["loader-sizes.tsx", "loader-inline.tsx"]
+    "demos": [
+      "loader-demo.tsx",
+      "loader-small.tsx",
+      "loader-medium.tsx",
+      "loader-large.tsx",
+      "loader-extra-large.tsx",
+      "loader-label.tsx"
+    ]
   },
   "meter": {
     "title": "Meter",
@@ -821,7 +905,7 @@
   "separator": {
     "title": "Separator",
     "rsc": "client",
-    "demos": ["separator-horizontal.tsx", "separator-vertical.tsx", "separator-header.tsx"]
+    "demos": ["separator-demo.tsx", "separator-vertical.tsx", "separator-short-vertical.tsx"]
   },
   "sheet": {
     "title": "Sheet",

@@ -1106,8 +1106,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Kbd` caps of one combination, pressed together. In an `InputGroup` addon, make the group, or a lone cap, the addon's direct child, so the caps round with the addon's inner corner.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Command.Page",

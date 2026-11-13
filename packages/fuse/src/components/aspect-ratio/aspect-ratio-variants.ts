@@ -1,14 +1,14 @@
 import { tv } from "../../styles/tv";
 
 /**
- * The AspectRatio recipe: one fraction utility per ratio string. The fractions are literal, so
- * a host that redefines the theme variable behind Tailwind's video ratio utility cannot change a
- * 16:9 frame. Every class is a fixed string, so Tailwind-source and standalone-CSS consumers
- * both get it. Package-private: the facade exports the ratio strings, not the recipe.
+ * The AspectRatio recipe, one fraction utility per ratio string. The fractions are literal, so a
+ * host that redefines the theme variable behind Tailwind's video ratio utility cannot change a
+ * 16:9 frame. Every class is a fixed string, so Tailwind-source and standalone-CSS consumers both
+ * get it. It is package-private, and the facade exports the ratio strings, not the recipe.
  *
- * A direct `img` or `video` child is a block. Inline, it would sit on a text baseline, and the
- * line's descender space would grow the frame past its ratio in a host without Tailwind's
- * preflight.
+ * The base is `relative`, so an absolutely placed child fills the frame. A direct `img` or
+ * `video` child is a block. Inline, it would sit on a text baseline, and the line's descender
+ * space would grow the frame past its ratio in a host without Tailwind's preflight.
  */
 export const aspectRatioVariants = tv({
   base: "relative [&>img]:block [&>video]:block",

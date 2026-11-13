@@ -17,16 +17,16 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The text the status region announces, rendered visually hidden inside it. Defaults to the `aria-label`, then to the locale dictionary's \"Loading\".",
+          "description": "The text the Loader's polite status region announces, visually hidden. Without it, the region reads the `aria-label`, then \"Loading\" in the reader's locale. A live region announces only a change to its text, so keep the Loader mounted while loading runs, or render it inside a live region that is already mounted.",
           "required": false
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"large\" | \"medium\" | \"small\" | \"xl\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The spinner's size. The padding around it stays the same.",
           "required": false,
           "values": [
             "default",
@@ -38,11 +38,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The colour. `default` is the only value.",
           "required": false
         }
       ]

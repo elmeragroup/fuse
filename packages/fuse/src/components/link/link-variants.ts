@@ -17,16 +17,16 @@ const {
 } = typographyFragments.variants.variant;
 
 /**
- * PUBLIC recipe, exported from `@elmeragroup/fuse/link` beside `Link`.
+ * The public recipe, exported from `@elmeragroup/fuse/link` beside `Link`.
  *
- * Link is text in a sentence, so the base sets no font, size, line height or display: the anchor
+ * Link is text in a sentence, so the base sets no font, size, line height or display. The anchor
  * stays `inline`, takes the surrounding text's type and wraps with it. `weight` leaves the
  * sentence's weight unless it is set. The underline offset and thickness are in `em`, so they
  * scale with whatever size the sentence is set in, with a 1px floor that keeps a small line
  * visible. The base layer's `a[data-slot]` reset in `fuse.css` clears the browser's link colour
  * and underline first, and weighs nothing, so these classes and a consumer's own win.
  *
- * `underline` sets the cue that tells a link from its sentence:
+ * `underline` sets the cue that tells a link from its sentence.
  * - `always`, the default, underlines at rest in a dimmed line, the link's colour at 35% in a
  *   light scheme and 65% in a dark one, and draws it in the full colour under the pointer. The
  *   default colour is the sentence's own, and `primary` is the text colour in several themes,
@@ -43,7 +43,7 @@ const {
  * of a wrapped link its own whole ring, where the default slicing leaves the line ends open.
  * An inline SVG child, such as an external-link icon, is drawn `1em` square on the text's
  * baseline in the link's colour. Mark it `data-icon="inline-end"` or `data-icon="inline-start"`,
- * as on Button, and it keeps `0.25em` from the text, and the link keeps to one line: Chromium
+ * as on Button, and it keeps `0.25em` from the text, and the link keeps to one line. Chromium
  * breaks a line between a word and an inline SVG even with no space between them, which would
  * leave the icon alone at the start of the next line.
  */

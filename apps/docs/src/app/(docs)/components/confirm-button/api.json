@@ -27,7 +27,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Explicit armed announcement and `aria-label` override.",
+          "description": "The `aria-label` while armed, and the text a live region announces when the button arms. Without it, a string `armedChildren` is announced, then `aria-label`.",
           "required": false
         },
         {
@@ -36,7 +36,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Label swapped in while armed; the resting label is kept when omitted. Text in `children` and `armedChildren`, fragments included, renders in a `<span>` so the swap still works after page translation replaced the text. Text your own component renders stays bare: put it in an element, and when both labels use the same element, give each a different `key` so the swap replaces it instead of updating the text inside.",
+          "description": "The label while armed. Without it, the label at rest stays. Text in `children` and `armedChildren`, fragments included, renders in a `<span>`, so the swap still works after page translation replaces the text. Text that your own component renders stays bare, so put it in an element. When both labels use the same element, give each a different `key`, so the swap replaces the element instead of updating the text inside it.",
           "required": false
         },
         {
@@ -45,7 +45,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Resting label.",
+          "description": "The label at rest.",
           "required": false
         },
         {
@@ -73,7 +73,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
@@ -82,8 +82,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Renders Button's disabled treatment and stamps `aria-disabled` while keeping Tab focus, focus-visible and any Tooltip; pointer presses do not move focus. Presses never arm or confirm, and turning it on disarms. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` hides it while presses stay ignored.",
+          "defaultValue": "false",
+          "description": "Shows Button's disabled look and stamps `aria-disabled` while the button keeps Tab focus, its focus ring and any Tooltip. A pointer press does not move focus to it. Presses never arm or confirm, and turning it on disarms the button. The look follows `aria-disabled`, so an explicit `aria-disabled={false}` hides it while presses stay ignored.",
           "required": false
         },
         {
@@ -103,7 +103,7 @@
           "type": "() => void",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called on the second press only, after the button disarms.",
+          "description": "Called on the second press, after the button disarms. Escape and moving focus away disarm it without calling `onConfirm`, and so does turning on `disabled`, `isPending` or `isVisuallyDisabled`. While armed, the button consumes Escape, so inside a Dialog, Sheet or Popover the first Escape disarms the button and a second one closes the overlay.",
           "required": true
         },
         {
@@ -149,7 +149,7 @@
           "origin": "declared",
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The height and padding. The `icon*` sizes are square and require an `aria-label`.",
           "required": false,
           "values": [
@@ -207,7 +207,7 @@
           "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [

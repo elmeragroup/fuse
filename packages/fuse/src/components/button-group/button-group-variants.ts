@@ -1,12 +1,13 @@
 /**
- * PUBLIC recipe. Other package modules import this file
- * relatively; consumers borrow it from `@elmeragroup/fuse/button-group`.
+ * The public recipe. Other package modules import this file relatively, and consumers import it
+ * from `@elmeragroup/fuse/button-group`.
  *
- * `orientation` is a layout axis, not a control size: it does not read `--control-*`. Nested groups pick up `gap-2`
- * through `has-[>[data-slot=button-group]]`; `[data-slot]` children join the
- * silhouette so inner radii and shared borders collapse. The group rounds both outer ends
- * with `rounded-md`, whatever its first and last children round with on their own, so a
- * field at one end, which rounds with `--radius-field`, matches a button at the other.
+ * `orientation` is a layout axis, not a control size, so it reads no `--control-*` metric. A
+ * group with a nested group takes `gap-2` through `has-[>[data-slot=button-group]]`. Children
+ * with a `data-slot` join the group's outline, so their inner corners square off and shared
+ * borders collapse. The group rounds both outer ends with `rounded-md`, whatever its first and
+ * last children round with, so a field at one end, which rounds with `--radius-field`, matches a
+ * button at the other.
  */
 import { tv } from "../../styles/tv";
 

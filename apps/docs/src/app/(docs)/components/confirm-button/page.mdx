@@ -3,9 +3,24 @@ lede: >
   A button that asks for a second press before it fires.
 ---
 
+import { ConfirmButtonDemo } from "./demos/confirm-button-demo";
+import { ConfirmButtonOutline } from "./demos/confirm-button-outline";
+import { ConfirmButtonSecondary } from "./demos/confirm-button-secondary";
+import { ConfirmButtonGhost } from "./demos/confirm-button-ghost";
+import { ConfirmButtonLink } from "./demos/confirm-button-link";
 import { ConfirmButtonDestructive } from "./demos/confirm-button-destructive";
 import { ConfirmButtonSuccess } from "./demos/confirm-button-success";
+import { ConfirmButtonExtraSmall } from "./demos/confirm-button-extra-small";
+import { ConfirmButtonSmall } from "./demos/confirm-button-small";
+import { ConfirmButtonLarge } from "./demos/confirm-button-large";
 import { ConfirmButtonIcon } from "./demos/confirm-button-icon";
+import { ConfirmButtonIconExtraSmall } from "./demos/confirm-button-icon-extra-small";
+import { ConfirmButtonIconSmall } from "./demos/confirm-button-icon-small";
+import { ConfirmButtonIconLarge } from "./demos/confirm-button-icon-large";
+import { ConfirmButtonIconInline } from "./demos/confirm-button-icon-inline";
+import { ConfirmButtonPending } from "./demos/confirm-button-pending";
+import { ConfirmButtonVisuallyDisabled } from "./demos/confirm-button-visually-disabled";
+import { ConfirmButtonDisabled } from "./demos/confirm-button-disabled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,16 +28,112 @@ export const metadata = componentMetadata("confirm-button");
 
 <ComponentIntro slug="confirm-button" />
 
-<Demo slug="confirm-button" id="destructive" title="Destructive" file="confirm-button-destructive.tsx">
+<DefaultDemo slug="confirm-button" file="confirm-button-demo.tsx">
+  <ConfirmButtonDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
+
+<ConfirmButton armedChildren="Confirm delete" onConfirm={deleteRow}>Delete</ConfirmButton>
+```
+
+## Examples
+
+<Demo slug="confirm-button" id="outline" title="Outline" level={3} file="confirm-button-outline.tsx">
+  <ConfirmButtonOutline />
+</Demo>
+
+<Demo slug="confirm-button" id="secondary" title="Secondary" level={3} file="confirm-button-secondary.tsx">
+  <ConfirmButtonSecondary />
+</Demo>
+
+<Demo slug="confirm-button" id="ghost" title="Ghost" level={3} file="confirm-button-ghost.tsx">
+  <ConfirmButtonGhost />
+</Demo>
+
+<Demo slug="confirm-button" id="link" title="Link" level={3} file="confirm-button-link.tsx">
+  <ConfirmButtonLink />
+</Demo>
+
+<Demo
+  slug="confirm-button"
+  id="destructive"
+  title="Destructive"
+  level={3}
+  file="confirm-button-destructive.tsx">
   <ConfirmButtonDestructive />
 </Demo>
 
-<Demo slug="confirm-button" id="success" title="Success" file="confirm-button-success.tsx">
+<Demo slug="confirm-button" id="success" title="Success" level={3} file="confirm-button-success.tsx">
   <ConfirmButtonSuccess />
 </Demo>
 
-<Demo slug="confirm-button" id="icon" title="Icon" file="confirm-button-icon.tsx">
+<Demo
+  slug="confirm-button"
+  id="extra-small"
+  title="Extra small"
+  level={3}
+  file="confirm-button-extra-small.tsx">
+  <ConfirmButtonExtraSmall />
+</Demo>
+
+<Demo slug="confirm-button" id="small" title="Small" level={3} file="confirm-button-small.tsx">
+  <ConfirmButtonSmall />
+</Demo>
+
+<Demo slug="confirm-button" id="large" title="Large" level={3} file="confirm-button-large.tsx">
+  <ConfirmButtonLarge />
+</Demo>
+
+<Demo slug="confirm-button" id="icon" title="Icon" level={3} file="confirm-button-icon.tsx">
   <ConfirmButtonIcon />
+</Demo>
+
+<Demo
+  slug="confirm-button"
+  id="icon-extra-small"
+  title="Icon extra small"
+  level={3}
+  file="confirm-button-icon-extra-small.tsx">
+  <ConfirmButtonIconExtraSmall />
+</Demo>
+
+<Demo slug="confirm-button" id="icon-small" title="Icon small" level={3} file="confirm-button-icon-small.tsx">
+  <ConfirmButtonIconSmall />
+</Demo>
+
+<Demo slug="confirm-button" id="icon-large" title="Icon large" level={3} file="confirm-button-icon-large.tsx">
+  <ConfirmButtonIconLarge />
+</Demo>
+
+<Demo
+  slug="confirm-button"
+  id="icon-inline"
+  title="Icon inline"
+  level={3}
+  file="confirm-button-icon-inline.tsx">
+  <ConfirmButtonIconInline />
+</Demo>
+
+<Demo slug="confirm-button" id="pending" title="Pending" level={3} file="confirm-button-pending.tsx">
+  <ConfirmButtonPending />
+</Demo>
+
+<Demo
+  slug="confirm-button"
+  id="visually-disabled"
+  title="Visually disabled"
+  level={3}
+  file="confirm-button-visually-disabled.tsx">
+  <ConfirmButtonVisuallyDisabled />
+</Demo>
+
+<Demo slug="confirm-button" id="disabled" title="Disabled" level={3} file="confirm-button-disabled.tsx">
+  <ConfirmButtonDisabled />
 </Demo>
 
 <ApiReference slug="confirm-button" />

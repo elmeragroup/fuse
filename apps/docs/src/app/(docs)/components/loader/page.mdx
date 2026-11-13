@@ -3,8 +3,12 @@ lede: >
   A spinner that marks a pending state.
 ---
 
-import { LoaderSizes } from "./demos/loader-sizes";
-import { LoaderInline } from "./demos/loader-inline";
+import { LoaderDemo } from "./demos/loader-demo";
+import { LoaderSmall } from "./demos/loader-small";
+import { LoaderMedium } from "./demos/loader-medium";
+import { LoaderLarge } from "./demos/loader-large";
+import { LoaderExtraLarge } from "./demos/loader-extra-large";
+import { LoaderLabel } from "./demos/loader-label";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,12 +16,39 @@ export const metadata = componentMetadata("loader");
 
 <ComponentIntro slug="loader" />
 
-<Demo slug="loader" id="sizes" title="Sizes" file="loader-sizes.tsx">
-  <LoaderSizes />
+<DefaultDemo slug="loader" file="loader-demo.tsx">
+  <LoaderDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Loader } from "@elmeragroup/fuse/loader";
+
+<Loader />
+```
+
+## Examples
+
+<Demo slug="loader" id="small" title="Small" level={3} file="loader-small.tsx">
+  <LoaderSmall />
 </Demo>
 
-<Demo slug="loader" id="inline" title="Inline" file="loader-inline.tsx">
-  <LoaderInline />
+<Demo slug="loader" id="medium" title="Medium" level={3} file="loader-medium.tsx">
+  <LoaderMedium />
+</Demo>
+
+<Demo slug="loader" id="large" title="Large" level={3} file="loader-large.tsx">
+  <LoaderLarge />
+</Demo>
+
+<Demo slug="loader" id="extra-large" title="Extra large" level={3} file="loader-extra-large.tsx">
+  <LoaderExtraLarge />
+</Demo>
+
+<Demo slug="loader" id="label" title="Label" level={3} file="loader-label.tsx">
+  <LoaderLabel />
 </Demo>
 
 <ApiReference slug="loader" />

@@ -143,15 +143,33 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content, which fills the frame. Give an `img` or `video` `size-full object-cover`, so it crops to the frame instead of stretching. Round and fill the child, not the frame.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Give the frame a width, such as `w-full max-w-md`, and its height follows the ratio. An `aspect-*` class, such as `aspect-[7/5]`, replaces the ratio.",
+          "required": false
+        },
         {
           "name": "ratio",
           "origin": "declared",
           "type": "AspectRatioValue",
           "shortType": null,
           "defaultValue": null,
-          "description": "The frame's width to height, one of `\"1:1\"`, `\"4:3\"`, `\"3:4\"`, `\"3:2\"`, `\"2:3\"`, `\"16:9\"` and `\"9:16\"`. It has no default. A consumer `aspect-*` class, such as `aspect-[7/5]`, replaces it.",
+          "description": "The frame's width to height, written to `data-ratio`. It is required. For a ratio outside the set, pass an `aspect-*` class in `className`.",
           "required": true,
           "values": [
             "16:9",
