@@ -262,6 +262,9 @@ layer(NodeServices.layer, { excludeTestServices: true })("the canary opt-out ste
       assert.strictEqual(run.exitCode, 0, run.stdout + run.stderr);
       assert.strictEqual(run.output, "skip=false\n");
       assert.isFalse(run.requests.has(TOP));
+      // The log names each commit read, and stops where the answer was settled.
+      assert.include(run.stderr, `${LOWER}: #658 does not carry no-canary`);
+      assert.notInclude(run.stderr, TOP);
     })
   );
 

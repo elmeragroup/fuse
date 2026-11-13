@@ -1,9 +1,9 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Clock, ConfigProvider, Context, Duration, Effect, Exit, Fiber, Layer, Schema } from "effect";
+import { Clock, ConfigProvider, Context, Duration, Effect, Fiber, Layer, Schema } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
-import { AssociatedPulls, CommitSha } from "../src/canary-decision.ts";
+import { AssociatedPulls, CommitSha, PullsUnavailable } from "../src/canary-decision.ts";
 import * as GitHubPulls from "../src/github-pulls.ts";
 
 // Unit under test: the GitHub lookup layer's retries, on the test clock, against a stand-in
@@ -22,8 +22,8 @@ const HEALTHY = JSON.stringify([
 
 /**
  * Runs one lookup against a GitHub that answers `status` with `headers` (by default none, so no
- * wait) to every request made before `healthyAt` of virtual time, and the healthy list after it. Returns the running lookup
- * and the virtual times of the requests it has made so far.
+ * wait) to every request made before `healthyAt` of virtual time, and the healthy list after it.
+ * Returns the running lookup and the virtual times of the requests it has made so far.
  */
 const lookupAgainst = (
   status: number,
@@ -104,7 +104,31 @@ describe("GitHub's associated-PR lookup", () => {
       const { lookup, requests } = yield* lookupAgainst(429, "1 day");
       yield* TestClock.adjust("1 hour");
       assert.deepStrictEqual(seconds(requests), [0, 60, 180, 420]);
-      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
+      const error = yield* Effect.flip(Fiber.join(lookup));
+      assert.instanceOf(error, PullsUnavailable);
+      assert.match(error.message, /answered 429/u);
+    })
+  );
+
+  // A wait GitHub names is honoured as asked, up to a minute: `Retry-After` is RFC 9110's delay in
+  // seconds, and a spent limit's `x-ratelimit-reset` is the epoch second its window ends
+  // (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+  it.effect.each([
+    { name: "a Retry-After of exactly a minute", status: 429, headers: { "retry-after": "60" }, at: 60 },
+    {
+      name: "a spent limit that resets in 30 seconds",
+      status: 403,
+      headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "30" },
+      at: 30,
+    },
+  ])("retries when GitHub says, not before: $name", ({ status, headers, at }) =>
+    Effect.gen(function* () {
+      const { lookup, requests } = yield* lookupAgainst(status, "1 second", headers);
+      yield* TestClock.adjust(Duration.seconds(at - 1));
+      assert.deepStrictEqual(seconds(requests), [0]);
+      yield* TestClock.adjust("1 second");
+      assert.deepStrictEqual(seconds(requests), [0, at]);
+      assert.lengthOf(yield* Fiber.join(lookup), 1);
     })
   );
 
@@ -113,7 +137,9 @@ describe("GitHub's associated-PR lookup", () => {
       const { lookup, requests } = yield* lookupAgainst(429, "1 day", { "retry-after": "61" });
       yield* TestClock.adjust("1 hour");
       assert.deepStrictEqual(seconds(requests), [0]);
-      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
+      const error = yield* Effect.flip(Fiber.join(lookup));
+      assert.instanceOf(error, PullsUnavailable);
+      assert.match(error.message, /answered 429 and asked to wait/u);
     })
   );
 
@@ -122,7 +148,9 @@ describe("GitHub's associated-PR lookup", () => {
       const { lookup, requests } = yield* lookupAgainst(502, "1 day");
       yield* TestClock.adjust("1 hour");
       assert.deepStrictEqual(seconds(requests), [0, 1, 3, 7]);
-      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
+      const error = yield* Effect.flip(Fiber.join(lookup));
+      assert.instanceOf(error, PullsUnavailable);
+      assert.match(error.message, /answered 502/u);
     })
   );
 
