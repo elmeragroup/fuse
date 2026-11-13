@@ -99,7 +99,9 @@ export default function ReleasesPage(): ReactElement {
       <h3 id="merge-gates">Merge gates</h3>
       <p>
         The 24-theme token contract and the unit, type and browser suites run on every merge to{" "}
-        <code>main</code>, not against the packed tarball.
+        <code>main</code>, not against the packed tarball. <code>size-limit</code> also runs on every merge,
+        against the packed tarball: it gzips a minified consumer bundle of each JS entry and named import, and
+        each CSS file as shipped, and fails when one grows past its gzip ceiling.
       </p>
 
       <h2 id="supply-chain">Provenance</h2>
