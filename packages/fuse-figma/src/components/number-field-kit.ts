@@ -2,13 +2,15 @@
  * Number field, as two component sets on a page of their own: the stepper, and `NumberField` with
  * the docs Basic demo's label and description in five states.
  *
- * - `Number field stepper` is the increase stepper, Base UI's `<button aria-label="Increase">` with
- *   the stepper slot of `numberFieldVariants`, at rest, hovered, disabled and read-only: 4 cells. It is a
- *   full-height column `--control-h-xs` wide, floored at 24px, with a 1px `input` start border on a
- *   `background` fill, holding a 16px glyph, Plus, that its `Icon` swap property picks. Hover fills
- *   it `muted`; a stepper disabled at a bound fills `muted` and mutes its glyph. A read-only field's
- *   stepper stays enabled, so it draws as at rest. It has no pressed face, so the set draws none. `h-full` takes the height of the group around it, 34px in a dense
- *   field, the height the set draws; in Number field the instance fills the group at each density.
+ * - `Number field stepper` is the increase stepper, Base UI's increment `<button>` that Fuse stamps
+ *   `data-slot="number-field-increment"`, with the stepper slot of `numberFieldVariants`, at rest,
+ *   hovered, disabled and read-only: 4 cells. It is a full-height column `--control-h-xs` wide,
+ *   floored at 24px, with a 1px `input` start border on a `background` fill, holding a 16px glyph,
+ *   Plus, that its `Icon` swap property picks. Hover fills it `muted`; a stepper disabled at a bound
+ *   fills `muted` and mutes its glyph. A read-only field's stepper stays enabled, so it draws as at
+ *   rest. It has no pressed face, so the set draws none. `h-full` takes the height of the group
+ *   around it, 34px in a dense field, the height the set draws; in Number field the instance fills
+ *   the group at each density.
  * - `Number field` holds the Field root with FieldFrame's part spacing: the heading row with a `Label`
  *   instance, then Base UI's NumberField root around the group, the field box at the md control
  *   height, which holds the value, the optional denomination and the two steppers, then the error in
@@ -18,7 +20,8 @@
  * - The group takes the field's states from its input, a direct child it reads through `has-`
  *   variants, so focus rings it, invalid draws the `error` border and ring, and a disabled field dims
  *   it to 50%. A disabled or read-only group fills `muted`.
- * - Base UI's NumberField parts carry no `data-slot`, so each part is named by its element.
+ * - Base UI's NumberField parts carry no `data-slot`, so each part is named by its element, except the
+ *   steppers, which Fuse stamps `number-field-decrement` and `number-field-increment`.
  */
 import { cn, fieldFrameVariants, fieldVariants, numberFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
@@ -96,7 +99,8 @@ export const NUMBER_FIELD_STEPPER: ComponentDefinition = {
   key: "number-field-stepper",
   name: "Number field stepper",
   slot: "number-field-stepper",
-  element: { tag: "button", attributes: { "aria-label": "Increase" } },
+  element: { tag: "button", attributes: { "data-slot": "number-field-increment" } },
+  elementSlot: () => "number-field-increment",
   rootKind: "native-control",
   previewHeight: STEPPER_PREVIEW_HEIGHT,
   axes: [{ name: "state", values: ["rest", "hover", "disabled", "readonly"] }],
@@ -118,14 +122,13 @@ export const NUMBER_FIELD_STEPPER: ComponentDefinition = {
  * and facts read the inner cell, so the invalid cells hold their own instances whose fact holds it.
  */
 function stepper(direction: "decrease" | "increase", invalid: boolean): InstanceDefinition {
+  const slot = `number-field-${direction === "decrease" ? "decrement" : "increment"}`;
   return {
     kind: "instance",
     key: invalid ? `${direction}-invalid` : direction,
     of: NUMBER_FIELD_STEPPER,
-    element: {
-      tag: "button",
-      attributes: { "aria-label": direction === "decrease" ? "Decrease" : "Increase" },
-    },
+    slot,
+    element: { tag: "button", attributes: { "data-slot": slot } },
     // A disabled field disables its steppers, and a read-only one marks them read-only.
     cell: (outer) => ({
       state: outer.state === "disabled" || outer.state === "readonly" ? outer.state : "rest",

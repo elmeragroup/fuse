@@ -16,6 +16,7 @@ import { useStableCallback } from "../../hooks/use-stable-callback";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { definedProps } from "../../internal/defined-props";
 import { isElement } from "../../internal/dom-node";
+import { fieldActionName } from "../../internal/field-action-name";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -284,7 +285,12 @@ export function DatePickerTrigger({
   const strings = useLocalizedStrings(datePickerStrings);
   const { triggerId, labelledBy, ariaLabel, describedBy, readOnly, containsInput } = shell;
   const disabled = disabledProp || shell.disabled;
-  const name = triggerName(strings.format("calendar"), labelledBy, ariaLabel);
+  const name = fieldActionName({
+    id: triggerId,
+    name: strings.format("calendar"),
+    fieldLabelId: labelledBy,
+    fieldAriaLabel: ariaLabel,
+  });
   // As PopoverInfoButton's trigger: the Button keeps its presentation, `aria-label` (an icon size
   // requires it) and `disabled` (so it styles itself disabled); the trigger states the rest.
   const button = (
@@ -293,7 +299,7 @@ export function DatePickerTrigger({
       data-slot="date-picker-trigger"
       variant={props.variant ?? "ghost"}
       size="icon-sm"
-      aria-label={name}
+      aria-label={name["aria-label"]}
       disabled={disabled || readOnly}
       className={cn(styles.trigger(), className)}
     />
@@ -310,25 +316,12 @@ export function DatePickerTrigger({
           event.preventDefault();
         }
       }}
-      aria-label={name}
-      aria-labelledby={labelledBy === undefined ? undefined : `${triggerId} ${labelledBy}`}
+      {...name}
       aria-describedby={describedBy}
       render={button}>
       {children ?? <CalendarBlank aria-hidden="true" className={styles.icon()} />}
     </PopoverTrigger>
   );
-}
-
-/**
- * The trigger's own `aria-label`: "Calendar", which the visible label follows through
- * `aria-labelledby`, or "Calendar" and the picker's `aria-label` when it has no visible label.
- */
-function triggerName(
-  calendar: string,
-  labelledBy: string | undefined,
-  ariaLabel: string | undefined
-): string {
-  return labelledBy === undefined && ariaLabel !== undefined ? `${calendar} ${ariaLabel}` : calendar;
 }
 
 /** `DatePicker.Popup` takes Popover's content props. */
