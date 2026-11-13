@@ -9,6 +9,17 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { expectInvalidRing, ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { CaughtError, caughtError } from "../../../test/caught-error";
+import {
+  described,
+  fileInput,
+  fileTransfer,
+  paste,
+  pdf,
+  pick,
+  png,
+  stubPicker,
+  txt,
+} from "../../../test/file-picks";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
@@ -17,61 +28,6 @@ import { SkeletonReveal } from "../skeleton/skeleton-reveal";
 import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
-
-/** The Root's hidden picker input. It has no role or name to query it by. */
-function fileInput(host: HTMLElement): HTMLInputElement {
-  // The picker input is `hidden`, so it is outside the accessibility tree. It never has a
-  // `name`; the separate input a form posts does.
-  const input = host.querySelector('input[type="file"]:not([name])');
-  if (!(input instanceof HTMLInputElement)) {
-    throw new Error("expected the Root's hidden file input");
-  }
-  return input;
-}
-
-/** Stubs the hidden input's `click`, which would open the picker, and returns the spy. */
-function stubPicker(host: HTMLElement) {
-  return vi.spyOn(fileInput(host), "click").mockReturnValue(undefined);
-}
-
-function fileTransfer(files: readonly File[]): DataTransfer {
-  const transfer = new DataTransfer();
-  for (const file of files) {
-    transfer.items.add(file);
-  }
-  return transfer;
-}
-
-/** Picks `files` the way the browser does: it sets `input.files`, then fires `change`. */
-function pick(input: HTMLInputElement, files: readonly File[]): void {
-  input.files = fileTransfer(files).files;
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-/**
- * Dispatches a paste carrying `files` at `target`, and returns the event to read its outcome. Root
- * cancels a paste it takes before it reads the files, so an uncancelled paste delivers nothing.
- */
-function paste(target: EventTarget, files: readonly File[]): ClipboardEvent {
-  // A browser's paste is composed, so it leaves a shadow root on its way to the document.
-  const event = new ClipboardEvent("paste", {
-    bubbles: true,
-    cancelable: true,
-    composed: true,
-    clipboardData: fileTransfer(files),
-  });
-  target.dispatchEvent(event);
-  return event;
-}
-
-const png = (name: string) => new File(["png"], name, { type: "image/png" });
-const txt = (name: string) => new File(["txt"], name, { type: "text/plain" });
-const pdf = (name: string) => new File(["pdf"], name, { type: "" });
-
-/** A rejection as `[reason, name]`. */
-function described(rejection: FileRejection): readonly [string, string] {
-  return "file" in rejection ? [rejection.reason, rejection.file.name] : [rejection.reason, rejection.name];
-}
 
 describe("FileUpload.Root and FileUpload.Trigger", () => {
   it("opens the picker once per Trigger click, from a type=button that survives type={undefined}", async () => {
