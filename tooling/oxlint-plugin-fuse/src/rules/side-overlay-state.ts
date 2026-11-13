@@ -43,6 +43,8 @@ type OverlayPart = StateAttribute | "internal";
  * left out render none (ConfirmButton arms in place, Pagination is a list of links) or show only
  * while pointed at: a tooltip closes when the press that flips the window moves hover and focus
  * off its trigger, and a toast sits in the Dashboard's own viewport and dismisses itself.
+ * `side-overlay-state.inventory.test.ts` holds both lists to every popup part the docs' `api.json`
+ * files document, so a new one fails there until it gets a row or an exemption.
  *
  * `Command.Root` and `NavigationMenu.Root` always count. Whether a Command opens a dialog depends on
  * a `Command.Content` anywhere below it, possibly in another module, and whether a nav menu shows a
