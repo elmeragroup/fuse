@@ -1,20 +1,28 @@
 /**
- * A theme's brand ramps, from the colour each brand and segment seeds them with. The seed is
- * read from the palette data, upstream of role assignment: the brand palette's `feature`,
+ * A theme's brand ramps, from the colours each brand and segment seeds them with. The brand seed
+ * is read from the palette data, upstream of role assignment: the brand palette's `feature`,
  * overlaid by its segment delta's `feature` where one exists. It never reads a composed theme,
- * because the branded identity layer points roles at the ramps the seed builds.
+ * because the palettes point roles at the ramps the seed builds. It seeds the brand neutral ramp's
+ * hue and brand palette 1.
+ *
+ * Each brand palette passes through its seed literal at the step nearest the seed's lightness
+ * (`brand-ramps.ts`), so palette 1 holds the brand's `feature` exactly.
+ *
+ * Brand palette 2 takes a seed from {@link SECOND_BRAND_SEEDS} where the brand curates a second
+ * colour, and otherwise aliases palette 1 step for step, so a role that points at palette 2 shows
+ * the brand colour in a single-colour brand.
  *
  * `feature` seeds the ramps, so it stays a curated colour literal in every brand palette and
  * segment delta. An alias there would make the ramps depend on the roles they feed, so
  * {@link brandSeed} refuses one with a message that names the brand and segment.
  */
 
-import type * as Oklch from "@elmeragroup/color/oklch";
-
 import { cssVarReference } from "../css-values";
 import type { BrandCode, ThemeInput, ThemeSegment } from "../theme-input";
 import { tokenOklch } from "../token-color";
+import { GUEN_ORANGE } from "./brand-dark-palettes";
 import { BRAND_PALETTES, paletteBrand } from "./brand-palettes";
+import type { PaletteBrandCode } from "./brand-palettes";
 import { brandRampTokens } from "./brand-ramps";
 import type { BrandRampTokens } from "./brand-ramps";
 import { segmentSheet } from "./segment-sheets";
@@ -35,10 +43,10 @@ const BRAND_NEUTRAL_CHROMA = 0.01;
  *
  * @param brand - The brand. `fkab` resolves to `fkas`.
  * @param segment - The segment.
- * @returns The seed colour.
+ * @returns The seed colour, the curated `oklch()` literal.
  * @throws When the seed is a `var()` alias rather than a colour literal, a defect in the palettes.
  */
-function brandSeed(brand: BrandCode, segment: ThemeSegment): Oklch.Oklch {
+function brandSeed(brand: BrandCode, segment: ThemeSegment): string {
   const palette = paletteBrand(brand);
   const feature = segmentSheet(palette, segment)?.light.feature ?? BRAND_PALETTES[palette].feature;
   if (cssVarReference(feature) !== undefined) {
@@ -46,8 +54,26 @@ function brandSeed(brand: BrandCode, segment: ThemeSegment): Oklch.Oklch {
       `The ${brand} ${segment} feature seeds the brand ramps, so it must be a colour literal, not ${feature}.`
     );
   }
-  return tokenOklch(feature);
+  return feature;
 }
+
+/**
+ * The second colour of each brand that curates one, the seed of its brand palette 2. Each is a
+ * tone the brand already paints, never an invented one. Gudbrandsdal Energi's orange is
+ * {@link GUEN_ORANGE}, the constant its branded dark `secondary` paints. Telinet's green is its
+ * branded light `feature-foreground`, but stays a literal here, because that role points at this
+ * palette and cannot also seed it. Every other brand has one colour and is
+ * `undefined`. A segment that needs its own second colour would overlay this table per segment,
+ * as `feature` does.
+ */
+const SECOND_BRAND_SEEDS = {
+  fkas: undefined,
+  tkas: undefined,
+  guen: GUEN_ORANGE,
+  fkse: "oklch(0.72225 0.16251 154.25)", // #36C275, the Telinet green
+  elma: undefined,
+  ngfi: undefined,
+} as const satisfies Record<PaletteBrandCode, string | undefined>;
 
 /**
  * A theme's ramp tokens. They follow the brand and segment alone, so a theme holds the same
@@ -59,5 +85,10 @@ function brandSeed(brand: BrandCode, segment: ThemeSegment): Oklch.Oklch {
  */
 export function brandRampLayer(theme: ThemeInput): BrandRampTokens {
   const seed = brandSeed(theme.brand, theme.segment);
-  return brandRampTokens({ neutral: { hue: seed.h, chroma: BRAND_NEUTRAL_CHROMA } });
+  const second = SECOND_BRAND_SEEDS[paletteBrand(theme.brand)];
+  return brandRampTokens({
+    neutral: { _tag: "tint", hue: tokenOklch(seed).h, chroma: BRAND_NEUTRAL_CHROMA },
+    "1": { _tag: "seed", literal: seed },
+    "2": second === undefined ? { _tag: "alias", of: "1" } : { _tag: "seed", literal: second },
+  });
 }

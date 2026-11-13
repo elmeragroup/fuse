@@ -42,6 +42,16 @@ const SIDEBAR_BRAND_OVERRIDE = `/* After the Fuse stylesheet, on the element tha
   --sidebar-brand-foreground: oklch(0.205 0 0);
 }`;
 
+const PALETTE_STEP = `/* After the Fuse stylesheet, on the element that carries the theme attributes.
+   A step of the brand colour, not a mix computed from --primary. The palettes
+   hold the same steps in light and dark, so one rule serves both schemes. Its
+   four qualifiers match the weight of the most specific branded dark rule, and
+   coming later in the cascade, it wins in every branded theme and scheme. */
+.app-shell[data-theme-identity="branded"][data-theme-brand][data-theme-segment] {
+  --sidebar-accent: var(--brand-1-600);
+  --sidebar-accent-foreground: var(--brand-1-50);
+}`;
+
 const NEXT_PAGES = `// pages/_document.tsx
 import { Head, Html, Main, NextScript } from "next/document";
 import { ColorSchemeScript, documentAttributes } from "@elmeragroup/fuse/theme";
@@ -215,6 +225,40 @@ export default function ThemingPage(): ReactElement {
         the alias, such as <code>var(--brand-neutral-100)</code>, so overriding a step on the element that
         carries the theme attributes moves every role that points at it. Neutral themes keep their untinted
         system greys, and branded dark themes keep the neutrals they mix from each brand&apos;s dark card.
+      </p>
+      <h3 id="brand-palettes">Brand palettes</h3>
+      <p>
+        Each brand rule also declares two brand palettes on the same recipe, <code>--brand-1-50</code> to{" "}
+        <code>--brand-1-950</code> and <code>--brand-2-50</code> to <code>--brand-2-950</code>. A palette is
+        built from a seed colour, a curated brand tone, and passes through it: the step whose lightness is
+        nearest the seed&apos;s holds the seed itself, unchanged. Every other step sits on the ramp&apos;s
+        shared lightness at the seed&apos;s hue and chroma, with the chroma lowered only where sRGB cannot
+        hold it at that lightness. Palette 1 is the brand colour, the brand&apos;s <code>--feature</code>{" "}
+        tone, so Fjordkraft&apos;s company segment is teal. Palette 2 is a second brand colour where the brand
+        curates one: Telinet&apos;s green and Gudbrandsdal Energi&apos;s orange. Every other brand has one
+        colour, so its <code>--brand-2-*</code> steps point at <code>--brand-1-*</code> step for step, and a
+        role that points at palette 2 shows the brand colour. Like the neutral ramp, the palettes hold one
+        value per brand and segment in both schemes and identities, <code>:root</code> declares untinted
+        greys, and utilities such as <code>bg-brand-1-800</code> read them.
+      </p>
+      <p>
+        A role points at a palette and a step, not at a colour. Telinet&apos;s{" "}
+        <code>--feature-foreground</code> is <code>var(--brand-2-400)</code>, the step that holds its green.
+        The brand&apos;s other tones, such as <code>--primary</code> and the soft forms, stay curated colours,
+        because they are hand-tuned. A product that needs a tone the roles do not name takes a step instead of
+        computing one. A selected sidebar row in the brand colour, for example, takes a mid step and a light
+        step rather than mixing <code>--primary</code> toward black:
+      </p>
+      <pre>
+        <code>{PALETTE_STEP}</code>
+      </pre>
+      <p>
+        In every branded theme and both schemes, step 50 on step 600 measures at least 5.61:1, and the
+        selected fill stands out from the sidebar by at least 5.59:1 in light and 2.11:1 in dark. A darker
+        fill such as step 800 would vanish into the dark sidebar, at 1.12:1. Equal steps line up in lightness
+        across brands but not in contrast, so measure the pair you choose in every brand you ship, as
+        Fuse&apos;s contrast gates measure its own role pairs. A page of the palettes with their measured step
+        pairs is planned in issue #434.
       </p>
       <p>
         Corner rounding is part of the theme: each identity picks a corner set. A branded theme rounds cards
