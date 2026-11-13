@@ -36,6 +36,10 @@ export default function TokensPage(): ReactElement {
       {/* Swatches render inside a `ThemeScope` on the header picker's theme, so the list shows
           real values for whichever of the twenty-four themes is selected. */}
       <TokenSwatchList tokens={COLOR_TOKENS} />
+      <p>
+        To compare the brands&apos; palettes, roles and contrast pairs side by side, open{" "}
+        <Link href="/handbook/palettes">Palettes &amp; contrast</Link>.
+      </p>
 
       <h2 id="what-a-component-reads">What a component reads</h2>
       <p>

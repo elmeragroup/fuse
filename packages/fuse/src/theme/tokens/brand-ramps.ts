@@ -195,6 +195,9 @@ export type RampSeed = {
 /** Where one ramp scale's steps come from. */
 export type RampSource = RampTint | RampSeed | RampAlias;
 
+/** Where every ramp scale of a theme takes its steps from. */
+export type RampSources = { readonly [S in RampScale]: RampSource };
+
 /**
  * One step of a ramp: the step's lightness at the tint, mapped into sRGB by lowering chroma.
  *
@@ -228,9 +231,30 @@ function nearestStep(lightness: number): RampStep {
  * @returns The step as an `oklch()` literal.
  */
 function seededTone(seed: RampSeed, step: RampStep): string {
+  if (step === seedStep(seed)) return seed.literal;
   const color = tokenOklch(seed.literal);
-  if (step === nearestStep(color.l)) return seed.literal;
   return rampTone({ _tag: "tint", hue: color.h, chroma: color.c }, step);
+}
+
+/**
+ * The step that holds a seed's literal unchanged: the step whose lightness is nearest the seed's.
+ *
+ * @param seed - A brand palette's seed.
+ * @returns The step a role points at to paint the curated colour exactly.
+ */
+function seedStep(seed: RampSeed): RampStep {
+  return nearestStep(tokenOklch(seed.literal).l);
+}
+
+/**
+ * The step of a ramp that holds its seed literal unchanged, for a seeded brand palette. A tinted
+ * ramp has no seed, and an aliased scale shows the seed of the scale it points at.
+ *
+ * @param source - Where the ramp's steps come from.
+ * @returns The seed's step, or `undefined` for a tint or an alias.
+ */
+export function rampSeedStep(source: RampSource): RampStep | undefined {
+  return source._tag === "seed" ? seedStep(source) : undefined;
 }
 
 /**
@@ -239,7 +263,7 @@ function seededTone(seed: RampSeed, step: RampStep): string {
  * @param sources - The tint or seed of each scale, or the scale it aliases.
  * @returns The ramp tokens with their `oklch()` literals or `var()` aliases.
  */
-export function brandRampTokens(sources: { readonly [S in RampScale]: RampSource }): BrandRampTokens {
+export function brandRampTokens(sources: RampSources): BrandRampTokens {
   return brandRampRecord((scale, step) => {
     const source = sources[scale];
     switch (source._tag) {

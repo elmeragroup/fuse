@@ -130,6 +130,24 @@
   --spacing-footer-end: calc(2rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* The palettes tables: a checker behind a translucent swatch, so its alpha shows, and the hatch
+   of a cell whose brand is pinned to the other segment. Both draw in the page's own roles. */
+@utility palette-checker {
+  background-image: repeating-conic-gradient(
+    color-mix(in oklab, var(--foreground) 14%, transparent) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 6px 6px;
+}
+
+@utility palette-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 5px,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 5px 10px
+  );
+}
+
 /* A press confirmed the moment a finger lands, not when it lifts. */
 @utility landing-press {
   transition: scale 140ms var(--ease-snap);

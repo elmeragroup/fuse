@@ -43,6 +43,7 @@ describe("SideNav inventory", () => {
       "Density",
       "Theme matrix",
       "Tokens",
+      "Palettes & contrast",
       "Brands & segments",
       "Fonts",
       "Icons",

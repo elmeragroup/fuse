@@ -39,6 +39,26 @@ function byte(pair: string): number {
 }
 
 /**
+ * Write a color as CSS hex notation: uppercase `#RRGGBB` for an opaque color, and `#RRGGBBAA`
+ * with its alpha as the fourth byte for a translucent one. Each channel and the alpha round to the
+ * nearest of 256 steps, so the result is a color CSS reads back at 8-bit precision.
+ *
+ * @param color - A gamma-encoded sRGB color of any alpha.
+ * @returns The six- or eight-digit hex color.
+ */
+export function format(color: Srgb.Srgb): string {
+  const opaque = formatOpaque(color);
+  return color.alpha < 1 ? `${opaque}${byteHex(color.alpha)}` : opaque;
+}
+
+function byteHex(channel: number): string {
+  return Math.round(channel * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
+}
+
+/**
  * Write a color's channels as uppercase `#RRGGBB`, the six-digit form that design-token formats
  * such as DTCG and Figma pair with a separate alpha. Each channel rounds to the nearest of 256
  * steps.
@@ -47,10 +67,5 @@ function byte(pair: string): number {
  * @returns The six-digit hex color.
  */
 export function formatOpaque(color: Srgb.Srgb): string {
-  const pair = (channel: number): string =>
-    Math.round(channel * 255)
-      .toString(16)
-      .padStart(2, "0")
-      .toUpperCase();
-  return `#${pair(color.r)}${pair(color.g)}${pair(color.b)}`;
+  return `#${byteHex(color.r)}${byteHex(color.g)}${byteHex(color.b)}`;
 }
