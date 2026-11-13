@@ -170,6 +170,54 @@ describe("Item", () => {
     }
   });
 
+  it("keeps a hidden footer's positioned content out of its scroll container's overflow", () => {
+    // Enough lines that the input, placed after them, sits far below the collapsed row.
+    const deliveryLines = Array.from({ length: 12 }, (_, index) => `Delivery detail ${index + 1}`);
+    function Scroller({ mode }: { mode: "hidden" | "visible" }) {
+      return (
+        <div
+          role="region"
+          aria-label="Orders"
+          style={{ position: "relative", height: "120px", overflow: "auto" }}>
+          <Item.Root>
+            <Item.Title>Order</Item.Title>
+            <Item.Footer mode={mode}>
+              {/* A field after the lines, ending in a visually hidden input as DateField and
+                  FileUpload render it: absolutely positioned, so the clip holds it only as the
+                  input's containing block. The block wrapper puts its static position below the
+                  lines, as a field's wrapper does. */}
+              <div>
+                {deliveryLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+                <input
+                  aria-label="Delivery date"
+                  readOnly
+                  tabIndex={-1}
+                  style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden" }}
+                />
+              </div>
+            </Item.Footer>
+          </Item.Root>
+        </div>
+      );
+    }
+    const { rerender } = renderThemed(<Scroller mode="hidden" />);
+    const scroller = roleNamed("region", "Orders");
+
+    // The title row alone fits in 120px, so a collapsed footer leaves nothing to scroll to.
+    expect(scroller.scrollHeight).toBe(scroller.clientHeight);
+
+    // The same content, revealed, does overflow: the check above measures the clip.
+    rerender(<Scroller mode="visible" />);
+    const footer = textNamed("Delivery detail 1").closest<HTMLElement>('[data-slot="item-footer"]');
+    if (!footer) {
+      throw new Error("expected the footer around the delivery lines");
+    }
+    settleTransitions(footer);
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 2);
+  });
+
   it("makes a link-rendered item a keyboard-activatable link", async () => {
     renderThemed(
       <Item.Root render={<a href="#order" />}>
