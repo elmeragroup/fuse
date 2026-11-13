@@ -31,6 +31,7 @@ export const attachmentVariants = tv({
       itemShellClass,
       // A border box, so a width such as `w-full` or a tile's width includes the padding and
       // border in a host without Tailwind's preflight too.
+      // oxlint-disable-next-line fuse/container-surface -- an attachment is a chip that borrows the card colour and repaints on hover; nothing rests on it
       "group/attachment relative box-border flex max-w-full min-w-0 shrink-0 border-border bg-card text-card-foreground transition-colors duration-100",
       "data-[state=error]:border-error/30 data-[state=idle]:border-dashed",
       // Only a root holding an enabled trigger fills on hover.

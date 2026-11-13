@@ -18,7 +18,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  */
 export const radioIconButtonVariants = tv({
   base: cn(
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
+    // oxlint-disable-next-line elmera/no-local-focus-ring, fuse/container-surface -- native outline off, the ring comes from the shared adapter; the control borrows the card colour and nothing rests on it
     "ease-out inline-flex shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-[color,background-color,box-shadow,scale] duration-150 outline-none data-checked:border-primary data-checked:bg-muted enabled-hover:bg-muted enabled-active:scale-[0.96]",
     selfFocusRingClass,
     dataStateFaceClass

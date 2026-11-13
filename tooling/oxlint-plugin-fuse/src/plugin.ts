@@ -1,6 +1,7 @@
 import type { Plugin } from "@oxlint/plugins";
 
 import { chartDemoTable } from "./rules/chart-demo-table.ts";
+import { containerSurface } from "./rules/container-surface.ts";
 import { declaredDensityRole } from "./rules/declared-density-role.ts";
 import { definedPropsWiring } from "./rules/defined-props-wiring.ts";
 import { motionSafeTransform } from "./rules/motion-safe-transform.ts";
@@ -36,6 +37,7 @@ const plugin: Plugin = {
   meta: { name: "fuse" },
   rules: {
     "chart-demo-table": chartDemoTable,
+    "container-surface": containerSurface,
     "declared-density-role": declaredDensityRole,
     "defined-props-wiring": definedPropsWiring,
     "motion-safe-transform": motionSafeTransform,

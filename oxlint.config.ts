@@ -391,6 +391,7 @@ export default defineConfig({
         "shadcn/no-raw-colors": "error",
         "shadcn/no-inline-styles": "error",
         "shadcn/no-unknown-classes": "error",
+        "fuse/container-surface": "error",
         "fuse/defined-props-wiring": "error",
         "fuse/declared-density-role": [
           "error",

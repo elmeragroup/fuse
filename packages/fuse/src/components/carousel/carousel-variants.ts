@@ -26,7 +26,8 @@ export const carouselVariants = tv({
     viewport: cn("no-scrollbar flex min-h-0 min-w-0 snap-mandatory scroll-smooth", selfFocusRingClass),
     slide: "min-h-0 min-w-0 shrink-0 grow-0 basis-full snap-start snap-always",
     controls: "flex flex-wrap items-center justify-center gap-(--surface-gap-lg)",
-    // The outline button rests on the card surface, as the design draws it over a tinted page.
+    // The outline button takes the card fill, as the design draws it over a tinted page.
+    // oxlint-disable-next-line fuse/container-surface -- the outline button borrows the card colour; nothing rests on it
     edge: "bg-card",
     // Mirrored in a right-to-left carousel, where Previous points right.
     edgeIcon: "",

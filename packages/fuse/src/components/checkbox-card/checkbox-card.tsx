@@ -29,7 +29,8 @@ const checkboxCardStyles = tv({
   base: "shadow-xs border-border",
   variants: {
     variant: {
-      default: "bg-card",
+      // Card.Root paints the card fill and states it as `--surface`.
+      default: "",
       // The muted card swaps Card's fill, so it restates the text, `--surface` and muted text
       // Card states beside its own.
       muted:

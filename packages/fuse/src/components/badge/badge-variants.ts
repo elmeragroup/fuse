@@ -35,6 +35,7 @@ export const badgeVariants = tv({
       "outline-info": "border-info text-info",
       muted: "shadow-xs border-transparent bg-muted text-foreground",
       accent: "shadow-xs border-transparent bg-accent text-accent-foreground",
+      // oxlint-disable-next-line fuse/container-surface -- a badge is a chip that borrows the card colour; nothing rests on it
       card: "shadow-xs border-transparent bg-card text-card-foreground",
     },
     size: {

@@ -18,6 +18,7 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border",
   fieldBoxShellClass,
+  // oxlint-disable-next-line fuse/container-surface -- a field box is a control that borrows the card colour; its read-only face repaints it and nothing rests on it
   "border border-input bg-card transition-[color,border-color,box-shadow]"
 );
 
