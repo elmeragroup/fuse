@@ -1,7 +1,7 @@
 /**
  * Decides whether a push to `main` publishes a canary, for the merge workflow's `canary-opt-out`
  * job (`canary-decision.ts` holds the rule). It writes `skip=true` or `skip=false` to
- * GITHUB_OUTPUT and explains on stderr each commit it looked up, which stops at the first that
+ * GITHUB_OUTPUT and explains on stderr each commit it looked up, stopping at the first that
  * publishes. A failed lookup, an answer that is not a PR list or an unreadable payload writes
  * nothing and fails the step, which skips publication visibly instead of guessing.
  *

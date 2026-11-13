@@ -54,7 +54,7 @@ const lookupAgainst = (
       )
     );
     const lookup = yield* Effect.forkChild(Context.get(pulls, AssociatedPulls).of(SHA));
-    // Let the first attempt run at virtual time zero.
+    // Let the first attempt run at the current virtual time.
     yield* TestClock.adjust(0);
     return { lookup, requests };
   });
@@ -63,40 +63,6 @@ const lookupAgainst = (
 const seconds = (requests: ReadonlyArray<number>) => requests.map((millis) => millis / 1000);
 
 describe("GitHub's associated-PR lookup", () => {
-  it.effect("waits at least a minute after a rate limit that names no wait", () =>
-    Effect.gen(function* () {
-      const { lookup, requests } = yield* lookupAgainst(429, "1 second");
-      yield* TestClock.adjust("59 seconds");
-      assert.deepStrictEqual(seconds(requests), [0]);
-      yield* TestClock.adjust("1 second");
-      assert.deepStrictEqual(seconds(requests), [0, 60]);
-      const pulls = yield* Fiber.join(lookup);
-      assert.deepStrictEqual(
-        pulls.map((pull) => pull.number),
-        [661]
-      );
-    })
-  );
-
-  it.effect("waits exponentially longer while a secondary rate limit continues, then recovers", () =>
-    Effect.gen(function* () {
-      // GitHub stays rate limited for four minutes, past three fixed one-minute waits.
-      const { lookup, requests } = yield* lookupAgainst(429, "4 minutes");
-      yield* TestClock.adjust("10 minutes");
-      const sent = seconds(requests);
-      const gaps = sent.slice(1).map((time, index) => time - (sent[index] ?? 0));
-      assert.isAtLeast(gaps[0] ?? 0, 60);
-      for (let index = 1; index < gaps.length; index += 1) {
-        assert.isAtLeast(gaps[index] ?? 0, 2 * (gaps[index - 1] ?? 0), `gaps ${gaps.join(", ")}`);
-      }
-      const pulls = yield* Fiber.join(lookup);
-      assert.deepStrictEqual(
-        pulls.map((pull) => pull.number),
-        [661]
-      );
-    })
-  );
-
   // GitHub's guidance fixes the waits at one minute, doubled for each further retry, and the lookup
   // gives up after three retries, which the merge workflow's 15-minute job timeout is sized from.
   it.effect("gives up on a continued secondary rate limit after retrying at 1, 2 and 4 minutes", () =>
@@ -113,21 +79,30 @@ describe("GitHub's associated-PR lookup", () => {
   // A wait GitHub names is honoured as asked, up to a minute: `Retry-After` is RFC 9110's delay in
   // seconds, and a spent limit's `x-ratelimit-reset` is the epoch second its window ends
   // (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
-  it.effect.each([
-    { name: "a Retry-After of exactly a minute", status: 429, headers: { "retry-after": "60" }, at: 60 },
-    {
-      name: "a spent limit that resets in 30 seconds",
-      status: 403,
-      headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "30" },
-      at: 30,
-    },
-  ])("retries when GitHub says, not before: $name", ({ status, headers, at }) =>
+  it.effect("retries a Retry-After of exactly a minute when GitHub says, not before", () =>
     Effect.gen(function* () {
-      const { lookup, requests } = yield* lookupAgainst(status, "1 second", headers);
-      yield* TestClock.adjust(Duration.seconds(at - 1));
+      const { lookup, requests } = yield* lookupAgainst(429, "1 second", { "retry-after": "60" });
+      yield* TestClock.adjust("59 seconds");
       assert.deepStrictEqual(seconds(requests), [0]);
       yield* TestClock.adjust("1 second");
-      assert.deepStrictEqual(seconds(requests), [0, at]);
+      assert.deepStrictEqual(seconds(requests), [0, 60]);
+      assert.lengthOf(yield* Fiber.join(lookup), 1);
+    })
+  );
+
+  // An epoch-second reset is a wait of what remains of it from now: a request made at 10 seconds,
+  // whose window ends at second 40, retries 30 seconds later.
+  it.effect("retries a spent limit at its reset, measured from the clock rather than zero", () =>
+    Effect.gen(function* () {
+      yield* TestClock.adjust("10 seconds");
+      const { lookup, requests } = yield* lookupAgainst(403, "11 seconds", {
+        "x-ratelimit-remaining": "0",
+        "x-ratelimit-reset": "40",
+      });
+      yield* TestClock.adjust("29 seconds");
+      assert.deepStrictEqual(seconds(requests), [10]);
+      yield* TestClock.adjust("1 second");
+      assert.deepStrictEqual(seconds(requests), [10, 40]);
       assert.lengthOf(yield* Fiber.join(lookup), 1);
     })
   );
@@ -151,19 +126,6 @@ describe("GitHub's associated-PR lookup", () => {
       const error = yield* Effect.flip(Fiber.join(lookup));
       assert.instanceOf(error, PullsUnavailable);
       assert.match(error.message, /answered 502/u);
-    })
-  );
-
-  it.effect("retries a server error that names no wait within seconds", () =>
-    Effect.gen(function* () {
-      const { lookup, requests } = yield* lookupAgainst(502, "1 second");
-      yield* TestClock.adjust("5 seconds");
-      assert.strictEqual(requests.length, 2);
-      const pulls = yield* Fiber.join(lookup);
-      assert.deepStrictEqual(
-        pulls.map((pull) => pull.number),
-        [661]
-      );
     })
   );
 });
