@@ -210,11 +210,7 @@ describe("Item", () => {
 
     // The same content, revealed, does overflow: the check above measures the clip.
     rerender(<Scroller mode="visible" />);
-    const footer = textNamed("Delivery detail 1").closest<HTMLElement>('[data-slot="item-footer"]');
-    if (!footer) {
-      throw new Error("expected the footer around the delivery lines");
-    }
-    settleTransitions(footer);
+    settleTransitions(footerHost("Delivery detail 1"));
     expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 2);
   });
 
