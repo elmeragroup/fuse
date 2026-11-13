@@ -20,7 +20,7 @@ export type CommitSha = typeof CommitSha.Type;
 export type AssociatedPull = {
   /** The PR number, for the diagnostics. */
   readonly number: number;
-  /** The commit the PR merged as, or none while it is open. */
+  /** The commit the PR merged as, or its test merge commit while open. */
   readonly mergeCommitSha: string | null;
   /** The PR's head branch. */
   readonly headRef: string;
@@ -42,11 +42,14 @@ export class AssociatedPulls extends Context.Service<
   }
 >()("@elmeragroup/canary-opt-out/AssociatedPulls") {}
 
-/** Whether the push skips its canary, and one line explaining each part of that. */
+/** Whether the push skips its canary, and one line explaining each commit read for it. */
 export type CanaryDecision = {
   /** Whether the push skips its canary. */
   readonly skip: boolean;
-  /** One line per pushed commit, or one for a push decided without lookups. */
+  /**
+   * One line per pushed commit looked up, ending at the first that publishes, or one for a push
+   * decided without lookups.
+   */
   readonly diagnostics: ReadonlyArray<string>;
 };
 
@@ -98,11 +101,12 @@ function commitVerdict(sha: CommitSha, pulls: ReadonlyArray<AssociatedPull>): Co
 
 /**
  * Decides whether a push skips its canary: only when every pushed commit is the merge of a PR
- * labelled `no-canary`. A push that lists no commits, or may have been cut at GitHub's cap,
- * publishes without lookups.
+ * labelled `no-canary`. It stops at the first commit that publishes, since that settles the answer
+ * and a later lookup could then only fail a push that must publish. A push that lists no commits,
+ * or may have been cut at GitHub's cap, publishes without lookups.
  *
  * @param pushed - The pushed commits, in push order.
- * @returns The decision, or the first lookup that failed.
+ * @returns The decision, or the first lookup that failed before the answer was settled.
  */
 export const decide = Effect.fn("CanaryDecision.decide")(function* (pushed: ReadonlyArray<CommitSha>) {
   if (pushed.length === 0) {
@@ -118,11 +122,11 @@ export const decide = Effect.fn("CanaryDecision.decide")(function* (pushed: Read
     } satisfies CanaryDecision;
   }
   const pulls = yield* AssociatedPulls;
-  const verdicts = yield* Effect.forEach(pushed, (sha) =>
-    Effect.map(pulls.of(sha), (associated) => commitVerdict(sha, associated))
-  );
-  return {
-    skip: verdicts.every((verdict) => verdict.optedOut),
-    diagnostics: verdicts.map((verdict) => verdict.diagnostic),
-  } satisfies CanaryDecision;
+  const diagnostics: Array<string> = [];
+  for (const sha of pushed) {
+    const verdict = commitVerdict(sha, yield* pulls.of(sha));
+    diagnostics.push(verdict.diagnostic);
+    if (!verdict.optedOut) return { skip: false, diagnostics } satisfies CanaryDecision;
+  }
+  return { skip: true, diagnostics } satisfies CanaryDecision;
 });

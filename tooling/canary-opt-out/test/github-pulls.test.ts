@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Clock, ConfigProvider, Context, Duration, Effect, Fiber, Layer, Schema } from "effect";
+import { Clock, ConfigProvider, Context, Duration, Effect, Exit, Fiber, Layer, Schema } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
@@ -21,11 +21,15 @@ const HEALTHY = JSON.stringify([
 ]);
 
 /**
- * Runs one lookup against a GitHub that answers `status` with no wait header to every request made
- * before `healthyAt` of virtual time, and the healthy list after it. Returns the running lookup
+ * Runs one lookup against a GitHub that answers `status` with `headers` (by default none, so no
+ * wait) to every request made before `healthyAt` of virtual time, and the healthy list after it. Returns the running lookup
  * and the virtual times of the requests it has made so far.
  */
-const lookupAgainst = (status: number, healthyAt: Duration.Input) =>
+const lookupAgainst = (
+  status: number,
+  healthyAt: Duration.Input,
+  headers: Readonly<Record<string, string>> = {}
+) =>
   Effect.gen(function* () {
     const requests: number[] = [];
     const client = HttpClient.make((request) =>
@@ -35,7 +39,7 @@ const lookupAgainst = (status: number, healthyAt: Duration.Input) =>
         const healthy = now >= Duration.toMillis(Duration.fromInputUnsafe(healthyAt));
         return HttpClientResponse.fromWeb(
           request,
-          healthy ? new Response(HEALTHY, { status: 200 }) : new Response(null, { status })
+          healthy ? new Response(HEALTHY, { status: 200 }) : new Response(null, { status, headers })
         );
       })
     );
@@ -90,6 +94,35 @@ describe("GitHub's associated-PR lookup", () => {
         pulls.map((pull) => pull.number),
         [661]
       );
+    })
+  );
+
+  // GitHub's guidance fixes the waits at one minute, doubled for each further retry, and the lookup
+  // gives up after three retries, which the merge workflow's 15-minute job timeout is sized from.
+  it.effect("gives up on a continued secondary rate limit after retrying at 1, 2 and 4 minutes", () =>
+    Effect.gen(function* () {
+      const { lookup, requests } = yield* lookupAgainst(429, "1 day");
+      yield* TestClock.adjust("1 hour");
+      assert.deepStrictEqual(seconds(requests), [0, 60, 180, 420]);
+      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
+    })
+  );
+
+  it.effect("fails at once when GitHub asks for a wait longer than a minute", () =>
+    Effect.gen(function* () {
+      const { lookup, requests } = yield* lookupAgainst(429, "1 day", { "retry-after": "61" });
+      yield* TestClock.adjust("1 hour");
+      assert.deepStrictEqual(seconds(requests), [0]);
+      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
+    })
+  );
+
+  it.effect("gives up on a continued server error after retrying at 1, 2 and 4 seconds", () =>
+    Effect.gen(function* () {
+      const { lookup, requests } = yield* lookupAgainst(502, "1 day");
+      yield* TestClock.adjust("1 hour");
+      assert.deepStrictEqual(seconds(requests), [0, 1, 3, 7]);
+      assert.isTrue(Exit.isFailure(yield* Fiber.await(lookup)));
     })
   );
 

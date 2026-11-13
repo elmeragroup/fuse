@@ -17,7 +17,7 @@ import { NodeHttpClient, NodeServices } from "@effect/platform-node";
 import { Config, Console, Effect, FileSystem, Layer, Schema } from "effect";
 
 import { CommitSha, decide } from "./canary-decision.ts";
-import { runStep, setBooleanOutput } from "./github-actions.ts";
+import { runStep, setSkipOutput } from "./github-actions.ts";
 import * as GitHubPulls from "./github-pulls.ts";
 
 /** The part of GitHub's push payload the decision reads: each pushed commit's SHA, in order. */
@@ -30,6 +30,11 @@ class InvalidPushPayload extends Schema.TaggedError<InvalidPushPayload>()("Inval
   message: Schema.String,
 }) {}
 
+/** The push payload file could not be read. */
+class PushPayloadUnreadable extends Schema.TaggedError<PushPayloadUnreadable>()("PushPayloadUnreadable", {
+  message: Schema.String,
+}) {}
+
 /** The pushed commits, from the payload at GITHUB_EVENT_PATH. */
 const pushedCommits = Effect.gen(function* () {
   const path = yield* Config.NonEmptyString("GITHUB_EVENT_PATH");
@@ -37,7 +42,7 @@ const pushedCommits = Effect.gen(function* () {
     .readFileString(path)
     .pipe(
       Effect.mapError(
-        (error) => new InvalidPushPayload({ message: `Could not read ${path}: ${error.message}` })
+        (error) => new PushPayloadUnreadable({ message: `Could not read ${path}: ${error.message}` })
       )
     );
   const payload = yield* Schema.decodeUnknownEffect(PushPayload)(text).pipe(
@@ -51,7 +56,7 @@ const pushedCommits = Effect.gen(function* () {
 const main = Effect.gen(function* () {
   const { skip, diagnostics } = yield* decide(yield* pushedCommits);
   yield* Effect.forEach(diagnostics, (line) => Console.error(line));
-  yield* setBooleanOutput("skip", skip);
+  yield* setSkipOutput(skip);
 });
 
 runStep(

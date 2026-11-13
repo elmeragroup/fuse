@@ -17,6 +17,8 @@ import { createServer, ServerResponse } from "node:http";
 const LOWER = "a".repeat(40);
 const TOP = "b".repeat(40);
 const DIRECT = "c".repeat(40);
+// GitHub fills an open PR's merge_commit_sha with its test merge commit, never with a pushed SHA.
+const TEST_MERGE = "d".repeat(40);
 const TOKEN = "test-token";
 
 /** A GitHub associated-PR entry. */
@@ -199,7 +201,10 @@ layer(NodeServices.layer, { excludeTestServices: true })("the canary opt-out ste
       name: "a direct push beside an opted-out merge",
       shas: [LOWER, DIRECT],
       // The open PR's branch contains the commit but did not merge as it.
-      answers: { [LOWER]: [pull(658, LOWER, ["no-canary"])], [DIRECT]: [pull(702, null, ["no-canary"])] },
+      answers: {
+        [LOWER]: [pull(658, LOWER, ["no-canary"])],
+        [DIRECT]: [pull(702, TEST_MERGE, ["no-canary"])],
+      },
       skip: false,
     },
     { name: "a push that lists no commits", shas: [], answers: {}, skip: false },
@@ -246,6 +251,18 @@ layer(NodeServices.layer, { excludeTestServices: true })("the canary opt-out ste
         assert.strictEqual(run.output, "skip=true\n");
         assert.strictEqual(run.requests.get(TOP), 2);
       })
+  );
+
+  it.effect("publishes without reading the rest once a commit ships", () =>
+    Effect.gen(function* () {
+      const run = yield* runStep(push([LOWER, TOP]), {
+        [LOWER]: [pull(658, LOWER, [])],
+        [TOP]: { status: 422 },
+      });
+      assert.strictEqual(run.exitCode, 0, run.stdout + run.stderr);
+      assert.strictEqual(run.output, "skip=false\n");
+      assert.isFalse(run.requests.has(TOP));
+    })
   );
 
   it.effect("fails at once on a plain 403, which a repeat would not change", () =>

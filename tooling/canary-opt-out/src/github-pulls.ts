@@ -91,13 +91,18 @@ type AttemptFailure =
   /** An answer that repeating the read would not change. */
   | { readonly _tag: "Rejected"; readonly status: number };
 
-/** Whether an answer is a rate limit or a server error, which a later attempt may not meet. */
-function isThrottled(response: HttpClientResponse.HttpClientResponse): boolean {
-  if (response.status === 429 || response.status >= 500) return true;
-  return (
-    response.status === 403 &&
-    (response.headers["retry-after"] !== undefined || response.headers["x-ratelimit-remaining"] === "0")
-  );
+/**
+ * Whether an answer is a rate limit or a server error, which a later attempt may not meet: a 429,
+ * a 5xx, or a 403 with `Retry-After` or a spent `x-ratelimit-remaining`.
+ */
+function throttleKind(
+  response: HttpClientResponse.HttpClientResponse
+): Option.Option<"RateLimit" | "ServerError"> {
+  if (response.status >= 500) return Option.some("ServerError");
+  if (response.status === 429) return Option.some("RateLimit");
+  const spent =
+    response.headers["retry-after"] !== undefined || response.headers["x-ratelimit-remaining"] === "0";
+  return response.status === 403 && spent ? Option.some("RateLimit") : Option.none();
 }
 
 /** GitHub's `x-ratelimit-reset`: epoch seconds, written as whole digits. */
@@ -199,8 +204,8 @@ const apiUrl = Effect.gen(function* () {
   if (parsed._tag === "Failure") return yield* invalid;
   const url = parsed.success;
   const loopback = url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname);
-  if ((url.protocol !== "https:" && !loopback) || url.username !== "" || url.password !== "")
-    return yield* invalid;
+  if (url.protocol !== "https:" && !loopback) return yield* invalid;
+  // The href equals origin plus path only without credentials, a query and a fragment.
   if (url.href !== `${url.origin}${url.pathname}`) return yield* invalid;
   return url;
 });
@@ -218,6 +223,7 @@ export const layer = Layer.effect(
     const client = (yield* HttpClient.HttpClient).pipe(
       HttpClient.mapRequest((request) =>
         request.pipe(
+          HttpClientRequest.prependUrl(api.href),
           HttpClientRequest.bearerToken(token),
           HttpClientRequest.setHeader("accept", "application/vnd.github+json"),
           HttpClientRequest.setHeader("x-github-api-version", "2022-11-28"),
@@ -231,21 +237,19 @@ export const layer = Layer.effect(
       const unavailable = (reason: string) =>
         new PullsUnavailable({ message: `Could not read the PRs of ${sha}: ${reason}` });
       // The repository and SHA are path-safe by their patterns, so the URL stays under the base.
-      const url = new URL(
-        `${api.pathname.replace(/\/+$/u, "")}/repos/${repository}/commits/${sha}/pulls`,
-        api.origin
-      );
+      const path = `/repos/${repository}/commits/${sha}/pulls`;
       // One attempt: the request and its whole body, within the attempt's timeout.
       const attempt = Effect.gen(function* () {
         const response = yield* client
-          .get(url)
+          .get(path)
           .pipe(
             Effect.mapError((error): AttemptFailure => ({ _tag: "Unanswered", reason: error.reason._tag }))
           );
-        if (isThrottled(response)) {
+        const throttled = throttleKind(response);
+        if (Option.isSome(throttled)) {
           return yield* Effect.fail<AttemptFailure>({
             _tag: "Throttled",
-            kind: response.status >= 500 ? "ServerError" : "RateLimit",
+            kind: throttled.value,
             status: response.status,
             wait: yield* requestedWait(response.headers),
           });

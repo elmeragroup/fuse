@@ -1,7 +1,7 @@
 /**
  * The GitHub Actions side of the step: its error annotation, its output and its exit code. It
  * follows `tooling/release-announcement/src/github-actions.ts`, trimmed to what this step needs:
- * its one output is a boolean, so it is written as `name=value` with no delimiter to draw.
+ * its one output is the boolean `skip`, so it is written as `skip=value` with no delimiter to draw.
  */
 
 import { NodeRuntime } from "@effect/platform-node";
@@ -13,20 +13,16 @@ class OutputFailed extends Schema.TaggedError<OutputFailed>()("OutputFailed", {
 }) {}
 
 /**
- * Appends a boolean output to the step's `GITHUB_OUTPUT` file.
+ * Appends the step's `skip` output to its `GITHUB_OUTPUT` file.
  *
- * @param name - The output's name, a fixed identifier.
- * @param value - Its value.
+ * @param skip - Whether the push skips its canary.
  * @returns An effect that writes it.
  */
-export const setBooleanOutput = Effect.fn("GitHubActions.setBooleanOutput")(function* (
-  name: "skip",
-  value: boolean
-) {
+export const setSkipOutput = Effect.fn("GitHubActions.setSkipOutput")(function* (skip: boolean) {
   const path = yield* Config.NonEmptyString("GITHUB_OUTPUT");
   const fs = yield* FileSystem.FileSystem;
   yield* fs
-    .writeFileString(path, `${name}=${String(value)}\n`, { flag: "a" })
+    .writeFileString(path, `skip=${String(skip)}\n`, { flag: "a" })
     .pipe(
       Effect.mapError((error) => new OutputFailed({ message: `Could not write ${path}: ${error.message}` }))
     );
