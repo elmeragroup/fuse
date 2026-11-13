@@ -5,8 +5,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { describedTextsFor } from "../../../test/described-texts";
 import { withLocale } from "../../../test/locale-matrix";
-import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
   cssVarColor,
   fieldBoxOf,

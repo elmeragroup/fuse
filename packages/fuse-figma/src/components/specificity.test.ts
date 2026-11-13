@@ -22,19 +22,18 @@ describe("specificityOf", () => {
     [".data-invalid\\:border-error[data-invalid]", [0, 2, 0]],
     // fuse.css's `data-checked:` wraps its attribute in `:where()`.
     ['.data-checked\\:border-primary:where([data-checked]:not([data-checked="false"]))', [0, 1, 0]],
-    // `focus-visible:` and `disabled:` from the React Aria plugin: `:is()` counts its most
-    // specific argument, here (0,1,0) on either side.
-    [
-      ".focus-visible\\:ring-2:is(:where([data-rac])[data-focus-visible], :where(:not([data-rac])):focus-visible)",
-      [0, 2, 0],
-    ],
-    [
-      '.aria-invalid\\:focus-visible\\:ring-3[aria-invalid="true"]:is(:where([data-rac])[data-focus-visible], :where(:not([data-rac])):focus-visible)',
-      [0, 3, 0],
-    ],
+    // Tailwind's `focus-visible:` adds one pseudo-class.
+    [".focus-visible\\:ring-2:focus-visible", [0, 2, 0]],
+    ['.aria-invalid\\:focus-visible\\:ring-3[aria-invalid="true"]:focus-visible', [0, 3, 0]],
     // fuse.css's `enabled-hover:` puts all of its arguments in `:where()`, inside or outside `:not()`.
     [
-      '.enabled-hover\\:bg-muted:not(:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])):where([data-rac][data-hovered], :not([data-rac]):hover)',
+      '.enabled-hover\\:bg-muted:not(:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])):where(:hover)',
+      [0, 1, 0],
+    ],
+    // `**:` wraps the whole selector in `:is()`, which counts its argument: the class alone, since
+    // the gate sits in `:where()` and `*` counts nothing.
+    [
+      ':is(.enabled-hover\\:\\*\\*\\:text-accent-foreground:not(:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])):where(:hover) *)',
       [0, 1, 0],
     ],
     ['.has-data-\\[icon\\=inline-start\\]\\:pl-2:has([data-icon="inline-start"])', [0, 2, 0]],

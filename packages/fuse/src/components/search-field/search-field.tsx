@@ -261,7 +261,7 @@ export function SearchField({
       label={label}
       description={description}
       errorMessage={errorMessage}
-      // As React Aria's SearchField did, the copy shows only while the field is invalid.
+      // The copy shows only while the field is invalid.
       isErrorMessageAlwaysShown={isInvalid}>
       <InputGroupRoot size={size}>
         <InputGroupAddon align="inline-start" className="text-foreground">

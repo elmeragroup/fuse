@@ -197,9 +197,8 @@ export function cellSelector(id: string, measured: string): string {
 
 /**
  * The elements whose text the font check reads: each cell's measured element and every element in
- * it, the box the page crops and compares. Text a renderer draws around that box takes no part, as
- * the month heading of the Calendar a day cell sits in, which takes the theme's heading font, Neo
- * Sans in Fjordkraft's branded themes, and which the comparison never shows.
+ * it, the box the page crops and compares. Text a renderer draws around that box takes no part, since
+ * the comparison never shows it.
  *
  * @param requests - The cells, by id and measured element.
  * @returns A selector list from the document root, empty for no cells.
@@ -252,8 +251,8 @@ export function forcedSelector(
 /**
  * The selector of the element a definition's cells measure: the one whose `data-slot` is the
  * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
- * names by tag and attributes, such as `*[data-rac]`, each attribute by its presence or its value,
- * each of its `prefixes` by the start of its value and each of its `suffixes` by its end.
+ * names by tag and attributes, such as `div[role="option"]`, each attribute by its presence or its
+ * value and each of its `suffixes` by the end of its value.
  *
  * @param definition - The root's slot and, for a root without a `data-slot`, its element.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
@@ -263,18 +262,15 @@ export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | 
   return element === undefined ? `[data-slot="${definition.slot}"]` : elementSelector(element);
 }
 
-/** The CSS form of an element selector: its tag, then each attribute, prefix and suffix it names. */
+/** The CSS form of an element selector: its tag, then each attribute and suffix it names. */
 function elementSelector(element: ElementSelector): string {
   const attributes = Object.entries(element.attributes).map(([name, value]) =>
     value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
   );
-  const prefixes = Object.entries(element.prefixes ?? {}).map(
-    ([name, prefix]) => `[${name}^=${cssString(prefix)}]`
-  );
   const suffixes = Object.entries(element.suffixes ?? {}).map(
     ([name, suffix]) => `[${name}$=${cssString(suffix)}]`
   );
-  return `${element.tag}${[...attributes, ...prefixes, ...suffixes].join("")}`;
+  return `${element.tag}${[...attributes, ...suffixes].join("")}`;
 }
 
 /**

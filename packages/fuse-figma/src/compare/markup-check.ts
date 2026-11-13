@@ -35,7 +35,7 @@ import {
 } from "../components/definition-parts.ts";
 import { labelCharacters } from "../components/label-layout.ts";
 import { makeStateTable, withInPlaceFacts } from "../components/state-table.ts";
-import { forcedAttributesFor, renderCellHtml } from "./cell-renderers.ts";
+import { renderCellHtml } from "./cell-renderers.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 import {
   ancestorIndexes,
@@ -66,7 +66,6 @@ import {
   PARENT_VARIANTS,
   POSITION_VARIANTS,
   PEER_VARIANTS,
-  REACT_ARIA_HOVER,
   TAG_VARIANTS,
 } from "./markup-variants.ts";
 import { elementsOf, selects } from "./static-markup.ts";
@@ -561,13 +560,7 @@ export function checkMarkup(
 ): readonly MarkupDiagnostic[] {
   return cells.flatMap((cell) =>
     renderingsOf(definition).flatMap((turnedOn) =>
-      firstDifference(
-        definition,
-        cell,
-        turnedOn,
-        renderCellHtml(renderer, cell, turnedOn),
-        forcedAttributesFor(renderer, cell)
-      )
+      firstDifference(definition, cell, turnedOn, renderCellHtml(renderer, cell, turnedOn))
     )
   );
 }
@@ -581,16 +574,14 @@ export function checkMarkup(
  * @param definition - The cell's definition.
  * @param cell - The parsed cell.
  * @param html - The mounted markup, read before the page forces any state.
- * @param forcedAttributes - The attributes the page writes on the cell's forced element.
  * @returns The first difference, as the static check reports one per rendering, or none.
  */
 export function checkMountedMarkup(
   definition: ComponentDefinition,
   cell: Cell,
-  html: string,
-  forcedAttributes: Readonly<Record<string, string>>
+  html: string
 ): readonly MarkupDiagnostic[] {
-  return firstDifference(definition, cell, new Set(), html, forcedAttributes);
+  return firstDifference(definition, cell, new Set(), html);
 }
 
 /** The first difference of one rendering of a cell, named by the rendering, or none. */
@@ -598,10 +589,9 @@ function firstDifference(
   definition: ComponentDefinition,
   cell: Cell,
   turnedOn: ReadonlySet<string>,
-  html: string,
-  forcedAttributes: Readonly<Record<string, string>>
+  html: string
 ): readonly MarkupDiagnostic[] {
-  const first = checkRendering(definition, cell, turnedOn, html, forcedAttributes).next();
+  const first = checkRendering(definition, cell, turnedOn, html).next();
   if (first.done === true) {
     return [];
   }
@@ -629,8 +619,7 @@ function* checkRendering(
   definition: ComponentDefinition,
   cell: Cell,
   turnedOn: ReadonlySet<string>,
-  html: string,
-  forcedAttributes: Readonly<Record<string, string>>
+  html: string
 ): Differences {
   const meaningOf = makeStateTable(definition);
   const holdsIn = conditionHolds(definition, cell);
@@ -657,18 +646,11 @@ function* checkRendering(
         return "kind" in part && index !== undefined ? [index] : [];
       })
     );
-    const stateTaker =
-      (yield* checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, "")) ?? root;
+    yield* checkAttributeStates(definition, { cell, variant: holdsIn }, elements, measured, "");
     // A root whose definition names no `styleFor` makes no claim, as Base UI writes its own inline
     // styles on some roots, a stepper's `user-select: none` among them.
     if (definition.styleFor !== undefined) {
       yield* checkStyle(definition, cell, root, "the style on the root");
-    }
-    if (stateTaker.attributes.has("data-rac")) {
-      const hovered = Object.hasOwn(forcedAttributes, "data-hovered");
-      for (const variant of REACT_ARIA_HOVER) {
-        yield* same(variant, { expected: holdsIn(variant), found: hovered });
-      }
     }
     // A variant the root's own classes name selects the root below its group. One an element below
     // the root names selects that element below its group, which may be the root or a part between,

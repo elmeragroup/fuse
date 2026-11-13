@@ -129,7 +129,7 @@ describe("component generator", () => {
     expect(snapshot(directory)).toEqual(before);
   }, 30000);
 
-  it("rejects existing, reserved, quarantined, deferred and invalid names, existing docs and a missing registration marker without writes", () => {
+  it("rejects existing, reserved, deferred and invalid names, existing docs and a missing registration marker without writes", () => {
     const directory = fixture();
     // An existing docs page blocks its name, and a missing marker blocks every valid name. Name
     // checks run before the marker check, so each name below fails for its own reason.
@@ -152,7 +152,6 @@ describe("component generator", () => {
       "button",
       "theme",
       "theme-catalog",
-      "react-aria",
       "calendar",
       "chart",
       "future-entry",
@@ -166,7 +165,6 @@ describe("component generator", () => {
     const output = result.stdout + result.stderr;
     for (const reason of [
       "registered",
-      "quarantined",
       "deferred",
       "kebab-case",
       "already has source or documentation",

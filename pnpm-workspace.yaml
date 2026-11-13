@@ -17,7 +17,6 @@ catalog:
   "@figma/plugin-typings": 1.141.0
   "@fontsource/inter": 5.3.0
   "@fontsource/roboto": 5.3.0
-  "@internationalized/date": 3.12.4
   "@internationalized/string": 3.2.10
   "@paper-design/shaders-react": 0.0.81
   "@phosphor-icons/react": 2.1.10
@@ -95,8 +94,6 @@ catalog:
   rolldown: 1.2.15
   "sugar-high": 2.4.1
   react: 19.3.0
-  react-aria: 3.52.1
-  react-aria-components: 1.21.1
   react-dom: 19.3.0
   remark-frontmatter: 5.0.0
   remark-gfm: 4.0.1
@@ -105,7 +102,6 @@ catalog:
   tailwind-merge: 3.7.0
   tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
-  tailwindcss-react-aria-components: 2.2.0
   # @elmeragroup/fuse/temporal-polyfill installs it. 1.0.8 (2026-11-04) is the newest release past
   # the minimum release age, as are its pinned temporal-spec 1.0.1 and temporal-utils 1.0.4.
   temporal-polyfill: 1.0.8
@@ -147,10 +143,3 @@ minimumReleaseAgeExclude:
   - "@tsrs/linux-x64-gnu@0.21.0-ts7.1.0-beta"
   - "@tsrs/linux-x64-musl@0.21.0-ts7.1.0-beta"
   - "@tsrs/win32-x64@0.21.0-ts7.1.0-beta"
-
-patchedDependencies:
-  # Backports mui/base-ui#6165 (unreleased after 1.9.0): useDismiss no longer replays an outside
-  # press whose propagation another document capture listener stopped (such as React Aria's popover
-  # dismissal) on the next click, which dismissed a Sheet or other Base UI popup. Drop it with the
-  # first release that ships the fix (#608).
-  "@base-ui/react@1.9.0": patches/@base-ui__react@1.9.0.patch

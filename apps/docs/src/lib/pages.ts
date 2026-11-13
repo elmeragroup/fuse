@@ -125,13 +125,6 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     group: "handbook",
   },
   {
-    href: "/handbook/temporal-migration",
-    label: "Temporal migration",
-    description:
-      "Moving from the interim React Aria date tier and @internationalized/date to the Temporal date components: polyfill, component, prop and API maps, boundaries, validation and behaviour changes.",
-    group: "handbook",
-  },
-  {
     href: "/handbook/llms-txt",
     label: "llms.txt",
     description:

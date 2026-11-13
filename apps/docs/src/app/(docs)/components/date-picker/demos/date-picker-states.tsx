@@ -1,20 +1,21 @@
 "use client";
 
-import { CalendarDate } from "@internationalized/date";
-
-import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-
-const invoiceDate = new CalendarDate(2026, 7, 14);
+import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 
 export function DatePickerStates() {
+  const date = Temporal.PlainDate.from("2026-10-05");
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-3">
-        <DatePicker label="Disabled" isDisabled defaultValue={invoiceDate} />
-        <DatePicker label="Read only" isReadOnly defaultValue={invoiceDate} />
-        <DatePicker label="Required" isRequired defaultValue={invoiceDate} />
-      </div>
-    </UiProviders>
+    <div className="max-w-xs flex w-full flex-col gap-4">
+      <DatePickerField label="Small" size="sm" defaultValue={date} />
+      <DatePickerField label="Default" defaultValue={date} />
+      <DatePickerField
+        label="Moving date"
+        defaultValue={date}
+        isInvalid
+        errorMessage="Choose a date after the lease ends."
+      />
+      <DatePickerField label="Inspection" defaultValue={date} isDisabled />
+      <DatePickerField label="Contract start" defaultValue={date} isReadOnly />
+    </div>
   );
 }

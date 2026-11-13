@@ -210,14 +210,8 @@ function buildConsumerCss(
         }
         return { path: id, base, content: await readFile(path, "utf8") };
       },
-      loadModule: async (id, base) => {
-        if (id !== "tailwindcss-react-aria-components") {
-          throw new KitSourceInvalid({
-            message: `fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`,
-          });
-        }
-        return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
-      },
+      loadModule: (id) =>
+        Promise.reject(new KitSourceInvalid({ message: `fuse.css loads no plugin, received ${id}` })),
     });
     return compiler.build([...candidates]);
   });

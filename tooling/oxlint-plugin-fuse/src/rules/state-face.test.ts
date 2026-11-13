@@ -6,7 +6,7 @@ ruleTester.run("state-face", stateFace, {
     'const row = "group-data-disabled/field:opacity-50 peer-data-disabled:opacity-50";',
     'const fill = "disabled:bg-muted opacity-50 data-[hovering]:pointer-events-auto";',
     'const face = "enabled-hover:bg-muted enabled-active:scale-[0.96] group-hover:bg-muted";',
-    "const recipe = { variants: { isDisabled: { true: racDisabledStateFaceClass } } };",
+    "const recipe = { variants: { isDisabled: { true: propDisabledStateFaceClass } } };",
     'const recipe = { variants: { muted: { true: "opacity-50" }, isDisabled: { true: "cursor-not-allowed" } } };',
     'const classes = cn(base, isVisuallyDisabled && "cursor-not-allowed");',
     'const classes = cn(isOpen && "opacity-0");',

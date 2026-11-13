@@ -2,14 +2,13 @@
  * The shared state table against the `chip` fixture of `test/fixture-sets.ts`. The unit under test
  * is `makeStateTable`. The oracle is what each variant means in the browser: fuse.css gates
  * `enabled-hover:` on hover of an enabled control, and `hover:` holds on hover with no gate, since
- * tailwindcss-react-aria-components compiles it to `:hover`, or to `[data-hovered]` on an element
- * marked `data-rac`. Tailwind's `focus-visible:` holds on keyboard focus, `disabled:` on a native disabled
- * control, `aria-disabled:` on a disabled Base UI span, which never matches `:disabled`,
- * `aria-invalid:` and `data-invalid:` on a control inside an invalid Field, `has-data-[icon=…]:`
- * while a descendant carries that `data-icon`, and each child selector picks the `<svg>` elements
- * its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a` and `> a:hover`, a link
- * child of the box, which no kit box holds. `sm:` and `md:` compile to `@media (width >= 40rem)` and
- * `(width >= 48rem)`, which a desktop window matches.
+ * Tailwind compiles it to `:hover`. Tailwind's `focus-visible:` holds on keyboard focus,
+ * `disabled:` on a native disabled control, `aria-disabled:` on a disabled Base UI span, which
+ * never matches `:disabled`, `aria-invalid:` and `data-invalid:` on a control inside an invalid
+ * Field, `has-data-[icon=…]:` while a descendant carries that `data-icon`, and each child selector
+ * picks the `<svg>` elements its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a`
+ * and `> a:hover`, a link child of the box, which no kit box holds. `sm:` and `md:` compile to
+ * `@media (width >= 40rem)` and `(width >= 48rem)`, which a desktop window matches.
  */
 import { describe, expect, it } from "vitest";
 
@@ -130,23 +129,6 @@ describe("the shared state entries", () => {
     expect(holdsAt(title, "state", "group-data-disabled/field")).toEqual(["disabled"]);
     for (const variant of ["disabled", "data-disabled", "aria-disabled"]) {
       expect(holdsAt(title, "state", variant), variant).toBe("unmodelled");
-    }
-  });
-
-  it("hold the disabled and invalid attributes React Aria stamps, and invalid:, on a React Aria element", () => {
-    // React Aria Components renders a disabled Calendar day cell with `aria-disabled="true"` and
-    // `data-disabled="true"`, and an invalid one with `aria-invalid="true"` and `data-invalid="true"`.
-    // tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
-    // `data-rac`, and an element is never natively `:disabled` there.
-    const day = definition({
-      rootKind: "react-aria-element",
-      axes: [{ name: "state", values: [...CONTROL_STATES.values, "invalid"] }],
-    });
-    expect(holdsAt(day, "state", "aria-disabled")).toEqual(["disabled"]);
-    expect(holdsAt(day, "state", "data-disabled")).toEqual(["disabled"]);
-    expect(holdsAt(day, "state", "disabled")).toBe("unmodelled");
-    for (const variant of ["aria-invalid", "data-invalid", "invalid"]) {
-      expect(holdsAt(day, "state", variant), variant).toEqual(["invalid"]);
     }
   });
 

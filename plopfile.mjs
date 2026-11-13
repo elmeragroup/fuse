@@ -10,7 +10,6 @@ import { join } from "node:path";
 import {
   BARE_COMPONENT_ENTRIES,
   DEFERRED_ENTRIES,
-  RAC_ENTRIES,
   NON_COMPONENT_JS_ENTRIES,
   TOOLING_ONLY_JS_ENTRIES,
   CSS_ENTRY_NAMES,
@@ -33,7 +32,6 @@ const RESERVED_NAMES = new Set([
   "components",
   "hooks",
   "styles",
-  "react-aria",
   "intl",
   "test",
 ]);
@@ -44,9 +42,6 @@ function validateName(name, root) {
   }
   if (DEFERRED_ENTRIES.includes(name)) {
     return `"${name}" is deferred. Implement it through an explicit release change, including its DEFERRED_ENTRIES policy.`;
-  }
-  if (RAC_ENTRIES.includes(name)) {
-    return `"${name}" is a quarantined react-aria entry; use the react-aria authoring workflow.`;
   }
   if (BARE_COMPONENT_ENTRIES.includes(name) || RESERVED_NAMES.has(name)) {
     return `"${name}" is already registered or reserved.`;

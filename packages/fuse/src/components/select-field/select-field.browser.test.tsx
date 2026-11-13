@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { describedTextsFor } from "../../../test/rac-calendar-testing";
+import { describedTextsFor } from "../../../test/described-texts";
 import { formNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { Field } from "../field";

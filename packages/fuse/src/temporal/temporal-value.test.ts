@@ -4,8 +4,8 @@ import { getOrThrow } from "@elmeragroup/color/result";
 
 /**
  * Unit under test: `parseTemporal`, `resolveValueKind` and `sameKind`. Oracle: ISO 8601 / RFC 9557 text and
- * the kind-resolution order in the date-tier plan (value, then the kind resolved before, then the
- * default value, then granularity and time zone), written out by hand.
+ * the kind-resolution order: value, then the kind resolved before, then the default value, then
+ * granularity and time zone, written out by hand.
  */
 import "../temporal-polyfill";
 import {

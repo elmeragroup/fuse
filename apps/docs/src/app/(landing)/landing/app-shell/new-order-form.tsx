@@ -1,24 +1,24 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactElement } from "react";
 
-import { parseDate } from "@internationalized/date";
-import type { CalendarDate } from "@internationalized/date";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 import { Field } from "@elmeragroup/fuse/field";
 import { NumberField } from "@elmeragroup/fuse/number-field";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "@elmeragroup/fuse/radio-group";
-import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { Select } from "@elmeragroup/fuse/select";
 import { Sheet } from "@elmeragroup/fuse/sheet";
+// The landing's only Temporal user installs the polyfill with this lazy chunk, not on first paint.
+import "@elmeragroup/fuse/temporal-polyfill";
 import { TextField } from "@elmeragroup/fuse/text-field";
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 import { useSideOverlay, useSideShown } from "../window-side";
 import { useDashboard } from "./dashboard-context";
@@ -70,14 +70,14 @@ function pick<T extends string>(options: readonly T[], value: string | null): T 
 }
 
 /** The picker's value for a `yyyy-mm-dd` field, which is empty until every segment is in. */
-function calendarDate(iso: string): CalendarDate | null {
-  return iso === "" ? null : parseDate(iso);
+function plainDate(iso: string): Temporal.PlainDate | null {
+  return iso === "" ? null : Temporal.PlainDate.from(iso);
 }
 
 /**
- * `fields` as the Start date picker shows them. React Aria keeps the date it last committed while
+ * `fields` as the Start date picker shows them. The picker keeps the date it last committed while
  * a segment is empty, so a picker with an empty segment holds no date here. `data-placeholder` is
- * React Aria's own mark of an empty segment.
+ * the date input's own mark of an empty segment.
  */
 function withShownStartDate(fields: DraftFields, picker: HTMLElement | null): DraftFields {
   const hasEmptySegment = picker !== null && picker.querySelector("[data-placeholder]") !== null;
@@ -93,7 +93,8 @@ export type NewOrderFormProps = {
 /**
  * New order's form: its Sheet's body and footer. It mounts with the Sheet's popup, so every
  * opening starts empty. Errors appear on submit, through each control's Field, and each one
- * clears as soon as its field is valid.
+ * clears as soon as its field is valid. The Start date picker also reports a half-typed or
+ * too-early date itself when focus leaves it, as every Fuse date field does.
  */
 export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
   const { dispatch, now, notify } = useDashboard();
@@ -104,12 +105,10 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
   // PhoneNumberField's country picker keeps its open state inside, so the field remounts when the
   // side hides, which unmounts an open picker in that commit. The number lives in `fields`.
   const sideShown = useSideShown();
-  // The fields as last stored, ahead of the render that shows them. React Aria can commit a
-  // constrained date in the same blur that rechecks it, after this render's `fields` were read.
+  // The fields as last stored, ahead of the render that shows them. The picker can commit a
+  // date in the same blur that rechecks it, after this render's `fields` were read.
   const latestFields = useRef(fields);
   const startDatePicker = useRef<HTMLDivElement>(null);
-  // A new value on every render would make React Aria drop a segment edit still in progress.
-  const startDate = useMemo(() => calendarDate(fields.startDate), [fields.startDate]);
   const today = osloDate(now());
   /** Stores `next`, and drops each shown error that `checked` no longer fails. */
   const update = (next: DraftFields, checked: DraftFields) => {
@@ -292,16 +291,16 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
             ))}
           </RadioGroup>
           {/* Norwegian segments (dd.mm.yyyy) and calendar months, for Norwegian customers. The
-              demo's today bounds the calendar, so earlier days take no pick and it opens on that
-              month. Native validation stays silent in the noValidate form, so the parse's message
-              is the only one, shown on submit like every other field's. */}
+              demo's today bounds the calendar, so earlier days take no pick. Leaving a half-typed
+              or too-early date shows the picker's own message, in Norwegian. After a submit the
+              parse's message replaces it, so the field shows one error at a time. */}
           <div ref={startDatePicker}>
-            <UiProviders locale="nb-NO" navigate={() => undefined}>
-              <DatePicker<CalendarDate>
+            <LocaleProvider locale="nb-NO">
+              <DatePickerField
                 label="Start date"
                 isOpen={startDateOpen}
                 onOpenChange={setStartDateOpen}
-                value={startDate}
+                value={plainDate(fields.startDate)}
                 onChange={(value) => {
                   // A change means every segment is in, or every one is empty, so the value is
                   // what the field shows. The segments on screen still predate this keystroke.
@@ -309,17 +308,16 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
                   update(next, next);
                 }}
                 onBlur={() => {
-                  // Retyping the committed date is no change to React Aria, so recheck on leaving.
+                  // Retyping the committed date is no change to the picker, so recheck on leaving.
                   // Only the errors: the fields may already hold a date committed in this blur.
                   const checked = withShownStartDate(latestFields.current, startDatePicker.current);
                   setErrors((shown) => (shown.size > 0 ? remainingErrors(shown, checked, today) : shown));
                 }}
-                minValue={parseDate(today)}
-                placeholderValue={parseDate(today)}
+                minValue={Temporal.PlainDate.from(today)}
                 isInvalid={error("startDate") !== undefined}
                 errorMessage={error("startDate")}
               />
-            </UiProviders>
+            </LocaleProvider>
           </div>
           <Field.Root invalid={error("powerOfAttorney") !== undefined}>
             <Field.Item>

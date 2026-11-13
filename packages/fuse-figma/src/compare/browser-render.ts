@@ -11,10 +11,7 @@
  * each forced cell against its resting twin: a forced cell whose measured element and descendants
  * have the twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
  * `focus-visible:` rules, and the page then hovers or focuses the forced element for real before its
- * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme. React Aria draws its hover and focus faces from pointer and focus
- * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
- * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
- * Calendar day's `data-hovered` and its focused class.
+ * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme.
  *
  * A client cell mounts on the page from the client bundle, open, with its popup in its slot. The
  * page awaits the mount before it reads any font or style, checks that no client slot holds focus
@@ -82,11 +79,11 @@ export type CellRequest = {
   readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
   /**
-   * The attributes the page writes on the forced element with the forced pseudo classes, as React
-   * Aria would while the state holds, or alone, as `data-highlighted` on a highlighted Combobox row.
-   * Empty for a cell whose state CSS draws from the pseudo classes alone.
+   * Whether the page writes `data-highlighted` on the forced element: true only for a highlighted
+   * row of a set that marks it by that attribute, as a Combobox does. A highlighted row of a set
+   * that highlights by focus takes `:focus` in `forced` instead, and this stays false.
    */
-  readonly forcedAttributes: Readonly<Record<string, string>>;
+  readonly writesHighlightAttribute: boolean;
   /** The same cell at rest, rendered off to the side to check the forced state. */
   readonly resting: CellContent | undefined;
   /** The real hover or focus the page tries when forcing changed nothing, or none. */
@@ -164,9 +161,14 @@ const SIGNATURE_PROPERTIES: readonly string[] = [
   "opacity",
 ];
 
-/** Whether the page forces anything on a cell: pseudo classes, attributes, or both. */
-function forcesState(request: CellRequest): boolean {
-  return request.forced.length > 0 || Object.keys(request.forcedAttributes).length > 0;
+/**
+ * Whether the page forces anything on a cell: pseudo classes, the highlight attribute, or both.
+ *
+ * @param request - The cell's forced pseudo classes and whether the page writes its highlight attribute.
+ * @returns Whether the page forces a state on the cell.
+ */
+export function forcesState(request: Pick<CellRequest, "forced" | "writesHighlightAttribute">): boolean {
+  return request.forced.length > 0 || request.writesHighlightAttribute;
 }
 
 const REFERENCE_PREFIX = "rest-";
@@ -423,8 +425,8 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
       selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
-    for (const [name, value] of Object.entries(request.forcedAttributes)) {
-      await cdp.send("DOM.setAttributeValue", { nodeId, name, value });
+    if (request.writesHighlightAttribute) {
+      await cdp.send("DOM.setAttributeValue", { nodeId, name: "data-highlighted", value: "" });
     }
   }
   const changed = new Set<string>();

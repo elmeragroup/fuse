@@ -1,14 +1,27 @@
 "use client";
 
-import { CalendarDate } from "@internationalized/date";
-
-import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { Calendar } from "@elmeragroup/fuse/calendar";
 
 export function CalendarBasic() {
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <Calendar defaultValue={new CalendarDate(2026, 7, 14)} />
-    </UiProviders>
+    <Calendar.Root aria-label="Delivery date" defaultValue={Temporal.PlainDate.from("2026-10-14")}>
+      <Calendar.Header>
+        <Calendar.DecrementMonth />
+        <Calendar.VisibleRangeHeading />
+        <Calendar.IncrementMonth />
+      </Calendar.Header>
+      <Calendar.Months>
+        {(month) => (
+          <Calendar.Month key={month.toString()} value={month}>
+            {/* The heading above already shows the month; this one names the grid. */}
+            <Calendar.MonthHeading className="sr-only" />
+            <Calendar.DayGrid>
+              <Calendar.DayGridHeader />
+              <Calendar.DayGridBody />
+            </Calendar.DayGrid>
+          </Calendar.Month>
+        )}
+      </Calendar.Months>
+    </Calendar.Root>
   );
 }

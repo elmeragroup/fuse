@@ -1,24 +1,24 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import type { FocusEvent, FormEvent, KeyboardEvent, ReactElement } from "react";
+import { useState } from "react";
+import type { FormEvent, ReactElement } from "react";
 
-import { CalendarDate } from "@internationalized/date";
 import { tv } from "tailwind-variants";
 
 import { Alert } from "@elmeragroup/fuse/alert";
 import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
 import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { DateField } from "@elmeragroup/fuse/date-field";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 import { Field } from "@elmeragroup/fuse/field";
 import { Form } from "@elmeragroup/fuse/form";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-import { DateField } from "@elmeragroup/fuse/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 import { Separator } from "@elmeragroup/fuse/separator";
+// The screens' only Temporal user installs the polyfill where the engine lacks Temporal.
+import "@elmeragroup/fuse/temporal-polyfill";
 import { Text } from "@elmeragroup/fuse/text";
 import { TextField } from "@elmeragroup/fuse/text-field";
 
@@ -47,26 +47,13 @@ const EXTRAS = [
 
 const BASE_PRICE = 39;
 
-const earliestStart = new CalendarDate(2026, 11, 1);
+/** The first start date the screen takes, built in render so the host's Temporal is installed. */
+const EARLIEST_START = "2026-11-01";
 
 const FORM_ID = "checkout-order";
 
-const startFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
-
 /** A confirmed order, as the success message reads it back. */
 type Order = { readonly customer: string; readonly email: string; readonly summary: string };
-
-/**
- * Whether every segment of the DateField that `event` came from is filled. React Aria keeps its
- * last complete value while a segment is empty, and reports no change when a segment is filled
- * back to that value, so the segments themselves tell.
- */
-function segmentsFilled(event: KeyboardEvent | FocusEvent): boolean {
-  const target = event.target;
-  // React Aria marks an empty segment, and no prop or callback reports it.
-  const group = target instanceof Element ? target.closest('[role="group"]') : null;
-  return (group?.querySelector('[role="spinbutton"][data-placeholder]') ?? null) === null;
-}
 
 /** Formats whole kroner as the summary shows them. */
 function kroner(amount: number): string {
@@ -76,33 +63,22 @@ function kroner(amount: number): string {
 /**
  * A sign-up checkout in the branded look: contact fields with a live email error, the phone and
  * start date, optional extras, and an order summary that follows the picks. "Confirm order"
- * submits the Form, which checks every field and the start date first; a valid order is
- * confirmed in place.
+ * submits the Form, which checks every field first; a valid order is confirmed in place.
  */
 export function CheckoutScreen(): ReactElement {
   const [email, setEmail] = useState("nora.haugen@example");
   const [extras, setExtras] = useState<ReadonlySet<string>>(new Set(["app"]));
-  const [start, setStart] = useState<CalendarDate | null>(earliestStart);
-  const [startFilled, setStartFilled] = useState(true);
+  const earliestStart = Temporal.PlainDate.from(EARLIEST_START);
+  const [start, setStart] = useState<Temporal.PlainDate | null>(earliestStart);
   const emailInvalid = !EMAIL.test(email);
-  // The interim React Aria DateField does not register with the Form, so the screen gates on it.
-  const startError =
-    start === null || !startFilled
-      ? "Enter a complete start date."
-      : start.compare(earliestStart) < 0
-        ? "Choose a start date from 1 November 2026 on."
-        : undefined;
-  const trackFilled = (event: KeyboardEvent | FocusEvent) => {
-    setStartFilled(segmentsFilled(event));
-  };
   const picked = EXTRAS.filter((extra) => extras.has(extra.id));
   const total = BASE_PRICE + picked.reduce((sum, extra) => sum + extra.price, 0);
   const [order, setOrder] = useState<Order | undefined>(undefined);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (start === null || startError !== undefined) {
-      setOrder(undefined);
+    // The Form calls this only once the DateField's own required, complete and minimum checks pass.
+    if (start === null) {
       return;
     }
     const data = new FormData(event.currentTarget);
@@ -114,7 +90,7 @@ export function CheckoutScreen(): ReactElement {
     setOrder({
       customer: `${read("firstName")} ${read("lastName")}`,
       email: read("email"),
-      summary: `${items}: NOK ${String(total)} a month from ${startFormat.format(start.toDate("UTC"))}.`,
+      summary: `${items}: NOK ${String(total)} a month from ${start.toLocaleString("en-GB", { dateStyle: "long" })}.`,
     });
   };
 
@@ -137,7 +113,14 @@ export function CheckoutScreen(): ReactElement {
         </Alert.Root>
       )}
       <div className={styles.layout()}>
-        <Form id={FORM_ID} className={styles.form()} onSubmit={submit}>
+        <Form
+          id={FORM_ID}
+          className={styles.form()}
+          // A refused submit never reaches `onSubmit`, so every attempt drops the last confirmation first.
+          onSubmitCapture={() => {
+            setOrder(undefined);
+          }}
+          onSubmit={submit}>
           <div className={styles.pair()}>
             <TextField
               label="First name"
@@ -162,28 +145,19 @@ export function CheckoutScreen(): ReactElement {
             value={email}
             onChange={setEmail}
             isInvalid={emailInvalid}
-            errorMessage="Enter an email address like name@example.com."
+            errorMessage={emailInvalid ? "Enter an email address like name@example.com." : undefined}
             autoComplete="email"
           />
           <PhoneNumberField label="Mobile" name="mobile" defaultValue="+4741234567" />
-          {/* React Aria builds its dates on `new Date()`, which the studio's prerender refuses, so
-              the browser renders the field. */}
-          <Suspense fallback={null}>
-            <UiProviders locale="en-US" navigate={() => undefined}>
-              <DateField<CalendarDate>
-                label="Start date"
-                name="start"
-                description="The first of a month, from November on."
-                value={start}
-                minValue={earliestStart}
-                isInvalid={startError !== undefined}
-                errorMessage={startError}
-                onChange={setStart}
-                onKeyUp={trackFilled}
-                onBlur={trackFilled}
-              />
-            </UiProviders>
-          </Suspense>
+          <DateField
+            label="Start date"
+            name="start"
+            description="The first of a month, from November on."
+            isRequired
+            value={start}
+            minValue={earliestStart}
+            onChange={setStart}
+          />
           <Field.Root>
             <Field.Label>Extras</Field.Label>
             <div className={styles.extras()}>

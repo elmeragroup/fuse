@@ -65,19 +65,7 @@ export const ATTRIBUTE_VARIANTS = new Map<string, (element: MarkupElement) => bo
   // fuse.css defines `data-active:` on `[data-state="active"]` and on a `data-active` that is not
   // `"false"`, which a Sidebar row's `useRender` stamps while it is the current item.
   ["data-active", isActive],
-  // tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
-  // `data-rac`, and to `:invalid` on any other, a validity static markup does not hold, which no
-  // set reads.
-  ["invalid", (element) => element.attributes.has("data-rac") && element.attributes.has("data-invalid")],
 ]);
-
-/**
- * The variants that read `data-hovered` on an element marked `data-rac`, which React Aria stamps
- * while the pointer is over it: tailwindcss-react-aria-components compiles `hover:` there to
- * `[data-hovered]`, and fuse.css's `enabled-hover:` reads `[data-rac][data-hovered]` on an element
- * that is not disabled.
- */
-export const REACT_ARIA_HOVER = ["hover", "enabled-hover"];
 
 /** Whether an element carries a group marker, such as `group/field`, in its `class`. */
 function marks(element: MarkupElement, marker: string): boolean {

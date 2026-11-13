@@ -3,7 +3,7 @@ import type { Variables } from "@internationalized/string";
 /**
  * Default localized copy for the `calendar.*` rows: the month buttons' names and the parts a day
  * button's name adds to its date. The rows copy React Aria's `@react-aria/calendar` strings, so a
- * screen reader hears the same names on the interim tier and on this one.
+ * screen reader hears the names React Aria's calendar uses.
  */
 export const enUS = {
   previous: "Previous",

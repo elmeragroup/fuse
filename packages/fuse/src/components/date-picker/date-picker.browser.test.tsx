@@ -1,9 +1,8 @@
 /*
  * DatePicker and DatePickerField in the browser: opening and closing, focus moving into the
  * calendar and back, Alt+ArrowDown, presets, time values, forms, cancelable details and the
- * computed faces of the trigger, the group and a checked preset. The consumer contract both tiers
- * share (names, typing, popup naming, preset radios) follows React Aria's; these cases cover what
- * only this tier has.
+ * computed faces of the trigger, the group and a checked preset. Names, typing, popup naming and
+ * preset radios follow React Aria's DatePicker.
  * Expectations are literals: ISO values, accessible names, reasons.
  */
 import { useEffect, useState } from "react";

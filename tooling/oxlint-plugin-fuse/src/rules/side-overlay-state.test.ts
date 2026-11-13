@@ -27,9 +27,7 @@ function Panel() { const [open] = useSideOverlay(false); return <Sheet.Root open
     // A ListDetail's Sheet, held by the hook or forwarded with a closed default.
     `${listDetail}function Orders() { const [open, setOpen] = useSideOverlay(false); return <ListDetail.Root open={open} onOpenChange={setOpen} />; }`,
     `${listDetail}function Main({ detailOpen = false, onDetailOpenChange }) { return <ListDetail.Root open={detailOpen} onOpenChange={onDetailOpenChange} />; }`,
-    // React Aria's picker and Fuse's picker fields take `isOpen`.
-    `${hook}import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-function Start() { const [open, setOpen] = useSideOverlay(false); return <DatePicker isOpen={open} onOpenChange={setOpen} />; }`,
+    // Fuse's picker fields take `isOpen`.
     `${hook}import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 function Start() { const [open, setOpen] = useSideOverlay(false); return <DatePickerField label="Start" isOpen={open} onOpenChange={setOpen} />; }`,
     // A namespace import of a subpath, and a lowercase namespace of the root.
@@ -107,12 +105,6 @@ function Panel() { return <fuse.Sheet.Root defaultOpen />; }`,
     {
       code: `${hook}import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
 function Range() { const [open] = useSideOverlay(false); return <DateRangePickerField label="Period" open={open} />; }`,
-      errors: [{ messageId: "uncontrolled" }],
-    },
-    // React Aria's picker counts by `isOpen` too.
-    {
-      code: `${hook}import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-function Start() { const [open] = useSideOverlay(false); return <DatePicker open={open} />; }`,
       errors: [{ messageId: "uncontrolled" }],
     },
     // NavigationMenu shows by `value`; its open state is not `open`.
@@ -331,7 +323,7 @@ const columns = [actionsColumn(helper, { items: () => null })];`,
     // A dynamic import of Fuse loads a part the rule cannot name, as the landing's `dynamic` does.
     {
       code: `import dynamic from "next/dynamic";
-const DatePicker = dynamic(async () => (await import("@elmeragroup/fuse/react-aria/date-picker")).DatePicker, { ssr: false });
+const DatePicker = dynamic(async () => (await import("@elmeragroup/fuse/date-picker")).DatePickerField, { ssr: false });
 function Start() { return <DatePicker label="Start" />; }`,
       errors: [{ messageId: "dynamicImport" }],
     },

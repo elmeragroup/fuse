@@ -18,7 +18,6 @@
     "@elmeragroup/fuse": "workspace:*",
     "@fontsource/inter": "catalog:",
     "@fontsource/roboto": "catalog:",
-    "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
     "@paper-design/shaders-react": "catalog:",
     "@shuding/opentype.js": "catalog:",
@@ -27,7 +26,6 @@
     "libphonenumber-js": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "tailwind-variants": "catalog:"
   },

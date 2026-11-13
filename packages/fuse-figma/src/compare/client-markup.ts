@@ -8,7 +8,7 @@
  */
 
 import type { ComponentDefinition } from "../components/component-spec.ts";
-import type { CellRequest, MountedHtml } from "./browser-render.ts";
+import type { MountedHtml } from "./browser-render.ts";
 import { checkMountedMarkup } from "./markup-check.ts";
 import type { MarkupDiagnostic } from "./markup-check.ts";
 
@@ -39,7 +39,6 @@ export function mountedMarkup(
  * @param definition - The cell's definition.
  * @param union - The `data-slot`s an open composite's renderer names, undefined otherwise.
  * @param cell - The parsed cell.
- * @param request - The cell's request, whose forced attributes the check reads.
  * @param mounted - The markup the page mounted for the cell.
  * @returns The first difference, naming the cell, or none where the markup holds what the
  *   definition says.
@@ -48,13 +47,7 @@ export function checkClientMarkup(
   definition: ComponentDefinition,
   union: readonly string[] | undefined,
   cell: Readonly<Record<string, string>>,
-  request: Pick<CellRequest, "forcedAttributes">,
   mounted: MountedHtml
 ): readonly MarkupDiagnostic[] {
-  return checkMountedMarkup(
-    definition,
-    cell,
-    mountedMarkup(definition.slot, union, mounted),
-    request.forcedAttributes
-  );
+  return checkMountedMarkup(definition, cell, mountedMarkup(definition.slot, union, mounted));
 }

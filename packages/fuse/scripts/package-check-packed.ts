@@ -19,12 +19,7 @@ import {
 } from "./flag-assets";
 import { buildPublishExportMap, exportBindingsObject } from "./generate-exports";
 import type { ExportBinding } from "./generate-exports";
-import {
-  emittedDirectiveFailure,
-  packedBareEntryRacDeclarationFailure,
-  packedValueExportFailure,
-  parsePackedEvalJson,
-} from "./package-check-lib";
+import { emittedDirectiveFailure, packedValueExportFailure, parsePackedEvalJson } from "./package-check-lib";
 import { packageRootFromScript, toPosix } from "./paths";
 import { twemojiNoticeFailure } from "./twemoji-notices";
 
@@ -369,13 +364,6 @@ export function checkPackedDirectives(extracted: string, discovered: DiscoveredE
   const mismatch = emittedDirectiveFailure(extracted, discovered.sourceFiles, packageRoot);
   if (mismatch !== undefined) {
     throw new Error(mismatch);
-  }
-}
-
-export function checkPackedBareEntryRacDeclarations(extracted: string, discovered: DiscoveredEntries): void {
-  const leak = packedBareEntryRacDeclarationFailure(extracted, discovered.jsEntries);
-  if (leak !== undefined) {
-    throw new Error(leak);
   }
 }
 

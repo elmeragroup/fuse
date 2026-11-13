@@ -12,7 +12,7 @@ import { DatePickerFieldCalendar, DatePickerInput, DatePickerRoot } from "./date
 import { DatePickerGroup, DatePickerPopup, DatePickerTrigger, PickerPopupPane } from "./picker-shell";
 
 /**
- * DatePickerField's props: the interim React Aria DatePicker's names, over Temporal values.
+ * DatePickerField's props: React Aria's DatePicker prop names, over Temporal values.
  *
  * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
@@ -49,7 +49,7 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
   hourCycle?: 12 | 24;
   /** Hides a zoned value's zone name. */
   hideTimeZone?: boolean;
-  /** The zone an empty zoned picker takes. New beside the interim names, as DateField's. */
+  /** The zone an empty zoned picker takes. New beside React Aria's names, as DateField's. */
   timeZone?: string;
   /** The weekday each calendar row starts on. */
   firstDayOfWeek?: CalendarFirstDayOfWeek;
@@ -74,7 +74,7 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    * @default true
    */
   shouldCloseOnSelect?: boolean;
-  /** Pads days, months and hours with a leading zero, as the interim picker did. @default true */
+  /** Pads days, months and hours with a leading zero, as DateField does. @default true */
   shouldForceLeadingZeros?: boolean;
   /** Whether the popup is open, when the parent owns it. */
   isOpen?: boolean;
@@ -109,8 +109,8 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
 };
 
 /**
- * Labeled date picker composite over Field and `DatePicker`'s parts, with the interim React Aria
- * DatePicker's prop names: a label, the field box with the segments and the calendar trigger, the
+ * Labeled date picker composite over Field and `DatePicker`'s parts, with React Aria's
+ * DatePicker prop names: a label, the field box with the segments and the calendar trigger, the
  * error, the description, and the calendar popup with an optional preset pane. Values are Temporal
  * values, which a client component builds. The composite itself holds no state, so a server
  * component can render it without a value.
@@ -148,12 +148,12 @@ export function DatePickerField<P = object, T extends DateInputValue = PropsMade
       label={label}
       description={description}
       errorMessage={errorMessage}
-      // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
+      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails.
       isErrorMessageAlwaysShown={isInvalid}>
       <DatePickerRoot<KindFromValue, T>
         {...definedProps({
           ...props,
-          // The extra details argument is ignored by the interim `onChange(value)` signature.
+          // The extra details argument is ignored by the `onChange(value)` signature.
           onValueChange: onChange,
           open: isOpen,
           onFocusLeave: onBlur,

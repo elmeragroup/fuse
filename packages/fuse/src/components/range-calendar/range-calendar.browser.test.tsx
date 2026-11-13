@@ -1,6 +1,6 @@
 /**
  * Unit under test: RangeCalendar's Root over Calendar's parts in Chromium, through roles, names
- * and data attributes. Oracles: the React Aria interim tier's behaviour (keyboard anchoring and its one-day
+ * and data attributes. Oracles: React Aria RangeCalendar's behaviour (keyboard anchoring and its one-day
  * focus step, Escape, range-end names), React Aria's `useRangeCalendarState` and
  * `useRangeCalendar` rules (swap, narrowing around the anchor, commit on blur and outside press)
  * worked out by hand, and printed 2026 calendars. Every scenario runs under a clock frozen at
@@ -107,7 +107,7 @@ function daysWith(attribute: string): string[] {
   );
 }
 
-describe("RangeCalendar parity with the interim tier", () => {
+describe("RangeCalendar parity with React Aria", () => {
   it("anchors on Enter, moves focus a day, follows focus, drops the anchor on Escape and completes", async () => {
     mount(
       <Harness

@@ -14,7 +14,6 @@ import { tv } from "./tv";
  *   child counts, as in the within state face (`state-face.ts`), so a field box nested in the
  *   group's addon, such as a NumberField, rings itself and leaves the outer group unpainted.
  *   The owner keeps its control as a direct child.
- * - `state` paints from React Aria's `isFocusVisible` render prop, for a non-focusable host.
  *
  * A focused invalid control paints the invalid focus face from the constants below instead,
  * which the state face composes: see {@link ariaInvalidFocusRingClass}.
@@ -34,24 +33,8 @@ export const focusRing = tv({
         control:
           "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0",
       },
-      state: {
-        root: "outline-none",
-      },
-    },
-    isFocusVisible: {
-      true: {},
-      false: {},
     },
   },
-  compoundVariants: [
-    {
-      target: "state",
-      isFocusVisible: true,
-      class: {
-        root: "ring-2 ring-ring outline-hidden",
-      },
-    },
-  ],
   defaultVariants: {
     target: "self",
   },
@@ -78,26 +61,6 @@ export const withinFocusRingClass = focusRing({ target: "within" }).root();
  * {@link withinFocusRingClass}.
  */
 export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
-
-/**
- * The state-target focus ring's resting face — `outline-none` alone, the half that does
- * not depend on RAC's `isFocusVisible` render prop. Pair it with
- * {@link stateFocusRingVisibleClass} on the recipe's `isFocusVisible: true` arm, whose
- * `outline-hidden` replaces it, so forced-colors mode, which drops box-shadow, still draws
- * an outline on the focused face and none at rest.
- *
- * The `state` target exists because the interim react-aria tier hangs the ring on a
- * non-focusable wrapper (a `Group`, a calendar cell, a grid row) and is told about focus
- * through a render prop rather than a `:focus-visible` selector. Its two *fixed* rungs
- * are constants, so they are resolved here like the other two targets.
- */
-export const stateFocusRingClass = focusRing({ target: "state" }).root();
-
-/**
- * The state-target focus ring's keyboard-focused face, resolved once at module scope.
- * Recipes put it on their `isFocusVisible: true` arm; see {@link stateFocusRingClass}.
- */
-export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVisible: true }).root();
 
 /**
  * The focused invalid face for a control that carries `aria-invalid` itself. Outside the error
@@ -142,13 +105,6 @@ export const withinInvalidFocusRingClass = cn(
 export const dataWithinInvalidFocusRingClass = cn(
   "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
 );
-
-/**
- * The state-target focused invalid face (see {@link ariaInvalidFocusRingClass}), for a React
- * Aria recipe's compound of `isInvalid: true` and `isFocusVisible: true`. A compound applies
- * after both arms, so tailwind-merge keeps its ring over the plain focus ring's.
- */
-export const stateInvalidFocusRingVisibleClass = cn("ring-3 ring-error/20 ring-offset-1 ring-offset-error");
 
 /** Icon-crossfade faces. */
 export const iconCrossfadeTransition = cn(

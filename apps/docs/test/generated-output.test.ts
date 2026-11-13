@@ -36,16 +36,6 @@ function authoredPage(slug: string): AuthoredPage {
   return { text, parsed: parseComponentPage(text, slug, file) };
 }
 
-/** The component's committed API artifact — the one source of its API data. */
-function api(slug: string): ComponentApiArtifact {
-  // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`; generation
-  // rewrites a committed file that disagrees, and the drift check (`api-artifact.test.ts`)
-  // fails on that rewrite.
-  return JSON.parse(
-    readFileSync(resolveComponentPaths(slug).apis[0].apiFile, "utf8")
-  ) as ComponentApiArtifact;
-}
-
 /**
  * Every part a page's API reference renders, read from its committed artifacts: its own `api.json`,
  * then each extra entry's `<entry>.api.json`, in reading order.
@@ -263,15 +253,6 @@ describe("committed api.json", () => {
     expect(markdown).toContain('- Import: `import { ... } from "@elmeragroup/fuse/command-virtual";`');
     expect(markdown).toContain("### CommandVirtual.List · RSC: client");
     expect(markdown).toContain("| `estimateSize` |");
-  });
-
-  it("documents DateInput's own props and the forwarded RAC remainder", () => {
-    const dateInput = api("date-field").parts.find((part) => part.name === "DateInput");
-    expect(dateInput?.props.length).toBeGreaterThan(0);
-    expect(dateInput?.props.map((prop) => prop.name)).toEqual(expect.arrayContaining(["slot", "className"]));
-    expect(dateInput?.props.map((prop) => prop.name)).not.toContain("children");
-    expect(dateInput?.forwardedCount).toBeGreaterThan(0);
-    expect(dateInput?.forwardedFrom).toEqual(expect.arrayContaining(["react-aria-components"]));
   });
 
   it("never leaves a documented prop without a description or an unresolved type, and publishes only documented dependency props", () => {

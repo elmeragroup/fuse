@@ -1,6 +1,6 @@
 /**
  * The renderer of the `link` set: each cell as the real Fuse `<Link>` at the cell's variant and
- * underline, as the docs React Aria demo's link, `href="/invoices/1042"` around its text. The page
+ * underline, as the docs Router links example's link, `href="/invoices/1042"` around its text. The page
  * forces hover and focus on the `<a data-slot="link">` itself.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`

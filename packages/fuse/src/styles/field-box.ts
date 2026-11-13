@@ -6,14 +6,14 @@ import { tv } from "./tv";
 import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
 /**
- * The field box chrome: elevation, the field corner, hairline border, fill and the transition
- * that animates them. The corner is `--radius-field` in branded themes and `--radius` in
- * neutral ones (`corner-radius.ts`), and the box publishes it less its border as the inner
- * corner of the parts inside (`inner-corner/field.ts`). {@link fieldBox} paints it for Input and Textarea. RAC
- * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
- * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of
- * them: the shared focus ring marks focus, and only the invalid face recolours the border.
- * Each read-only box swaps the fill for `bg-muted`.
+ * The field box chrome: elevation, the field corner, hairline border, fill and the transition that
+ * animates them. The corner is `--radius-field` in branded themes and `--radius` in neutral ones
+ * (`corner-radius.ts`), and the box publishes it less its border as the inner corner of the parts
+ * inside (`inner-corner/field.ts`). {@link fieldBox} paints it for Input and Textarea. The date
+ * fields' boxes, Select's trigger, NumberField's group and InputGroup's root paint it without being
+ * `fieldBox` variants. Focus leaves the `--input` border alone on every one of them: the shared
+ * focus ring marks focus, and only the invalid face recolours the border. Each read-only box swaps
+ * the fill for `bg-muted`.
  */
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border",
@@ -23,10 +23,10 @@ export const fieldBoxChromeClass = cn(
 );
 
 /**
- * The read-only fill, the React Aria FieldGroup's `isReadOnly` face, so a read-only Input
- * reads as locked next to a read-only DateField. It keys off the `readonly` attribute, not
- * `:read-only`, which also matches a disabled input and a file input, and it leaves a
- * disabled box its disabled fill.
+ * The read-only fill of Input and Textarea. It matches the date fields' `data-readonly:bg-muted`
+ * box, so a read-only Input reads as locked next to a read-only DateField. It keys off the
+ * `readonly` attribute, not `:read-only`, which also matches a disabled input and a file input,
+ * and it leaves a disabled box its disabled fill.
  */
 export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
 

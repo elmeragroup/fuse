@@ -2,7 +2,7 @@
 "@elmeragroup/fuse": minor
 ---
 
-The Temporal date tier closes its gaps with the interim React Aria tier:
+The date components gain:
 
 - `DatePicker.TimeInput`, `DateRangePicker.StartTimeInput` and `DateRangePicker.EndTimeInput` edit
   the value's time in the popup under the calendar, and `DatePickerField` and `DateRangePickerField`

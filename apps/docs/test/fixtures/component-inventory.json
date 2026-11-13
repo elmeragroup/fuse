@@ -167,13 +167,7 @@
   "calendar": {
     "title": "Calendar",
     "rsc": "client",
-    "demos": [
-      "calendar-basic.tsx",
-      "calendar-controlled.tsx",
-      "calendar-bounds.tsx",
-      "calendar-error.tsx",
-      "calendar-rtl.tsx"
-    ]
+    "demos": ["calendar-basic.tsx", "calendar-months.tsx", "calendar-bounds.tsx", "calendar-controlled.tsx"]
   },
   "card": {
     "title": "Card",
@@ -345,14 +339,15 @@
   },
   "date-field": {
     "title": "Date Field",
-    "rsc": "client",
+    "rsc": "server",
     "demos": [
       "date-field-basic.tsx",
-      "date-field-sizes.tsx",
-      "date-field-validation.tsx",
-      "date-field-granularity.tsx",
       "date-field-states.tsx",
-      "date-field-date-input.tsx"
+      "date-field-time.tsx",
+      "date-field-zoned.tsx",
+      "date-field-bounds.tsx",
+      "date-field-form.tsx",
+      "date-field-parts.tsx"
     ]
   },
   "date-picker": {
@@ -360,13 +355,12 @@
     "rsc": "client",
     "demos": [
       "date-picker-basic.tsx",
-      "date-picker-sizes.tsx",
-      "date-picker-controlled.tsx",
-      "date-picker-presets.tsx",
-      "date-picker-trigger-start.tsx",
-      "date-picker-validation.tsx",
       "date-picker-states.tsx",
-      "date-picker-in-modal.tsx"
+      "date-picker-time.tsx",
+      "date-picker-time-input.tsx",
+      "date-picker-presets.tsx",
+      "date-picker-form.tsx",
+      "date-picker-controlled.tsx"
     ]
   },
   "date-range-picker": {
@@ -374,12 +368,11 @@
     "rsc": "client",
     "demos": [
       "date-range-picker-basic.tsx",
-      "date-range-picker-sizes.tsx",
-      "date-range-picker-controlled.tsx",
-      "date-range-picker-presets.tsx",
-      "date-range-picker-validation.tsx",
       "date-range-picker-states.tsx",
-      "date-range-picker-in-modal.tsx"
+      "date-range-picker-months.tsx",
+      "date-range-picker-time.tsx",
+      "date-range-picker-presets.tsx",
+      "date-range-picker-form.tsx"
     ]
   },
   "description-list": {
@@ -467,11 +460,6 @@
       "file-upload-form.tsx",
       "file-upload-folders.tsx"
     ]
-  },
-  "focusable": {
-    "title": "Focusable",
-    "rsc": "client",
-    "demos": ["focusable-tooltip-trigger.tsx"]
   },
   "form": {
     "title": "Form",
@@ -583,7 +571,6 @@
       "link-colors.tsx",
       "link-external.tsx",
       "link-next.tsx",
-      "link-react-aria.tsx",
       "link-truncate.tsx"
     ]
   },
@@ -735,10 +722,9 @@
     "rsc": "client",
     "demos": [
       "range-calendar-basic.tsx",
-      "range-calendar-controlled.tsx",
+      "range-calendar-months.tsx",
       "range-calendar-unavailable.tsx",
-      "range-calendar-error.tsx",
-      "range-calendar-bounds.tsx"
+      "range-calendar-controlled.tsx"
     ]
   },
   "scatter-chart": {
@@ -915,61 +901,6 @@
       "tabs-disabled.tsx"
     ]
   },
-  "temporal-calendar": {
-    "title": "Temporal Calendar",
-    "rsc": "client",
-    "demos": [
-      "temporal-calendar-basic.tsx",
-      "temporal-calendar-months.tsx",
-      "temporal-calendar-bounds.tsx",
-      "temporal-calendar-controlled.tsx"
-    ]
-  },
-  "temporal-date-field": {
-    "title": "Temporal Date Field",
-    "rsc": "server",
-    "demos": [
-      "temporal-date-field-basic.tsx",
-      "temporal-date-field-time.tsx",
-      "temporal-date-field-zoned.tsx",
-      "temporal-date-field-bounds.tsx",
-      "temporal-date-field-form.tsx",
-      "temporal-date-field-parts.tsx"
-    ]
-  },
-  "temporal-date-picker": {
-    "title": "Temporal Date Picker",
-    "rsc": "client",
-    "demos": [
-      "temporal-date-picker-basic.tsx",
-      "temporal-date-picker-time.tsx",
-      "temporal-date-picker-time-input.tsx",
-      "temporal-date-picker-presets.tsx",
-      "temporal-date-picker-form.tsx",
-      "temporal-date-picker-controlled.tsx"
-    ]
-  },
-  "temporal-range-calendar": {
-    "title": "Temporal Range Calendar",
-    "rsc": "client",
-    "demos": [
-      "temporal-range-calendar-basic.tsx",
-      "temporal-range-calendar-months.tsx",
-      "temporal-range-calendar-unavailable.tsx",
-      "temporal-range-calendar-controlled.tsx"
-    ]
-  },
-  "temporal-range-picker": {
-    "title": "Temporal Range Picker",
-    "rsc": "client",
-    "demos": [
-      "temporal-range-picker-basic.tsx",
-      "temporal-range-picker-months.tsx",
-      "temporal-range-picker-time.tsx",
-      "temporal-range-picker-presets.tsx",
-      "temporal-range-picker-form.tsx"
-    ]
-  },
   "text": {
     "title": "Text",
     "rsc": "client",
@@ -1067,10 +998,5 @@
     "title": "Tooltip",
     "rsc": "client",
     "demos": ["tooltip-basic.tsx", "tooltip-sides.tsx", "tooltip-delay.tsx", "tooltip-controlled.tsx"]
-  },
-  "ui-providers": {
-    "title": "UI Providers",
-    "rsc": "client",
-    "demos": ["ui-providers-basic.tsx", "ui-providers-locale-switch.tsx"]
   }
 }

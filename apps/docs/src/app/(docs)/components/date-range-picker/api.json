@@ -3,41 +3,854 @@
   "slug": "date-range-picker",
   "parts": [
     {
-      "name": "DateRangePicker",
+      "name": "DateRangePicker.Root",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/date-range-picker/date-range-picker.tsx",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria-components",
-        "react-stately"
+        "@base-ui/react",
+        "@types/react"
       ],
-      "forwardedCount": 111,
+      "forwardedCount": 275,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Defines a string value that labels the current element. Names the picker when it renders no `DateRangePicker.Label`.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label, group, error, description and popup.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "DatePickerClassName<DateRangePickerRootState> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Extra classes, or a callback of the Root's state that returns them.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup starts open.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "DateRangePickerValue<T> | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The first range, when the picker owns its value.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether nothing responds and the values are not submitted.",
+          "required": false
+        },
+        {
+          "name": "endName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The name the end's ISO value submits and `Form` errors arrive under.",
+          "required": false
+        },
+        {
+          "name": "firstDayOfWeek",
+          "origin": "declared",
+          "type": "CalendarFirstDayOfWeek | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The weekday each calendar row starts on.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the form the values submit with.",
+          "required": false
+        },
+        {
+          "name": "granularity",
+          "origin": "declared",
+          "type": "DateGranularity | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The smallest unit the inputs edit. Without a value it names the kind, as DateInput's does.",
+          "required": false
+        },
+        {
+          "name": "hideTimeZone",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides zoned values' zone names.",
+          "required": false
+        },
+        {
+          "name": "hourCycle",
+          "origin": "declared",
+          "type": "12 | 24 | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The hour cycle shown. Defaults to the locale's.",
+          "required": false
+        },
+        {
+          "name": "invalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the picker shows as invalid whatever its value.",
+          "required": false
+        },
+        {
+          "name": "isDateUnavailable",
+          "origin": "declared",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Values the picker refuses for either end.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The latest valid value for either end.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The earliest valid value for either end, a Temporal value of any kind.",
+          "required": false
+        },
+        {
+          "name": "onFocusLeave",
+          "origin": "declared",
+          "type": "((event: FocusEvent<Element, Element>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when focus leaves the picker: its group and its popup together. It receives the `blur` that started the leave, as `DatePicker.Root`'s `onFocusLeave` does.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": "declared",
+          "type": "((open: boolean, details: DatePickerOpenChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the popup opens or closes, as `DatePicker.Root`'s `onOpenChange`. The first Escape in the calendar drops a half-picked range and keeps the popup open; the next closes it.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "NoInfer<(value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"`, `\"focus-out\"` (a range completed in the calendar), `\"input-change\"`, `\"input-clear\"`, `\"input-paste\"` or `\"preset-press\"` (a `PresetItem` with a `dateValue` range). Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so another end can be picked, a canceled edit shows the range again in the segments, and a canceled preset stays unchecked.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup is open, when the parent owns it.",
+          "required": false
+        },
+        {
+          "name": "pageBehavior",
+          "origin": "declared",
+          "type": "CalendarPageBehavior | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How the calendar pages a multi-month view.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the range cannot change.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DateRangePickerRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether an empty or incomplete end is invalid.",
+          "required": false
+        },
+        {
+          "name": "shouldCloseOnSelect",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, a completed range is held while the popup stays open, as `DatePicker.Root`'s day: it commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise at midnight (an end with a typed time at that time) when the popup closes; that commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it was typed over: a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The field box's size.",
+          "required": false
+        },
+        {
+          "name": "startName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The name the start's ISO value submits and `Form` errors arrive under.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The zone an empty zoned picker takes.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "DateRangePickerValue<T> | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client component. `null` empties both ends.",
+          "required": false
+        },
+        {
+          "name": "visibleMonths",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How many months the calendar shows.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Label",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Group",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "DatePickerClassName<DatePickerGroupState> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Extra classes, or a callback of the group's state that returns them.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DatePickerGroupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.StartInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.EndInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Error",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Description",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Popup",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How the popup aligns to the trigger on the cross axis.",
+          "required": false
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Offset along the alignment axis, in pixels.",
+          "required": false
+        },
+        {
+          "name": "anchor",
+          "origin": "declared",
+          "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. A controlled popover with no trigger opens against it. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box; pass a new anchor then, such as a new virtual element, to place the popup again.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
         {
           "name": "container",
           "origin": "declared",
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for the popover. Defaults to the nearest `ThemeScope`, so the overlay inherits the theme it was opened from; an explicit element or ref wins.",
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
-          "name": "description",
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is opened. By default, focus moves to the first tabbable element inside the popup, except when the popover is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "showArrow",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Renders the placement arrow after `children`. Off by default.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Which side of the trigger the popup is placed on.",
+          "required": false
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Distance from the trigger, in pixels.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Calendar",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "className",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "description": "Extra classes, merged after the picker's own.",
           "required": false
         },
         {
-          "name": "errorMessage",
+          "name": "commitBehavior",
           "origin": "declared",
-          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "type": "RangeCommitBehavior | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "What an open range does when focus leaves the calendar or the user presses outside its days and month buttons: `\"select\"` completes it at the focused or hovered day, `\"reset\"` drops the anchor and keeps the previous range.",
+          "required": false
+        },
+        {
+          "name": "onVisibleRangeChange",
+          "origin": "declared",
+          "type": "CalendarVisibleRangeChangeHandler | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the range is invalid — an end before its start, or an endpoint outside the allowed dates. Accepts a node or a validation render function. Without it or `isInvalid`, the picker shows the `Form` errors under its `startName` and its `endName`, and a change to the range clears both.",
+          "description": "Called when the visible months change by a month button or the keyboard, with the new first month. `details.reason` is `\"increment-press\"`, `\"decrement-press\"` or `\"keyboard\"`. Canceling with `details.cancel()` keeps the months shown: a month button press does nothing, and a key that would page leaves focus on the day it was on.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, RangeCalendarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.StartTimeInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.EndTimeInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.Presets",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": "null",
+          "description": "The preset checked first, when the pane owns its value.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether no preset responds. A disabled or read-only picker disables its presets too.",
           "required": false
         },
         {
@@ -46,7 +859,347 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as the private RAC `Label`.",
+          "description": "The pane's accessible name. An explicit `aria-label` wins over it; both win over \"Date presets\".",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "((value: string, details: DatePickerPresetsValueChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the key of a preset pressed or chosen by key while it was not checked. A preset without a `dateValue` is the caller's key to map to a date or a range and set the picker's value. For a preset with one, the picker's `onValueChange` runs first: canceling there refuses the whole press, and this is never called. This runs once the picker's value is committed; canceling it keeps the checked preset as it was, and does not undo that value. `details.reason` is `\"preset-press\"`, and `details.trigger` the preset's radio.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The checked preset's value, when the parent owns it. `null` checks none.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.PresetItem",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visible name, which names the radio.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "DatePickerClassName<DatePickerPresetItemState> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Extra classes, or a callback of the preset's state that returns them.",
+          "required": false
+        },
+        {
+          "name": "closeOnDoubleClick",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Closes the popup on double-click (`reason: \"preset-press\"`), after the item's own `onDoubleClick`. A pointer shortcut: a click or Space selects without closing.",
+          "required": false
+        },
+        {
+          "name": "dateValue",
+          "origin": "declared",
+          "type": "DatePickerPresetValue | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press (the value and the checked preset stay, and the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way (a day, typing, a time, a form reset), and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether it does not respond.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DatePickerPresetItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The preset's key, which the pane reports.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DateRangePickerField",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-field.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Names the picker when there is no visible `label`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the picker's root.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Portal target for the popup. Defaults to the nearest `ThemeScope`.",
+          "required": false
+        },
+        {
+          "name": "defaultOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup starts open.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "DateRangePickerValue<T> | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The first range, when the picker owns its value.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy below the field box.",
+          "required": false
+        },
+        {
+          "name": "endName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The name the end's ISO value submits and `Form` errors arrive under.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy shown while the range is invalid, in place of its own messages (an end out of bounds, an end before its start, the `Form` errors under `startName` and `endName`). Without `isInvalid` it shows only once the range's own validation fails. A node that renders nothing (`null`, `false`, `\"\"`) keeps the range's own messages.",
+          "required": false
+        },
+        {
+          "name": "firstDayOfWeek",
+          "origin": "declared",
+          "type": "CalendarFirstDayOfWeek | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The weekday each calendar row starts on.",
+          "required": false
+        },
+        {
+          "name": "granularity",
+          "origin": "declared",
+          "type": "DateGranularity | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The smallest unit the inputs edit. Without a value it names the kind, as DateField's does.",
+          "required": false
+        },
+        {
+          "name": "hideTimeZone",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides zoned values' zone names.",
+          "required": false
+        },
+        {
+          "name": "hourCycle",
+          "origin": "declared",
+          "type": "12 | 24 | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The hour cycle shown. Defaults to the locale's.",
+          "required": false
+        },
+        {
+          "name": "isDateUnavailable",
+          "origin": "declared",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Values the picker refuses for either end.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Disables the picker and leaves its values out of the form.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Shows the picker invalid, with `errorMessage`.",
+          "required": false
+        },
+        {
+          "name": "isOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the popup is open, when the parent owns it.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Keeps the range; the segments stay focusable and the trigger is disabled.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Reports an empty or incomplete end invalid.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label. It names the group, both inputs' segments, the trigger and the popup.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The latest valid value for either end.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The earliest valid value for either end, a Temporal value of any kind.",
+          "required": false
+        },
+        {
+          "name": "onBlur",
+          "origin": "declared",
+          "type": "((event: FocusEvent<Element, Element>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when focus leaves the picker: the field box and the popup together. It receives the `blur` that started the leave: its `relatedTarget` is where focus went, or, when focus left the popup through one of Base UI's focus guards, that guard.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "NoInfer<(value: DateRangePickerValue<T> | null) => void> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with this runtime's range once both ends hold a value and one changes, and `null` as soon as a whole range loses an end, as React Aria reports it.",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": "declared",
+          "type": "((isOpen: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the popup opens or closes.",
+          "required": false
+        },
+        {
+          "name": "pageBehavior",
+          "origin": "declared",
+          "type": "CalendarPageBehavior | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How the calendar pages a multi-month view.",
           "required": false
         },
         {
@@ -55,7 +1208,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Quick-choice pane rendered beside the range calendar — normally a `DateRangePickerPresetGroup`. A renderable node is what turns the dialog into two panes; a falsy one (`false` from a `&&` guard, `null`, `\"\"`) keeps the single pane.",
+          "description": "The preset pane beside the calendar, normally `DateRangePicker.Presets`. With one, focus leaving the calendar drops a half-picked range instead of completing it. A falsy node keeps the calendar alone.",
+          "required": false
+        },
+        {
+          "name": "shouldCloseOnSelect",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity`, the popup shows a start and an end time input under the calendar; a range picked in an empty picker that stays open commits once both have a time, or at midnight when the popup closes.",
           "required": false
         },
         {
@@ -64,7 +1226,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads day and month segments with a leading zero in both rows, matching the default behavior of DatePicker and DateField.",
+          "description": "Pads days, months and hours with a leading zero in both inputs.",
           "required": false
         },
         {
@@ -72,63 +1234,44 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The segment rows and the calendar trigger follow it.",
-          "required": false
-        }
-      ]
-    },
-    {
-      "name": "DateRangePickerPresetGroup",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/date-range-picker/date-range-picker.tsx",
-      "forwardedFrom": [
-        "@react-types/shared",
-        "@types/react",
-        "react-aria-components",
-        "react-stately"
-      ],
-      "forwardedCount": 97,
-      "props": [
-        {
-          "name": "label",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the preset pane. An explicit `aria-label` wins over it, and either wins over the `datePicker.presets` row of the locale dictionary.",
-          "required": false
-        }
-      ]
-    },
-    {
-      "name": "DateRangePickerPresetItem",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/date-range-picker/date-range-picker.tsx",
-      "forwardedFrom": [
-        "@react-types/shared",
-        "@types/react",
-        "react-aria",
-        "react-aria-components"
-      ],
-      "forwardedCount": 98,
-      "props": [
-        {
-          "name": "description",
-          "origin": "declared",
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Supporting copy carried alongside the preset, kept from the reference face. RAC `Radio` renders only its children, so this never joins the accessible name.",
+          "description": "Control size of the field box.",
           "required": false
         },
         {
-          "name": "isCloseDialogOnDoubleClick",
+          "name": "startName",
           "origin": "declared",
-          "type": "boolean | undefined",
+          "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Closes the picker dialog on double-click, after the caller's own `onDoubleClick`. A pointer-only affordance: single click (and Space from the keyboard) selects without closing, so nothing is reachable by pointer alone.",
+          "description": "The name the start's ISO value submits and `Form` errors arrive under.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The zone an empty zoned picker takes. New beside React Aria's names.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "DateRangePickerValue<T> | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client component. `null` empties both ends.",
+          "required": false
+        },
+        {
+          "name": "visibleMonths",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How many months the calendar shows.",
           "required": false
         }
       ]

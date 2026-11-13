@@ -2,13 +2,16 @@ import { expectTypeOf, test } from "vitest";
 
 import type { AutocompleteInputProps } from "@elmeragroup/fuse/autocomplete";
 import type { ComboboxChipsProps, ComboboxInputProps } from "@elmeragroup/fuse/combobox";
+import type { DateFieldProps, DateInputRootProps } from "@elmeragroup/fuse/date-field";
+import type { DatePickerFieldProps, DatePickerRootProps } from "@elmeragroup/fuse/date-picker";
+import type {
+  DateRangePickerFieldProps,
+  DateRangePickerRootProps,
+} from "@elmeragroup/fuse/date-range-picker";
 import type { InputProps } from "@elmeragroup/fuse/input";
 import type { InputGroupInputProps, InputGroupRootProps } from "@elmeragroup/fuse/input-group";
 import type { NumberFieldProps } from "@elmeragroup/fuse/number-field";
 import type { PhoneNumberFieldProps } from "@elmeragroup/fuse/phone-number-field";
-import type { DateFieldProps, DateInputProps } from "@elmeragroup/fuse/react-aria/date-field";
-import type { DatePickerProps } from "@elmeragroup/fuse/react-aria/date-picker";
-import type { DateRangePickerProps } from "@elmeragroup/fuse/react-aria/date-range-picker";
 import type { SearchFieldProps } from "@elmeragroup/fuse/search-field";
 import type { SelectFieldProps } from "@elmeragroup/fuse/select-field";
 import type { TextFieldProps } from "@elmeragroup/fuse/text-field";
@@ -27,10 +30,12 @@ test("every text-entry field box takes the field size", () => {
   expectTypeOf<NumberFieldProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<PhoneNumberFieldProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<SearchFieldProps["size"]>().toEqualTypeOf<FieldSize>();
-  expectTypeOf<DateFieldProps<never>["size"]>().toEqualTypeOf<FieldSize>();
-  expectTypeOf<DateInputProps["size"]>().toEqualTypeOf<FieldSize>();
-  expectTypeOf<DatePickerProps<never>["size"]>().toEqualTypeOf<FieldSize>();
-  expectTypeOf<DateRangePickerProps<never>["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DateFieldProps["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DateInputRootProps["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DatePickerFieldProps["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DatePickerRootProps["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DateRangePickerFieldProps["size"]>().toEqualTypeOf<FieldSize>();
+  expectTypeOf<DateRangePickerRootProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<InputGroupRootProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<ComboboxInputProps["size"]>().toEqualTypeOf<FieldSize>();
   expectTypeOf<ComboboxChipsProps["size"]>().toEqualTypeOf<FieldSize>();

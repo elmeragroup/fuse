@@ -2,10 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MockInstance } from "vitest";
 
 /**
- * Unit under test: the `temporal()` accessor. Oracle: the host-setup contract in the date-tier
- * plan: a clear TypeError naming the subpath without Temporal, and one development warning when
- * the subpath's marker is missing. The warning is spent once per module instance, and this file
- * loads one, so a single test owns it.
+ * Unit under test: the `temporal()` accessor. Oracle: the host-setup contract: a TypeError naming
+ * the subpath without Temporal, and one development warning when the subpath's marker is missing.
+ * The warning is spent once per module instance, and this file loads one, so a single test owns it.
  */
 import "../temporal-polyfill";
 import { TEMPORAL_INSTALL_MARKER } from "./install-marker";

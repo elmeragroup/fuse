@@ -446,8 +446,9 @@ export function usePickerRootElement(options: PickerRootElementOptions): ReactEl
 /**
  * The calendar's view key. Calendar keeps its view when its controlled value changes, so a value
  * that came from anywhere but the calendar itself (typing, a preset the parent maps to a value)
- * changes the key and the calendar remounts on it, as the interim picker's month sync did. A value
- * the calendar made is marked as picked first and keeps the key, so the calendar under focus stays.
+ * changes the key and the calendar remounts on it, so the calendar shows the new value's month. A
+ * value the calendar made is marked as picked first and keeps the key, so the calendar under focus
+ * stays.
  *
  * @param basis - The committed value's key.
  * @returns `[key, markPicked]`, where `markPicked` takes the key of a value the calendar made.

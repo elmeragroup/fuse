@@ -306,10 +306,7 @@ export default defineConfig({
     },
     shadcn: {
       ui: "@elmeragroup/fuse",
-      ignoreImports: [
-        "^@elmeragroup/fuse/(icons|emoji|illustrations|flags|theme)(/|$)",
-        "^@elmeragroup/fuse/react-aria/ui-providers$",
-      ],
+      ignoreImports: ["^@elmeragroup/fuse/(icons|emoji|illustrations|flags|theme)(/|$)"],
       mergeFunctions: ["mergeClassName"],
     },
   },
@@ -384,7 +381,6 @@ export default defineConfig({
         "elmera/restrict-process-env": "error",
         "elmera/no-internal-dynamic-import": "error",
         "elmera/facade-reexport-grammar": "error",
-        "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn",
         "elmera/no-raw-class-map": "error",
         "no-restricted-imports": restrictImports(LIBRARY_IMPORTS),

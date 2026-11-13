@@ -1,8 +1,8 @@
 // How a date field writes itself, through Intl: the segments' order and the literals between them
 // (`Intl.DateTimeFormat#formatToParts`), each segment's text and placeholder, the names a screen
 // reader hears and the bound in a validation message. The options are React Aria's
-// `getFormatOptions` (`@react-stately/datepicker`), so the interim tier and this one print the same
-// segments. Intl never sees a Temporal object, which only a polyfill's Intl replacement formats: a
+// `getFormatOptions` (`@react-stately/datepicker`), so a field prints the segments React Aria's
+// does. Intl never sees a Temporal object, which only a polyfill's Intl replacement formats: a
 // plain value formats as UTC fields in UTC, a zoned value as its instant in its own zone.
 
 import { dateTimeFormat } from "../../internal/intl-cache";

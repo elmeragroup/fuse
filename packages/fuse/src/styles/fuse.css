@@ -6,7 +6,6 @@
 @import "tw-animate-css";
 @import "./frame-variants.css";
 @import "./skeleton-reveal.css";
-@plugin "tailwindcss-react-aria-components";
 
 /* Locked library-fixed --font-mono, plus the library-owned density metrics: control metrics
    (`--control-*`), row metrics (`--row-*`), label metrics (`--label-*`) and surface metrics
@@ -768,13 +767,11 @@
    `aria-disabled` control still activates; only its hover and press faces are gated.
    tailwind-merge keeps a consumer's plain `hover:` class beside these, and these rules sort
    after it. Every condition sits in :where() or :not(:where()), so each rule has the
-   specificity of one class and the consumer's `hover:` rule, with two, still wins. The
-   [data-rac] branches match the selectors tailwindcss-react-aria-components emits for
-   hover and active. */
+   specificity of one class and the consumer's `hover:` rule, with two, still wins. */
 @custom-variant enabled-hover {
   @media (hover: hover) {
     @variant not-disabled-state {
-      &:where([data-rac][data-hovered], :not([data-rac]):hover) {
+      &:where(:hover) {
         @slot;
       }
     }
@@ -796,7 +793,7 @@
 }
 @custom-variant enabled-active {
   @variant not-disabled-state {
-    &:where([data-rac][data-active], :not([data-rac]):active) {
+    &:where(:active) {
       @slot;
     }
   }

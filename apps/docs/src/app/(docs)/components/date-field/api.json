@@ -4,32 +4,126 @@
   "parts": [
     {
       "name": "DateField",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/date-field/date-field.tsx",
-      "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria",
-        "react-aria-components",
-        "react-stately"
-      ],
-      "forwardedCount": 104,
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/date-field/date-field.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Names the segment group when there is no visible `label`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "T | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The first value, when the field owns its value.",
+          "required": false
+        },
         {
           "name": "description",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "description": "Supporting copy, rendered as `Field.Description`.",
           "required": false
         },
         {
           "name": "errorMessage",
           "origin": "declared",
-          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` while the field is invalid, in place of its own message. Without `isInvalid` it shows only once the field's own validation fails. Falsy, the field shows its own message: an error `Form` holds under its `name`, or why the value fails (\"Value must be 10/31/2026 or earlier.\").",
+          "required": false
+        },
+        {
+          "name": "granularity",
+          "origin": "declared",
+          "type": "DateGranularity | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The smallest unit edited. Defaults to `\"day\"` for a date and `\"minute\"` for a value with a time. Without a value it names the kind, as DateInput's does.",
+          "required": false
+        },
+        {
+          "name": "hideTimeZone",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides a zoned value's zone name.",
+          "required": false
+        },
+        {
+          "name": "hourCycle",
+          "origin": "declared",
+          "type": "12 | 24 | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The hour cycle shown. Defaults to the locale's.",
+          "required": false
+        },
+        {
+          "name": "isDateUnavailable",
+          "origin": "declared",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the field is invalid. Accepts a node or a validation render function. Without it or `isInvalid`, the field shows a `Form` error under its `name`, which clears when the value changes.",
+          "description": "Values the field reports as unavailable.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Disables the field and leaves its value out of the form.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Shows the field invalid, with `errorMessage`.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Keeps the value; the segments stay focusable.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Reports an empty or incomplete field invalid.",
           "required": false
         },
         {
@@ -38,7 +132,43 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as the private RAC `Label`.",
+          "description": "Visible label, rendered as `Field.Label`. It names the segment group and every segment.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The latest valid value, a Temporal value of any kind.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The earliest valid value, a Temporal value of any kind. An earlier value still commits and shows as invalid.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The name the ISO value submits and `Form` errors arrive under.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "NoInfer<(value: T | null) => void> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with this runtime's Temporal value once the segments form a new one, or with `null` when every segment is cleared.",
           "required": false
         },
         {
@@ -47,7 +177,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads day and month segments with a leading zero. The reference flips RAC's locale-dependent default; this port keeps that flip.",
+          "description": "Pads days, months and hours with a leading zero, which flips React Aria's locale default.",
           "required": false
         },
         {
@@ -56,28 +186,192 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box, forwarded to `DateInput`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "description": "Control size of the field box. `\"default\"` maps to the `md` control size; `\"sm\"` to the `sm` one.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The zone an empty zoned field takes. New beside React Aria's names: React Aria reads the zone from a value, so an empty field needs it to emit a ZonedDateTime.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "T | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client component. `null` empties it.",
           "required": false
         }
       ]
     },
     {
-      "name": "DateInput",
+      "name": "DateInput.Root",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/date-field/date-field.tsx",
+      "sourcePath": "packages/fuse/src/components/date-field/date-input.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria-components"
+        "@base-ui/react",
+        "@types/react"
       ],
-      "forwardedCount": 71,
+      "forwardedCount": 277,
       "props": [
         {
-          "name": "className",
+          "name": "children",
           "origin": "declared",
-          "type": "ClassNameOrFunction<DateInputRenderProps> | undefined",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Extra classes, composed with the segment row and its standalone field surface. Inside a field group, the group owns the surface. A function may compute the class from DateInput render props.",
+          "description": "The first value, when the input owns its value. Takes what `value` takes.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether nothing responds and the value is not submitted.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the form the ISO value submits with, when it is not the enclosing one.",
+          "required": false
+        },
+        {
+          "name": "granularity",
+          "origin": "declared",
+          "type": "DateGranularity | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The smallest unit edited. A time granularity needs a value with a time. Defaults to `\"day\"` for a PlainDate and `\"minute\"` for a value with a time. Without a value or default value it names the kind: `\"day\"` or none a PlainDate, a time unit a PlainDateTime, or a ZonedDateTime with `timeZone`.",
+          "required": false
+        },
+        {
+          "name": "hideTimeZone",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides a zoned value's zone name.",
+          "required": false
+        },
+        {
+          "name": "hourCycle",
+          "origin": "declared",
+          "type": "12 | 24 | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The hour cycle shown: `12` with a day period, `24` without. Defaults to the locale's.",
+          "required": false
+        },
+        {
+          "name": "invalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the input shows as invalid whatever its value.",
+          "required": false
+        },
+        {
+          "name": "isDateUnavailable",
+          "origin": "declared",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Values the input reports invalid (\"Selected date unavailable.\"), such as fully booked days.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The latest valid value, taking what `minValue` takes. \"Value must be … or earlier.\"",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The earliest valid value: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation, of any kind, compared as React Aria compares it. A value before it still commits; the input reports it invalid with \"Value must be … or later.\"",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The name the ISO value submits under. A surrounding Field's `name` wins.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "NoInfer<(value: T | null, details: DateInputValueChangeEventDetails) => void> | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the segments form a new value, with this runtime's Temporal value, or `null` when every segment was cleared. A value forms when every segment is filled and it holds exactly what was typed; a value that does not, such as February 30, waits for blur and then commits constrained. `details.reason` is `\"input-change\"` (typing, keys, blur), `\"input-clear\"` or `\"input-paste\"`. Canceling with `details.cancel()` keeps the value and shows it again in the segments, discarding the edit.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the value cannot change. The segments stay focusable.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DateInputRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether an empty or incomplete input is invalid (\"Please fill out this field.\").",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
           "required": false
         },
         {
@@ -85,18 +379,59 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": "\"default\"",
-          "description": "Control size of the field box the row paints when it stands alone. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. Inside a date picker the picker's field box owns the size, and the row reads it from there.",
+          "defaultValue": null,
+          "description": "The field box's size: `\"default\"` the md control size, `\"sm\"` the sm one. Written as `data-size`.",
           "required": false
         },
         {
-          "name": "slot",
+          "name": "timeZone",
           "origin": "declared",
-          "type": "string | null | undefined",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The zone an empty input's ZonedDateTime takes. With a time `granularity` and no value or default value to read a kind from, it makes the input zoned; a value's own zone wins over it. Pass it whenever `T` is `ZonedDateTime` and the input can start empty.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Range-picker slot. `\"start\"` / `\"end\"` inside DateRangePicker.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation. A server component cannot pass one, since it reaches the client as text: build the value in a client component. `null` empties the input.",
           "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateInput.Segment",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-field/date-input-segment.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DateInputSegmentState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "segment",
+          "origin": "declared",
+          "type": "DateInputSegmentData",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The segment, as `DateInput.Root` passes it to its children.",
+          "required": true
         }
       ]
     }

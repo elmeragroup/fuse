@@ -1,18 +1,14 @@
 "use client";
 
-import { CalendarDate } from "@internationalized/date";
-
-import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 
 export function DatePickerBasic() {
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <DatePicker
-        label="Invoice date"
-        description="The date printed on the invoice."
-        defaultValue={new CalendarDate(2026, 7, 14)}
-      />
-    </UiProviders>
+    <DatePickerField
+      className="max-w-xs w-full"
+      label="Moving date"
+      description="Type it or pick it from the calendar."
+      defaultValue={Temporal.PlainDate.from("2026-10-05")}
+    />
   );
 }

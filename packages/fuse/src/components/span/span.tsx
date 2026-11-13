@@ -9,7 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { spanVariants } from "./span-variants";
 
-export type SpanProps = Omit<ComponentPropsWithoutRef<"span">, "slot"> &
+export type SpanProps = ComponentPropsWithoutRef<"span"> &
   VariantProps<typeof spanVariants> & {
     /**
      * Replaces the host element via base-ui `useRender`. The host stays a

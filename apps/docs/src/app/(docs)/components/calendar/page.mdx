@@ -1,13 +1,12 @@
 ---
 lede: >
-  A month grid for picking one date.
+  A month grid for picking one date, built from parts, with Temporal values.
 ---
 
 import { CalendarBasic } from "./demos/calendar-basic";
-import { CalendarControlled } from "./demos/calendar-controlled";
+import { CalendarMonths } from "./demos/calendar-months";
 import { CalendarBounds } from "./demos/calendar-bounds";
-import { CalendarError } from "./demos/calendar-error";
-import { CalendarRtl } from "./demos/calendar-rtl";
+import { CalendarControlled } from "./demos/calendar-controlled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -17,9 +16,13 @@ export const metadata = componentMetadata("calendar");
 
 <Prose>
 
-Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
+`Calendar` from `@elmeragroup/fuse/calendar` picks one date. Its values are `Temporal.PlainDate`s: a date prop takes a `PlainDate` object from any Temporal implementation, such as `Temporal.PlainDate.from("2026-10-14")`, and `onValueChange` hands back this runtime's `PlainDate`. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
-Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
+Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser, so engines without native Temporal get the polyfill.
+
+The types name the global `Temporal` from TypeScript's own lib, not from the polyfill: type-check with TypeScript 6.0 or later and a `lib` that includes `esnext` (or `esnext.temporal`). Below that, Fuse's declarations report "Cannot find namespace 'Temporal'", even for an app that renders no calendar, or, under `skipLibCheck`, the date props are typed `any`.
+
+Compose the parts: `Calendar.Header` holds `Calendar.DecrementMonth`, `Calendar.VisibleRangeHeading` and `Calendar.IncrementMonth`, and `Calendar.Months` renders a `Calendar.Month` for each visible month, with its `Calendar.MonthHeading` and `Calendar.DayGrid`. With no children, `Calendar.DayGridHeader` and `Calendar.DayGridBody` render the weekday row and the weeks; pass functions to `Calendar.DayGridBody`, `Calendar.DayGridRow` and `Calendar.DayGridHeaderRow` to render the rows and cells yourself.
 
 </Prose>
 
@@ -27,21 +30,57 @@ Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
   <CalendarBasic />
 </Demo>
 
-<Demo slug="calendar" id="controlled" title="Controlled" file="calendar-controlled.tsx">
-  <CalendarControlled />
+<Prose>
+
+## Several months
+
+`visibleMonths` shows that many months in a row that wraps on a narrow host. The host picks the count from the viewport, as below: two months where they fit and one on a phone. The server renders the count the host's server value gives. Arrow keys move focus from one month's grid into the next without paging. Past the visible months, and on the month buttons, the view pages by every visible month, or by one with `pageBehavior="single"`. Show each month's `Calendar.MonthHeading`, and keep the one `Calendar.VisibleRangeHeading`, which announces a page, visually hidden if you like.
+
+</Prose>
+
+<Demo slug="calendar" id="months" title="Several months" file="calendar-months.tsx">
+  <CalendarMonths />
 </Demo>
 
-<Demo slug="calendar" id="bounds" title="Bounds" file="calendar-bounds.tsx">
+<Prose>
+
+## Bounds and unavailable dates
+
+`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`; a bound with a time counts from its own wall-clock day. Days outside them are disabled and never take focus, the keyboard clamps to them, and the first and last days are named "First available date" and "Last available date". A month button whose page has no selectable day is disabled. `isDateUnavailable` refuses days the user may still focus and read, such as weekends here.
+
+</Prose>
+
+<Demo slug="calendar" id="bounds" title="Bounds and unavailable dates" file="calendar-bounds.tsx">
   <CalendarBounds />
 </Demo>
 
-<Demo slug="calendar" id="error" title="Error" file="calendar-error.tsx">
-  <CalendarError />
+<Prose>
+
+## Controlled value and canceling a change
+
+`value` and `onValueChange` let the parent own the date. `onValueChange` receives the details of the change: its `reason` (`"day-press"` or `"keyboard"`), the DOM `event`, the `trigger` element, `cancel()` and `getValidationError()`. Canceling keeps the value unchanged and focus on the day. `getValidationError()` returns `null` for a day the user may select, and otherwise `"rangeUnderflow"` or `"rangeOverflow"` for a day outside the bounds and `"unavailable"` for one `isDateUnavailable` refuses, the words of `ValidityState` that every Fuse date component uses. `onVisibleRangeChange` reports each page with the new first month and the reasons `"increment-press"`, `"decrement-press"` and `"keyboard"`; canceling it keeps the months shown and focus on its day.
+
+</Prose>
+
+<Demo slug="calendar" id="controlled" title="Controlled value" file="calendar-controlled.tsx">
+  <CalendarControlled />
 </Demo>
 
-<Demo slug="calendar" id="rtl" title="RTL" file="calendar-rtl.tsx">
-  <CalendarRtl />
-</Demo>
+<Prose>
+
+## Server rendering
+
+The parts are client components that a server component can render without a date value. A server render marks no today, so the server and the browser agree; today is marked from the first client effect and moves at midnight. A calendar with neither `value` nor `defaultValue` opens on today's month, which only that effect knows: the server and the hydrating render write each visible month's frame instead, the weekday row over six weeks of empty days, hidden from assistive technology, and the effect fills in today's months. Six weeks are the most a month spans, so the calendar never grows when today's months arrive: it keeps its height for a six-week month and shrinks by a row or two for a shorter one. The server and the hydrating render match, so it hydrates without a mismatch.
+
+## Accessibility
+
+- **Name the calendar.** The Root is a `group` named by `aria-label` or `aria-labelledby`, and each grid's name starts with it: "Delivery date, October 2026".
+- **Days read in full.** A day button is named "Wednesday, October 14, 2026", with "Today, " before today, " selected" after the selected day, and the bound suffixes, as React Aria names them. `aria-selected` sits on the gridcell.
+- **One tab stop.** Tab reaches the focused day once across every grid. Arrow keys step a day or a week in the writing direction, Home and End go to the month's first and last day, Page Up and Page Down a month, with Shift a year. Keys with Alt, Control or Meta stay the browser's, and a held Enter or Space selects once.
+- **One live region.** `Calendar.VisibleRangeHeading` announces a page, by a month button or a key, and stays quiet until the user first pages, so loading and hydration announce nothing, and while a day has focus.
+- **24px targets** at both densities: the days are 36px circles.
+
+</Prose>
 
 <ApiReference slug="calendar" />
 

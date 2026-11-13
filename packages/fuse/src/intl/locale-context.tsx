@@ -45,9 +45,6 @@ export function LocaleProvider({ locale, timeZone, children }: LocaleProviderPro
 
 /**
  * Read the active locale and time zone. Throws when the required `LocaleProvider` is missing.
- *
- * Not react-aria's `useLocale`, which is a different hook (it also returns `direction`) and is
- * confined to `src/react-aria/**`. A quarantine file needing both must alias one of them.
  */
 export function useLocale(): LocaleContextValue {
   const value = use(LocaleContext);

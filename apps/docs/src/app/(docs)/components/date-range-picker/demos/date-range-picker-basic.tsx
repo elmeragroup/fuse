@@ -1,18 +1,17 @@
 "use client";
 
-import { CalendarDate } from "@internationalized/date";
-
-import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
 
 export function DateRangePickerBasic() {
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <DateRangePicker
-        label="Delivery window"
-        description="The days we may deliver the order."
-        defaultValue={{ start: new CalendarDate(2026, 7, 14), end: new CalendarDate(2026, 7, 18) }}
-      />
-    </UiProviders>
+    <DateRangePickerField
+      className="max-w-md"
+      label="Stay"
+      description="Check-in and check-out."
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      }}
+    />
   );
 }

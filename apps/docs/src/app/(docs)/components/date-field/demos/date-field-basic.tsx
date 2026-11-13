@@ -1,18 +1,20 @@
 "use client";
 
-import { CalendarDate } from "@internationalized/date";
+import { useState } from "react";
 
-import { DateField } from "@elmeragroup/fuse/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
+import { DateField } from "@elmeragroup/fuse/date-field";
 
 export function DateFieldBasic() {
+  const [value, setValue] = useState<Temporal.PlainDate | null>(null);
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
+    <div className="max-w-xs flex w-full flex-col gap-2">
       <DateField
-        label="Invoice date"
-        description="The date printed on the invoice."
-        defaultValue={new CalendarDate(2026, 7, 14)}
+        label="Moving date"
+        description="The day the keys change hands."
+        value={value}
+        onChange={setValue}
       />
-    </UiProviders>
+      <output className="text-sm text-muted-foreground">Value: {value?.toString() ?? "none"}</output>
+    </div>
   );
 }

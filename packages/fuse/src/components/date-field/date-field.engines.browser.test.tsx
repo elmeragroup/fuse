@@ -1,8 +1,8 @@
 /**
  * Unit under test: the segments, literals, placeholders and segment names DateField writes in
  * each Fuse locale, which every engine must write alike. Oracle: React Aria's DateField in
- * Chromium for the same locales and options (two-digit days, months and hours, as the interim
- * DateField forces; its placeholders table; `Intl.DisplayNames` field names), written out by hand.
+ * Chromium for the same locales and options (two-digit days, months and hours, as DateField
+ * forces; its placeholders table; `Intl.DisplayNames` field names), written out by hand.
  * The time isolates U+2066/U+2069 are React Aria's.
  */
 import type { ReactElement } from "react";

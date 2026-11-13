@@ -4,7 +4,6 @@ import { dirname, join } from "node:path";
 import { CSS_ENTRY_NAMES, discoverEntries } from "./entries";
 import { checkPackedChartBundles, checkPackedGrowthRule } from "./package-check-chart";
 import {
-  checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
   checkPackedDirectives,
   checkPackedExports,
@@ -108,7 +107,6 @@ function runInProcessChecks(extracted: string): void {
   checkPackedPeers(extracted);
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);
-  checkPackedBareEntryRacDeclarations(extracted, discovered);
   checkPackedFlags(extracted, consumerRoot, exported[importSpecifier("flags")]);
   checkPackedTwemojiNotices(extracted);
   checkValidateThemeEnv(extracted);

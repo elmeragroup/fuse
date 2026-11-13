@@ -13,7 +13,7 @@ import {
 /**
  * DateInput's module-private recipe. No entry exports it.
  *
- * - `root` is the field box around the segments, the box the interim React Aria DateInput paints:
+ * - `root` is the field box around the segments, the box React Aria's DateInput paints:
  *   the shared field chrome, the field height of its `size`, the md control inset and the text-entry
  *   type, floored at 150px wide. Its segments are direct children marked `data-focus-ring-control`,
  *   so the box rings while one has keyboard focus. Base UI-style `data-invalid` and `data-disabled`

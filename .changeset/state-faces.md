@@ -24,7 +24,7 @@ Interactive controls now share one disabled and invalid look:
   An `aria-disabled` Tabs trigger now receives clicks; use its `disabled` prop, the supported
   way to disable a tab.
 - **Invalid.** Every invalid control paints an `--error` border and a 3px ring. `Toggle`
-  and `RadioIconButton` now show that ring, and so do the React Aria date fields. A radio
+  and `RadioIconButton` now show that ring, and so do the date fields. A radio
   or checkbox inside an invalid group shows the same ring.
 - **Groups.** A disabled `InputGroup` dims once. Its input is no longer dimmed again inside
   the dimmed group. `InputGroup` now paints its invalid ring only when its input or textarea
@@ -36,8 +36,8 @@ Interactive controls now share one disabled and invalid look:
   `aria-disabled="true"` dims once as a whole too. A disabled `NumberField` now dims once as
   a whole and shows the `not-allowed` cursor over its input and steppers. A stepper disabled
   at its bound no longer dims on its own; it keeps its muted fill and shows a muted caret.
-- **Other controls.** A disabled `Accordion.Trigger` and a disabled React Aria `Link` now
-  dim, show the `not-allowed` cursor, and no longer underline or fade on hover. An
+- **Other controls.** A disabled `Accordion.Trigger` now
+  dims, shows the `not-allowed` cursor, and no longer underlines or fades on hover. An
   `Accordion.Trigger`, `Select.Trigger`, `Input` or `Textarea` given `aria-disabled="true"`
   now dims and shows the `not-allowed` cursor as well. A disabled inline `TextField` no
   longer shows its border and fill when hovered.

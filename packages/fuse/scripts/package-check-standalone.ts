@@ -21,7 +21,6 @@ try {
         "react-dom",
         "tailwindcss",
         "tw-animate-css",
-        "tailwindcss-react-aria-components",
       ]);
       writeFileSync(
         join(scratch, "render.ts"),

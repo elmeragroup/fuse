@@ -215,9 +215,8 @@ export type DatePickerGroupProps = Omit<
 
 /**
  * The field box around the inputs and the trigger: a `group` named by the picker's label and
- * described by its description and error, written `data-slot="field-group"` as the interim
- * picker's box. Alt+ArrowDown in it opens the popup (`reason: "keyboard"`), before the segment
- * under focus sees the key.
+ * described by its description and error, written `data-slot="field-group"`. Alt+ArrowDown in it
+ * opens the popup (`reason: "keyboard"`), before the segment under focus sees the key.
  */
 export function DatePickerGroup({ className, render, ...props }: DatePickerGroupProps): ReactElement {
   const shell = usePickerShellContext("DatePicker.Group");
@@ -512,8 +511,7 @@ export type DatePickerPresetItemProps = Omit<
   disabled?: boolean;
   /**
    * Closes the popup on double-click (`reason: "preset-press"`), after the item's own
-   * `onDoubleClick`. A pointer shortcut: a click or Space selects without closing. The interim
-   * tier's `isCloseDialogOnDoubleClick`.
+   * `onDoubleClick`. A pointer shortcut: a click or Space selects without closing.
    */
   closeOnDoubleClick?: boolean;
   /** The visible name, which names the radio. */

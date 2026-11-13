@@ -105,17 +105,6 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  */
 export const PREVIEW_ENTRIES = ["chart"] as const;
 
-/** Appendix A — 7 quarantined react-aria interim entries. */
-export const RAC_ENTRIES = [
-  "calendar",
-  "date-field",
-  "date-picker",
-  "date-range-picker",
-  "focusable",
-  "range-calendar",
-  "ui-providers",
-] as const;
-
 /**
  * Opt-in entries a consumer imports bare for what they install, not for exports. Each source file
  * is the installer itself rather than a facade, exports no value, and stays out of the root
@@ -132,6 +121,9 @@ export const NON_COMPONENT_JS_ENTRIES = [
   "flags",
   ...INSTALLER_ENTRIES,
 ] as const;
+
+/** Every registered public JS entry, `.` for the root barrel. */
+const PUBLIC_JS_ENTRIES: readonly string[] = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
 
 /**
  * In-repo `package.json#exports` only. Neither packed nor in the root barrel.
@@ -160,9 +152,6 @@ export const runtimeDependencies = [
   "clsx",
   "tailwind-merge",
   "tailwind-variants",
-  "react-aria-components",
-  "react-aria",
-  "@internationalized/date",
   "@phosphor-icons/react",
   "@internationalized/string",
   "sugar-high",
@@ -179,7 +168,7 @@ export const runtimeDependencies = [
 
 /**
  * Bare component entries that import an optional peer, keyed to that peer. They stay out of the
- * root barrel, like icons and react-aria/*, so `import { Button } from "@elmeragroup/fuse"` never
+ * root barrel, like icons, so `import { Button } from "@elmeragroup/fuse"` never
  * resolves a package the consumer may not have installed.
  */
 export const OPTIONAL_PEER_ENTRIES = {
@@ -222,7 +211,8 @@ function isBareComponent(subpath: string): boolean {
 function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
   return deferred.includes(subpath);
 }
-const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
+
+const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme"]);
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -292,34 +282,18 @@ function resolveExistingSource(packageRoot: string, relativeWithoutExt: string):
   return undefined;
 }
 
-function canonicalJsAllowlist(): Set<string> {
-  const allow = new Set<string>(NON_COMPONENT_JS_ENTRIES);
-  for (const name of BARE_COMPONENT_ENTRIES) {
-    allow.add(name);
-  }
-  for (const name of RAC_ENTRIES) {
-    allow.add(`react-aria/${name}`);
-  }
-  return allow;
-}
-
-function collectUnexpectedJsFiles(
-  packageRoot: string,
-  relativeDir: string,
-  allow: Set<string>,
-  toSubpath: (baseName: string) => string,
-  skipDirectory: (name: string) => boolean
-): string[] {
+/** The JS files and directory indexes in `src` that no registered public entry claims. */
+function unexpectedJsEntryFiles(packageRoot: string): string[] {
+  const isEntry = (baseName: string) => PUBLIC_JS_ENTRIES.includes(baseName === "index" ? "." : baseName);
   const unexpected: string[] = [];
-  const dir = join(packageRoot, relativeDir);
+  const dir = join(packageRoot, "src");
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
     return unexpected;
   }
 
   for (const entry of readdirSync(dir)) {
-    const fullPath = join(dir, entry);
-    const stat = statSync(fullPath);
-    const relativePath = `${relativeDir}/${entry}`;
+    const stat = statSync(join(dir, entry));
+    const relativePath = `src/${entry}`;
     if (stat.isFile()) {
       if (!SOURCE_EXTENSIONS.some((extension) => entry.endsWith(extension))) {
         continue;
@@ -327,51 +301,20 @@ function collectUnexpectedJsFiles(
       if (isSkippedSourceFile(relativePath)) {
         continue;
       }
-      const baseName = entry.replace(/\.(tsx|ts|jsx|js)$/u, "");
-      if (!allow.has(toSubpath(baseName))) {
+      if (!isEntry(entry.replace(/\.(tsx|ts|jsx|js)$/u, ""))) {
         unexpected.push(toPosix(relativePath));
       }
       continue;
     }
-    if (!stat.isDirectory() || skipDirectory(entry)) {
+    if (!stat.isDirectory() || IMPLEMENTATION_DIRECTORIES.has(entry)) {
       continue;
     }
     const index = resolveExistingSource(packageRoot, relativePath);
-    if (index?.startsWith(`${relativeDir}/${entry}/`) && !allow.has(toSubpath(entry))) {
+    if (index?.startsWith(`${relativePath}/`) && !isEntry(entry)) {
       unexpected.push(index);
     }
   }
   return unexpected;
-}
-
-function unexpectedJsEntryFiles(packageRoot: string): string[] {
-  const allow = canonicalJsAllowlist();
-  return [
-    ...collectUnexpectedJsFiles(
-      packageRoot,
-      "src",
-      allow,
-      (baseName) => (baseName === "index" ? "." : baseName),
-      (name) => IMPLEMENTATION_DIRECTORIES.has(name)
-    ),
-    ...collectUnexpectedJsFiles(
-      packageRoot,
-      "src/react-aria",
-      allow,
-      (baseName) => `react-aria/${baseName}`,
-      () => false
-    ),
-  ];
-}
-
-function resolveJsSource(packageRoot: string, subpath: string): string | undefined {
-  if (subpath === ".") {
-    return resolveExistingSource(packageRoot, "src/index");
-  }
-  if (subpath.startsWith("react-aria/")) {
-    return resolveExistingSource(packageRoot, `src/${subpath}`);
-  }
-  return resolveExistingSource(packageRoot, `src/${subpath}`);
 }
 
 function iconRuntimeExports(): readonly string[] {
@@ -567,7 +510,7 @@ export function discoverJsEntriesFromAllowlist(
     if (isDeferredEntry(subpath, deferred)) {
       continue;
     }
-    const sourceFile = resolveJsSource(packageRoot, subpath);
+    const sourceFile = resolveExistingSource(packageRoot, subpath === "." ? "src/index" : `src/${subpath}`);
     if (sourceFile === undefined) {
       throw new Error(`Missing source entry for ${subpath}`);
     }
@@ -609,12 +552,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
     );
   }
 
-  const allow = [
-    ...NON_COMPONENT_JS_ENTRIES,
-    ...BARE_COMPONENT_ENTRIES,
-    ...RAC_ENTRIES.map((name) => `react-aria/${name}`),
-  ];
-  const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow);
+  const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, PUBLIC_JS_ENTRIES);
 
   const css = cssEntries(packageRoot);
   const assetPatterns = flagAssetPattern(packageRoot);

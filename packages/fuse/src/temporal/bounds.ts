@@ -1,7 +1,7 @@
 // Where a value falls against a minimum and maximum of any kind. A bound's kind is independent of
 // the value's: a ZonedDateTime field may take a ZonedDateTime minimum and a PlainDateTime maximum.
 // The comparison reproduces React Aria's `value.compare(bound)` from `@internationalized/date`, so
-// moving off the interim date tier keeps every validation result:
+// every validation result matches React Aria's:
 //
 // - A PlainDate value compares days with the bound's own date. A ZonedDateTime bound gives the
 //   date on its own wall clock, in its own zone.

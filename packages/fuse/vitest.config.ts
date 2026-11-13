@@ -81,7 +81,6 @@ function browserProject(
         "tailwind-variants",
         // The layer browser tests compile fuse.css in the page.
         "tailwindcss",
-        "tailwindcss-react-aria-components",
       ],
     },
     test: {

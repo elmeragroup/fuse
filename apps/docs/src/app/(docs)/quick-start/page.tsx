@@ -121,9 +121,10 @@ export default function QuickStartPage(): ReactElement {
         and not every engine Fuse supports ships it yet. Fuse never installs it for you: import{" "}
         <code>@elmeragroup/fuse/temporal-polyfill</code> once in each runtime that renders. In a Next.js App
         Router app that is the root layout for the server, and <code>instrumentation-client.ts</code> for the
-        browser, which runs before any of the app&apos;s client modules (see{" "}
-        <a href="/handbook/temporal-migration#install-temporal">Install Temporal</a>). The root{" "}
-        <code>@elmeragroup/fuse</code> entry never imports it.
+        browser, which runs before any of the app&apos;s client modules. A client module such as{" "}
+        <code>app/providers.tsx</code> is too late when another module that builds a Temporal value at its top
+        level evaluates first. Other hosts import it first in the module their bundler starts the client from.
+        The root <code>@elmeragroup/fuse</code> entry never imports it.
       </p>
       <pre>
         <code>{TEMPORAL_POLYFILL}</code>

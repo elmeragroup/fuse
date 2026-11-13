@@ -83,7 +83,7 @@ export const PART_DENSITY = {
   "button-group-text": "layout",
 
   // The day circles and the weekday labels keep one 36px size at both densities, above the 24px
-  // target floor; the card pads with the small surface tier, as the interim Calendar does.
+  // target floor; the card pads with the small surface tier.
   calendar: "surface",
   "calendar-header": "layout",
   "calendar-decrement-month": "control",
@@ -103,11 +103,11 @@ export const PART_DENSITY = {
   // RangeCalendar's Root, the same card as Calendar's; its parts are Calendar's.
   "range-calendar": "surface",
 
-  // The Temporal pickers. The Roots only stack their parts; the group is the `field-group` box
+  // The date pickers. The Roots only stack their parts; the group is the `field-group` box
   // (Field's row), the input row pads with the md control inset inside it, and the trigger is the
   // field's inner square. The popup drops Popover's padding, since the calendar and the preset pane
   // pad themselves; the preset pane pads with the small surface tier and each preset is a ghost sm
-  // button row, as the interim pickers' presets are. The range separator is a glyph.
+  // button row. The range separator is a glyph.
   "date-picker": "layout",
   "date-range-picker": "layout",
   "date-picker-input": "control",
@@ -116,6 +116,7 @@ export const PART_DENSITY = {
   "date-picker-trigger": "control",
   "date-picker-popup": "layout",
   "date-picker-presets": "surface",
+  "date-picker-preset-item": "row",
   "date-range-picker-separator": "fixed",
 
   // DateInput's segments are text runs inside the field box, whose `field-group` slot reads the
@@ -762,15 +763,8 @@ export const PART_DENSITY = {
   "toolbar-separator": "fixed",
 
   "tooltip-trigger": "control",
-  // A trigger rendered through `Focusable`, which gives inline text a tab stop, reads no control
-  // metric. A trigger styled as a control, such as a Button on an anchor, keeps `control`.
-  "tooltip-trigger[data-focusable-child]": "fixed",
   "tooltip-content": "surface",
 
-  "date-picker-preset-group": "surface",
-  "date-picker-preset-item": "row",
-  "date-range-picker-preset-group": "surface",
-  "date-range-picker-preset-item": "row",
   "data-table-filter-bar": "layout",
   "data-table-filter-bar-row": "surface",
   "data-table-filter-trigger": "control",

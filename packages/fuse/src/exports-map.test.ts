@@ -229,33 +229,14 @@ const EXPECTED_ENTRIES = {
   form: { inRootBarrel: true, runtimeExports: ["Form"] },
   "navigation-menu": { inRootBarrel: true, runtimeExports: ["NavigationMenu"] },
   link: { inRootBarrel: true, runtimeExports: ["Link", "linkVariants"] },
-  // The Temporal Calendar is a permanent component in the barrel; the interim React Aria one stays
-  // behind its own subpath below.
   calendar: { inRootBarrel: true, runtimeExports: ["Calendar"] },
   "range-calendar": { inRootBarrel: true, runtimeExports: ["RangeCalendar"] },
-  // DateInput's parts and the DateField composite share one entry, as the interim
-  // `react-aria/date-field` exports both names.
+  // DateInput's parts and the DateField composite share one entry.
   "date-field": { inRootBarrel: true, runtimeExports: ["DateField", "DateInput"] },
   // Each picker's parts and its labeled composite share one entry, as `date-field` does.
   "date-picker": { inRootBarrel: true, runtimeExports: ["DatePicker", "DatePickerField"] },
   "date-range-picker": { inRootBarrel: true, runtimeExports: ["DateRangePicker", "DateRangePickerField"] },
   "file-trigger": { inRootBarrel: true, runtimeExports: ["FileTrigger"] },
-  "react-aria/calendar": {
-    inRootBarrel: false,
-    runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],
-  },
-  "react-aria/date-field": { inRootBarrel: false, runtimeExports: ["DateField", "DateInput"] },
-  "react-aria/date-picker": {
-    inRootBarrel: false,
-    runtimeExports: ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"],
-  },
-  "react-aria/date-range-picker": {
-    inRootBarrel: false,
-    runtimeExports: ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"],
-  },
-  "react-aria/focusable": { inRootBarrel: false, runtimeExports: ["Focusable", "useFocusable"] },
-  "react-aria/range-calendar": { inRootBarrel: false, runtimeExports: ["RangeCalendar"] },
-  "react-aria/ui-providers": { inRootBarrel: false, runtimeExports: ["UiProviders"] },
 } satisfies Record<string, EntrySurface>;
 
 describe("exports map", () => {
@@ -438,7 +419,6 @@ describe("exports map", () => {
       "toggleGroupVariants",
       "toolbarVariants",
       "tooltipVariants",
-      "cellVariants",
       "cn",
       "commandContentShellClass",
       "commandListShellClass",

@@ -4,8 +4,7 @@
 
 Adds `DateField` and the `DateInput` parts from `@elmeragroup/fuse/date-field` and the root entry:
 a segmented input for a date, a date and time, or a date and time in a zone, whose values are
-Temporal values. It is the Temporal replacement for the interim
-`@elmeragroup/fuse/react-aria/date-field`, which stays unchanged.
+Temporal values.
 
 ```tsx
 import { DateField } from "@elmeragroup/fuse/date-field";
@@ -14,7 +13,7 @@ import { DateField } from "@elmeragroup/fuse/date-field";
 <DateField label="Outage starts" granularity="minute" hourCycle={24} timeZone="Europe/Oslo" />;
 ```
 
-- `DateField` keeps the interim prop names (`label`, `description`, `errorMessage`, `isInvalid`,
+- `DateField` takes React Aria's prop names (`label`, `description`, `errorMessage`, `isInvalid`,
   `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`,
   `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `size`,
   `shouldForceLeadingZeros`), and adds `timeZone`, the zone an empty field's `ZonedDateTime` takes.
@@ -45,7 +44,7 @@ import { DateField } from "@elmeragroup/fuse/date-field";
   `onValueChange`, `disabled`, `readOnly`, `required`, `invalid`, `render`). `onValueChange` passes
   details with a `reason` (`"input-change"`, `"input-clear"`, `"input-paste"`),
   `getValidationError()`, which names a failure in Calendar's words (`"rangeUnderflow"`,
-  `"rangeOverflow"`, `"unavailable"`), and `cancel()`. React Aria has no equivalent. Its children
+  `"rangeOverflow"`, `"unavailable"`), and `cancel()`. Its children
   receive each segment as `DateInputSegmentData`, a literal, the zone's name or a unit:
   `isEditable` narrows `type` to a unit, and `type` tells the other two apart.
 - Segments are spinbuttons named by their unit and the label ("month, Moving date"), textboxes on

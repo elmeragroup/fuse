@@ -26,19 +26,13 @@ function pascalCase(slug: string): string {
   return slug.split("-").map(capitalize).join("");
 }
 
-/** Slug parts spelled in a fixed casing, so `ui-providers` is the `UI Providers` page. */
-const FIXED_CASE_SLUG_PARTS = new Map<string, string>([["ui", "UI"]]);
-
 /**
  * The reader-facing name of a component. `alert-dialog` becomes `Alert Dialog`. The
  * SideNav label, the H1, the search hit, the `llms.txt` row, the `<title>` and the
  * markdown heading all read this one spelling.
  */
 function displayName(slug: string): string {
-  return slug
-    .split("-")
-    .map((part) => FIXED_CASE_SLUG_PARTS.get(part) ?? capitalize(part))
-    .join(" ");
+  return slug.split("-").map(capitalize).join(" ");
 }
 
 /** Every component page on the site, in route order. */
@@ -106,10 +100,8 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
     ["RadioGroup", "RadioGroupItem", "Radio", "RadioItem", "RadioItemGroup", "RadioIconButton"],
   ],
   ["date-field", ["DateField", "DateInput"]],
-  ["focusable", ["Focusable", "useFocusable"]],
-  ["calendar", ["Calendar", "CalendarHeader", "CalendarGridHeader"]],
-  ["date-picker", ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"]],
-  ["date-range-picker", ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"]],
+  ["date-picker", ["DatePicker", "DatePickerField"]],
+  ["date-range-picker", ["DateRangePicker", "DateRangePickerField"]],
   ["combobox", ["Combobox", "useComboboxAnchor"]],
   ["kbd", ["Kbd", "KbdGroup"]],
   ["skeleton", ["Skeleton", "SkeletonReveal"]],
@@ -118,11 +110,6 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
   ["sparkline", ["Sparkline", "SparklineHover"]],
-  ["temporal-calendar", ["Calendar"]],
-  ["temporal-range-calendar", ["RangeCalendar"]],
-  ["temporal-date-field", ["DateField", "DateInput"]],
-  ["temporal-date-picker", ["DatePicker", "DatePickerField"]],
-  ["temporal-range-picker", ["DateRangePicker", "DateRangePickerField"]],
 ]);
 
 /**
@@ -142,23 +129,6 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
   ["scatter-chart", { entry: "chart", source: "scatter-chart-root" }],
   ["live-line-chart", { entry: "chart", source: "live-line-chart-root" }],
   ["sparkline", { entry: "chart", source: "sparkline" }],
-]);
-
-/**
- * Pages whose slug is not their entry's, because another page already holds the entry's slug.
- * `calendar` and `range-calendar` are the interim React Aria calendars' pages until that tier is
- * removed, so the Temporal calendars of `@elmeragroup/fuse/calendar` and
- * `@elmeragroup/fuse/range-calendar` document themselves as `temporal-calendar` and
- * `temporal-range-calendar`. The entry's
- * own conventions still apply: `src/calendar.ts`, `components/calendar/calendar.tsx` and the
- * `Calendar` export.
- */
-const ENTRY_SLUG_OF_PAGE = new Map<string, string>([
-  ["temporal-calendar", "calendar"],
-  ["temporal-range-calendar", "range-calendar"],
-  ["temporal-date-field", "date-field"],
-  ["temporal-date-picker", "date-picker"],
-  ["temporal-range-picker", "date-range-picker"],
 ]);
 
 /**
@@ -200,17 +170,13 @@ function resolveExtraApi(pageSlug: string, slug: string): ApiEntryPaths {
 /** Where a slug's inputs and its co-located generated artifacts live. */
 export function resolveComponentPaths(slug: string): ComponentPaths {
   const routeDir = path.join(componentRoutesDir, slug);
-  const racFacade = path.join(fuseSrc, "react-aria", `${slug}.ts`);
-  const isRac = existsSync(racFacade);
   const shared = SHARED_ENTRY_PAGES.get(slug);
-  const entrySlug = shared?.entry ?? ENTRY_SLUG_OF_PAGE.get(slug) ?? slug;
-  const componentDir = isRac
-    ? path.join(fuseSrc, "react-aria", slug)
-    : path.join(fuseSrc, "components", entrySlug);
-  const entryFile = isRac ? racFacade : path.join(fuseSrc, `${entrySlug}.ts`);
+  const entrySlug = shared?.entry ?? slug;
+  const componentDir = path.join(fuseSrc, "components", entrySlug);
+  const entryFile = path.join(fuseSrc, `${entrySlug}.ts`);
   const own: ApiEntryPaths = {
     slug,
-    entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${entrySlug}`,
+    entry: `@elmeragroup/fuse/${entrySlug}`,
     entryFile,
     apiEntryFile: shared?.entry === "chart" ? CHART_API_FACADE : entryFile,
     exportNames: apiExportNamesFor(slug),

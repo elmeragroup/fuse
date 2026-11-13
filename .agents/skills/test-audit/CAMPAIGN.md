@@ -1,8 +1,8 @@
 # Test-pruning campaign
 
 A campaign prunes one subsystem's whole test suite in one PR. A subsystem is a
-component family with its docs demos (`components/sidebar`), the `react-aria/`
-quarantine, the `theme/` runtime, or a workspace such as
+component family with its docs demos (`components/sidebar`), the `theme/`
+runtime, or a workspace such as
 `packages/fuse-figma`. [SKILL.md](SKILL.md) owns the value bar and its terms.
 [AUDIT.md](AUDIT.md) owns candidate evidence (§2), validation (§4) and handoff
 (§6) for every lane. The steps below replace AUDIT.md's discovery (§1), edit

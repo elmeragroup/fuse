@@ -155,18 +155,15 @@ export function forcedPseudoClasses(cell: Cell, highlight?: Highlight): readonly
 }
 
 /**
- * The attribute the page writes for a highlighted row whose set marks it, as Base UI marks the
+ * Whether the page marks a cell's row highlighted with `data-highlighted`, as Base UI marks the
  * highlighted Combobox or Command item.
  *
  * @param cell - A parsed cell.
  * @param highlight - How the cell's set shows a highlighted row, undefined for a set with none.
- * @returns `data-highlighted` for a highlighted cell of a set that marks it, and nothing otherwise.
+ * @returns Whether the cell is a highlighted row of a set that marks it by that attribute.
  */
-export function highlightAttributes(
-  cell: Cell,
-  highlight: Highlight | undefined
-): Readonly<Record<string, string>> {
-  return cell.state === "highlighted" && highlight === "data-highlighted" ? { "data-highlighted": "" } : {};
+export function writesHighlightAttribute(cell: Cell, highlight: Highlight | undefined): boolean {
+  return cell.state === "highlighted" && highlight === "data-highlighted";
 }
 
 /** The real interaction the page tries for a cell whose forced state changed nothing. */

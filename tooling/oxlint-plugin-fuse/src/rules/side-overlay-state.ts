@@ -24,7 +24,7 @@ type OverlayPart = StateAttribute | "internal";
 /**
  * Every Fuse part that renders a popup, by the path it is exported under (`Sheet.Root`,
  * `SelectField`), and how it is controlled. A modal popup (Dialog, AlertDialog, Sheet, Menu,
- * Select, a React Aria picker's popover, a ListDetail below its breakpoint) keeps the page's scroll
+ * Select, a ListDetail below its breakpoint) keeps the page's scroll
  * locked and the shown side hidden from assistive technology; a non-modal one (Popover, Combobox,
  * Autocomplete, a date picker's popup, a nav panel) stays on screen over the side that replaced it.
  * A ListDetail shows its detail as a Sheet over the list below its breakpoint and as a pane beside
@@ -78,14 +78,6 @@ const FUSE_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
     SelectField: "internal",
     "Sheet.Root": "open",
     "Sidebar.Provider": "openMobile",
-  })
-);
-
-/** The React Aria entries' overlay parts, which take React Aria's `isOpen`. */
-const REACT_ARIA_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
-  Object.entries<OverlayPart>({
-    DatePicker: "isOpen",
-    DateRangePicker: "isOpen",
   })
 );
 
@@ -154,26 +146,22 @@ function importOf(variable: Variable | undefined): ImportOf | undefined {
   return { source, imported: specifier.imported };
 }
 
-/** A Fuse import a name resolves to: the export path it names, and its entry family. */
-type FuseImport = { readonly path: readonly string[]; readonly reactAria: boolean };
-
 /**
- * The Fuse import a variable is bound by: `["Sheet"]` for `import { Sheet as S }`, `[]` for a
- * namespace import, or `undefined` for any other binding, a shadowing local included.
+ * The Fuse export path a variable's import names: `["Sheet"]` for `import { Sheet as S }`, `[]`
+ * for a namespace import, or `undefined` for any other binding, a shadowing local included.
  */
-function fuseImport(variable: Variable | undefined): FuseImport | undefined {
+function fuseImport(variable: Variable | undefined): readonly string[] | undefined {
   const binding = importOf(variable);
   if (binding === undefined || !isFuseSource(binding.source)) return undefined;
-  const reactAria = binding.source.startsWith("@elmeragroup/fuse/react-aria/");
   const imported = binding.imported;
-  if (imported === "namespace") return { path: [], reactAria };
-  return { path: [moduleExportName(imported)], reactAria };
+  if (imported === "namespace") return [];
+  return [moduleExportName(imported)];
 }
 
 /** Whether an export path names an overlay part or a namespace holding one. */
-function reachesOverlay(path: readonly string[], reactAria: boolean): boolean {
+function reachesOverlay(path: readonly string[]): boolean {
   const prefix = path.join(".");
-  return [...(reactAria ? REACT_ARIA_OVERLAYS : FUSE_OVERLAYS).keys()].some(
+  return [...FUSE_OVERLAYS.keys()].some(
     (key) => prefix === "" || key === prefix || key.startsWith(`${prefix}.`)
   );
 }
@@ -188,8 +176,7 @@ function rendered(segments: readonly string[], scope: Scope): OverlayPart | "loc
   if (head === undefined || (members.length === 0 && /^[a-z]/u.test(head))) return undefined;
   const imported = fuseImport(resolve(scope, head));
   if (imported !== undefined) {
-    const table = imported.reactAria ? REACT_ARIA_OVERLAYS : FUSE_OVERLAYS;
-    return table.get([...imported.path, ...members].join("."));
+    return FUSE_OVERLAYS.get([...imported, ...members].join("."));
   }
   const registered = REGISTERED.get(members.at(-1) ?? "");
   return registered === undefined ? "local" : FUSE_OVERLAYS.get(registered);
@@ -443,7 +430,7 @@ function forwardsState(variable: Variable | undefined): boolean {
  * `oxlint-disable` with its reason.
  *
  * - An overlay part is controlled through its state attribute (`open`, NavigationMenu's `value`,
- *   React Aria's `isOpen`, `DataTable.Pagination`'s `pageSizeOpen`, `Sidebar.Provider`'s
+ *   a labeled composite's `isOpen`, `DataTable.Pagination`'s `pageSizeOpen`, `Sidebar.Provider`'s
  *   `openMobile`), with no spread after it.
  * - That attribute reads, by name, state never reassigned: the first binding of
  *   `useSideOverlay(false)` (`null` for a nav value), or, for a boolean attribute, a prop named
@@ -553,10 +540,10 @@ export const sideOverlayState: Rule = {
           parent.type === "MemberExpression" && !parent.computed && parent.property.type === "Identifier"
             ? [parent.property.name]
             : [];
-        const path = [...imported.path, ...member];
+        const path = [...imported, ...member];
         if (path.join(".") === ROW_ACTIONS_FACTORY) {
           report(identifier, "factory", { name: identifier.name });
-        } else if (reachesOverlay(path, imported.reactAria)) {
+        } else if (reachesOverlay(path)) {
           report(identifier, "alias", { name: identifier.name });
         }
       },

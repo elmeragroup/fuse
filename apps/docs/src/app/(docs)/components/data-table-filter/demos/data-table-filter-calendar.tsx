@@ -1,6 +1,5 @@
 "use client";
 
-import { parseDate } from "@internationalized/date";
 import {
   columnFacetingFeature,
   columnFilteringFeature,
@@ -10,6 +9,7 @@ import {
   tableFeatures,
 } from "@tanstack/react-table";
 
+import { Calendar } from "@elmeragroup/fuse/calendar";
 import { createFuseTableHook } from "@elmeragroup/fuse/data-table";
 import {
   createDataTableFilterFn,
@@ -18,10 +18,7 @@ import {
 } from "@elmeragroup/fuse/data-table-filter";
 import type { DateEditorState } from "@elmeragroup/fuse/data-table-filter";
 import { CalendarBlank, Circle } from "@elmeragroup/fuse/icons";
-import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
-import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-import { useLocale } from "@elmeragroup/fuse/theme";
+import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 
 type Status = "pending" | "paid" | "overdue";
 
@@ -84,35 +81,46 @@ const ORDERS: Order[] = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 /**
- * App code: a calendar in the date editor's slot. The React Aria calendars stay in the app's
- * import graph. UiProviders hands them Fuse's locale. An app that already renders UiProviders
- * at its root needs no wrapper here.
+ * App code: a calendar in the date editor's slot. The editor's values are ISO dates, so the
+ * calendars read them as `Temporal.PlainDate`s and hand back their ISO text.
  */
 function OrderDateCalendar({ field, target, values, onValueChange }: DateEditorState) {
-  const { locale } = useLocale();
   const [start, end] = values;
+  if (target === "range") {
+    return (
+      <RangeCalendar.Root
+        aria-label={field.label}
+        value={
+          start !== undefined && end !== undefined
+            ? { start: Temporal.PlainDate.from(start), end: Temporal.PlainDate.from(end) }
+            : null
+        }
+        onValueChange={(range) => {
+          onValueChange([range.start.toString(), range.end.toString()]);
+        }}>
+        <RangeCalendar.Header>
+          <RangeCalendar.DecrementMonth />
+          <RangeCalendar.VisibleRangeHeading />
+          <RangeCalendar.IncrementMonth />
+        </RangeCalendar.Header>
+        <RangeCalendar.Months />
+      </RangeCalendar.Root>
+    );
+  }
   return (
-    <UiProviders locale={locale} navigate={() => undefined}>
-      {target === "range" ? (
-        <RangeCalendar
-          aria-label={field.label}
-          value={
-            start !== undefined && end !== undefined ? { start: parseDate(start), end: parseDate(end) } : null
-          }
-          onChange={(range) => {
-            onValueChange([range.start.toString(), range.end.toString()]);
-          }}
-        />
-      ) : (
-        <Calendar
-          aria-label={field.label}
-          value={start === undefined ? null : parseDate(start)}
-          onChange={(day) => {
-            onValueChange([day.toString()]);
-          }}
-        />
-      )}
-    </UiProviders>
+    <Calendar.Root
+      aria-label={field.label}
+      value={start === undefined ? null : Temporal.PlainDate.from(start)}
+      onValueChange={(day) => {
+        onValueChange([day.toString()]);
+      }}>
+      <Calendar.Header>
+        <Calendar.DecrementMonth />
+        <Calendar.VisibleRangeHeading />
+        <Calendar.IncrementMonth />
+      </Calendar.Header>
+      <Calendar.Months />
+    </Calendar.Root>
   );
 }
 
