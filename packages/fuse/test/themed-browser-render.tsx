@@ -175,6 +175,15 @@ export function px(value: string): number {
   return parsed;
 }
 
+/**
+ * A computed pixel length snapped to Chromium's layout unit of 1/64px, the precision the page
+ * lays out at. The standalone sheet's Lightning CSS pass prints lengths to six significant digits,
+ * so `1.828125rem` computes to 29.2501px yet lays out at 29.25px.
+ */
+export function layoutPx(value: string): number {
+  return Math.round(px(value) * 64) / 64;
+}
+
 /** The lightness, chroma and hue of an opaque OKLCH color, as Chromium computes it. */
 type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
 

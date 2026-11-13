@@ -59,6 +59,9 @@ catalog:
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
+  # The standalone stylesheet's nesting check parses dist/styles.css with the Lightning CSS that
+  # @tailwindcss/node 4.3.3 runs its --optimize pass through.
+  lightningcss: 1.32.0
   # The release announcement's Markdown reader, at the versions the docs app's remark already
   # resolves, all past the minimum release age. Of GitHub's extensions it takes strikethrough
   # alone: the full set's autolink-literal extension is quadratic on a long paragraph with an

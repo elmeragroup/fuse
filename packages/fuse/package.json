@@ -505,6 +505,7 @@
     "@vitest/browser-playwright": "catalog:",
     "axe-core": "catalog:",
     "fast-check": "catalog:",
+    "lightningcss": "catalog:",
     "oxc-parser": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
