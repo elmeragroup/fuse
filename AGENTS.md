@@ -26,6 +26,8 @@ Use Field for label/error wiring and the shared focus, overlay and locale owners
 Parse, convert, mix and measure colors through `@elmeragroup/color`, never ad hoc.
 Keep explicit string overrides ahead of dictionary defaults.
 Preserve the 24px target-size floor at both densities and central reduced motion.
+Hold built CSS to the browser floor: approve each use above it, with its fallback, in
+`packages/fuse/test/browser-floor-approvals.ts`.
 
 ## Consumer compatibility
 
