@@ -81,8 +81,8 @@ export type FieldFrameProps = {
   errorMessage?: ReactNode;
   /**
    * Whether `errorMessage` shows whenever it is given (the default), or only while the field fails
-   * its own validation or holds a `Form` error, as React Aria's `errorMessage` does without
-   * `isInvalid`. Forwarded to `Field.Error`'s `match` when `errorMessage` is given.
+   * its own validation or holds a `Form` error, so a composite that is not forced invalid keeps its
+   * message for a failed check. Forwarded to `Field.Error`'s `match` when `errorMessage` is given.
    * @default true
    */
   isErrorMessageAlwaysShown?: boolean;

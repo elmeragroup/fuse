@@ -162,7 +162,7 @@ export function forcedPseudoClasses(cell: Cell, highlight?: Highlight): readonly
  * @param highlight - How the cell's set shows a highlighted row, undefined for a set with none.
  * @returns Whether the cell is a highlighted row of a set that marks it by that attribute.
  */
-export function marksHighlight(cell: Cell, highlight: Highlight | undefined): boolean {
+export function writesHighlightAttribute(cell: Cell, highlight: Highlight | undefined): boolean {
   return cell.state === "highlighted" && highlight === "data-highlighted";
 }
 

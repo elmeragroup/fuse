@@ -79,10 +79,11 @@ export type CellRequest = {
   readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
   /**
-   * Whether the page writes `data-highlighted` on the forced element, as on a highlighted Combobox
-   * row.
+   * Whether the page writes `data-highlighted` on the forced element: true only for a highlighted
+   * row of a set that marks it by that attribute, as a Combobox does. A highlighted row of a set
+   * that highlights by focus takes `:focus` in `forced` instead, and this stays false.
    */
-  readonly highlighted: boolean;
+  readonly writesHighlightAttribute: boolean;
   /** The same cell at rest, rendered off to the side to check the forced state. */
   readonly resting: CellContent | undefined;
   /** The real hover or focus the page tries when forcing changed nothing, or none. */
@@ -160,9 +161,14 @@ const SIGNATURE_PROPERTIES: readonly string[] = [
   "opacity",
 ];
 
-/** Whether the page forces anything on a cell: pseudo classes, the highlight, or both. */
-function forcesState(request: CellRequest): boolean {
-  return request.forced.length > 0 || request.highlighted;
+/**
+ * Whether the page forces anything on a cell: pseudo classes, the highlight attribute, or both.
+ *
+ * @param request - The cell's forced pseudo classes and whether the page writes its highlight attribute.
+ * @returns Whether the page forces a state on the cell.
+ */
+export function forcesState(request: Pick<CellRequest, "forced" | "writesHighlightAttribute">): boolean {
+  return request.forced.length > 0 || request.writesHighlightAttribute;
 }
 
 const REFERENCE_PREFIX = "rest-";
@@ -419,7 +425,7 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
       selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
-    if (request.highlighted) {
+    if (request.writesHighlightAttribute) {
       await cdp.send("DOM.setAttributeValue", { nodeId, name: "data-highlighted", value: "" });
     }
   }

@@ -9,34 +9,6 @@ import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../sty
 import { buttonVariants } from "../button/button-variants";
 
 /**
- * The range picker's root: a size container its two rows lay out by.
- */
-const pickerRangeRootClass = cn("@container/picker w-full");
-
-/**
- * A calendar inside the picker's popover, which is already the card: it drops its own border,
- * shadow and fill, and keeps the popover's `--surface`.
- */
-const pickerPopupCalendarClass = cn(
-  "border-none bg-transparent shadow-none [--surface-muted-foreground:inherit] [--surface:inherit]"
-);
-
-/**
- * RangeCalendar's root is bare and the popup pads nothing, so the grid would otherwise sit flush
- * against the popover border. It pads with the small surface tier, as Calendar's own shell does in
- * the single picker.
- */
-const pickerRangeCalendarClass = cn("p-(--surface-pad-sm)");
-
-/**
- * The pane holding presets beside the calendar: stacked on a phone, side by side from `sm`. The
- * divider names the border role, the colour fuse.css's base-layer default gives every border, so the
- * role stays beside the divider. The pane takes no padding or gap, so the divider runs edge to edge
- * across the popover; the preset group and the calendar each carry their own inset.
- */
-const pickerPaneClass = cn("sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border");
-
-/**
  * The date pickers' module-private recipe, shared by DatePicker and DateRangePicker. No entry
  * exports it.
  *
@@ -54,9 +26,14 @@ const pickerPaneClass = cn("sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col 
  *   Field composite of a picker with a time stacks the calendar over its time inputs in
  *   `timeColumn`, and a range's two time inputs side by side in `timeInputs`; a date-only one's
  *   popup holds the calendar alone.
- * - `calendar` is the calendar inside the popup, which is already the card; a range calendar pads
- *   itself with the small surface tier.
- * - `pane` holds the presets beside the calendar: stacked on a phone, side by side from `sm`.
+ * - `calendar` is the calendar inside the popup, which is already the card, so it drops its own
+ *   border, shadow and fill and keeps the popover's `--surface`. RangeCalendar's root is bare and
+ *   the popup pads nothing, so a range calendar pads itself with the small surface tier, as
+ *   Calendar's own shell does in the single picker.
+ * - `pane` holds the presets beside the calendar: stacked on a phone, side by side from `sm`. The
+ *   divider names the border role, the colour fuse.css's base-layer default gives every border, so
+ *   the role stays beside the divider. The pane takes no padding or gap, so the divider runs edge to
+ *   edge across the popover; the preset group and the calendar each carry their own inset.
  * - `presets` / `preset` are the radio group and each preset, a ghost `sm` button around a native
  *   radio, filled while checked and dimmed by the data-target state face while disabled.
  */
@@ -81,12 +58,13 @@ export const datePickerVariants = tv({
     trigger: cn("shrink-0 rounded-inner", fieldReads.inner()),
     icon: "size-4",
     popup: "w-auto gap-0 p-0",
-    calendar: pickerPopupCalendarClass,
+    calendar:
+      "border-none bg-transparent shadow-none [--surface-muted-foreground:inherit] [--surface:inherit]",
     timeField: "contents",
     timeInput: "mx-(--surface-pad-sm) mb-(--surface-pad-sm) w-auto",
     timeColumn: "flex flex-col",
     timeInputs: "flex flex-wrap",
-    pane: pickerPaneClass,
+    pane: "sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border",
     presets: cn(pickerPresetsShellClass, "flex flex-col gap-2"),
     preset: cn(
       buttonVariants({ size: "sm", variant: "ghost" }),
@@ -104,15 +82,15 @@ export const datePickerVariants = tv({
     },
     /**
      * Two segment rows and a separator: one row from 24rem, stacked beside the trigger below it.
-     * The range Root holds its label, error and description itself, so it takes a field root's
-     * gap and error-coloured label.
+     * The range Root is the size container those rows lay out by. It holds its label, error and
+     * description itself, so it takes a field root's gap and error-coloured label.
      */
     range: {
       true: {
-        root: cn(pickerRangeRootClass, "group/field gap-1 data-invalid:text-error"),
+        root: "group/field @container/picker w-full gap-1 data-invalid:text-error",
         group: "min-w-[208px] flex-wrap @max-[24rem]/picker:h-auto",
         input: "flex-none",
-        calendar: pickerRangeCalendarClass,
+        calendar: "p-(--surface-pad-sm)",
       },
     },
   },

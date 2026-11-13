@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 
-import { TemporalPolyfill } from "../../../../components/temporal-polyfill";
 import { AdminTableScreen } from "../../../../studio/components/screens/admin-table-screen";
 import { CheckoutScreen } from "../../../../studio/components/screens/checkout-screen";
 import { SelfServiceScreen } from "../../../../studio/components/screens/self-service-screen";
@@ -17,8 +16,6 @@ export const metadata = studioPageMetadata("/studio/screens");
 export default function StudioScreensPage(): ReactElement {
   return (
     <>
-      {/* The checkout screen's start date is a Temporal date. */}
-      <TemporalPolyfill />
       <StudioArtboard id="screen-self-service">
         <SelfServiceScreen />
       </StudioArtboard>

@@ -122,6 +122,9 @@ export const NON_COMPONENT_JS_ENTRIES = [
   ...INSTALLER_ENTRIES,
 ] as const;
 
+/** Every registered public JS entry, `.` for the root barrel. */
+const PUBLIC_JS_ENTRIES: readonly string[] = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
+
 /**
  * In-repo `package.json#exports` only. Neither packed nor in the root barrel.
  */
@@ -208,8 +211,6 @@ function isBareComponent(subpath: string): boolean {
 function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
   return deferred.includes(subpath);
 }
-/** Every registered public JS entry, `.` for the root barrel. */
-const PUBLIC_JS_ENTRIES: readonly string[] = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
 
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme"]);
 

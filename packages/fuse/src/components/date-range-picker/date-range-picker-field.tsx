@@ -177,8 +177,8 @@ export function DateRangePickerField<P = object, T extends DateInputValue = Prop
         <DateRangePickerEndInput shouldForceLeadingZeros={shouldForceLeadingZeros} />
         <DatePickerTrigger className="ms-auto" />
       </DatePickerGroup>
-      {/* Without `isInvalid`, `errorMessage` shows only once the range's validation fails, as in React Aria;
-          an `errorMessage` that renders nothing keeps the range's own messages. */}
+      {/* Without `isInvalid`, `errorMessage` shows only once the range's validation fails; an
+          `errorMessage` that renders nothing keeps the range's own messages. */}
       <DateRangePickerError>{errorMessage}</DateRangePickerError>
       {description ? <DateRangePickerDescription>{description}</DateRangePickerDescription> : null}
       <DatePickerPopup {...definedProps({ container })}>

@@ -17,11 +17,17 @@ import type { Cell, ComponentDefinition } from "../components/component-spec.ts"
 import { KIT } from "../components/kit-registry.ts";
 import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
-import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
+import { CompareBrowser, DEVICE_SCALE, forcesState } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, RenderedCell } from "./browser-render.ts";
 import { isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
-import { fallbackInteraction, forcedPseudoClasses, marksHighlight, parseCell, restingTwin } from "./cells.ts";
+import {
+  fallbackInteraction,
+  forcedPseudoClasses,
+  parseCell,
+  restingTwin,
+  writesHighlightAttribute,
+} from "./cells.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
@@ -218,8 +224,7 @@ export function planCells(
         ? { _tag: "Client", set: definition.key, cell: shown }
         : { _tag: "Static", html: renderCellHtml(renderer, shown) };
     const forced = forcedPseudoClasses(cell, renderer.highlight);
-    const highlighted = marksHighlight(cell, renderer.highlight);
-    const forces = forced.length > 0 || highlighted;
+    const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);
     planned.push({
       instance,
       definition,
@@ -234,8 +239,10 @@ export function planCells(
         height: definition.viewport?.height,
         forcedOn: forcedSelector(definition, cell),
         forced,
-        highlighted,
-        resting: forces ? content(restingTwin(cell)) : undefined,
+        writesHighlightAttribute: writesHighlight,
+        resting: forcesState({ forced, writesHighlightAttribute: writesHighlight })
+          ? content(restingTwin(cell))
+          : undefined,
         fallback: fallbackInteraction(cell),
         restsByDesign: unchanged.has(instance.variant),
       },

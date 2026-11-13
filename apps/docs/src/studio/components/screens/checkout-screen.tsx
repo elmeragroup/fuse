@@ -17,6 +17,8 @@ import { Heading } from "@elmeragroup/fuse/heading";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 import { Separator } from "@elmeragroup/fuse/separator";
+// The screens' only Temporal user installs the polyfill where the engine lacks Temporal.
+import "@elmeragroup/fuse/temporal-polyfill";
 import { Text } from "@elmeragroup/fuse/text";
 import { TextField } from "@elmeragroup/fuse/text-field";
 
@@ -61,8 +63,7 @@ function kroner(amount: number): string {
 /**
  * A sign-up checkout in the branded look: contact fields with a live email error, the phone and
  * start date, optional extras, and an order summary that follows the picks. "Confirm order"
- * submits the Form, which checks every field first; a valid order is
- * confirmed in place.
+ * submits the Form, which checks every field first; a valid order is confirmed in place.
  */
 export function CheckoutScreen(): ReactElement {
   const [email, setEmail] = useState("nora.haugen@example");
@@ -112,7 +113,14 @@ export function CheckoutScreen(): ReactElement {
         </Alert.Root>
       )}
       <div className={styles.layout()}>
-        <Form id={FORM_ID} className={styles.form()} onSubmit={submit}>
+        <Form
+          id={FORM_ID}
+          className={styles.form()}
+          // A refused submit never reaches `onSubmit`, so every attempt drops the last confirmation first.
+          onSubmitCapture={() => {
+            setOrder(undefined);
+          }}
+          onSubmit={submit}>
           <div className={styles.pair()}>
             <TextField
               label="First name"
@@ -137,7 +145,7 @@ export function CheckoutScreen(): ReactElement {
             value={email}
             onChange={setEmail}
             isInvalid={emailInvalid}
-            errorMessage="Enter an email address like name@example.com."
+            errorMessage={emailInvalid ? "Enter an email address like name@example.com." : undefined}
             autoComplete="email"
           />
           <PhoneNumberField label="Mobile" name="mobile" defaultValue="+4741234567" />
@@ -148,11 +156,7 @@ export function CheckoutScreen(): ReactElement {
             isRequired
             value={start}
             minValue={earliestStart}
-            onChange={(next) => {
-              setStart(next);
-              // A refused submit never reaches `submit`, so an earlier confirmation would go stale.
-              setOrder(undefined);
-            }}
+            onChange={setStart}
           />
           <Field.Root>
             <Field.Label>Extras</Field.Label>
