@@ -178,16 +178,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Footer content, wrapped in the inner `item-footer-content` element. `mode=\"hidden\"` collapses its grid row to zero, clips it and makes it inert. Switching between `hidden` and `visible` animates the row's height with a fade and a short slide, so content below the footer moves smoothly instead of jumping. Both modes clip content that reaches more than 0.25rem (4px at the default 16px root) past the footer's content box, including absolutely positioned content with no positioned ancestor inside the footer: the content element is its containing block, so it positions against that element. That ring room is part of the content element's box, so a zero-inset item flush against a scroll container's edge should keep 0.25rem of inset there or the room scrolls. A `default` footer never clips, and switching to it snaps.",
+          "description": "The footer's content, wrapped in an inner `item-footer-content` element. A `hidden` or `visible` footer clips content that reaches more than 0.25rem past that element's box. That includes absolutely positioned content with no positioned ancestor inside the footer, which positions against the inner element. Keep 0.25rem of inset on a zero-inset item flush against a scroll container's edge, or that room scrolls. A `default` footer never clips.",
           "required": false
         },
         {
           "name": "mode",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "Whether the footer shows. `hidden` collapses its row to zero height, clips it and makes it inert. Switching between `hidden` and `visible` animates the height with a fade and a short slide, so content below moves instead of jumping. Switching to `default` snaps.",
           "required": false,
           "values": [
             "default",

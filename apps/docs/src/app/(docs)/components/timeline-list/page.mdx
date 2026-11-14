@@ -3,8 +3,9 @@ lede: >
   A dated list of events.
 ---
 
-import { TimelineListBasic } from "./demos/timeline-list-basic";
-import { TimelineListRich } from "./demos/timeline-list-rich";
+import { TimelineListDemo } from "./demos/timeline-list-demo";
+import { TimelineListDateTime } from "./demos/timeline-list-date-time";
+import { TimelineListLinks } from "./demos/timeline-list-links";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,12 +13,33 @@ export const metadata = componentMetadata("timeline-list");
 
 <ComponentIntro slug="timeline-list" />
 
-<Demo slug="timeline-list" id="basic" title="Basic" file="timeline-list-basic.tsx">
-  <TimelineListBasic />
+<DefaultDemo slug="timeline-list" file="timeline-list-demo.tsx">
+  <TimelineListDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { TimelineList } from "@elmeragroup/fuse/timeline-list";
+
+<TimelineList.Root>
+  <TimelineList.Item>
+    <TimelineList.Title>Order placed</TimelineList.Title>
+    <TimelineList.Time date="2026-03-03">3 March 2026</TimelineList.Time>
+    <TimelineList.Description>Confirmed at checkout.</TimelineList.Description>
+  </TimelineList.Item>
+</TimelineList.Root>
+```
+
+## Examples
+
+<Demo slug="timeline-list" id="date-time" title="Date and time" level={3} file="timeline-list-date-time.tsx">
+  <TimelineListDateTime />
 </Demo>
 
-<Demo slug="timeline-list" id="rich" title="Rich descriptions" file="timeline-list-rich.tsx">
-  <TimelineListRich />
+<Demo slug="timeline-list" id="links" title="Links in descriptions" level={3} file="timeline-list-links.tsx">
+  <TimelineListLinks />
 </Demo>
 
 <ApiReference slug="timeline-list" />

@@ -5,18 +5,12 @@ import { useState } from "react";
 import { Card } from "@elmeragroup/fuse/card";
 import { CaretRight } from "@elmeragroup/fuse/icons";
 
-/**
- * A whole section as a `Card.SectionButton`, with a trailing caret. It takes a hover fill and a
- * focus ring.
- */
 export function CardSectionButton() {
   const [declined, setDeclined] = useState(false);
   return (
     <Card.Root className="max-w-md w-full">
       <Card.Section>
-        <Card.Title size="default" level={2}>
-          Home insurance
-        </Card.Title>
+        <Card.Title size="default">Home insurance</Card.Title>
         <Card.Description>Covers the contents of your home from NOK 99 a month.</Card.Description>
       </Card.Section>
       <Card.SectionButton onClick={() => setDeclined(true)}>

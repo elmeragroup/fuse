@@ -7,20 +7,26 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/item/item.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
+          "name": "aria-disabled",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Marks an unavailable row. A link row takes no `disabled`, so mark it `aria-disabled=\"true\"`. Any row marked so dims with the `not-allowed` cursor. A `render` row also drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click neither opens a new tab nor runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.",
+          "required": false
+        },
+        {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Replaces the host `div`, such as `render={<a href=\"/orders\" />}` for a link row or `render={<button type=\"button\" />}` for a button row. Inside `Item.Group` the rendered element keeps its own role inside a list item wrapper. An explicit `role` on the row replaces that and skips the wrapper.",
           "required": false
         },
         {
@@ -60,15 +66,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged after the media's own. A height or size class sets the box of `default` and `icon` media. To resize `image` media, add a size class under the matching row size, such as `group-data-[size=sm]/item:size-10`.",
+          "required": false
+        },
+        {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"icon\" | \"image\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The media's frame. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a rounded square sized by the row's `size`. Beside a description, `default` and `image` media top-align with the content, and `icon` media centres its glyph on the title's first line.",
           "required": false,
           "values": [
             "default",
@@ -105,15 +120,33 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rows, each an `Item.Root` as a direct child, with or without a `render` element. A `default` group tightens its gap when one of its rows is `sm` or `xs`. An Item wrapped in another element or nested inside a row does not count as a row.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged after the group's own. A `gap-*` class replaces the gap between rows.",
+          "required": false
+        },
+        {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"compact\" | \"default\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The group's look. `compact` draws the rows as one connected list: no gap, tighter rows, flush separators, and outline rows joined under one border with rounded outer corners. Every `Item.Root` and `Item.Separator` inside reads it, so the rows need no props of their own.",
           "required": false,
           "values": [
             "compact",
@@ -130,8 +163,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "aria-hidden",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides the rule from assistive technology. Inside `Item.Group` it defaults to `true`, because a list may own only list items. Pass `false` to expose the rule there. Outside a group it is a `separator`.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": "declared",
@@ -225,16 +267,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Footer content, wrapped in the inner `item-footer-content` element. `mode=\"hidden\"` collapses its grid row to zero, clips it and makes it inert. Switching between `hidden` and `visible` animates the row's height with a fade and a short slide, so content below the footer moves smoothly instead of jumping. Both modes clip content that reaches more than 0.25rem (4px at the default 16px root) past the footer's content box, including absolutely positioned content with no positioned ancestor inside the footer: the content element is its containing block, so it positions against that element. That ring room is part of the content element's box, so a zero-inset item flush against a scroll container's edge should keep 0.25rem of inset there or the room scrolls. A `default` footer never clips, and switching to it snaps.",
+          "description": "The footer's content, wrapped in an inner `item-footer-content` element. A `hidden` or `visible` footer clips content that reaches more than 0.25rem past that element's box. That includes absolutely positioned content with no positioned ancestor inside the footer, which positions against the inner element. Keep 0.25rem of inset on a zero-inset item flush against a scroll container's edge, or that room scrolls. A `default` footer never clips.",
           "required": false
         },
         {
           "name": "mode",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "Whether the footer shows. `hidden` collapses its row to zero height, clips it and makes it inert. Switching between `hidden` and `visible` animates the height with a fade and a short slide, so content below moves instead of jumping. Switching to `default` snaps.",
           "required": false,
           "values": [
             "default",

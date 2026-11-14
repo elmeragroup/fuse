@@ -227,16 +227,18 @@
     "title": "Card",
     "rsc": "server",
     "demos": [
-      "card-basic.tsx",
+      "card-demo.tsx",
       "card-content-only.tsx",
-      "card-with-action.tsx",
+      "card-action.tsx",
       "card-tag.tsx",
+      "card-title-icon.tsx",
       "card-horizontal.tsx",
-      "card-item-rows.tsx",
-      "card-nested.tsx",
-      "card-sizes.tsx",
+      "card-large.tsx",
       "card-sections.tsx",
-      "card-section-button.tsx"
+      "card-section-media.tsx",
+      "card-section-button.tsx",
+      "card-section-link.tsx",
+      "card-section-link-unavailable.tsx"
     ]
   },
   "carousel": {
@@ -452,13 +454,13 @@
     "title": "Description List",
     "rsc": "server",
     "demos": [
-      "description-list-basic.tsx",
-      "description-list-multi-details.tsx",
-      "description-list-responsive.tsx",
+      "description-list-demo.tsx",
       "description-list-no-dividers.tsx",
       "description-list-inline.tsx",
-      "description-list-inline-rows.tsx",
-      "description-list-long-values.tsx"
+      "description-list-inline-groups.tsx",
+      "description-list-long-values.tsx",
+      "description-list-several-details.tsx",
+      "description-list-several-terms.tsx"
     ]
   },
   "dialog": {
@@ -502,10 +504,11 @@
     "title": "Empty",
     "rsc": "server",
     "demos": [
-      "empty-basic.tsx",
+      "empty-demo.tsx",
       "empty-outline.tsx",
-      "empty-with-actions.tsx",
-      "empty-media-variants.tsx",
+      "empty-outline-dashed.tsx",
+      "empty-illustration.tsx",
+      "empty-actions.tsx",
       "empty-inline-link.tsx"
     ]
   },
@@ -556,12 +559,12 @@
     "title": "Frame",
     "rsc": "server",
     "demos": [
-      "frame-basic.tsx",
-      "frame-layouts.tsx",
-      "frame-collapsible-panels.tsx",
+      "frame-demo.tsx",
+      "frame-stacked.tsx",
       "frame-flush.tsx",
+      "frame-collapsible-panels.tsx",
       "frame-with-table.tsx",
-      "frame-key-value-table.tsx"
+      "frame-panel-table.tsx"
     ]
   },
   "gauge-chart": {
@@ -581,7 +584,36 @@
   "heading": {
     "title": "Heading",
     "rsc": "client",
-    "demos": ["heading-basic.tsx", "heading-sizes.tsx", "heading-variants.tsx", "heading-modifiers.tsx"]
+    "demos": [
+      "heading-demo.tsx",
+      "heading-level-1.tsx",
+      "heading-level-3.tsx",
+      "heading-level-4.tsx",
+      "heading-level-5.tsx",
+      "heading-level-6.tsx",
+      "heading-size-sm.tsx",
+      "heading-size-default.tsx",
+      "heading-size-lg.tsx",
+      "heading-size-xl.tsx",
+      "heading-size-2xl.tsx",
+      "heading-size-3xl.tsx",
+      "heading-size-4xl.tsx",
+      "heading-size-5xl.tsx",
+      "heading-size-6xl.tsx",
+      "heading-foreground.tsx",
+      "heading-primary.tsx",
+      "heading-brand.tsx",
+      "heading-muted.tsx",
+      "heading-destructive.tsx",
+      "heading-inherit.tsx",
+      "heading-font-default.tsx",
+      "heading-font-normal.tsx",
+      "heading-semi-bold.tsx",
+      "heading-left.tsx",
+      "heading-center.tsx",
+      "heading-right.tsx",
+      "heading-uppercase.tsx"
+    ]
   },
   "input": {
     "title": "Input",
@@ -614,15 +646,23 @@
     "title": "Item",
     "rsc": "client",
     "demos": [
-      "item-basic.tsx",
-      "item-as-link.tsx",
-      "item-as-button.tsx",
-      "item-group.tsx",
-      "item-link-group.tsx",
-      "item-compact-group.tsx",
-      "item-media-variants.tsx",
+      "item-demo.tsx",
+      "item-muted.tsx",
+      "item-outline.tsx",
+      "item-small.tsx",
+      "item-extra-small.tsx",
+      "item-icon-media.tsx",
+      "item-image-media.tsx",
+      "item-default-media.tsx",
+      "item-header.tsx",
+      "item-footer.tsx",
       "item-footer-reveal.tsx",
-      "item-sizes.tsx"
+      "item-group.tsx",
+      "item-separator.tsx",
+      "item-compact-group.tsx",
+      "item-as-link.tsx",
+      "item-unavailable-link.tsx",
+      "item-as-button.tsx"
     ]
   },
   "kbd": {
@@ -850,9 +890,10 @@
     "title": "Scroll Area",
     "rsc": "client",
     "demos": [
-      "scroll-area-vertical.tsx",
+      "scroll-area-demo.tsx",
       "scroll-area-horizontal.tsx",
       "scroll-area-always.tsx",
+      "scroll-area-auto.tsx",
       "scroll-area-max-height.tsx",
       "scroll-area-composed.tsx"
     ]
@@ -921,7 +962,7 @@
   "show": {
     "title": "Show",
     "rsc": "server",
-    "demos": ["show-basic.tsx"]
+    "demos": ["show-demo.tsx", "show-hidden.tsx", "show-toggle.tsx"]
   },
   "sidebar": {
     "title": "Sidebar",
@@ -962,7 +1003,32 @@
   "span": {
     "title": "Span",
     "rsc": "client",
-    "demos": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"]
+    "demos": [
+      "span-demo.tsx",
+      "span-foreground.tsx",
+      "span-primary.tsx",
+      "span-brand.tsx",
+      "span-muted.tsx",
+      "span-success.tsx",
+      "span-destructive.tsx",
+      "span-inherit.tsx",
+      "span-size-xs.tsx",
+      "span-size-sm.tsx",
+      "span-size-lg.tsx",
+      "span-size-xl.tsx",
+      "span-size-2xl.tsx",
+      "span-leading-none.tsx",
+      "span-leading-tight.tsx",
+      "span-leading-relaxed.tsx",
+      "span-leading-loose.tsx",
+      "span-medium.tsx",
+      "span-bold.tsx",
+      "span-left.tsx",
+      "span-center.tsx",
+      "span-right.tsx",
+      "span-justify.tsx",
+      "span-truncate.tsx"
+    ]
   },
   "sparkline": {
     "title": "Sparkline",
@@ -1011,10 +1077,30 @@
     "title": "Text",
     "rsc": "client",
     "demos": [
-      "text-basic.tsx",
-      "text-sizes.tsx",
-      "text-variants.tsx",
-      "text-leading-weight.tsx",
+      "text-demo.tsx",
+      "text-foreground.tsx",
+      "text-primary.tsx",
+      "text-brand.tsx",
+      "text-muted.tsx",
+      "text-success.tsx",
+      "text-destructive.tsx",
+      "text-inherit.tsx",
+      "text-size-xs.tsx",
+      "text-size-sm.tsx",
+      "text-size-lg.tsx",
+      "text-size-xl.tsx",
+      "text-size-2xl.tsx",
+      "text-leading-none.tsx",
+      "text-leading-tight.tsx",
+      "text-leading-snug.tsx",
+      "text-leading-relaxed.tsx",
+      "text-leading-loose.tsx",
+      "text-medium.tsx",
+      "text-bold.tsx",
+      "text-left.tsx",
+      "text-center.tsx",
+      "text-right.tsx",
+      "text-justify.tsx",
       "text-truncate.tsx"
     ]
   },
@@ -1053,7 +1139,7 @@
   "timeline-list": {
     "title": "Timeline List",
     "rsc": "server",
-    "demos": ["timeline-list-basic.tsx", "timeline-list-rich.tsx"]
+    "demos": ["timeline-list-demo.tsx", "timeline-list-date-time.tsx", "timeline-list-links.tsx"]
   },
   "toast": {
     "title": "Toast",

@@ -9,15 +9,33 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 278,
+      "forwardedCount": 276,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The card's parts. Give it a `Card.Header` if it needs one, then a `Card.Content` and a `Card.Footer`, or a run of `Card.Section` and `Card.SectionButton` parts. In a vertical card, a content or footer that opens the card pads every side with the card's tier, and one below another part drops its top padding, so the tier is also the gap between them. A horizontal card pads itself and gaps its parts with the tier. Sections make up the whole body. A `Card.Content` or `Card.Footer` beside them gets no divider line, so put that content in a last section.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged after the card's own. A border colour class replaces the card's edge colour, a shadow size class such as `shadow-md` replaces its shadow, and a shadow colour class tints the shadow. To recolour the edge or shadow of many cards, set `--card-border` or `--card-shadow` on the `ThemeScope` or another element around them. A `bg-*` class that changes the fill should set `--surface` and `--surface-muted-foreground` to match, as in `className=\"bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]\"`, so a chart inside cuts its seams out of the new fill.",
+          "required": false
+        },
+        {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -30,7 +48,7 @@
           "type": "\"default\" | \"lg\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The card's surface tier, which pads its sections, gaps them and sets their inner corner. `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with too, so the card's text starts on their edge. `lg` takes the large tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.",
+          "description": "The card's surface tier, which pads its parts, gaps them and sets their inner corner. `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with too, so the card's text starts on their edge. `lg` takes the large tier, `--surface-pad-lg`, for a card that holds long prose or is a page's main panel. A card nested in another takes its own `size`, not its parent's.",
           "required": false,
           "values": [
             "default",
@@ -50,11 +68,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -74,11 +92,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -98,11 +116,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -115,7 +133,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Rendered before `children` — the title becomes a flex row (`items-center gap-x-1.5`) and any `svg` is sized to `5`.",
+          "description": "An icon before the title text. The title becomes a flex row, and an `svg` is sized to `size-5`. Mark a decorative icon `aria-hidden`.",
           "required": false
         },
         {
@@ -124,7 +142,7 @@
           "type": "CardTitleLevel | undefined",
           "shortType": null,
           "defaultValue": "3",
-          "description": "Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`, so a card titles itself without assuming its place in the document outline.",
+          "description": "The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. The default `3` suits a card in a page section. Set the level that fits the card's place in the outline.",
           "required": false
         },
         {
@@ -133,7 +151,7 @@
           "type": "NonNullable<\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"2xl\"",
-          "description": "Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`.",
+          "description": "The title's type size.",
           "required": false,
           "values": [
             "2xl",
@@ -160,11 +178,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -177,7 +195,7 @@
           "type": "NonNullable<\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"sm\"",
-          "description": "Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`.",
+          "description": "The description's type size.",
           "required": false,
           "values": [
             "2xl",
@@ -201,11 +219,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -225,11 +243,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -249,11 +267,11 @@
       "props": [
         {
           "name": "direction",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
             "horizontal",
@@ -277,20 +295,35 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/card/card-section-button.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 290,
+      "forwardedCount": 288,
       "props": [
         {
+          "name": "aria-disabled",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Marks an unavailable section. A link takes no `disabled`, so mark it `aria-disabled=\"true\"`. The section dims and drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click opens no new tab.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The section's content. Use phrasing content only, such as text, an icon and a `Card.SectionMedia`, and no other control. Beside a `Card.SectionMedia`, put the text in a plain `span`, not a `Card.Content`, which is a `div`.",
+          "required": false
+        },
+        {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Replaces the host `<button type=\"button\">`. `render={<a href=\"/terms\" />}` makes the section a link. To make it a trigger, pass it to the trigger's `render`, as with `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>Change plan</Dialog.Trigger>`.",
           "required": false
         }
       ]
@@ -302,8 +335,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 278,
-      "props": []
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The section's icon, sized to `size-5`. Put the media first in a `Card.Section` or `Card.SectionButton`. The section becomes two columns, the icon centred on the section's height beside the content. In a `Card.Section`, put the content in a `Card.Content`. In a `Card.SectionButton`, put it in a plain `span`, because a button holds phrasing content only.",
+          "required": false
+        }
+      ]
     }
   ]
 }

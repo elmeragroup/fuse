@@ -3,12 +3,12 @@ lede: >
   A shell for grouped or stacked panels. Use Card when the surface stands alone.
 ---
 
-import { FrameBasic } from "./demos/frame-basic";
-import { FrameCollapsiblePanels } from "./demos/frame-collapsible-panels";
+import { FrameDemo } from "./demos/frame-demo";
+import { FrameStacked } from "./demos/frame-stacked";
 import { FrameFlush } from "./demos/frame-flush";
-import { FrameKeyValueTable } from "./demos/frame-key-value-table";
-import { FrameLayouts } from "./demos/frame-layouts";
+import { FrameCollapsiblePanels } from "./demos/frame-collapsible-panels";
 import { FrameWithTable } from "./demos/frame-with-table";
+import { FramePanelTable } from "./demos/frame-panel-table";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,40 +16,50 @@ export const metadata = componentMetadata("frame");
 
 <ComponentIntro slug="frame" />
 
-<Demo slug="frame" id="basic" title="Basic" file="frame-basic.tsx">
-  <FrameBasic />
+<DefaultDemo slug="frame" file="frame-demo.tsx">
+  <FrameDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Frame } from "@elmeragroup/fuse/frame";
+
+<Frame.Root>
+  <Frame.Header>
+    <Frame.Title>Usage</Frame.Title>
+  </Frame.Header>
+  <Frame.Panel>March, 1 240 kWh</Frame.Panel>
+  <Frame.Panel>April, 980 kWh</Frame.Panel>
+</Frame.Root>
+```
+
+## Examples
+
+<Demo slug="frame" id="stacked" title="Stacked" level={3} file="frame-stacked.tsx">
+  <FrameStacked />
 </Demo>
 
-`layout` sets how the panels sit: apart on a muted gutter, stacked into one card, or flush with the Frame's edges.
-
-<Demo slug="frame" id="layouts" title="Layouts" file="frame-layouts.tsx">
-  <FrameLayouts />
-</Demo>
-
-A `Collapsible.Root` around a header and a `Collapsible.Content` makes the panel collapsible. A `Collapsible.Trigger` directly in `Frame.Header` takes the whole band and turns its caret while the panel is open.
-
-### Panels and wrappers
-
-A Frame lays out its own items: the panels and Tables that are its direct children, and those in a `Collapsible.Content` of a `Collapsible.Root` that is its direct child. Each item takes the Frame's corner, the layout's gutter, seams and flush edges, and the Frame's text inset. A panel inside any other wrapper, such as a `div`, is a plain panel: it rounds with `rounded-xl` and the Frame does not lay it out.
-
-<Demo slug="frame" id="collapsible-panels" title="Collapsible panels" file="frame-collapsible-panels.tsx">
-  <FrameCollapsiblePanels />
-</Demo>
-
-<Demo slug="frame" id="flush" title="Flush layout" file="frame-flush.tsx">
+<Demo slug="frame" id="flush" title="Flush" level={3} file="frame-flush.tsx">
   <FrameFlush />
 </Demo>
 
-<Demo slug="frame" id="with-table" title="With a table" file="frame-with-table.tsx">
+<Demo
+  slug="frame"
+  id="collapsible-panels"
+  title="Collapsible panels"
+  level={3}
+  file="frame-collapsible-panels.tsx">
+  <FrameCollapsiblePanels />
+</Demo>
+
+<Demo slug="frame" id="with-table" title="Table" level={3} file="frame-with-table.tsx">
   <FrameWithTable />
 </Demo>
 
-Every text column in a Frame starts and ends on one inset: the header, the panels, a framed Table's first and last columns and its caption, and the footer.
-
-A Table inside a panel is a plain table. A panel whose only child is a `Table.Root` or `VerticalTable.Body` element drops its padding: the table runs to the panel's edges and clips to its corners, and its first and last columns take over the padding, so their text stays on the inset. Anything else keeps the padding, including text beside the table and a component of your own that renders a table.
-
-<Demo slug="frame" id="key-value-table" title="Key/value table in a panel" file="frame-key-value-table.tsx">
-  <FrameKeyValueTable />
+<Demo slug="frame" id="panel-table" title="Table in a panel" level={3} file="frame-panel-table.tsx">
+  <FramePanelTable />
 </Demo>
 
 <ApiReference slug="frame" />

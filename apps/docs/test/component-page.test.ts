@@ -152,8 +152,8 @@ describe("component page anatomy", () => {
     const html = await fetchText("/components/scroll-area");
     expect(html).toContain('href="#api-reference"');
     expect(html).toContain('href="#tokens-consumed"');
-    expect(html).toContain('href="#vertical"');
-    expect(html).toContain('href="#composition-limits"');
-    expect(html).toContain('id="composition-limits"');
+    expect(html).toContain('href="#horizontal"');
+    expect(html).toContain('href="#usage"');
+    expect(html).toContain('id="usage"');
   });
 });

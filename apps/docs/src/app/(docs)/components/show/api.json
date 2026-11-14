@@ -15,7 +15,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Rendered inside a fragment when `when` is true. `children` is an ordinary prop: the JSX is evaluated by the parent before `Show` decides anything; only rendering is skipped. Guarding expressions that throw when the condition is false (`data!.name`) is not safe here — use an inline ternary or optional chaining.",
+          "description": "Rendered when `when` is true. The parent evaluates this JSX before `Show` decides, and only rendering is skipped, so an expression that throws when the condition is false, such as `data!.name`, still throws here. Use an inline ternary or optional chaining for it instead.",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "boolean",
           "shortType": null,
           "defaultValue": null,
-          "description": "Render condition. Strict boolean — callers coerce (for example `items.length > 0`); the helper does not.",
+          "description": "The render condition, a strict boolean. Coerce it yourself, as in `items.length > 0`.",
           "required": true
         }
       ]

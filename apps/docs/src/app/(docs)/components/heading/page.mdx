@@ -4,10 +4,34 @@ lede: >
   weight from the theme, which branded themes set to their own heading styles.
 ---
 
-import { HeadingBasic } from "./demos/heading-basic";
-import { HeadingSizes } from "./demos/heading-sizes";
-import { HeadingVariants } from "./demos/heading-variants";
-import { HeadingModifiers } from "./demos/heading-modifiers";
+import { HeadingDemo } from "./demos/heading-demo";
+import { HeadingLevel1 } from "./demos/heading-level-1";
+import { HeadingLevel3 } from "./demos/heading-level-3";
+import { HeadingLevel4 } from "./demos/heading-level-4";
+import { HeadingLevel5 } from "./demos/heading-level-5";
+import { HeadingLevel6 } from "./demos/heading-level-6";
+import { HeadingSizeSm } from "./demos/heading-size-sm";
+import { HeadingSizeDefault } from "./demos/heading-size-default";
+import { HeadingSizeLg } from "./demos/heading-size-lg";
+import { HeadingSizeXl } from "./demos/heading-size-xl";
+import { HeadingSize2xl } from "./demos/heading-size-2xl";
+import { HeadingSize3xl } from "./demos/heading-size-3xl";
+import { HeadingSize4xl } from "./demos/heading-size-4xl";
+import { HeadingSize5xl } from "./demos/heading-size-5xl";
+import { HeadingSize6xl } from "./demos/heading-size-6xl";
+import { HeadingForeground } from "./demos/heading-foreground";
+import { HeadingPrimary } from "./demos/heading-primary";
+import { HeadingBrand } from "./demos/heading-brand";
+import { HeadingMuted } from "./demos/heading-muted";
+import { HeadingDestructive } from "./demos/heading-destructive";
+import { HeadingInherit } from "./demos/heading-inherit";
+import { HeadingFontDefault } from "./demos/heading-font-default";
+import { HeadingFontNormal } from "./demos/heading-font-normal";
+import { HeadingSemiBold } from "./demos/heading-semi-bold";
+import { HeadingLeft } from "./demos/heading-left";
+import { HeadingCenter } from "./demos/heading-center";
+import { HeadingRight } from "./demos/heading-right";
+import { HeadingUppercase } from "./demos/heading-uppercase";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,20 +39,127 @@ export const metadata = componentMetadata("heading");
 
 <ComponentIntro slug="heading" />
 
-<Demo slug="heading" id="basic" title="Levels" file="heading-basic.tsx">
-  <HeadingBasic />
+<DefaultDemo slug="heading" file="heading-demo.tsx">
+  <HeadingDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Heading } from "@elmeragroup/fuse/heading";
+
+<Heading level={1}>Order overview</Heading>
+```
+
+## Examples
+
+<Demo slug="heading" id="level-1" title="Level 1" level={3} file="heading-level-1.tsx">
+  <HeadingLevel1 />
 </Demo>
 
-<Demo slug="heading" id="sizes" title="Sizes" file="heading-sizes.tsx">
-  <HeadingSizes />
+<Demo slug="heading" id="level-3" title="Level 3" level={3} file="heading-level-3.tsx">
+  <HeadingLevel3 />
 </Demo>
 
-<Demo slug="heading" id="variants" title="Variants" file="heading-variants.tsx">
-  <HeadingVariants />
+<Demo slug="heading" id="level-4" title="Level 4" level={3} file="heading-level-4.tsx">
+  <HeadingLevel4 />
 </Demo>
 
-<Demo slug="heading" id="modifiers" title="Modifiers" file="heading-modifiers.tsx">
-  <HeadingModifiers />
+<Demo slug="heading" id="level-5" title="Level 5" level={3} file="heading-level-5.tsx">
+  <HeadingLevel5 />
+</Demo>
+
+<Demo slug="heading" id="level-6" title="Level 6" level={3} file="heading-level-6.tsx">
+  <HeadingLevel6 />
+</Demo>
+
+<Demo slug="heading" id="size-sm" title="Small" level={3} file="heading-size-sm.tsx">
+  <HeadingSizeSm />
+</Demo>
+
+<Demo slug="heading" id="size-default" title="Default size" level={3} file="heading-size-default.tsx">
+  <HeadingSizeDefault />
+</Demo>
+
+<Demo slug="heading" id="size-lg" title="Large" level={3} file="heading-size-lg.tsx">
+  <HeadingSizeLg />
+</Demo>
+
+<Demo slug="heading" id="size-xl" title="Extra large" level={3} file="heading-size-xl.tsx">
+  <HeadingSizeXl />
+</Demo>
+
+<Demo slug="heading" id="size-2xl" title="2XL" level={3} file="heading-size-2xl.tsx">
+  <HeadingSize2xl />
+</Demo>
+
+<Demo slug="heading" id="size-3xl" title="3XL" level={3} file="heading-size-3xl.tsx">
+  <HeadingSize3xl />
+</Demo>
+
+<Demo slug="heading" id="size-4xl" title="4XL" level={3} file="heading-size-4xl.tsx">
+  <HeadingSize4xl />
+</Demo>
+
+<Demo slug="heading" id="size-5xl" title="5XL" level={3} file="heading-size-5xl.tsx">
+  <HeadingSize5xl />
+</Demo>
+
+<Demo slug="heading" id="size-6xl" title="6XL" level={3} file="heading-size-6xl.tsx">
+  <HeadingSize6xl />
+</Demo>
+
+<Demo slug="heading" id="foreground" title="Foreground" level={3} file="heading-foreground.tsx">
+  <HeadingForeground />
+</Demo>
+
+<Demo slug="heading" id="primary" title="Primary" level={3} file="heading-primary.tsx">
+  <HeadingPrimary />
+</Demo>
+
+<Demo slug="heading" id="brand" title="Brand" level={3} file="heading-brand.tsx">
+  <HeadingBrand />
+</Demo>
+
+<Demo slug="heading" id="muted" title="Muted" level={3} file="heading-muted.tsx">
+  <HeadingMuted />
+</Demo>
+
+<Demo slug="heading" id="destructive" title="Destructive" level={3} file="heading-destructive.tsx">
+  <HeadingDestructive />
+</Demo>
+
+<Demo slug="heading" id="inherit" title="Inherit" level={3} file="heading-inherit.tsx">
+  <HeadingInherit />
+</Demo>
+
+<Demo slug="heading" id="font-default" title="Medium weight" level={3} file="heading-font-default.tsx">
+  <HeadingFontDefault />
+</Demo>
+
+<Demo slug="heading" id="font-normal" title="Normal weight" level={3} file="heading-font-normal.tsx">
+  <HeadingFontNormal />
+</Demo>
+
+<Demo slug="heading" id="semi-bold" title="Semi-bold" level={3} file="heading-semi-bold.tsx">
+  <HeadingSemiBold />
+</Demo>
+
+<Demo slug="heading" id="left" title="Left" level={3} file="heading-left.tsx">
+  <HeadingLeft />
+</Demo>
+
+<Demo slug="heading" id="center" title="Center" level={3} file="heading-center.tsx">
+  <HeadingCenter />
+</Demo>
+
+<Demo slug="heading" id="right" title="Right" level={3} file="heading-right.tsx">
+  <HeadingRight />
+</Demo>
+
+<Demo slug="heading" id="uppercase" title="Uppercase" level={3} file="heading-uppercase.tsx">
+  <HeadingUppercase />
 </Demo>
 
 <ApiReference slug="heading" />

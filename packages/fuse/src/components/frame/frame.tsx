@@ -20,22 +20,54 @@ export type FrameRootProps = ComponentProps<"div"> & {
    * @defaultValue "gutter"
    */
   layout?: "gutter" | "stacked" | "flush";
+  /**
+   * The Frame's parts: an optional `Frame.Header`, then panels and Tables, then an optional
+   * `Frame.Footer`. The Frame lays out its own items, the panels and Tables that are its direct
+   * children and those in the `Collapsible.Content` of a `Collapsible.Root` that is its direct
+   * child. Each item takes the Frame's corner, the layout's gutter, seams and flush edges, and the
+   * Frame's text inset, so the header, the panels, a Table's first and last columns and the
+   * footer start their text on one line. A panel inside any other wrapper, such as a `div`, is a
+   * plain panel that rounds with `rounded-xl`. To make a panel collapsible, wrap a `Frame.Header`
+   * and a `Collapsible.Content` holding the panel in a `Collapsible.Root`.
+   */
+  children?: ComponentProps<"div">["children"];
 };
 
 /** A Frame's `layout`: how it lays out its panels. */
 export type FrameLayout = NonNullable<FrameRootProps["layout"]>;
-export type FramePanelProps = ComponentProps<"div">;
-export type FrameHeaderProps = ComponentProps<"header">;
+/** `Frame.Panel` takes a native `div`'s props. */
+export type FramePanelProps = ComponentProps<"div"> & {
+  /**
+   * The panel's content. A Table inside a panel is a plain table. When the only child is a
+   * `Table.Root` or `VerticalTable.Body` element, written directly here, the panel drops its
+   * padding. The table then runs to the panel's edges and clips to its corners, and its first and
+   * last columns pad, so their text stays on the panel's inset. Anything else keeps the padding,
+   * including text beside the table and a component of your own that renders a table.
+   */
+  children?: ComponentProps<"div">["children"];
+  /**
+   * Extra classes, merged after the panel's own. A `bg-*` class that changes the fill should set
+   * `--surface` and `--surface-muted-foreground` to match, so a chart inside cuts its seams out
+   * of the new fill.
+   */
+  className?: ComponentProps<"div">["className"];
+};
+/** `Frame.Header` takes a native `header`'s props. */
+export type FrameHeaderProps = ComponentProps<"header"> & {
+  /**
+   * The header's content, usually a `Frame.Title` and a `Frame.Description`. A
+   * `Collapsible.Trigger` as its direct child takes the whole band and turns a trailing icon,
+   * such as `CaretDown`, half a turn while its panel is open.
+   */
+  children?: ComponentProps<"header">["children"];
+};
 export type FrameTitleProps = ComponentProps<"div">;
 export type FrameDescriptionProps = ComponentProps<"div">;
 export type FrameFooterProps = ComponentProps<"footer">;
 
 /**
  * The Frame surface: a muted band behind a 1px border that holds a header, panels, Tables and a
- * footer. Its `layout` sets how its panels sit, and it hands its panels and Tables the corner
- * they take, concentric with its `rounded-xl`. A `Collapsible.Root` that is its direct child,
- * holding a `Frame.Header` and a `Collapsible.Content` around a panel or Table, makes that panel
- * collapsible and keeps its corner and layout.
+ * footer. It hands its panels and Tables the corner they take, concentric with its `rounded-xl`.
  */
 function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): ReactElement {
   return (
@@ -110,13 +142,10 @@ function holdsOnlyTable(children: ReactNode): boolean {
  * It fills with the `panel` role, white like a Card in light themes and the page in dark ones, sets
  * its text in `panel-foreground`, and states the fill as `--surface`, the colour of the fill an
  * element sits on, so a chart in it cuts its rings and seams out of the panel, with its muted text
- * as `--surface-muted-foreground`. A `bg-*` class that changes the fill changes both beside it.
+ * as `--surface-muted-foreground`.
  *
- * A panel whose only child is a `Table.Root` or `VerticalTable.Body` element, written directly in
- * its children, drops its padding and writes `data-sole-table="true"`: the table runs to the
- * panel's edges, clips to its corners, and its first and last columns take over the padding, so
- * their text lines up with the panel's. Anything else keeps the padding, including text beside the
- * table and a component of your own that renders a table.
+ * A panel whose only child is a `Table.Root` or `VerticalTable.Body` element writes
+ * `data-sole-table="true"` and drops its padding.
  */
 function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
   return (
@@ -144,10 +173,9 @@ const barPaddingClass = cn(
 /**
  * A header band in the Frame's muted surface. In a Frame its inline padding starts its text on
  * the Frame's text inset, where a panel's text starts, and outside one it is the large surface
- * tier. Its block padding is half that tier, so it reads as chrome above the panels. A `Collapsible.Trigger`
- * that is its direct child takes the whole band: it carries the band's padding and title type,
- * draws the shared focus ring inside its edges, and turns a trailing icon, such as `CaretDown`,
- * half a turn while its panel is open.
+ * tier. Its block padding is half that tier, so it reads as chrome above the panels. A
+ * `Collapsible.Trigger` that is its direct child carries the band's padding and title type and
+ * draws the shared focus ring inside its edges.
  */
 function FrameHeader({ className, ...props }: FrameHeaderProps): ReactElement {
   return (

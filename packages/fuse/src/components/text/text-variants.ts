@@ -1,13 +1,13 @@
 /**
  * PUBLIC recipe. Span and other package modules borrow it from
  * `@elmeragroup/fuse/text`. `size` is a type-scale axis, not a control
- * size: it does not read `--control-*`.
+ * size. It does not read `--control-*`.
  *
- * Colour (`variant`) and start/center/end (`align`) come from the package-private
- * `typographyFragments` recipe via `extend`. This recipe adds `success` and
- * `justify`. `destructive` keeps its ref value name for consumer compat, but the
- * class is `text-error`. `weight: "bold"` maps to `font-medium` — a
- * deliberate cap on body-copy weight, kept from the ref.
+ * Colour (`variant`) and alignment (`align`) come from the package-private
+ * `typographyFragments` recipe through `extend`. This recipe adds `success` and
+ * `justify`. `destructive` keeps its old value name for consumer compatibility, but the
+ * class is `text-error`. `weight: "bold"` maps to `font-medium` on purpose, to cap the
+ * weight of body text.
  *
  * Each `size` arm puts the plain `text-<size>` on the Text but sizes children and
  * descendants with the font-size-only `text-(length:--text-<size>)`. A plain
@@ -19,8 +19,8 @@
  *
  * Without a `leading` prop, the `sm`, `default` and `lg` arms set the line height from the
  * theme's paragraph roles, `--paragraph-leading-sm`, `--paragraph-leading-base` and
- * `--paragraph-leading-lg`: the relaxed 1.625 ratio in neutral themes and the 14/20, 16/22
- * and 18/24 paragraph styles in branded ones. On a host without `themes.css`, each falls back
+ * `--paragraph-leading-lg`. Neutral themes set the relaxed 1.625 ratio, and branded themes
+ * set the 14/20, 16/22 and 18/24 paragraph styles. On a host without `themes.css`, each falls back
  * to its neutral default, the same relaxed line height as a length. The `xs`, `xl` and `2xl`
  * arms keep a plain `leading-relaxed`.
  * The leading class must follow the arm's `text-<size>`, because tailwind-merge drops a

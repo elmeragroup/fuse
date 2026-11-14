@@ -1,21 +1,22 @@
 "use client";
 
+import { useState } from "react";
+
 import { Item } from "@elmeragroup/fuse/item";
 
 export function ItemFooterReveal() {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-3">
-      <Item.Root>
-        <Item.Title>Default footer</Item.Title>
-        <Item.Footer>Always visible</Item.Footer>
-      </Item.Root>
-      <Item.Root>
-        <Item.Title>Visible footer</Item.Title>
-        <Item.Footer mode="visible">Entering</Item.Footer>
-      </Item.Root>
-      <Item.Root>
-        <Item.Title>Hidden footer</Item.Title>
-        <Item.Footer mode="hidden">Collapsed</Item.Footer>
+    <div className="max-w-md flex w-full flex-col items-start gap-3">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {open ? "Hide details" : "Show details"}
+      </button>
+      <Item.Root variant="outline">
+        <Item.Content>
+          <Item.Title>Spot</Item.Title>
+          <Item.Description>Hourly price with no lock-in.</Item.Description>
+        </Item.Content>
+        <Item.Footer mode={open ? "visible" : "hidden"}>Billed monthly with a fixed markup.</Item.Footer>
       </Item.Root>
     </div>
   );

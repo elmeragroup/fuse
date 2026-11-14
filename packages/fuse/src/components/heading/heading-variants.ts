@@ -2,13 +2,13 @@
  * PUBLIC recipe. Other package modules import this file relatively;
  * consumers borrow it from `@elmeragroup/fuse/heading`.
  *
- * Colour (`variant`) and start/center/end (`align`) come from the package-private
- * `typographyFragments` recipe via `extend`. Size, font, noMargin, and uppercase
+ * Colour (`variant`) and alignment (`align`) come from the package-private
+ * `typographyFragments` recipe through `extend`. Size, font, noMargin and uppercase
  * stay here.
  *
- * - `destructive` keeps its ref value name for consumer compat, but the class is
- *   `text-error` — no `destructive` class appears in library source.
- * - `size` is a type-scale axis, not a control size: it does not read `--control-*`.
+ * - `destructive` keeps its old value name for consumer compatibility, but the class is
+ *   `text-error`. No `destructive` class appears in library source.
+ * - `size` is a type-scale axis, not a control size. It does not read `--control-*`.
  * - The recipe knows no level. `Heading` merges the theme's `--heading-1-*` to `--heading-3-*`
  *   roles over the default `size` and `font` arms for levels 1 to 3, so `headingVariants()` on
  *   its own keeps the level-free scale: `text-base leading-snug font-medium` unless a size or
