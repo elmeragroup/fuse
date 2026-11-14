@@ -20,8 +20,6 @@ const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@tanstack\/
 const CARVE_OUTS = new Map<string, readonly string[]>([
   // A year of hours would fill the demo's printed source, so it reads one data module.
   ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
-  // Two months of hours for the month switch's Sparklines, 1,465 values.
-  ["chart/demos/chart-month-usage-and-price.tsx", ["./data/no1-household-hourly-2025-09-2025-10"]],
   ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
   // The 24-hour profile averages the same two months of hours by clock hour.
   [

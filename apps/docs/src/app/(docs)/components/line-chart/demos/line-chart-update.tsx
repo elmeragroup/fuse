@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { LineChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
@@ -38,9 +37,9 @@ export function LineChartUpdate() {
   const [start, setStart] = useState(0);
   return (
     <div className="flex w-full flex-col items-start gap-4">
-      <Button variant="outline" onClick={() => setStart((value) => value + 1)}>
+      <button type="button" onClick={() => setStart((value) => value + 1)}>
         Next reading
-      </Button>
+      </button>
       <LineChart.Root
         data={windowAt(start)}
         config={config}

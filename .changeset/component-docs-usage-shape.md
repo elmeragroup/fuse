@@ -154,6 +154,22 @@ their `visibleMonths`, `pageBehavior` and `shouldCloseOnSelect` defaults, and
 `DateRangePickerField` its `size` default, values they already had, so the API reference shows
 them. The public types are unchanged.
 
+`Chart`, `BarChart`, `LineChart`, `AreaChart` and `ScatterChart` now document their rules on the
+props they concern. `Chart.Root` documents its keys on `defaultActiveX` and `orientation`, stacks,
+series intervals, scales and threshold colours on `config`, the server render on `data`, a late
+`Bar` on `data-intro`, references outside the data on `yInclude`, and `--surface` and
+`--chart-hover-dim` on `style`. `Chart.Panel` documents where each part goes, `Chart.Tooltip` its
+placement, glide and dismissal on `anchor`, `Chart.Crosshair` its width and glide on `variant`, and
+`Chart.ActiveDot`, `Chart.SlotLabel`, `Chart.LegendToggleGroup` and the table button their motion
+or keys. `Chart.Bar`, `Chart.Line` and `Chart.Area` document their looks, readings, updates and
+curves on `dataKey` and `curve`. `ScatterChart.Root` documents its keys on `children`, its option
+on `xLabel`, axis motion on `data` and references outside the domains on `xInclude` and
+`yInclude`, and `ScatterChart.Points` and `ScatterChart.Line` their paths and fitted lines on
+`dataKey`. The `curve` docs no longer promise a vertical tangent under `"monotone-y"`, the table
+button says the table stays out of the Tab order only while collapsed, and `Chart.Bar` and config
+`barVariant` say that only a vertical chart draws more than 100 slots as one path. The public types
+are unchanged.
+
 Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
 `CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
 The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below

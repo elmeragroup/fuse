@@ -1,14 +1,26 @@
 ---
 lede: >
-  Preview. Areas over a category or time axis, alone or stacked.
+  Preview, so names and props can change until Fuse's first stable release. Filled areas over a
+  category or time axis, alone or stacked.
 ---
 
-import { AreaChartDailyUsage } from "./demos/area-chart-daily-usage";
-import { AreaChartEntrance } from "./demos/area-chart-entrance";
+import { AreaChartCurveBasis } from "./demos/area-chart-curve-basis";
+import { AreaChartCurveBump } from "./demos/area-chart-curve-bump";
+import { AreaChartCurveLinear } from "./demos/area-chart-curve-linear";
+import { AreaChartCurveMonotoneY } from "./demos/area-chart-curve-monotone-y";
+import { AreaChartCurveNatural } from "./demos/area-chart-curve-natural";
+import { AreaChartCurveStep } from "./demos/area-chart-curve-step";
+import { AreaChartCurveStepAfter } from "./demos/area-chart-curve-step-after";
+import { AreaChartCurveStepBefore } from "./demos/area-chart-curve-step-before";
+import { AreaChartDemo } from "./demos/area-chart-demo";
+import { AreaChartDotted } from "./demos/area-chart-dotted";
+import { AreaChartGradientReverse } from "./demos/area-chart-gradient-reverse";
+import { AreaChartHatched } from "./demos/area-chart-hatched";
+import { AreaChartLines } from "./demos/area-chart-lines";
 import { AreaChartPrice } from "./demos/area-chart-price";
+import { AreaChartSolid } from "./demos/area-chart-solid";
 import { AreaChartStacked } from "./demos/area-chart-stacked";
 import { AreaChartThreshold } from "./demos/area-chart-threshold";
-import { AreaChartVariants } from "./demos/area-chart-variants";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,58 +28,113 @@ export const metadata = componentMetadata("area-chart");
 
 <ComponentIntro slug="area-chart" />
 
-<Prose>
+<DefaultDemo slug="area-chart" file="area-chart-demo.tsx">
+  <AreaChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. `AreaChart` is the same component as `Chart`. An area fills from 0, so it needs the zero baseline and throws `baseline-required` under `yBaseline="none"`. It draws its fill only, and a `Line` on the same key draws its edge.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { AreaChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-<Demo slug="area-chart" id="daily-usage" title="Daily usage" file="area-chart-daily-usage.tsx">
-  <AreaChartDailyUsage />
+<AreaChart.Root data={data} config={config} xKey="month" xScale="point" aria-label="Consumption per month">
+  <AreaChart.YAxis />
+  <AreaChart.XAxis />
+  <AreaChart.Area dataKey="kwh" />
+  <AreaChart.Line dataKey="kwh" />
+  <AreaChart.Tooltip />
+  <AreaChart.Table />
+</AreaChart.Root>
+```
+
+## Examples
+
+<Demo slug="area-chart" id="solid" title="Solid" level={3} file="area-chart-solid.tsx">
+  <AreaChartSolid />
 </Demo>
 
-<Demo slug="area-chart" id="stacked" title="Stacked" file="area-chart-stacked.tsx">
+<Demo
+  slug="area-chart"
+  id="gradient-reverse"
+  title="Gradient reverse"
+  level={3}
+  file="area-chart-gradient-reverse.tsx">
+  <AreaChartGradientReverse />
+</Demo>
+
+<Demo slug="area-chart" id="dotted" title="Dotted" level={3} file="area-chart-dotted.tsx">
+  <AreaChartDotted />
+</Demo>
+
+<Demo slug="area-chart" id="lines" title="Lines" level={3} file="area-chart-lines.tsx">
+  <AreaChartLines />
+</Demo>
+
+<Demo slug="area-chart" id="hatched" title="Hatched" level={3} file="area-chart-hatched.tsx">
+  <AreaChartHatched />
+</Demo>
+
+<Demo slug="area-chart" id="linear" title="Linear curve" level={3} file="area-chart-curve-linear.tsx">
+  <AreaChartCurveLinear />
+</Demo>
+
+<Demo
+  slug="area-chart"
+  id="monotone-y"
+  title="Monotone y curve"
+  level={3}
+  file="area-chart-curve-monotone-y.tsx">
+  <AreaChartCurveMonotoneY />
+</Demo>
+
+<Demo slug="area-chart" id="natural" title="Natural curve" level={3} file="area-chart-curve-natural.tsx">
+  <AreaChartCurveNatural />
+</Demo>
+
+<Demo slug="area-chart" id="step" title="Step curve" level={3} file="area-chart-curve-step.tsx">
+  <AreaChartCurveStep />
+</Demo>
+
+<Demo
+  slug="area-chart"
+  id="step-before"
+  title="Step before curve"
+  level={3}
+  file="area-chart-curve-step-before.tsx">
+  <AreaChartCurveStepBefore />
+</Demo>
+
+<Demo
+  slug="area-chart"
+  id="step-after"
+  title="Step after curve"
+  level={3}
+  file="area-chart-curve-step-after.tsx">
+  <AreaChartCurveStepAfter />
+</Demo>
+
+<Demo slug="area-chart" id="bump" title="Bump curve" level={3} file="area-chart-curve-bump.tsx">
+  <AreaChartCurveBump />
+</Demo>
+
+<Demo slug="area-chart" id="basis" title="Basis curve" level={3} file="area-chart-curve-basis.tsx">
+  <AreaChartCurveBasis />
+</Demo>
+
+<Demo slug="area-chart" id="stacked" title="Stacked" level={3} file="area-chart-stacked.tsx">
   <AreaChartStacked />
 </Demo>
 
-<Demo slug="area-chart" id="variants" title="Fill looks" file="area-chart-variants.tsx">
-  <AreaChartVariants />
-</Demo>
-
-<Demo slug="area-chart" id="price" title="Value colour" file="area-chart-price.tsx">
+<Demo slug="area-chart" id="price" title="Diverging colour scale" level={3} file="area-chart-price.tsx">
   <AreaChartPrice />
 </Demo>
 
-<Demo slug="area-chart" id="entrance" title="Entrance" file="area-chart-entrance.tsx">
-  <AreaChartEntrance />
-</Demo>
-
-## Threshold colour
-
-<Prose>
-
-A threshold colour splits a series at one value, such as a spot price above and below the period's average. Give the series' config `color` a `threshold` and a role and a legend label for each side. A value above the threshold paints `above`, and a value at or below it paints `below`. The line and the fill change colour where they cross the threshold, a bar paints its own side, and so do the active dot, markers and the tooltip swatch.
-
-The threshold is a number, and Fuse computes none, so pass the same number to a `ReferenceLine` to show where the split lies. The legend lists both sides, while the tooltip, the table and the spoken text keep the series' own label. A threshold follows the series' own values, so it throws `scale-colour-on-stack` on a stacked Line or Area, as a scale does.
-
-</Prose>
-
-<Demo slug="area-chart" id="threshold" title="Threshold colour" file="area-chart-threshold.tsx">
+<Demo slug="area-chart" id="threshold" title="Threshold colour" level={3} file="area-chart-threshold.tsx">
   <AreaChartThreshold />
 </Demo>
 
-## Keyboard
-
-<Prose>
-
-The plot is one tab stop. The legend toggle group and the table's button add one each.
-
-| Where               | Keys                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chart               | ArrowRight and ArrowLeft move one slot. PageDown and PageUp move a tenth of the window's slots, at least one. Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a legend toggle group is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on. |
-| Legend toggle group | Tab enters at the pressed toggle or the first. The arrows move, and Enter or Space presses a toggle. Pressing the pressed toggle clears the selection.                                                                                                                                                                                                                                                    |
-| Table               | The table's button and the page buttons are native buttons. The button moves focus to the table, which never joins the Tab order.                                                                                                                                                                                                                                                                         |
-
-</Prose>
-
 <ApiReference slug="area-chart" />
+
+<ComponentTokens slug="area-chart" />

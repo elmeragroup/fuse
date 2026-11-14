@@ -316,12 +316,12 @@ export function ChartUsageAndPrice() {
         <Chart.Grid />
         <Chart.YAxis />
         <Chart.Crosshair variant="line" />
-        <Chart.Line dataKey="price" curve="step-after" />
+        <Chart.Line dataKey="price" />
         <Chart.ActiveDot dataKey="price" />
         <Chart.XAxis />
       </Chart.Panel>
       <Chart.Tooltip />
-      <Chart.LegendToggleGroup />
+      <Chart.Legend />
       <Chart.Table />
     </Chart.Root>
   );

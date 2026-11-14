@@ -332,9 +332,10 @@ export type ChartSeriesConfig = {
   color: ChartColor;
   /**
    * The look of the series' bars, and of its legend swatches inside the chart, so the server draws
-   * both alike. "default" by default. Above 100 slots a series draws its bars as one path, which
-   * knows the "default" and "gradient" looks only, so every other look draws the default one there,
-   * its swatches too, and warns `bar-variant-needs-html` in development. The tinted looks, which are
+   * both alike. "default" by default. In a vertical chart with more than 100 domain slots a series
+   * draws its bars as one path, which knows the "default" and "gradient" looks only, so every other
+   * look draws the default one there, its swatches too, and warns `bar-variant-needs-html` in
+   * development. A horizontal chart always draws separate bars. The tinted looks, which are
    * "hatched", "striped", "gradient", "duotone" and "duotone-reverse", fill most of a bar with a
    * pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour
    * and on the legend for its identity. Pair them with a Legend or a Table. It sets the bars' look
@@ -488,7 +489,19 @@ export type ChartFigureProps = Omit<
   ComponentProps<"figure">,
   "children" | "color" | "content" | "hidden" | "style" | "aria-label" | "aria-labelledby"
 > & {
-  /** Inline styles, with every public chart custom property typed. */
+  /**
+   * Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the
+   * opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim
+   * off.
+   *
+   * Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and
+   * the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as
+   * Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the
+   * fallback. On a fill of your own, set both beside it, such as `{ background: "var(--muted)",
+   * "--surface": "var(--muted)", "--surface-muted-foreground": "var(--muted-foreground)" }`. A
+   * translucent tint keeps the surface beneath it, and an image or a gradient has no colour for
+   * the cut-outs to match.
+   */
   style?: ChartStyle;
 };
 
@@ -651,7 +664,10 @@ export type ChartTimeFields = {
   period?: ChartPeriod;
   /** The current instant. Fuse never reads the clock. */
   now?: ChartInstant;
-  /** IANA zone of the data's market. It overrides LocaleProvider's, and a time axis with neither throws. */
+  /**
+   * The IANA zone of the data's market, such as "Europe/Oslo". It overrides LocaleProvider's, and a
+   * time axis with neither throws.
+   */
   timeZone?: string;
   /** The x label format in the tooltip, the table and spoken text. */
   xFormat?: XFormat;
@@ -667,7 +683,7 @@ export type ChartTimeFields = {
  */
 export type ChartTimeAxisProps<TX> = [TX] extends [string]
   ? {
-      /** Time axes only. A category axis takes no interval. */
+      /** Time axes only. */
       interval?: never;
       /** Time axes only. */
       period?: never;
@@ -925,8 +941,8 @@ export type ChartLayerProps = {
 
 /**
  * d3-shape curves. "monotone" stays monotone along the category axis, so it is monotoneX when time
- * runs along x and monotoneY under `orientation="horizontal"`. "monotone-y" is d3's monotoneY in
- * screen space, a decorative curve that puts a vertical tangent at every reading.
+ * runs along x and monotoneY under `orientation="horizontal"`. "monotone-y" is d3's monotoneY,
+ * monotone along screen y in either orientation.
  *
  * @beta
  */

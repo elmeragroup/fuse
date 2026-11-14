@@ -18,7 +18,7 @@ export type ChartGridProps = ChartLayerProps & {
    * horizontal under `orientation="vertical"` and vertical under `"horizontal"`.
    */
   orientation?: "horizontal" | "vertical" | "both";
-  /** The line style. "solid" by default, as the Figma `Chart` component draws. */
+  /** The line style. "solid" matches the Figma `Chart` component. */
   variant?: "solid" | "dashed";
 };
 

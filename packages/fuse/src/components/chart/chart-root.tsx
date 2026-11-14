@@ -97,13 +97,35 @@ export type ChartRootProps<
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> &
   ChartTimeAxisProps<TRow[TXKey]> & {
-    /** The rows, one per slot or category. Every cell is serialisable, so a server component passes it. */
+    /**
+     * The rows, one per slot or category. Every cell is serialisable, so a server component passes
+     * it. The plot keeps its height and draws no mark until the browser measures it, and a loading
+     * icon fades in at its middle if that takes more than a moment.
+     */
     data: readonly TRow[];
     /**
      * One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig`
-     * with a required `label` and `color` and an optional `format`, `icon`, `stack`, `missing`,
-     * `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelt literal
-     * `qualityKey` fails the type.
+     * with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`,
+     * `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies
+     * ChartConfig`, so a misspelt literal `qualityKey` fails the type.
+     *
+     * Series that share a `stack` id stack in one column. A series `interval` coarser than Root's,
+     * such as hourly usage under quarter-hour prices, draws each value across the Root slots of its
+     * own slot, and the option, the tooltip and the table name that slot. Fuse never sums or
+     * averages.
+     *
+     * A `color` is a role, a list of two or more roles, a scale or a threshold. A role list is a
+     * decorative gradient that never follows the value. A scale, "chart-seq" or "chart-diverging",
+     * bins each value into 7 steps, and the diverging scale centres them on 0, so a negative value
+     * takes a mirrored step below the solid zero line. A bar paints its step, and a Line or Area
+     * paints a gradient along the value axis. A threshold, `{ threshold, below, above }`, paints
+     * `above` on values above `threshold` and `below` on values at or below it, and the legend
+     * lists both sides. A line and its fill change colour where they cross the threshold, and a
+     * bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip,
+     * the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the
+     * same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under
+     * `stackOffset="expand"`, throws `scale-colour-on-stack` for a scale or a threshold. Set
+     * `--chart-color-<key>` on Root for a colour outside the roles.
      */
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow>;
     /**
@@ -112,22 +134,35 @@ export type ChartRootProps<
      * order.
      */
     xKey: TXKey;
-    /** "band" by default. Line and area charts usually pass "point". */
+    /**
+     * The x scale. "band" gives each slot a band of its own, which bars fill. "point" places each
+     * slot at a point, which line and area charts usually pass.
+     */
     xScale?: "band" | "point";
     /**
      * "horizontal" draws the x column down the left edge and values left to right, for horizontal
      * bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and
-     * `YAxis` always the value axis. Each category row is `--chart-row-height` tall.
+     * `YAxis` always the value axis. Each category row is `--chart-row-height` tall. On a horizontal
+     * chart, ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the
+     * series focus.
      */
     orientation?: "vertical" | "horizontal";
-    /** "diverging" by default, so negative values stack below zero. */
+    /**
+     * How the series of a stack id add up. "diverging" stacks negative values below zero. "expand"
+     * scales each column to a total of 1, so each part reads as its share.
+     */
     stackOffset?: "diverging" | "expand";
     /**
-     * "zero" by default. "none" lets a Line-only layout leave 0 out, and Bar and Area throw under it.
-     * It governs the default layout only. Each Panel takes its own.
+     * Whether the value axis reaches 0. "none" lets a Line-only layout leave 0 out, and Bar and Area
+     * throw `baseline-required` under it. It governs the default layout only. Each Panel takes its
+     * own.
      */
     yBaseline?: "zero" | "none";
-    /** Values the default layout's y domain must reach, such as a price cap. Each Panel takes its own. */
+    /**
+     * Values the default layout's y domain must reach, such as a price cap. Root never reads its
+     * children, so a `ReferenceLine` or `ReferenceArea` outside the data reaches the axis only
+     * through this list. Each Panel takes its own.
+     */
     yInclude?: readonly number[];
     /**
      * The first and last slot of the brushed window, both inclusive. Prefer the uncontrolled
@@ -147,7 +182,16 @@ export type ChartRootProps<
       range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>],
       details: ChartChangeEventDetails<ChartXRangeChangeReason>
     ) => void;
-    /** The slot that is active before any pointer or key moves. An x survives a reload where an index would not. */
+    /**
+     * The slot that is active before any pointer or key moves. An x survives a reload where an
+     * index would not.
+     *
+     * The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth
+     * of the window's slots and at least one, and Home and End go to the window's first and last
+     * slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series
+     * while a `LegendToggleGroup` is mounted, and pin the tooltip otherwise. Escape hides the
+     * tooltip and keeps focus, and a second Escape passes on.
+     */
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
      * The entrance wipe origin, physical under `dir="rtl"` too. "none" turns the entrance off. The
@@ -162,7 +206,9 @@ export type ChartRootProps<
      * again, even mid-wipe, or a new origin never replays it, and a line or an area added later
      * never wipes in. A data update while the
      * entrance waits plays it with the latest data. Reduced motion, "none" and printing draw the
-     * marks at rest at once. A bar that a data update adds after the entrance writes
+     * marks at rest at once. A Bar behind its own Suspense boundary that arrives while the entrance
+     * waits grows with the rest, and one that arrives after the entrance started draws at rest.
+     * A bar that a data update adds after the entrance writes
      * `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush step or a
      * pan adds writes `data-intro="none"` and takes its place at once.
      */
@@ -171,7 +217,10 @@ export type ChartRootProps<
     "data-fade"?: "past";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts, painted in the order you write them. Root never inspects them, so a server
+     * component can compose them.
+     */
     children?: ReactNode;
   };
 

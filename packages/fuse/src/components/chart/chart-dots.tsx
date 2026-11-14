@@ -54,8 +54,8 @@ export type ChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
   /**
-   * The dot's look. "default" by default, a filled dot inside a ring of the surface the chart
-   * rests on, `--surface`. "ring" is a hollow ring and "halo" a dot inside a faint halo of
+   * The dot's look. "default" is a filled dot inside a ring of the surface the chart rests on,
+   * `--surface`. "ring" is a hollow ring and "halo" a dot inside a faint halo of
    * its colour.
    */
   variant?: "default" | "ring" | "halo";
@@ -67,9 +67,13 @@ export type ChartDotsProps = ChartLayerProps & {
  * @beta
  */
 export type ChartActiveDotProps = ChartLayerProps & {
-  /** The series the dot follows. */
+  /**
+   * The series the dot follows. It glides with the crosshair along the series' Line, Area or Bar,
+   * on a straight track through the bar tops. It moves at once across a gap or a missing reading,
+   * and under reduced motion.
+   */
   dataKey: string;
-  /** The dot's look. "default" by default. "ping" sends a ring out from the dot once a second. */
+  /** The dot's look. "ping" sends a ring out from the dot once a second. */
   variant?: "default" | "ring" | "halo" | "ping";
 };
 
@@ -83,7 +87,7 @@ export type ChartMarkerProps = ChartLayerProps & {
   dataKey: string;
   /** The slots to mark. An x string on a time axis throws `x-type-mismatch`. */
   at: ChartDatum;
-  /** The dot's look. "default" by default. */
+  /** The dot's look. "ping" sends a ring out from the dot once a second. */
   variant?: "default" | "ring" | "halo" | "ping";
   /** A `ValueLabel` adds the value as a pill beside the dot. */
   children?: ReactNode;

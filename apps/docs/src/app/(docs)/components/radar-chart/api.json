@@ -134,7 +134,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it, such as `{ background: \"var(--muted)\", \"--surface\": \"var(--muted)\", \"--surface-muted-foreground\": \"var(--muted-foreground)\" }`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         }
       ]
@@ -564,7 +564,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -604,7 +604,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The popup's surface. \"default\" by default.",
+          "description": "The popup's surface. \"frosted\" is translucent, so its cut-outs show the surface beneath the popup.",
           "required": false,
           "values": [
             "default",
@@ -831,7 +831,7 @@
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"square\"",
-          "description": "The swatch's shape. \"square\" by default.",
+          "description": "The swatch's shape.",
           "required": false,
           "values": [
             "bar",
@@ -953,7 +953,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -1039,7 +1039,7 @@
           "type": "ChartFallback | undefined",
           "shortType": null,
           "defaultValue": "\"last\"",
-          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "description": "The datum to print when nothing is active: the first or last reading, the lowest or highest, or the slot that contains Root's `now`.",
           "required": false,
           "values": [
             "first",
@@ -1152,7 +1152,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.",
+          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie. The group is one tab stop, which Tab enters at the pressed toggle or the first. The arrows move between toggles, Enter or Space presses one, and pressing the pressed toggle clears the selection.",
           "required": false
         },
         {
@@ -1170,7 +1170,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the group sits around the plot. \"bottom\" by default.",
+          "description": "Where the group sits around the plot.",
           "required": false,
           "values": [
             "bottom",
@@ -1284,7 +1284,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -1424,7 +1424,7 @@
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
           "defaultValue": "\"dots\"",
-          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "description": "The pattern drawn behind the marks.",
           "required": false,
           "values": [
             "4-pointed-star",

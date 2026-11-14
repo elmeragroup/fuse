@@ -29,7 +29,7 @@ import type {
  */
 export type ChartLegendProps = ChartDomProps<"ul"> & {
   /**
-   * Where the legend sits around the plot. "bottom" by default. In a polar chart narrower than
+   * Where the legend sits around the plot. In a polar chart narrower than
    * 30rem, a "start" or "end" legend moves under the dial, so the dial keeps its size.
    */
   side?: "top" | "bottom" | "start" | "end";
@@ -56,7 +56,10 @@ export type ChartLegendItemProps = ChartDomProps<"li"> & {
 export type ChartLegendValueProps = ChartDomProps<"span"> & {
   /** The series to print. Inside a LegendItem template the item supplies it. */
   dataKey?: string;
-  /** The datum to print when nothing is active. "last" by default. */
+  /**
+   * The datum to print when nothing is active: the first or last reading, the lowest or highest, or
+   * the slot that contains Root's `now`.
+   */
   fallback?: ChartFallback;
   /** The value format. The series' config `format` is the default. */
   format?: ValueFormat;
@@ -82,9 +85,14 @@ export type ChartLegendShareProps = ChartDomProps<"span"> & {
 export type ChartLegendToggleGroupProps = ChartLayerProps & {
   /** The group's name. The dictionary's "Serier" is the default. */
   "aria-label"?: string;
-  /** Where the group sits around the plot. "bottom" by default. */
+  /** Where the group sits around the plot. */
   side?: ChartLegendProps["side"];
-  /** LegendToggle parts. Without children, one per config key, or per kept category in a folded pie. */
+  /**
+   * LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.
+   * The group is one tab stop, which Tab enters at the pressed toggle or the first. The arrows move
+   * between toggles, Enter or Space presses one, and pressing the pressed toggle clears the
+   * selection.
+   */
   children?: ReactNode;
 };
 

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { BarChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
@@ -76,14 +75,14 @@ export function BarChartUpdate() {
   const days = current.rows.map(([date, base, peak]) => ({ day: oslo(current.month, date), base, peak }));
   return (
     <div className="flex w-full flex-col gap-4">
-      <Button
-        variant="outline"
+      <button
+        type="button"
         className="self-start"
         onClick={() => {
           setLoad((load + 1) % LOADS.length);
         }}>
         Load {LOADS[(load + 1) % LOADS.length]?.name}
-      </Button>
+      </button>
       <BarChart.Root
         data={days}
         config={config}
@@ -94,7 +93,6 @@ export function BarChartUpdate() {
         <BarChart.Grid />
         <BarChart.YAxis />
         <BarChart.XAxis />
-        <BarChart.ReferenceLine y={6} label="Contracted {value}" variant="dashed" />
         <BarChart.Bar dataKey="base" />
         <BarChart.Bar dataKey="peak" />
         <BarChart.Tooltip />

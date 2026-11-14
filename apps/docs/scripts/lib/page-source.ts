@@ -79,6 +79,10 @@ export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
     "data-table-filter",
     "The filter needs a fields map, a filter function on the table and its overlays beside the Bar, none of them one prop.",
   ],
+  [
+    "chart",
+    "Chart's marks, axes and Panels compose under one Root in paint order, and the typed chart names are aliases of it.",
+  ],
 ]);
 
 const FRONTMATTER_FENCE = "---";

@@ -61,7 +61,9 @@ export type ScatterChartRootProps<
     /**
      * Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values
      * and repeated points are valid, and every one draws. A row whose x or y is null or undefined
-     * has no point. Every cell is serialisable, so a server component passes it.
+     * has no point. Every cell is serialisable, so a server component passes it. On a data update
+     * the axes glide to fit the new points over the chart's update time. They move at once under
+     * reduced motion and when the chart holds more than 5,000 points.
      */
     data: readonly TRow[];
     /**
@@ -87,14 +89,21 @@ export type ScatterChartRootProps<
     /**
      * The x measure's name, such as "Ukemiddeltemperatur", which the tooltip, the options, the
      * description and the table's header print. The dictionary's "x-verdi" is the default. The axis
-     * title is `XAxis`'s own `label`.
+     * title is `XAxis`'s own `label`. The plot's one option names the active point's series, then
+     * its x and y under `xLabel` and `yLabel`.
      */
     xLabel?: string;
     /** The y measure's name, such as "Ukeforbruk". The dictionary's "y-verdi" is the default. */
     yLabel?: string;
-    /** Values the x domain must reach, such as 0 °C. */
+    /**
+     * Values the x domain must reach, such as 0 °C. A `ReferenceLine` outside the domains draws
+     * nothing, so list its x here to bring it in.
+     */
     xInclude?: readonly number[];
-    /** Values the y domain must reach. A scatter leaves 0 out unless it is listed here. */
+    /**
+     * Values the y domain must reach. A scatter leaves 0 out unless it is listed here. A
+     * `ReferenceLine` outside the domains draws nothing, so list its y here to bring it in.
+     */
     yInclude?: readonly number[];
     /**
      * "none" turns the entrance off. By default the marks sweep in from the left, by x, the first
@@ -103,7 +112,14 @@ export type ScatterChartRootProps<
     "data-intro"?: "none";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them.
+     *
+     * The plot is one tab stop. ArrowRight and ArrowLeft move to the next and previous point, by x
+     * and then y, and Home and End go to the first and last point. ArrowDown and ArrowUp move the
+     * series focus, all series first, and the walk then stays in the focused series. Enter and Space
+     * pin the tooltip, and Escape hides it.
+     */
     children?: ReactNode;
   };
 

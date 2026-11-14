@@ -18,7 +18,7 @@ import type { ScatterMark } from "./scatter-chart-context";
  * @beta
  */
 export type ScatterChartLegendProps = ChartDomProps<"ul"> & {
-  /** Where the legend sits around the plot. "bottom" by default. */
+  /** Where the legend sits around the plot. */
   side?: "top" | "bottom" | "start" | "end";
 };
 

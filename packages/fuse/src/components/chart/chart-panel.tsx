@@ -27,15 +27,17 @@ export type ChartPanelProps = ChartLayerProps & {
   /**
    * The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over
    * the rows inside the effective `xRange`. The series cycle and the "all series" option list keys
-   * in config order, so write config in Panel order. Every key of a `stack` sits in the same Panel.
+   * in config order, so write config in Panel order. List each config key in exactly one Panel,
+   * and every key of a `stack` in the same Panel.
    */
   series: readonly string[];
-  /** As Root's `yBaseline`, for this Panel's layout. "zero" by default. */
+  /** As Root's `yBaseline`, for this Panel's layout. */
   yBaseline?: "zero" | "none";
   /** As Root's `yInclude`, for this Panel's layout. */
   yInclude?: readonly number[];
   /**
-   * The Panel's plot parts. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and
+   * The Panel's plot parts. Put each plot part in the Panel whose series it draws, and the `XAxis`
+   * in the last Panel. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and
    * Takeaway stay under Root, beside the Panels.
    */
   children?: ReactNode;

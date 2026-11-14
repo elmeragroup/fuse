@@ -27,7 +27,12 @@ export type ChartTableProps = ChartLayerProps & {
   caption?: string;
   /** Replaces the first column's header, which the interval picks. */
   xHeader?: string;
-  /** Replaces the dictionary's "Vis som tabell". */
+  /**
+   * Replaces the dictionary's "Vis som tabell". The button shows the table and moves focus to it.
+   * While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past
+   * 500 rows it pages, by calendar period on a time axis, so a year of hours reads
+   * as 53 ISO weeks, and by 500 rows otherwise.
+   */
   showLabel?: string;
   /** Replaces the dictionary's "Skjul tabell". */
   hideLabel?: string;

@@ -16,7 +16,7 @@ import type { ChartBackgroundPattern, ChartLayerProps } from "./chart-types";
  * @beta
  */
 export type ChartBackgroundProps = ChartLayerProps & {
-  /** The pattern drawn behind the marks. "dots" by default. */
+  /** The pattern drawn behind the marks. */
   variant?: ChartBackgroundPattern;
 };
 
