@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Accordion } from "@elmeragroup/fuse/accordion";
+import { Button } from "@elmeragroup/fuse/button";
 
 const ALL = ["shipping", "billing", "returns"] as const;
 
@@ -12,12 +13,12 @@ export function AccordionControlled() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
-        <button type="button" onClick={() => setValue([...ALL])}>
+        <Button variant="outline" onClick={() => setValue([...ALL])}>
           Open all
-        </button>
-        <button type="button" onClick={() => setValue([])}>
+        </Button>
+        <Button variant="outline" onClick={() => setValue([])}>
           Close all
-        </button>
+        </Button>
       </div>
       <Accordion.Root multiple value={value} onValueChange={setValue}>
         <Accordion.Item value="shipping">

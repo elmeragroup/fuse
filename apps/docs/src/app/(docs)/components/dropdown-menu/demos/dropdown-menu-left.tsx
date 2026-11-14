@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuLeft() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>Account</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Account</DropdownMenu.Trigger>
       <DropdownMenu.Content side="left">
         <DropdownMenu.Item>Profile</DropdownMenu.Item>
         <DropdownMenu.Item>Billing</DropdownMenu.Item>

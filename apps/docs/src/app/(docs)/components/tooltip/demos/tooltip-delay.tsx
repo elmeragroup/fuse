@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 export function TooltipDelay() {
@@ -7,11 +8,11 @@ export function TooltipDelay() {
     <Tooltip.Provider delay={400}>
       <div className="flex gap-4">
         <Tooltip.Root>
-          <Tooltip.Trigger>Grid rent</Tooltip.Trigger>
+          <Tooltip.Trigger render={<Button variant="outline" />}>Grid rent</Tooltip.Trigger>
           <Tooltip.Content>The fee for using the electricity grid</Tooltip.Content>
         </Tooltip.Root>
         <Tooltip.Root>
-          <Tooltip.Trigger>Energy fee</Tooltip.Trigger>
+          <Tooltip.Trigger render={<Button variant="outline" />}>Energy fee</Tooltip.Trigger>
           <Tooltip.Content>The tax on each kWh you use</Tooltip.Content>
         </Tooltip.Root>
       </div>

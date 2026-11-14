@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 
 export function DialogSize7xl() {
   return (
     <Dialog.Root>
-      <Dialog.Trigger>Compare tariffs</Dialog.Trigger>
+      <Dialog.Trigger render={<Button variant="outline" />}>Compare tariffs</Dialog.Trigger>
       <Dialog.Content size="7xl">
         <Dialog.Header>
           <Dialog.Title>Compare tariffs</Dialog.Title>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Field } from "@elmeragroup/fuse/field";
 import { Switch } from "@elmeragroup/fuse/switch";
 
@@ -19,9 +20,7 @@ export function SwitchForm() {
         <Field.Label>Notifications</Field.Label>
         <Switch name="notifications" value="on" defaultChecked />
       </Field.Root>
-      <button type="submit" className="text-sm underline underline-offset-4">
-        Save
-      </button>
+      <Button type="submit">Save</Button>
       <p role="status" className="text-sm">
         {submitted ? `Submitted: ${submitted}` : ""}
       </p>

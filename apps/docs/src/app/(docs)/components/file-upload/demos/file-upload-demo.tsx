@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 
 export function FileUploadDemo() {
@@ -15,7 +16,7 @@ export function FileUploadDemo() {
       }}
       className="max-w-lg w-full">
       <FileUpload.Dropzone>
-        <FileUpload.Trigger>Add files</FileUpload.Trigger>
+        <FileUpload.Trigger render={<Button size="sm" />}>Add files</FileUpload.Trigger>
         <FileUpload.Description>Drop files here or choose them.</FileUpload.Description>
       </FileUpload.Dropzone>
       {names.length > 0 ? <p className="text-sm text-muted-foreground">{names.join(", ")}</p> : null}

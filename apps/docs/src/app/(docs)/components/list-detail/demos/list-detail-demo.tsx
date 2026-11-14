@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { X } from "@elmeragroup/fuse/icons";
 import { ListDetail } from "@elmeragroup/fuse/list-detail";
 
@@ -32,15 +33,16 @@ export function ListDetailDemo() {
             className="m-0 flex list-none flex-col gap-1 p-2">
             {CUSTOMERS.map((candidate) => (
               <li key={candidate.id}>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
                   aria-current={candidate.id === selected ? "true" : undefined}
                   onClick={() => {
                     setSelected(candidate.id);
                     setOpen(true);
                   }}>
                   {candidate.name}
-                </button>
+                </Button>
               </li>
             ))}
           </ListDetail.List>
@@ -52,7 +54,9 @@ export function ListDetailDemo() {
                 <div className="flex items-center gap-2">
                   <ListDetail.Title>{customer.name}</ListDetail.Title>
                   <ListDetail.Close
-                    render={<button type="button" aria-label="Close details" className="ml-auto" />}>
+                    render={
+                      <Button variant="ghost" size="icon-sm" aria-label="Close details" className="ml-auto" />
+                    }>
                     <X aria-hidden />
                   </ListDetail.Close>
                 </div>

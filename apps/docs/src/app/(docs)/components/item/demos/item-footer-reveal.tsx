@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Item } from "@elmeragroup/fuse/item";
 
 export function ItemFooterReveal() {
   const [open, setOpen] = useState(false);
   return (
     <div className="max-w-md flex w-full flex-col items-start gap-3">
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <Button variant="outline" aria-expanded={open} onClick={() => setOpen(!open)}>
         {open ? "Hide details" : "Show details"}
-      </button>
+      </Button>
       <Item.Root variant="outline">
         <Item.Content>
           <Item.Title>Spot</Item.Title>

@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuShortcuts() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>Account</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Account</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item>
           Profile <DropdownMenu.Shortcut>⇧⌘P</DropdownMenu.Shortcut>

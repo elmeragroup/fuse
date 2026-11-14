@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 
 /** What the form posted under `receipts`, as one line per file. */
@@ -36,7 +37,7 @@ export function FileUploadForm() {
         multiple
         onSelect={(picked) => setFiles((current) => [...current, ...picked])}>
         <FileUpload.Dropzone>
-          <FileUpload.Trigger>Add receipts</FileUpload.Trigger>
+          <FileUpload.Trigger render={<Button size="sm" />}>Add receipts</FileUpload.Trigger>
           <FileUpload.Description>Images or PDFs.</FileUpload.Description>
         </FileUpload.Dropzone>
         {files.length > 0 ? (
@@ -44,21 +45,21 @@ export function FileUploadForm() {
             {files.map((file, index) => (
               <li key={`${index}-${file.name}`} className="flex items-center justify-between gap-2">
                 {file.name}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   aria-label={`Remove ${file.name}`}
-                  onClick={() => setFiles((current) => current.filter((_, kept) => kept !== index))}
-                  className="text-muted-foreground underline">
+                  onClick={() => setFiles((current) => current.filter((_, kept) => kept !== index))}>
                   Remove
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         ) : null}
       </FileUpload.Root>
-      <button type="submit" className="text-sm self-start rounded-md border border-input px-3 py-1.5">
+      <Button type="submit" variant="outline" className="self-start">
         Send
-      </button>
+      </Button>
       {posted === null ? null : <output className="text-sm">The form posted {posted.join(", ")}.</output>}
     </form>
   );

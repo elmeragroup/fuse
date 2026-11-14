@@ -54,7 +54,8 @@ Examples on a page in `COMPOSITION_PAGES` (`apps/docs/scripts/lib/page-source.ts
 rule goes into the JSDoc of the prop it concerns, which the API reference and the markdown
 endpoint render.
 Each example stages one instance of the page's component, with its own parts and plain HTML.
-Another Fuse component appears only when the subject cannot work without it.
+Another Fuse component appears only when the subject cannot work without it. A clickable
+control that the subject does not style itself, such as an overlay trigger, is a Fuse `Button`.
 Generate API artifacts and exports through their scripts, including after rebase.
 Put implementation rationale beside its owner. Track unresolved work as GitHub
 issues, never in a `TODO.md` or other backlog file, and cite the issue number

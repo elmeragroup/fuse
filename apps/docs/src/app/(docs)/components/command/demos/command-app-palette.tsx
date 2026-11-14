@@ -3,6 +3,7 @@
 import { createContext, use, useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
 
 type Action = { readonly label: string; readonly run: () => void };
@@ -84,13 +85,14 @@ function CustomersPage() {
     <ul className="flex flex-col items-start gap-1">
       {CUSTOMERS.map((customer) => (
         <li key={customer.id}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               navigate({ page: "customer", customer });
             }}>
             {customer.name}
-          </button>
+          </Button>
         </li>
       ))}
     </ul>
@@ -200,27 +202,30 @@ export function CommandAppPalette() {
         <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-background">
           <div className="flex items-center gap-1 border-b border-border px-3 py-2">
             <nav aria-label="App" className="flex gap-1">
-              <button
-                type="button"
+              <Button
+                variant={route.page === "overview" ? "secondary" : "ghost"}
+                size="sm"
                 aria-current={route.page === "overview" ? "page" : undefined}
                 onClick={() => {
                   setRoute({ page: "overview" });
                 }}>
                 Overview
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={route.page === "overview" ? "ghost" : "secondary"}
+                size="sm"
                 aria-current={route.page === "customers" ? "page" : undefined}
                 onClick={() => {
                   setRoute({ page: "customers" });
                 }}>
                 Customers
-              </button>
+              </Button>
             </nav>
             {/* Command.Trigger works only inside the Root, so a button elsewhere controls `open`.
                 Closing returns focus to the element that had it when the palette opened. */}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               className="ml-auto"
               aria-haspopup="dialog"
               aria-expanded={open}
@@ -228,7 +233,7 @@ export function CommandAppPalette() {
                 setOpen(true);
               }}>
               Search commands
-            </button>
+            </Button>
           </div>
           <div className="flex flex-col gap-3 p-4">
             <p className="text-base font-medium">{titleOf(route)}</p>

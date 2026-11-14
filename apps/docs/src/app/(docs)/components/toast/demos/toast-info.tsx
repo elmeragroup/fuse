@@ -2,14 +2,15 @@
 
 import { useRef } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 function ShowButton() {
   const toastManager = Toast.useToastManager();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={() =>
         toastManager.add({
           type: "info",
@@ -18,7 +19,7 @@ function ShowButton() {
         })
       }>
       Refresh prices
-    </button>
+    </Button>
   );
 }
 

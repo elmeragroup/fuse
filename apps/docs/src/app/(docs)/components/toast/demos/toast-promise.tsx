@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 function wait(ms: number): Promise<void> {
@@ -14,8 +15,8 @@ function SaveButton() {
   const toastManager = Toast.useToastManager();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={() =>
         void toastManager.promise(wait(1200), {
           loading: "Saving the reading.",
@@ -24,7 +25,7 @@ function SaveButton() {
         })
       }>
       Save reading
-    </button>
+    </Button>
   );
 }
 

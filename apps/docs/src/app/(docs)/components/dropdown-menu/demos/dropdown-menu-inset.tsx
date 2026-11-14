@@ -1,12 +1,13 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Copy, Trash } from "@elmeragroup/fuse/icons";
 
 export function DropdownMenuInset() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>File</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>File</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item>
           <Copy />

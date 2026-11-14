@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { ScatterChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
@@ -41,18 +42,19 @@ export function ScatterChartLive() {
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex gap-2">
-        <button type="button" disabled={count >= LAST} onClick={() => setRunning(!running)}>
+        <Button variant="outline" size="sm" disabled={count >= LAST} onClick={() => setRunning(!running)}>
           {running && count < LAST ? "Pause" : "Stream readings"}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           disabled={count === FIRST}
           onClick={() => {
             setCount(FIRST);
             setRunning(false);
           }}>
           Start over
-        </button>
+        </Button>
       </div>
       <ScatterChart.Root
         data={data}

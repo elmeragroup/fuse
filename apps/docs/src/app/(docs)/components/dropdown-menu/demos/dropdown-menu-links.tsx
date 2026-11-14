@@ -2,6 +2,7 @@
 
 import type { ComponentProps } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 function Link({ href, ...props }: ComponentProps<"a"> & { href: string }) {
@@ -11,7 +12,7 @@ function Link({ href, ...props }: ComponentProps<"a"> & { href: string }) {
 export function DropdownMenuLinks() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>Navigate</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Navigate</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Group>
           <DropdownMenu.Label>Pages</DropdownMenu.Label>

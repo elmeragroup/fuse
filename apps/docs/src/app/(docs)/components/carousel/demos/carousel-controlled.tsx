@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Carousel, useCarousel } from "@elmeragroup/fuse/carousel";
 
 const PLANS = ["Basic", "Plus", "Premium"];
@@ -12,13 +13,14 @@ function PlanPicker() {
   return (
     <div role="group" aria-label="Plan" className="flex justify-center gap-2">
       {PLANS.map((plan, page) => (
-        <button
+        <Button
           key={plan}
-          type="button"
+          variant="outline"
+          size="sm"
           aria-pressed={state.index === page}
           onClick={() => actions.goTo(page)}>
           {plan}
-        </button>
+        </Button>
       ))}
     </div>
   );

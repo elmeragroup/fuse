@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 export function SheetSize2xl() {
   return (
     <Sheet.Root>
-      <Sheet.Trigger>Compare tariffs</Sheet.Trigger>
+      <Sheet.Trigger render={<Button variant="outline" />}>Compare tariffs</Sheet.Trigger>
       <Sheet.Content size="2xl">
         <Sheet.Header>
           <Sheet.Title>Compare tariffs</Sheet.Title>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { GaugeChart } from "@elmeragroup/fuse/chart";
 
 // One meter's power draw, read every ten seconds as the oven, the heat pump and the car charger
@@ -14,13 +15,14 @@ export function GaugeChartLive() {
   const [index, setIndex] = useState(0);
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => {
           setIndex((current) => (current + 1) % readings.length);
         }}>
         Next reading
-      </button>
+      </Button>
       <GaugeChart.Root value={readings[index] ?? 0} max={11} valueFormat={power} aria-label="Power draw now">
         <GaugeChart.Track />
         <GaugeChart.Fill />

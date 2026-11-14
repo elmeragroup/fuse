@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 
 const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
@@ -10,7 +11,7 @@ export function DialogScrolling() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   return (
     <Dialog.Root>
-      <Dialog.Trigger>Open the full terms</Dialog.Trigger>
+      <Dialog.Trigger render={<Button variant="outline" />}>Open the full terms</Dialog.Trigger>
       <Dialog.Content initialFocus={titleRef}>
         <Dialog.Header>
           <Dialog.Title ref={titleRef} isFocusable>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 
 /** How many paths the demo lists before it counts the rest. */
@@ -17,7 +18,7 @@ export function FileUploadFolders() {
       onSelect={(files) => setPaths(files.map((file) => file.webkitRelativePath || file.name))}
       className="max-w-md w-full">
       <FileUpload.Dropzone>
-        <FileUpload.Trigger>Add folder</FileUpload.Trigger>
+        <FileUpload.Trigger render={<Button variant="outline" size="sm" />}>Add folder</FileUpload.Trigger>
         <FileUpload.Description>Drop a folder here or choose one.</FileUpload.Description>
       </FileUpload.Dropzone>
       {paths.length > 0 ? (

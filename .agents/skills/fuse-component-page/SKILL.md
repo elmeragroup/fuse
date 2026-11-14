@@ -15,27 +15,35 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    such as `variant` or `size`, gets its own example. So does each state worth seeing, such as
    pending, disabled or a `render` swap. One instance of the page's component per stage, plus its own
    parts and plain HTML. Done when every recipe value has a stage.
-2. **Decide on Composition.** Add `## Composition` only when the component cannot be used
+2. **Stage controls as Buttons.** A clickable control that the subject does not style itself is
+   a Fuse `Button`. Pass it to an unstyled part through `render`, as in
+   `<Dialog.Trigger render={<Button variant="outline" />}>`, and write it in place of a native
+   `<button>`. A trigger or a control that fires something defaults to `outline`, a destructive
+   trigger is `destructive`, a main action, such as a footer's confirm or an upload trigger, is
+   the default variant, and a `Toolbar.Button` is `ghost` `sm`. A link part the subject does not
+   style takes `buttonVariants({ variant: "link" })`. Keep a native `<button>` only when it is the
+   subject's own element, as in `Item.Root`'s `render`.
+3. **Decide on Composition.** Add `## Composition` only when the component cannot be used
    correctly without knowing how its parts or sibling components fit together, as with Form and
    the fields inside it. Keep it to a few sentences. A rule about one prop never goes there; it
    goes on that prop. Adding a slug to `COMPOSITION_PAGES` needs a one-line reason beside it.
-3. **Put each rule on its prop.** A rule a consumer must follow goes into the JSDoc of the prop
+4. **Put each rule on its prop.** A rule a consumer must follow goes into the JSDoc of the prop
    it concerns. Component-level JSDoc reaches neither the API reference nor the `.md` endpoint,
    so a rule about children goes on a declared `children` prop. Implementation rationale goes
    into a comment beside its owner, usually the recipe file. Done when every rule a reader needs
    is on the HTML page.
-4. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
+5. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
    rule as an instruction to the consumer, with the value or markup it names in backticks. Give
    each fact once, on the prop it concerns, and leave out how the component implements it. Cut
    filler: no "simply", "just", "note that", or restating the type.
-5. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
+6. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
    declared prop's default only from destructuring; it reads `@default` only for dependency
    props. A prop with no recorded default shows "unset" in Live code, which is correct when the
    default is unknown. Restating a recipe default this way is interim until the extractor records
    recipe defaults (elmeragroup/internal#39).
-6. **Write the demos and the page**, then record the demo files in
+7. **Write the demos and the page**, then record the demo files in
    `apps/docs/test/fixtures/component-inventory.json` and run `pnpm --filter docs generate`.
-7. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
+8. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
 
 ## Page rules generation enforces
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { PieChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
@@ -35,9 +36,9 @@ export function PieChartUpdate() {
   const [month, setMonth] = useState(0);
   return (
     <div className="flex w-full flex-col gap-4">
-      <button type="button" className="self-start" onClick={() => setMonth(1 - month)}>
+      <Button variant="outline" size="sm" className="self-start" onClick={() => setMonth(1 - month)}>
         {month === 0 ? "Show November" : "Show October"}
-      </button>
+      </Button>
       <PieChart.Root
         data={bills[month] ?? []}
         config={config}

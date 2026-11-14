@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Form } from "@elmeragroup/fuse/form";
 import type { FormProps } from "@elmeragroup/fuse/form";
 import { TextField } from "@elmeragroup/fuse/text-field";
@@ -21,9 +22,9 @@ export function FormServerErrors() {
       <div className="flex flex-col gap-4">
         <TextField label="Email" name="email" defaultValue="ada@example.com" />
         <TextField label="Mobile number" name="phone" filter="numeric" defaultValue="1234" />
-        <button type="submit" className="self-start">
+        <Button type="submit" className="self-start">
           Sign up
-        </button>
+        </Button>
       </div>
     </Form>
   );

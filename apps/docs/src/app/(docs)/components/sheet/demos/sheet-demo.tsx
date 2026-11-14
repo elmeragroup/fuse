@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 export function SheetDemo() {
   return (
     <Sheet.Root>
-      <Sheet.Trigger>Open meter details</Sheet.Trigger>
+      <Sheet.Trigger render={<Button variant="outline" />}>Open meter details</Sheet.Trigger>
       <Sheet.Content>
         <Sheet.Header>
           <Sheet.Title>Meter details</Sheet.Title>
@@ -15,7 +16,7 @@ export function SheetDemo() {
           <p>Last reading 12 480 kWh. Next scheduled read is 1 September.</p>
         </Sheet.Body>
         <Sheet.Footer>
-          <Sheet.Close>Close</Sheet.Close>
+          <Sheet.Close render={<Button variant="outline" />}>Close</Sheet.Close>
         </Sheet.Footer>
       </Sheet.Content>
     </Sheet.Root>

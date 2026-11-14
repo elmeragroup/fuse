@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuDisabled() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>Invoice</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Invoice</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item>Download</DropdownMenu.Item>
         <DropdownMenu.Item disabled>Send reminder</DropdownMenu.Item>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Form } from "@elmeragroup/fuse/form";
 import { TextField } from "@elmeragroup/fuse/text-field";
 
@@ -14,9 +15,9 @@ export function FormDemo() {
       }}>
       <div className="flex flex-col gap-4">
         <TextField label="Email" name="email" isRequired />
-        <button type="submit" className="self-start">
+        <Button type="submit" className="self-start">
           Sign up
-        </button>
+        </Button>
         <p role="status" className="text-sm text-muted-foreground">
           {status}
         </p>

@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 
 export function DialogFooterClose() {
   return (
     <Dialog.Root>
-      <Dialog.Trigger>Cancel the contract</Dialog.Trigger>
+      <Dialog.Trigger render={<Button variant="outline" />}>Cancel the contract</Dialog.Trigger>
       <Dialog.Content>
         <Dialog.Header>
           <Dialog.Title>Cancel the contract</Dialog.Title>
@@ -14,7 +15,7 @@ export function DialogFooterClose() {
           </Dialog.Description>
         </Dialog.Header>
         <Dialog.Footer showCloseButton>
-          <button type="button">Cancel contract</button>
+          <Button>Cancel contract</Button>
         </Dialog.Footer>
       </Dialog.Content>
     </Dialog.Root>

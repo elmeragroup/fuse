@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { ListDetail } from "@elmeragroup/fuse/list-detail";
 
 const READINGS = [
@@ -39,13 +40,13 @@ export function ListDetailNever() {
             {READINGS.map((row) => (
               <tr key={row.meter}>
                 <td>
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
                     onClick={() => {
                       setSelected(row.meter);
                     }}>
                     {row.meter}
-                  </button>
+                  </Button>
                 </td>
                 <td>{row.address}</td>
                 <td>{row.reading}</td>

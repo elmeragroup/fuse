@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuAlignEnd() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>Account</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Account</DropdownMenu.Trigger>
       <DropdownMenu.Content align="end">
         <DropdownMenu.Item>Profile</DropdownMenu.Item>
         <DropdownMenu.Item>Billing</DropdownMenu.Item>

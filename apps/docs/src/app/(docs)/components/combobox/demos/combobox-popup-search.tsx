@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Combobox } from "@elmeragroup/fuse/combobox";
 
 const countries = ["Norway", "Sweden", "Finland", "Denmark"];
@@ -9,12 +10,7 @@ export function ComboboxPopupSearch() {
     <Combobox.Root items={countries} defaultValue="Norway">
       <Combobox.Trigger
         aria-label="Country"
-        render={
-          <button
-            type="button"
-            className="text-sm inline-flex h-9 w-56 items-center justify-between rounded-md border border-input px-3"
-          />
-        }>
+        render={<Button variant="outline" className="w-56 justify-between" />}>
         <Combobox.Value />
       </Combobox.Trigger>
       <Combobox.Content>

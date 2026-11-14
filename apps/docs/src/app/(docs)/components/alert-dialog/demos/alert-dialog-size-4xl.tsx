@@ -1,11 +1,12 @@
 "use client";
 
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function AlertDialogSize4xl() {
   return (
     <AlertDialog.Root>
-      <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
+      <AlertDialog.Trigger render={<Button variant="destructive" />}>Delete order</AlertDialog.Trigger>
       <AlertDialog.Content
         size="4xl"
         title="Delete order?"

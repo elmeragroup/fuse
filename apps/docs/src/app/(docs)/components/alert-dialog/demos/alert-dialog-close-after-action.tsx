@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function AlertDialogCloseAfterAction() {
   const [open, setOpen] = useState(false);
@@ -10,7 +11,7 @@ export function AlertDialogCloseAfterAction() {
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
-      <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
+      <AlertDialog.Trigger render={<Button variant="destructive" />}>Delete order</AlertDialog.Trigger>
       <AlertDialog.Content
         title="Delete order?"
         actionLabel="Delete"

@@ -2,17 +2,18 @@
 
 import { useRef } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 function SaveButton() {
   const toastManager = Toast.useToastManager();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={() => toastManager.add({ title: "Draft saved", description: "You can finish it later." })}>
       Save draft
-    </button>
+    </Button>
   );
 }
 

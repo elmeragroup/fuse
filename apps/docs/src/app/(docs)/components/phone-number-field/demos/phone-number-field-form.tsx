@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 export function PhoneNumberFieldForm() {
@@ -19,8 +20,10 @@ export function PhoneNumberFieldForm() {
       }}>
       <PhoneNumberField label="Mobile" name="phone" defaultValue="+4741234567" />
       <div className="flex gap-2">
-        <button type="submit">Save</button>
-        <button type="reset">Reset</button>
+        <Button type="submit">Save</Button>
+        <Button type="reset" variant="outline">
+          Reset
+        </Button>
       </div>
       <p role="status" className="text-sm text-muted-foreground">
         {submitted}

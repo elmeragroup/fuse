@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 
 export function FileUploadPicker() {
@@ -9,7 +10,7 @@ export function FileUploadPicker() {
 
   return (
     <FileUpload.Root accept=".pdf" onSelect={([file]) => setName(file?.name ?? null)} className="items-start">
-      <FileUpload.Trigger>Choose file</FileUpload.Trigger>
+      <FileUpload.Trigger render={<Button variant="outline" size="sm" />}>Choose file</FileUpload.Trigger>
       <FileUpload.Description>One PDF.</FileUpload.Description>
       {name === null ? null : <p className="text-sm">{name}</p>}
     </FileUpload.Root>

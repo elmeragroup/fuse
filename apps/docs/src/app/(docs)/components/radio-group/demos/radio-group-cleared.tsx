@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Radio, RadioGroup } from "@elmeragroup/fuse/radio-group";
 
 export function RadioGroupCleared() {
@@ -13,9 +14,7 @@ export function RadioGroupCleared() {
         <Radio value="fixed">Fixed price</Radio>
         <Radio value="spot">Spot price</Radio>
       </RadioGroup>
-      <button type="button" className="text-sm underline underline-offset-4" onClick={() => setValue(null)}>
-        Clear the choice
-      </button>
+      <Button onClick={() => setValue(null)}>Clear the choice</Button>
     </div>
   );
 }

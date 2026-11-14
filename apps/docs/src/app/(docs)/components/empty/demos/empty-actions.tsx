@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Empty } from "@elmeragroup/fuse/empty";
 import { Tray } from "@elmeragroup/fuse/icons";
 
@@ -14,8 +15,8 @@ export function EmptyActions() {
         <Empty.Description>Orders you create will show up here.</Empty.Description>
       </Empty.Header>
       <Empty.Content>
-        <button type="button">Create order</button>
-        <button type="button">Import orders</button>
+        <Button>Create order</Button>
+        <Button variant="secondary">Import orders</Button>
       </Empty.Content>
     </Empty.Root>
   );

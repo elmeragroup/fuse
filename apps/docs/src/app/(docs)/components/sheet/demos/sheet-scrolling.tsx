@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
@@ -7,7 +8,7 @@ const clauses = Array.from({ length: 24 }, (_, index) => index + 1);
 export function SheetScrolling() {
   return (
     <Sheet.Root>
-      <Sheet.Trigger>Open the full terms</Sheet.Trigger>
+      <Sheet.Trigger render={<Button variant="outline" />}>Open the full terms</Sheet.Trigger>
       <Sheet.Content>
         <Sheet.Header>
           <Sheet.Title>Full terms</Sheet.Title>
@@ -22,7 +23,7 @@ export function SheetScrolling() {
           ))}
         </Sheet.Body>
         <Sheet.Footer>
-          <Sheet.Close>Close</Sheet.Close>
+          <Sheet.Close render={<Button variant="outline" />}>Close</Sheet.Close>
         </Sheet.Footer>
       </Sheet.Content>
     </Sheet.Root>

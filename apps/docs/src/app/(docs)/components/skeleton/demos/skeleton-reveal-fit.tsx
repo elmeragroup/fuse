@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { SkeletonReveal } from "@elmeragroup/fuse/skeleton";
 
 type Customer = {
@@ -40,9 +41,7 @@ function CustomerCard({ customer }: { readonly customer: Customer }) {
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm">{customer.plan}</span>
-        <button type="button" className="text-sm rounded-md border px-3 py-1.5">
-          Change plan
-        </button>
+        <Button variant="outline">Change plan</Button>
       </div>
     </article>
   );
@@ -64,15 +63,15 @@ export function SkeletonRevealFit() {
       <SkeletonReveal data={customer} sample={SAMPLE} label="Loading customer">
         {(shown) => <CustomerCard customer={shown} />}
       </SkeletonReveal>
-      <button
-        type="button"
-        className="text-sm self-start rounded-md border px-3 py-1.5"
+      <Button
+        variant="secondary"
+        className="self-start"
         onClick={() => {
           setCustomer(null);
           setRequest((count) => count + 1);
         }}>
         Reload
-      </button>
+      </Button>
     </div>
   );
 }

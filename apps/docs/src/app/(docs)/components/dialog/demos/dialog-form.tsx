@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 
 export function DialogForm() {
@@ -10,7 +11,7 @@ export function DialogForm() {
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger>Call me back</Dialog.Trigger>
+      <Dialog.Trigger render={<Button variant="outline" />}>Call me back</Dialog.Trigger>
       <Dialog.Content>
         <Dialog.Header>
           <Dialog.Title>Call me back</Dialog.Title>
@@ -33,9 +34,9 @@ export function DialogForm() {
           </label>
         </form>
         <Dialog.Footer showCloseButton closeLabel="Cancel">
-          <button type="submit" form={formId}>
+          <Button type="submit" form={formId}>
             Book the call
-          </button>
+          </Button>
         </Dialog.Footer>
       </Dialog.Content>
     </Dialog.Root>

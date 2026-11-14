@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Popover } from "@elmeragroup/fuse/popover";
 
 export function PopoverAnchor() {
@@ -11,7 +12,7 @@ export function PopoverAnchor() {
     <div className="flex flex-col items-start gap-3">
       <p ref={address}>Storgata 1, 0155 Oslo</p>
       <Popover.Root>
-        <Popover.Trigger>Why this address?</Popover.Trigger>
+        <Popover.Trigger render={<Button variant="outline" />}>Why this address?</Popover.Trigger>
         <Popover.Content anchor={address} side="right">
           <Popover.Header>
             <Popover.Title>Delivery address</Popover.Title>

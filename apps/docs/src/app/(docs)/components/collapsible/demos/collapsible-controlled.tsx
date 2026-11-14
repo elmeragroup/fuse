@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 
 export function CollapsibleControlled() {
@@ -9,9 +10,9 @@ export function CollapsibleControlled() {
 
   return (
     <div className="flex flex-col items-start gap-3">
-      <button type="button" onClick={() => setOpen((value) => !value)}>
+      <Button variant="outline" onClick={() => setOpen((value) => !value)}>
         {open ? "Hide details" : "Show details"}
-      </button>
+      </Button>
       <Collapsible.Root open={open} onOpenChange={setOpen}>
         <Collapsible.Trigger className="font-medium rounded-md px-2 py-1 hover:bg-foreground/5">
           Toggle panel

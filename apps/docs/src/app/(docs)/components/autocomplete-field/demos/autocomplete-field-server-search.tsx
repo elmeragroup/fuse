@@ -5,6 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
 import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
+import { Button } from "@elmeragroup/fuse/button";
 
 type Company = { readonly name: string; readonly orgNumber: string };
 
@@ -168,9 +169,9 @@ export function AutocompleteFieldServerSearch() {
           className="h-9 rounded-md border border-input px-3"
         />
       </label>
-      <button type="submit" className="text-sm self-start rounded-md border border-input px-3 py-1.5">
+      <Button type="submit" className="self-start">
         Continue
-      </button>
+      </Button>
       <p role="status" className="text-sm text-muted-foreground">
         {submitted === "" ? "Nothing submitted yet." : `Submitted ${submitted}`}
       </p>

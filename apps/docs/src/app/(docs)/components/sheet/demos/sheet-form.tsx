@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 export function SheetForm() {
@@ -10,7 +11,7 @@ export function SheetForm() {
 
   return (
     <Sheet.Root open={open} onOpenChange={setOpen}>
-      <Sheet.Trigger>Report a reading</Sheet.Trigger>
+      <Sheet.Trigger render={<Button variant="outline" />}>Report a reading</Sheet.Trigger>
       <Sheet.Content>
         <Sheet.Header>
           <Sheet.Title>Report a reading</Sheet.Title>
@@ -39,10 +40,10 @@ export function SheetForm() {
           </form>
         </Sheet.Body>
         <Sheet.Footer>
-          <Sheet.Close>Cancel</Sheet.Close>
-          <button type="submit" form={formId}>
+          <Sheet.Close render={<Button variant="outline" />}>Cancel</Sheet.Close>
+          <Button type="submit" form={formId}>
             Send reading
-          </button>
+          </Button>
         </Sheet.Footer>
       </Sheet.Content>
     </Sheet.Root>

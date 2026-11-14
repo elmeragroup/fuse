@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 export function SheetTop() {
   return (
     <Sheet.Root side="top">
-      <Sheet.Trigger>Open meter details</Sheet.Trigger>
+      <Sheet.Trigger render={<Button variant="outline" />}>Open meter details</Sheet.Trigger>
       <Sheet.Content>
         <Sheet.Header>
           <Sheet.Title>Meter details</Sheet.Title>

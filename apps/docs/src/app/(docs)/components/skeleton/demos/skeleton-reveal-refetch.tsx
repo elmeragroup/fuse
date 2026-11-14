@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { SkeletonReveal } from "@elmeragroup/fuse/skeleton";
 
 type Customer = {
@@ -31,9 +32,7 @@ function CustomerCard({ customer }: { readonly customer: Customer }) {
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm">{customer.plan}</span>
-        <button type="button" className="text-sm rounded-md border px-3 py-1.5">
-          Change plan
-        </button>
+        <Button variant="outline">Change plan</Button>
       </div>
     </article>
   );

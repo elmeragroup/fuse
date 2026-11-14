@@ -1,11 +1,12 @@
 "use client";
 
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+import { Button } from "@elmeragroup/fuse/button";
 
 export function AlertDialogCancelLabel() {
   return (
     <AlertDialog.Root>
-      <AlertDialog.Trigger>Remove contract</AlertDialog.Trigger>
+      <AlertDialog.Trigger render={<Button variant="destructive" />}>Remove contract</AlertDialog.Trigger>
       <AlertDialog.Content
         title="Remove this contract?"
         actionLabel="Remove"

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Checkbox } from "@elmeragroup/fuse/checkbox";
 import { Field } from "@elmeragroup/fuse/field";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
@@ -13,9 +14,7 @@ export function SelectionItemSubSection() {
           <SelectionItem.Description>A text message when the spot price peaks.</SelectionItem.Description>
         </SelectionItem.Content>
         <SelectionItem.SubSection>
-          <button type="button" className="text-sm underline underline-offset-4">
-            Change the alert price
-          </button>
+          <Button variant="link">Change the alert price</Button>
         </SelectionItem.SubSection>
       </SelectionItem.Shell>
     </Field.Root>

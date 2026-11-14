@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Popover } from "@elmeragroup/fuse/popover";
 
 export function PopoverAlignEnd() {
   return (
     <Popover.Root>
-      <Popover.Trigger>Delivery window</Popover.Trigger>
+      <Popover.Trigger render={<Button variant="outline" />}>Delivery window</Popover.Trigger>
       <Popover.Content align="end">
         <Popover.Header>
           <Popover.Title>Delivery window</Popover.Title>

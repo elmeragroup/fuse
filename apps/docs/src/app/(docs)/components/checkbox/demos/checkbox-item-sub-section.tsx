@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { CheckboxItem, CheckboxItemGroup } from "@elmeragroup/fuse/checkbox";
 
 export function CheckboxItemSubSection() {
@@ -15,9 +16,7 @@ export function CheckboxItemSubSection() {
           <CheckboxItem.Description>A text message when the spot price peaks.</CheckboxItem.Description>
         </CheckboxItem.Content>
         <CheckboxItem.SubSection mode={value.includes("price-alert") ? "visible" : "hidden"}>
-          <button type="button" className="text-sm underline underline-offset-4">
-            Change the alert price
-          </button>
+          <Button variant="link">Change the alert price</Button>
         </CheckboxItem.SubSection>
       </CheckboxItem>
     </CheckboxItemGroup>

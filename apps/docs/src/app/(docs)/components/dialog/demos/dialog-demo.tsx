@@ -1,11 +1,12 @@
 "use client";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 
 export function DialogDemo() {
   return (
     <Dialog.Root>
-      <Dialog.Trigger>Move the meter reading</Dialog.Trigger>
+      <Dialog.Trigger render={<Button variant="outline" />}>Move the meter reading</Dialog.Trigger>
       <Dialog.Content>
         <Dialog.Header>
           <Dialog.Title>Move the meter reading</Dialog.Title>
@@ -14,8 +15,8 @@ export function DialogDemo() {
           </Dialog.Description>
         </Dialog.Header>
         <Dialog.Footer>
-          <Dialog.Close>Cancel</Dialog.Close>
-          <button type="button">Move reading</button>
+          <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
+          <Button>Move reading</Button>
         </Dialog.Footer>
       </Dialog.Content>
     </Dialog.Root>

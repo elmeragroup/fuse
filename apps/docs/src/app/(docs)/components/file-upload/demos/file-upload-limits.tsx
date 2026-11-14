@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 import type { FileRejection } from "@elmeragroup/fuse/file-upload";
 
@@ -76,7 +77,7 @@ export function FileUploadLimits() {
       onReject={(rejections) => report(rejections.map(rejectionText))}
       className="max-w-md w-full">
       <FileUpload.Dropzone>
-        <FileUpload.Trigger>Add files</FileUpload.Trigger>
+        <FileUpload.Trigger render={<Button size="sm" />}>Add files</FileUpload.Trigger>
         <FileUpload.Description>Images or PDFs, up to 3 files of 5 MB each.</FileUpload.Description>
       </FileUpload.Dropzone>
       <p role="alert" className="text-sm text-error">
@@ -87,13 +88,13 @@ export function FileUploadLimits() {
           {files.map((file) => (
             <li key={file.id} className="flex items-center justify-between gap-2">
               {file.name}, {file.size}
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="xs"
                 aria-label={`Remove ${file.name}`}
-                onClick={() => setFiles((current) => current.filter((entry) => entry.id !== file.id))}
-                className="text-muted-foreground underline">
+                onClick={() => setFiles((current) => current.filter((entry) => entry.id !== file.id))}>
                 Remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Button } from "@elmeragroup/fuse/button";
 import { SkeletonReveal } from "@elmeragroup/fuse/skeleton";
 
 type Notice = { readonly title: string; readonly paragraphs: readonly string[] };
@@ -46,15 +47,15 @@ export function SkeletonRevealHeight() {
           </article>
         )}
       </SkeletonReveal>
-      <button
-        type="button"
-        className="text-sm self-start rounded-md border px-3 py-1.5"
+      <Button
+        variant="secondary"
+        className="self-start"
         onClick={() => {
           setNotice(null);
           setRequest((count) => count + 1);
         }}>
         Reload
-      </button>
+      </Button>
     </div>
   );
 }
