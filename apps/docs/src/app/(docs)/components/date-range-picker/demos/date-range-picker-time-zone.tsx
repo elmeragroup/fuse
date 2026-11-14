@@ -1,0 +1,15 @@
+"use client";
+
+import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
+
+export function DateRangePickerTimeZone() {
+  return (
+    <DateRangePickerField
+      label="Outage"
+      defaultValue={{
+        start: Temporal.ZonedDateTime.from("2026-10-24T22:00[Europe/Oslo]"),
+        end: Temporal.ZonedDateTime.from("2026-10-25T06:00[Europe/Oslo]"),
+      }}
+    />
+  );
+}

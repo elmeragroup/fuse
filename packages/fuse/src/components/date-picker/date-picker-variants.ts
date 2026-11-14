@@ -19,7 +19,8 @@ import { buttonVariants } from "../button/button-variants";
  * - `input` is a `DateInput.Root` inside the box: no chrome of its own, the md control inset and the
  *   text-entry type, so the segments line up with DateField's.
  * - `trigger` is the calendar button flush against the box's border: it reads the box's inner
- *   corner and the field's inner square.
+ *   corner and the field's inner square, which keeps it above the 24px target-size floor at both
+ *   densities.
  * - `popup` drops Popover's width and padding, since the calendar and the presets pad themselves.
  * - `timeInput` is a time input under the calendar in the popup: a `DateInput.Root` box of its own,
  *   inset as the calendar's shell pads, inside `timeField`, its own Field, which adds no box. A

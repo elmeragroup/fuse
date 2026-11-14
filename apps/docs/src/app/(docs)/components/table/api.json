@@ -49,8 +49,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row's cells. The table never marks a row selected: set `data-state=\"selected\"` on the row when your row model selects it, and the row takes the muted fill.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Table.Head",
@@ -97,7 +107,7 @@
           "type": "\"default\" | \"non-bordered-compact\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Facts-sheet look. `\"default\"` draws a bordered box in the `panel` fill and states it as `--surface`. `\"non-bordered-compact\"` drops the wrapper border/background, keeps the surface of its host, and tightens cell padding via descendant `data-variant` selectors.",
+          "description": "The facts sheet's look. `\"default\"` draws a bordered box in the `panel` fill. `\"non-bordered-compact\"` drops the border and the fill, keeps the fill of the surface around it, and tightens the cell padding.",
           "required": false,
           "values": [
             "default",
@@ -121,7 +131,7 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline levels; the level-2 type classes and `data-slot` stay merged onto the replacement.",
+          "description": "Replaces the `<h2>`, such as `render={<h3 />}` for another outline level. The level-2 type classes stay on the replacement.",
           "required": false
         }
       ]
@@ -141,7 +151,7 @@
           "type": "VerticalTableItem[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Key/value rows rendered before `children`. Each item becomes a `VerticalTable.Row` with `Key` then `Value`.",
+          "description": "Key/value rows rendered before `children`. Each item becomes a `VerticalTable.Row` with a `VerticalTable.Key` and a `VerticalTable.Value`.",
           "required": false
         },
         {
@@ -150,7 +160,7 @@
           "type": "DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Inner `<table>` (`Table.Root`) props. Association attributes such as `aria-labelledby` belong here — Body's own props, including `aria-*`, stay on the wrapper only. `className` merges with `table-fixed`.",
+          "description": "The inner `Table.Root`'s props. Put association attributes such as `aria-labelledby` here: the Body's own props, `aria-*` included, stay on the wrapper `div`. A `className` here merges with `table-fixed`.",
           "required": false
         }
       ]
@@ -170,7 +180,7 @@
           "type": "\"bold\" | \"normal\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"normal\"",
-          "description": "Weight token consumed by `Key`/`Value` via the row group scope.",
+          "description": "The text weight of the row's `VerticalTable.Key` and `VerticalTable.Value`.",
           "required": false,
           "values": [
             "bold",
@@ -183,7 +193,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the row with the `hidden` class when true.",
+          "description": "Hides the row.",
           "required": false
         }
       ]
@@ -203,7 +213,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).",
+          "description": "Shows a skeleton in place of the children while the key loads.",
           "required": false
         },
         {
@@ -212,7 +222,7 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `<td>` via base-ui `useRender`. Pass `render={<th scope=\"row\" />}` for row-header semantics; Key classes and `data-slot` stay merged onto the host.",
+          "description": "Replaces the `<td>`. Pass `render={<th scope=\"row\" />}` to make the key the row's header. The key's classes stay on the replacement.",
           "required": false
         },
         {
@@ -221,7 +231,7 @@
           "type": "\"default\" | \"truncate\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"truncate\"",
-          "description": "`\"truncate\"` clips overflowing text; `\"default\"` wraps (`whitespace-normal`).",
+          "description": "`\"truncate\"` clips text that overflows the cell; `\"default\"` wraps it.",
           "required": false,
           "values": [
             "default",
@@ -245,7 +255,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).",
+          "description": "Shows a skeleton in place of the children while the value loads.",
           "required": false
         },
         {
@@ -254,7 +264,7 @@
           "type": "\"default\" | \"truncate\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"truncate\"",
-          "description": "`\"truncate\"` clips overflowing text; `\"default\"` wraps (`whitespace-normal`).",
+          "description": "`\"truncate\"` clips text that overflows the cell; `\"default\"` wraps it.",
           "required": false,
           "values": [
             "default",

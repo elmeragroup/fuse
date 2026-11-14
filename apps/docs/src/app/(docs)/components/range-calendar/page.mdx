@@ -3,10 +3,16 @@ lede: >
   A month grid for picking a range of dates, built from Calendar's parts, with Temporal values.
 ---
 
-import { RangeCalendarBasic } from "./demos/range-calendar-basic";
-import { RangeCalendarMonths } from "./demos/range-calendar-months";
-import { RangeCalendarUnavailable } from "./demos/range-calendar-unavailable";
-import { RangeCalendarControlled } from "./demos/range-calendar-controlled";
+import { RangeCalendarDemo } from "./demos/range-calendar-demo";
+import { RangeCalendarSeveralMonths } from "./demos/range-calendar-several-months";
+import { RangeCalendarPageByOneMonth } from "./demos/range-calendar-page-by-one-month";
+import { RangeCalendarWeekStartsMonday } from "./demos/range-calendar-week-starts-monday";
+import { RangeCalendarResetOnLeave } from "./demos/range-calendar-reset-on-leave";
+import { RangeCalendarBounds } from "./demos/range-calendar-bounds";
+import { RangeCalendarUnavailableDates } from "./demos/range-calendar-unavailable-dates";
+import { RangeCalendarDisabled } from "./demos/range-calendar-disabled";
+import { RangeCalendarReadOnly } from "./demos/range-calendar-read-only";
+import { RangeCalendarCanceledChange } from "./demos/range-calendar-canceled-change";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,77 +20,93 @@ export const metadata = componentMetadata("range-calendar");
 
 <ComponentIntro slug="range-calendar" />
 
-<Prose>
+<DefaultDemo slug="range-calendar" file="range-calendar-demo.tsx">
+  <RangeCalendarDemo />
+</DefaultDemo>
 
-`RangeCalendar` from `@elmeragroup/fuse/range-calendar` picks a range of dates. Its value is a range, `{ start, end }`: each end takes a `Temporal.PlainDate` object from any Temporal implementation, and `onValueChange` hands back this runtime's `PlainDate`s, earlier day first. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
+## Usage
 
-Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser, so engines without native Temporal get the polyfill.
+{/* prettier-ignore */}
+```tsx
+import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 
-`RangeCalendar.Root` is its own Root; every other part is [Calendar](/components/calendar)'s, under the same names, so compose it the same way. With no children, `RangeCalendar.Months` renders each month's heading and grid.
+<RangeCalendar.Root aria-label="Stay">
+  <RangeCalendar.Header>
+    <RangeCalendar.DecrementMonth />
+    <RangeCalendar.VisibleRangeHeading />
+    <RangeCalendar.IncrementMonth />
+  </RangeCalendar.Header>
+  <RangeCalendar.Months />
+</RangeCalendar.Root>
+```
 
-</Prose>
+## Examples
 
-<Demo slug="range-calendar" id="basic" title="Basic" file="range-calendar-basic.tsx">
-  <RangeCalendarBasic />
+<Demo
+  slug="range-calendar"
+  id="several-months"
+  title="Several months"
+  level={3}
+  file="range-calendar-several-months.tsx">
+  <RangeCalendarSeveralMonths />
 </Demo>
 
-<Prose>
-
-## Choosing a range
-
-The first day pressed anchors the range, and the range then follows the hovered or focused day until a second day completes it. A second day before the first swaps them, so the range always starts on the earlier day. With the keyboard, Enter or Space anchors and moves focus on a day, so the range shows two days; the arrow keys stretch it, and Enter or Space completes it. Escape drops the anchor and keeps the previous range.
-
-A range left open completes at the focused or hovered day when focus leaves the calendar, or when the user releases a press outside its days and month buttons; a touch that scrolls the page leaves it open. Pass `commitBehavior="reset"` to drop the anchor there instead and keep the previous range.
-
-## Several months
-
-`visibleMonths` shows that many months in a row that wraps on a narrow host, and the range highlight runs across their grids. Arrow keys move from one month's grid into the next without paging. Past the visible months, and on the month buttons, the view pages by every visible month, or by one with `pageBehavior="single"`.
-
-</Prose>
-
-<Demo slug="range-calendar" id="months" title="Several months" file="range-calendar-months.tsx">
-  <RangeCalendarMonths />
+<Demo
+  slug="range-calendar"
+  id="page-by-one-month"
+  title="Page by one month"
+  level={3}
+  file="range-calendar-page-by-one-month.tsx">
+  <RangeCalendarPageByOneMonth />
 </Demo>
 
-<Prose>
-
-## Bounds and unavailable dates
-
-`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`, as on Calendar. `isDateUnavailable` refuses days the user may still focus, such as booked nights here; it also receives the anchored day while a range is open, so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day on each side are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep `isDateUnavailable` defined outside render, since every day re-renders when its identity changes.
-
-</Prose>
-
-<Demo slug="range-calendar" id="unavailable" title="Unavailable dates" file="range-calendar-unavailable.tsx">
-  <RangeCalendarUnavailable />
+<Demo
+  slug="range-calendar"
+  id="week-starts-monday"
+  title="Week starts on Monday"
+  level={3}
+  file="range-calendar-week-starts-monday.tsx">
+  <RangeCalendarWeekStartsMonday />
 </Demo>
 
-<Prose>
-
-## Controlled value and canceling a change
-
-`value` and `onValueChange` let the parent own the range. `onValueChange` is called only when a range completes, with the details of the change: its `reason` (`"day-press"`, `"keyboard"`, `"outside-press"` or `"focus-out"`), the DOM `event`, the `trigger` element, `cancel()` and `getValidationError()`. Canceling a day press or key keeps the value and the anchor, so the user can pick another end, as the seven-night limit below does; canceling an outside press or a focus-out keeps the value and drops the anchor. A press on an outside element that takes focus, such as a mouse press on a button in most browsers, moves focus first and reports `"focus-out"`, while a touch tap on the same button reports `"outside-press"`, so treat the two reasons alike. `getValidationError()` returns `null` for a range the calendar accepts, and otherwise `"rangeUnderflow"` for a start before `minValue`, `"rangeOverflow"` for an end after `maxValue` and `"unavailable"` for an end `isDateUnavailable` refuses, the words of `ValidityState` that every Fuse date component uses. `onVisibleRangeChange` reports each page as on Calendar.
-
-</Prose>
-
-<Demo slug="range-calendar" id="controlled" title="Controlled value" file="range-calendar-controlled.tsx">
-  <RangeCalendarControlled />
+<Demo
+  slug="range-calendar"
+  id="reset-on-leave"
+  title="Reset on leave"
+  level={3}
+  file="range-calendar-reset-on-leave.tsx">
+  <RangeCalendarResetOnLeave />
 </Demo>
 
-<Prose>
+<Demo slug="range-calendar" id="bounds" title="Bounds" level={3} file="range-calendar-bounds.tsx">
+  <RangeCalendarBounds />
+</Demo>
 
-## Styling the range
+<Demo
+  slug="range-calendar"
+  id="unavailable-dates"
+  title="Unavailable dates"
+  level={3}
+  file="range-calendar-unavailable-dates.tsx">
+  <RangeCalendarUnavailableDates />
+</Demo>
 
-Each day's gridcell and button carry the range as bare data attributes, present and empty: `data-selected` on every selected day, `data-in-range` on the days from the range's start to its end, `data-selection-start` and `data-selection-end` on its ends, and `data-highlighted` on the days of a range being chosen. The Root carries `data-selecting` while a range is open and `data-invalid` when an end falls outside the bounds or on an unavailable day. The default styles paint a band across the in-range cells and fill the ends' circles. Each grid is `aria-multiselectable`, since several of its cells are selected at once.
+<Demo slug="range-calendar" id="disabled" title="Disabled" level={3} file="range-calendar-disabled.tsx">
+  <RangeCalendarDisabled />
+</Demo>
 
-## Accessibility
+<Demo slug="range-calendar" id="read-only" title="Read-only" level={3} file="range-calendar-read-only.tsx">
+  <RangeCalendarReadOnly />
+</Demo>
 
-- **Name the calendar.** The Root is a `group` named by `aria-label` or `aria-labelledby`, and each grid's name starts with it: "Stay, October 2026".
-- **The ends name the range.** The range's first and last day buttons start with the whole range, "Selected Range: Monday, October 12 to Friday, October 16, 2026", and every selected day ends in " selected", as React Aria names them. `aria-selected` sits on the gridcell.
-- **The focused day says what selecting it does:** "Click to start selecting date range", then "Click to finish selecting date range" once a range is open.
-- **One tab stop and one live region,** as on Calendar.
-- **24px targets** at both densities: the days are 36px circles.
-
-</Prose>
+<Demo
+  slug="range-calendar"
+  id="canceled-change"
+  title="Canceled change"
+  level={3}
+  file="range-calendar-canceled-change.tsx">
+  <RangeCalendarCanceledChange />
+</Demo>
 
 <ApiReference slug="range-calendar" />
 

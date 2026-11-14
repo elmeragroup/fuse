@@ -19,7 +19,7 @@ import type { DateGranularity, TemporalValue, ValueKind } from "../../temporal/t
 /** A segment the user edits. */
 export type EditableSegmentType = "year" | "month" | "day" | "hour" | "dayPeriod" | "minute" | "second";
 
-/** The hour cycles a field shows: 1–12 with a day period, or 0–23. */
+/** The hour cycles a field shows: 1 to 12 with a day period, or 0 to 23. */
 export type HourCycle = "h12" | "h23";
 
 /** A day period: `0` before noon, `1` from noon. */
@@ -30,7 +30,7 @@ export type DateDraft = {
   readonly year: number | null;
   readonly month: number | null;
   readonly day: number | null;
-  /** The hour in the field's hour cycle: 1–12 under `h12`, 0–23 under `h23`. */
+  /** The hour in the field's hour cycle: 1 to 12 under `h12`, 0 to 23 under `h23`. */
   readonly hour: number | null;
   /** The day period under `h12`; always `null` under `h23`. */
   readonly dayPeriod: DayPeriod | null;
@@ -112,7 +112,7 @@ export function segmentLimits(type: EditableSegmentType, hourCycle: HourCycle): 
 /**
  * A 24-hour hour in an hour cycle.
  *
- * @param hour - The hour, 0–23.
+ * @param hour - The hour, 0 to 23.
  * @param hourCycle - The cycle.
  * @returns The day period (`null` under `h23`) and the hour in that cycle.
  */
@@ -128,10 +128,10 @@ export function toHourCycle(hour: number, hourCycle: HourCycle): readonly [DayPe
 /**
  * An hour in a cycle as a 24-hour hour.
  *
- * @param hour - The hour in the cycle: 1–12 under `h12`, 0–23 under `h23`.
+ * @param hour - The hour in the cycle: 1 to 12 under `h12`, 0 to 23 under `h23`.
  * @param dayPeriod - The day period, which only `h12` reads.
  * @param hourCycle - The cycle.
- * @returns The hour, 0–23.
+ * @returns The hour, 0 to 23.
  */
 export function fromHourCycle(hour: number, dayPeriod: DayPeriod, hourCycle: HourCycle): number {
   if (hourCycle === "h23") {
@@ -410,7 +410,7 @@ function cycleZonedHour(
  */
 export function draftToValue(draft: DateDraft, base: TemporalValue, hourCycle: HourCycle): TemporalValue {
   const runtime = temporal();
-  // A lone typed zero, the first digit of 01–09, is below every limit; it reads as the limit, as
+  // A lone typed zero, the first digit of 01 to 09, is below every limit; it reads as the limit, as
   // React Aria's constrain does, while the draft keeps showing it.
   const date = {
     year: Math.max(1, draft.year ?? base.year),

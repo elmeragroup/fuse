@@ -1,0 +1,24 @@
+"use client";
+
+import { Calendar } from "@elmeragroup/fuse/calendar";
+
+/** Saturdays and Sundays: focusable, so a keyboard user reads them, but never selectable. */
+function isWeekend(date: Temporal.PlainDate): boolean {
+  return date.dayOfWeek >= 6;
+}
+
+export function CalendarUnavailableDates() {
+  return (
+    <Calendar.Root
+      aria-label="Installation date"
+      defaultValue={Temporal.PlainDate.from("2026-07-14")}
+      isDateUnavailable={isWeekend}>
+      <Calendar.Header>
+        <Calendar.DecrementMonth />
+        <Calendar.VisibleRangeHeading />
+        <Calendar.IncrementMonth />
+      </Calendar.Header>
+      <Calendar.Months />
+    </Calendar.Root>
+  );
+}

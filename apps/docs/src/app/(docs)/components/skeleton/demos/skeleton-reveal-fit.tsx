@@ -2,10 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { Avatar } from "@elmeragroup/fuse/avatar";
-import { Badge } from "@elmeragroup/fuse/badge";
-import { Button } from "@elmeragroup/fuse/button";
-import { Card } from "@elmeragroup/fuse/card";
 import { SkeletonReveal } from "@elmeragroup/fuse/skeleton";
 
 type Customer = {
@@ -30,23 +26,25 @@ const CUSTOMER: Customer = {
   address: "Kongens gate 12, 7011 Trondheim",
 };
 
-function CustomerCard({ customer }: { customer: Customer }) {
+function CustomerCard({ customer }: { readonly customer: Customer }) {
   return (
-    <Card.Root>
-      <Card.Header className="flex flex-row items-center gap-3">
-        <Avatar.Root>
-          <Avatar.Fallback>{customer.initials}</Avatar.Fallback>
-        </Avatar.Root>
+    <article className="flex flex-col gap-4 rounded-lg border p-4">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium flex size-10 items-center justify-center rounded-full bg-muted">
+          {customer.initials}
+        </span>
         <div className="flex flex-col gap-1">
-          <Card.Title>{customer.name}</Card.Title>
-          <Card.Description>{customer.address}</Card.Description>
+          <h4 className="font-medium">{customer.name}</h4>
+          <p className="text-sm text-muted-foreground">{customer.address}</p>
         </div>
-      </Card.Header>
-      <Card.Content className="flex items-center justify-between gap-2">
-        <Badge>{customer.plan}</Badge>
-        <Button variant="outline">Change plan</Button>
-      </Card.Content>
-    </Card.Root>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm">{customer.plan}</span>
+        <button type="button" className="text-sm rounded-md border px-3 py-1.5">
+          Change plan
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -66,15 +64,15 @@ export function SkeletonRevealFit() {
       <SkeletonReveal data={customer} sample={SAMPLE} label="Loading customer">
         {(shown) => <CustomerCard customer={shown} />}
       </SkeletonReveal>
-      <Button
-        variant="secondary"
-        className="self-start"
+      <button
+        type="button"
+        className="text-sm self-start rounded-md border px-3 py-1.5"
         onClick={() => {
           setCustomer(null);
           setRequest((count) => count + 1);
         }}>
         Reload
-      </Button>
+      </button>
     </div>
   );
 }

@@ -15,7 +15,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The Bar, the overlays and anything else that reads the filter.",
+          "description": "The `DataTableFilter.Bar`, `DataTableFilter.Content` and `DataTableFilter.ValueContent`, as siblings, never one inside another, and anything else that reads the filter. A part outside its Root or chip throws a `DataTableFilterCompositionError` that names the fix. Inside the Root, `useDataTableFilter().actions.edit(fieldId)` opens a field's editor: the value popover of a field with a chip, and otherwise the add menu on a text, number or date field's editor.",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "FilterFacets<TFields> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Server counts and ranges. They win over TanStack faceting, and with `manualFiltering` they are the only source, since TanStack would count the current page only.",
+          "description": "Server counts and ranges. They win over TanStack faceting, and with `manualFiltering` they are the only source, since TanStack would count the current page only. An absent entry means unknown, and its list shows no counts.",
           "required": false
         },
         {
@@ -33,7 +33,7 @@
           "type": "TFields",
           "shortType": null,
           "defaultValue": null,
-          "description": "The filterable fields keyed by column id, from `defineFilterFields`.",
+          "description": "The filterable fields keyed by column id, from `defineFilterFields<Row>()`. The map checks each field's kind against the column's type and each option's value against the column's values. It holds no functions, so a server module can define it and pass it to the client. A text field matches `contains` by default; list `startsWith` in its `operators` for a prefix match, such as an ID typed from its start. A boolean field filters a column of `true` and `false` through a Yes and No list with counts, named by `trueLabel` and `falseLabel`. Give it `toggle: true` for a scope such as \"My orders\" that is on or off: its add-menu row ticks the filter on and off, and its chip is its name and Remove. With `manualFiltering` a toggle's id need not be a column, since the server decides what it means. A date field lists its presets by key, such as `presets: [\"today\", \"yesterday\", \"thisWeek\", \"lastMonth\"]`. A period preset covers the whole period, and a week starts on the locale's first day.",
           "required": true
         },
         {
@@ -51,7 +51,7 @@
           "type": "((fieldId: string | null) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the field whose editor opens, and null when it closes. A server fetches facets from it.",
+          "description": "Called with the field whose submenu or editor opens, and null when it closes, so a server can fetch that field's facets first.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "FilterTableSource",
           "shortType": null,
           "defaultValue": null,
-          "description": "The table, from `useTable` or a Fuse table hook with `columnFilteringFeature`.",
+          "description": "The table, from TanStack Table 9.2 or later: `useTable` or a Fuse table hook with `columnFilteringFeature`. The filter reads and writes its `columnFilters` state, and every filter value is a plain object, `{ kind, operator, values }`. To filter on the client, add `createDataTableFilterFn({ timeZone })` to the features' `filterFns` and name it in `defaultColumn.filterFn`.",
           "required": true
         },
         {
@@ -69,7 +69,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The zone for date presets and the date editor's today. Defaults to the runtime zone.",
+          "description": "The zone for date presets and the date editor's today. Defaults to the runtime zone. Pass the zone you give `createDataTableFilterFn`, so the presets and the date matches agree on the calendar day.",
           "required": false
         }
       ]
@@ -82,8 +82,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `DataTableFilter.Trigger`, the `DataTableFilter.Chips` and `DataTableFilter.Clear`. Defaults to those three. The bar stays one line high however many filters it holds, so a search field or table beside it never moves. The chips sit in one strip that scrolls sideways, by touch, trackpad, keyboard focus or a vertical mouse wheel, and an end of the strip fades only while chips hide past it. Clear follows the last chip, or sits at the bar's end once the chips overflow. The Trigger is a square icon button named \"Filter\" at every width. Below a 36rem bar width Clear hides its label behind its icon, and its name stays \"Clear filters\".",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -561,7 +570,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The menu's body: `FieldList` and an `Editor` for the in-place drill, each rendering only for its step. Defaults to both, with the default kind editors.",
+          "description": "The menu's body: `FieldList` and an `Editor` for the in-place drill, each rendering only for its step. Defaults to both, with the default kind editors. The menu searches the fields. An option or multi-option field opens a submenu of its values with their counts, and each tick applies at once. A text, number or date field opens its editor in the same menu, in place of the list, and its value applies as it changes. Back, Escape, or Backspace in an empty text input return to the list with the search kept and that field highlighted. From two typed characters on, the menu also lists matching option values across every field. A list of values shows its first 50 matches and asks for more typing. A tap opens the menu or a submenu without focusing its search, so the on-screen keyboard stays down until the person taps the search.",
           "required": false
         },
         {
@@ -678,8 +687,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The kind editors, such as `DataTableFilter.OptionEditor` and `DataTableFilter.DateEditor`. Each renders only for its own kinds, so list one for every kind your fields use.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "DataTableFilter.OptionEditor",
@@ -726,7 +745,7 @@
           "type": "((editor: DateEditorState) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Replaces the date inputs, such as with a calendar. The presets and the header stay. On a viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit.",
+          "description": "Replaces the date inputs, such as with a `Calendar`. The presets and the header stay. On a viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit. Keep the calendar in your app's own modules, so the bare entry never pulls the calendars in.",
           "required": false
         }
       ]
@@ -738,8 +757,17 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The actions: `DataTableFilter.SelectAllValues`, `DataTableFilter.ClearValues` and `DataTableFilter.Done`. Render the footer as one shared component in `FieldList`'s children, for the add menu's submenus, and in `OptionEditor`'s children, for a chip's popover. It stays in view below the scrolling list. Select all picks every option, past the 50 shown rows, or every option the search matches, beside the values already picked; a boolean or single-select field leaves it out. Clear all removes only that field's filter and keeps the list open. Done closes the list.",
+          "required": false
+        },
         {
           "name": "fields",
           "origin": "declared",

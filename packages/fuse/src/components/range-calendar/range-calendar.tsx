@@ -65,39 +65,80 @@ export type RangeCalendarRootState = {
   readonly selecting: boolean;
 };
 
-/** `RangeCalendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
-export type RangeCalendarRootProps = Omit<
+type RootElementProps = Omit<
   useRender.ComponentProps<"div", RangeCalendarRootState>,
-  "defaultValue" | "onChange"
-> &
+  "defaultValue" | "onChange" | "aria-label" | "aria-labelledby" | "className"
+>;
+
+type RootClassName = useRender.ComponentProps<"div", RangeCalendarRootState>["className"];
+
+/** `RangeCalendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
+export type RangeCalendarRootProps = RootElementProps &
   CalendarViewProps & {
     /**
      * The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any
      * implementation. A range given in reverse shows the earlier day first. A server component
-     * cannot pass one, since it reaches the client as text: build the value in a client
-     * component. `null` selects nothing.
+     * cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a
+     * `TypeError`: build the value in a client component. `null` selects nothing.
+     *
+     * The range's first and last day buttons start their names with the whole range, such as
+     * "Selected Range: Monday, October 12 to Friday, October 16, 2026", and every selected day's
+     * name ends in " selected". The focused day is described as "Click to start selecting date
+     * range", and as "Click to finish selecting date range" while a range is open.
+     *
+     * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
+     * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
+     * `/quick-start#temporal` shows.
      */
     value?: RangeCalendarValue | null;
-    /** The range selected first, when the calendar owns its value. Takes what `value` takes. */
+    /**
+     * The range selected first, when the calendar owns its value. Takes what `value` takes. With
+     * neither `value` nor `defaultValue`, the calendar opens on today's month, as `Calendar` does.
+     */
     defaultValue?: RangeCalendarValue | null;
     /**
      * Called when the user completes a range, with this runtime's `Temporal.PlainDate`s, earlier
-     * day first. The first day pressed only anchors the range and calls nothing. `details.reason`
-     * is `"day-press"`, `"keyboard"`, `"outside-press"` or `"focus-out"`. Canceling a day press or
-     * key with `details.cancel()` keeps the value and the anchor, so the user can pick another end;
-     * canceling an outside press or focus-out keeps the value and drops the anchor.
-     * `details.getValidationError()` returns `null` for a range the calendar accepts, and
-     * otherwise `"rangeUnderflow"` for a start before `minValue`, `"rangeOverflow"` for an end
-     * after `maxValue` and `"unavailable"` for an end `isDateUnavailable` refuses with no anchor.
+     * day first. The first day pressed, or chosen with Enter or Space, only anchors the range and
+     * calls nothing. The range then follows the focused or hovered day across every visible month
+     * until a second day completes it, and a second day before the first swaps them. After
+     * anchoring, Enter or Space also moves focus on a day, so a keyboard user sees the range
+     * start. Escape drops the anchor and keeps the previous range.
+     *
+     * `details.reason` is `"day-press"`, `"keyboard"`, `"outside-press"` or `"focus-out"`, and
+     * `details.event` and `details.trigger` are the DOM event and the element. A press on an
+     * outside element that takes focus, such as a mouse press on a button in most browsers,
+     * reports `"focus-out"`, while a touch tap on the same button reports `"outside-press"`, so
+     * treat the two alike. Canceling a day press or key with `details.cancel()` keeps the value
+     * and the anchor, so the user can pick another end; canceling an outside press or focus-out
+     * keeps the value and drops the anchor. `details.getValidationError()` returns `null` for a
+     * range the calendar accepts, and otherwise `"rangeUnderflow"` for a start before `minValue`,
+     * `"rangeOverflow"` for an end after `maxValue` and `"unavailable"` for an end
+     * `isDateUnavailable` refuses with no anchor.
      */
     onValueChange?: (value: RangeCalendarValue, details: RangeCalendarRootValueChangeEventDetails) => void;
     /**
-     * What an open range does when focus leaves the calendar or the user presses outside its days
-     * and month buttons: `"select"` completes it at the focused or hovered day, `"reset"` drops the
-     * anchor and keeps the previous range.
+     * What an open range does when focus leaves the calendar or the user releases a press outside
+     * its days and month buttons: `"select"` completes it at the focused or hovered day, `"reset"`
+     * drops the anchor and keeps the previous range. A touch that scrolls the page leaves the
+     * range open.
      * @default "select"
      */
     commitBehavior?: RangeCalendarCommitBehavior;
+    /**
+     * Extra classes, merged last. The Root carries `data-selecting` while a range is open, and
+     * `data-invalid` when an end falls outside the bounds or on an unavailable day. Each day's
+     * cell and button carry `data-selected` on every selected day, `data-in-range` from the
+     * range's start to its end, `data-selection-start` and `data-selection-end` on its ends, and
+     * `data-highlighted` on the days of a range being chosen.
+     */
+    className?: RootClassName;
+    /**
+     * The parts, Calendar's under the same names: a `RangeCalendar.Header` with
+     * `RangeCalendar.DecrementMonth`, `RangeCalendar.VisibleRangeHeading` and
+     * `RangeCalendar.IncrementMonth`, then `RangeCalendar.Months`. The Root's first element child
+     * is a hidden prompt, so your first part is not its `:first-child`.
+     */
+    children?: RootElementProps["children"];
     /**
      * Days the user may focus but not select, given the anchored day while a range is being chosen
      * (`null` otherwise), so the available days can depend on the first day picked. Once a range is
@@ -147,21 +188,10 @@ function sameRange(a: DayRange | null, b: DayRange | null): boolean {
 }
 
 /**
- * A calendar that selects a range of days, on the same parts as Calendar: the months, their day
- * grids and the buttons that page them. The first day pressed (or chosen with Enter or Space)
- * anchors the range; the range then follows the focused or hovered day across every visible month
- * until a second day completes it, earlier day first. Enter or Space moves focus on a day after
- * anchoring, so a keyboard user sees a range start. Escape drops the anchor. Focus leaving the
- * calendar, or a press outside its days and month buttons, completes or drops an open range by
- * `commitBehavior`. It is a `group` named by `aria-label` or `aria-labelledby`; values are
- * `Temporal.PlainDate`s, and a host without native Temporal imports
- * `@elmeragroup/fuse/temporal-polyfill` once.
- *
- * Today is marked from the first client effect on; a server render marks no today. A calendar
- * with neither `value` nor `defaultValue` opens on today's month from that effect on.
- *
- * The Root's first element child is a hidden prompt the days' `aria-describedby` points at, so the
- * consumer's first part is not its `:first-child`.
+ * A calendar that selects a range of days, on the same parts as Calendar. It is a `group`. A host
+ * without native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once. Today is marked from
+ * the first client effect on; a server render marks no today. The Root's first element child is
+ * a hidden prompt the days' `aria-describedby` points at.
  *
  * @throws TypeError naming the prop and the fix when a range end, `minValue` or `maxValue` is a
  *   string rather than a Temporal object, or a range lacks an end, a host defect.

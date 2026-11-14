@@ -28,11 +28,7 @@ export function DateRangePickerPresets() {
   const [preset, setPreset] = useState<Preset | null>("this-week");
   return (
     <DateRangePickerField
-      className="max-w-md"
       label="Report period"
-      hourCycle={24}
-      firstDayOfWeek="mon"
-      size="sm"
       value={value}
       onChange={(next) => {
         setValue(next);

@@ -17,7 +17,9 @@ import {
  *   the shared field chrome, the field height of its `size`, the md control inset and the text-entry
  *   type, floored at 150px wide. Its segments are direct children marked `data-focus-ring-control`,
  *   so the box rings while one has keyboard focus. Base UI-style `data-invalid` and `data-disabled`
- *   give it the data-target state face, and `data-readonly` the muted read-only fill.
+ *   give it the data-target state face, and `data-readonly` the muted read-only fill. The whole
+ *   box is the pointer target, which keeps the 24px target-size floor: a press beside the segments
+ *   focuses the last filled one.
  * - `segment` is one segment: a span the box's type sizes, highlighted while focused, muted and
  *   italic while it shows its placeholder, muted while disabled. A literal takes no padding.
  */

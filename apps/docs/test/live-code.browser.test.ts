@@ -688,12 +688,12 @@ describe("Live code", () => {
   });
 
   it("drops a previewed value the stage cannot render, keeps the stage working and names the value", async () => {
-    // Oracle: the Basic Date Picker holds a PlainDate, which an hour granularity rejects.
+    // Oracle: the Small Date Picker holds a PlainDate, which an hour granularity rejects.
     const context = await browser().newContext({ colorScheme: "light", reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.goto(`${docsBaseUrl()}/components/date-picker`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#basic") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#small") });
     await waitForDemoHydration(frame);
     const stage = frame.locator("[data-demo-stage]");
     await frame.getByRole("button", { name: "Edit props" }).click();

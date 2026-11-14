@@ -35,15 +35,23 @@ import type { DateRangePickerRootContextValue, Endpoint } from "./date-range-pic
 const styles = datePickerVariants({ range: true });
 const fieldSlots = fieldVariants();
 
-/** The parts of `DateRangePicker.Label`, `.Description` and `.Error`: a `span` or `div` with `render`. */
-export type DateRangePickerLabelProps = useRender.ComponentProps<"span">;
+type LabelElementProps = useRender.ComponentProps<"span">;
 
-/**
- * The picker's visible label. It names the group, both inputs' segments ("month, Start Date,
- * Period"), the trigger and the popup; pressing it focuses the first segment. Its text sits in a span
- * whose id the Root owns, which every name points at, so an `id` of your own on the label (directly
- * or on its `render` element) keeps the names whole, on the server too.
- */
+/** `DateRangePicker.Label` takes a `span`'s props plus Base UI's `render`. */
+export type DateRangePickerLabelProps = LabelElementProps & {
+  /**
+   * The label text. It names the group, both inputs' segments ("month, Start Date, Period"), the
+   * trigger and the popup. Pressing the label focuses the first segment.
+   */
+  children?: LabelElementProps["children"];
+  /**
+   * The label's own id. The names point at a span inside the label, so an `id` here, or on the
+   * `render` element, keeps them whole, on the server too.
+   */
+  id?: LabelElementProps["id"];
+};
+
+/** The picker's visible label. Its text sits in a span whose id the Root owns. */
 export function DateRangePickerLabel({
   className,
   render,
@@ -73,8 +81,13 @@ export function DateRangePickerLabel({
   });
 }
 
+type DescriptionElementProps = useRender.ComponentProps<"div">;
+
 /** `DateRangePicker.Description` takes a `div`'s props plus Base UI's `render`. */
-export type DateRangePickerDescriptionProps = useRender.ComponentProps<"div">;
+export type DateRangePickerDescriptionProps = DescriptionElementProps & {
+  /** Supporting copy, which describes the group and both inputs. */
+  children?: DescriptionElementProps["children"];
+};
 
 /**
  * Supporting copy, which describes the group and both inputs. Its text sits in a span whose id the
@@ -105,15 +118,22 @@ export function DateRangePickerDescription({
   });
 }
 
+type ErrorElementProps = useRender.ComponentProps<"div">;
+
 /** `DateRangePicker.Error` takes a `div`'s props plus Base UI's `render`. */
-export type DateRangePickerErrorProps = useRender.ComponentProps<"div">;
+export type DateRangePickerErrorProps = ErrorElementProps & {
+  /**
+   * Replaces the merged messages: each end's own message (missing, incomplete, out of bounds,
+   * unavailable, an end before its start) and the errors a `Form` holds under `startName` and
+   * `endName`, once each. `null`, `false` and `""` keep them. The error renders nothing while the
+   * picker is valid, and while it renders its text describes the group and both inputs.
+   */
+  children?: ErrorElementProps["children"];
+};
 
 /**
- * The merged error of both ends: each end's own message (missing, incomplete, out of bounds,
- * unavailable, an end before its start) and the errors a `Form` holds under `startName` and
- * `endName`, once each, while the picker is invalid. Children that render anything replace them;
- * `null`, `false` and `""` keep them. Renders nothing while the picker is valid. While it renders, the group and both inputs are
- * described by its text, which sits in a span whose id the Root owns.
+ * The merged error of both ends, while the picker is invalid. Its text sits in a span whose id the
+ * Root owns.
  */
 export function DateRangePickerError({
   className,
@@ -328,9 +348,17 @@ export function DateRangePickerSeparator({
  * `DateRangePicker.Calendar` takes `RangeCalendar.Root`'s presentation props, and
  * `commitBehavior`; the range, bounds and calendar options come from the Root.
  */
-export type DateRangePickerCalendarProps = Omit<RangeCalendarRootProps, PickerOwnedCalendarProp> & {
+export type DateRangePickerCalendarProps = Omit<
+  RangeCalendarRootProps,
+  PickerOwnedCalendarProp | "children"
+> & {
   /** Extra classes, merged after the picker's own. */
   className?: string;
+  /**
+   * `RangeCalendar`'s parts, composed as in `RangeCalendar.Root`. Defaults to the month buttons,
+   * the visible months' heading and the months.
+   */
+  children?: RangeCalendarRootProps["children"];
 };
 
 /**

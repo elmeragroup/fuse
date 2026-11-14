@@ -1,7 +1,7 @@
 /**
- * Shared `Table.Cell` class string. `VerticalTable.Key` applies the
- * same layout and in-frame padding so a `render` host keeps the proven cell geometry.
- * Package-private — not on the `@elmeragroup/fuse/table` facade.
+ * The shared `Table.Cell` class string. `VerticalTable.Key` applies the same layout and in-frame
+ * padding, so a `render` host keeps the cell geometry. It is package-private: the
+ * `@elmeragroup/fuse/table` entry does not export it.
  *
  * A cell is a row: at least `--row-h` tall, padded with `--row-px` and `--row-py`, so a
  * one-line row measures exactly `--row-h` and a taller control grows the row by its own height.

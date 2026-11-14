@@ -31,16 +31,27 @@ const ISO_WEEKDAY = {
 } as const satisfies Record<CalendarFirstDayOfWeek, IsoWeekday>;
 
 /**
- * The props every calendar Root takes besides its value: the months it shows, its bounds, whether
- * it responds, its first weekday and its paging callback. `Calendar.Root` and `RangeCalendar.Root`
- * both take them, so each is documented once.
+ * The props every calendar Root takes besides its value: its name, the months it shows, its
+ * bounds, whether it responds, its first weekday and its paging callback. `Calendar.Root` and
+ * `RangeCalendar.Root` both take them, so each is documented once.
  */
 export type CalendarViewProps = {
   /**
+   * The calendar's name, which starts each grid's name, such as "Delivery date, October 2026".
+   * Name a calendar that stands alone with `aria-label` or `aria-labelledby`.
+   */
+  "aria-label"?: string | undefined;
+  /**
+   * The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then
+   * named by those elements and its month heading.
+   */
+  "aria-labelledby"?: string | undefined;
+  /**
    * How many months show side by side, wrapping onto new rows when the host is narrow. Pick it
-   * from the viewport in the host, such as one month on a phone and two on a desktop. A whole
-   * number from 1: a fraction truncates, and anything below 1 or not a finite number shows one
-   * month, with a warning in development.
+   * from the viewport in the host, such as one month on a phone and two on a desktop; the server
+   * renders the count the host passes there. A whole number from 1: a fraction truncates, and
+   * anything below 1 or not a finite number shows one month, with a warning in development.
+   * Arrow keys move focus from one month's grid into the next without paging.
    * @default 1
    */
   visibleMonths?: number;
@@ -53,10 +64,14 @@ export type CalendarViewProps = {
   /**
    * The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any
    * implementation. A date-time bound counts from its own wall-clock day. Days before it are
-   * disabled, never focusable, and focus clamps to it.
+   * disabled and never take focus, the keyboard stops at it, and its name ends ", First
+   * available date". A month button whose page has no selectable day is disabled.
    */
   minValue?: TemporalValue;
-  /** The last selectable day, taking what `minValue` takes. Days after it are disabled. */
+  /**
+   * The last selectable day, taking what `minValue` takes. Days after it are disabled and never
+   * take focus, the keyboard stops at it, and its name ends ", Last available date".
+   */
   maxValue?: TemporalValue;
   /** Whether nothing in the calendar responds: no day takes focus and the month buttons are disabled. */
   disabled?: boolean;

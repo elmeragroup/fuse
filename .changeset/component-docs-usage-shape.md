@@ -127,6 +127,33 @@ documents `variant`, `Attachment.Group` its name and scrolling, `Attachment.Acti
 `SelectField` declares its `size` default, a value it already had, so the API reference shows it.
 The public types are unchanged.
 
+`Calendar`, `RangeCalendar`, `DateField`, `DateInput`, `DatePicker`, `DatePickerField`,
+`DateRangePicker`, `DateRangePickerField`, `DataTable`, `DataTableFilter`, `Table`,
+`VerticalTable`, `Skeleton` and `SkeletonReveal` now document their rules on the props they
+concern. `Calendar.Root` and `RangeCalendar.Root` document their name on `aria-label` and
+`aria-labelledby`, their parts on `children`, the server render and today's month on
+`defaultValue`, and the bound names on `minValue` and `maxValue`. Every date component's `value`
+points to the Temporal polyfill and TypeScript lib setup in the quick start. The calendar parts document the
+live heading on `VisibleRangeHeading`'s `children`, a one-month heading on `MonthHeading`'s, the
+day names and keys on `DayButton`'s, the range flags on `DayGridCell`'s `className`, and canceling
+a page on the month buttons' `onClick`. `RangeCalendar.Root` documents choosing a range and its
+reasons on `onValueChange`, and its state attributes on `className`. `DateField`,
+`DatePickerField` and `DateRangePickerField` document their keys, kinds, time zones, bounds,
+`Form` posting and segment names on the props they concern, and `DateInput.Root` its `Field`
+wiring on `name` and its segments on `children`. `DatePicker.Root` documents its parts and
+`TimeInput` on `children` and focus on `onOpenChange`, and `DatePicker.Presets` who clears the
+checked preset on `value` and `defaultValue`. `DateRangePicker.Label`, `Description` and `Error`
+document their `children`. `DataTable.Pagination` documents a stable `data`, `total` and page size
+changes, and `DataTable.RowActions` its own `label`. `DataTableFilter.Root` documents the fields
+map, its parts and `actions.edit` on `fields` and `children`, the filter function on `table`, and `Bar`, `Content`, `Editor`,
+`ValuesFooter` and `DateEditor` their behaviour on `children`. `Table.Row` documents
+`data-state="selected"`, `Skeleton` documents `aria-busy` on `className`, and `SkeletonReveal`
+documents how it draws, its focus and form rules and its markers on `children`. The month buttons
+declare their `icon` size and `ghost` variant, and `DatePickerField` and `DateRangePickerField`
+their `visibleMonths`, `pageBehavior` and `shouldCloseOnSelect` defaults, and
+`DateRangePickerField` its `size` default, values they already had, so the API reference shows
+them. The public types are unchanged.
+
 Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
 `CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
 The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below

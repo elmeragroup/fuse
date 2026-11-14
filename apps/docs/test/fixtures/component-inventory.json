@@ -280,7 +280,17 @@
   "calendar": {
     "title": "Calendar",
     "rsc": "client",
-    "demos": ["calendar-basic.tsx", "calendar-months.tsx", "calendar-bounds.tsx", "calendar-controlled.tsx"]
+    "demos": [
+      "calendar-demo.tsx",
+      "calendar-several-months.tsx",
+      "calendar-page-by-one-month.tsx",
+      "calendar-week-starts-monday.tsx",
+      "calendar-bounds.tsx",
+      "calendar-unavailable-dates.tsx",
+      "calendar-disabled.tsx",
+      "calendar-read-only.tsx",
+      "calendar-canceled-change.tsx"
+    ]
   },
   "card": {
     "title": "Card",
@@ -503,59 +513,116 @@
     "title": "Data Table",
     "rsc": "client",
     "demos": [
-      "data-table-client-paged.tsx",
+      "data-table-demo.tsx",
+      "data-table-pagination.tsx",
       "data-table-server-paged.tsx",
-      "data-table-cell-override.tsx",
-      "data-table-selection.tsx",
-      "data-table-inventory.tsx"
+      "data-table-sorting.tsx",
+      "data-table-column-visibility.tsx",
+      "data-table-row-selection.tsx",
+      "data-table-row-press.tsx",
+      "data-table-row-actions.tsx",
+      "data-table-formatted-cells.tsx",
+      "data-table-cell-overrides.tsx",
+      "data-table-loading.tsx",
+      "data-table-empty.tsx",
+      "data-table-plain-parts.tsx"
     ]
   },
   "data-table-filter": {
     "title": "Data Table Filter",
     "rsc": "client",
     "demos": [
-      "data-table-filter-client.tsx",
+      "data-table-filter-demo.tsx",
       "data-table-filter-server.tsx",
       "data-table-filter-high-cardinality.tsx",
-      "data-table-filter-calendar.tsx"
+      "data-table-filter-toggle.tsx",
+      "data-table-filter-composed-bar.tsx",
+      "data-table-filter-values-footer.tsx",
+      "data-table-filter-date-calendar.tsx"
     ]
   },
   "date-field": {
     "title": "Date Field",
     "rsc": "server",
     "demos": [
-      "date-field-basic.tsx",
-      "date-field-states.tsx",
-      "date-field-time.tsx",
-      "date-field-zoned.tsx",
+      "date-field-demo.tsx",
+      "date-field-small.tsx",
+      "date-field-date-and-time.tsx",
+      "date-field-hour-granularity.tsx",
+      "date-field-second-granularity.tsx",
+      "date-field-24-hour-clock.tsx",
+      "date-field-time-zone.tsx",
+      "date-field-hidden-time-zone.tsx",
+      "date-field-empty-zoned-field.tsx",
+      "date-field-without-leading-zeros.tsx",
       "date-field-bounds.tsx",
-      "date-field-form.tsx",
-      "date-field-parts.tsx"
+      "date-field-unavailable-dates.tsx",
+      "date-field-error.tsx",
+      "date-field-disabled.tsx",
+      "date-field-read-only.tsx",
+      "date-field-required.tsx",
+      "date-field-form-error.tsx",
+      "date-field-date-input-parts.tsx"
     ]
   },
   "date-picker": {
     "title": "Date Picker",
     "rsc": "client",
     "demos": [
-      "date-picker-basic.tsx",
-      "date-picker-states.tsx",
-      "date-picker-time.tsx",
-      "date-picker-time-input.tsx",
+      "date-picker-demo.tsx",
+      "date-picker-small.tsx",
+      "date-picker-trigger-at-start.tsx",
+      "date-picker-date-and-time.tsx",
+      "date-picker-hour-granularity.tsx",
+      "date-picker-second-granularity.tsx",
+      "date-picker-24-hour-clock.tsx",
+      "date-picker-time-zone.tsx",
+      "date-picker-hidden-time-zone.tsx",
+      "date-picker-empty-zoned-picker.tsx",
+      "date-picker-keep-open-on-select.tsx",
+      "date-picker-week-starts-monday.tsx",
+      "date-picker-several-months.tsx",
+      "date-picker-page-by-one-month.tsx",
+      "date-picker-without-leading-zeros.tsx",
       "date-picker-presets.tsx",
-      "date-picker-form.tsx",
-      "date-picker-controlled.tsx"
+      "date-picker-bounds.tsx",
+      "date-picker-unavailable-dates.tsx",
+      "date-picker-error.tsx",
+      "date-picker-disabled.tsx",
+      "date-picker-read-only.tsx",
+      "date-picker-required.tsx",
+      "date-picker-form-error.tsx",
+      "date-picker-time-in-the-popup.tsx",
+      "date-picker-canceled-change.tsx"
     ]
   },
   "date-range-picker": {
     "title": "Date Range Picker",
     "rsc": "client",
     "demos": [
-      "date-range-picker-basic.tsx",
-      "date-range-picker-states.tsx",
-      "date-range-picker-months.tsx",
-      "date-range-picker-time.tsx",
+      "date-range-picker-demo.tsx",
+      "date-range-picker-small.tsx",
+      "date-range-picker-date-and-time.tsx",
+      "date-range-picker-hour-granularity.tsx",
+      "date-range-picker-second-granularity.tsx",
+      "date-range-picker-24-hour-clock.tsx",
+      "date-range-picker-time-zone.tsx",
+      "date-range-picker-hidden-time-zone.tsx",
+      "date-range-picker-empty-zoned-picker.tsx",
+      "date-range-picker-keep-open-on-select.tsx",
+      "date-range-picker-week-starts-monday.tsx",
+      "date-range-picker-several-months.tsx",
+      "date-range-picker-page-by-one-month.tsx",
+      "date-range-picker-without-leading-zeros.tsx",
       "date-range-picker-presets.tsx",
-      "date-range-picker-form.tsx"
+      "date-range-picker-bounds.tsx",
+      "date-range-picker-unavailable-dates.tsx",
+      "date-range-picker-error.tsx",
+      "date-range-picker-disabled.tsx",
+      "date-range-picker-read-only.tsx",
+      "date-range-picker-required.tsx",
+      "date-range-picker-form-error.tsx",
+      "date-range-picker-parts.tsx"
     ]
   },
   "description-list": {
@@ -1101,10 +1168,16 @@
     "title": "Range Calendar",
     "rsc": "client",
     "demos": [
-      "range-calendar-basic.tsx",
-      "range-calendar-months.tsx",
-      "range-calendar-unavailable.tsx",
-      "range-calendar-controlled.tsx"
+      "range-calendar-demo.tsx",
+      "range-calendar-several-months.tsx",
+      "range-calendar-page-by-one-month.tsx",
+      "range-calendar-week-starts-monday.tsx",
+      "range-calendar-reset-on-leave.tsx",
+      "range-calendar-bounds.tsx",
+      "range-calendar-unavailable-dates.tsx",
+      "range-calendar-disabled.tsx",
+      "range-calendar-read-only.tsx",
+      "range-calendar-canceled-change.tsx"
     ]
   },
   "scatter-chart": {
@@ -1268,11 +1341,15 @@
     "title": "Skeleton",
     "rsc": "server",
     "demos": [
-      "skeleton-basic.tsx",
-      "skeleton-card.tsx",
+      "skeleton-demo.tsx",
+      "skeleton-circle.tsx",
       "skeleton-reveal-fit.tsx",
-      "skeleton-reveal-modes.tsx",
-      "skeleton-reveal-height.tsx"
+      "skeleton-reveal-together.tsx",
+      "skeleton-reveal-sequence.tsx",
+      "skeleton-reveal-height.tsx",
+      "skeleton-reveal-refetch.tsx",
+      "skeleton-reveal-plain-children.tsx",
+      "skeleton-reveal-markers.tsx"
     ]
   },
   "slider": {
@@ -1352,10 +1429,16 @@
     "title": "Table",
     "rsc": "server",
     "demos": [
-      "table-basic.tsx",
+      "table-demo.tsx",
+      "table-selected-row.tsx",
+      "table-footer.tsx",
       "table-in-frame.tsx",
-      "vertical-table-data.tsx",
-      "vertical-table-compact.tsx"
+      "vertical-table-demo.tsx",
+      "vertical-table-compact.tsx",
+      "vertical-table-bold-row.tsx",
+      "vertical-table-wrapping-text.tsx",
+      "vertical-table-loading.tsx",
+      "vertical-table-rows-as-children.tsx"
     ]
   },
   "tabs": {

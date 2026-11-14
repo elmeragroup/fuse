@@ -71,6 +71,14 @@ export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
     "field",
     "Field wires only the parts inside its Root, and the field components render those parts themselves.",
   ],
+  [
+    "data-table",
+    "DataTable's registered parts exist only through createFuseTableHook and the app's features, which have no prop rows.",
+  ],
+  [
+    "data-table-filter",
+    "The filter needs a fields map, a filter function on the table and its overlays beside the Bar, none of them one prop.",
+  ],
 ]);
 
 const FRONTMATTER_FENCE = "---";

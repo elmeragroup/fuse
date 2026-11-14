@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
-import { Card } from "@elmeragroup/fuse/card";
 import { SkeletonReveal } from "@elmeragroup/fuse/skeleton";
 
 type Notice = { readonly title: string; readonly paragraphs: readonly string[] };
@@ -36,29 +34,27 @@ export function SkeletonRevealHeight() {
 
   return (
     <div className="max-w-sm flex w-full flex-col gap-4">
-      <SkeletonReveal data={notice} sample={SAMPLE} reveal="together" label="Loading notice">
+      <SkeletonReveal data={notice} sample={SAMPLE} label="Loading notice">
         {(shown) => (
-          <Card.Root>
-            <Card.Header>
-              <Card.Title>{shown.title}</Card.Title>
-            </Card.Header>
-            <Card.Content className="flex flex-col gap-2">
-              {shown.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </Card.Content>
-          </Card.Root>
+          <article className="flex flex-col gap-2 rounded-lg border p-4">
+            <h4 className="font-medium">{shown.title}</h4>
+            {shown.paragraphs.map((paragraph) => (
+              <p key={paragraph} className="text-sm">
+                {paragraph}
+              </p>
+            ))}
+          </article>
         )}
       </SkeletonReveal>
-      <Button
-        variant="secondary"
-        className="self-start"
+      <button
+        type="button"
+        className="text-sm self-start rounded-md border px-3 py-1.5"
         onClick={() => {
           setNotice(null);
           setRequest((count) => count + 1);
         }}>
         Reload
-      </Button>
+      </button>
     </div>
   );
 }

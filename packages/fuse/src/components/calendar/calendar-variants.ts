@@ -41,6 +41,7 @@ export const calendarVariants = tv({
       "data-selection-end:rounded-e-full data-selection-start:rounded-s-full",
       "data-in-range:first:rounded-s-full data-in-range:last:rounded-e-full"
     ),
+    // A day is a 36px circle at both densities, above the 24px target-size floor.
     day: cn(
       "text-sm flex size-9 cursor-default items-center justify-center rounded-full text-foreground forced-color-adjust-none",
       selfFocusRingClass,
