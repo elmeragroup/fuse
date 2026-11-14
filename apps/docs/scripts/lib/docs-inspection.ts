@@ -47,7 +47,9 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-glide.tsx",
   // A server component writes selection rows and their SubSections, which must still render
   // outside each row's label once they cross Flight (#508).
-  "apps/docs/src/app/(docs)/components/selection-item/demos/selection-item-server.tsx",
+  "apps/docs/src/app/(docs)/components/selection-item/demos/selection-item-server-shell.tsx",
+  "apps/docs/src/app/(docs)/components/selection-item/demos/selection-item-server-checkbox-rows.tsx",
+  "apps/docs/src/app/(docs)/components/selection-item/demos/selection-item-server-radio-rows.tsx",
 ]);
 
 /**

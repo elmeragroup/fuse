@@ -43,8 +43,9 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
-  // The server demo needs a consumer's own "use client" rows to pass its SubSections through.
-  ["selection-item/demos/selection-item-server.tsx", ["./client/plan-rows"]],
+  // The server row demos need a consumer's own "use client" rows to pass their SubSections through.
+  ["selection-item/demos/selection-item-server-checkbox-rows.tsx", ["./client/plan-rows"]],
+  ["selection-item/demos/selection-item-server-radio-rows.tsx", ["./client/plan-rows"]],
 ]);
 
 /**

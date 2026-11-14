@@ -14,13 +14,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: AvatarRootState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "Extra classes for the 32px circle, or a function of the avatar's state that returns them. A `size-*` class, such as `size-12`, replaces the 32px size.",
           "required": false
         },
         {
@@ -54,8 +52,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Avatar.Root`s to stack. The group overlaps them and rings each in the background colour, so they need no negative margin or ring of their own. A ring class on one avatar wins over the group's.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Avatar.Image",
@@ -65,8 +73,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 287,
+      "forwardedCount": 286,
       "props": [
+        {
+          "name": "alt",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The image's text alternative. Write the person's name, or `\"\"` when the name already shows beside the avatar.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {

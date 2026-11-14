@@ -49,7 +49,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting line under the title (`text-sm text-pretty`).",
+          "description": "The line of supporting text under the title.",
           "required": true
         },
         {
@@ -102,7 +102,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Dims the card with the shared disabled look (50% opacity, `not-allowed` cursor) and sets `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
+          "description": "Disables the checkbox and dims the whole card to 50% with the `not-allowed` cursor.",
           "required": false
         },
         {
@@ -177,7 +177,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trailing slot outside the label — clicks there do not toggle the checkbox.",
+          "description": "Content at the card's end, outside the label, such as a link or a button. A click there does not toggle the checkbox.",
           "required": false
         },
         {
@@ -197,7 +197,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Badge chips above the title. The row is omitted when `tags` is empty or absent.",
+          "description": "Badges above the title. An empty or missing list draws no badge row.",
           "required": false
         },
         {
@@ -206,7 +206,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible title. The native string `title` attribute is omitted so this `ReactNode` is not narrowed to `string`.",
+          "description": "The card's visible title. It takes any node, where the native `title` attribute takes a string.",
           "required": true
         },
         {
@@ -226,16 +226,16 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\". Checkbox group membership value.",
+          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\". The value the card adds to the enclosing `CheckboxGroup`'s selection. Inside a group, the group's `value` or `defaultValue` decides whether the card is checked, and the card's own `checked` and `defaultChecked` have no effect.",
           "required": false
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"muted\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The card's fill. `default` is the card fill, and `muted` the muted fill. Both keep the `--border` edge in every theme, since the card is a control.",
           "required": false,
           "values": [
             "default",

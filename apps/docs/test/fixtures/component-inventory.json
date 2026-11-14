@@ -123,7 +123,14 @@
   "avatar": {
     "title": "Avatar",
     "rsc": "client",
-    "demos": ["avatar-basic.tsx", "avatar-fallback.tsx", "avatar-sizes.tsx", "avatar-group.tsx"]
+    "demos": [
+      "avatar-demo.tsx",
+      "avatar-fallback.tsx",
+      "avatar-initials.tsx",
+      "avatar-size.tsx",
+      "avatar-beside-name.tsx",
+      "avatar-group.tsx"
+    ]
   },
   "badge": {
     "title": "Badge",
@@ -319,22 +326,40 @@
     "title": "Checkbox",
     "rsc": "client",
     "demos": [
-      "checkbox-basic.tsx",
+      "checkbox-demo.tsx",
+      "checkbox-checked.tsx",
+      "checkbox-indeterminate.tsx",
+      "checkbox-disabled.tsx",
+      "checkbox-read-only.tsx",
+      "checkbox-invalid.tsx",
       "checkbox-group.tsx",
+      "checkbox-group-horizontal.tsx",
+      "checkbox-group-description.tsx",
+      "checkbox-group-error.tsx",
+      "checkbox-group-disabled.tsx",
+      "checkbox-group-hidden-label.tsx",
+      "checkbox-parent.tsx",
       "checkbox-item-group.tsx",
-      "checkbox-tristate.tsx",
-      "checkbox-description.tsx"
+      "checkbox-item-group-horizontal.tsx",
+      "checkbox-item-control-end.tsx",
+      "checkbox-item-actions.tsx",
+      "checkbox-item-sub-section.tsx",
+      "checkbox-item-disabled.tsx",
+      "checkbox-description.tsx",
+      "checkbox-description-link.tsx"
     ]
   },
   "checkbox-card": {
     "title": "Checkbox Card",
     "rsc": "client",
     "demos": [
-      "checkbox-card-basic.tsx",
+      "checkbox-card-demo.tsx",
+      "checkbox-card-muted.tsx",
+      "checkbox-card-checked.tsx",
+      "checkbox-card-disabled.tsx",
       "checkbox-card-tags.tsx",
-      "checkbox-card-right-content.tsx",
-      "checkbox-card-variants.tsx",
-      "checkbox-card-group.tsx"
+      "checkbox-card-extra-content.tsx",
+      "checkbox-card-right-content.tsx"
     ]
   },
   "clock-chart": {
@@ -800,11 +825,15 @@
     "title": "Meter",
     "rsc": "client",
     "demos": [
-      "meter-basic.tsx",
-      "meter-modes.tsx",
+      "meter-demo.tsx",
+      "meter-high.tsx",
+      "meter-full.tsx",
+      "meter-exceeded.tsx",
+      "meter-inverted.tsx",
+      "meter-success-only-when-full.tsx",
+      "meter-neutral.tsx",
       "meter-value-label.tsx",
-      "meter-range.tsx",
-      "meter-neutral.tsx"
+      "meter-range.tsx"
     ]
   },
   "navigation-menu": {
@@ -958,12 +987,27 @@
     "title": "Radio Group",
     "rsc": "client",
     "demos": [
-      "radio-group-basic.tsx",
+      "radio-group-demo.tsx",
+      "radio-group-horizontal.tsx",
+      "radio-group-description.tsx",
+      "radio-group-error.tsx",
+      "radio-group-disabled.tsx",
+      "radio-group-disabled-option.tsx",
+      "radio-group-read-only.tsx",
       "radio-group-pending.tsx",
-      "radio-group-label-hidden.tsx",
+      "radio-group-hidden-label.tsx",
+      "radio-group-cleared.tsx",
       "radio-item-group.tsx",
+      "radio-item-group-horizontal.tsx",
+      "radio-item-control-end.tsx",
+      "radio-item-actions.tsx",
+      "radio-item-sub-section.tsx",
+      "radio-item-disabled.tsx",
       "radio-icon-button.tsx",
-      "radio-controlled-null.tsx"
+      "radio-icon-button-extra-extra-small.tsx",
+      "radio-icon-button-extra-small.tsx",
+      "radio-icon-button-small.tsx",
+      "radio-icon-button-large.tsx"
     ]
   },
   "range-calendar": {
@@ -1031,19 +1075,21 @@
     "title": "Selection Item",
     "rsc": "client",
     "demos": [
-      "selection-item-basic.tsx",
-      "selection-item-subsection.tsx",
-      "selection-item-selectable-subsection.tsx",
-      "selection-item-server.tsx",
+      "selection-item-demo.tsx",
+      "selection-item-checked.tsx",
       "selection-item-control-end.tsx",
-      "selection-item-stacked.tsx",
-      "selection-item-disabled.tsx",
+      "selection-item-actions.tsx",
+      "selection-item-sub-section.tsx",
+      "selection-item-revealed-sub-section.tsx",
+      "selection-item-selectable-sub-section.tsx",
       "selection-item-icon.tsx",
-      "selection-item-radio-stack.tsx",
-      "selection-item-checkbox-adjacent.tsx",
+      "selection-item-disabled.tsx",
+      "selection-item-disabled-checked.tsx",
+      "selection-item-stacked.tsx",
       "selection-item-horizontal.tsx",
-      "selection-item-disabled-rows.tsx",
-      "selection-item-disabled-group.tsx"
+      "selection-item-server-shell.tsx",
+      "selection-item-server-checkbox-rows.tsx",
+      "selection-item-server-radio-rows.tsx"
     ]
   },
   "separator": {
@@ -1123,13 +1169,17 @@
     "title": "Slider",
     "rsc": "client",
     "demos": [
-      "slider-basic.tsx",
+      "slider-demo.tsx",
+      "slider-show-value.tsx",
+      "slider-description.tsx",
       "slider-range.tsx",
+      "slider-thumb-labels.tsx",
+      "slider-steps.tsx",
       "slider-format.tsx",
       "slider-vertical.tsx",
       "slider-disabled.tsx",
       "slider-invalid.tsx",
-      "slider-label-less.tsx",
+      "slider-aria-label.tsx",
       "slider-commit.tsx"
     ]
   },
@@ -1178,10 +1228,13 @@
     "title": "Switch",
     "rsc": "client",
     "demos": [
-      "switch-basic.tsx",
-      "switch-sizes.tsx",
-      "switch-states.tsx",
-      "switch-in-field.tsx",
+      "switch-demo.tsx",
+      "switch-small.tsx",
+      "switch-checked.tsx",
+      "switch-disabled.tsx",
+      "switch-disabled-checked.tsx",
+      "switch-read-only.tsx",
+      "switch-invalid.tsx",
       "switch-form.tsx"
     ]
   },
@@ -1294,22 +1347,32 @@
     "title": "Toggle",
     "rsc": "client",
     "demos": [
-      "toggle-basic.tsx",
-      "toggle-variants.tsx",
-      "toggle-sizes.tsx",
+      "toggle-demo.tsx",
+      "toggle-outline.tsx",
+      "toggle-extra-small.tsx",
+      "toggle-small.tsx",
+      "toggle-large.tsx",
       "toggle-icon-only.tsx",
-      "toggle-controlled.tsx"
+      "toggle-pressed.tsx",
+      "toggle-disabled.tsx"
     ]
   },
   "toggle-group": {
     "title": "Toggle Group",
     "rsc": "client",
     "demos": [
-      "toggle-group-single.tsx",
-      "toggle-group-multiple.tsx",
-      "toggle-group-outline-segmented.tsx",
+      "toggle-group-demo.tsx",
+      "toggle-group-outline.tsx",
+      "toggle-group-extra-small.tsx",
+      "toggle-group-small.tsx",
+      "toggle-group-large.tsx",
       "toggle-group-vertical.tsx",
-      "toggle-group-sizes.tsx"
+      "toggle-group-segmented.tsx",
+      "toggle-group-segmented-outline.tsx",
+      "toggle-group-multiple.tsx",
+      "toggle-group-icons.tsx",
+      "toggle-group-disabled.tsx",
+      "toggle-group-disabled-item.tsx"
     ]
   },
   "toolbar": {

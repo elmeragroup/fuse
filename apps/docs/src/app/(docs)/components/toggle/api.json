@@ -18,7 +18,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged via the recipe `className` slot inside `cn`.",
+          "description": "Extra classes for the button, merged after the recipe's.",
           "required": false
         },
         {
@@ -89,11 +89,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The control size: `xs`, `sm`, `default` or `lg`, where `default` is the `md` control size. A toggle is never narrower than it is tall. The size's padding still applies, so an icon-only toggle can come out wider than tall, as a 16px icon does at `sm` in the dense density.",
           "required": false,
           "values": [
             "default",
@@ -126,11 +126,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The resting look. `default` has no fill or border, and `outline` adds a border and a small shadow. Pressed, either fills with the theme's `toggle-pressed` colours.",
           "required": false,
           "values": [
             "default",

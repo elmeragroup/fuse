@@ -69,3 +69,23 @@ empty state and remount on `Detail`'s `children`, and the Sheet-only `size`, `sh
 `icon-sm` size default and `Command.Root` and `Command.Page` their `virtualized` default, all values
 they already had, so the API reference shows
 them. The public types are unchanged.
+
+`Checkbox`, `CheckboxCard`, `RadioGroup`, `Switch`, `Toggle`, `ToggleGroup`, `SelectionItem`,
+`Slider`, `Meter` and `Avatar` now document their rules on the props they concern.
+`CheckboxGroup` and `RadioGroup` document `orientation`, `allValues` and the options they take on
+`children`, and on `value` and `defaultValue` that the group, not a member's `defaultChecked`,
+decides which members are checked. `CheckboxCard` says the same on `value`. `CheckboxItem`,
+`RadioItem` and `SelectionItem.Shell` document on `className` where to
+set the `--selection-*` theme roles, on `children` how a server component writes the row, and
+`SelectionItem.Shell` documents an icon beside the control on `control`. `CheckboxCard`,
+`Toggle` and `ToggleGroup` document `variant` and `size`. `Slider` documents vertical height,
+`onValueCommitted` for saving and a NumberField for exact values. `Meter` documents each `mode`
+and its levels. `Avatar.Root` documents `size-*` on `className`, `Avatar.Image` documents `alt`,
+and `Avatar.Group` its stacking on `children`. `CheckboxItem` and `RadioItem` declare their
+`isSubSectionSelectable` default, and `Slider` and `Meter` their range and step defaults, all
+values they already had, so the API reference shows them. The public types are unchanged.
+
+Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
+`CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
+The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below
+which it wraps. Vertical groups and `Item` are unchanged.

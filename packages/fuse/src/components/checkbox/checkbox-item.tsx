@@ -1,8 +1,8 @@
 /**
- * Server-visible `CheckboxItem`. The row is hook-free, so this module has no directive:
- * a server component runs it and reads `CheckboxItem.Title` and the other parts, while
- * `Checkbox` and `SelectionItem.Shell` stay client references it renders. The shell
- * partitions its SubSections (see `partitionSubSections`).
+ * `CheckboxItem` uses no hooks, so this module has no directive. A server component runs it and
+ * reads `CheckboxItem.Title` and the other parts, and it renders `Checkbox` and
+ * `SelectionItem.Shell` as client references. The shell partitions the SubSections, as
+ * `partitionSubSections` describes.
  */
 import type { ReactElement, ReactNode } from "react";
 
@@ -13,74 +13,86 @@ import { Checkbox } from "./checkbox";
 
 type CheckboxItemBaseProps = SelectionItemRootProps & {
   /**
-   * Forwards `disabled` to the inner Checkbox, which dims to 50%, and shows the disabled row: the
-   * theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes
-   * (neutral themes stripe a muted fill, branded themes keep the card fill without stripes)
-   * and the `not-allowed` cursor. The row's text, its SubSection's included, takes
-   * `--selection-disabled-foreground`, the muted foreground in branded themes; a text colour
-   * class on the row still wins. A disabled group shows its rows the same way.
+   * Disables the checkbox, which dims to 50%, and shows the disabled row. The row fills with the
+   * theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and
+   * shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep
+   * the card fill with no stripes. The row's text, its SubSection's included, takes
+   * `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text
+   * colour class on the row still wins. A disabled group shows its rows the same way.
    */
   isDisabled?: boolean;
-  /** Forwards `readOnly` to the inner Checkbox. */
+  /** Makes the checkbox read-only: it shows its state but a click does not change it. */
   isReadOnly?: boolean;
-  /**
-   * Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`.
-   * Default `"start"`.
-   */
+  /** Where the checkbox sits in the row: before the content, or after it at `end`. */
   controlPosition?: "start" | "end";
   /**
-   * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
-   * inset, and a click in that inset beside the label row toggles the control. The row
-   * paints the card fill (`bg-card`); a background class such as `bg-background` replaces it.
+   * Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that
+   * inset beside the label row toggles the checkbox. The row paints the card fill (`bg-card`),
+   * and a background class such as `bg-background` replaces it.
    * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
    * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
    * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
-   * fill win over such a class; set `--selection-disabled-background`, for example to
+   * fill win over such a class. Set `--selection-disabled-background`, for example to
    * `var(--background)`, to change the disabled fill.
+   *
+   * The edges and the lines between rows come from the `--selection-*` theme roles, which the
+   * Tokens section lists. Set a role on the element that carries the theme attributes, `<html>`
+   * or a `ThemeScope`. For example, `--selection-border: var(--border)` on the `ThemeScope`
+   * gives branded rows an outer edge. On a plain wrapper the rows keep the edges the theme
+   * element resolved.
    */
   className?: string;
   /**
-   * Lets a click on a SubSection's text, band or side padding toggle the control, while
-   * links, buttons, fields and other focusable elements in it keep their own clicks.
-   * Forwarded to `SelectionItem.Shell`; see it there. Leave it off when the SubSection
-   * reveals fields under the control. Default `false`.
+   * Lets a click on a SubSection's text, band or side padding toggle the checkbox, while links,
+   * buttons, fields and other focusable elements in it keep their own clicks. The checkbox's
+   * name stays the label row. Leave it off when the SubSection reveals fields under the
+   * checkbox, so a click between those fields does not clear the choice.
    */
   isSubSectionSelectable?: boolean;
   /**
-   * Row children, partitioned by the row. Direct `CheckboxItem.SubSection` (the
-   * same object as `SelectionItem.SubSection`) children render outside the label.
+   * The row's content: `CheckboxItem.Content` with a `Title` and a `Description`, then
+   * `CheckboxItem.Actions`. Direct `CheckboxItem.SubSection` children render below the label
+   * row, outside the label, so a field or button in one never toggles the row. A server
+   * component may write these children and pass them to a client component that renders the
+   * `CheckboxItem`. In a client component, a Fragment or wrapper around a SubSection hides it
+   * from the row and keeps it inside the label.
    */
   children?: ReactNode;
 };
 
 /**
- * Discriminated parent-vs-value union. Parent rows derive tri-state from the
- * group's `allValues` and must not set `value`.
+ * A member row sets `value`. A `parent` row sets no `value` and takes its state from the
+ * group's `allValues`.
  */
 export type CheckboxItemProps = CheckboxItemBaseProps &
   (
     | {
-        /** Member value in the group. Required unless `parent`. */
+        /** The value the row adds to the group's selection. Every row but a `parent` needs one. */
         value: string;
-        /** When true, this row is the tri-state parent. Incompatible with `value`. */
+        /**
+         * Makes the row the group's parent checkbox, which checks and unchecks every member
+         * and is indeterminate while some are checked. A parent row sets no `value`.
+         */
         parent?: false;
       }
     | {
-        /** Tri-state parent — checked/indeterminate/unchecked from the group's `allValues`. */
+        /**
+         * Makes the row the group's parent checkbox, which checks and unchecks every member
+         * and is indeterminate while some are checked. A parent row sets no `value`.
+         */
         parent: true;
-        /** Parent rows must not set `value`. */
+        /** A parent row sets no `value`. */
         value?: never;
       }
   );
 
 /**
- * Labeled selection row over `SelectionItem.Shell`. Server-compatible: it renders the
- * client `SelectionItem.Shell`, which wires Field.Item and the label. The namespace
- * aliases `Title`, `Description`, `Content`, `Actions` and `SubSection` are the exact
- * `SelectionItem.*` objects, so the shell's partition recognises either spelling.
- * Other attributes, such as `id`, `data-testid` or a `data-*` hook, land on the row's
- * `Field.Item` root, the element that carries the row's `data-slot`.
+ * A labeled checkbox row built on `SelectionItem.Shell`. A server component can render it. The
+ * parts `Title`, `Description`, `Content`, `Actions` and `SubSection` are the same objects as
+ * `SelectionItem`'s, so the row recognises either spelling. Other attributes, such as `id`,
+ * `data-testid` or a `data-*` hook, land on the row's `Field.Item` root, the element that
+ * carries the row's `data-slot`.
  */
 export function CheckboxItem({
   value,
@@ -89,7 +101,7 @@ export function CheckboxItem({
   isReadOnly,
   controlPosition = "start",
   className,
-  isSubSectionSelectable,
+  isSubSectionSelectable = false,
   children,
   ...props
 }: CheckboxItemProps): ReactElement {

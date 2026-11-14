@@ -3,9 +3,11 @@ lede: >
   An image or initials standing in for a person or entity.
 ---
 
-import { AvatarBasic } from "./demos/avatar-basic";
+import { AvatarDemo } from "./demos/avatar-demo";
 import { AvatarFallback } from "./demos/avatar-fallback";
-import { AvatarSizes } from "./demos/avatar-sizes";
+import { AvatarInitials } from "./demos/avatar-initials";
+import { AvatarSize } from "./demos/avatar-size";
+import { AvatarBesideName } from "./demos/avatar-beside-name";
 import { AvatarGroup } from "./demos/avatar-group";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -14,19 +16,41 @@ export const metadata = componentMetadata("avatar");
 
 <ComponentIntro slug="avatar" />
 
-<Demo slug="avatar" id="basic" title="Basic" file="avatar-basic.tsx">
-  <AvatarBasic />
-</Demo>
+<DefaultDemo slug="avatar" file="avatar-demo.tsx">
+  <AvatarDemo />
+</DefaultDemo>
 
-<Demo slug="avatar" id="fallback" title="Fallback" file="avatar-fallback.tsx">
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Avatar } from "@elmeragroup/fuse/avatar";
+
+<Avatar.Root>
+  <Avatar.Image src="/ada.png" alt="Ada Lovelace" />
+  <Avatar.Fallback>AL</Avatar.Fallback>
+</Avatar.Root>
+```
+
+## Examples
+
+<Demo slug="avatar" id="fallback" title="Fallback" level={3} file="avatar-fallback.tsx">
   <AvatarFallback />
 </Demo>
 
-<Demo slug="avatar" id="sizes" title="Sizes" file="avatar-sizes.tsx">
-  <AvatarSizes />
+<Demo slug="avatar" id="initials" title="Initials" level={3} file="avatar-initials.tsx">
+  <AvatarInitials />
 </Demo>
 
-<Demo slug="avatar" id="group" title="Group" file="avatar-group.tsx">
+<Demo slug="avatar" id="size" title="Size" level={3} file="avatar-size.tsx">
+  <AvatarSize />
+</Demo>
+
+<Demo slug="avatar" id="beside-name" title="Beside a name" level={3} file="avatar-beside-name.tsx">
+  <AvatarBesideName />
+</Demo>
+
+<Demo slug="avatar" id="group" title="Group" level={3} file="avatar-group.tsx">
   <AvatarGroup />
 </Demo>
 
