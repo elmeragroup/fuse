@@ -14,7 +14,7 @@ const businessLinks = [
   { href: "#reporting", title: "Energy reporting", description: "Usage and emissions per site." },
 ] as const;
 
-export function NavigationMenuLinkCards() {
+export function NavigationMenuLinkDescriptions() {
   return (
     <NavigationMenu.Root aria-label="Products">
       <NavigationMenu.List>

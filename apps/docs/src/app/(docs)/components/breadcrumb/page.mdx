@@ -3,10 +3,10 @@ lede: >
   A trail of links that shows where the current page sits.
 ---
 
-import { BreadcrumbBasic } from "./demos/breadcrumb-basic";
+import { BreadcrumbDemo } from "./demos/breadcrumb-demo";
 import { BreadcrumbCustomSeparator } from "./demos/breadcrumb-custom-separator";
 import { BreadcrumbEllipsis } from "./demos/breadcrumb-ellipsis";
-import { BreadcrumbRenderLink } from "./demos/breadcrumb-render-link";
+import { BreadcrumbRouterLink } from "./demos/breadcrumb-router-link";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,20 +14,46 @@ export const metadata = componentMetadata("breadcrumb");
 
 <ComponentIntro slug="breadcrumb" />
 
-<Demo slug="breadcrumb" id="basic" title="Basic" file="breadcrumb-basic.tsx">
-  <BreadcrumbBasic />
-</Demo>
+<DefaultDemo slug="breadcrumb" file="breadcrumb-demo.tsx">
+  <BreadcrumbDemo />
+</DefaultDemo>
 
-<Demo slug="breadcrumb" id="custom-separator" title="Custom separator" file="breadcrumb-custom-separator.tsx">
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
+
+<Breadcrumb.Root>
+  <Breadcrumb.List>
+    <Breadcrumb.Item>
+      <Breadcrumb.Link href="/">Home</Breadcrumb.Link>
+    </Breadcrumb.Item>
+    <Breadcrumb.Separator />
+    <Breadcrumb.Item>
+      <Breadcrumb.Page>Invoices</Breadcrumb.Page>
+    </Breadcrumb.Item>
+  </Breadcrumb.List>
+</Breadcrumb.Root>
+```
+
+## Examples
+
+<Demo
+  slug="breadcrumb"
+  id="custom-separator"
+  title="Custom separator"
+  level={3}
+  file="breadcrumb-custom-separator.tsx">
   <BreadcrumbCustomSeparator />
 </Demo>
 
-<Demo slug="breadcrumb" id="ellipsis" title="Ellipsis" file="breadcrumb-ellipsis.tsx">
+<Demo slug="breadcrumb" id="ellipsis" title="Ellipsis" level={3} file="breadcrumb-ellipsis.tsx">
   <BreadcrumbEllipsis />
 </Demo>
 
-<Demo slug="breadcrumb" id="render-link" title="Render link" file="breadcrumb-render-link.tsx">
-  <BreadcrumbRenderLink />
+<Demo slug="breadcrumb" id="router-link" title="Router link" level={3} file="breadcrumb-router-link.tsx">
+  <BreadcrumbRouterLink />
 </Demo>
 
 <ApiReference slug="breadcrumb" />

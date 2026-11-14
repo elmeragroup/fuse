@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop.",
+          "description": "The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
           "required": false
         }
       ]
@@ -29,8 +29,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Pagination.Item`s, one per link or ellipsis. In a narrow container the row wraps onto more lines, so Previous and Next stay in reach.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Pagination.Item",
@@ -57,7 +67,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Current page. Renders `aria-current=\"page\"` and the outline button variant; inactive links omit the attribute entirely.",
+          "description": "Marks the current page. The link gets `aria-current=\"page\"` and the outline button style. Other links have no `aria-current`.",
           "required": false
         },
         {
@@ -66,7 +76,7 @@
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"icon\"",
-          "description": "Recipe size axis borrowed from Button. Defaults to `\"icon\"`.",
+          "description": "The link's size, one of Button's sizes.",
           "required": false,
           "values": [
             "default",
@@ -97,7 +107,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.",
+          "description": "The link's accessible name, such as \"Go to previous page\". Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
           "required": false
         },
         {
@@ -106,7 +116,7 @@
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
+          "description": "The link's size, one of Button's sizes.",
           "required": false,
           "values": [
             "default",
@@ -126,7 +136,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible Previous copy. Defaults to the locale dictionary.",
+          "description": "The visible text beside the caret. Unset, it comes from the locale dictionary.",
           "required": false
         }
       ]
@@ -146,7 +156,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.",
+          "description": "The link's accessible name, such as \"Go to next page\". Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
           "required": false
         },
         {
@@ -155,7 +165,7 @@
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
+          "description": "The link's size, one of Button's sizes.",
           "required": false,
           "values": [
             "default",
@@ -175,7 +185,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible Next copy. Defaults to the locale dictionary.",
+          "description": "The visible text beside the caret. Unset, it comes from the locale dictionary.",
           "required": false
         }
       ]
@@ -195,7 +205,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Screen-reader-only ellipsis copy. Defaults to the locale dictionary.",
+          "description": "The screen reader text for the pages the ellipsis stands for. Unset, it comes from the locale dictionary.",
           "required": false
         }
       ]

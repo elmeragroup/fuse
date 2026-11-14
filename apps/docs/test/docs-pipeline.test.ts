@@ -18,6 +18,7 @@ import {
 import { readRscStatus } from "../scripts/lib/rsc-status.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
+import { readComponentApi } from "../src/lib/api-source";
 import type { DocsComponent } from "../src/lib/docs-model";
 import { STATIC_PAGES } from "../src/lib/pages";
 import { STUDIO_PAGES } from "../src/studio/registration";
@@ -760,12 +761,12 @@ describe("markdown endpoint rendering", () => {
   });
 });
 
-describe("Collapsible settle override (collapsible/page.mdx)", () => {
-  // The page hands readers the exact utilities that settle `Collapsible.Content`. That sentence
-  // is only true while each one cancels what the library actually applies, and the library side
-  // is spread over two files — `panelHeightTransition` and the height variable `Content`
-  // appends. So read all three strings from source rather than restating any of them here: a
-  // change to either library file fails this test instead of quietly rotting the prose.
+describe("Collapsible settle override (Collapsible.Content className)", () => {
+  // The `className` row of `Collapsible.Content` hands readers the exact utilities that settle
+  // the panel. That sentence is true only while each one cancels what the library applies, and
+  // the library side is spread over two files, `panelHeightTransition` and the height variable
+  // `Content` appends. So the test reads all three strings from their sources and restates none,
+  // and a change to either library file fails it.
   const readOne = (file: string, pattern: RegExp): string => {
     // oxlint-disable-next-line fuse/no-source-reading-tests -- docs drift contract: the page's settle utilities must cancel what the library applies, read from the two library files that apply it
     const match = pattern.exec(readFileSync(join(repoRoot, file), "utf8"));
@@ -786,10 +787,17 @@ describe("Collapsible settle override (collapsible/page.mdx)", () => {
     ),
   ].join(" ");
 
-  const documented = readOne(
-    "apps/docs/src/app/(docs)/components/collapsible/page.mdx",
-    /set its `className` to\s+`([^`]+)`/
-  );
+  const documented = ((): string => {
+    // Readers see the generated API reference, so the override is read from its row.
+    const description = readComponentApi("collapsible")
+      .parts.find((part) => part.name === "Collapsible.Content")
+      ?.props.find((prop) => prop.name === "className")?.description;
+    const match = /set `className` to\s+`([^`]+)`/u.exec(description ?? "");
+    if (match?.[1] === undefined) {
+      throw new Error("No settle override in the Collapsible.Content className row");
+    }
+    return match[1];
+  })();
 
   // Clipping and the height animation are the two things the page promises to switch off;
   // `ease-out` and `duration-150` need no counterpart once `transition` is cancelled.

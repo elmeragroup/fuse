@@ -9,7 +9,7 @@ export function AccordionMultiple() {
         <Accordion.Header>
           <Accordion.Trigger>Shipping</Accordion.Trigger>
         </Accordion.Header>
-        <Accordion.Content>Delivered within 3–5 business days.</Accordion.Content>
+        <Accordion.Content>Delivered within 3 to 5 business days.</Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="billing">
         <Accordion.Header>

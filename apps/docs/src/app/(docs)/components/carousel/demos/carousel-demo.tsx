@@ -9,7 +9,7 @@ const OFFERS = [
   { title: "Solar buyback", body: "Sell what your panels make at the spot price." },
 ];
 
-export function CarouselBasic() {
+export function CarouselDemo() {
   return (
     <Carousel.Root aria-label="Electricity offers" className="max-w-md w-full">
       <Carousel.Viewport>

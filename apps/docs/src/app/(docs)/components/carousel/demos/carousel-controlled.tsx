@@ -3,33 +3,24 @@
 import { useState } from "react";
 
 import { Carousel, useCarousel } from "@elmeragroup/fuse/carousel";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 const PLANS = ["Basic", "Plus", "Premium"];
 
-/** A custom control: it reads the carousel's state and acts through `useCarousel`. */
+/** A custom control. It reads the carousel's state and acts through `useCarousel`. */
 function PlanPicker() {
   const { state, actions } = useCarousel();
   return (
-    <ToggleGroup.Root
-      aria-label="Plan"
-      size="sm"
-      variant="outline"
-      className="self-center"
-      value={[PLANS[state.index] ?? ""]}
-      onValueChange={(next) => {
-        // Pressing the selected plan again would empty the group; the page stays instead.
-        const picked = PLANS.indexOf(next[0] ?? "");
-        if (picked !== -1) {
-          actions.goTo(picked);
-        }
-      }}>
-      {PLANS.map((plan) => (
-        <ToggleGroup.Item key={plan} value={plan}>
+    <div role="group" aria-label="Plan" className="flex justify-center gap-2">
+      {PLANS.map((plan, page) => (
+        <button
+          key={plan}
+          type="button"
+          aria-pressed={state.index === page}
+          onClick={() => actions.goTo(page)}>
           {plan}
-        </ToggleGroup.Item>
+        </button>
       ))}
-    </ToggleGroup.Root>
+    </div>
   );
 }
 

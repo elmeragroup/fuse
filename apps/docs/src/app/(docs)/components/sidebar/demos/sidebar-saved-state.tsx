@@ -1,9 +1,8 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
-import { ChartBar, ElmeraGroupLogo, Gear, House, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
+import { ChartBar, Gear, House, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
 import { SIDEBAR_COOKIE_NAME, Sidebar } from "@elmeragroup/fuse/sidebar";
 
 const NAV = [
@@ -15,15 +14,17 @@ const NAV = [
 ];
 
 /**
- * The cookie the Provider writes is meant to be read on the server, so the first paint
- * already knows whether the rail is open. In a Next.js layout:
+ * A server layout reads the cookie the Provider writes and passes it as `defaultOpen`, so the
+ * first paint already has the saved state. In a Next.js layout:
  *
  *   const open = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
- *   <Sidebar.Provider defaultOpen={open}>…</Sidebar.Provider>
+ *   <Sidebar.Provider defaultOpen={open}>...</Sidebar.Provider>
  *
- * This demo has no server layout of its own, so it reads the same cookie through
- * `useSyncExternalStore`: the server snapshot is "open", the client snapshot is the
- * cookie, and the initial `defaultOpen` therefore matches what SSR would have produced.
+ * This demo has no server layout of its own, so it reads the cookie on the client. The server
+ * snapshot is "open", and `defaultOpen` only counts on the first render, which hydration renders
+ * with that snapshot. So the demo controls `open` instead: it follows the cookie once the page
+ * has hydrated, and the user's choice after that. The rail renders open first and then closes,
+ * which the server read avoids.
  */
 function isSidebarOpen(cookieHeader: string): boolean {
   return !cookieHeader.split("; ").includes(`${SIDEBAR_COOKIE_NAME}=false`);
@@ -33,7 +34,7 @@ function subscribeNever(): () => void {
   return () => undefined;
 }
 
-function useSidebarCookie(): boolean {
+function useSavedSidebarState(): boolean {
   return useSyncExternalStore(
     subscribeNever,
     () => isSidebarOpen(document.cookie),
@@ -41,19 +42,17 @@ function useSidebarCookie(): boolean {
   );
 }
 
-export function SidebarAppFrame() {
-  const defaultOpen = useSidebarCookie();
+export function SidebarSavedState() {
+  const saved = useSavedSidebarState();
+  const [choice, setChoice] = useState<boolean>();
 
   return (
     <div className="relative h-[28rem] w-full overflow-hidden rounded-lg border border-border contain-paint">
-      <Sidebar.Provider defaultOpen={defaultOpen} className="min-h-full">
+      <Sidebar.Provider open={choice ?? saved} onOpenChange={setChoice} className="min-h-full">
         <Sidebar.Root className="h-full">
-          <Sidebar.Header>
-            <Sidebar.Input placeholder="Search orders" aria-label="Search orders" />
-          </Sidebar.Header>
           <Sidebar.Content>
             <Sidebar.Group>
-              <Sidebar.GroupLabel>Funnel</Sidebar.GroupLabel>
+              <Sidebar.GroupLabel>Sales</Sidebar.GroupLabel>
               <Sidebar.GroupContent>
                 <Sidebar.Menu>
                   {NAV.map(({ label, icon: Icon, href, active }) => (
@@ -84,28 +83,17 @@ export function SidebarAppFrame() {
               </Sidebar.GroupContent>
             </Sidebar.Group>
           </Sidebar.Content>
-          <Sidebar.Footer>
-            <Sidebar.Icon>
-              <ElmeraGroupLogo />
-            </Sidebar.Icon>
-          </Sidebar.Footer>
           <Sidebar.Rail />
         </Sidebar.Root>
         <Sidebar.Inset>
           <header className="flex h-12 items-center gap-2 border-b border-border px-3">
             <Sidebar.Trigger />
             <span className="text-sm font-medium">Orders</span>
-            <span className="text-xs ml-auto text-muted-foreground">
-              Press <kbd className="rounded border border-border px-1">⌘B</kbd> /{" "}
-              <kbd className="rounded border border-border px-1">Ctrl+B</kbd> to toggle
-            </span>
           </header>
-          <div className="text-sm flex flex-1 flex-col gap-3 p-4 text-muted-foreground">
-            <p>The rail pushes this inset aside on desktop and becomes a Sheet below 768px.</p>
-            <Button variant="outline" className="self-start">
-              New order
-            </Button>
-          </div>
+          <p className="text-sm p-4 text-muted-foreground">
+            Close the rail and reload the page. The rail comes back closed, because the Provider wrote the
+            state to its cookie.
+          </p>
         </Sidebar.Inset>
       </Sidebar.Provider>
     </div>

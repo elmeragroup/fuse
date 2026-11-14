@@ -1,6 +1,5 @@
 "use client";
 
-import { Toggle } from "@elmeragroup/fuse/toggle";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
@@ -13,7 +12,7 @@ export function ToolbarToggleGroup() {
         <ToggleGroup.Item value="right">Right</ToggleGroup.Item>
       </ToggleGroup.Root>
       <Toolbar.Separator />
-      <Toolbar.Button render={<Toggle size="sm" />}>Wrap text</Toolbar.Button>
+      <Toolbar.Button>Clear formatting</Toolbar.Button>
     </Toolbar.Root>
   );
 }

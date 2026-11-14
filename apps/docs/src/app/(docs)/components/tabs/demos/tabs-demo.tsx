@@ -2,7 +2,7 @@
 
 import { Tabs } from "@elmeragroup/fuse/tabs";
 
-export function TabsBasic() {
+export function TabsDemo() {
   return (
     <Tabs.Root defaultValue="account">
       <Tabs.List>

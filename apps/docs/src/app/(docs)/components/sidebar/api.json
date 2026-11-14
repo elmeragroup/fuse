@@ -17,7 +17,7 @@
           "type": "SidebarBounds | undefined",
           "shortType": null,
           "defaultValue": "\"page\"",
-          "description": "What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or Ctrl+B from anywhere in the document. `container` fills its container's height, which the host must define, keeps the rail inside it, writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside the Provider's React tree. An `Inset` taller than the container is clipped, so the host scrolls the inset's own content. The mobile Sheet still follows the viewport's width.",
+          "description": "What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or Ctrl+B from anywhere in the document. `container` fills its container's height, which the host must define, keeps the rail inside it, writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside the Provider's React tree, so a page Sidebar around it keeps the shortcut everywhere else. An `Inset` taller than the container is clipped, so the host scrolls the inset's own content. The mobile Sheet still follows the viewport's width.",
           "required": false,
           "values": [
             "container",
@@ -30,7 +30,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Uncontrolled initial open state. SSR pattern: parse the `sidebar:state` cookie server-side and pass it here.",
+          "description": "The desktop open state on first render. The Provider reads it once, so a later value changes nothing. A page Sidebar writes its state to the `sidebar:state` cookie on every change. To restore it without a flash, read that cookie in a server layout with `cookies()` and pass it here. A value read on the client arrives after hydration, which renders the server's value, so a client-only read has to control `open` instead.",
           "required": false
         },
         {
@@ -39,7 +39,7 @@
           "type": "Partial<SidebarLabels> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Copy overrides for the Trigger/Rail label and the mobile Sheet's sr-only title and description. Defaults to the locale dictionary (`sidebar.*`).",
+          "description": "Text for the Trigger's and Rail's label and the mobile Sheet's screen reader title and description. Each one left out comes from the locale dictionary's `sidebar.*` entries.",
           "required": false
         },
         {
@@ -48,7 +48,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Controlled setter. When provided, internal state is bypassed; at `bounds=\"page\"` the cookie is still written on every change.",
+          "description": "Called with the requested desktop open state. When you pass it, the Provider keeps no state of its own. At `bounds=\"page\"` it still writes the cookie on every change.",
           "required": false
         },
         {
@@ -57,7 +57,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Controlled setter for the phone Sheet. Called with the requested state when the Trigger, the shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it; when provided, internal state is bypassed.",
+          "description": "Called with the requested Sheet state when the Trigger, the shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it. When you pass it, the Provider keeps no Sheet state of its own, and the host decides.",
           "required": false
         },
         {
@@ -66,7 +66,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled open state.",
+          "description": "The desktop open state, for a Sidebar you control.",
           "required": false
         },
         {
@@ -75,7 +75,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled open state of the phone Sheet the Root becomes below the mobile breakpoint, so a host can close it from outside, such as after a navigation. Session-only: never written to the cookie. Uncontrolled, it starts closed.",
+          "description": "The open state of the Sheet the Root becomes below 768px, so a host can close it from outside, such as after a navigation. It lasts for the session only and is never written to the cookie. Uncontrolled, it starts closed.",
           "required": false
         }
       ]
@@ -87,15 +87,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 279,
+      "forwardedCount": 277,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rail's sections: `Sidebar.Header`, `Sidebar.Content`, `Sidebar.Footer` and `Sidebar.Rail`. Below 768px they show in a Sheet, under a close button.",
+          "required": false
+        },
         {
           "name": "collapsible",
           "origin": "declared",
           "type": "\"icon\" | \"none\" | \"offcanvas\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"offcanvas\"",
-          "description": "`offcanvas` slides the rail off-screen when collapsed; `icon` collapses to `--sidebar-width-icon`; `none` renders the static branch — which still emits `group peer` and `data-state/variant/side` for inset compositions.",
+          "description": "How the rail collapses. `offcanvas` slides it off the edge, `icon` narrows it to `--sidebar-width-icon` with only the icons showing, and `none` keeps it open. A `none` root still writes `data-state`, `data-variant` and `data-side` for an `inset` layout.",
           "required": false,
           "values": [
             "icon",
@@ -109,7 +118,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Text direction, forwarded to the mobile Sheet content (RTL).",
+          "description": "The text direction of the mobile Sheet, such as `rtl`.",
           "required": false
         },
         {
@@ -118,7 +127,7 @@
           "type": "\"left\" | \"right\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"left\"",
-          "description": "Edge the rail anchors to. Emitted as `data-side`; drives gap rotation, container offsets, border side and rail cursors.",
+          "description": "The edge the rail sits on. The root writes it as `data-side`. For `right`, keep the Root before `Sidebar.Inset` and pass `className=\"flex-row-reverse\"` to `Sidebar.Provider`, so the rail's spacer moves to the right edge and the Inset still reads the Root's state.",
           "required": false,
           "values": [
             "left",
@@ -126,12 +135,21 @@
           ]
         },
         {
+          "name": "style",
+          "origin": "declared",
+          "type": "CSSProperties | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles. The root's element props land on a different element in each layout: the rail container on desktop, the Sheet's dialog below 768px and the root `div` with `collapsible=\"none\"`. In the Sheet, `style` merges over the mobile `--sidebar-width`, so it can set the Sheet's width.",
+          "required": false
+        },
+        {
           "name": "variant",
           "origin": "declared",
           "type": "\"floating\" | \"inset\" | \"sidebar\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"sidebar\"",
-          "description": "`floating` pads the rail and rounds/shadows the inner surface; `inset` pads the rail and lets the sibling `Sidebar.Inset` react through peer selectors; `sidebar` is flush with an edge border.",
+          "description": "The rail style. `sidebar` sits flush with the edge behind a border. `floating` pads the rail and rounds and shadows its surface. `inset` pads the rail and shows the `Sidebar.Inset` beside it as a card.",
           "required": false,
           "values": [
             "floating",
@@ -157,7 +175,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Defines a string value that labels the current element. Accessible name for the icon-only trigger. Defaults to the locale dictionary `sidebar.toggle`.",
+          "description": "Defines a string value that labels the current element. The trigger's accessible name. Unset, it is the locale dictionary's `sidebar.toggle`.",
           "required": false
         },
         {
@@ -349,20 +367,17 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/sidebar/sidebar.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
       "forwardedCount": 280,
       "props": [
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The element the column renders. Unset, it is a `<main>` landmark. A layout that already has its own `<main>` passes `<div />`, and the column keeps its slot and its card look beside an `inset` rail.",
           "required": false
         }
       ]
@@ -559,15 +574,24 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 290,
+      "forwardedCount": 289,
       "props": [
+        {
+          "name": "aria-disabled",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pass `\"true\"` to make the row unavailable. It looks disabled but keeps pointer events, so its tooltip still opens. A click or Enter neither follows its link nor runs `onClick`, and a middle-click neither opens a new tab nor runs `onAuxClick`.",
+          "required": false
+        },
         {
           "name": "isActive",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Current item. Emits `data-active` and the accent background/foreground; pair with `aria-current=\"page\"` at the call site.",
+          "description": "Marks the current item. The row gets `data-active` and the accent fill. Pass `aria-current=\"page\"` on its link yourself.",
           "required": false
         },
         {
@@ -583,11 +607,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"lg\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The row height. `default` takes the density's row height, `sm` is 28px with smaller type, and `lg` is 48px.",
           "required": false,
           "values": [
             "default",
@@ -601,16 +625,16 @@
           "type": "string | TooltipContentProps | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Collapsed icon-mode label. The button becomes the tooltip trigger (one DOM node is the menu button, the caller's `render` element and the trigger); the content sits on the right and is only visible while the desktop rail is collapsed. A string is shorthand for `{ children }`.",
+          "description": "The label to show beside the collapsed icon rail. The row becomes the tooltip's trigger, so one element is the row, your `render` element and the trigger. The tooltip opens to the right and only while the desktop rail is collapsed. A string is short for `{ children }`.",
           "required": false
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The row style. `outline` gives the row a fill and a 1px ring in the sidebar border colour.",
           "required": false,
           "values": [
             "default",
@@ -646,7 +670,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the action at `md:` and up until the menu item is hovered or focused within, or the action reports `aria-expanded` (an open dropdown keeps it visible).",
+          "description": "Hides the action from 768px up until its menu item is hovered or holds focus, or the action has `aria-expanded`, so an open dropdown keeps it in view.",
           "required": false
         }
       ]
@@ -676,7 +700,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders a square icon placeholder before the text bar.",
+          "description": "Draws a square icon placeholder before the text bar.",
           "required": false
         }
       ]
@@ -709,15 +733,24 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 287,
       "props": [
+        {
+          "name": "aria-disabled",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pass `\"true\"` to make the row unavailable. It looks disabled, a click or Enter neither follows its link nor runs `onClick`, and a middle-click neither opens a new tab nor runs `onAuxClick`.",
+          "required": false
+        },
         {
           "name": "isActive",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Current item. Emits `data-active` and the accent background/foreground.",
+          "description": "Marks the current item. The row gets `data-active` and the accent fill.",
           "required": false
         },
         {
@@ -737,7 +770,7 @@
           "type": "\"md\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"md\"",
-          "description": "Row size, emitted as `data-size`. `md` takes the md control size's height and the density type pair; `sm` takes the sm control size's height and fixed `text-sm`.",
+          "description": "The row size, written as `data-size`. `md` takes the md control height and the density's type, and `sm` the sm control height and `text-sm`.",
           "required": false,
           "values": [
             "md",

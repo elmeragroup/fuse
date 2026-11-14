@@ -2,9 +2,9 @@
 
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
-export function NavigationMenuBasic() {
+export function NavigationMenuVertical() {
   return (
-    <NavigationMenu.Root aria-label="Main">
+    <NavigationMenu.Root aria-label="Main" orientation="vertical" side="right">
       <NavigationMenu.List>
         <NavigationMenu.Item>
           <NavigationMenu.Trigger>Customers</NavigationMenu.Trigger>
@@ -18,19 +18,6 @@ export function NavigationMenuBasic() {
               </li>
               <li>
                 <NavigationMenu.Link href="#charging">Home charging</NavigationMenu.Link>
-              </li>
-            </ul>
-          </NavigationMenu.Content>
-        </NavigationMenu.Item>
-        <NavigationMenu.Item>
-          <NavigationMenu.Trigger>Business</NavigationMenu.Trigger>
-          <NavigationMenu.Content>
-            <ul className="grid w-72 gap-1">
-              <li>
-                <NavigationMenu.Link href="#contracts">Power contracts</NavigationMenu.Link>
-              </li>
-              <li>
-                <NavigationMenu.Link href="#reporting">Energy reporting</NavigationMenu.Link>
               </li>
             </ul>
           </NavigationMenu.Content>

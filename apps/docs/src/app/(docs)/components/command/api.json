@@ -394,7 +394,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }
@@ -1467,7 +1467,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }

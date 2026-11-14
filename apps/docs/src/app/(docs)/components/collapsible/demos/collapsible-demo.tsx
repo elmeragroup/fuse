@@ -2,7 +2,7 @@
 
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 
-export function CollapsibleBasic() {
+export function CollapsibleDemo() {
   return (
     <Collapsible.Root defaultOpen>
       <Collapsible.Trigger className="font-medium rounded-md px-2 py-1 hover:bg-foreground/5">

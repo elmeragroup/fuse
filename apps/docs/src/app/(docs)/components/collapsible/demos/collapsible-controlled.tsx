@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 
 export function CollapsibleControlled() {
@@ -10,15 +9,15 @@ export function CollapsibleControlled() {
 
   return (
     <div className="flex flex-col items-start gap-3">
-      <Button variant="outline" onClick={() => setOpen((value) => !value)}>
+      <button type="button" onClick={() => setOpen((value) => !value)}>
         {open ? "Hide details" : "Show details"}
-      </Button>
+      </button>
       <Collapsible.Root open={open} onOpenChange={setOpen}>
         <Collapsible.Trigger className="font-medium rounded-md px-2 py-1 hover:bg-foreground/5">
           Toggle panel
         </Collapsible.Trigger>
         <Collapsible.Content>
-          <p className="pt-2">Controlled from the button above and from the trigger.</p>
+          <p className="pt-2">The button above and the trigger both open this panel.</p>
         </Collapsible.Content>
       </Collapsible.Root>
     </div>

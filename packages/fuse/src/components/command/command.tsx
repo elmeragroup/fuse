@@ -213,6 +213,7 @@ export function CommandRoot<
   defaultPages,
   onPagesChange,
   grouped = false,
+  virtualized = false,
   autoHighlight = "always",
   keepHighlight = true,
   children,
@@ -293,6 +294,7 @@ export function CommandRoot<
               part="Command.Root"
               session={session}
               grouped={grouped}
+              virtualized={virtualized}
               autoHighlight={autoHighlight}
               keepHighlight={keepHighlight}
               {...search}>
@@ -344,6 +346,7 @@ export function CommandPage<
   id,
   label,
   grouped = false,
+  virtualized = false,
   autoHighlight = "always",
   keepHighlight = true,
   children,
@@ -360,6 +363,7 @@ export function CommandPage<
         part="Command.Page"
         session={session}
         grouped={grouped}
+        virtualized={virtualized}
         autoHighlight={autoHighlight}
         keepHighlight={keepHighlight}
         {...search}>

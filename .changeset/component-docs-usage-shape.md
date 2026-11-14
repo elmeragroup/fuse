@@ -43,3 +43,29 @@ status and shortcut rules on `open`, `onOpenChange`, `pages`, `defaultPages`, `i
 `placeholder`, `Command.List`'s `children` and `render`, `Command.Empty`'s and `Command.Status`'s
 `children`, `Command.Item`'s `onClick` and `Command.Shortcut`'s `children`. `Dialog.Content` and
 `Sheet.Content` declare the `md` size default they already had, so the API reference shows it.
+
+`Accordion`, `Collapsible`, `Tabs`, `Breadcrumb`, `NavigationMenu`, `Pagination`, `Sidebar`,
+`Toolbar`, `Carousel` and `ListDetail` now document their rules on the props they concern.
+`Accordion.Root` documents each `variant` and `radius`, and `Accordion.Trigger` how to style a
+custom `indicator`. `Collapsible.Content` documents the `className` that turns off its clipping and
+height transition. `Tabs.List` documents `variant` and its `activateOnFocus` default.
+`Breadcrumb.Link` and `NavigationMenu.Link` document router links on `render`. `NavigationMenu`
+documents its landmark name on `aria-label`, its keyboard on `Trigger`'s `children`, its inline
+submenus on `inline` and its indicator on `children`. `Pagination.Content` documents wrapping in a
+narrow container. `Toolbar` documents its focus order on `loopFocus`, `disabled` and
+`orientation`, and how buttons, inputs, menus and tooltips join it on `render`. `Sidebar.Root`
+documents how to compose a right sidebar on `side`. `Sidebar.Provider`
+documents on `defaultOpen` that it reads the value once, so a flash-free restore reads the cookie
+in a server layout and passes it there, and it documents the mobile Sheet on `openMobile`, `Sidebar.Root` where its
+element props land on `style`, `Sidebar.Inset` its landmark on `render`, and `Sidebar.MenuButton`
+and `Sidebar.MenuSubButton` their `aria-disabled` rows and sizes. `Carousel` documents its name,
+parts, slide sizing, inert slides, controls order, thumbnails, page count, reduced motion and the
+full automatic rotation lifecycle on the props they concern, and `useCarousel` lists its state and actions.
+`ListDetail` documents its layout, server render and focus moves on `split` and `onOpenChange`, its
+empty state and remount on `Detail`'s `children`, and the Sheet-only `size`, `showCloseButton`,
+`closeLabel` and `Close` `render`. `Toolbar.Root` declares its `orientation`, `loopFocus` and
+`disabled` defaults, `Toolbar.Button` and `Toolbar.Group` their `disabled` default and
+`NavigationMenu.Link` its `active` default, `Carousel.Previous` and `Carousel.Next` their
+`icon-sm` size default and `Command.Root` and `Command.Page` their `virtualized` default, all values
+they already had, so the API reference shows
+them. The public types are unchanged.

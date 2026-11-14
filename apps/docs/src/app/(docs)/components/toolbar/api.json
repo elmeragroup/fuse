@@ -10,8 +10,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 273,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The toolbar's name, such as \"Invoice\". Give every toolbar one.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The items: `Toolbar.Button`, `Toolbar.Link`, `Toolbar.Input`, `Toolbar.Group` and `Toolbar.Separator`. A `ToggleGroup` joins the toolbar's arrow-key order instead of keeping its own. The bar publishes `--inner-corner`, so a block of your own with `rounded-inner` rounds with it. For a bar that only switches between options, use `ToggleGroup` on its own.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -24,25 +42,30 @@
           "required": false
         },
         {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Disables every button and input in the bar. They stay in the arrow-key order, so a keyboard user still finds them. A `Toolbar.Link` cannot be disabled.",
+          "required": false
+        },
+        {
           "name": "loopFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "If `true`, using keyboard navigation will wrap focus to the other end of the toolbar once the end is reached.",
+          "description": "Whether the arrow keys wrap from the last item to the first. Tab moves focus into the bar and out again. Pass `false` to stop at the ends.",
           "required": false
         },
         {
           "name": "orientation",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "Orientation | undefined",
           "shortType": null,
-          "defaultValue": "'horizontal'",
-          "description": "The orientation of the toolbar.",
+          "defaultValue": "\"horizontal\"",
+          "description": "The direction of the bar. `vertical` stacks the items, the up and down arrow keys move between them, and separators turn horizontal.",
           "required": false,
           "values": [
             "horizontal",
@@ -96,13 +119,11 @@
         },
         {
           "name": "disabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "When `true` the item is disabled.",
+          "description": "Disables the button. It stays focusable, so the arrow keys still reach it, unless `focusableWhenDisabled` is `false`.",
           "required": false
         },
         {
@@ -129,13 +150,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, ToolbarButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The control that shows the button, such as `<Button variant=\"ghost\" size=\"sm\" />` or `<Toggle size=\"sm\" />`. A `Popover.Trigger` or `DropdownMenu.Trigger` goes here too, with the Button in its own `render`. A tooltip goes the other way round: pass the `Toolbar.Button` to `Tooltip.Trigger`'s `render`. Unset, the button is a native `<button>` with no styles.",
           "required": false
         },
         {
@@ -163,13 +182,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: ToolbarLinkState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "Classes for the anchor, which has no styles of its own, such as `buttonVariants({ variant: \"link\", size: \"sm\" })`.",
           "required": false
         },
         {
@@ -241,13 +258,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, ToolbarInputState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The control that shows the input, such as `<Input aria-label=\"Search\" />`. Unset, it is a native `<input>` with no styles. The arrow keys move its caret as well as the toolbar's focus, so put at most one input in a horizontal toolbar, as its last item.",
           "required": false
         },
         {
@@ -271,8 +286,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's name, such as \"File\".",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -286,13 +310,11 @@
         },
         {
           "name": "disabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "When `true` all toolbar items in the group are disabled.",
+          "description": "Disables every button and input in the group. They stay in the arrow-key order. A `Toolbar.Link` cannot be disabled.",
           "required": false
         },
         {

@@ -3,11 +3,15 @@
     "title": "Accordion",
     "rsc": "client",
     "demos": [
-      "accordion-basic.tsx",
+      "accordion-demo.tsx",
+      "accordion-card.tsx",
+      "accordion-infodropdown.tsx",
+      "accordion-radius-lg.tsx",
+      "accordion-radius-xl.tsx",
       "accordion-multiple.tsx",
-      "accordion-variants.tsx",
-      "accordion-controlled.tsx",
+      "accordion-disabled-item.tsx",
       "accordion-leading-indicator.tsx",
+      "accordion-controlled.tsx",
       "accordion-hidden-until-found.tsx"
     ]
   },
@@ -191,10 +195,10 @@
     "title": "Breadcrumb",
     "rsc": "client",
     "demos": [
-      "breadcrumb-basic.tsx",
+      "breadcrumb-demo.tsx",
       "breadcrumb-custom-separator.tsx",
       "breadcrumb-ellipsis.tsx",
-      "breadcrumb-render-link.tsx"
+      "breadcrumb-router-link.tsx"
     ]
   },
   "button": {
@@ -265,12 +269,14 @@
     "title": "Carousel",
     "rsc": "client",
     "demos": [
-      "carousel-basic.tsx",
+      "carousel-demo.tsx",
+      "carousel-vertical.tsx",
       "carousel-several.tsx",
       "carousel-status.tsx",
       "carousel-thumbnails.tsx",
       "carousel-autoplay.tsx",
-      "carousel-vertical.tsx",
+      "carousel-start-page.tsx",
+      "carousel-heading-name.tsx",
       "carousel-controlled.tsx"
     ]
   },
@@ -355,7 +361,12 @@
   "collapsible": {
     "title": "Collapsible",
     "rsc": "client",
-    "demos": ["collapsible-basic.tsx", "collapsible-controlled.tsx", "collapsible-hidden-until-found.tsx"]
+    "demos": [
+      "collapsible-demo.tsx",
+      "collapsible-disabled.tsx",
+      "collapsible-controlled.tsx",
+      "collapsible-hidden-until-found.tsx"
+    ]
   },
   "combobox": {
     "title": "Combobox",
@@ -761,7 +772,12 @@
   "list-detail": {
     "title": "List Detail",
     "rsc": "client",
-    "demos": ["list-detail-basic.tsx", "list-detail-never.tsx"]
+    "demos": [
+      "list-detail-demo.tsx",
+      "list-detail-split-4xl.tsx",
+      "list-detail-split-5xl.tsx",
+      "list-detail-never.tsx"
+    ]
   },
   "live-line-chart": {
     "title": "Live Line Chart",
@@ -795,9 +811,18 @@
     "title": "Navigation Menu",
     "rsc": "client",
     "demos": [
-      "navigation-menu-basic.tsx",
+      "navigation-menu-demo.tsx",
+      "navigation-menu-top.tsx",
+      "navigation-menu-left.tsx",
+      "navigation-menu-right.tsx",
+      "navigation-menu-inline-start.tsx",
+      "navigation-menu-inline-end.tsx",
+      "navigation-menu-align-center.tsx",
+      "navigation-menu-align-end.tsx",
+      "navigation-menu-vertical.tsx",
+      "navigation-menu-indicator.tsx",
       "navigation-menu-links.tsx",
-      "navigation-menu-link-cards.tsx",
+      "navigation-menu-link-descriptions.tsx",
       "navigation-menu-nested.tsx",
       "navigation-menu-nested-inline.tsx",
       "navigation-menu-router-link.tsx"
@@ -820,7 +845,13 @@
   "pagination": {
     "title": "Pagination",
     "rsc": "client",
-    "demos": ["pagination-basic.tsx", "pagination-ellipsis.tsx", "pagination-controlled.tsx"]
+    "demos": [
+      "pagination-demo.tsx",
+      "pagination-ellipsis.tsx",
+      "pagination-narrow.tsx",
+      "pagination-custom-text.tsx",
+      "pagination-controlled.tsx"
+    ]
   },
   "phone-number-field": {
     "title": "Phone Number Field",
@@ -1054,11 +1085,27 @@
     "title": "Sidebar",
     "rsc": "client",
     "demos": [
-      "sidebar-app-frame.tsx",
-      "sidebar-icon-collapse.tsx",
-      "sidebar-mobile-sheet.tsx",
+      "sidebar-demo.tsx",
+      "sidebar-floating.tsx",
       "sidebar-inset-variant.tsx",
-      "sidebar-menu-rich.tsx"
+      "sidebar-right.tsx",
+      "sidebar-icon-collapse.tsx",
+      "sidebar-not-collapsible.tsx",
+      "sidebar-outline-buttons.tsx",
+      "sidebar-small-buttons.tsx",
+      "sidebar-large-buttons.tsx",
+      "sidebar-links.tsx",
+      "sidebar-disabled-item.tsx",
+      "sidebar-two-groups.tsx",
+      "sidebar-group-action.tsx",
+      "sidebar-menu-action.tsx",
+      "sidebar-action-on-hover.tsx",
+      "sidebar-menu-badge.tsx",
+      "sidebar-submenu.tsx",
+      "sidebar-small-submenu.tsx",
+      "sidebar-loading.tsx",
+      "sidebar-mobile-sheet.tsx",
+      "sidebar-saved-state.tsx"
     ]
   },
   "skeleton": {
@@ -1151,13 +1198,7 @@
   "tabs": {
     "title": "Tabs",
     "rsc": "client",
-    "demos": [
-      "tabs-basic.tsx",
-      "tabs-line.tsx",
-      "tabs-vertical.tsx",
-      "tabs-with-icons.tsx",
-      "tabs-disabled.tsx"
-    ]
+    "demos": ["tabs-demo.tsx", "tabs-line.tsx", "tabs-vertical.tsx", "tabs-icons.tsx", "tabs-disabled.tsx"]
   },
   "text": {
     "title": "Text",
@@ -1275,11 +1316,16 @@
     "title": "Toolbar",
     "rsc": "client",
     "demos": [
-      "toolbar-basic.tsx",
-      "toolbar-toggle-group.tsx",
-      "toolbar-popups.tsx",
+      "toolbar-demo.tsx",
+      "toolbar-vertical.tsx",
+      "toolbar-disabled-button.tsx",
+      "toolbar-disabled-group.tsx",
+      "toolbar-disabled.tsx",
+      "toolbar-link.tsx",
       "toolbar-input.tsx",
-      "toolbar-vertical.tsx"
+      "toolbar-toggle-group.tsx",
+      "toolbar-menu.tsx",
+      "toolbar-tooltip.tsx"
     ]
   },
   "tooltip": {

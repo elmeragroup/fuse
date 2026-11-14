@@ -18,7 +18,7 @@
           "type": "(open: boolean) => void",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called when the Sheet asks to open or close, when the pane takes over an open Sheet's item, and when the root stops splitting with focus inside the pane, which opens the Sheet.",
+          "description": "Called when the Sheet asks to open or close, when the pane takes over an open Sheet's item, and when the root stops splitting with focus inside the pane, which opens the Sheet. A change of layout, from the root's width, the root font size or `split`, keeps focus where the user was. Losing the split with focus inside the pane opens the Sheet, which takes focus. With focus elsewhere the list keeps it. Gaining the split with focus inside the Sheet moves focus to the pane, after any menu or dialog open in the Sheet has closed. A Sheet that opened because the root narrowed returns focus, when it closes, to the list item that last held focus.",
           "required": true
         },
         {
@@ -27,7 +27,7 @@
           "type": "boolean",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether the detail Sheet is open. Set it when the user opens an item. From the breakpoint the pane shows the item instead, so the root answers an `open` there with `onOpenChange(false)`, and the Sheet stays closed until the root narrows with focus in the pane.",
+          "description": "Whether the detail Sheet is open. The app holds the selected item, and `open` says only whether its Sheet is open. Set it when the user opens an item, and follow `onOpenChange`. From the breakpoint the pane shows the item instead, so the root answers an `open` there with `onOpenChange(false)`, and the Sheet stays closed until the root narrows with focus in the pane.",
           "required": true
         },
         {
@@ -47,7 +47,7 @@
           "type": "ListDetailSplit | undefined",
           "shortType": null,
           "defaultValue": "\"4xl\"",
-          "description": "The root width from which the detail sits beside the list.",
+          "description": "The root width from which the detail is a complementary pane beside the list. Below it, the detail opens in a Sheet over the list. The breakpoint is a container query on the root, so it follows the room the root has: a Sidebar opening beside it narrows it as a smaller window does. The root takes its width from its parent. The server renders the split layout, and CSS hides the pane in a root narrower than the breakpoint, so the first paint matches before any script runs. Pass `never` to keep the detail in a Sheet at every width, for a list that needs all of its width, such as a wide table.",
           "required": false,
           "values": [
             "3xl",
@@ -89,15 +89,33 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The pane's or the dialog's name while no `ListDetail.Title` is mounted, such as while nothing is selected. The element props, `className`, `ref` and `render` land on whichever is mounted.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The open item's detail, with a `ListDetail.Title` that names the pane and the Sheet's dialog. The pane shows at every width from the breakpoint, so render an empty state here while nothing is selected. The content remounts on a change of layout, so keep a draft it must not lose in state above it.",
+          "required": false
+        },
         {
           "name": "closeLabel",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary.",
+          "description": "The Sheet's corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. It applies below the breakpoint only.",
           "required": false
         },
         {
@@ -117,7 +135,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner.",
+          "description": "Shows the Sheet's corner close button. It applies below the breakpoint only.",
           "required": false
         },
         {
@@ -126,7 +144,7 @@
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The panel's maximum width on the `left` and `right` sides, from the `sm` breakpoint up. `sm` to `7xl` cap it at Tailwind's container width of the same name, and `8xl`, `9xl` and `10xl` at 1366px, 1536px and 1920px, never past 90% of the viewport's width. Below `sm`, and always on the `top` and `bottom` sides, the panel is full width and `size` does nothing.",
+          "description": "The Sheet's maximum width, as on `Sheet.Content`. It applies below the breakpoint only.",
           "required": false,
           "values": [
             "10xl",
@@ -203,13 +221,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, DrawerCloseState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The button that closes the Sheet, such as `<button type=\"button\" aria-label=\"Close details\" />`, as `Sheet.Close` composes. The close renders only below the breakpoint, where the detail is a Sheet, so a detail can keep it in its own header in both layouts.",
           "required": false
         },
         {

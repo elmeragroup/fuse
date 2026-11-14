@@ -16,29 +16,43 @@ const styles = breadcrumbVariants();
 
 export type BreadcrumbRootProps = ComponentProps<"nav"> & {
   /**
-   * Landmark label. Defaults to the locale dictionary; an explicit `aria-label`
-   * wins over this prop.
+   * The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label`
+   * wins over it.
    */
   label?: string;
 };
 
 export type BreadcrumbListProps = ComponentProps<"ol">;
 export type BreadcrumbItemProps = ComponentProps<"li">;
-export type BreadcrumbLinkProps = useRender.ComponentProps<"a">;
+export type BreadcrumbLinkProps = Omit<useRender.ComponentProps<"a">, "render"> & {
+  /**
+   * Your router's link element, with its own destination prop, such as `<NextLink href="/" />` or
+   * React Router's `<RouterLink to="/" />`. The link merges its classes and props onto it, and the
+   * router handles the click.
+   */
+  render?: useRender.ComponentProps<"a">["render"];
+};
 export type BreadcrumbPageProps = ComponentProps<"span">;
-export type BreadcrumbSeparatorProps = ComponentProps<"li">;
+export type BreadcrumbSeparatorProps = Omit<ComponentProps<"li">, "children"> & {
+  /**
+   * The mark between two items. Unset, it is a caret. Pass an icon or a character such as `/`. An
+   * `<svg>` child draws at 14px. The separator is hidden from screen readers.
+   */
+  children?: ComponentProps<"li">["children"];
+};
 
 export type BreadcrumbEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
-   * Screen-reader-only copy for omitted items. Defaults to the locale dictionary
+   * The screen reader text for the items the ellipsis stands for. Unset, it comes from the locale
+   * dictionary.
    */
   label?: string;
 };
 
 /**
- * Client breadcrumb trail. `Breadcrumb.Link` is the library
- * exemplar for `useRender` + `state.slot → data-slot`. Landmark and ellipsis copy
- * come from the provider dictionary.
+ * The trail of links to the current page. Its landmark name and the ellipsis text come from the
+ * locale dictionary. `Breadcrumb.Link` is the library's example of `useRender` with
+ * `state.slot` setting `data-slot`.
  */
 export function BreadcrumbRoot({
   className,
@@ -58,14 +72,17 @@ export function BreadcrumbRoot({
   );
 }
 
+/** The ordered list that holds the items and separators. */
 export function BreadcrumbList({ className, ...props }: BreadcrumbListProps): ReactElement {
   return <ol data-slot="breadcrumb-list" className={cn(styles.list(), className)} {...props} />;
 }
 
+/** One entry of the trail, holding a link, the page or an ellipsis. */
 export function BreadcrumbItem({ className, ...props }: BreadcrumbItemProps): ReactElement {
   return <li data-slot="breadcrumb-item" className={cn(styles.item(), className)} {...props} />;
 }
 
+/** A link to an ancestor page. */
 export function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): ReactElement {
   return useRender({
     defaultTagName: "a",
@@ -82,6 +99,7 @@ export function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkPr
   });
 }
 
+/** The current page, marked `aria-current="page"`. */
 export function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): ReactElement {
   return (
     <span
@@ -95,6 +113,7 @@ export function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): Re
   );
 }
 
+/** The mark between two items. */
 export function BreadcrumbSeparator({
   children,
   className,
@@ -112,6 +131,7 @@ export function BreadcrumbSeparator({
   );
 }
 
+/** Three dots that stand for items left out of the trail. */
 export function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(breadcrumbStrings);
 

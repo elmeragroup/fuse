@@ -3,7 +3,7 @@
 import { Lock, User } from "@elmeragroup/fuse/icons";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 
-export function TabsWithIcons() {
+export function TabsIcons() {
   return (
     <Tabs.Root defaultValue="account">
       <Tabs.List>

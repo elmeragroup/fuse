@@ -1,10 +1,9 @@
 /**
- * PUBLIC recipe. Consumers borrow it from
- * `@elmeragroup/fuse/pagination`. Layout only — colors, radius, focus ring, and
- * control-box sizing come from the borrowed public `buttonVariants`.
+ * The public recipe, exported from `@elmeragroup/fuse/pagination`. It sets layout only. Colours,
+ * radius, the focus ring and the control box come from Button's public `buttonVariants`.
  *
- * `direction` is not a consumer-facing prop. No recipe
- * default — Previous/Next pass the axis internally (ConfirmButton/TimelineList).
+ * `direction` is not a consumer prop. It has no recipe default, because Previous and Next pass
+ * it themselves, as ConfirmButton and TimelineList pass theirs.
  *
  * `pl-2.5` / `pr-2.5` are reviewed chevron-side layout literals, not a
  * control-box size axis. The ellipsis is the md control square, so it matches its sibling
@@ -34,6 +33,6 @@ export const paginationVariants = tv({
     },
   },
   // Required shape: elmera/enforce-variant-standard makes every recipe declare
-  // `defaultVariants`. There is no default direction — Previous/Next pass the axis.
+  // `defaultVariants`. There is no default direction, because Previous and Next pass the axis.
   defaultVariants: {},
 });

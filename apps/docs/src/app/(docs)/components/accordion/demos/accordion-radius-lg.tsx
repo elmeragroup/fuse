@@ -2,14 +2,14 @@
 
 import { Accordion } from "@elmeragroup/fuse/accordion";
 
-export function AccordionBasic() {
+export function AccordionRadiusLg() {
   return (
-    <Accordion.Root defaultValue={["shipping"]}>
+    <Accordion.Root radius="lg" defaultValue={["shipping"]}>
       <Accordion.Item value="shipping">
         <Accordion.Header>
           <Accordion.Trigger>Shipping</Accordion.Trigger>
         </Accordion.Header>
-        <Accordion.Content>Delivered within 3–5 business days.</Accordion.Content>
+        <Accordion.Content>Delivered within 3 to 5 business days.</Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="billing">
         <Accordion.Header>
