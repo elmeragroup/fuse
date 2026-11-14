@@ -3,9 +3,10 @@
  *
  * A `page.mdx` is compiled by `@next/mdx` for the browser; this is the same file read as
  * *data* by the docs generation pass, which needs what a page declares and nothing else
- * does: its lede, the headings and demos of its on-page TOC in page order, and, on a page in
- * the Usage shape, its default stage and Usage code. There is no separate registry to drift from — the page the site
- * serves is the page the generator reads.
+ * does: its lede, the headings and demos of its on-page TOC in page order, its default stage
+ * and its Usage code. Every component page is in the Usage shape, and one that is not fails
+ * generation. There is no separate registry to drift from — the page the site serves is the
+ * page the generator reads.
  *
  * Deliberately a small line-oriented reader rather than an MDX/YAML parse: the schema is
  * closed (lede), so an unknown key is a build failure instead of silently ignored input,
@@ -24,33 +25,25 @@ export type PageDemo = {
   title: string;
   /** File name inside the page's `demos/` directory. */
   file: string;
-  /** The level of the demo's heading: 2 by default, 3 for an example under `## Examples`. */
-  depth: 2 | 3;
+  /** The level of the demo's heading, 3 for an example under `## Examples`. */
+  depth: 3;
 };
 
 /** One authored component page read as data. */
 export type ComponentPageSource = {
   /** The editorial half of the page: the one-paragraph description under the H1. */
   lede: string;
-  /**
-   * The page's intro, the markdown of the `<Prose>` blocks before its first demo or default stage,
-   * or `""` when the page opens with one. The markdown endpoint prints it under the lede.
-   */
-  intro: string;
   /** The demos the page renders, in authored order. */
   demos: readonly PageDemo[];
   /** The headings and demos together, in page order. */
   sections: readonly PageSection[];
   /**
-   * The file of the page's untitled default stage, `<DefaultDemo file="…">`, or `null` when the
-   * page has none. It has no heading, so it stays out of the outline and the markdown.
+   * The file of the page's untitled default stage, `<DefaultDemo file="…">`. It has no heading, so
+   * it stays out of the outline and the markdown.
    */
-  defaultDemo: string | null;
-  /**
-   * The code of the one fence under the page's `## Usage` heading, or `null` when the page is not
-   * in the Usage shape. The markdown endpoint prints it under the Usage heading.
-   */
-  usage: string | null;
+  defaultDemo: string;
+  /** The code of the one fence under the page's `## Usage` heading, which the markdown endpoint prints. */
+  usage: string;
   /**
    * The markdown of the page's `## Composition` section, the body of its one `<Prose>` block, or
    * `null` when the page has none. The markdown endpoint prints it under the Composition heading.
@@ -216,12 +209,11 @@ function readAttributes(tag: string): ReadonlyMap<string, string> {
   return attributes;
 }
 
-/** A demo's heading level: `level={3}` for an example, 2 when the tag leaves it out. */
-function readDepth(tag: string, file: string): 2 | 3 {
+/** A demo's heading level, which must be `level={3}`, an example under `## Examples`. */
+function readDepth(tag: string, file: string): 3 {
   const level = LEVEL_ATTRIBUTE.exec(tag)?.[1];
-  if (level === undefined || level === "2") return 2;
   if (level === "3") return 3;
-  throw new Error(`${file}: a <Demo> heading level must be 2 or 3, not ${level}`);
+  throw new Error(`${file}: a <Demo> must be a level={3} example, not level ${level ?? "unset"}`);
 }
 
 /** One demo the page renders, read off its own `<Demo …>` element. */
@@ -268,30 +260,10 @@ function readItems(lines: readonly string[], slug: string, file: string): readon
   return items.toSorted((left, right) => left.at - right.at);
 }
 
-/**
- * An item as a TOC section. A heading inside an intro block is marked, so the markdown endpoint,
- * which prints the intro whole, does not print it a second time.
- */
-function sectionOf(item: PageItem, intro: readonly IntroBlock[]): PageSection {
-  if (item.kind === "heading") {
-    const inIntro = intro.some((block) => item.at >= block.start && item.at < block.end);
-    return inIntro ? { ...item.section, intro: true } : item.section;
-  }
+/** An item as a TOC section. */
+function sectionOf(item: PageItem): PageSection {
+  if (item.kind === "heading") return item.section;
   return { kind: "demo", id: item.demo.id, title: item.demo.title, depth: item.demo.depth };
-}
-
-/** Fails on a level-3 demo that no `##` heading precedes, which the TOC could not nest. */
-function assertNestable(sections: readonly PageSection[], file: string): void {
-  const firstHeading = sections.findIndex((section) => section.kind === "heading" && section.depth === 2);
-  const orphan = sections.find(
-    (section, index) =>
-      section.kind === "demo" && section.depth === 3 && (firstHeading === -1 || index < firstHeading)
-  );
-  if (orphan !== undefined) {
-    throw new Error(
-      `${file}: the level-3 demo "${orphan.id}" needs a "##" heading before it, such as "## Examples"`
-    );
-  }
 }
 
 /** What a page in the Usage shape declares beyond its sections. */
@@ -308,11 +280,11 @@ const PROSE_TAG = /<Prose[\s/>]/gu;
 const COMPOSITION_BODY = /^<Prose>\n([\s\S]*?)\n<\/Prose>$/u;
 
 /**
- * Reads a page in the Usage shape, which `AGENTS.md` states: the intro, the untitled
- * `<DefaultDemo>`, `## Usage` with exactly one code block, an optional `## Composition` on a page
- * in {@link COMPOSITION_PAGES}, `## Examples` with only `level={3}` demos, then the API reference
- * and tokens. The only `<Prose>` is the one block that makes up the Composition section, with at
- * most one code block. Fails naming the first rule the page breaks.
+ * Reads a component page, which must be in the Usage shape `AGENTS.md` states: the intro, the
+ * untitled `<DefaultDemo>`, `## Usage` with exactly one code block, an optional `## Composition` on
+ * a page in {@link COMPOSITION_PAGES}, `## Examples` with only `level={3}` demos, then the API
+ * reference and tokens. The only `<Prose>` is the one block that makes up the Composition
+ * section, with at most one code block. Fails naming the first rule the page breaks.
  *
  * @param body - The page body, for the code and the Composition markdown.
  * @param lines - The body with code blocks blanked, for its structure.
@@ -329,7 +301,7 @@ function readUsagePage(
   file: string
 ): UsageContent {
   const fail = (rule: string): never => {
-    throw new Error(`${file}: a page with <DefaultDemo> follows the Usage shape, but ${rule}`);
+    throw new Error(`${file}: a component page follows the Usage shape, but ${rule}`);
   };
   // The structure outside code blocks; offsets into it are offsets into `body`.
   const structure = lines.join("\n");
@@ -376,7 +348,7 @@ function readUsagePage(
   }
   for (const item of items) {
     if (item.kind !== "demo") continue;
-    if (item.at < examplesAt || item.at > apiAt || item.demo.depth !== 3) {
+    if (item.at < examplesAt || item.at > apiAt) {
       fail(`the demo "${item.demo.id}" is not a level={3} demo under "## Examples"`);
     }
   }
@@ -406,14 +378,16 @@ function readComposition(body: string, start: number, end: number, fail: (rule: 
   return markdown;
 }
 
-/** The file of the page's `<DefaultDemo>`, or `null`; a page renders at most one. */
-function readDefaultDemo(lines: readonly string[], slug: string, file: string): string | null {
+/** The file of the page's one `<DefaultDemo>`, which every component page renders. */
+function readDefaultDemo(lines: readonly string[], slug: string, file: string): string {
   const tags = [...lines.join("\n").matchAll(DEFAULT_DEMO_TAG)];
+  const [tag] = tags;
+  if (tag === undefined) {
+    throw new Error(`${file}: a component page follows the Usage shape, but it renders no <DefaultDemo>`);
+  }
   if (tags.length > 1) {
     throw new Error(`${file}: a page renders at most one <DefaultDemo>`);
   }
-  const tag = tags[0];
-  if (tag === undefined) return null;
   const attributes = readAttributes(tag[1] ?? "");
   const demoFile = attributes.get("file") ?? "";
   if (demoFile === "") {
@@ -427,44 +401,21 @@ function readDefaultDemo(lines: readonly string[], slug: string, file: string): 
   return demoFile;
 }
 
-const PROSE_BLOCK = /<Prose>\n([\s\S]*?)\n<\/Prose>/gu;
-
-/** One `<Prose>` block before the first `<Demo>`: its body span and its markdown. */
-type IntroBlock = { readonly start: number; readonly end: number; readonly markdown: string };
-
-/** The `<Prose>` blocks before the first demo or default stage, which make up the page's intro. */
-function readIntroBlocks(body: string): readonly IntroBlock[] {
-  // `<DefaultDemo>` opens a page in the Usage shape, whose only `<Prose>` is its Composition.
-  const firstDemo = body.search(/<(?:Default)?Demo\s/u);
-  const head = firstDemo === -1 ? body : body.slice(0, firstDemo);
-  return [...head.matchAll(PROSE_BLOCK)].map((match) => ({
-    start: match.index,
-    end: match.index + match[0].length,
-    markdown: (match[1] ?? "").trim(),
-  }));
-}
-
 /** Reads one authored `page.mdx`, given its text. `label` names the file in failures. */
 export function parseComponentPage(source: string, slug: string, label: string): ComponentPageSource {
   const split = splitFrontmatter(source, label);
+  const lede = parseFrontmatter(split.frontmatter, label);
   const lines = withoutCodeFences(split.body);
-  const items = readItems(lines, slug, label);
-  const intro = readIntroBlocks(split.body);
-  const sections = items.map((item) => sectionOf(item, intro));
-  assertNestable(sections, label);
   const defaultDemo = readDefaultDemo(lines, slug, label);
-  const content = defaultDemo === null ? null : readUsagePage(split.body, lines, items, slug, label);
+  const items = readItems(lines, slug, label);
+  const { usage, composition } = readUsagePage(split.body, lines, items, slug, label);
   return {
-    lede: parseFrontmatter(split.frontmatter, label),
-    intro: intro
-      .map((block) => block.markdown)
-      .filter((markdown) => markdown !== "")
-      .join("\n\n"),
+    lede,
     demos: items.flatMap((item) => (item.kind === "demo" ? [item.demo] : [])),
-    sections,
+    sections: items.map(sectionOf),
     defaultDemo,
-    usage: content?.usage ?? null,
-    composition: content?.composition ?? null,
+    usage,
+    composition,
   };
 }
 

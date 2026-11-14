@@ -74,22 +74,25 @@ describe("authored page.mdx as generation input", () => {
 
   it("folds a `>` lede and reads the demos the page renders, in order", () => {
     const parsed = parseComponentPage(
-      page(
-        '<Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">',
+      usagePage([
+        ...USAGE,
+        "## Examples",
+        "",
+        '<Demo slug="button" id="variants" title="Variants" level={3} file="button-variant-matrix.tsx">',
         "  <ButtonVariantMatrix />",
         "</Demo>",
         "",
-        '<Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">',
+        '<Demo slug="button" id="sizes" title="Sizes" level={3} file="button-sizes.tsx">',
         "  <ButtonSizes />",
-        "</Demo>"
-      ),
+        "</Demo>",
+      ]),
       "button",
       "button/page.mdx"
     );
     expect(parsed.lede).toBe("First line second line");
     expect(parsed.demos).toEqual([
-      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx", depth: 2 },
-      { id: "sizes", title: "Sizes", file: "button-sizes.tsx", depth: 2 },
+      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx", depth: 3 },
+      { id: "sizes", title: "Sizes", file: "button-sizes.tsx", depth: 3 },
     ]);
   });
 
@@ -144,20 +147,6 @@ describe("authored page.mdx as generation input", () => {
     expect(parsed.demos.map((demo) => demo.file)).toEqual(["button-outline.tsx", "button-ghost.tsx"]);
   });
 
-  it("reads a page without the Usage shape as before: no default stage, no Usage code", () => {
-    const parsed = parseComponentPage(
-      page('<Demo slug="button" id="a" title="A" file="a.tsx" />', "", "## Limits"),
-      "button",
-      "button/page.mdx"
-    );
-    expect(parsed.defaultDemo).toBeNull();
-    expect(parsed.usage).toBeNull();
-    expect(parsed.sections).toEqual([
-      { kind: "demo", id: "a", title: "A", depth: 2 },
-      { kind: "heading", id: "limits", title: "Limits", depth: 2 },
-    ]);
-  });
-
   // `title` is the one frontmatter key that used to be legal: the page title is derived
   // from the slug, so a page that still declares one fails instead of carrying a second
   // name. An arbitrary key is rejected by the same branch, named in the message.
@@ -166,24 +155,24 @@ describe("authored page.mdx as generation input", () => {
     ["an unknown frontmatter key, named", "---\nlede: Y\nnope: 1\n---\n", /unknown frontmatter key "nope"/],
     ["a missing lede", "---\nlede:\n---\n", /"lede" is required/],
     [
+      "a component page with no <DefaultDemo>",
+      page('<Demo slug="button" id="a" title="A" file="a.tsx" />', "", "## Limits"),
+      /x\.mdx: a component page follows the Usage shape, but it renders no <DefaultDemo>/,
+    ],
+    [
       "a <Demo> missing its file attribute",
-      page('<Demo slug="button" id="a" title="A" />'),
+      usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level={3} />']),
       /missing its "file" attribute/,
     ],
     [
       "a <Demo> naming another page's slug",
-      page('<Demo slug="card" id="a" title="A" file="a.tsx" />'),
+      usagePage([...USAGE, "## Examples", '<Demo slug="card" id="a" title="A" level={3} file="a.tsx" />']),
       /names slug "card" on the "button" page/,
     ],
     [
-      "a level-3 <Demo> with no heading before it",
-      page('<Demo slug="button" id="a" title="A" level={3} file="a.tsx" />'),
-      /needs a "##" heading before it/,
-    ],
-    [
-      "a <Demo> heading level other than 2 or 3",
-      page("## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />'),
-      /must be 2 or 3, not 4/,
+      "a <Demo> heading level other than 3",
+      usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />']),
+      /must be a level=\{3\} example, not level 4/,
     ],
     [
       "a Usage-shaped page with no code block under Usage",
@@ -210,7 +199,7 @@ describe("authored page.mdx as generation input", () => {
       /the demo "a" is not a level=\{3\} demo under "## Examples"/,
     ],
     [
-      "a level-2 demo under Examples on a Usage-shaped page",
+      "a demo with no level under Examples on a Usage-shaped page",
       usagePage([
         "## Usage",
         "",
@@ -221,7 +210,7 @@ describe("authored page.mdx as generation input", () => {
         "## Examples",
         '<Demo slug="button" id="a" title="A" file="a.tsx" />',
       ]),
-      /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+      /must be a level=\{3\} example, not level unset/,
     ],
     [
       "prose on a Usage-shaped page",
@@ -266,7 +255,7 @@ describe("authored page.mdx as generation input", () => {
     ],
     [
       "a second <DefaultDemo>",
-      page('<DefaultDemo slug="button" file="a.tsx" />', '<DefaultDemo slug="button" file="b.tsx" />'),
+      usagePage(['<DefaultDemo slug="button" file="b.tsx" />', ...USAGE, "## Examples"]),
       /at most one <DefaultDemo>/,
     ],
   ] as const)("rejects %s rather than ignoring it", (_case, source, message) => {
@@ -324,8 +313,6 @@ describe("authored page.mdx as generation input", () => {
       );
       expect(parsed.usage).toBe("<A />");
       expect(parsed.composition).toBe("Put each field inside the form.\n\n```tsx\n<B />\n```");
-      // The Composition prose is no intro, so the markdown endpoint prints it once, under its heading.
-      expect(parsed.intro).toBe("");
       expect(parsed.sections).toEqual([
         { kind: "heading", id: "usage", title: "Usage", depth: 2 },
         { kind: "heading", id: "composition", title: "Composition", depth: 2 },
@@ -395,24 +382,20 @@ describe("authored page.mdx as generation input", () => {
   });
 
   it("collects ATX headings for the TOC and reads fenced code as source, not structure", () => {
+    const fenced = [
+      "## not a heading",
+      '<Demo slug="button" id="fenced" title="Fenced" file="fenced.tsx" />',
+    ];
     const parsed = parseComponentPage(
-      page(
-        "## Composition limits",
-        "",
-        "```tsx",
-        "## not a heading",
-        '<Demo slug="button" id="fenced" title="Fenced" file="fenced.tsx" />',
-        "```",
-        "",
-        "### Details"
-      ),
+      usagePage(["## Usage", "", "```tsx", ...fenced, "```", "", "## Examples"]),
       "button",
       "button/page.mdx"
     );
     expect(parsed.sections).toEqual([
-      { kind: "heading", id: "composition-limits", title: "Composition limits", depth: 2 },
-      { kind: "heading", id: "details", title: "Details", depth: 3 },
+      { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+      { kind: "heading", id: "examples", title: "Examples", depth: 2 },
     ]);
+    expect(parsed.usage).toBe(fenced.join("\n"));
     expect(parsed.demos).toEqual([]);
   });
 });
@@ -588,14 +571,16 @@ describe("markdown endpoint rendering", () => {
     slug: "widget",
     title: "Widget",
     lede: "A widget.",
-    intro: "",
     apis: [{ slug: "widget", entry: "@elmeragroup/fuse/widget" }],
     sourcePath: "packages/fuse/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",
-    rsc: "client",
-    sections: [{ kind: "demo", id: "basic", title: "Basic", depth: 2 }],
-    usage: null,
+    sections: [
+      { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+      { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+      { kind: "demo", id: "basic", title: "Basic", depth: 3 },
+    ],
+    usage: 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />',
     composition: null,
     demos: [
       {
@@ -653,11 +638,10 @@ describe("markdown endpoint rendering", () => {
   });
 
   it("mirrors a Usage-shaped page: H1, lede, Usage code, Composition, the examples with their source, API, tokens", () => {
-    const usage = 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />';
+    const { usage } = component;
     const composition = "Put each `Widget.Item` inside a `Widget`.";
     const markdown = renderComponentMarkdown({
       ...component,
-      usage,
       composition,
       sections: [
         { kind: "heading", id: "usage", title: "Usage", depth: 2 },
@@ -683,81 +667,8 @@ describe("markdown endpoint rendering", () => {
       "### Basic\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx`"
     );
     expect(markdown).toContain("export function WidgetBasic() {}");
-    // The page itself shows no import list or RSC line, so its mirror leaves them out too.
+    // The Usage code imports the page's one entry, so the endpoint lists no other import.
     expect(markdown).not.toContain("- Import:");
-    expect(markdown).not.toContain("- RSC:");
-  });
-
-  it("prints each heading once: the intro's under the lede, none for a prose heading over its demo", () => {
-    const page = parseComponentPage(
-      [
-        "---",
-        "lede: A widget.",
-        "---",
-        "<Prose>",
-        "",
-        "## Composition limits",
-        "",
-        "One bar per root.",
-        "",
-        "### Two axes",
-        "",
-        "Mount two bars.",
-        "",
-        "</Prose>",
-        "",
-        '<Demo slug="widget" id="basic" title="Basic" file="widget-basic.tsx" />',
-        "",
-        "<Prose>",
-        "",
-        "## Thumbnails",
-        "",
-        "Map your own indicators.",
-        "",
-        "</Prose>",
-        "",
-        '<Demo slug="widget" id="thumbnails" title="Thumbnails" file="widget-thumbnails.tsx" />',
-      ].join("\n"),
-      "widget",
-      "widget/page.mdx"
-    );
-    const thumbnails = {
-      id: "thumbnails",
-      title: "Thumbnails",
-      sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx",
-      source: "export function WidgetThumbnails() {}",
-    };
-    const markdown = renderComponentMarkdown({
-      ...component,
-      intro: page.intro,
-      sections: page.sections,
-      demos: [...component.demos, thumbnails],
-    });
-    const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
-    expect(headings).toEqual([
-      "# Widget",
-      "## Composition limits",
-      "### Two axes",
-      "## Basic",
-      "## Thumbnails",
-      "## API reference",
-      "### Widget · RSC: client",
-      "## Tokens consumed",
-    ]);
-    expect(markdown).toContain(
-      "# Widget\n\nA widget.\n\n## Composition limits\n\nOne bar per root.\n\n### Two axes\n\nMount two bars.\n"
-    );
-    expect(markdown).toContain(
-      "## Thumbnails\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx`"
-    );
-    // Both prose headings stay in the outline.
-    expect(page.sections.map((section) => section.id)).toEqual([
-      "composition-limits",
-      "two-axes",
-      "basic",
-      "thumbnails",
-      "thumbnails",
-    ]);
   });
 });
 

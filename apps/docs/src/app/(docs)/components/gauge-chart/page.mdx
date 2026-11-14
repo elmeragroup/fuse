@@ -1,16 +1,29 @@
 ---
 lede: >
-  Preview. One reading on a dial from its minimum to its maximum, named as a meter.
+  Preview, so names and props can change until Fuse's first stable release. One reading on a dial
+  from its minimum to its maximum, named as a meter.
 ---
 
-import { GaugeChartBattery } from "./demos/gauge-chart-battery";
-import { GaugeChartCapacityStep } from "./demos/gauge-chart-capacity-step";
-import { GaugeChartCharging } from "./demos/gauge-chart-charging";
+import { GaugeChartClosedRing } from "./demos/gauge-chart-closed-ring";
+import { GaugeChartDemo } from "./demos/gauge-chart-demo";
+import { GaugeChartDots } from "./demos/gauge-chart-dots";
 import { GaugeChartEmpty } from "./demos/gauge-chart-empty";
+import { GaugeChartFadingDots } from "./demos/gauge-chart-fading-dots";
+import { GaugeChartFlatSector } from "./demos/gauge-chart-flat-sector";
+import { GaugeChartGlow } from "./demos/gauge-chart-glow";
 import { GaugeChartLive } from "./demos/gauge-chart-live";
 import { GaugeChartLoading } from "./demos/gauge-chart-loading";
-import { GaugeChartPriceArea } from "./demos/gauge-chart-price-area";
-import { GaugeChartSpotPrice } from "./demos/gauge-chart-spot-price";
+import { GaugeChartNeedle } from "./demos/gauge-chart-needle";
+import { GaugeChartNoEntrance } from "./demos/gauge-chart-no-entrance";
+import { GaugeChartOutsideRuler } from "./demos/gauge-chart-outside-ruler";
+import { GaugeChartOverMax } from "./demos/gauge-chart-over-max";
+import { GaugeChartProgressRing } from "./demos/gauge-chart-progress-ring";
+import { GaugeChartRadialSector } from "./demos/gauge-chart-radial-sector";
+import { GaugeChartRuler } from "./demos/gauge-chart-ruler";
+import { GaugeChartSector } from "./demos/gauge-chart-sector";
+import { GaugeChartSolidTrack } from "./demos/gauge-chart-solid-track";
+import { GaugeChartTriangleNeedle } from "./demos/gauge-chart-triangle-needle";
+import { GaugeChartZone } from "./demos/gauge-chart-zone";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -18,68 +31,125 @@ export const metadata = componentMetadata("gauge-chart");
 
 <ComponentIntro slug="gauge-chart" />
 
-<Prose>
+<DefaultDemo slug="gauge-chart" file="gauge-chart-demo.tsx">
+  <GaugeChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Names and props can change until Fuse's first stable release. Root takes the reading in its own unit, with `min` and `max` around it, and names the dial as a meter: a screen reader reads its name, its domain and the value in Root's format. Nothing in the chart takes focus.
+## Usage
 
-Every part draws from one value. The track scales out once, the first time the gauge comes into view, then the fill sweeps from the minimum to the reading, lighting each notch as it passes, while the ruler's ticks brighten and the needle turns with it. A new reading sweeps on from wherever the dial shows. With reduced motion, and in print, the dial draws at rest at once.
+{/* prettier-ignore */}
+```tsx
+import { GaugeChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-</Prose>
+<GaugeChart.Root value={3.9} max={5} valueFormat={energy} aria-label="This hour's consumption">
+  <GaugeChart.Track />
+  <GaugeChart.Fill />
+  <GaugeChart.Center>
+    <GaugeChart.CenterValue />
+    <GaugeChart.CenterLabel>This hour</GaugeChart.CenterLabel>
+  </GaugeChart.Center>
+</GaugeChart.Root>
+```
 
-## Against a limit
+## Examples
 
-A `Zone` marks a range at the rim, here the step above the 5 kWh capacity limit. The track scales in to make room for it, so no radius needs tuning.
-
-<Demo slug="gauge-chart" id="capacity-step" title="Capacity step" file="gauge-chart-capacity-step.tsx">
-  <GaugeChartCapacityStep />
+<Demo slug="gauge-chart" id="zone" title="Zone" level={3} file="gauge-chart-zone.tsx">
+  <GaugeChartZone />
 </Demo>
 
-## Price bands
-
-Zones repeat, each in its own colour role. An outside `Ruler` stands at the rim with its labels past it, and `Track variant="solid"` draws one band, which the fill follows.
-
-<Demo slug="gauge-chart" id="spot-price" title="Spot price" file="gauge-chart-spot-price.tsx">
-  <GaugeChartSpotPrice />
+<Demo slug="gauge-chart" id="solid-track" title="Solid track" level={3} file="gauge-chart-solid-track.tsx">
+  <GaugeChartSolidTrack />
 </Demo>
 
-A gauge may leave the track out and let a `Sector` and rings of `Dots` carry the reading.
-
-<Demo slug="gauge-chart" id="price-area" title="Price area" file="gauge-chart-price-area.tsx">
-  <GaugeChartPriceArea />
+<Demo slug="gauge-chart" id="glow" title="Glow" level={3} file="gauge-chart-glow.tsx">
+  <GaugeChartGlow />
 </Demo>
 
-## Rings
-
-A `ProgressRing` draws the reading as a thin ring outside the track, its remainder dimmed.
-
-<Demo slug="gauge-chart" id="battery" title="Battery charge" file="gauge-chart-battery.tsx">
-  <GaugeChartBattery />
+<Demo slug="gauge-chart" id="ruler" title="Ruler" level={3} file="gauge-chart-ruler.tsx">
+  <GaugeChartRuler />
 </Demo>
 
-With `startAngle={0}` and `endAngle={360}` the ring closes, and alone it carries the reading.
-
-<Demo slug="gauge-chart" id="charging" title="Charging session" file="gauge-chart-charging.tsx">
-  <GaugeChartCharging />
+<Demo
+  slug="gauge-chart"
+  id="outside-ruler"
+  title="Outside ruler"
+  level={3}
+  file="gauge-chart-outside-ruler.tsx">
+  <GaugeChartOutsideRuler />
 </Demo>
 
-## Live readings
+<Demo slug="gauge-chart" id="needle" title="Needle" level={3} file="gauge-chart-needle.tsx">
+  <GaugeChartNeedle />
+</Demo>
 
-Each new reading sweeps on from where the dial shows, also when it lands mid-sweep, and the centre's digits roll to it.
+<Demo
+  slug="gauge-chart"
+  id="triangle-needle"
+  title="Triangle needle"
+  level={3}
+  file="gauge-chart-triangle-needle.tsx">
+  <GaugeChartTriangleNeedle />
+</Demo>
 
-<Demo slug="gauge-chart" id="live" title="Live reading" file="gauge-chart-live.tsx">
+<Demo slug="gauge-chart" id="sector" title="Sector" level={3} file="gauge-chart-sector.tsx">
+  <GaugeChartSector />
+</Demo>
+
+<Demo slug="gauge-chart" id="flat-sector" title="Flat sector" level={3} file="gauge-chart-flat-sector.tsx">
+  <GaugeChartFlatSector />
+</Demo>
+
+<Demo
+  slug="gauge-chart"
+  id="radial-sector"
+  title="Radial sector"
+  level={3}
+  file="gauge-chart-radial-sector.tsx">
+  <GaugeChartRadialSector />
+</Demo>
+
+<Demo slug="gauge-chart" id="dots" title="Dots" level={3} file="gauge-chart-dots.tsx">
+  <GaugeChartDots />
+</Demo>
+
+<Demo slug="gauge-chart" id="fading-dots" title="Fading dots" level={3} file="gauge-chart-fading-dots.tsx">
+  <GaugeChartFadingDots />
+</Demo>
+
+<Demo
+  slug="gauge-chart"
+  id="progress-ring"
+  title="Progress ring"
+  level={3}
+  file="gauge-chart-progress-ring.tsx">
+  <GaugeChartProgressRing />
+</Demo>
+
+<Demo slug="gauge-chart" id="closed-ring" title="Closed ring" level={3} file="gauge-chart-closed-ring.tsx">
+  <GaugeChartClosedRing />
+</Demo>
+
+<Demo slug="gauge-chart" id="over-max" title="Over the maximum" level={3} file="gauge-chart-over-max.tsx">
+  <GaugeChartOverMax />
+</Demo>
+
+<Demo slug="gauge-chart" id="live" title="Live reading" level={3} file="gauge-chart-live.tsx">
   <GaugeChartLive />
 </Demo>
 
-## Loading and empty states
+<Demo slug="gauge-chart" id="no-entrance" title="No entrance" level={3} file="gauge-chart-no-entrance.tsx">
+  <GaugeChartNoEntrance />
+</Demo>
 
-<Demo slug="gauge-chart" id="loading" title="Loading" file="gauge-chart-loading.tsx">
+<Demo slug="gauge-chart" id="loading" title="Loading" level={3} file="gauge-chart-loading.tsx">
   <GaugeChartLoading />
 </Demo>
 
-A null value shows `GaugeChart.Empty`, and the dial is no meter until a reading arrives.
-
-<Demo slug="gauge-chart" id="empty" title="No reading" file="gauge-chart-empty.tsx">
+<Demo slug="gauge-chart" id="empty" title="No reading" level={3} file="gauge-chart-empty.tsx">
   <GaugeChartEmpty />
 </Demo>
 
 <ApiReference slug="gauge-chart" />
+
+<ComponentTokens slug="gauge-chart" />

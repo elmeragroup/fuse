@@ -13,6 +13,7 @@ import { VerticalTableBoldRow } from "./demos/vertical-table-bold-row";
 import { VerticalTableWrappingText } from "./demos/vertical-table-wrapping-text";
 import { VerticalTableLoading } from "./demos/vertical-table-loading";
 import { VerticalTableRowsAsChildren } from "./demos/vertical-table-rows-as-children";
+import { VerticalTableWrappingKey } from "./demos/vertical-table-wrapping-key";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -73,10 +74,19 @@ import { Table } from "@elmeragroup/fuse/table";
 <Demo
   slug="table"
   id="vertical-wrapping-text"
-  title="Wrapping text"
+  title="Wrapping value"
   level={3}
   file="vertical-table-wrapping-text.tsx">
   <VerticalTableWrappingText />
+</Demo>
+
+<Demo
+  slug="table"
+  id="vertical-wrapping-key"
+  title="Wrapping key"
+  level={3}
+  file="vertical-table-wrapping-key.tsx">
+  <VerticalTableWrappingKey />
 </Demo>
 
 <Demo slug="table" id="vertical-loading" title="Loading value" level={3} file="vertical-table-loading.tsx">

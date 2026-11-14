@@ -29,7 +29,10 @@ import { springEasing } from "./layout/spring";
  * @beta
  */
 export type RadarChartGridProps = ChartLayerProps & {
-  /** The ring shape. "polygon" by default. */
+  /**
+   * The ring shape, polygons through the spokes or circles. When the radius domain reaches below 0
+   * the zero ring draws solid.
+   */
   variant?: "polygon" | "circle";
 };
 

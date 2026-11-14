@@ -13,6 +13,8 @@ import { AlertTitleOnly } from "./demos/alert-title-only";
 import { AlertHeadingLevel } from "./demos/alert-heading-level";
 import { AlertList } from "./demos/alert-list";
 import { AlertStatus } from "./demos/alert-status";
+import { AlertIconFill } from "./demos/alert-icon-fill";
+import { AlertIconRegular } from "./demos/alert-icon-regular";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -72,6 +74,14 @@ import { Alert } from "@elmeragroup/fuse/alert";
 
 <Demo slug="alert" id="status" title="Status" level={3} file="alert-status.tsx">
   <AlertStatus />
+</Demo>
+
+<Demo slug="alert" id="icon-fill" title="Filled icon" level={3} file="alert-icon-fill.tsx">
+  <AlertIconFill />
+</Demo>
+
+<Demo slug="alert" id="icon-regular" title="Regular icon" level={3} file="alert-icon-regular.tsx">
+  <AlertIconRegular />
 </Demo>
 
 <ApiReference slug="alert" />

@@ -21,7 +21,7 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type ClockChartScrubberProps = ChartLayerProps & {
-  /** "line" draws a hand through the active slot, "band" its whole sector. "line" by default. */
+  /** "line" draws a hand through the active slot, and "band" its whole sector. */
   variant?: "line" | "band";
 };
 

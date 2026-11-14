@@ -44,15 +44,19 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type ClockChartLineProps = ChartLayerProps & {
-  /** The series the line draws. An unknown key throws `unknown-key`. */
+  /**
+   * The series the line draws. An unknown key throws `unknown-key`. To compare a cycle with an
+   * earlier one, such as today with the same day last week, put the earlier reading in a second
+   * column on the same rows and draw it as a dashed or quiet Line.
+   */
   dataKey: string;
   /**
-   * The line's look. "default" by default. "dashed" dashes the whole line, "flowing" runs its
-   * dashes along it, which reduced motion stops, and "quiet" draws a thin, faint line for a
-   * reference series such as last week.
+   * The line's look. "dashed" dashes the whole line, "flowing" runs its dashes along it, which
+   * reduced motion stops, and "quiet" draws a thin, faint line for a reference series such as last
+   * week.
    */
   variant?: "default" | "dashed" | "flowing" | "quiet";
-  /** The curve through the readings round the dial. "monotone" by default. */
+  /** The curve through the readings round the dial. */
   curve?: ChartCurve;
 };
 
@@ -65,12 +69,12 @@ export type ClockChartAreaProps = ChartLayerProps & {
   /** The series the area draws. An unknown key throws `unknown-key`. */
   dataKey: string;
   /**
-   * The fill's look. "gradient" by default, which fades from the value toward the zero ring, and
-   * "gradient-reverse" fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted",
-   * "lines" and "hatched" fill with a texture of the series colour.
+   * The fill's look. "gradient" fades from the value toward the zero ring, and "gradient-reverse"
+   * fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted", "lines" and
+   * "hatched" fill with a texture of the series colour.
    */
   variant?: "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines" | "hatched";
-  /** The curve along the area's edge. "monotone" by default. */
+  /** The curve along the area's edge. Pass the Line's curve, so the fill's edge meets the line. */
   curve?: ChartCurve;
 };
 

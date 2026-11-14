@@ -20,7 +20,11 @@ import { labelWidth } from "./layout/label-width";
  * @beta
  */
 export type ClockChartAngleAxisProps = ChartLayerProps & {
-  /** The label format. The cycle's own, hours, weekdays or months, is the default. */
+  /**
+   * The label format. The cycle's own, hours, weekdays or months, is the default. The labels thin
+   * by one stride for the whole dial. Each label follows its slot, so on a 25-hour day 06 sits at
+   * 100.8° and the repeated 02 labels once.
+   */
   format?: XFormat;
 };
 

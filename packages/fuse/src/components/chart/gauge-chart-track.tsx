@@ -18,8 +18,8 @@ import { GaugeDialLayer } from "./gauge-chart-dial";
 export type GaugeChartTrackProps = ChartLayerProps & {
   /**
    * The track's look, which `Fill` and `Glow` follow. "notches" draws 40 notches over the sweep,
-   * every notch and every gap alike; "solid" draws one band with softly rounded ends. "notches" by
-   * default.
+   * every notch and every gap alike, and the fill lights each notch it passes. "solid" draws one
+   * band with softly rounded ends.
    */
   variant?: "notches" | "solid";
 };
@@ -30,7 +30,7 @@ export type GaugeChartTrackProps = ChartLayerProps & {
  * @beta
  */
 export type GaugeChartFillProps = ChartLayerProps & {
-  /** The colour role of the fill, or of the glow that casts it. "chart-1" by default. */
+  /** The colour role of the fill, or of the glow that casts it. */
   color?: ChartGaugeRole;
 };
 

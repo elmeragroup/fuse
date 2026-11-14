@@ -15,6 +15,9 @@ import { TooltipOffset } from "./demos/tooltip-offset";
 import { TooltipDelay } from "./demos/tooltip-delay";
 import { TooltipRootDelay } from "./demos/tooltip-root-delay";
 import { TooltipControlled } from "./demos/tooltip-controlled";
+import { TooltipTrackCursorX } from "./demos/tooltip-track-cursor-x";
+import { TooltipTrackCursorY } from "./demos/tooltip-track-cursor-y";
+import { TooltipTrackCursorBoth } from "./demos/tooltip-track-cursor-both";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -70,6 +73,33 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 <Demo slug="tooltip" id="offset" title="Offset" level={3} file="tooltip-offset.tsx">
   <TooltipOffset />
+</Demo>
+
+<Demo
+  slug="tooltip"
+  id="track-cursor-x"
+  title="Track the cursor horizontally"
+  level={3}
+  file="tooltip-track-cursor-x.tsx">
+  <TooltipTrackCursorX />
+</Demo>
+
+<Demo
+  slug="tooltip"
+  id="track-cursor-y"
+  title="Track the cursor vertically"
+  level={3}
+  file="tooltip-track-cursor-y.tsx">
+  <TooltipTrackCursorY />
+</Demo>
+
+<Demo
+  slug="tooltip"
+  id="track-cursor-both"
+  title="Track the cursor"
+  level={3}
+  file="tooltip-track-cursor-both.tsx">
+  <TooltipTrackCursorBoth />
 </Demo>
 
 <Demo slug="tooltip" id="delay" title="Shared delay" level={3} file="tooltip-delay.tsx">

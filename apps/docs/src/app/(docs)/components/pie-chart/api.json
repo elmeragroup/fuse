@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. The plot is one tab stop. Hover a slice, or focus the chart and use the arrow keys, to make it active. The active slice moves out along its bisector by `--chart-slice-pop`, 8 px by default, and the others dim. A pointer anywhere in the chart's cell picks the slice under its angle, the hole and the space past the rim included. On a touch screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a second tap on the same slice releases it.",
           "required": false
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per slice, drawn in data order. A negative value throws `negative-polar-value`.",
+          "description": "The rows, one per slice, drawn in data order from `startAngle`, clockwise. Sort the rows to put the largest slice first. A negative value throws `negative-polar-value`. A data update tweens the slices to their new angles, and a slice that leaves collapses into its neighbour's seam. Every value above 0 keeps at least one device pixel of rim, and the labels, the tooltip and the table keep the true value. With no value above 0 the chart shows `Empty` and has no tab stop. A server component can render the chart when every prop is plain data, and with JavaScript off or in print the whole chart shows at once.",
           "required": true
         },
         {
@@ -62,7 +62,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns the entrance sweep off.",
+          "description": "\"none\" turns off the entrance, which sweeps the slices in the first time the chart comes into view.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default.",
+          "description": "Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default. The chart keeps the aspect of the sweep's bounding box, so a semicircle from -90 to 90 is twice as wide as it is tall.",
           "required": false
         },
         {
@@ -116,7 +116,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Turns the sweep into a gauge, where slices fill their total's share of `max`.",
+          "description": "Turns the sweep into a gauge, where the slices fill their total's share of `max` and `Track` draws the rest. A total above `max` fills the whole sweep and sets `data-over-max`, and the texts keep the true value.",
           "required": false
         },
         {
@@ -125,7 +125,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The most slices drawn, 6 by default. Past it the smallest rows fold into one Other slice.",
+          "description": "The most slices drawn, 6 by default. Past it the smallest rows fold into one Other slice, which comes last and prints `otherLabel` with the number of categories it holds. The table lists every row unfolded.",
           "required": false
         },
         {
@@ -170,7 +170,7 @@
           "type": "ChartKeyOf<TRow, ChartQuality | null | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The column that holds each slice's `ChartQuality`.",
+          "description": "The column that holds each slice's `ChartQuality`. An estimated slice draws hatched, a missing one draws no arc, and the table names each slice's quality.",
           "required": false
         },
         {
@@ -242,7 +242,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "0",
-          "description": "A fraction of the outer radius, from 0 to 0.5. The plot keeps its aspect, so pixels would mean nothing.",
+          "description": "The slices' corner radius as a fraction of the outer radius, from 0 to 0.5. It is a fraction because the plot keeps its aspect.",
           "required": false
         },
         {
@@ -269,7 +269,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "A per-slice template. Without children, SeriesLabel and LegendShare.",
+          "description": "A template each label renders for its slice. Without children, `SeriesLabel` and `LegendShare`.",
           "required": false
         },
         {
@@ -287,7 +287,7 @@
           "type": "\"inside\" | \"outside\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"inside\"",
-          "description": "Where each label sits. An inside label on a role with no on-colour role draws outside instead.",
+          "description": "Where each label sits. \"outside\" draws a leader from the rim and takes a gutter beside the dial. An inside label draws outside its slice when the slice's role has no on-colour role, such as a sequential step, or when its box does not fit the slice.",
           "required": false,
           "values": [
             "inside",
@@ -345,7 +345,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The centre's content, such as `CenterValue` over a `CenterLabel`.",
+          "description": "The centre's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the hole. Its text never shrinks below 12 px. When the lines overflow the square it drops every line but the value, and then the value.",
           "required": false
         },
         {
@@ -390,7 +390,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The category's config `format`, then Root's `valueFormat`, is the default.",
+          "description": "The value format. The category's config `format`, then Root's `valueFormat`, is the default. The part prints the active slice's or ring's value, and with nothing active the total, or nothing when the categories' formats differ.",
           "required": false
         },
         {
@@ -426,7 +426,7 @@
           "type": "ChartFractionDigits | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The percentage digits.",
+          "description": "The percentage digits. The part prints the active slice's share of the total, or the active ring's share of its maximum. With nothing active a gauge pie prints its total over `max`, and a radial chart its sum over the sum of its maxima when every ring shares one format.",
           "required": false
         },
         {
@@ -462,7 +462,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The maximum's format. The value's format is the default.",
+          "description": "The maximum's format. The value's format is the default. The part prints a gauge pie's `max`, or the active ring's `max` or `maxKey` value, and with nothing active a radial chart's sum of maxima when every ring shares one format.",
           "required": false
         },
         {
@@ -489,7 +489,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label text, such as \"av\" between the value and the maximum.",
+          "description": "The label text, such as \"av\" between the value and the maximum. It stays the same whatever is active, and it may hold the centre's numbers, as in \"av\" before a `CenterMax`.",
           "required": false
         },
         {
@@ -525,7 +525,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The text with nothing active, such as \"Total\" under the total.",
+          "description": "The text with nothing active, such as \"Total\" under the total. With a slice or ring active the line prints that item's config label instead. A hole narrower than 4rem leaves the line out.",
           "required": false
         },
         {
@@ -570,7 +570,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The category whose slice or ring glows.",
+          "description": "The category whose slice or ring glows. A category that folds into Other glows nothing, and Other has no config key to name.",
           "required": true
         },
         {
@@ -599,7 +599,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "0",
-          "description": "A fraction of the outer radius, as on Root. 0 by default.",
+          "description": "The hole as a fraction of the outer radius. Pass Root's `innerRadius`.",
           "required": false
         },
         {

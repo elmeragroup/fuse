@@ -1,14 +1,23 @@
 ---
 lede: >
-  Preview. Radial bar charts, one ring per row filled against its maximum.
+  Preview, so names and props can change until Fuse's first stable release. Radial bar charts, one
+  ring per row filled against its maximum.
 ---
 
+import { RadialChartActiveRing } from "./demos/radial-chart-active-ring";
 import { RadialChartBudgets } from "./demos/radial-chart-budgets";
+import { RadialChartDemo } from "./demos/radial-chart-demo";
 import { RadialChartDotted } from "./demos/radial-chart-dotted";
 import { RadialChartEmpty } from "./demos/radial-chart-empty";
+import { RadialChartEstimated } from "./demos/radial-chart-estimated";
+import { RadialChartFrostedTooltip } from "./demos/radial-chart-frosted-tooltip";
 import { RadialChartGauge } from "./demos/radial-chart-gauge";
+import { RadialChartGlow } from "./demos/radial-chart-glow";
 import { RadialChartLoading } from "./demos/radial-chart-loading";
 import { RadialChartMonthToDate } from "./demos/radial-chart-month-to-date";
+import { RadialChartNoEntrance } from "./demos/radial-chart-no-entrance";
+import { RadialChartNoMax } from "./demos/radial-chart-no-max";
+import { RadialChartOneMax } from "./demos/radial-chart-one-max";
 import { RadialChartOverBudget } from "./demos/radial-chart-over-budget";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -17,58 +26,103 @@ export const metadata = componentMetadata("radial-chart");
 
 <ComponentIntro slug="radial-chart" />
 
-<Prose>
+<DefaultDemo slug="radial-chart" file="radial-chart-demo.tsx">
+  <RadialChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row is the outermost ring. Each ring fills its value's share of its maximum: the largest value by default, one `max` for every ring, or each row's own through `maxKey`. A ring never laps. The tracks scale out and the rings sweep in once, the first time the chart comes into view, and a data update morphs each ring to its new value. Every value above 0 keeps at least one device pixel of arc.
+## Usage
 
-Hover a ring, or focus the chart and use the arrow keys, to read one ring. The active ring and the rings outside it grow a little, and the others dim. Rings in one unit read best sorted largest first, so the longest arc holds the largest value. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same ring releases it.
+{/* prettier-ignore */}
+```tsx
+import { RadialChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-</Prose>
+<RadialChart.Root data={data} config={config} nameKey="budget" valueKey="kwh" maxKey="limit" aria-label="Usage against budget">
+  <RadialChart.Track />
+  <RadialChart.Bar />
+  <RadialChart.Tooltip />
+  <RadialChart.Table />
+</RadialChart.Root>
+```
 
-## Against a budget
+## Examples
 
-The centre prints the active ring's value over its budget, and with nothing active the total over the sum of the budgets. The "of" before the budget is a `CenterLabel`, whose text stays the same whatever is active. A `CenterName` line would name the active ring instead, and print its children with nothing active.
-
-<Demo slug="radial-chart" id="budgets" title="Budgets" file="radial-chart-budgets.tsx">
-  <RadialChartBudgets />
-</Demo>
-
-The centre prints the total with nothing active only when every ring shares one format, because a sum of kWh and kroner means nothing. Here it prints the active ring's share of its budget.
-
-<Demo slug="radial-chart" id="month-to-date" title="Month to date" file="radial-chart-month-to-date.tsx">
-  <RadialChartMonthToDate />
-</Demo>
-
-A value past its maximum fills the whole sweep and sets `data-over-max` on its ring, while the centre, the tooltip and the table keep the true share.
-
-<Demo slug="radial-chart" id="over-budget" title="Over budget" file="radial-chart-over-budget.tsx">
-  <RadialChartOverBudget />
-</Demo>
-
-## Gauges and dots
-
-`startAngle` and `endAngle` turn the rings into a gauge. The chart keeps the aspect of the sweep's bounding box.
-
-<Demo slug="radial-chart" id="gauge" title="Capacity step" file="radial-chart-gauge.tsx">
-  <RadialChartGauge />
-</Demo>
-
-`variant="dotted"` draws 40 dots per sweep and fills the value's share of them, whole dots only.
-
-<Demo slug="radial-chart" id="dotted" title="Dotted" file="radial-chart-dotted.tsx">
+<Demo slug="radial-chart" id="dotted" title="Dotted" level={3} file="radial-chart-dotted.tsx">
   <RadialChartDotted />
 </Demo>
 
-## Loading and empty states
+<Demo
+  slug="radial-chart"
+  id="budgets"
+  title="Value against the budget"
+  level={3}
+  file="radial-chart-budgets.tsx">
+  <RadialChartBudgets />
+</Demo>
 
-<Demo slug="radial-chart" id="loading" title="Loading" file="radial-chart-loading.tsx">
+<Demo slug="radial-chart" id="active-ring" title="Active ring" level={3} file="radial-chart-active-ring.tsx">
+  <RadialChartActiveRing />
+</Demo>
+
+<Demo
+  slug="radial-chart"
+  id="month-to-date"
+  title="Share in the centre"
+  level={3}
+  file="radial-chart-month-to-date.tsx">
+  <RadialChartMonthToDate />
+</Demo>
+
+<Demo slug="radial-chart" id="one-max" title="One maximum" level={3} file="radial-chart-one-max.tsx">
+  <RadialChartOneMax />
+</Demo>
+
+<Demo
+  slug="radial-chart"
+  id="no-max"
+  title="Largest value fills its ring"
+  level={3}
+  file="radial-chart-no-max.tsx">
+  <RadialChartNoMax />
+</Demo>
+
+<Demo slug="radial-chart" id="over-budget" title="Over budget" level={3} file="radial-chart-over-budget.tsx">
+  <RadialChartOverBudget />
+</Demo>
+
+<Demo slug="radial-chart" id="gauge" title="Gauge" level={3} file="radial-chart-gauge.tsx">
+  <RadialChartGauge />
+</Demo>
+
+<Demo slug="radial-chart" id="estimated" title="Estimated ring" level={3} file="radial-chart-estimated.tsx">
+  <RadialChartEstimated />
+</Demo>
+
+<Demo slug="radial-chart" id="glow" title="Glow" level={3} file="radial-chart-glow.tsx">
+  <RadialChartGlow />
+</Demo>
+
+<Demo
+  slug="radial-chart"
+  id="frosted-tooltip"
+  title="Frosted tooltip"
+  level={3}
+  file="radial-chart-frosted-tooltip.tsx">
+  <RadialChartFrostedTooltip />
+</Demo>
+
+<Demo slug="radial-chart" id="no-entrance" title="No entrance" level={3} file="radial-chart-no-entrance.tsx">
+  <RadialChartNoEntrance />
+</Demo>
+
+<Demo slug="radial-chart" id="loading" title="Loading" level={3} file="radial-chart-loading.tsx">
   <RadialChartLoading />
 </Demo>
 
-A chart with no reading shows `RadialChart.Empty`, and it has no tab stop.
-
-<Demo slug="radial-chart" id="empty" title="No data" file="radial-chart-empty.tsx">
+<Demo slug="radial-chart" id="empty" title="No data" level={3} file="radial-chart-empty.tsx">
   <RadialChartEmpty />
 </Demo>
 
 <ApiReference slug="radial-chart" />
+
+<ComponentTokens slug="radial-chart" />

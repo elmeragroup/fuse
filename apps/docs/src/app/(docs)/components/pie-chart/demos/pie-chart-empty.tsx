@@ -8,18 +8,12 @@ const bill: { part: string; kr: number }[] = [];
 
 const config = {
   energy: { label: "Energy", color: "chart-1" },
-  grid: { label: "Grid rent", color: "chart-2" },
+  rent: { label: "Grid rent", color: "chart-2" },
 } as const satisfies ChartConfig;
 
 export function PieChartEmpty() {
   return (
-    <PieChart.Root
-      data={bill}
-      config={config}
-      nameKey="part"
-      valueKey="kr"
-      innerRadius={0.62}
-      aria-label="Electricity bill">
+    <PieChart.Root data={bill} config={config} nameKey="part" valueKey="kr" aria-label="Electricity bill">
       <PieChart.Pie />
       <PieChart.Empty />
     </PieChart.Root>

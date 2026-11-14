@@ -44,7 +44,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the popup starts open.",
           "required": false
         },
@@ -62,7 +62,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether nothing responds and the values are not submitted.",
           "required": false
         },
@@ -122,7 +122,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Hides zoned values' zone names.",
           "required": false
         },
@@ -140,7 +140,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the picker shows as invalid whatever its value.",
           "required": false
         },
@@ -212,7 +212,7 @@
           "origin": "declared",
           "type": "CalendarPageBehavior | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"visible\"",
           "description": "How the calendar pages a multi-month view.",
           "required": false,
           "values": [
@@ -225,7 +225,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the range cannot change.",
           "required": false
         },
@@ -245,7 +245,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether an empty or incomplete end is invalid.",
           "required": false
         },
@@ -254,7 +254,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "true",
           "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, a completed range is held while the popup stays open, as `DatePicker.Root`'s day: it commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise at midnight (an end with a typed time at that time) when the popup closes; that commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it was typed over: a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
           "required": false
         },
@@ -263,7 +263,7 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The field box's size.",
           "required": false,
           "values": [
@@ -303,7 +303,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "1",
           "description": "How many months the calendar shows.",
           "required": false
         }

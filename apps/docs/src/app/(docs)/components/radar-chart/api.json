@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. The plot is one tab stop. Hover a spoke, or focus the chart and use the arrow keys, to read it. ArrowLeft and ArrowRight move between spokes, and ArrowUp and ArrowDown between series. The series other than the nearest dim. On a touch screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a second tap on the same spoke releases it.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "TConfig & ChartSeriesConfigCheck<TConfig, TRow> & ChartRadarFieldCheck<TConfig> & ChartRadarCap<TConfig>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Keyed by series, as in `Chart.Root`. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format`, `icon`, `missing` and `qualityKey`. A fifth literal key fails the type, and a fifth runtime key throws. It takes no `stack`, `projectedFrom`, `interval` or scale.",
+          "description": "Keyed by series, as in `Chart.Root`. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format`, `icon`, `missing` and `qualityKey`. A radar compares at most 4 series. A fifth literal key fails the type, and a fifth runtime key throws in development and draws the first four in production. It takes no `stack`, `projectedFrom`, `interval` or scale.",
           "required": true
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per spoke. Negative values draw inside a zero ring.",
+          "description": "The rows, one per spoke. The first row's spoke points to 12 o'clock and the rest follow clockwise, so a cyclic profile such as the days of a week puts its last spoke beside its first. Negative values draw inside a zero ring. With no reading the chart shows `Empty` and has no tab stop. A server component can render the chart when every prop is plain data.",
           "required": true
         },
         {
@@ -62,7 +62,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns the entrance off.",
+          "description": "\"none\" turns off the entrance, in which each series grows from the centre the first time the chart comes into view.",
           "required": false
         },
         {
@@ -170,7 +170,7 @@
           "type": "\"circle\" | \"polygon\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"polygon\"",
-          "description": "The ring shape. \"polygon\" by default.",
+          "description": "The ring shape, polygons through the spokes or circles. When the radius domain reaches below 0 the zero ring draws solid.",
           "required": false,
           "values": [
             "circle",
@@ -264,7 +264,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the area fills.",
+          "description": "The series the area fills, between the zero ring and the series' edge, so a fill always reads as distance from 0. A filled radar is an Area and a Line of the same series.",
           "required": true
         },
         {
@@ -300,7 +300,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the outline draws.",
+          "description": "The series the outline draws. An outline radar is a Line alone. Where a reading is missing, the Line leaves out the edges either side of it.",
           "required": true
         },
         {
@@ -318,7 +318,7 @@
           "type": "\"dashed\" | \"default\" | \"quiet\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The outline's look. \"default\" by default.",
+          "description": "The outline's look. \"dashed\" dashes every edge, and \"quiet\" draws a thin, faint reference, such as last year's series.",
           "required": false,
           "values": [
             "dashed",
@@ -368,7 +368,7 @@
           "type": "\"default\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default.",
+          "description": "The dot's look. \"ring\" draws each dot hollow, in a ring of the series' colour.",
           "required": false,
           "values": [
             "default",
@@ -399,7 +399,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the dot follows.",
+          "description": "The series the dot follows. A step carries the dot along the polygon's edges to the next spoke. Over an edge beside a missing reading it fades out and back in past it, and a missing reading at the active spoke shows no dot.",
           "required": true
         },
         {

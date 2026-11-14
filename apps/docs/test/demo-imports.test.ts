@@ -21,21 +21,6 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   // A year of hours would fill the demo's printed source, so it reads one data module.
   ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
   ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
-  // The 24-hour profile averages the same two months of hours by clock hour.
-  [
-    "radar-chart/demos/radar-chart-hours.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  // The clock's day, week and last-week demos read the same two months of hours.
-  [
-    "clock-chart/demos/clock-chart-load-profile.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  [
-    "clock-chart/demos/clock-chart-last-week.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  ["clock-chart/demos/clock-chart-week.tsx", ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"]],
   // Link's router demo shows `render` composing the docs app's own router link.
   ["link/demos/link-router.tsx", ["next/link"]],
   // The router-link demo shows `render` composing the docs app's own router link.

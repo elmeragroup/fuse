@@ -20,7 +20,11 @@ import { latestWindow, liveName, liveTimeText, liveValueText } from "./live-line
 export type LiveLineChartTableProps = ChartLayerProps & {
   /** Replaces the generated caption, the chart's name and its reading count. */
   caption?: string;
-  /** Replaces the dictionary's "Vis som tabell". */
+  /**
+   * Replaces the dictionary's "Vis som tabell". The button shows the table and moves focus to it.
+   * The table lists the window's readings newest first. While collapsed it stays out of the Tab
+   * order and stays in the accessibility tree. Past 500 readings it pages by row range.
+   */
   showLabel?: string;
   /** Replaces the dictionary's "Skjul tabell". */
   hideLabel?: string;

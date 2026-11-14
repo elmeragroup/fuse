@@ -163,12 +163,8 @@ export type ContentHeading = {
  * nests a depth-3 demo under the depth-2 heading before it.
  */
 export type PageSection =
-  | ({
-      readonly kind: "heading";
-      /** Set when the heading sits in the page's intro, which prints it; the TOC still lists it. */
-      readonly intro?: true;
-    } & ContentHeading)
-  | { readonly kind: "demo"; readonly id: string; readonly title: string; readonly depth: 2 | 3 };
+  | ({ readonly kind: "heading" } & ContentHeading)
+  | { readonly kind: "demo"; readonly id: string; readonly title: string; readonly depth: 3 };
 
 /** One on-page TOC entry: the anchor it links, its label, and the entries nested under it. */
 export type TocItem = {
@@ -191,7 +187,7 @@ export type TocItem = {
  * {@link ComponentOutline} instead, which holds the TOC skeleton and leaves out the token
  * lists.
  *
- * The import specifier and the page's RSC status are absent on purpose: the generation pass
+ * The import specifiers and each part's RSC status are absent on purpose. The generation pass
  * is their only reader, so they live on `DocsComponent` and never reach the browser.
  */
 export type ComponentPageEntry = {
@@ -230,9 +226,10 @@ export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "mark
 };
 
 /**
- * One component as the *generation pass* holds it: the manifest entry plus the facts the
- * generated outputs derive from — the import specifier, the page's RSC status, its headings,
- * every demo's verbatim source and the full API model.
+ * One component as the *generation pass* holds it. It is the manifest entry plus the import
+ * specifiers, the headings, every demo's verbatim source and the full API model, whose parts
+ * each carry their declaring module's RSC status. The page's Usage code holds the imports a
+ * reader copies.
  *
  * The client outline ships a slice of those: the depth-2 headings, each demo's id and title,
  * and the part names. The demo sources, the API model and the import specifier stay in the
@@ -247,8 +244,6 @@ export type DocsComponent = ComponentPageEntry & {
    * holds their parts in the same order.
    */
   apis: readonly [ApiEntry, ...ApiEntry[]];
-  /** The page's authored intro, the prose before its first demo, or `""` when it has none. */
-  intro: string;
   /**
    * The page this page repeats whole, such as `chart` for `bar-chart`, when it is an alias. An
    * alias page has no API artifact and no parts of its own.
@@ -256,15 +251,10 @@ export type DocsComponent = ComponentPageEntry & {
   alias?: ApiAlias;
   /** An alias page's own part names, such as `BarChart.Root`, which its search entry matches. */
   aliasParts?: readonly string[];
-  /**
-   * The page's RSC status, read from its implementation module's own directive
-   * and published by the markdown endpoint.
-   */
-  rsc: RscStatus;
   /** The headings and titled demos together, in page order. */
   sections: readonly PageSection[];
-  /** The code under the page's `## Usage` heading, or `null` when the page has no Usage section. */
-  usage: string | null;
+  /** The code under the page's `## Usage` heading. */
+  usage: string;
   /** The markdown under the page's `## Composition` heading, or `null` when the page has none. */
   composition: string | null;
   demos: readonly DocsDemo[];

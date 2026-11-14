@@ -170,6 +170,28 @@ button says the table stays out of the Tab order only while collapsed, and `Char
 `barVariant` say that only a vertical chart draws more than 100 slots as one path. The public types
 are unchanged.
 
+`LiveLineChart`, `PieChart`, `RadarChart`, `RadialChart`, `GaugeChart`, `ClockChart`, `Sparkline`
+and `SparklineHover` now document their rules on the props they concern. Each Root documents its
+keys and touch behaviour on `children`, its entrance on `data-intro`, and its empty state and
+server render on `data`. `LiveLineChart.Root` documents its feed, clock and reduced motion on
+`data`, `value` and `paused`, and `LiveLineChart.YAxis` documents on `side` that a `Badge` takes
+the end column. `PieChart.Root` documents its gauge on `max` and its Other slice on `maxSlices`, and the
+centre parts shared with `RadialChart` say what each prints with nothing active. `RadialChart.Root`
+documents ring order, maxima and values past them on `data`, `max` and `maxKey`. `RadarChart.Root`
+documents its four-series cap on `config`. `GaugeChart.Root` documents its meter on `valueFormat`
+and its sweeps on `value`. `ClockChart` documents comparing cycles on `Line`'s `dataKey`, stacks on
+`Column`'s, its labels on the axes' `format` and the threshold ring on `config`. `Sparkline`
+documents its hover on `data-hover`, its entrance on `data-intro` and its looks on `variant`, and
+`SparklineHover` declares `children` to document its glide. The public types are unchanged.
+
+The API reference now records these runtime defaults: `Alert.Icon` `weight="bold"`, every `Card`
+part's `direction="vertical"`, `ClockChart.Root`'s `stackOffset`, `yBaseline`, `innerRadius` and
+`radiusScale`, the `tone` and `variant` of `Chart`'s and `ClockChart`'s `ReferenceLine` and
+`ReferenceArea`, `ScatterChart.ReferenceLine`'s `tone`, and the options of `DatePicker.Root` and
+`DateRangePicker.Root`, such as `visibleMonths` and `pageBehavior`. Rendering is unchanged, except
+that `ScatterChart.ReferenceLine` now writes `data-tone="default"` when `tone` is unset, as
+`Chart.ReferenceLine` does.
+
 Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
 `CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
 The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below

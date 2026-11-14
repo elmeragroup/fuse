@@ -19,7 +19,10 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type GaugeChartZoneProps = ChartLayerProps & {
-  /** Where the range starts, in the domain's unit. */
+  /**
+   * Where the range starts, in the domain's unit. A Zone draws at the rim, and the track scales in
+   * to make room for it.
+   */
   from: number;
   /** Where the range ends, in the domain's unit. */
   to: number;

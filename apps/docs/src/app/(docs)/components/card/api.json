@@ -34,7 +34,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -71,7 +71,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -95,7 +95,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -119,7 +119,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -181,7 +181,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -222,7 +222,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -246,7 +246,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [
@@ -270,7 +270,7 @@
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"vertical\"",
           "description": "The card's layout. `horizontal` sets the header, content and footer side by side and wraps whole parts onto a new row as the container narrows, keeping a title with its description. Pass the same value to the root and to every part. Sections take no `direction`, so use them in a vertical card.",
           "required": false,
           "values": [

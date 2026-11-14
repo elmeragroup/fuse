@@ -96,8 +96,8 @@
           "origin": "declared",
           "type": "\"bold\" | \"fill\" | \"regular\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The Phosphor stroke weight. Unset, the glyph draws `bold`, and `regular` draws a thinner stroke. Keep `fill` for selected or active states.",
+          "defaultValue": "\"bold\"",
+          "description": "The Phosphor stroke weight. `regular` draws a thinner stroke. Keep `fill` for selected or active states.",
           "required": false,
           "values": [
             "bold",

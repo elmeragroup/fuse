@@ -18,7 +18,7 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type ClockChartGridProps = ChartLayerProps & {
-  /** The rings' and spokes' line style. "solid" by default. The zero ring stays solid. */
+  /** The rings' and spokes' line style. The zero ring stays solid. */
   variant?: "solid" | "dashed";
 };
 

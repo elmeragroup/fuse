@@ -1312,8 +1312,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The line's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's tone.",
           "required": false,
           "values": [
             "default",
@@ -1352,8 +1352,8 @@
           "origin": "declared",
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The line style. \"solid\" by default.",
+          "defaultValue": "\"solid\"",
+          "description": "The line style.",
           "required": false,
           "values": [
             "dashed",
@@ -1446,8 +1446,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The band's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The band's tone.",
           "required": false,
           "values": [
             "default",

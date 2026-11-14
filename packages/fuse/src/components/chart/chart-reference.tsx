@@ -76,9 +76,9 @@ export type ChartReferenceLineProps = ChartLayerProps &
   ) & {
     /** The visible label. `{value}` prints the line's value. */
     label?: string;
-    /** The line style. "solid" by default. */
+    /** The line style. */
     variant?: "solid" | "dashed";
-    /** The line's tone. "default" by default. */
+    /** The line's tone. */
     tone?: ChartTone;
   };
 
@@ -134,7 +134,7 @@ export type ChartReferenceAreaProps = ChartLayerProps &
   ) & {
     /** The visible label. `{value}` prints the range. */
     label?: string;
-    /** The band's tone. "default" by default. */
+    /** The band's tone. */
     tone?: ChartTone;
   };
 
@@ -536,8 +536,14 @@ function toggle(node: Element, name: string, on: boolean): void {
  *
  * @beta
  */
-export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps): ReactElement {
-  const { label, variant = "solid", tone = "default", className } = props;
+export function ChartReferenceLine({
+  label,
+  variant = "solid",
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ChartReferenceLineProps): ReactElement {
   const context = useChartRoot("Chart.ReferenceLine");
   const layout = usePlotLayout("Chart.ReferenceLine");
   const strings = CHART_STRINGS[context.locale];
@@ -629,8 +635,13 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
  *
  * @beta
  */
-export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps): ReactElement {
-  const { label, tone = "default", className } = props;
+export function ChartReferenceArea({
+  label,
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ChartReferenceAreaProps): ReactElement {
   const context = useChartRoot("Chart.ReferenceArea");
   const layout = usePlotLayout("Chart.ReferenceArea");
   const strings = CHART_STRINGS[context.locale];

@@ -47,7 +47,7 @@ dependencies, as `publish-release.yml`'s `notify` job does for `tooling/release-
 
 Update public JSDoc, consumer examples and behavior tests when usage changes.
 Keep runnable demos beside their page; review scenario coverage in the fixtures.
-A component page in the Button shape runs in this order: intro, an untitled `<DefaultDemo>`,
+Every component page runs in this order: intro, an untitled `<DefaultDemo>`,
 `## Usage` with one code block, `## Examples` with one `level={3}` `<Demo>` per example, API
 reference, tokens. It carries no prose, except a short `## Composition` between Usage and
 Examples on a page in `COMPOSITION_PAGES` (`apps/docs/scripts/lib/page-source.ts`). A consumer

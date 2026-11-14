@@ -1,17 +1,78 @@
 ---
 lede: >
-  Preview. Clock charts, one cycle of a time series round a calendar dial.
+  Preview, so names and props can change until Fuse's first stable release. Clock charts, one cycle
+  of a time series round a calendar dial.
 ---
 
+import { ClockChartActiveDot } from "./demos/clock-chart-active-dot";
+import { ClockChartActiveDotHalo } from "./demos/clock-chart-active-dot-halo";
+import { ClockChartActiveDotPing } from "./demos/clock-chart-active-dot-ping";
+import { ClockChartActiveDotRing } from "./demos/clock-chart-active-dot-ring";
+import { ClockChartActiveValueFirst } from "./demos/clock-chart-active-value-first";
+import { ClockChartActiveValueLast } from "./demos/clock-chart-active-value-last";
+import { ClockChartActiveValueMax } from "./demos/clock-chart-active-value-max";
+import { ClockChartActiveValueMin } from "./demos/clock-chart-active-value-min";
+import { ClockChartArea } from "./demos/clock-chart-area";
+import { ClockChartAreaDotted } from "./demos/clock-chart-area-dotted";
+import { ClockChartAreaGradientReverse } from "./demos/clock-chart-area-gradient-reverse";
+import { ClockChartAreaHatched } from "./demos/clock-chart-area-hatched";
+import { ClockChartAreaLines } from "./demos/clock-chart-area-lines";
+import { ClockChartAreaSolid } from "./demos/clock-chart-area-solid";
+import { ClockChartCenter } from "./demos/clock-chart-center";
+import { ClockChartCurveBasis } from "./demos/clock-chart-curve-basis";
+import { ClockChartCurveBump } from "./demos/clock-chart-curve-bump";
+import { ClockChartCurveLinear } from "./demos/clock-chart-curve-linear";
+import { ClockChartCurveMonotoneY } from "./demos/clock-chart-curve-monotone-y";
+import { ClockChartCurveNatural } from "./demos/clock-chart-curve-natural";
+import { ClockChartCurveStep } from "./demos/clock-chart-curve-step";
+import { ClockChartCurveStepAfter } from "./demos/clock-chart-curve-step-after";
+import { ClockChartCurveStepBefore } from "./demos/clock-chart-curve-step-before";
+import { ClockChartDashedGrid } from "./demos/clock-chart-dashed-grid";
+import { ClockChartDemo } from "./demos/clock-chart-demo";
+import { ClockChartDots } from "./demos/clock-chart-dots";
+import { ClockChartDotsHalo } from "./demos/clock-chart-dots-halo";
+import { ClockChartDotsRing } from "./demos/clock-chart-dots-ring";
+import { ClockChartEmphasis } from "./demos/clock-chart-emphasis";
+import { ClockChartEmphasisNow } from "./demos/clock-chart-emphasis-now";
 import { ClockChartEmpty } from "./demos/clock-chart-empty";
+import { ClockChartExpand } from "./demos/clock-chart-expand";
 import { ClockChartFallBack } from "./demos/clock-chart-fall-back";
+import { ClockChartFrostedTooltip } from "./demos/clock-chart-frosted-tooltip";
+import { ClockChartGlow } from "./demos/clock-chart-glow";
 import { ClockChartHeatingYear } from "./demos/clock-chart-heating-year";
-import { ClockChartLastWeek } from "./demos/clock-chart-last-week";
-import { ClockChartLoadProfile } from "./demos/clock-chart-load-profile";
+import { ClockChartLine } from "./demos/clock-chart-line";
+import { ClockChartLineDashed } from "./demos/clock-chart-line-dashed";
+import { ClockChartLineFlowing } from "./demos/clock-chart-line-flowing";
+import { ClockChartLineQuiet } from "./demos/clock-chart-line-quiet";
+import { ClockChartLinearRadius } from "./demos/clock-chart-linear-radius";
 import { ClockChartLoading } from "./demos/clock-chart-loading";
+import { ClockChartMarker } from "./demos/clock-chart-marker";
+import { ClockChartMarkerHalo } from "./demos/clock-chart-marker-halo";
+import { ClockChartMarkerPing } from "./demos/clock-chart-marker-ping";
+import { ClockChartMarkerRing } from "./demos/clock-chart-marker-ring";
+import { ClockChartNoBaseline } from "./demos/clock-chart-no-baseline";
+import { ClockChartNoEntrance } from "./demos/clock-chart-no-entrance";
+import { ClockChartNow } from "./demos/clock-chart-now";
+import { ClockChartNowError } from "./demos/clock-chart-now-error";
+import { ClockChartNowMuted } from "./demos/clock-chart-now-muted";
+import { ClockChartPastFade } from "./demos/clock-chart-past-fade";
+import { ClockChartReferenceArea } from "./demos/clock-chart-reference-area";
+import { ClockChartReferenceAreaError } from "./demos/clock-chart-reference-area-error";
+import { ClockChartReferenceAreaMuted } from "./demos/clock-chart-reference-area-muted";
+import { ClockChartReferenceLine } from "./demos/clock-chart-reference-line";
+import { ClockChartReferenceLineDashed } from "./demos/clock-chart-reference-line-dashed";
+import { ClockChartReferenceLineError } from "./demos/clock-chart-reference-line-error";
+import { ClockChartReferenceLineMuted } from "./demos/clock-chart-reference-line-muted";
+import { ClockChartReferenceSector } from "./demos/clock-chart-reference-sector";
+import { ClockChartReferenceSpoke } from "./demos/clock-chart-reference-spoke";
+import { ClockChartScrubber } from "./demos/clock-chart-scrubber";
+import { ClockChartScrubberBand } from "./demos/clock-chart-scrubber-band";
 import { ClockChartServer } from "./demos/clock-chart-server";
 import { ClockChartSolar } from "./demos/clock-chart-solar";
 import { ClockChartSpotPrice } from "./demos/clock-chart-spot-price";
+import { ClockChartStacked } from "./demos/clock-chart-stacked";
+import { ClockChartTooltipTotal } from "./demos/clock-chart-tooltip-total";
+import { ClockChartValueLabel } from "./demos/clock-chart-value-label";
 import { ClockChartWeek } from "./demos/clock-chart-week";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -20,76 +81,450 @@ export const metadata = componentMetadata("clock-chart");
 
 <ComponentIntro slug="clock-chart" />
 
-<Prose>
+<DefaultDemo slug="clock-chart" file="clock-chart-demo.tsx">
+  <ClockChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Names and props can change until Fuse's first stable release. A clock chart draws one cycle of a time series round a dial: a day from midnight, an ISO week from Monday 00:00, or a year from 1 January, in Root's zone, with the cycle's start at 12 o'clock. Every slot takes an equal angle, so a 25-hour day draws 25 equal slots. The radius is area-true by default, so a ring twice the value covers twice the area, and `radiusScale="linear"` keeps the radius true instead.
+## Usage
 
-Hover a slot, or focus the chart and use the arrow keys, to read it. The arrows step one slot and wrap round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a week and a month round a year, and up and down move between series. Each slot rises from its base as a clockwise wedge opens, the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same slot releases it.
+{/* prettier-ignore */}
+```tsx
+import { ClockChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-The hour, weekday or month labels thin by one stride for the whole dial. A `RadiusAxis` value shows beside the 12 o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where it clears the marks and the labels, so a crowded dial shows fewer values. `Now`'s label sits on the hand just inside the rim, and shows only where it clears the hole, so on a narrow dial the hand and its dot mark Now alone.
+<ClockChart.Root data={hours} config={config} xKey="start" cycle="day" interval="hour" timeZone="Europe/Oslo" aria-label="Consumption per hour">
+  <ClockChart.Grid />
+  <ClockChart.AngleAxis />
+  <ClockChart.RadiusAxis />
+  <ClockChart.Column dataKey="kwh" />
+  <ClockChart.Tooltip />
+  <ClockChart.Table />
+</ClockChart.Root>
+```
 
-</Prose>
+## Examples
 
-## A day
-
-A live day draws up to `now`, and `Now` points at the current minute. The cycle that holds `now` is the default, and a live feed filters its rows on the cycle, since a row outside it throws in development. `data-fade="past"` dims the Column wedges before `now`.
-
-<Demo slug="clock-chart" id="load-profile" title="Load profile" file="clock-chart-load-profile.tsx">
-  <ClockChartLoadProfile />
+<Demo
+  slug="clock-chart"
+  id="linear-radius"
+  title="Linear radius"
+  level={3}
+  file="clock-chart-linear-radius.tsx">
+  <ClockChartLinearRadius />
 </Demo>
 
-A threshold colour paints each wedge in its own value's side, and a dashed `ReferenceLine` at the same value draws the ring the colours split at. `radiusScale="linear"` lets the radius read as a price, so a negative hour hangs inward from the zero ring. The day is a sunny summer Sunday in NO1, whose midday hours fall below zero.
+<Demo slug="clock-chart" id="stacked" title="Stacked columns" level={3} file="clock-chart-stacked.tsx">
+  <ClockChartStacked />
+</Demo>
 
-<Demo slug="clock-chart" id="spot-price" title="Spot price" file="clock-chart-spot-price.tsx">
+<Demo slug="clock-chart" id="expand" title="Expanded stack" level={3} file="clock-chart-expand.tsx">
+  <ClockChartExpand />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="tooltip-total"
+  title="Stack total in the tooltip"
+  level={3}
+  file="clock-chart-tooltip-total.tsx">
+  <ClockChartTooltipTotal />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="no-baseline"
+  title="No zero baseline"
+  level={3}
+  file="clock-chart-no-baseline.tsx">
+  <ClockChartNoBaseline />
+</Demo>
+
+<Demo slug="clock-chart" id="line" title="Line" level={3} file="clock-chart-line.tsx">
+  <ClockChartLine />
+</Demo>
+
+<Demo slug="clock-chart" id="line-dashed" title="Dashed line" level={3} file="clock-chart-line-dashed.tsx">
+  <ClockChartLineDashed />
+</Demo>
+
+<Demo slug="clock-chart" id="line-flowing" title="Flowing line" level={3} file="clock-chart-line-flowing.tsx">
+  <ClockChartLineFlowing />
+</Demo>
+
+<Demo slug="clock-chart" id="line-quiet" title="Quiet line" level={3} file="clock-chart-line-quiet.tsx">
+  <ClockChartLineQuiet />
+</Demo>
+
+<Demo slug="clock-chart" id="area" title="Area" level={3} file="clock-chart-area.tsx">
+  <ClockChartArea />
+</Demo>
+
+<Demo slug="clock-chart" id="area-solid" title="Solid area" level={3} file="clock-chart-area-solid.tsx">
+  <ClockChartAreaSolid />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="area-gradient-reverse"
+  title="Gradient reverse area"
+  level={3}
+  file="clock-chart-area-gradient-reverse.tsx">
+  <ClockChartAreaGradientReverse />
+</Demo>
+
+<Demo slug="clock-chart" id="area-dotted" title="Dotted area" level={3} file="clock-chart-area-dotted.tsx">
+  <ClockChartAreaDotted />
+</Demo>
+
+<Demo slug="clock-chart" id="area-lines" title="Lines area" level={3} file="clock-chart-area-lines.tsx">
+  <ClockChartAreaLines />
+</Demo>
+
+<Demo slug="clock-chart" id="area-hatched" title="Hatched area" level={3} file="clock-chart-area-hatched.tsx">
+  <ClockChartAreaHatched />
+</Demo>
+
+<Demo slug="clock-chart" id="linear" title="Linear curve" level={3} file="clock-chart-curve-linear.tsx">
+  <ClockChartCurveLinear />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="monotone-y"
+  title="Monotone y curve"
+  level={3}
+  file="clock-chart-curve-monotone-y.tsx">
+  <ClockChartCurveMonotoneY />
+</Demo>
+
+<Demo slug="clock-chart" id="natural" title="Natural curve" level={3} file="clock-chart-curve-natural.tsx">
+  <ClockChartCurveNatural />
+</Demo>
+
+<Demo slug="clock-chart" id="step" title="Step curve" level={3} file="clock-chart-curve-step.tsx">
+  <ClockChartCurveStep />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="step-before"
+  title="Step before curve"
+  level={3}
+  file="clock-chart-curve-step-before.tsx">
+  <ClockChartCurveStepBefore />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="step-after"
+  title="Step after curve"
+  level={3}
+  file="clock-chart-curve-step-after.tsx">
+  <ClockChartCurveStepAfter />
+</Demo>
+
+<Demo slug="clock-chart" id="bump" title="Bump curve" level={3} file="clock-chart-curve-bump.tsx">
+  <ClockChartCurveBump />
+</Demo>
+
+<Demo slug="clock-chart" id="basis" title="Basis curve" level={3} file="clock-chart-curve-basis.tsx">
+  <ClockChartCurveBasis />
+</Demo>
+
+<Demo slug="clock-chart" id="dots" title="Dots" level={3} file="clock-chart-dots.tsx">
+  <ClockChartDots />
+</Demo>
+
+<Demo slug="clock-chart" id="dots-halo" title="Halo dots" level={3} file="clock-chart-dots-halo.tsx">
+  <ClockChartDotsHalo />
+</Demo>
+
+<Demo slug="clock-chart" id="dots-ring" title="Ring dots" level={3} file="clock-chart-dots-ring.tsx">
+  <ClockChartDotsRing />
+</Demo>
+
+<Demo slug="clock-chart" id="active-dot" title="Active dot" level={3} file="clock-chart-active-dot.tsx">
+  <ClockChartActiveDot />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-dot-halo"
+  title="Halo active dot"
+  level={3}
+  file="clock-chart-active-dot-halo.tsx">
+  <ClockChartActiveDotHalo />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-dot-ping"
+  title="Pinging active dot"
+  level={3}
+  file="clock-chart-active-dot-ping.tsx">
+  <ClockChartActiveDotPing />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-dot-ring"
+  title="Ring active dot"
+  level={3}
+  file="clock-chart-active-dot-ring.tsx">
+  <ClockChartActiveDotRing />
+</Demo>
+
+<Demo slug="clock-chart" id="marker" title="Marker" level={3} file="clock-chart-marker.tsx">
+  <ClockChartMarker />
+</Demo>
+
+<Demo slug="clock-chart" id="marker-halo" title="Halo marker" level={3} file="clock-chart-marker-halo.tsx">
+  <ClockChartMarkerHalo />
+</Demo>
+
+<Demo slug="clock-chart" id="marker-ping" title="Pinging marker" level={3} file="clock-chart-marker-ping.tsx">
+  <ClockChartMarkerPing />
+</Demo>
+
+<Demo slug="clock-chart" id="marker-ring" title="Ring marker" level={3} file="clock-chart-marker-ring.tsx">
+  <ClockChartMarkerRing />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="value-label"
+  title="Marker with its value"
+  level={3}
+  file="clock-chart-value-label.tsx">
+  <ClockChartValueLabel />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="emphasis"
+  title="Emphasis on the highest hour"
+  level={3}
+  file="clock-chart-emphasis.tsx">
+  <ClockChartEmphasis />
+</Demo>
+
+<Demo slug="clock-chart" id="glow" title="Glow" level={3} file="clock-chart-glow.tsx">
+  <ClockChartGlow />
+</Demo>
+
+<Demo slug="clock-chart" id="dashed-grid" title="Dashed grid" level={3} file="clock-chart-dashed-grid.tsx">
+  <ClockChartDashedGrid />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-line"
+  title="Reference ring"
+  level={3}
+  file="clock-chart-reference-line.tsx">
+  <ClockChartReferenceLine />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-line-dashed"
+  title="Dashed reference ring"
+  level={3}
+  file="clock-chart-reference-line-dashed.tsx">
+  <ClockChartReferenceLineDashed />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-line-muted"
+  title="Muted reference ring"
+  level={3}
+  file="clock-chart-reference-line-muted.tsx">
+  <ClockChartReferenceLineMuted />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-line-error"
+  title="Error reference ring"
+  level={3}
+  file="clock-chart-reference-line-error.tsx">
+  <ClockChartReferenceLineError />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-spoke"
+  title="Reference spoke"
+  level={3}
+  file="clock-chart-reference-spoke.tsx">
+  <ClockChartReferenceSpoke />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-area"
+  title="Reference band"
+  level={3}
+  file="clock-chart-reference-area.tsx">
+  <ClockChartReferenceArea />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-area-muted"
+  title="Muted reference band"
+  level={3}
+  file="clock-chart-reference-area-muted.tsx">
+  <ClockChartReferenceAreaMuted />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-area-error"
+  title="Error reference band"
+  level={3}
+  file="clock-chart-reference-area-error.tsx">
+  <ClockChartReferenceAreaError />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="reference-sector"
+  title="Reference sector"
+  level={3}
+  file="clock-chart-reference-sector.tsx">
+  <ClockChartReferenceSector />
+</Demo>
+
+<Demo slug="clock-chart" id="scrubber" title="Scrubber" level={3} file="clock-chart-scrubber.tsx">
+  <ClockChartScrubber />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="scrubber-band"
+  title="Band scrubber"
+  level={3}
+  file="clock-chart-scrubber-band.tsx">
+  <ClockChartScrubberBand />
+</Demo>
+
+<Demo slug="clock-chart" id="now" title="Now" level={3} file="clock-chart-now.tsx">
+  <ClockChartNow />
+</Demo>
+
+<Demo slug="clock-chart" id="now-muted" title="Muted now" level={3} file="clock-chart-now-muted.tsx">
+  <ClockChartNowMuted />
+</Demo>
+
+<Demo slug="clock-chart" id="now-error" title="Error now" level={3} file="clock-chart-now-error.tsx">
+  <ClockChartNowError />
+</Demo>
+
+<Demo slug="clock-chart" id="past-fade" title="Past hours faded" level={3} file="clock-chart-past-fade.tsx">
+  <ClockChartPastFade />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="emphasis-now"
+  title="Emphasis on the current hour"
+  level={3}
+  file="clock-chart-emphasis-now.tsx">
+  <ClockChartEmphasisNow />
+</Demo>
+
+<Demo slug="clock-chart" id="center" title="Centre" level={3} file="clock-chart-center.tsx">
+  <ClockChartCenter />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-value-first"
+  title="Centre with the first hour"
+  level={3}
+  file="clock-chart-active-value-first.tsx">
+  <ClockChartActiveValueFirst />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-value-last"
+  title="Centre with the last hour"
+  level={3}
+  file="clock-chart-active-value-last.tsx">
+  <ClockChartActiveValueLast />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-value-max"
+  title="Centre with the highest hour"
+  level={3}
+  file="clock-chart-active-value-max.tsx">
+  <ClockChartActiveValueMax />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="active-value-min"
+  title="Centre with the lowest hour"
+  level={3}
+  file="clock-chart-active-value-min.tsx">
+  <ClockChartActiveValueMin />
+</Demo>
+
+<Demo
+  slug="clock-chart"
+  id="frosted-tooltip"
+  title="Frosted tooltip"
+  level={3}
+  file="clock-chart-frosted-tooltip.tsx">
+  <ClockChartFrostedTooltip />
+</Demo>
+
+<Demo slug="clock-chart" id="spot-price" title="Threshold colour" level={3} file="clock-chart-spot-price.tsx">
   <ClockChartSpotPrice />
 </Demo>
 
-<Demo slug="clock-chart" id="solar" title="Solar production" file="clock-chart-solar.tsx">
-  <ClockChartSolar />
-</Demo>
-
-On the 25-hour fall-back day the hours keep equal angles, and each label follows its slot, so 06 sits at 100.8°. The repeated 02 labels once.
-
-<Demo slug="clock-chart" id="fall-back" title="The 25-hour day" file="clock-chart-fall-back.tsx">
+<Demo slug="clock-chart" id="fall-back" title="The 25-hour day" level={3} file="clock-chart-fall-back.tsx">
   <ClockChartFallBack />
 </Demo>
 
-## Weeks and years
+<Demo
+  slug="clock-chart"
+  id="solar"
+  title="Quarter-hours on the 23-hour day"
+  level={3}
+  file="clock-chart-solar.tsx">
+  <ClockChartSolar />
+</Demo>
 
-<Demo slug="clock-chart" id="week" title="Weekdays against the weekend" file="clock-chart-week.tsx">
+<Demo slug="clock-chart" id="week" title="A week" level={3} file="clock-chart-week.tsx">
   <ClockChartWeek />
 </Demo>
 
-<Demo slug="clock-chart" id="heating-year" title="Heating across a year" file="clock-chart-heating-year.tsx">
+<Demo slug="clock-chart" id="heating-year" title="A year" level={3} file="clock-chart-heating-year.tsx">
   <ClockChartHeatingYear />
 </Demo>
 
-## Comparing cycles
-
-ClockChart has no shift prop. To compare today with the same day last week, put last week's reading in a second column on today's rows, and draw it as a dashed `Line`.
-
-<Demo slug="clock-chart" id="last-week" title="Today against last week" file="clock-chart-last-week.tsx">
-  <ClockChartLastWeek />
+<Demo slug="clock-chart" id="no-entrance" title="No entrance" level={3} file="clock-chart-no-entrance.tsx">
+  <ClockChartNoEntrance />
 </Demo>
 
-## On the server
-
-This demo is a server component. A stack of `Column`s settles its pixel floors so a sliver still shows, and `TooltipTotal` prints the stack's total.
-
-<Demo slug="clock-chart" id="server" title="Server component" file="clock-chart-server.tsx">
+<Demo slug="clock-chart" id="server" title="Server component" level={3} file="clock-chart-server.tsx">
   <ClockChartServer />
 </Demo>
 
-## Loading and empty states
-
-<Demo slug="clock-chart" id="loading" title="Loading" file="clock-chart-loading.tsx">
+<Demo slug="clock-chart" id="loading" title="Loading" level={3} file="clock-chart-loading.tsx">
   <ClockChartLoading />
 </Demo>
 
-A chart with no reading shows `ClockChart.Empty`, and it has no tab stop.
-
-<Demo slug="clock-chart" id="empty" title="No data" file="clock-chart-empty.tsx">
+<Demo slug="clock-chart" id="empty" title="No data" level={3} file="clock-chart-empty.tsx">
   <ClockChartEmpty />
 </Demo>
 
 <ApiReference slug="clock-chart" />
+
+<ComponentTokens slug="clock-chart" />

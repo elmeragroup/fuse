@@ -101,7 +101,7 @@ export type ScatterChartReferenceLineProps = ChartLayerProps &
     label?: string;
     /** The line style. */
     variant?: "solid" | "dashed";
-    /** The line's tone. "default" by default. */
+    /** The line's tone. */
     tone?: ChartTone;
   };
 
@@ -295,7 +295,7 @@ export function ScatterChartYAxis({
 export function ScatterChartReferenceLine({
   label,
   variant = "solid",
-  tone,
+  tone = "default",
   className,
   style,
   ...props

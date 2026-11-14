@@ -71,8 +71,8 @@ export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight
    */
   variant: AlertVariant;
   /**
-   * The Phosphor stroke weight. Unset, the glyph draws `bold`, and `regular` draws a thinner
-   * stroke. Keep `fill` for selected or active states.
+   * The Phosphor stroke weight. `regular` draws a thinner stroke. Keep `fill` for selected or
+   * active states.
    */
   weight?: ComponentProps<typeof Info>["weight"];
 };
@@ -127,11 +127,19 @@ function AlertRoot({
 }
 
 /** The status glyph `Alert.Root` draws, for use outside an alert. It is always decorative. */
-function AlertIcon({ variant, className, ...props }: AlertIconProps): ReactElement {
+function AlertIcon({ variant, weight = "bold", className, ...props }: AlertIconProps): ReactElement {
   const { icon } = alertVariants({ variant });
   const Glyph = ALERT_ICONS[variant];
 
-  return <Glyph data-slot="alert-icon" className={cn(icon(), className)} {...props} aria-hidden="true" />;
+  return (
+    <Glyph
+      data-slot="alert-icon"
+      weight={weight}
+      className={cn(icon(), className)}
+      {...props}
+      aria-hidden="true"
+    />
+  );
 }
 
 /**

@@ -1,12 +1,12 @@
 ---
 name: fuse-component-page
-description: "Fuse component page drafting: shape, demos, JSDoc and Live code gotchas. Use when writing or migrating a docs page under apps/docs/src/app/(docs)/components, adding or changing one of its demos, or when such a page fails generation, transparency or the Live code sweep."
+description: "Fuse component page drafting: shape, demos, JSDoc and Live code gotchas. Use when writing or reshaping a docs page under apps/docs/src/app/(docs)/components, adding or changing one of its demos, or when such a page fails generation, transparency or the Live code sweep."
 ---
 
 # Fuse component page
 
 The page shape and the one-subject rule live in the Documentation section of `AGENTS.md`. The Button page,
-`apps/docs/src/app/(docs)/components/button/`, is the reference migration; copy its layout.
+`apps/docs/src/app/(docs)/components/button/`, is the reference page; copy its layout.
 `pnpm gen` scaffolds a new page in the same shape.
 
 ## Steps
@@ -19,11 +19,11 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    correctly without knowing how its parts or sibling components fit together, as with Form and
    the fields inside it. Keep it to a few sentences. A rule about one prop never goes there; it
    goes on that prop. Adding a slug to `COMPOSITION_PAGES` needs a one-line reason beside it.
-3. **Move the prose out.** For each `<Prose>` fact, a rule a consumer must follow goes into the
-   JSDoc of the prop it concerns. Component-level JSDoc reaches neither the API reference nor the
-   `.md` endpoint, so a rule about children goes on a declared `children` prop. Implementation
-   rationale goes into a comment beside its owner, usually the recipe file. Then delete the
-   prose. Done when every deleted fact is findable on the HTML page or in the source.
+3. **Put each rule on its prop.** A rule a consumer must follow goes into the JSDoc of the prop
+   it concerns. Component-level JSDoc reaches neither the API reference nor the `.md` endpoint,
+   so a rule about children goes on a declared `children` prop. Implementation rationale goes
+   into a comment beside its owner, usually the recipe file. Done when every rule a reader needs
+   is on the HTML page.
 4. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
    rule as an instruction to the consumer, with the value or markup it names in backticks. Give
    each fact once, on the prop it concerns, and leave out how the component implements it. Cut
@@ -39,18 +39,18 @@ The page shape and the one-subject rule live in the Documentation section of `AG
 
 ## Page rules generation enforces
 
-- A page with `<DefaultDemo>` is held to the whole shape: the default stage before `## Usage`,
+- Every component page is held to the whole shape: the default stage before `## Usage`,
   `## Usage` then `## Examples` as the only headings, exactly one code block under Usage, only
   `level={3}` demos and all of them under Examples, and no `<Prose>`. Anything else fails
-  generation, naming the rule.
+  generation, naming the page and the rule.
 - The one exception is `## Composition` between Usage and Examples, on a slug listed in
   `COMPOSITION_PAGES` in `scripts/lib/page-source.ts` with its reason. Its body is one `<Prose>`
   block with at most one code block and no demo. The TOC, the ⌘K list and the `.md` endpoint show
   it after Usage.
 - `<DefaultDemo>` comes once, untitled. It has no TOC entry and no markdown section. It gets the
   same file checks as a `<Demo>`: the file exists and starts with `"use client"`.
-- On any page, a level-3 demo before the first `##` heading, a level 4, or a second
-  `<DefaultDemo>` fails generation.
+- A page with no `<DefaultDemo>` or a second one, or a `<Demo>` without `level={3}`, fails
+  generation.
 - Demo ids are unique, URL-safe, and differ from heading ids. Every file in `demos/` must be
   rendered by a frame, and every frame's `file` must exist.
 - Put `{/* prettier-ignore */}` above the Usage fence. Without it oxfmt appends `;` to the JSX

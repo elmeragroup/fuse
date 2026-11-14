@@ -41,7 +41,15 @@ export type PieChartRootProps<
 > = ChartAccessibleName &
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> & {
-    /** The rows, one per slice, drawn in data order. A negative value throws `negative-polar-value`. */
+    /**
+     * The rows, one per slice, drawn in data order from `startAngle`, clockwise. Sort the rows to put
+     * the largest slice first. A negative value throws `negative-polar-value`. A data update tweens
+     * the slices to their new angles, and a slice that leaves collapses into its neighbour's seam.
+     * Every value above 0 keeps at least one device pixel of rim, and the labels, the tooltip and
+     * the table keep the true value. With no value above 0 the chart shows `Empty` and has no tab
+     * stop. A server component can render the chart when every prop is plain data, and with
+     * JavaScript off or in print the whole chart shows at once.
+     */
     data: readonly TRow[];
     /**
      * One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with
@@ -54,7 +62,10 @@ export type PieChartRootProps<
     nameKey: TNameKey;
     /** The column that sizes each slice. */
     valueKey: TValueKey;
-    /** The column that holds each slice's `ChartQuality`. */
+    /**
+     * The column that holds each slice's `ChartQuality`. An estimated slice draws hatched, a missing
+     * one draws no arc, and the table names each slice's quality.
+     */
     qualityKey?: ChartQualityKey<TRow>;
     /** The value format. A category's config `format` overrides it. */
     valueFormat?: ValueFormat;
@@ -67,21 +78,40 @@ export type PieChartRootProps<
      * is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
      */
     startAngle?: number;
-    /** Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default. */
+    /**
+     * Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default. The chart keeps
+     * the aspect of the sweep's bounding box, so a semicircle from -90 to 90 is twice as wide as it
+     * is tall.
+     */
     endAngle?: number;
-    /** Turns the sweep into a gauge, where slices fill their total's share of `max`. */
+    /**
+     * Turns the sweep into a gauge, where the slices fill their total's share of `max` and `Track`
+     * draws the rest. A total above `max` fills the whole sweep and sets `data-over-max`, and the
+     * texts keep the true value.
+     */
     max?: number;
-    /** The most slices drawn, 6 by default. Past it the smallest rows fold into one Other slice. */
+    /**
+     * The most slices drawn, 6 by default. Past it the smallest rows fold into one Other slice, which
+     * comes last and prints `otherLabel` with the number of categories it holds. The table lists
+     * every row unfolded.
+     */
     maxSlices?: number;
     /** The Other slice's label. The dictionary's "Annet" is the default. */
     otherLabel?: string;
     /** The slice that is active before any pointer or key moves. A folded category activates Other. */
     defaultActiveKey?: keyof TConfig & string;
-    /** "none" turns the entrance sweep off. */
+    /** "none" turns off the entrance, which sweeps the slices in the first time the chart comes into view. */
     "data-intro"?: "none";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. The plot is one tab stop. Hover a slice, or focus
+     * the chart and use the arrow keys, to make it active. The active slice moves out along its
+     * bisector by `--chart-slice-pop`, 8 px by default, and the others dim. A pointer anywhere in the
+     * chart's cell picks the slice under its angle, the hole and the space past the rim included. On
+     * a touch screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a
+     * second tap on the same slice releases it.
+     */
     children?: ReactNode;
   };
 

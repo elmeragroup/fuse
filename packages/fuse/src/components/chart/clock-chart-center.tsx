@@ -43,7 +43,7 @@ export type ClockChartCenterProps = ChartLayerProps & {
 export type ClockChartActiveValueProps = ChartLayerProps & {
   /** The series to print. */
   dataKey: string;
-  /** The datum to print when nothing is active. "now" by default. */
+  /** The datum to print when nothing is active. */
   fallback?: ChartFallback;
   /** The value format. The series' config `format` is the default. */
   format?: ValueFormat;

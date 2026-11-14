@@ -3,7 +3,7 @@
 import { RadialChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-// This month's consumption so far against each appliance group's budget, in kilowatt-hours.
+// This month's consumption against each group's budget, in kWh.
 const rings = [
   { budget: "heating", kwh: 412, limit: 500 },
   { budget: "water", kwh: 168, limit: 200 },
@@ -34,7 +34,6 @@ export function RadialChartBudgets() {
           of <RadialChart.CenterMax />
         </RadialChart.CenterLabel>
       </RadialChart.Center>
-      <RadialChart.Legend />
       <RadialChart.Tooltip />
       <RadialChart.Table />
     </RadialChart.Root>

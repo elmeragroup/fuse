@@ -270,41 +270,38 @@ const OWNER = "DatePicker.Root";
  *   `maxValue` is a string rather than a Temporal object, or a time `granularity` meets a
  *   PlainDate value: host defects.
  */
-export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
-  props: DatePickerRootProps<T> & KindProps<P, DatePickerRootProps<DateInputValue>>
-): ReactElement {
-  const {
-    value: valueProp,
-    defaultValue,
-    onValueChange,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    shouldCloseOnSelect = true,
-    minValue,
-    maxValue,
-    isDateUnavailable,
-    granularity,
-    hourCycle,
-    hideTimeZone = false,
-    timeZone,
-    firstDayOfWeek,
-    visibleMonths = 1,
-    pageBehavior = "visible",
-    disabled: disabledProp = false,
-    readOnly = false,
-    required = false,
-    invalid: invalidProp = false,
-    name,
-    form,
-    size = "default",
-    "aria-label": ariaLabel,
-    onFocusLeave,
-    className,
-    render,
-    children,
-    ...elementProps
-  } = props;
+export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>({
+  value: valueProp,
+  defaultValue,
+  onValueChange,
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  shouldCloseOnSelect = true,
+  minValue,
+  maxValue,
+  isDateUnavailable,
+  granularity,
+  hourCycle,
+  hideTimeZone = false,
+  timeZone,
+  firstDayOfWeek,
+  visibleMonths = 1,
+  pageBehavior = "visible",
+  disabled: disabledProp = false,
+  readOnly = false,
+  required = false,
+  invalid: invalidProp = false,
+  name,
+  form,
+  size = "default",
+  "aria-label": ariaLabel,
+  onFocusLeave,
+  className,
+  render,
+  children,
+  ...elementProps
+}: DatePickerRootProps<T> & KindProps<P, DatePickerRootProps<DateInputValue>>): ReactElement {
   const labelable = useLabelableContext();
   const field = useFieldRootContext();
   const controlled = valueProp !== undefined;

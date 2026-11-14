@@ -38,10 +38,8 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   "apps/docs/src/app/(docs)/components/radar-chart/demos/radar-chart-deviation.tsx",
   // A dial of stacked columns renders on the server from plain data (S13).
   "apps/docs/src/app/(docs)/components/clock-chart/demos/clock-chart-server.tsx",
-  // Sparkline calls no hook, and these demos show it drawn on the server with no client JavaScript.
-  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-table.tsx",
-  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-variants.tsx",
-  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-negative.tsx",
+  // Sparkline calls no hook, and this demo shows it drawn on the server with no client JavaScript.
+  "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-server.tsx",
   // A server component wraps server-rendered Sparklines in the client SparklineHover, which reads
   // their geometry from the markup, so the data never crosses Flight as props.
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-glide.tsx",
@@ -125,10 +123,7 @@ export function inspectComponentDemos(
     problems.add(`${slug}: no co-located demos directory at ${repoRelative(paths.demosDir)}`);
   }
 
-  const rendered = new Set([
-    ...page.demos.map((demo) => demo.file),
-    ...(page.defaultDemo === null ? [] : [page.defaultDemo]),
-  ]);
+  const rendered = new Set([...page.demos.map((demo) => demo.file), page.defaultDemo]);
   if (existsSync(paths.demosDir)) {
     for (const entry of readdirSync(paths.demosDir)) {
       if (entry.endsWith(".tsx") && !rendered.has(entry)) {
@@ -138,7 +133,7 @@ export function inspectComponentDemos(
   }
 
   // The default stage gets every check a titled demo gets, and no section of the outline.
-  if (page.defaultDemo !== null) readRenderedDemo(paths.demosDir, page.defaultDemo, problems);
+  readRenderedDemo(paths.demosDir, page.defaultDemo, problems);
   return page.demos.flatMap((entry): DocsDemo[] => {
     const demo = readRenderedDemo(paths.demosDir, entry.file, problems);
     if (demo === null) return [];

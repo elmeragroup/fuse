@@ -105,13 +105,18 @@ type CardSectionMediaProps = HTMLAttributes<HTMLSpanElement> & {
  * chart in it cuts its rings and seams out of the card, and its muted text as
  * `--surface-muted-foreground`, which a chart's chips read.
  */
-function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
+function CardRoot({
+  className,
+  direction = "vertical",
+  size = "default",
+  ...props
+}: CardRootProps): ReactElement {
   const { base } = cardVariants({ direction, size });
 
   return (
     <div
       data-slot="card"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       data-size={size}
       className={cn(base(), className)}
       {...props}
@@ -119,20 +124,20 @@ function CardRoot({ className, direction, size = "default", ...props }: CardRoot
   );
 }
 
-function CardHeader({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardHeader({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardHeader } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-header"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardHeader(), className)}
       {...props}
     />
   );
 }
 
-function CardTag({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardTag({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardTag } = cardVariants({ direction });
 
   return <div data-slot="card-tag" className={cn(cardTag(), className)} {...props} />;
@@ -141,7 +146,7 @@ function CardTag({ className, direction, ...props }: CardDivProps): ReactElement
 function CardTitle({
   children,
   className,
-  direction,
+  direction = "vertical",
   level = 3,
   size = "2xl",
   icon,
@@ -171,7 +176,7 @@ function CardTitle({
 
 function CardDescription({
   className,
-  direction,
+  direction = "vertical",
   size = "sm",
   ...props
 }: CardDescriptionProps): ReactElement {
@@ -186,7 +191,7 @@ function CardDescription({
   );
 }
 
-function CardAction({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardAction({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardAction } = cardVariants({ direction });
 
   return <div data-slot="card-action" className={cn(cardAction(), className)} {...props} />;
@@ -196,26 +201,26 @@ function CardAction({ className, direction, ...props }: CardDivProps): ReactElem
  * A card's body. Inside a `Card.Section` it is the section's content column, beside a
  * `Card.SectionMedia`, and drops its own padding, because the section pads.
  */
-function CardContent({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardContent({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardContent } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-content"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardContent(), className)}
       {...props}
     />
   );
 }
 
-function CardFooter({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardFooter({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardFooter } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-footer"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardFooter(), className)}
       {...props}
     />

@@ -393,8 +393,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The line's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's tone.",
           "required": false,
           "values": [
             "default",

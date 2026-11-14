@@ -24,7 +24,7 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartNeedleProps = ChartLayerProps & {
-  /** The needle's shape: a "line" with round ends, or a slim "triangle". "line" by default. */
+  /** The needle's shape, a "line" with round ends or a slim "triangle". */
   variant?: "line" | "triangle";
 };
 

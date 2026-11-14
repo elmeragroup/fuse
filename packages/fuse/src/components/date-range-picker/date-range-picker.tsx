@@ -312,42 +312,39 @@ function isReversed(ends: Ends): boolean {
  * @throws TypeError naming the prop and the fix when a value or bound is a string rather than a
  *   Temporal object, or a time `granularity` meets a PlainDate value: host defects.
  */
-export function DateRangePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
-  props: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>
-): ReactElement {
-  const {
-    value: valueProp,
-    defaultValue,
-    onValueChange,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    shouldCloseOnSelect = true,
-    minValue,
-    maxValue,
-    isDateUnavailable,
-    granularity,
-    hourCycle,
-    hideTimeZone = false,
-    timeZone,
-    firstDayOfWeek,
-    visibleMonths = 1,
-    pageBehavior = "visible",
-    disabled: disabledProp = false,
-    readOnly = false,
-    required = false,
-    invalid: invalidProp = false,
-    startName,
-    endName,
-    form,
-    size = "default",
-    "aria-label": ariaLabel,
-    onFocusLeave,
-    className,
-    render,
-    children,
-    ...elementProps
-  } = props;
+export function DateRangePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>({
+  value: valueProp,
+  defaultValue,
+  onValueChange,
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  shouldCloseOnSelect = true,
+  minValue,
+  maxValue,
+  isDateUnavailable,
+  granularity,
+  hourCycle,
+  hideTimeZone = false,
+  timeZone,
+  firstDayOfWeek,
+  visibleMonths = 1,
+  pageBehavior = "visible",
+  disabled: disabledProp = false,
+  readOnly = false,
+  required = false,
+  invalid: invalidProp = false,
+  startName,
+  endName,
+  form,
+  size = "default",
+  "aria-label": ariaLabel,
+  onFocusLeave,
+  className,
+  render,
+  children,
+  ...elementProps
+}: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>): ReactElement {
   const controlled = valueProp !== undefined;
   const parsedValue = useRangeProp(valueProp, OWNER, "value");
   const parsedDefault = useRangeProp(defaultValue, OWNER, "defaultValue");

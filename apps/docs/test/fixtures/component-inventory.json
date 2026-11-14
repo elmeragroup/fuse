@@ -1,7 +1,6 @@
 {
   "accordion": {
     "title": "Accordion",
-    "rsc": "client",
     "demos": [
       "accordion-demo.tsx",
       "accordion-card.tsx",
@@ -17,7 +16,6 @@
   },
   "action-bar": {
     "title": "Action Bar",
-    "rsc": "client",
     "demos": [
       "action-bar-demo.tsx",
       "action-bar-above-footer.tsx",
@@ -27,7 +25,6 @@
   },
   "alert": {
     "title": "Alert",
-    "rsc": "server",
     "demos": [
       "alert-demo.tsx",
       "alert-info.tsx",
@@ -38,12 +35,13 @@
       "alert-title-only.tsx",
       "alert-heading-level.tsx",
       "alert-list.tsx",
-      "alert-status.tsx"
+      "alert-status.tsx",
+      "alert-icon-fill.tsx",
+      "alert-icon-regular.tsx"
     ]
   },
   "alert-dialog": {
     "title": "Alert Dialog",
-    "rsc": "client",
     "demos": [
       "alert-dialog-demo.tsx",
       "alert-dialog-neutral.tsx",
@@ -68,7 +66,6 @@
   },
   "area-chart": {
     "title": "Area Chart",
-    "rsc": "client",
     "demos": [
       "area-chart-demo.tsx",
       "area-chart-solid.tsx",
@@ -91,7 +88,6 @@
   },
   "aspect-ratio": {
     "title": "Aspect Ratio",
-    "rsc": "server",
     "demos": [
       "aspect-ratio-demo.tsx",
       "aspect-ratio-square.tsx",
@@ -105,7 +101,6 @@
   },
   "attachment": {
     "title": "Attachment",
-    "rsc": "client",
     "demos": [
       "attachment-demo.tsx",
       "attachment-small.tsx",
@@ -124,7 +119,6 @@
   },
   "autocomplete": {
     "title": "Autocomplete",
-    "rsc": "client",
     "demos": [
       "autocomplete-demo.tsx",
       "autocomplete-small.tsx",
@@ -146,7 +140,6 @@
   },
   "autocomplete-field": {
     "title": "Autocomplete Field",
-    "rsc": "server",
     "demos": [
       "autocomplete-field-demo.tsx",
       "autocomplete-field-clear-button.tsx",
@@ -161,7 +154,6 @@
   },
   "avatar": {
     "title": "Avatar",
-    "rsc": "client",
     "demos": [
       "avatar-demo.tsx",
       "avatar-fallback.tsx",
@@ -173,7 +165,6 @@
   },
   "badge": {
     "title": "Badge",
-    "rsc": "server",
     "demos": [
       "badge-demo.tsx",
       "badge-secondary.tsx",
@@ -200,7 +191,6 @@
   },
   "bar-chart": {
     "title": "Bar Chart",
-    "rsc": "client",
     "demos": [
       "bar-chart-demo.tsx",
       "bar-chart-basic.tsx",
@@ -231,7 +221,6 @@
   },
   "breadcrumb": {
     "title": "Breadcrumb",
-    "rsc": "client",
     "demos": [
       "breadcrumb-demo.tsx",
       "breadcrumb-custom-separator.tsx",
@@ -241,7 +230,6 @@
   },
   "button": {
     "title": "Button",
-    "rsc": "client",
     "demos": [
       "button-demo.tsx",
       "button-outline.tsx",
@@ -270,7 +258,6 @@
   },
   "button-group": {
     "title": "Button Group",
-    "rsc": "client",
     "demos": [
       "button-group-demo.tsx",
       "button-group-vertical.tsx",
@@ -282,7 +269,6 @@
   },
   "calendar": {
     "title": "Calendar",
-    "rsc": "client",
     "demos": [
       "calendar-demo.tsx",
       "calendar-several-months.tsx",
@@ -297,7 +283,6 @@
   },
   "card": {
     "title": "Card",
-    "rsc": "server",
     "demos": [
       "card-demo.tsx",
       "card-content-only.tsx",
@@ -315,7 +300,6 @@
   },
   "carousel": {
     "title": "Carousel",
-    "rsc": "client",
     "demos": [
       "carousel-demo.tsx",
       "carousel-vertical.tsx",
@@ -330,7 +314,6 @@
   },
   "chart": {
     "title": "Chart",
-    "rsc": "client",
     "demos": [
       "chart-demo.tsx",
       "chart-interval-second.tsx",
@@ -425,7 +408,6 @@
   },
   "checkbox": {
     "title": "Checkbox",
-    "rsc": "client",
     "demos": [
       "checkbox-demo.tsx",
       "checkbox-checked.tsx",
@@ -452,7 +434,6 @@
   },
   "checkbox-card": {
     "title": "Checkbox Card",
-    "rsc": "client",
     "demos": [
       "checkbox-card-demo.tsx",
       "checkbox-card-muted.tsx",
@@ -465,28 +446,85 @@
   },
   "clock-chart": {
     "title": "Clock Chart",
-    "rsc": "client",
     "demos": [
-      "clock-chart-empty.tsx",
-      "clock-chart-fall-back.tsx",
-      "clock-chart-heating-year.tsx",
-      "clock-chart-last-week.tsx",
-      "clock-chart-load-profile.tsx",
-      "clock-chart-loading.tsx",
-      "clock-chart-server.tsx",
-      "clock-chart-solar.tsx",
+      "clock-chart-demo.tsx",
+      "clock-chart-linear-radius.tsx",
+      "clock-chart-stacked.tsx",
+      "clock-chart-expand.tsx",
+      "clock-chart-tooltip-total.tsx",
+      "clock-chart-no-baseline.tsx",
+      "clock-chart-line.tsx",
+      "clock-chart-line-dashed.tsx",
+      "clock-chart-line-flowing.tsx",
+      "clock-chart-line-quiet.tsx",
+      "clock-chart-area.tsx",
+      "clock-chart-area-solid.tsx",
+      "clock-chart-area-gradient-reverse.tsx",
+      "clock-chart-area-dotted.tsx",
+      "clock-chart-area-lines.tsx",
+      "clock-chart-area-hatched.tsx",
+      "clock-chart-curve-linear.tsx",
+      "clock-chart-curve-monotone-y.tsx",
+      "clock-chart-curve-natural.tsx",
+      "clock-chart-curve-step.tsx",
+      "clock-chart-curve-step-before.tsx",
+      "clock-chart-curve-step-after.tsx",
+      "clock-chart-curve-bump.tsx",
+      "clock-chart-curve-basis.tsx",
+      "clock-chart-dots.tsx",
+      "clock-chart-dots-halo.tsx",
+      "clock-chart-dots-ring.tsx",
+      "clock-chart-active-dot.tsx",
+      "clock-chart-active-dot-halo.tsx",
+      "clock-chart-active-dot-ping.tsx",
+      "clock-chart-active-dot-ring.tsx",
+      "clock-chart-marker.tsx",
+      "clock-chart-marker-halo.tsx",
+      "clock-chart-marker-ping.tsx",
+      "clock-chart-marker-ring.tsx",
+      "clock-chart-value-label.tsx",
+      "clock-chart-emphasis.tsx",
+      "clock-chart-glow.tsx",
+      "clock-chart-dashed-grid.tsx",
+      "clock-chart-reference-line.tsx",
+      "clock-chart-reference-line-dashed.tsx",
+      "clock-chart-reference-line-muted.tsx",
+      "clock-chart-reference-line-error.tsx",
+      "clock-chart-reference-spoke.tsx",
+      "clock-chart-reference-area.tsx",
+      "clock-chart-reference-area-muted.tsx",
+      "clock-chart-reference-area-error.tsx",
+      "clock-chart-reference-sector.tsx",
+      "clock-chart-scrubber.tsx",
+      "clock-chart-scrubber-band.tsx",
+      "clock-chart-now.tsx",
+      "clock-chart-now-muted.tsx",
+      "clock-chart-now-error.tsx",
+      "clock-chart-past-fade.tsx",
+      "clock-chart-emphasis-now.tsx",
+      "clock-chart-center.tsx",
+      "clock-chart-active-value-first.tsx",
+      "clock-chart-active-value-last.tsx",
+      "clock-chart-active-value-max.tsx",
+      "clock-chart-active-value-min.tsx",
+      "clock-chart-frosted-tooltip.tsx",
       "clock-chart-spot-price.tsx",
-      "clock-chart-week.tsx"
+      "clock-chart-fall-back.tsx",
+      "clock-chart-solar.tsx",
+      "clock-chart-week.tsx",
+      "clock-chart-heating-year.tsx",
+      "clock-chart-no-entrance.tsx",
+      "clock-chart-server.tsx",
+      "clock-chart-loading.tsx",
+      "clock-chart-empty.tsx"
     ]
   },
   "code": {
     "title": "Code",
-    "rsc": "server",
     "demos": ["code-demo.tsx", "code-named-region.tsx"]
   },
   "collapsible": {
     "title": "Collapsible",
-    "rsc": "client",
     "demos": [
       "collapsible-demo.tsx",
       "collapsible-disabled.tsx",
@@ -496,7 +534,6 @@
   },
   "combobox": {
     "title": "Combobox",
-    "rsc": "client",
     "demos": [
       "combobox-demo.tsx",
       "combobox-small.tsx",
@@ -521,7 +558,6 @@
   },
   "combobox-field": {
     "title": "Combobox Field",
-    "rsc": "server",
     "demos": [
       "combobox-field-demo.tsx",
       "combobox-field-clear-button.tsx",
@@ -534,7 +570,6 @@
   },
   "command": {
     "title": "Command",
-    "rsc": "client",
     "demos": [
       "command-demo.tsx",
       "command-dialog.tsx",
@@ -550,7 +585,6 @@
   },
   "confirm-button": {
     "title": "Confirm Button",
-    "rsc": "client",
     "demos": [
       "confirm-button-demo.tsx",
       "confirm-button-outline.tsx",
@@ -574,7 +608,6 @@
   },
   "data-table": {
     "title": "Data Table",
-    "rsc": "client",
     "demos": [
       "data-table-demo.tsx",
       "data-table-pagination.tsx",
@@ -593,7 +626,6 @@
   },
   "data-table-filter": {
     "title": "Data Table Filter",
-    "rsc": "client",
     "demos": [
       "data-table-filter-demo.tsx",
       "data-table-filter-server.tsx",
@@ -606,7 +638,6 @@
   },
   "date-field": {
     "title": "Date Field",
-    "rsc": "server",
     "demos": [
       "date-field-demo.tsx",
       "date-field-small.tsx",
@@ -630,7 +661,6 @@
   },
   "date-picker": {
     "title": "Date Picker",
-    "rsc": "client",
     "demos": [
       "date-picker-demo.tsx",
       "date-picker-small.tsx",
@@ -661,7 +691,6 @@
   },
   "date-range-picker": {
     "title": "Date Range Picker",
-    "rsc": "client",
     "demos": [
       "date-range-picker-demo.tsx",
       "date-range-picker-small.tsx",
@@ -690,7 +719,6 @@
   },
   "description-list": {
     "title": "Description List",
-    "rsc": "server",
     "demos": [
       "description-list-demo.tsx",
       "description-list-no-dividers.tsx",
@@ -703,7 +731,6 @@
   },
   "dialog": {
     "title": "Dialog",
-    "rsc": "client",
     "demos": [
       "dialog-demo.tsx",
       "dialog-size-sm.tsx",
@@ -726,7 +753,6 @@
   },
   "dropdown-menu": {
     "title": "Dropdown Menu",
-    "rsc": "client",
     "demos": [
       "dropdown-menu-demo.tsx",
       "dropdown-menu-top.tsx",
@@ -750,7 +776,6 @@
   },
   "emoji": {
     "title": "Emoji",
-    "rsc": "server",
     "demos": [
       "emoji-demo.tsx",
       "emoji-slightly-frowning-face.tsx",
@@ -763,7 +788,6 @@
   },
   "empty": {
     "title": "Empty",
-    "rsc": "server",
     "demos": [
       "empty-demo.tsx",
       "empty-outline.tsx",
@@ -775,7 +799,6 @@
   },
   "field": {
     "title": "Field",
-    "rsc": "client",
     "demos": [
       "field-demo.tsx",
       "field-horizontal.tsx",
@@ -793,7 +816,6 @@
   },
   "file-trigger": {
     "title": "File Trigger",
-    "rsc": "client",
     "demos": [
       "file-trigger-demo.tsx",
       "file-trigger-outline.tsx",
@@ -815,7 +837,6 @@
   },
   "file-upload": {
     "title": "File Upload",
-    "rsc": "client",
     "demos": [
       "file-upload-demo.tsx",
       "file-upload-picker.tsx",
@@ -829,7 +850,6 @@
   },
   "form": {
     "title": "Form",
-    "rsc": "client",
     "demos": [
       "form-demo.tsx",
       "form-server-errors.tsx",
@@ -839,7 +859,6 @@
   },
   "frame": {
     "title": "Frame",
-    "rsc": "server",
     "demos": [
       "frame-demo.tsx",
       "frame-stacked.tsx",
@@ -851,21 +870,31 @@
   },
   "gauge-chart": {
     "title": "Gauge Chart",
-    "rsc": "client",
     "demos": [
-      "gauge-chart-battery.tsx",
-      "gauge-chart-capacity-step.tsx",
-      "gauge-chart-charging.tsx",
-      "gauge-chart-empty.tsx",
+      "gauge-chart-demo.tsx",
+      "gauge-chart-zone.tsx",
+      "gauge-chart-solid-track.tsx",
+      "gauge-chart-glow.tsx",
+      "gauge-chart-ruler.tsx",
+      "gauge-chart-outside-ruler.tsx",
+      "gauge-chart-needle.tsx",
+      "gauge-chart-triangle-needle.tsx",
+      "gauge-chart-sector.tsx",
+      "gauge-chart-flat-sector.tsx",
+      "gauge-chart-radial-sector.tsx",
+      "gauge-chart-dots.tsx",
+      "gauge-chart-fading-dots.tsx",
+      "gauge-chart-progress-ring.tsx",
+      "gauge-chart-closed-ring.tsx",
+      "gauge-chart-over-max.tsx",
       "gauge-chart-live.tsx",
+      "gauge-chart-no-entrance.tsx",
       "gauge-chart-loading.tsx",
-      "gauge-chart-price-area.tsx",
-      "gauge-chart-spot-price.tsx"
+      "gauge-chart-empty.tsx"
     ]
   },
   "heading": {
     "title": "Heading",
-    "rsc": "client",
     "demos": [
       "heading-demo.tsx",
       "heading-level-1.tsx",
@@ -899,7 +928,6 @@
   },
   "input": {
     "title": "Input",
-    "rsc": "client",
     "demos": [
       "input-demo.tsx",
       "input-small.tsx",
@@ -912,7 +940,6 @@
   },
   "input-group": {
     "title": "Input Group",
-    "rsc": "client",
     "demos": [
       "input-group-demo.tsx",
       "input-group-small.tsx",
@@ -933,7 +960,6 @@
   },
   "item": {
     "title": "Item",
-    "rsc": "client",
     "demos": [
       "item-demo.tsx",
       "item-muted.tsx",
@@ -956,7 +982,6 @@
   },
   "kbd": {
     "title": "Kbd",
-    "rsc": "server",
     "demos": [
       "kbd-demo.tsx",
       "kbd-in-a-sentence.tsx",
@@ -968,7 +993,6 @@
   },
   "line-chart": {
     "title": "Line Chart",
-    "rsc": "client",
     "demos": [
       "line-chart-demo.tsx",
       "line-chart-point-scale.tsx",
@@ -995,7 +1019,6 @@
   },
   "link": {
     "title": "Link",
-    "rsc": "client",
     "demos": [
       "link-demo.tsx",
       "link-foreground.tsx",
@@ -1014,7 +1037,6 @@
   },
   "list-detail": {
     "title": "List Detail",
-    "rsc": "client",
     "demos": [
       "list-detail-demo.tsx",
       "list-detail-split-4xl.tsx",
@@ -1024,12 +1046,26 @@
   },
   "live-line-chart": {
     "title": "Live Line Chart",
-    "rsc": "client",
-    "demos": ["live-line-chart-basic.tsx", "live-line-chart-polish.tsx"]
+    "demos": [
+      "live-line-chart-demo.tsx",
+      "live-line-chart-paused.tsx",
+      "live-line-chart-dashed-grid.tsx",
+      "live-line-chart-axis-end.tsx",
+      "live-line-chart-area.tsx",
+      "live-line-chart-solid-area.tsx",
+      "live-line-chart-curve-linear.tsx",
+      "live-line-chart-curve-step.tsx",
+      "live-line-chart-curve-step-before.tsx",
+      "live-line-chart-curve-step-after.tsx",
+      "live-line-chart-curve-bump.tsx",
+      "live-line-chart-curve-basis.tsx",
+      "live-line-chart-dot.tsx",
+      "live-line-chart-badge.tsx",
+      "live-line-chart-frosted-tooltip.tsx"
+    ]
   },
   "loader": {
     "title": "Loader",
-    "rsc": "server",
     "demos": [
       "loader-demo.tsx",
       "loader-small.tsx",
@@ -1041,7 +1077,6 @@
   },
   "meter": {
     "title": "Meter",
-    "rsc": "client",
     "demos": [
       "meter-demo.tsx",
       "meter-high.tsx",
@@ -1056,7 +1091,6 @@
   },
   "navigation-menu": {
     "title": "Navigation Menu",
-    "rsc": "client",
     "demos": [
       "navigation-menu-demo.tsx",
       "navigation-menu-top.tsx",
@@ -1077,7 +1111,6 @@
   },
   "number-field": {
     "title": "Number Field",
-    "rsc": "client",
     "demos": [
       "number-field-demo.tsx",
       "number-field-small.tsx",
@@ -1094,7 +1127,6 @@
   },
   "pagination": {
     "title": "Pagination",
-    "rsc": "client",
     "demos": [
       "pagination-demo.tsx",
       "pagination-ellipsis.tsx",
@@ -1105,7 +1137,6 @@
   },
   "phone-number-field": {
     "title": "Phone Number Field",
-    "rsc": "client",
     "demos": [
       "phone-number-field-demo.tsx",
       "phone-number-field-small.tsx",
@@ -1126,20 +1157,32 @@
   },
   "pie-chart": {
     "title": "Pie Chart",
-    "rsc": "client",
     "demos": [
-      "pie-chart-appliances.tsx",
-      "pie-chart-bill.tsx",
-      "pie-chart-capacity-step.tsx",
-      "pie-chart-empty.tsx",
-      "pie-chart-loading.tsx",
+      "pie-chart-demo.tsx",
+      "pie-chart-outside-labels.tsx",
+      "pie-chart-share-labels.tsx",
+      "pie-chart-donut.tsx",
+      "pie-chart-active-slice.tsx",
+      "pie-chart-centre-share.tsx",
+      "pie-chart-pad-angle.tsx",
+      "pie-chart-rounded.tsx",
       "pie-chart-semicircle.tsx",
-      "pie-chart-server.tsx"
+      "pie-chart-other-slice.tsx",
+      "pie-chart-gauge.tsx",
+      "pie-chart-over-max.tsx",
+      "pie-chart-estimated.tsx",
+      "pie-chart-glow.tsx",
+      "pie-chart-frosted-tooltip.tsx",
+      "pie-chart-tooltip-share.tsx",
+      "pie-chart-no-entrance.tsx",
+      "pie-chart-update.tsx",
+      "pie-chart-server.tsx",
+      "pie-chart-loading.tsx",
+      "pie-chart-empty.tsx"
     ]
   },
   "popover": {
     "title": "Popover",
-    "rsc": "client",
     "demos": [
       "popover-demo.tsx",
       "popover-top.tsx",
@@ -1157,7 +1200,6 @@
   },
   "popover-info-button": {
     "title": "Popover Info Button",
-    "rsc": "client",
     "demos": [
       "popover-info-button-demo.tsx",
       "popover-info-button-variant-default.tsx",
@@ -1187,32 +1229,47 @@
   },
   "radar-chart": {
     "title": "Radar Chart",
-    "rsc": "client",
     "demos": [
+      "radar-chart-demo.tsx",
+      "radar-chart-circle-grid.tsx",
+      "radar-chart-outline.tsx",
+      "radar-chart-dashed-line.tsx",
+      "radar-chart-quiet-line.tsx",
+      "radar-chart-dots.tsx",
+      "radar-chart-ring-dots.tsx",
+      "radar-chart-active-dot.tsx",
+      "radar-chart-glow.tsx",
+      "radar-chart-frosted-tooltip.tsx",
+      "radar-chart-missing.tsx",
       "radar-chart-areas.tsx",
       "radar-chart-deviation.tsx",
-      "radar-chart-empty.tsx",
-      "radar-chart-hours.tsx",
+      "radar-chart-no-entrance.tsx",
       "radar-chart-loading.tsx",
-      "radar-chart-weekdays.tsx"
+      "radar-chart-empty.tsx"
     ]
   },
   "radial-chart": {
     "title": "Radial Chart",
-    "rsc": "client",
     "demos": [
-      "radial-chart-budgets.tsx",
+      "radial-chart-demo.tsx",
       "radial-chart-dotted.tsx",
-      "radial-chart-empty.tsx",
-      "radial-chart-gauge.tsx",
-      "radial-chart-loading.tsx",
+      "radial-chart-budgets.tsx",
+      "radial-chart-active-ring.tsx",
       "radial-chart-month-to-date.tsx",
-      "radial-chart-over-budget.tsx"
+      "radial-chart-one-max.tsx",
+      "radial-chart-no-max.tsx",
+      "radial-chart-over-budget.tsx",
+      "radial-chart-gauge.tsx",
+      "radial-chart-estimated.tsx",
+      "radial-chart-glow.tsx",
+      "radial-chart-frosted-tooltip.tsx",
+      "radial-chart-no-entrance.tsx",
+      "radial-chart-loading.tsx",
+      "radial-chart-empty.tsx"
     ]
   },
   "radio-group": {
     "title": "Radio Group",
-    "rsc": "client",
     "demos": [
       "radio-group-demo.tsx",
       "radio-group-horizontal.tsx",
@@ -1239,7 +1296,6 @@
   },
   "range-calendar": {
     "title": "Range Calendar",
-    "rsc": "client",
     "demos": [
       "range-calendar-demo.tsx",
       "range-calendar-several-months.tsx",
@@ -1255,7 +1311,6 @@
   },
   "scatter-chart": {
     "title": "Scatter Chart",
-    "rsc": "client",
     "demos": [
       "scatter-chart-demo.tsx",
       "scatter-chart-small-points.tsx",
@@ -1294,7 +1349,6 @@
   },
   "scroll-area": {
     "title": "Scroll Area",
-    "rsc": "client",
     "demos": [
       "scroll-area-demo.tsx",
       "scroll-area-horizontal.tsx",
@@ -1306,7 +1360,6 @@
   },
   "search-field": {
     "title": "Search Field",
-    "rsc": "client",
     "demos": [
       "search-field-demo.tsx",
       "search-field-small.tsx",
@@ -1319,7 +1372,6 @@
   },
   "select": {
     "title": "Select",
-    "rsc": "client",
     "demos": [
       "select-demo.tsx",
       "select-small.tsx",
@@ -1343,7 +1395,6 @@
   },
   "select-field": {
     "title": "Select Field",
-    "rsc": "server",
     "demos": [
       "select-field-demo.tsx",
       "select-field-small.tsx",
@@ -1355,7 +1406,6 @@
   },
   "selection-item": {
     "title": "Selection Item",
-    "rsc": "client",
     "demos": [
       "selection-item-demo.tsx",
       "selection-item-checked.tsx",
@@ -1376,12 +1426,10 @@
   },
   "separator": {
     "title": "Separator",
-    "rsc": "client",
     "demos": ["separator-demo.tsx", "separator-vertical.tsx", "separator-short-vertical.tsx"]
   },
   "sheet": {
     "title": "Sheet",
-    "rsc": "client",
     "demos": [
       "sheet-demo.tsx",
       "sheet-left.tsx",
@@ -1406,12 +1454,10 @@
   },
   "show": {
     "title": "Show",
-    "rsc": "server",
     "demos": ["show-demo.tsx", "show-hidden.tsx", "show-toggle.tsx"]
   },
   "sidebar": {
     "title": "Sidebar",
-    "rsc": "client",
     "demos": [
       "sidebar-demo.tsx",
       "sidebar-floating.tsx",
@@ -1438,7 +1484,6 @@
   },
   "skeleton": {
     "title": "Skeleton",
-    "rsc": "server",
     "demos": [
       "skeleton-demo.tsx",
       "skeleton-circle.tsx",
@@ -1453,7 +1498,6 @@
   },
   "slider": {
     "title": "Slider",
-    "rsc": "client",
     "demos": [
       "slider-demo.tsx",
       "slider-show-value.tsx",
@@ -1471,7 +1515,6 @@
   },
   "span": {
     "title": "Span",
-    "rsc": "client",
     "demos": [
       "span-demo.tsx",
       "span-foreground.tsx",
@@ -1501,18 +1544,31 @@
   },
   "sparkline": {
     "title": "Sparkline",
-    "rsc": "server",
     "demos": [
-      "sparkline-hourly-price.tsx",
-      "sparkline-variants.tsx",
+      "sparkline-demo.tsx",
+      "sparkline-area.tsx",
+      "sparkline-bar.tsx",
+      "sparkline-curve-linear.tsx",
+      "sparkline-curve-monotone-y.tsx",
+      "sparkline-curve-natural.tsx",
+      "sparkline-curve-step.tsx",
+      "sparkline-curve-step-before.tsx",
+      "sparkline-curve-step-after.tsx",
+      "sparkline-curve-bump.tsx",
+      "sparkline-curve-basis.tsx",
+      "sparkline-emphasis.tsx",
+      "sparkline-reference.tsx",
+      "sparkline-gap.tsx",
+      "sparkline-negative-bars.tsx",
+      "sparkline-negative-area.tsx",
+      "sparkline-no-hover.tsx",
+      "sparkline-no-entrance.tsx",
       "sparkline-glide.tsx",
-      "sparkline-negative.tsx",
-      "sparkline-table.tsx"
+      "sparkline-server.tsx"
     ]
   },
   "switch": {
     "title": "Switch",
-    "rsc": "client",
     "demos": [
       "switch-demo.tsx",
       "switch-small.tsx",
@@ -1526,7 +1582,6 @@
   },
   "table": {
     "title": "Table",
-    "rsc": "server",
     "demos": [
       "table-demo.tsx",
       "table-selected-row.tsx",
@@ -1536,18 +1591,17 @@
       "vertical-table-compact.tsx",
       "vertical-table-bold-row.tsx",
       "vertical-table-wrapping-text.tsx",
+      "vertical-table-wrapping-key.tsx",
       "vertical-table-loading.tsx",
       "vertical-table-rows-as-children.tsx"
     ]
   },
   "tabs": {
     "title": "Tabs",
-    "rsc": "client",
     "demos": ["tabs-demo.tsx", "tabs-line.tsx", "tabs-vertical.tsx", "tabs-icons.tsx", "tabs-disabled.tsx"]
   },
   "text": {
     "title": "Text",
-    "rsc": "client",
     "demos": [
       "text-demo.tsx",
       "text-foreground.tsx",
@@ -1578,7 +1632,6 @@
   },
   "text-field": {
     "title": "Text Field",
-    "rsc": "client",
     "demos": [
       "text-field-demo.tsx",
       "text-field-small.tsx",
@@ -1595,7 +1648,6 @@
   },
   "textarea": {
     "title": "Textarea",
-    "rsc": "server",
     "demos": [
       "textarea-demo.tsx",
       "textarea-small.tsx",
@@ -1606,7 +1658,6 @@
   },
   "textarea-field": {
     "title": "Textarea Field",
-    "rsc": "client",
     "demos": [
       "textarea-field-demo.tsx",
       "textarea-field-small.tsx",
@@ -1618,12 +1669,10 @@
   },
   "timeline-list": {
     "title": "Timeline List",
-    "rsc": "server",
     "demos": ["timeline-list-demo.tsx", "timeline-list-date-time.tsx", "timeline-list-links.tsx"]
   },
   "toast": {
     "title": "Toast",
-    "rsc": "client",
     "demos": [
       "toast-demo.tsx",
       "toast-info.tsx",
@@ -1645,7 +1694,6 @@
   },
   "toggle": {
     "title": "Toggle",
-    "rsc": "client",
     "demos": [
       "toggle-demo.tsx",
       "toggle-outline.tsx",
@@ -1659,7 +1707,6 @@
   },
   "toggle-group": {
     "title": "Toggle Group",
-    "rsc": "client",
     "demos": [
       "toggle-group-demo.tsx",
       "toggle-group-outline.tsx",
@@ -1677,7 +1724,6 @@
   },
   "toolbar": {
     "title": "Toolbar",
-    "rsc": "client",
     "demos": [
       "toolbar-demo.tsx",
       "toolbar-vertical.tsx",
@@ -1693,7 +1739,6 @@
   },
   "tooltip": {
     "title": "Tooltip",
-    "rsc": "client",
     "demos": [
       "tooltip-demo.tsx",
       "tooltip-bottom.tsx",
@@ -1704,6 +1749,9 @@
       "tooltip-align-start.tsx",
       "tooltip-align-end.tsx",
       "tooltip-offset.tsx",
+      "tooltip-track-cursor-x.tsx",
+      "tooltip-track-cursor-y.tsx",
+      "tooltip-track-cursor-both.tsx",
       "tooltip-delay.tsx",
       "tooltip-root-delay.tsx",
       "tooltip-controlled.tsx"

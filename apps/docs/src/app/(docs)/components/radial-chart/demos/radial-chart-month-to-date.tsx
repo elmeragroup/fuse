@@ -30,6 +30,7 @@ export function RadialChartMonthToDate() {
       nameKey="measure"
       valueKey="used"
       maxKey="budget"
+      defaultActiveKey="energy"
       innerRadius={0.45}
       aria-label="Month to date against budget">
       <RadialChart.Track />
@@ -37,7 +38,6 @@ export function RadialChartMonthToDate() {
       <RadialChart.Center>
         <RadialChart.CenterShare />
       </RadialChart.Center>
-      <RadialChart.Legend />
       <RadialChart.Tooltip />
       <RadialChart.Table />
     </RadialChart.Root>

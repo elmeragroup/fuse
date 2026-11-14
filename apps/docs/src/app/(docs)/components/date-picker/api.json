@@ -44,7 +44,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the popup starts open.",
           "required": false
         },
@@ -62,7 +62,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether nothing responds and the value is not submitted. A disabled `Field.Root` or `Field.Set` around the picker disables it whole, the trigger, calendar and presets included, from the server's first render on.",
           "required": false
         },
@@ -113,7 +113,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Hides a zoned value's zone name in the input and in `DatePicker.TimeInput`.",
           "required": false
         },
@@ -131,7 +131,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the picker shows as invalid whatever its value.",
           "required": false
         },
@@ -212,7 +212,7 @@
           "origin": "declared",
           "type": "CalendarPageBehavior | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"visible\"",
           "description": "How the calendar pages a multi-month view.",
           "required": false,
           "values": [
@@ -225,7 +225,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether the value cannot change. The segments stay focusable; the trigger is disabled.",
           "required": false
         },
@@ -245,7 +245,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Whether an empty or incomplete value is invalid.",
           "required": false
         },
@@ -254,7 +254,7 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "true",
           "description": "Whether picking a day closes the popup. With a time `granularity` and no value yet, a picked day is held while the popup stays open: a time typed in `DatePicker.TimeInput` commits it at that time, and otherwise it commits at midnight when the popup closes, however it closes (a parent setting `open` to `false` included). A time typed before any day waits for one. That commit runs first and reports the pick's reason; canceling it keeps the popup open with the day still held. A native form reset drops a held day and any half-typed segments, and the shown error, also when the value is unchanged.",
           "required": false
         },
@@ -263,7 +263,7 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The field box's size.",
           "required": false,
           "values": [
@@ -294,7 +294,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "1",
           "description": "How many months the calendar shows.",
           "required": false
         }

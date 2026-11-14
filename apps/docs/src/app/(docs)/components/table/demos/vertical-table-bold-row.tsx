@@ -6,13 +6,20 @@ export function VerticalTableBoldRow() {
   return (
     <VerticalTable.Root>
       <VerticalTable.Header>Customer</VerticalTable.Header>
-      <VerticalTable.Body
-        data={[
-          { label: "Name", value: "Kari Nordmann", fontWeight: "bold" },
-          { label: "Customer number", value: "10492831" },
-          { label: "Meter point", value: "7070575000" },
-        ]}
-      />
+      <VerticalTable.Body>
+        <VerticalTable.Row fontWeight="bold">
+          <VerticalTable.Key render={<th scope="row" />}>Name</VerticalTable.Key>
+          <VerticalTable.Value>Kari Nordmann</VerticalTable.Value>
+        </VerticalTable.Row>
+        <VerticalTable.Row>
+          <VerticalTable.Key render={<th scope="row" />}>Customer number</VerticalTable.Key>
+          <VerticalTable.Value>10492831</VerticalTable.Value>
+        </VerticalTable.Row>
+        <VerticalTable.Row>
+          <VerticalTable.Key render={<th scope="row" />}>Meter point</VerticalTable.Key>
+          <VerticalTable.Value>7070575000</VerticalTable.Value>
+        </VerticalTable.Row>
+      </VerticalTable.Body>
     </VerticalTable.Root>
   );
 }

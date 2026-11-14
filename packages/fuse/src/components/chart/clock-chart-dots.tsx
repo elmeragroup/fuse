@@ -29,7 +29,7 @@ import { sameItems } from "./layout/same-items";
 export type ClockChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
-  /** The dot's look. "default" by default. "ring" is hollow and "halo" sits in a faint halo. */
+  /** The dot's look. "ring" is hollow and "halo" sits in a faint halo. */
   variant?: "default" | "ring" | "halo";
 };
 
@@ -43,7 +43,10 @@ export type ClockChartMarkerProps = ChartLayerProps & {
   dataKey: string;
   /** The slots to mark. An x string throws `x-type-mismatch`. */
   at: ChartDatum;
-  /** The dot's look. "default" by default. */
+  /**
+   * The dot's look. "ring" is hollow, "halo" sits in a faint halo, and "ping" sends a ring out from
+   * the dot once a second.
+   */
   variant?: "default" | "ring" | "halo" | "ping";
   /** A `ValueLabel` adds the value as a pill beside the dot. */
   children?: ReactNode;
