@@ -644,7 +644,7 @@
           "type": "Align | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "How the popup aligns to the trigger on the cross axis.",
+          "description": "How the popup lines up with the trigger along the side it opens on.",
           "required": false,
           "values": [
             "center",
@@ -658,7 +658,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Offset along the alignment axis, in pixels.",
+          "description": "The popup's shift along the side it opens on, in pixels.",
           "required": false
         },
         {
@@ -667,7 +667,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. A controlled popover with no trigger opens against it. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box; pass a new anchor then, such as a new virtual element, to place the popup again.",
+          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. The trigger still opens and closes the popup, reports its state and takes focus back when the popup closes. A controlled popover with no trigger opens against the anchor, and the opener's `aria-expanded` and focus return are then yours to handle. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor then, such as a new virtual element, to place the popup again.",
           "required": false
         },
         {
@@ -687,7 +687,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -729,7 +729,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Renders the placement arrow after `children`. Off by default.",
+          "description": "Shows an arrow on the popup's edge that points at the trigger, or at `anchor` when set.",
           "required": false
         },
         {
@@ -738,7 +738,7 @@
           "type": "Side | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Which side of the trigger the popup is placed on.",
+          "description": "The side of the trigger the popup opens on.",
           "required": false,
           "values": [
             "bottom",
@@ -755,7 +755,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Distance from the trigger, in pixels.",
+          "description": "The gap between the trigger and the popup, in pixels.",
           "required": false
         },
         {

@@ -3,10 +3,25 @@ lede: >
   A confirmation dialog that must be answered before the app continues.
 ---
 
-import { AlertDialogDestructive } from "./demos/alert-dialog-destructive";
+import { AlertDialogDemo } from "./demos/alert-dialog-demo";
 import { AlertDialogNeutral } from "./demos/alert-dialog-neutral";
+import { AlertDialogSizeSm } from "./demos/alert-dialog-size-sm";
+import { AlertDialogSizeLg } from "./demos/alert-dialog-size-lg";
+import { AlertDialogSizeXl } from "./demos/alert-dialog-size-xl";
+import { AlertDialogSize2xl } from "./demos/alert-dialog-size-2xl";
+import { AlertDialogSize3xl } from "./demos/alert-dialog-size-3xl";
+import { AlertDialogSize4xl } from "./demos/alert-dialog-size-4xl";
+import { AlertDialogSize5xl } from "./demos/alert-dialog-size-5xl";
+import { AlertDialogSize6xl } from "./demos/alert-dialog-size-6xl";
+import { AlertDialogSize7xl } from "./demos/alert-dialog-size-7xl";
+import { AlertDialogSize8xl } from "./demos/alert-dialog-size-8xl";
+import { AlertDialogSize9xl } from "./demos/alert-dialog-size-9xl";
+import { AlertDialogSize10xl } from "./demos/alert-dialog-size-10xl";
 import { AlertDialogPending } from "./demos/alert-dialog-pending";
+import { AlertDialogActionDisabled } from "./demos/alert-dialog-action-disabled";
+import { AlertDialogCloseAfterAction } from "./demos/alert-dialog-close-after-action";
 import { AlertDialogCustomIcon } from "./demos/alert-dialog-custom-icon";
+import { AlertDialogCancelLabel } from "./demos/alert-dialog-cancel-label";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,26 +29,111 @@ export const metadata = componentMetadata("alert-dialog");
 
 <ComponentIntro slug="alert-dialog" />
 
-Destructive confirmations initially focus Cancel. Neutral confirmations initially focus the primary action. Use `initialFocus` when your content needs another target.
+<DefaultDemo slug="alert-dialog" file="alert-dialog-demo.tsx">
+  <AlertDialogDemo />
+</DefaultDemo>
 
-<Demo slug="alert-dialog" id="destructive" title="Destructive" file="alert-dialog-destructive.tsx">
-  <AlertDialogDestructive />
-</Demo>
+## Usage
 
-<Demo slug="alert-dialog" id="neutral" title="Neutral" file="alert-dialog-neutral.tsx">
+{/* prettier-ignore */}
+```tsx
+import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
+
+<AlertDialog.Root>
+  <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
+  <AlertDialog.Content title="Delete order?" actionLabel="Delete" onAction={deleteOrder}>
+    This permanently removes the order and cannot be undone.
+  </AlertDialog.Content>
+</AlertDialog.Root>
+```
+
+## Examples
+
+<Demo slug="alert-dialog" id="neutral" title="Neutral" level={3} file="alert-dialog-neutral.tsx">
   <AlertDialogNeutral />
 </Demo>
 
-<Demo slug="alert-dialog" id="pending" title="Pending and disabled" file="alert-dialog-pending.tsx">
+<Demo slug="alert-dialog" id="size-sm" title="Small" level={3} file="alert-dialog-size-sm.tsx">
+  <AlertDialogSizeSm />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-lg" title="Large" level={3} file="alert-dialog-size-lg.tsx">
+  <AlertDialogSizeLg />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-xl" title="Extra large" level={3} file="alert-dialog-size-xl.tsx">
+  <AlertDialogSizeXl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-2xl" title="2XL" level={3} file="alert-dialog-size-2xl.tsx">
+  <AlertDialogSize2xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-3xl" title="3XL" level={3} file="alert-dialog-size-3xl.tsx">
+  <AlertDialogSize3xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-4xl" title="4XL" level={3} file="alert-dialog-size-4xl.tsx">
+  <AlertDialogSize4xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-5xl" title="5XL" level={3} file="alert-dialog-size-5xl.tsx">
+  <AlertDialogSize5xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-6xl" title="6XL" level={3} file="alert-dialog-size-6xl.tsx">
+  <AlertDialogSize6xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-7xl" title="7XL" level={3} file="alert-dialog-size-7xl.tsx">
+  <AlertDialogSize7xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-8xl" title="8XL" level={3} file="alert-dialog-size-8xl.tsx">
+  <AlertDialogSize8xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-9xl" title="9XL" level={3} file="alert-dialog-size-9xl.tsx">
+  <AlertDialogSize9xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="size-10xl" title="10XL" level={3} file="alert-dialog-size-10xl.tsx">
+  <AlertDialogSize10xl />
+</Demo>
+
+<Demo slug="alert-dialog" id="pending" title="Pending" level={3} file="alert-dialog-pending.tsx">
   <AlertDialogPending />
 </Demo>
 
 <Demo
   slug="alert-dialog"
-  id="custom-icon"
-  title="Custom icon and cancel label"
-  file="alert-dialog-custom-icon.tsx">
+  id="action-disabled"
+  title="Action disabled"
+  level={3}
+  file="alert-dialog-action-disabled.tsx">
+  <AlertDialogActionDisabled />
+</Demo>
+
+<Demo
+  slug="alert-dialog"
+  id="close-after-action"
+  title="Close after the action"
+  level={3}
+  file="alert-dialog-close-after-action.tsx">
+  <AlertDialogCloseAfterAction />
+</Demo>
+
+<Demo slug="alert-dialog" id="custom-icon" title="Custom icon" level={3} file="alert-dialog-custom-icon.tsx">
   <AlertDialogCustomIcon />
+</Demo>
+
+<Demo
+  slug="alert-dialog"
+  id="cancel-label"
+  title="Cancel label"
+  level={3}
+  file="alert-dialog-cancel-label.tsx">
+  <AlertDialogCancelLabel />
 </Demo>
 
 <ApiReference slug="alert-dialog" />

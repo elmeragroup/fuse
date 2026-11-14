@@ -3,7 +3,6 @@
 import { createContext, use, useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
 
 type Action = { readonly label: string; readonly run: () => void };
@@ -85,14 +84,13 @@ function CustomersPage() {
     <ul className="flex flex-col items-start gap-1">
       {CUSTOMERS.map((customer) => (
         <li key={customer.id}>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={() => {
               navigate({ page: "customer", customer });
             }}>
             {customer.name}
-          </Button>
+          </button>
         </li>
       ))}
     </ul>
@@ -151,9 +149,12 @@ function PageOf({ route }: { route: Route }): ReactElement {
 }
 
 /**
- * The app's layout, with one palette for every page. The header button opens it; the docs site
- * keeps ⌘K and Ctrl+K for its own palette. The Root stays mounted while the pages change, and its
- * `items` are the page's commands above the app's own.
+ * The app's layout, with one palette for every page. The Root stays mounted while the pages
+ * change, and its `items` are the page's commands above the app's own. Fuse has no registry of
+ * commands, so each page passes its commands to the layout through `usePageCommands`, a hook the
+ * app writes. An app listens for its shortcut, such as ⌘K and Ctrl+K, on `document`. This demo
+ * opens from its header button only, because the docs site keeps ⌘K and Ctrl+K for its own
+ * palette.
  */
 export function CommandAppPalette() {
   const [route, setRoute] = useState<Route>({ page: "customers" });
@@ -199,28 +200,27 @@ export function CommandAppPalette() {
         <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-background">
           <div className="flex items-center gap-1 border-b border-border px-3 py-2">
             <nav aria-label="App" className="flex gap-1">
-              <Button
-                variant={route.page === "overview" ? "secondary" : "ghost"}
-                size="sm"
+              <button
+                type="button"
                 aria-current={route.page === "overview" ? "page" : undefined}
                 onClick={() => {
                   setRoute({ page: "overview" });
                 }}>
                 Overview
-              </Button>
-              <Button
-                variant={route.page === "overview" ? "ghost" : "secondary"}
-                size="sm"
+              </button>
+              <button
+                type="button"
                 aria-current={route.page === "customers" ? "page" : undefined}
                 onClick={() => {
                   setRoute({ page: "customers" });
                 }}>
                 Customers
-              </Button>
+              </button>
             </nav>
-            <Button
-              variant="outline"
-              size="sm"
+            {/* Command.Trigger works only inside the Root, so a button elsewhere controls `open`.
+                Closing returns focus to the element that had it when the palette opened. */}
+            <button
+              type="button"
               className="ml-auto"
               aria-haspopup="dialog"
               aria-expanded={open}
@@ -228,7 +228,7 @@ export function CommandAppPalette() {
                 setOpen(true);
               }}>
               Search commands
-            </Button>
+            </button>
           </div>
           <div className="flex flex-col gap-3 p-4">
             <p className="text-base font-medium">{titleOf(route)}</p>

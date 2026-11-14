@@ -25,21 +25,41 @@
     "title": "Alert",
     "rsc": "server",
     "demos": [
-      "alert-variants.tsx",
+      "alert-demo.tsx",
+      "alert-info.tsx",
+      "alert-destructive.tsx",
+      "alert-warning.tsx",
+      "alert-success.tsx",
       "alert-action.tsx",
       "alert-title-only.tsx",
       "alert-heading-level.tsx",
-      "alert-list.tsx"
+      "alert-list.tsx",
+      "alert-status.tsx"
     ]
   },
   "alert-dialog": {
     "title": "Alert Dialog",
     "rsc": "client",
     "demos": [
-      "alert-dialog-destructive.tsx",
+      "alert-dialog-demo.tsx",
       "alert-dialog-neutral.tsx",
+      "alert-dialog-size-sm.tsx",
+      "alert-dialog-size-lg.tsx",
+      "alert-dialog-size-xl.tsx",
+      "alert-dialog-size-2xl.tsx",
+      "alert-dialog-size-3xl.tsx",
+      "alert-dialog-size-4xl.tsx",
+      "alert-dialog-size-5xl.tsx",
+      "alert-dialog-size-6xl.tsx",
+      "alert-dialog-size-7xl.tsx",
+      "alert-dialog-size-8xl.tsx",
+      "alert-dialog-size-9xl.tsx",
+      "alert-dialog-size-10xl.tsx",
       "alert-dialog-pending.tsx",
-      "alert-dialog-custom-icon.tsx"
+      "alert-dialog-action-disabled.tsx",
+      "alert-dialog-close-after-action.tsx",
+      "alert-dialog-custom-icon.tsx",
+      "alert-dialog-cancel-label.tsx"
     ]
   },
   "area-chart": {
@@ -357,8 +377,10 @@
     "title": "Command",
     "rsc": "client",
     "demos": [
+      "command-demo.tsx",
       "command-dialog.tsx",
       "command-groups.tsx",
+      "command-shortcuts.tsx",
       "command-pages.tsx",
       "command-kept-query.tsx",
       "command-escape-back.tsx",
@@ -467,11 +489,22 @@
     "title": "Dialog",
     "rsc": "client",
     "demos": [
-      "dialog-basic.tsx",
-      "dialog-sizes.tsx",
+      "dialog-demo.tsx",
+      "dialog-size-sm.tsx",
+      "dialog-size-lg.tsx",
+      "dialog-size-xl.tsx",
+      "dialog-size-2xl.tsx",
+      "dialog-size-3xl.tsx",
+      "dialog-size-4xl.tsx",
+      "dialog-size-5xl.tsx",
+      "dialog-size-6xl.tsx",
+      "dialog-size-7xl.tsx",
+      "dialog-size-8xl.tsx",
+      "dialog-size-9xl.tsx",
+      "dialog-size-10xl.tsx",
       "dialog-footer-close.tsx",
-      "dialog-form.tsx",
       "dialog-no-close-button.tsx",
+      "dialog-form.tsx",
       "dialog-scrolling.tsx"
     ]
   },
@@ -479,12 +512,24 @@
     "title": "Dropdown Menu",
     "rsc": "client",
     "demos": [
-      "dropdown-menu-basic.tsx",
+      "dropdown-menu-demo.tsx",
+      "dropdown-menu-top.tsx",
+      "dropdown-menu-left.tsx",
+      "dropdown-menu-right.tsx",
+      "dropdown-menu-inline-start.tsx",
+      "dropdown-menu-inline-end.tsx",
+      "dropdown-menu-align-center.tsx",
+      "dropdown-menu-align-end.tsx",
+      "dropdown-menu-offset.tsx",
+      "dropdown-menu-group-label.tsx",
+      "dropdown-menu-shortcuts.tsx",
+      "dropdown-menu-destructive.tsx",
+      "dropdown-menu-disabled.tsx",
+      "dropdown-menu-inset.tsx",
       "dropdown-menu-checkboxes.tsx",
       "dropdown-menu-radio-group.tsx",
       "dropdown-menu-submenu.tsx",
-      "dropdown-menu-links.tsx",
-      "dropdown-menu-destructive.tsx"
+      "dropdown-menu-links.tsx"
     ]
   },
   "emoji": {
@@ -809,9 +854,16 @@
     "title": "Popover",
     "rsc": "client",
     "demos": [
-      "popover-basic.tsx",
+      "popover-demo.tsx",
+      "popover-top.tsx",
+      "popover-left.tsx",
+      "popover-right.tsx",
+      "popover-inline-start.tsx",
+      "popover-inline-end.tsx",
+      "popover-align-start.tsx",
+      "popover-align-end.tsx",
+      "popover-offset.tsx",
       "popover-arrow.tsx",
-      "popover-placement.tsx",
       "popover-controlled.tsx",
       "popover-anchor.tsx"
     ]
@@ -820,10 +872,30 @@
     "title": "Popover Info Button",
     "rsc": "client",
     "demos": [
-      "popover-info-button-basic.tsx",
-      "popover-info-button-sizes.tsx",
+      "popover-info-button-demo.tsx",
+      "popover-info-button-variant-default.tsx",
+      "popover-info-button-variant-secondary.tsx",
+      "popover-info-button-variant-outline.tsx",
+      "popover-info-button-variant-destructive.tsx",
+      "popover-info-button-variant-success.tsx",
+      "popover-info-button-variant-link.tsx",
+      "popover-info-button-content-size-sm.tsx",
+      "popover-info-button-content-size-lg.tsx",
+      "popover-info-button-content-size-xl.tsx",
+      "popover-info-button-content-size-2xl.tsx",
+      "popover-info-button-content-size-3xl.tsx",
+      "popover-info-button-content-size-4xl.tsx",
+      "popover-info-button-content-size-5xl.tsx",
+      "popover-info-button-content-size-6xl.tsx",
+      "popover-info-button-content-size-7xl.tsx",
+      "popover-info-button-icon-xs.tsx",
+      "popover-info-button-icon-sm.tsx",
+      "popover-info-button-icon.tsx",
+      "popover-info-button-icon-lg.tsx",
+      "popover-info-button-label.tsx",
       "popover-info-button-rich-text.tsx",
-      "popover-info-button-i18n.tsx"
+      "popover-info-button-paragraphs.tsx",
+      "popover-info-button-title.tsx"
     ]
   },
   "radar-chart": {
@@ -952,9 +1024,23 @@
     "title": "Sheet",
     "rsc": "client",
     "demos": [
-      "sheet-basic.tsx",
-      "sheet-sides.tsx",
-      "sheet-sizes.tsx",
+      "sheet-demo.tsx",
+      "sheet-left.tsx",
+      "sheet-top.tsx",
+      "sheet-bottom.tsx",
+      "sheet-size-sm.tsx",
+      "sheet-size-lg.tsx",
+      "sheet-size-xl.tsx",
+      "sheet-size-2xl.tsx",
+      "sheet-size-3xl.tsx",
+      "sheet-size-4xl.tsx",
+      "sheet-size-5xl.tsx",
+      "sheet-size-6xl.tsx",
+      "sheet-size-7xl.tsx",
+      "sheet-size-8xl.tsx",
+      "sheet-size-9xl.tsx",
+      "sheet-size-10xl.tsx",
+      "sheet-no-close-button.tsx",
       "sheet-form.tsx",
       "sheet-scrolling.tsx"
     ]
@@ -1145,11 +1231,21 @@
     "title": "Toast",
     "rsc": "client",
     "demos": [
-      "toast-statuses.tsx",
+      "toast-demo.tsx",
+      "toast-info.tsx",
+      "toast-success.tsx",
+      "toast-warning.tsx",
+      "toast-error.tsx",
+      "toast-loading.tsx",
       "toast-action.tsx",
       "toast-promise.tsx",
-      "toast-stacking.tsx",
-      "toast-placement.tsx",
+      "toast-promise-error.tsx",
+      "toast-limit.tsx",
+      "toast-top-left.tsx",
+      "toast-top-center.tsx",
+      "toast-top-right.tsx",
+      "toast-bottom-left.tsx",
+      "toast-bottom-center.tsx",
       "toast-module-manager.tsx"
     ]
   },
@@ -1189,6 +1285,19 @@
   "tooltip": {
     "title": "Tooltip",
     "rsc": "client",
-    "demos": ["tooltip-basic.tsx", "tooltip-sides.tsx", "tooltip-delay.tsx", "tooltip-controlled.tsx"]
+    "demos": [
+      "tooltip-demo.tsx",
+      "tooltip-bottom.tsx",
+      "tooltip-left.tsx",
+      "tooltip-right.tsx",
+      "tooltip-inline-start.tsx",
+      "tooltip-inline-end.tsx",
+      "tooltip-align-start.tsx",
+      "tooltip-align-end.tsx",
+      "tooltip-offset.tsx",
+      "tooltip-delay.tsx",
+      "tooltip-root-delay.tsx",
+      "tooltip-controlled.tsx"
+    ]
   }
 }

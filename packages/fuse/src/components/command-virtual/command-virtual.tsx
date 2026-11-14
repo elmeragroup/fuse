@@ -94,10 +94,7 @@ export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & 
    * height, which a single-line `Command.Item` takes, and follows a change of density.
    */
   estimateSize?: (index: number) => number;
-  /**
-   * Rows rendered beyond each edge of the visible window.
-   * @default 8
-   */
+  /** Rows rendered beyond each edge of the visible window. */
   overscan?: number;
 };
 

@@ -641,12 +641,12 @@ describe("Live code", () => {
   });
 
   it("edits a popup's part from the stage control, and applies the edit when the popup opens", async () => {
-    // Oracle: the Basic Dropdown Menu demo, whose items render only while its menu is open. Its
-    // Profile item's tag is the line above the line that reads "Profile".
+    // Oracle: the Shortcuts Dropdown Menu demo, whose items render only while its menu is open.
+    // Its Profile item's tag is the line above the line that reads "Profile".
     const lines = readDemoSource({
       section: "components",
       slug: "dropdown-menu",
-      file: "dropdown-menu-basic.tsx",
+      file: "dropdown-menu-shortcuts.tsx",
     }).source.split("\n");
     const profileLine = lines.findIndex((line) => line.includes("Profile"));
     expect(lines[profileLine - 1]?.trim()).toBe("<DropdownMenu.Item>");
@@ -654,9 +654,9 @@ describe("Live code", () => {
     const page = await context.newPage();
     await page.goto(`${docsBaseUrl()}/components/dropdown-menu`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#basic") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#shortcuts") });
     await waitForDemoHydration(frame);
-    const opener = frame.locator("[data-demo-stage]").getByRole("button", { name: "Open" });
+    const opener = frame.locator("[data-demo-stage]").getByRole("button", { name: "Account" });
     await opener.click();
     const profile = page.getByRole("menuitem", { name: /^Profile/u });
     await profile.waitFor();

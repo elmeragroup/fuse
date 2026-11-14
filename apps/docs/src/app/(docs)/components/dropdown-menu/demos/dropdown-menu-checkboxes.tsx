@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuCheckboxes() {
@@ -11,7 +10,7 @@ export function DropdownMenuCheckboxes() {
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger render={<Button variant="outline" />}>View</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger>View</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Group>
           <DropdownMenu.Label>Editor</DropdownMenu.Label>

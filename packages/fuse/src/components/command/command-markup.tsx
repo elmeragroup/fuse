@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
 import { KbdGroup } from "../kbd/kbd";
@@ -13,9 +13,19 @@ const styles = commandVariants();
 /** `Command.Footer` takes a native `div`'s props. */
 export type CommandFooterProps = ComponentProps<"div">;
 /** `Command.Hint` takes a native `span`'s props. */
-export type CommandHintProps = ComponentProps<"span">;
+export type CommandHintProps = ComponentProps<"span"> & {
+  /** The hint's `Kbd` caps, then its label, such as the cap for `↵` and "Open". */
+  children?: ReactNode;
+};
 /** `Command.Shortcut` takes `KbdGroup`'s props. */
-export type CommandShortcutProps = KbdGroupProps;
+export type CommandShortcutProps = Omit<KbdGroupProps, "children"> & {
+  /**
+   * The `Kbd` caps of one combination, pressed together. The shortcut is `aria-hidden`, so put
+   * the same combination on its row in `aria-keyshortcuts`, such as `"Alt+N"`. Fuse binds no
+   * keys, so the app listens for them.
+   */
+  children?: ReactNode;
+};
 
 /**
  * The strip under the list for key hints. It pads its content so the hints' text lines up with
@@ -26,19 +36,14 @@ export function CommandFooter({ className, ...props }: CommandFooterProps): Reac
 }
 
 /**
- * One key hint, made of its `Kbd` caps and a label, such as the cap for `↵` and "Open". A hint
- * repeats what the palette's own roles already tell assistive technology, so it is `aria-hidden`.
- * It is a server component.
+ * One key hint. A hint repeats what the palette's own roles already tell assistive technology,
+ * so it is `aria-hidden`. It is a server component.
  */
 export function CommandHint({ className, ...props }: CommandHintProps): ReactElement {
   return <span data-slot="command-hint" aria-hidden className={cn(styles.hint(), className)} {...props} />;
 }
 
-/**
- * A row's keyboard shortcut, the caps of one combination at the row's end. It is decorative, so
- * it is `aria-hidden`. Put the same shortcut on the row in `aria-keyshortcuts`, such as
- * `aria-keyshortcuts="Control+N"`. It is a server component.
- */
+/** A row's keyboard shortcut at the row's end. It is decorative, so it is `aria-hidden`. It is a server component. */
 export function CommandShortcut({ className, ...props }: CommandShortcutProps): ReactElement {
   return (
     <KbdGroup

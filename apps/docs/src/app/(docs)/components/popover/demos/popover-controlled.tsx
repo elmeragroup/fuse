@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Popover } from "@elmeragroup/fuse/popover";
 
 export function PopoverControlled() {
@@ -10,15 +9,15 @@ export function PopoverControlled() {
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger render={<Button variant="outline" />}>Details</Popover.Trigger>
+      <Popover.Trigger>Delivery window</Popover.Trigger>
       <Popover.Content>
         <Popover.Header>
-          <Popover.Title>Dimensions</Popover.Title>
-          <Popover.Description>Set the dimensions for the layer.</Popover.Description>
+          <Popover.Title>Delivery window</Popover.Title>
+          <Popover.Description>Orders placed before 14:00 ship the same day.</Popover.Description>
         </Popover.Header>
-        <Button variant="outline" onClick={() => setOpen(false)}>
-          Apply
-        </Button>
+        <button type="button" onClick={() => setOpen(false)}>
+          Got it
+        </button>
       </Popover.Content>
     </Popover.Root>
   );

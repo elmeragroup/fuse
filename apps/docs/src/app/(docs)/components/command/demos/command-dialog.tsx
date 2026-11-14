@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
 
 const COMMANDS = [
@@ -20,7 +19,7 @@ export function CommandDialog() {
   return (
     <div className="flex flex-col items-start gap-3">
       <Command.Root items={COMMANDS} open={open} onOpenChange={setOpen}>
-        <Command.Trigger render={<Button variant="outline" />}>Open command palette</Command.Trigger>
+        <Command.Trigger>Open command palette</Command.Trigger>
         <Command.Content>
           <Command.Input />
           <Command.Empty />

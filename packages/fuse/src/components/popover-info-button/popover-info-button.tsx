@@ -8,7 +8,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { definedProps } from "../../internal/defined-props";
 import { tv } from "../../styles/tv";
-import type { ButtonProps } from "../button/button";
+import type { ButtonProps, IconButtonSize, LabelButtonSize } from "../button/button";
 import { Button } from "../button/button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
@@ -65,40 +65,63 @@ export const popoverInfoButtonStyles = tv({
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | "aria-label"> &
+/**
+ * Button's `size` constraint, one branch per `ButtonProps` branch: an optional label size or a
+ * required icon size. It is spelled out, not picked from `ButtonProps`, so the API reference shows
+ * this trigger's `size` text alone instead of joining it to Button's.
+ */
+type PopoverInfoButtonSizeProps =
+  | {
+      /**
+       * The trigger's size. The default `icon-inline` square is as tall as the line it sits in, so
+       * beside a `Field.Label`'s text it centres on the label's line and keeps the label one line
+       * tall. Pass an `icon*` size for a standalone, control-sized trigger. `label` names the
+       * trigger, so no size needs an `aria-label`.
+       */
+      size?: LabelButtonSize;
+    }
+  | {
+      /**
+       * The trigger's size. The default `icon-inline` square is as tall as the line it sits in, so
+       * beside a `Field.Label`'s text it centres on the label's line and keeps the label one line
+       * tall. Pass an `icon*` size for a standalone, control-sized trigger. `label` names the
+       * trigger, so no size needs an `aria-label`.
+       */
+      size: IconButtonSize;
+    };
+
+export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | "aria-label" | "size"> &
+  PopoverInfoButtonSizeProps &
   VariantProps<typeof popoverInfoButtonStyles> & {
     /**
-     * Popover body. Inline content, such as a sentence with a `<strong>` or a link, flows as one
-     * paragraph; consecutive blocks, such as two `<p>`s or a `Popover.Header` and a `<p>`, are
-     * spaced by the small surface gap.
+     * The popover body. Inline content, such as a sentence with a `<strong>` or a link, flows as
+     * one paragraph, so translated rich text needs no wrapper. Consecutive blocks, such as two
+     * `<p>` elements or a `Popover.Header` and a `<p>`, sit the small surface gap apart.
      */
     children: ReactNode;
     /**
-     * Accessible name (`aria-label`) of the trigger and of the popup dialog. Defaults to the
-     * locale dictionary; an explicit value wins. A `Popover.Title` in `children` names the
-     * dialog instead.
+     * The accessible name of the trigger and of the popover it opens. Unset, it reads
+     * `popoverInfoButton.moreInformation`, "More information", from the locale dictionary.
+     * Prefer a label that names the topic, such as "About grid rent". A `Popover.Title` in
+     * `children` names the popover instead.
      */
     label?: string;
     /**
-     * Portal target forwarded to `Popover.Content`. Defaults to the nearest
-     * enclosing `ThemeScope` element.
+     * The element the popover renders into. Unset, it is the nearest enclosing `ThemeScope`
+     * element.
      */
     container?: OverlayContainerProps["container"];
     /**
-     * Max-width of the popover content. `sm`–`7xl` map to `max-w-sm`–`max-w-7xl`;
-     * `"default"` is `max-w-md`.
+     * The popover's maximum width. `sm` to `7xl` cap it at Tailwind's `max-w-sm` to
+     * `max-w-7xl`, and `default` at `max-w-md`. The popover is as wide as its content up to
+     * that cap.
      */
     contentSize?: VariantProps<typeof popoverInfoButtonStyles>["contentSize"];
   };
 
 /**
- * Ghost info button that opens a Popover. It defaults to the `icon-inline` square, as tall as
- * the line it sits in, so beside a `Field.Label`'s text it centres on the label's line and
- * keeps the label one line tall. Pass an `icon*` size for a standalone control-sized trigger.
- * The resolved `label`, by default the localized "More information", names both the trigger and
- * the popup dialog, so a body without a `Popover.Title` still opens a named dialog; a
- * `Popover.Title` names the dialog when present.
- * Client — Popover state and localized name.
+ * A ghost info button that opens a popover to its right. It is a client component, because it
+ * holds the popover's state and reads its name from the locale dictionary.
  */
 export function PopoverInfoButton({
   children,

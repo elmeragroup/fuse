@@ -656,7 +656,7 @@
           "type": "Align | undefined",
           "shortType": null,
           "defaultValue": "\"start\"",
-          "description": "How the popup aligns to the trigger on the cross axis.",
+          "description": "How the popup lines up with the trigger along the side it opens on.",
           "required": false,
           "values": [
             "center",
@@ -670,7 +670,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": "0",
-          "description": "Offset along the alignment axis, in pixels.",
+          "description": "The popup's shift along the side it opens on, in pixels.",
           "required": false
         },
         {
@@ -690,7 +690,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -732,7 +732,7 @@
           "type": "Side | undefined",
           "shortType": null,
           "defaultValue": "\"bottom\"",
-          "description": "Which side of the trigger the popup is placed on.",
+          "description": "The side of the trigger the popup opens on.",
           "required": false,
           "values": [
             "bottom",
@@ -749,7 +749,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": "6",
-          "description": "Distance from the trigger, in pixels.",
+          "description": "The gap between the trigger and the popup, in pixels.",
           "required": false
         },
         {

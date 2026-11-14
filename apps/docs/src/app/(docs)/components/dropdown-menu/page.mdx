@@ -3,12 +3,24 @@ lede: >
   Actions and options in a menu that opens from a trigger.
 ---
 
-import { DropdownMenuBasic } from "./demos/dropdown-menu-basic";
+import { DropdownMenuDemo } from "./demos/dropdown-menu-demo";
+import { DropdownMenuTop } from "./demos/dropdown-menu-top";
+import { DropdownMenuLeft } from "./demos/dropdown-menu-left";
+import { DropdownMenuRight } from "./demos/dropdown-menu-right";
+import { DropdownMenuInlineStart } from "./demos/dropdown-menu-inline-start";
+import { DropdownMenuInlineEnd } from "./demos/dropdown-menu-inline-end";
+import { DropdownMenuAlignCenter } from "./demos/dropdown-menu-align-center";
+import { DropdownMenuAlignEnd } from "./demos/dropdown-menu-align-end";
+import { DropdownMenuOffset } from "./demos/dropdown-menu-offset";
+import { DropdownMenuGroupLabel } from "./demos/dropdown-menu-group-label";
+import { DropdownMenuShortcuts } from "./demos/dropdown-menu-shortcuts";
+import { DropdownMenuDestructive } from "./demos/dropdown-menu-destructive";
+import { DropdownMenuDisabled } from "./demos/dropdown-menu-disabled";
+import { DropdownMenuInset } from "./demos/dropdown-menu-inset";
 import { DropdownMenuCheckboxes } from "./demos/dropdown-menu-checkboxes";
 import { DropdownMenuRadioGroup } from "./demos/dropdown-menu-radio-group";
 import { DropdownMenuSubmenu } from "./demos/dropdown-menu-submenu";
 import { DropdownMenuLinks } from "./demos/dropdown-menu-links";
-import { DropdownMenuDestructive } from "./demos/dropdown-menu-destructive";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,36 +28,118 @@ export const metadata = componentMetadata("dropdown-menu");
 
 <ComponentIntro slug="dropdown-menu" />
 
-<Demo slug="dropdown-menu" id="basic" title="Basic" file="dropdown-menu-basic.tsx">
-  <DropdownMenuBasic />
+<DefaultDemo slug="dropdown-menu" file="dropdown-menu-demo.tsx">
+  <DropdownMenuDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
+
+<DropdownMenu.Root>
+  <DropdownMenu.Trigger>Account</DropdownMenu.Trigger>
+  <DropdownMenu.Content>
+    <DropdownMenu.Item>Profile</DropdownMenu.Item>
+    <DropdownMenu.Item>Log out</DropdownMenu.Item>
+  </DropdownMenu.Content>
+</DropdownMenu.Root>
+```
+
+## Examples
+
+<Demo slug="dropdown-menu" id="top" title="Top" level={3} file="dropdown-menu-top.tsx">
+  <DropdownMenuTop />
 </Demo>
 
-<Demo slug="dropdown-menu" id="checkboxes" title="Checkboxes" file="dropdown-menu-checkboxes.tsx">
+<Demo slug="dropdown-menu" id="left" title="Left" level={3} file="dropdown-menu-left.tsx">
+  <DropdownMenuLeft />
+</Demo>
+
+<Demo slug="dropdown-menu" id="right" title="Right" level={3} file="dropdown-menu-right.tsx">
+  <DropdownMenuRight />
+</Demo>
+
+<Demo
+  slug="dropdown-menu"
+  id="inline-start"
+  title="Inline start"
+  level={3}
+  file="dropdown-menu-inline-start.tsx">
+  <DropdownMenuInlineStart />
+</Demo>
+
+<Demo slug="dropdown-menu" id="inline-end" title="Inline end" level={3} file="dropdown-menu-inline-end.tsx">
+  <DropdownMenuInlineEnd />
+</Demo>
+
+<Demo
+  slug="dropdown-menu"
+  id="align-center"
+  title="Align center"
+  level={3}
+  file="dropdown-menu-align-center.tsx">
+  <DropdownMenuAlignCenter />
+</Demo>
+
+<Demo slug="dropdown-menu" id="align-end" title="Align end" level={3} file="dropdown-menu-align-end.tsx">
+  <DropdownMenuAlignEnd />
+</Demo>
+
+<Demo slug="dropdown-menu" id="offset" title="Offset" level={3} file="dropdown-menu-offset.tsx">
+  <DropdownMenuOffset />
+</Demo>
+
+<Demo
+  slug="dropdown-menu"
+  id="group-label"
+  title="Group with a label"
+  level={3}
+  file="dropdown-menu-group-label.tsx">
+  <DropdownMenuGroupLabel />
+</Demo>
+
+<Demo slug="dropdown-menu" id="shortcuts" title="Shortcuts" level={3} file="dropdown-menu-shortcuts.tsx">
+  <DropdownMenuShortcuts />
+</Demo>
+
+<Demo
+  slug="dropdown-menu"
+  id="destructive"
+  title="Destructive item"
+  level={3}
+  file="dropdown-menu-destructive.tsx">
+  <DropdownMenuDestructive />
+</Demo>
+
+<Demo slug="dropdown-menu" id="disabled" title="Disabled item" level={3} file="dropdown-menu-disabled.tsx">
+  <DropdownMenuDisabled />
+</Demo>
+
+<Demo slug="dropdown-menu" id="inset" title="Inset" level={3} file="dropdown-menu-inset.tsx">
+  <DropdownMenuInset />
+</Demo>
+
+<Demo slug="dropdown-menu" id="checkboxes" title="Checkboxes" level={3} file="dropdown-menu-checkboxes.tsx">
   <DropdownMenuCheckboxes />
 </Demo>
 
-<Demo slug="dropdown-menu" id="radio-group" title="Radio group" file="dropdown-menu-radio-group.tsx">
+<Demo
+  slug="dropdown-menu"
+  id="radio-group"
+  title="Radio group"
+  level={3}
+  file="dropdown-menu-radio-group.tsx">
   <DropdownMenuRadioGroup />
 </Demo>
 
-`DropdownMenu.RadioGroup` is generic over the selected value's string union, so `value` and
-`onValueChange` agree by type. Item values are **not** checked against that union:
-`DropdownMenu.RadioItem` keeps the primitive's own value type, so a mistyped item value still
-compiles.
-
-`DropdownMenu.Label` renders the primitive's group label, so it must sit inside a
-`DropdownMenu.Group`; it labels the items of the group it belongs to.
-
-<Demo slug="dropdown-menu" id="submenu" title="Submenu" file="dropdown-menu-submenu.tsx">
+<Demo slug="dropdown-menu" id="submenu" title="Submenu" level={3} file="dropdown-menu-submenu.tsx">
   <DropdownMenuSubmenu />
 </Demo>
 
-<Demo slug="dropdown-menu" id="links" title="Links" file="dropdown-menu-links.tsx">
+<Demo slug="dropdown-menu" id="links" title="Links" level={3} file="dropdown-menu-links.tsx">
   <DropdownMenuLinks />
-</Demo>
-
-<Demo slug="dropdown-menu" id="destructive" title="Destructive" file="dropdown-menu-destructive.tsx">
-  <DropdownMenuDestructive />
 </Demo>
 
 <ApiReference slug="dropdown-menu" />

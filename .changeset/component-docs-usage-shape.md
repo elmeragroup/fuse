@@ -24,3 +24,22 @@ when a panel drops its padding for a table. `Item.Root` documents link rows and 
 documents fixed and max heights on `className`. `Text` and `Span` declare the `variant`, `size`
 and `weight` defaults they already had, and `Span` its `snug` leading, so the API reference shows
 them.
+
+`Alert`, `AlertDialog`, `Dialog`, `Sheet`, `Popover`, `PopoverInfoButton`, `Tooltip`, `Toast`,
+`DropdownMenu` and `Command` now document their rules on the props they concern. `Alert.Root`
+documents its live-region `role` and its text parts on `children`. `AlertDialog.Content`
+documents its initial focus on `variant` and when to close on `isAutomaticallyCloseOnActionEnabled`.
+`Dialog.Content` and `Sheet.Content` document each `size`, and `Sheet.Content` says the size applies
+only to the left and right sides from `sm` up. `Popover.Content` documents the trigger's role
+beside `anchor`. `PopoverInfoButton` documents its trigger `size` and its `label`. `Tooltip`
+documents shared and own delays. `Toast.Provider` documents one provider and viewport per app on
+`children`, `Toast.useToastManager` documents the `promise` lifecycle and its returned promise,
+and `Toast.Close` names the `overlay.close` dictionary entry it reads.
+`DropdownMenu.Group` documents its label on `children`, `inset` says it lines text up with items
+that start with an icon, and `DropdownMenu.RadioGroup` says its
+`value` type does not check item values. `Command` documents its search, stack, dialog, list,
+status and shortcut rules on `open`, `onOpenChange`, `pages`, `defaultPages`, `items`, `value`,
+`defaultValue`, `autoHighlight`, `virtualized`, `Command.Content`'s `aria-label` and `children`, `Command.Input`'s `aria-label` and
+`placeholder`, `Command.List`'s `children` and `render`, `Command.Empty`'s and `Command.Status`'s
+`children`, `Command.Item`'s `onClick` and `Command.Shortcut`'s `children`. `Dialog.Content` and
+`Sheet.Content` declare the `md` size default they already had, so the API reference shows it.

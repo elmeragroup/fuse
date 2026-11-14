@@ -3,9 +3,17 @@ lede: >
   A short label that appears when a control is hovered or focused.
 ---
 
-import { TooltipBasic } from "./demos/tooltip-basic";
-import { TooltipSides } from "./demos/tooltip-sides";
+import { TooltipDemo } from "./demos/tooltip-demo";
+import { TooltipBottom } from "./demos/tooltip-bottom";
+import { TooltipLeft } from "./demos/tooltip-left";
+import { TooltipRight } from "./demos/tooltip-right";
+import { TooltipInlineStart } from "./demos/tooltip-inline-start";
+import { TooltipInlineEnd } from "./demos/tooltip-inline-end";
+import { TooltipAlignStart } from "./demos/tooltip-align-start";
+import { TooltipAlignEnd } from "./demos/tooltip-align-end";
+import { TooltipOffset } from "./demos/tooltip-offset";
 import { TooltipDelay } from "./demos/tooltip-delay";
+import { TooltipRootDelay } from "./demos/tooltip-root-delay";
 import { TooltipControlled } from "./demos/tooltip-controlled";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -14,19 +22,65 @@ export const metadata = componentMetadata("tooltip");
 
 <ComponentIntro slug="tooltip" />
 
-<Demo slug="tooltip" id="basic" title="Basic" file="tooltip-basic.tsx">
-  <TooltipBasic />
+<DefaultDemo slug="tooltip" file="tooltip-demo.tsx">
+  <TooltipDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Tooltip } from "@elmeragroup/fuse/tooltip";
+
+<Tooltip.Root>
+  <Tooltip.Trigger>Grid rent</Tooltip.Trigger>
+  <Tooltip.Content>The fee for using the electricity grid</Tooltip.Content>
+</Tooltip.Root>
+```
+
+## Examples
+
+<Demo slug="tooltip" id="bottom" title="Bottom" level={3} file="tooltip-bottom.tsx">
+  <TooltipBottom />
 </Demo>
 
-<Demo slug="tooltip" id="sides" title="Sides" file="tooltip-sides.tsx">
-  <TooltipSides />
+<Demo slug="tooltip" id="left" title="Left" level={3} file="tooltip-left.tsx">
+  <TooltipLeft />
 </Demo>
 
-<Demo slug="tooltip" id="delay" title="Delay" file="tooltip-delay.tsx">
+<Demo slug="tooltip" id="right" title="Right" level={3} file="tooltip-right.tsx">
+  <TooltipRight />
+</Demo>
+
+<Demo slug="tooltip" id="inline-start" title="Inline start" level={3} file="tooltip-inline-start.tsx">
+  <TooltipInlineStart />
+</Demo>
+
+<Demo slug="tooltip" id="inline-end" title="Inline end" level={3} file="tooltip-inline-end.tsx">
+  <TooltipInlineEnd />
+</Demo>
+
+<Demo slug="tooltip" id="align-start" title="Align start" level={3} file="tooltip-align-start.tsx">
+  <TooltipAlignStart />
+</Demo>
+
+<Demo slug="tooltip" id="align-end" title="Align end" level={3} file="tooltip-align-end.tsx">
+  <TooltipAlignEnd />
+</Demo>
+
+<Demo slug="tooltip" id="offset" title="Offset" level={3} file="tooltip-offset.tsx">
+  <TooltipOffset />
+</Demo>
+
+<Demo slug="tooltip" id="delay" title="Shared delay" level={3} file="tooltip-delay.tsx">
   <TooltipDelay />
 </Demo>
 
-<Demo slug="tooltip" id="controlled" title="Controlled" file="tooltip-controlled.tsx">
+<Demo slug="tooltip" id="root-delay" title="Own delay" level={3} file="tooltip-root-delay.tsx">
+  <TooltipRootDelay />
+</Demo>
+
+<Demo slug="tooltip" id="controlled" title="Controlled" level={3} file="tooltip-controlled.tsx">
   <TooltipControlled />
 </Demo>
 

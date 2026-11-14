@@ -97,7 +97,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "description": "The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary.",
           "required": false
         },
         {
@@ -117,16 +117,16 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Renders the built-in corner dismiss affordance — the shared overlay close helper (`Button variant=\"ghost\" size=\"icon-sm\"`) as a `Sheet.Close`.",
+          "description": "Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner.",
           "required": false
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The panel's maximum width on the `left` and `right` sides, from the `sm` breakpoint up. `sm` to `7xl` cap it at Tailwind's container width of the same name, and `8xl`, `9xl` and `10xl` at 1366px, 1536px and 1920px, never past 90% of the viewport's width. Below `sm`, and always on the `top` and `bottom` sides, the panel is full width and `size` does nothing.",
           "required": false,
           "values": [
             "10xl",

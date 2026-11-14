@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
 
 type SettingPage = "language" | "theme";
@@ -47,7 +46,7 @@ export function CommandEscapeBack() {
           }
           setOpen(next);
         }}>
-        <Command.Trigger render={<Button variant="outline" />}>Change settings</Command.Trigger>
+        <Command.Trigger>Change settings</Command.Trigger>
         <Command.Content>
           <Command.Page id="settings" label="Settings" items={SETTINGS}>
             <Command.Input />

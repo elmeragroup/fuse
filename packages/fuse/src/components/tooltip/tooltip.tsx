@@ -25,27 +25,28 @@ const TooltipDescriptionContext = createContext<TooltipDescription | null>(null)
 
 export type TooltipProviderProps = Omit<ComponentProps<typeof TooltipPrimitive.Provider>, "delay"> & {
   /**
-   * Shared open delay for every tooltip in this group, in milliseconds. Instant by
-   * default — the ref overrides base-ui's 600ms. Tooltips in this group also share
-   * skip-delay hand-off: after one opens, moving to a neighbor skips the wait.
-   * @default 0
+   * The open delay for every tooltip in the group, in milliseconds. It defaults to `0`, where
+   * Base UI's own default is 600ms. Once one tooltip in the group has opened, the next one
+   * opens without the delay if the first closed less than `timeout` ago, 400ms by default.
    */
   delay?: number;
 };
 
+/** Groups tooltips so they share an open delay. */
 export function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
   return <TooltipPrimitive.Provider delay={delay} {...props} />;
 }
 
 export type TooltipRootProps = ComponentProps<typeof TooltipPrimitive.Root> & {
   /**
-   * When set, wraps this Root in a nested scoped Provider with that delay. That
-   * tooltip then forms its own provider group: it no longer participates in the
-   * outer Provider's shared delay or skip-delay hand-off.
+   * This tooltip's open delay, in milliseconds. Setting it wraps the tooltip in a provider of
+   * its own, so it leaves the outer `Tooltip.Provider`'s group. It no longer takes that group's
+   * delay, and moving to it from another tooltip does not skip the wait.
    */
   delay?: number;
 };
 
+/** Holds one tooltip's open state and connects its trigger to its popup. */
 export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement {
   const generatedId = useId();
   const [mountedId, setMountedId] = useState<string | null>(null);
@@ -64,6 +65,11 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
   return root;
 }
 
+/**
+ * Opens the tooltip on hover and focus. It renders a plain `button`; pass `render` to render
+ * another element. While the tooltip is mounted, the trigger's `aria-describedby` names it,
+ * after any ids you pass.
+ */
 export function TooltipTrigger({
   "aria-describedby": describedBy,
   className,
@@ -88,17 +94,15 @@ export function TooltipTrigger({
 
 export type TooltipContentProps = Omit<ComponentProps<typeof TooltipPrimitive.Popup>, "id"> &
   Omit<OverlayPositionerProps<ComponentProps<typeof TooltipPrimitive.Positioner>>, "side"> & {
-    /** Popup id used in the trigger description while mounted. Defaults to a stable generated id. */
+    /** The popup's id, which the trigger's `aria-describedby` names while the popup is mounted. Unset, it is a generated id. */
     id?: ComponentProps<typeof TooltipPrimitive.Popup>["id"];
-    /**
-     * Which side of the trigger the popup is placed on. Tooltips open upward by default.
-     */
+    /** The side of the trigger the popup opens on. */
     side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
   } & OverlayContainerProps;
 
 /**
- * The Tooltip popup. It publishes `--inner-corner`, its corner less its padding, for parts that
- * round with `rounded-inner`.
+ * The tooltip popup, with its arrow, positioner and portal. It publishes `--inner-corner`, its
+ * corner less its padding, for parts that round with `rounded-inner`.
  */
 export function TooltipContent({
   id,

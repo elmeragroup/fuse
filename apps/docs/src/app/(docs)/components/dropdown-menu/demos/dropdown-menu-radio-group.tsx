@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
 export function DropdownMenuRadioGroup() {
@@ -10,7 +9,7 @@ export function DropdownMenuRadioGroup() {
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger render={<Button variant="outline" />}>Panel</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger>Panel</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.RadioGroup value={panel} onValueChange={setPanel}>
           <DropdownMenu.Label>Visible panel</DropdownMenu.Label>

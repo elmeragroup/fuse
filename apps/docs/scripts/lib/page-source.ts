@@ -66,6 +66,7 @@ export type ComponentPageSource = {
  */
 export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
   ["form", "Form only routes errors through the Field parts and field components inside it."],
+  ["command", "Command's parts change role with the Root's search or page stack and with Content."],
 ]);
 
 const FRONTMATTER_FENCE = "---";

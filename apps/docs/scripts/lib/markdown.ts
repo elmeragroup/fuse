@@ -152,7 +152,7 @@ function renderFacts(component: DocsComponent): string[] {
   const stylesheet = ENTRY_STYLESHEETS.get(component.apis[0].entry);
   return [
     // One import line per entry the API reference documents, the page's own first.
-    ...component.apis.map(({ entry }) => `- Import: \`import { ... } from "${entry}";\``),
+    ...component.apis.map(importLine),
     ...(stylesheet === undefined
       ? []
       : [`- Stylesheet: \`import "${stylesheet}";\`, once, beside Fuse's own`]),
@@ -187,10 +187,17 @@ function renderSections(component: DocsComponent): string[] {
   });
 }
 
+/** The import line of one entry the API reference documents. */
+function importLine({ entry }: { readonly entry: string }): string {
+  return `- Import: \`import { ... } from "${entry}";\``;
+}
+
 /**
  * Renders one component's markdown endpoint: the H1 and lede, the intro, the import, RSC and
  * source facts, the page's sections in page order, the API reference and the tokens. A page in
- * the Usage shape shows no import list or RSC line, so its mirror leaves the facts out too.
+ * the Usage shape shows no import list or RSC line, so its mirror leaves the facts out too. Its
+ * Usage code imports only the page's own entry, so the mirror still lists the import of each
+ * extra entry, such as `@elmeragroup/fuse/command-virtual` on the Command page.
  */
 export function renderComponentMarkdown(component: DocsComponent): string {
   return finishMarkdown([
@@ -199,7 +206,7 @@ export function renderComponentMarkdown(component: DocsComponent): string {
     component.lede,
     "",
     ...(component.intro === "" ? [] : [component.intro, ""]),
-    ...(component.usage === null ? renderFacts(component) : []),
+    ...(component.usage === null ? renderFacts(component) : [...component.apis.slice(1).map(importLine), ""]),
     ...renderSections(component),
     "## API reference",
     "",

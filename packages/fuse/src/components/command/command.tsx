@@ -64,14 +64,24 @@ const styles = commandVariants();
 /** The Dialog.Root props the palette's dialog takes, with Base UI's own types. */
 type CommandDialogStateProps = Pick<
   DialogRootProps,
-  | "open"
-  | "defaultOpen"
-  | "onOpenChange"
-  | "onOpenChangeComplete"
-  | "modal"
-  | "disablePointerDismissal"
-  | "actionsRef"
->;
+  "defaultOpen" | "onOpenChangeComplete" | "modal" | "disablePointerDismissal" | "actionsRef"
+> & {
+  /**
+   * Whether `Command.Content` is open. Pass it with `onOpenChange` to control the dialog, such as
+   * to open the palette from a button outside the Root or from a keyboard shortcut, since
+   * `Command.Trigger` works only inside the Root. Closing returns focus to the element that had
+   * it when the palette opened.
+   */
+  open?: DialogRootProps["open"];
+  /**
+   * Runs when the dialog opens or closes, with Base UI Dialog's event details. Escape closes the
+   * dialog from any page. To make Escape go back a page first, control `pages` and `open`, and
+   * when `eventDetails.reason` is `"escape-key"` and the stack has a page to go back to, call
+   * `eventDetails.cancel()` and pop the stack. A controlled stack keeps its pages when the
+   * palette closes, so set it back to the first page here when the palette opens.
+   */
+  onOpenChange?: DialogRootProps["onOpenChange"];
+};
 
 type CommandPaletteContextValue = {
   /** Joins `Command.Trigger` to the Dialog.Root that `Command.Content` renders. */
@@ -116,14 +126,26 @@ type CommandNoSearchProps = {
 /** A stack of page ids, controlled with `pages` or uncontrolled from `defaultPages`. */
 type CommandStackProps =
   | {
-      /** The page ids from the first page to the one on top. Pass it to control the stack. */
+      /**
+       * The page ids from the first page to the one on top. Pass it with `onPagesChange` to
+       * control the stack, such as to open the palette on a page of an entity's actions. A Root
+       * with a stack takes no search props, because each `Command.Page` holds its own search.
+       */
       pages: readonly string[];
       defaultPages?: never;
       /** The Root calls it with the next stack after a push or a pop. */
       onPagesChange?: ((pages: string[]) => void) | undefined;
     }
   | {
-      /** The page ids the stack starts with, from the first page to the one on top. */
+      /**
+       * The page ids the stack starts with, from the first page to the one on top. A Root with
+       * `Command.Content` sets the stack back to `defaultPages` when the close animation ends or
+       * an opening interrupts the close. With `defaultPages={["home"]}`, a user who goes to
+       * another page and closes the palette finds `home` on the next opening. The Root reads
+       * `defaultPages` at that reset, so a changed value takes effect from the next reset. Control
+       * `pages` to open on a given page. A Root with a stack takes no search props, because each
+       * `Command.Page` holds its own search.
+       */
       defaultPages: readonly string[];
       pages?: never;
       /** The Root calls it with the next stack after a push or a pop. */
@@ -167,8 +189,9 @@ export type CommandRootProps<
  * Pass `grouped` when `items` are groups, and the callbacks receive one item of a group. Each
  * opening of the dialog starts fresh, even one that interrupts the close animation. An
  * uncontrolled query goes back to `defaultValue`, an uncontrolled stack goes back to
- * `defaultPages`, the highlight goes back to the first match, and `Command.Content`'s children
- * mount fresh. The Trigger and anything else outside `Command.Content` keep their state.
+ * `defaultPages`, and `Command.Content`'s children mount fresh. The highlight clears, and the
+ * default `autoHighlight="always"` puts it back on the first match. The Trigger and anything
+ * else outside `Command.Content` keep their state.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -294,7 +317,7 @@ export type CommandPageProps<
   Groups extends readonly ItemGroup[] = readonly ItemGroup[],
   Grouped extends boolean | undefined = false,
 > = CommandSearchProps<Item, Groups, Grouped> & {
-  /** The id `Command.PageTrigger` pushes and the Root's stack holds. */
+  /** The id `Command.PageTrigger` pushes and the Root's stack holds. The page renders only while its id is on top. */
   id: string;
   /** The page's name, which also names the page's `Command.Input` unless the input has its own. */
   label: string;
@@ -358,8 +381,23 @@ export function CommandTrigger(props: CommandTriggerProps): ReactElement {
   return <DialogTrigger data-slot="command-trigger" handle={handle} {...props} />;
 }
 
+type CommandPopupProps = ComponentProps<typeof DialogPrimitive.Popup>;
+
 /** `Command.Content` takes Base UI Dialog Popup's props plus the portal container. */
-export type CommandContentProps = ComponentProps<typeof DialogPrimitive.Popup> & OverlayContainerProps;
+export type CommandContentProps = Omit<CommandPopupProps, "aria-label" | "children"> &
+  OverlayContainerProps & {
+    /**
+     * The dialog's name. Unset, it reads `command.dialogLabel`, "Command palette", from the
+     * locale dictionary. A `Dialog.Title` inside the content names the dialog instead.
+     */
+    "aria-label"?: CommandPopupProps["aria-label"];
+    /**
+     * The palette's parts. Pass them as children, not through `render`. Each opening mounts the
+     * children fresh, even one that interrupts the close animation, while content a `render`
+     * element or function writes itself keeps its state then.
+     */
+    children?: CommandPopupProps["children"];
+  };
 
 /**
  * The palette as a modal. It renders the Dialog's portal and overlay around a palette-wide popup
@@ -411,14 +449,23 @@ export function CommandContent({
   );
 }
 
+type CommandAutocompleteInputProps = ComponentProps<typeof AutocompletePrimitive.Input>;
+
 /**
  * `Command.Input` takes Base UI Autocomplete Input's props, with the class and children on the
  * group.
  */
 export type CommandInputProps = Omit<
-  ComponentProps<typeof AutocompletePrimitive.Input>,
-  "className" | "children"
+  CommandAutocompleteInputProps,
+  "className" | "children" | "aria-label" | "placeholder"
 > & {
+  /**
+   * The field's name. Unset, it is the enclosing `Command.Page`'s `label`, or in a palette
+   * without pages `command.inputLabel`, "Search commands", from the locale dictionary.
+   */
+  "aria-label"?: CommandAutocompleteInputProps["aria-label"];
+  /** The field's placeholder. Unset, it reads `command.placeholder` from the locale dictionary. */
+  placeholder?: CommandAutocompleteInputProps["placeholder"];
   /** Extra classes for the outer InputGroup, not the input element. */
   className?: string;
   /**
@@ -488,10 +535,7 @@ export function CommandInput({
 
 /** `Command.Back` takes a label-sized Button's props, with the size and icon fixed. */
 export type CommandBackProps = Omit<LabelButtonProps, "size" | "children"> & {
-  /**
-   * The accessible name. An explicit `aria-label` wins over it, and both default to the locale
-   * dictionary's.
-   */
+  /** The accessible name. An `aria-label` wins over it. Unset, both read `command.back` from the locale dictionary. */
   label?: string;
 };
 
@@ -528,8 +572,26 @@ export function CommandBack({
   );
 }
 
+type CommandAutocompleteListProps = ComponentProps<typeof AutocompletePrimitive.List>;
+
 /** `Command.List` takes Base UI Autocomplete List's props. */
-export type CommandListProps = ComponentProps<typeof AutocompletePrimitive.List>;
+export type CommandListProps = Omit<CommandAutocompleteListProps, "children" | "render"> & {
+  /**
+   * The rows, as a row function over the filtered items or as elements. A row function takes its
+   * item type from your annotation, such as `(entry: Entry) =>`. In a `virtualized` search, a row
+   * function needs a `render` value, or the list throws.
+   */
+  children?: CommandAutocompleteListProps["children"];
+  /**
+   * The list element. Beside a row function, the rendered element receives the row function as
+   * `children`, with Base UI's listbox props and no rendered rows, and decides which rows mount.
+   * In a `virtualized` search, pass `<CommandVirtual.List />`, and keep `Command.List` out of a
+   * `ScrollArea`, because the virtual list is its own scroll element. Beside other children, `render`
+   * keeps Base UI's meaning, so a virtualizer of your own can pass `Command.Item` elements, each
+   * with its `index`.
+   */
+  render?: CommandAutocompleteListProps["render"];
+};
 
 type CommandListRender = NonNullable<CommandListProps["render"]>;
 
@@ -614,16 +676,19 @@ export function CommandList({ className, ...props }: CommandListProps): ReactEle
   );
 }
 
+type CommandAutocompleteEmptyProps = ComponentProps<typeof AutocompletePrimitive.Empty>;
+
+/** `Command.Empty` takes Base UI Autocomplete Empty's props. */
+export type CommandEmptyProps = Omit<CommandAutocompleteEmptyProps, "children"> & {
+  /** The message shown while no item matches. Unset, it reads `command.empty` from the locale dictionary. */
+  children?: CommandAutocompleteEmptyProps["children"];
+};
+
 /**
- * The message shown while no item matches, the locale dictionary's by default. Base UI keeps it
- * mounted as a polite live region and renders its children only while the list is empty. Place
- * it beside `Command.List`, not inside it.
+ * The message shown while no item matches. Base UI keeps it mounted as a polite live region and
+ * renders its children only while the list is empty.
  */
-export function CommandEmpty({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof AutocompletePrimitive.Empty>): ReactElement {
+export function CommandEmpty({ className, children, ...props }: CommandEmptyProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   return (
     <AutocompletePrimitive.Empty
@@ -635,16 +700,20 @@ export function CommandEmpty({
   );
 }
 
-/**
- * A polite live region for the search's state, such as "Searching…", an error or the number of
- * results. Screen readers announce each change of its children. It announces only while it stays
- * mounted, so render the message as its children and leave it empty when there is nothing to say.
- * Place it between `Command.Input` and `Command.List`.
- */
-export function CommandStatus({
-  className,
-  ...props
-}: ComponentProps<typeof AutocompletePrimitive.Status>): ReactElement {
+type CommandAutocompleteStatusProps = ComponentProps<typeof AutocompletePrimitive.Status>;
+
+/** `Command.Status` takes Base UI Autocomplete Status's props. */
+export type CommandStatusProps = Omit<CommandAutocompleteStatusProps, "children"> & {
+  /**
+   * The message to announce, such as "Searching…", an error or the number of results. Screen
+   * readers announce each change. The region announces only while it stays mounted, so change
+   * its children, and leave them empty when there is nothing to say.
+   */
+  children?: CommandAutocompleteStatusProps["children"];
+};
+
+/** A polite live region for the search's state. Place it between `Command.Input` and `Command.List`. */
+export function CommandStatus({ className, ...props }: CommandStatusProps): ReactElement {
   return (
     <AutocompletePrimitive.Status
       data-slot="command-status"
@@ -685,8 +754,16 @@ export function CommandCollection(
   return <AutocompletePrimitive.Collection {...props} />;
 }
 
+type CommandAutocompleteItemProps = ComponentProps<typeof AutocompletePrimitive.Item>;
+
 /** `Command.Item` takes Base UI Autocomplete Item's props. */
-export type CommandItemProps = ComponentProps<typeof AutocompletePrimitive.Item>;
+export type CommandItemProps = Omit<CommandAutocompleteItemProps, "onClick"> & {
+  /**
+   * Runs when the user clicks the row, and when they press Enter while it is highlighted. The
+   * arrow keys move the highlight, which Base UI marks with `data-highlighted`.
+   */
+  onClick?: CommandAutocompleteItemProps["onClick"];
+};
 
 type CommandItemStyle = CommandItemProps["style"];
 
@@ -717,10 +794,10 @@ function rowProps(row: CommandRow | null, style: CommandItemStyle) {
 }
 
 /**
- * One result row. Its `onClick` runs on a click, and on Enter while the row is highlighted. Base
- * UI's `data-highlighted` is its only highlight. Give it a `value` when the search has no `items`.
- * When it shows a `Command.Shortcut`, put the same shortcut in its `aria-keyshortcuts`. In a
- * virtual list it takes its index, position and measurement from the list.
+ * One result row. Base UI's `data-highlighted` is its only highlight. Give it a `value` when the
+ * search has no `items`. When it shows a `Command.Shortcut`, put the same shortcut in its
+ * `aria-keyshortcuts`. In a virtual list it takes its index, position and measurement from the
+ * list.
  */
 export function CommandItem({ className, ref, style, ...props }: CommandItemProps): ReactElement {
   const row = use(CommandRowContext);
@@ -738,7 +815,10 @@ export function CommandItem({ className, ref, style, ...props }: CommandItemProp
 
 /** `Command.PageTrigger` takes `Command.Item`'s props plus the page it opens. */
 export type CommandPageTriggerProps = CommandItemProps & {
-  /** The id of the `Command.Page` this row opens. */
+  /**
+   * The id of the `Command.Page` this row opens on click or Enter. Call `preventDefault()` in
+   * `onClick` to keep the page closed.
+   */
   page: string;
 };
 
