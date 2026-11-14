@@ -106,8 +106,8 @@ export type ChartRootProps<
     /**
      * One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig`
      * with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`,
-     * `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies
-     * ChartConfig`, so a misspelt literal `qualityKey` fails the type.
+     * `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it
+     * `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type.
      *
      * Series that share a `stack` id stack in one column. A series `interval` coarser than Root's,
      * such as hourly usage under quarter-hour prices, draws each value across the Root slots of its

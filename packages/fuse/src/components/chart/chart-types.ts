@@ -497,8 +497,8 @@ export type ChartFigureProps = Omit<
    * Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and
    * the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as
    * Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the
-   * fallback. On a fill of your own, set both beside it, such as `{ background: "var(--muted)",
-   * "--surface": "var(--muted)", "--surface-muted-foreground": "var(--muted-foreground)" }`. A
+   * fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set
+   * `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A
    * translucent tint keeps the surface beneath it, and an image or a gradient has no colour for
    * the cut-outs to match.
    */

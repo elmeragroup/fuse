@@ -1150,7 +1150,7 @@ export type ClockChartReferenceLineProps = ChartLayerProps & ({
 };
 
 // @beta
-function ClockChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartKeyOf<TRow, ChartInstant>, const TCycle extends ChartClockCycle>(props: ClockChartRootProps<TRow, TConfig, TXKey, TCycle>): ReactElement;
+function ClockChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartKeyOf<TRow, ChartInstant>, const TCycle extends ChartClockCycle>(input: ClockChartRootProps<TRow, TConfig, TXKey, TCycle>): ReactElement;
 
 // @beta
 export type ClockChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartKeyOf<TRow, ChartInstant> = ChartKeyOf<TRow, ChartInstant>, TCycle extends ChartClockCycle = ChartClockCycle> = ChartAccessibleName & ChartFigureProps & ChartSelectionProps<keyof TConfig & string> & {
@@ -2134,7 +2134,9 @@ export function Sparkline(props: SparklineProps): ReactElement;
 export function SparklineHover(input: SparklineHoverProps): ReactElement;
 
 // @beta
-export type SparklineHoverProps = useRender.ComponentProps<"div">;
+export type SparklineHoverProps = useRender.ComponentProps<"div"> & {
+    children?: useRender.ComponentProps<"div">["children"];
+};
 
 // @beta
 export type SparklineProps = ChartLayerProps & {
