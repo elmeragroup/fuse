@@ -35,23 +35,40 @@ export function useAttachmentOrientation(): AttachmentOrientation {
 /** The upload lifecycle an attachment shows. */
 export type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
 
+type AttachmentRootVariantProps = Pick<VariantProps<typeof attachmentVariants>, "size" | "orientation">;
+
 /** `Attachment.Root` takes a native `div`'s props plus the lifecycle and layout props. */
 export type AttachmentRootProps = ComponentProps<"div"> &
-  Pick<VariantProps<typeof attachmentVariants>, "size" | "orientation"> & {
+  AttachmentRootVariantProps & {
     /**
-     * The upload lifecycle, written to `data-state`. It only styles: `idle` dashes the border,
-     * `uploading` and `processing` sweep the title and dim image media, and `error` tints the
-     * border, the media and the description. Say the state in words in `Attachment.Description`.
+     * The upload lifecycle, written to `data-state`. Your app picks and uploads the files, and
+     * sets `state` as the upload moves on. It only styles: `idle` dashes the border, `uploading`
+     * and `processing` sweep a highlight across the title and dim image media, and `error` tints
+     * the border, the media and the description with the error role. Under reduced motion, the
+     * title stays still. The error state is a colour, so say the state, and the reason an upload
+     * failed, in words in `Attachment.Description`.
      */
     state?: AttachmentState;
+    /** The padding, the media and the text size. */
+    size?: AttachmentRootVariantProps["size"];
+    /**
+     * The layout, written to `data-orientation`. `horizontal` lays the media beside the content.
+     * `vertical` stacks a tile with the media on top, and its actions float in the media's top end
+     * corner on a `secondary` fill, so they stay visible on any photo.
+     */
+    orientation?: AttachmentRootVariantProps["orientation"];
+    /**
+     * The parts of one file: `Attachment.Media` with an icon or a picture, `Attachment.Content`
+     * with the `Attachment.Title` and `Attachment.Description`, and `Attachment.Actions` with one
+     * `Attachment.Action` per action. An `Attachment.Trigger` goes before `Attachment.Actions`.
+     */
+    children?: ComponentProps<"div">["children"];
   };
 
 /**
- * One file or image. `orientation="horizontal"` lays the media beside the content, and
- * `"vertical"` stacks a tile with the media on top. `size` sets the padding and type. Inside
- * `Attachment.Group` it is a list item. It publishes `--inner-corner`, its corner less its border
- * and padding, for parts that round with `rounded-inner`. A root holding an `Attachment.Trigger`
- * takes a hover fill.
+ * One file or image. Inside `Attachment.Group` it is a list item. It publishes `--inner-corner`,
+ * its corner less its border and padding, for parts that round with `rounded-inner`. A root
+ * holding an `Attachment.Trigger` takes a hover fill.
  */
 export function AttachmentRoot({
   className,
@@ -76,16 +93,29 @@ export function AttachmentRoot({
   );
 }
 
+type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root>;
+
 /** `Attachment.Group` takes Base UI ScrollArea Root's props; its accessible name goes on the list. */
-export type AttachmentGroupProps = ComponentProps<typeof ScrollAreaPrimitive.Root>;
+export type AttachmentGroupProps = Omit<
+  ScrollAreaRootProps,
+  "aria-label" | "aria-labelledby" | "children"
+> & {
+  /** The list's name. Give the group an `aria-label` or an `aria-labelledby`. */
+  "aria-label"?: ScrollAreaRootProps["aria-label"];
+  /** The ids of the elements that name the list, in place of `aria-label`. */
+  "aria-labelledby"?: ScrollAreaRootProps["aria-labelledby"];
+  /**
+   * The `Attachment.Root`s, each one an item of the list. They sit in one row that scrolls
+   * sideways and snaps to each attachment, and an edge fades while more attachments lie past it,
+   * on the side right-to-left text starts from too. Base UI measures those edges from its
+   * `DirectionProvider`, so in a right-to-left app, wrap the app in one as well as setting `dir`.
+   */
+  children?: ScrollAreaRootProps["children"];
+};
 
 /**
- * A horizontally scrolling list of attachments. Name it with `aria-label` or `aria-labelledby`,
- * which land on the list; each `Attachment.Root` inside is one of its items. Scrolling snaps to
- * each attachment, and an edge fades while more attachments lie past it, on the side right-to-left
- * text starts from too. Base UI measures those edges from its `DirectionProvider`, so a
- * right-to-left app wraps itself in one besides setting `dir`. The scrollbar shows on hover, and
- * the scrolling viewport takes keyboard focus while it overflows.
+ * A horizontally scrolling list of attachments. The scrollbar shows on hover, and the scrolling
+ * viewport takes keyboard focus while it overflows.
  */
 export function AttachmentGroup({
   className,

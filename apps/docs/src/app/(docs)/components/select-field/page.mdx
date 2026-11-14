@@ -3,10 +3,12 @@ lede: >
   A labeled dropdown for picking one option, laid out like the other labeled fields.
 ---
 
-import { SelectFieldBasic } from "./demos/select-field-basic";
-import { SelectFieldSizes } from "./demos/select-field-sizes";
-import { SelectFieldStates } from "./demos/select-field-states";
-import { SelectFieldForm } from "./demos/select-field-form";
+import { SelectFieldDemo } from "./demos/select-field-demo";
+import { SelectFieldSmall } from "./demos/select-field-small";
+import { SelectFieldError } from "./demos/select-field-error";
+import { SelectFieldDisabled } from "./demos/select-field-disabled";
+import { SelectFieldReadOnly } from "./demos/select-field-read-only";
+import { SelectFieldFormError } from "./demos/select-field-form-error";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,45 +16,44 @@ export const metadata = componentMetadata("select-field");
 
 <ComponentIntro slug="select-field" />
 
-<Prose>
+<DefaultDemo slug="select-field" file="select-field-demo.tsx">
+  <SelectFieldDemo />
+</DefaultDemo>
 
-`SelectField` puts a label, the error and a description around `Select`'s trigger and options, in the order `TextField` uses: the error sits under the trigger, ahead of the description. The trigger fills the field's width. Pass the options as `Select.Item` children and their labels as `items`, so the trigger can show the chosen label before the popup has opened. A `ref` and the props `SelectField` does not name itself go to the trigger.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Select } from "@elmeragroup/fuse/select";
+import { SelectField } from "@elmeragroup/fuse/select-field";
 
-<Demo slug="select-field" id="basic" title="Basic" file="select-field-basic.tsx">
-  <SelectFieldBasic />
+<SelectField label="Plan" items={{ basic: "Basic", pro: "Pro" }} placeholder="Choose a plan">
+  <Select.Item value="basic">Basic</Select.Item>
+  <Select.Item value="pro">Pro</Select.Item>
+</SelectField>
+```
+
+## Examples
+
+<Demo slug="select-field" id="small" title="Small" level={3} file="select-field-small.tsx">
+  <SelectFieldSmall />
 </Demo>
 
-<Demo slug="select-field" id="sizes" title="Sizes" file="select-field-sizes.tsx">
-  <SelectFieldSizes />
+<Demo slug="select-field" id="error" title="Error" level={3} file="select-field-error.tsx">
+  <SelectFieldError />
 </Demo>
 
-<Prose>
-
-`isReadOnly` keeps the selection: the trigger stays focusable and takes the muted read-only fill the other fields take, and its popup still opens to show the options, but choosing one changes nothing. The value still submits under `name`.
-
-</Prose>
-
-<Demo slug="select-field" id="states" title="Invalid, disabled and read-only" file="select-field-states.tsx">
-  <SelectFieldStates />
+<Demo slug="select-field" id="disabled" title="Disabled" level={3} file="select-field-disabled.tsx">
+  <SelectFieldDisabled />
 </Demo>
 
-<Prose>
-
-Inside a `Form`, the field shows the error `Form` holds under its `name` when it gets no `errorMessage`. Choosing another option clears it, and a new `errors` object shows it again. The selection submits under `name`, as `Select.Root`'s does, and `isRequired` blocks an empty submit with the required message.
-
-</Prose>
-
-<Demo slug="select-field" id="form" title="In a form" file="select-field-form.tsx">
-  <SelectFieldForm />
+<Demo slug="select-field" id="read-only" title="Read-only" level={3} file="select-field-read-only.tsx">
+  <SelectFieldReadOnly />
 </Demo>
 
-<Prose>
-
-`SelectField` takes one selection. For multiple selection or a layout of your own, such as a label row with an info button or a label beside the trigger, compose `Field.Root` and the `Select` parts.
-
-</Prose>
+<Demo slug="select-field" id="form-error" title="Form error" level={3} file="select-field-form-error.tsx">
+  <SelectFieldFormError />
+</Demo>
 
 <ApiReference slug="select-field" />
 

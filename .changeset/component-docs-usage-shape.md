@@ -103,6 +103,30 @@ behind `formatOptions`, `SearchField` its Enter, Escape and clear button behavio
 defaults, all values they already had, so the API reference shows them. The public types are
 unchanged.
 
+`Select`, `SelectField`, `Combobox`, `ComboboxField`, `Autocomplete`, `AutocompleteField`,
+`Attachment`, `FileTrigger` and `FileUpload` now document their rules on the props they concern.
+`Select.Content` documents when `alignItemWithTrigger` places the popup over the trigger and when
+it falls back to `side`. `Combobox.Content` documents its default anchor on `anchor`, and
+`Combobox.Input` and `Autocomplete.Input` when their clear button shows. `SelectField`, `ComboboxField` and `AutocompleteField` document where the
+label, error and description sit, how `Form` errors under `name` show and clear, what read-only
+still submits, and when to compose `Field.Root` and the parts instead. `SelectField` documents its
+`ref`, which goes to the trigger. `Autocomplete.Root` documents its text value, the picked item's
+text, `name` and `id` inside a `Field`, and `filter={null}` for a search that runs on a server.
+`Autocomplete.Item` documents `onClick` for capturing the picked item, and `Autocomplete.Empty`
+and `Autocomplete.Status` their live regions on `children`. `AutocompleteField` documents the same
+on `value`, `onValueChange`, `filter` and `itemToStringValue`, and groups on `items` and
+`children`. `FileUpload.Root` documents every rejection reason on `onReject`, app limits on
+`onSelect`, posting with a form on `name` and `files`, Field validation on `required`, folders on
+`directory`, and paste, the document drop guard and `useFileUpload()` on `children`.
+`FileUpload.Trigger` documents its Field label, id, description order and invalid face, and
+`FileUpload.Dropzone` and `FileUpload.Description` their rules on `children`. `FileTrigger`
+documents on `children` that it joins a `ButtonGroup` as a `Button` does. `Attachment.Root`
+documents each `size`, `orientation` and `state` and its parts on `children`, `Attachment.Media`
+documents `variant`, `Attachment.Group` its name and scrolling, `Attachment.Action` and
+`Attachment.Trigger` their names, and `Attachment.Trigger` links and dialogs on `render`.
+`SelectField` declares its `size` default, a value it already had, so the API reference shows it.
+The public types are unchanged.
+
 Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
 `CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
 The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below

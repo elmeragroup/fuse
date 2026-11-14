@@ -105,7 +105,7 @@
           "type": "(Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Filtered items to display in the list. When given, the list shows these instead of filtering `items` itself. With `items` also given, this array keeps its flat or grouped structure. Nullish entries are not supported, as in `items`. Use it to filter outside the list, such as with Base UI's `useFilter()` hook.",
+          "description": "The items the list shows, for filtering outside the list, such as with Base UI's `useFilter()` hook. When given, the list shows these and does not filter `items` itself. With `items` also given, this array keeps its own flat or grouped structure. Nullish entries are not supported, as in `items`.",
           "required": false
         },
         {
@@ -421,7 +421,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Rendered inside the InputGroup after the addon (extra addons, hidden inputs).",
+          "description": "Content after the inline-end addon inside the InputGroup, such as another addon or a hidden input.",
           "required": false
         },
         {
@@ -430,7 +430,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.",
+          "description": "Extra classes for the outer InputGroup, which is `w-auto`, not for the input element.",
           "required": false
         },
         {
@@ -439,7 +439,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the auto-rendered Clear button when `showClear`. Defaults to the locale dictionary.",
+          "description": "The accessible name of the clear button that `showClear` renders. Unset, it is the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -448,7 +448,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the component should ignore user interaction. Disables the input and the trigger/clear buttons. Combines with `disabled` on `Combobox.Root` and `Field.Root`: any of the three disables the input.",
+          "description": "Whether the component should ignore user interaction. Disables the input and its caret and clear buttons. `disabled` on `Combobox.Root` or `Field.Root` disables the input too.",
           "required": false
         },
         {
@@ -457,7 +457,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead: the Root's id is the one `Field.Label` points at, so an id here leaves the label's `for` unmatched.",
+          "description": "The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead. `Field.Label` points at the Root's id, so an id here leaves the label's `for` unmatched.",
           "required": false
         },
         {
@@ -477,7 +477,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders `Combobox.Clear` in the inline-end addon.",
+          "description": "Renders `Combobox.Clear` in the inline-end addon. It shows while an item is selected, and the caret hides while it shows.",
           "required": false
         },
         {
@@ -486,7 +486,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Renders the caret trigger button in the inline-end addon. Hidden at runtime whenever a clear button is present in the group.",
+          "description": "Renders the caret button in the inline-end addon. The caret hides while the group holds a clear button. Pass `false` for a search input inside `Combobox.Content`.",
           "required": false
         },
         {
@@ -495,7 +495,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box, the outer InputGroup. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute; set the width with a class instead.",
+          "description": "The control size of the field box, the outer InputGroup, emitted as `data-size`. `default` is the md control size, and `sm` the sm one. It replaces the native numeric `size` attribute, so set the width with a class.",
           "required": false,
           "values": [
             "default",
@@ -519,7 +519,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the auto-rendered caret trigger when `showTrigger`. Defaults to the locale dictionary.",
+          "description": "The accessible name of the caret button that `showTrigger` renders. Unset, it is the locale dictionary's `toggle` string.",
           "required": false
         }
       ]
@@ -640,7 +640,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the icon-only clear button. An explicit `aria-label` wins over it; both default to the locale dictionary.",
+          "description": "The accessible name of the icon-only clear button. An `aria-label` wins over it. Unset, the name is the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -717,7 +717,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s ref; also flips `data-external-anchor` on the popup.",
+          "description": "The element, ref or virtual element the popup positions against and takes its minimum width from. Pass the ref from `useComboboxAnchor()` that you put on `Combobox.Chips` or another element. It sets `data-external-anchor` on the popup. Unset, the popup anchors to `Combobox.Input`'s field box, or to `Combobox.Trigger` when the input sits in the popup.",
           "required": false
         },
         {
@@ -1211,7 +1211,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the chips field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The box's minimum height, inset, gap and text follow it, and a row of chips still fits the sm height. More chips than one row holds grow the box at both sizes.",
+          "description": "The control size of the chips field box, emitted as `data-size`. `default` is the md control size, and `sm` the sm one. The box's minimum height, inset, gap and text follow it, and one row of chips fits the sm height. At both sizes, chips that do not fit one row grow the box.",
           "required": false,
           "values": [
             "default",
@@ -1258,7 +1258,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the remove button. Defaults to dictionary `removeItem` formatted with the chip's string children, then `itemToStringLabel(value)`. When neither yields text, the localized \"Remove\" string with no trailing space.",
+          "description": "The accessible name of the remove button. Unset, it is the dictionary's `removeItem` string with the chip's text children, or else with `itemToStringLabel(value)`. When neither gives text, it is the localized \"Remove\" string with no trailing space.",
           "required": false
         },
         {
@@ -1278,7 +1278,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Renders the chip-remove button with an `X`.",
+          "description": "Renders the chip's remove button, an `X`.",
           "required": false
         },
         {

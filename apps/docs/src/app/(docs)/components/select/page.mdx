@@ -1,13 +1,26 @@
 ---
 lede: >
-  A dropdown for picking one option.
+  A dropdown for picking one option, or several with `multiple`. For a labeled select in a form, use SelectField.
 ---
 
-import { SelectBasic } from "./demos/select-basic";
+import { SelectDemo } from "./demos/select-demo";
+import { SelectSmall } from "./demos/select-small";
+import { SelectBesideTrigger } from "./demos/select-beside-trigger";
+import { SelectTop } from "./demos/select-top";
+import { SelectLeft } from "./demos/select-left";
+import { SelectRight } from "./demos/select-right";
+import { SelectInlineStart } from "./demos/select-inline-start";
+import { SelectInlineEnd } from "./demos/select-inline-end";
+import { SelectAlignStart } from "./demos/select-align-start";
+import { SelectAlignEnd } from "./demos/select-align-end";
+import { SelectOffset } from "./demos/select-offset";
 import { SelectGroups } from "./demos/select-groups";
-import { SelectSizes } from "./demos/select-sizes";
 import { SelectScrolling } from "./demos/select-scrolling";
+import { SelectMultiple } from "./demos/select-multiple";
+import { SelectDisabledItem } from "./demos/select-disabled-item";
 import { SelectInvalid } from "./demos/select-invalid";
+import { SelectDisabled } from "./demos/select-disabled";
+import { SelectReadOnly } from "./demos/select-read-only";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,30 +28,95 @@ export const metadata = componentMetadata("select");
 
 <ComponentIntro slug="select" />
 
-<Prose>
+<DefaultDemo slug="select" file="select-demo.tsx">
+  <SelectDemo />
+</DefaultDemo>
 
-For a labeled select in a form, use `SelectField`, which lays out the label, error and description as the other labeled fields do. Compose `Field.Root` and these parts for multiple selection or a layout of your own.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Select } from "@elmeragroup/fuse/select";
 
-<Demo slug="select" id="basic" title="Basic" file="select-basic.tsx">
-  <SelectBasic />
+<Select.Root items={{ apple: "Apple", pear: "Pear" }}>
+  <Select.Trigger aria-label="Fruit">
+    <Select.Value placeholder="Pick a fruit" />
+  </Select.Trigger>
+  <Select.Content>
+    <Select.Item value="apple">Apple</Select.Item>
+    <Select.Item value="pear">Pear</Select.Item>
+  </Select.Content>
+</Select.Root>
+```
+
+## Examples
+
+<Demo slug="select" id="small" title="Small" level={3} file="select-small.tsx">
+  <SelectSmall />
 </Demo>
 
-<Demo slug="select" id="groups" title="Groups" file="select-groups.tsx">
+<Demo slug="select" id="beside-trigger" title="Beside the trigger" level={3} file="select-beside-trigger.tsx">
+  <SelectBesideTrigger />
+</Demo>
+
+<Demo slug="select" id="top" title="Top" level={3} file="select-top.tsx">
+  <SelectTop />
+</Demo>
+
+<Demo slug="select" id="left" title="Left" level={3} file="select-left.tsx">
+  <SelectLeft />
+</Demo>
+
+<Demo slug="select" id="right" title="Right" level={3} file="select-right.tsx">
+  <SelectRight />
+</Demo>
+
+<Demo slug="select" id="inline-start" title="Inline start" level={3} file="select-inline-start.tsx">
+  <SelectInlineStart />
+</Demo>
+
+<Demo slug="select" id="inline-end" title="Inline end" level={3} file="select-inline-end.tsx">
+  <SelectInlineEnd />
+</Demo>
+
+<Demo slug="select" id="align-start" title="Align start" level={3} file="select-align-start.tsx">
+  <SelectAlignStart />
+</Demo>
+
+<Demo slug="select" id="align-end" title="Align end" level={3} file="select-align-end.tsx">
+  <SelectAlignEnd />
+</Demo>
+
+<Demo slug="select" id="offset" title="Offset" level={3} file="select-offset.tsx">
+  <SelectOffset />
+</Demo>
+
+<Demo slug="select" id="groups" title="Groups" level={3} file="select-groups.tsx">
   <SelectGroups />
 </Demo>
 
-<Demo slug="select" id="sizes" title="Sizes" file="select-sizes.tsx">
-  <SelectSizes />
-</Demo>
-
-<Demo slug="select" id="scrolling" title="Scrolling" file="select-scrolling.tsx">
+<Demo slug="select" id="scrolling" title="Scrolling" level={3} file="select-scrolling.tsx">
   <SelectScrolling />
 </Demo>
 
-<Demo slug="select" id="invalid" title="Invalid" file="select-invalid.tsx">
+<Demo slug="select" id="multiple" title="Multiple" level={3} file="select-multiple.tsx">
+  <SelectMultiple />
+</Demo>
+
+<Demo slug="select" id="disabled-item" title="Disabled item" level={3} file="select-disabled-item.tsx">
+  <SelectDisabledItem />
+</Demo>
+
+<Demo slug="select" id="invalid" title="Invalid" level={3} file="select-invalid.tsx">
   <SelectInvalid />
+</Demo>
+
+<Demo slug="select" id="disabled" title="Disabled" level={3} file="select-disabled.tsx">
+  <SelectDisabled />
+</Demo>
+
+<Demo slug="select" id="read-only" title="Read-only" level={3} file="select-read-only.tsx">
+  <SelectReadOnly />
 </Demo>
 
 <ApiReference slug="select" />

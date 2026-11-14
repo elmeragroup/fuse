@@ -96,28 +96,56 @@
     "title": "Attachment",
     "rsc": "client",
     "demos": [
-      "attachment-basic.tsx",
+      "attachment-demo.tsx",
+      "attachment-small.tsx",
+      "attachment-extra-small.tsx",
+      "attachment-vertical.tsx",
       "attachment-image.tsx",
-      "attachment-states.tsx",
-      "attachment-sizes.tsx",
+      "attachment-aspect-ratio.tsx",
+      "attachment-idle.tsx",
+      "attachment-uploading.tsx",
+      "attachment-processing.tsx",
+      "attachment-error.tsx",
       "attachment-group.tsx",
-      "attachment-trigger.tsx",
-      "attachment-upload.tsx"
+      "attachment-dialog-trigger.tsx",
+      "attachment-link-trigger.tsx"
     ]
   },
   "autocomplete": {
     "title": "Autocomplete",
     "rsc": "client",
-    "demos": ["autocomplete-sizes.tsx", "autocomplete-custom-layout.tsx"]
+    "demos": [
+      "autocomplete-demo.tsx",
+      "autocomplete-small.tsx",
+      "autocomplete-clear-button.tsx",
+      "autocomplete-caret.tsx",
+      "autocomplete-top.tsx",
+      "autocomplete-left.tsx",
+      "autocomplete-right.tsx",
+      "autocomplete-inline-start.tsx",
+      "autocomplete-inline-end.tsx",
+      "autocomplete-align-center.tsx",
+      "autocomplete-align-end.tsx",
+      "autocomplete-offset.tsx",
+      "autocomplete-groups.tsx",
+      "autocomplete-invalid.tsx",
+      "autocomplete-disabled.tsx",
+      "autocomplete-read-only.tsx"
+    ]
   },
   "autocomplete-field": {
     "title": "Autocomplete Field",
     "rsc": "server",
     "demos": [
-      "autocomplete-field-basic.tsx",
+      "autocomplete-field-demo.tsx",
+      "autocomplete-field-clear-button.tsx",
       "autocomplete-field-caret.tsx",
       "autocomplete-field-groups.tsx",
-      "autocomplete-field-company-search.tsx"
+      "autocomplete-field-server-search.tsx",
+      "autocomplete-field-error.tsx",
+      "autocomplete-field-disabled.tsx",
+      "autocomplete-field-read-only.tsx",
+      "autocomplete-field-form-error.tsx"
     ]
   },
   "avatar": {
@@ -397,17 +425,39 @@
     "title": "Combobox",
     "rsc": "client",
     "demos": [
-      "combobox-basic.tsx",
-      "combobox-sizes.tsx",
+      "combobox-demo.tsx",
+      "combobox-small.tsx",
+      "combobox-clear-button.tsx",
+      "combobox-top.tsx",
+      "combobox-left.tsx",
+      "combobox-right.tsx",
+      "combobox-inline-start.tsx",
+      "combobox-inline-end.tsx",
+      "combobox-align-center.tsx",
+      "combobox-align-end.tsx",
+      "combobox-offset.tsx",
       "combobox-groups.tsx",
-      "combobox-multi-chips.tsx",
-      "combobox-input-group-anchor.tsx"
+      "combobox-multiple.tsx",
+      "combobox-chips-small.tsx",
+      "combobox-popup-search.tsx",
+      "combobox-disabled-item.tsx",
+      "combobox-invalid.tsx",
+      "combobox-disabled.tsx",
+      "combobox-read-only.tsx"
     ]
   },
   "combobox-field": {
     "title": "Combobox Field",
     "rsc": "server",
-    "demos": ["combobox-field-basic.tsx", "combobox-field-form.tsx"]
+    "demos": [
+      "combobox-field-demo.tsx",
+      "combobox-field-clear-button.tsx",
+      "combobox-field-without-caret.tsx",
+      "combobox-field-error.tsx",
+      "combobox-field-disabled.tsx",
+      "combobox-field-read-only.tsx",
+      "combobox-field-form-error.tsx"
+    ]
   },
   "command": {
     "title": "Command",
@@ -614,18 +664,37 @@
   "file-trigger": {
     "title": "File Trigger",
     "rsc": "client",
-    "demos": ["file-trigger-basic.tsx", "file-trigger-modes.tsx"]
+    "demos": [
+      "file-trigger-demo.tsx",
+      "file-trigger-outline.tsx",
+      "file-trigger-secondary.tsx",
+      "file-trigger-ghost.tsx",
+      "file-trigger-destructive.tsx",
+      "file-trigger-success.tsx",
+      "file-trigger-link.tsx",
+      "file-trigger-extra-small.tsx",
+      "file-trigger-default-size.tsx",
+      "file-trigger-large.tsx",
+      "file-trigger-back-camera.tsx",
+      "file-trigger-front-camera.tsx",
+      "file-trigger-folder.tsx",
+      "file-trigger-without-icon.tsx",
+      "file-trigger-accept.tsx",
+      "file-trigger-disabled.tsx"
+    ]
   },
   "file-upload": {
     "title": "File Upload",
     "rsc": "client",
     "demos": [
-      "file-upload-compact.tsx",
-      "file-upload-limits.tsx",
+      "file-upload-demo.tsx",
       "file-upload-picker.tsx",
+      "file-upload-limits.tsx",
+      "file-upload-folders.tsx",
       "file-upload-field.tsx",
+      "file-upload-invalid.tsx",
       "file-upload-form.tsx",
-      "file-upload-folders.tsx"
+      "file-upload-disabled.tsx"
     ]
   },
   "form": {
@@ -1080,21 +1149,36 @@
     "title": "Select",
     "rsc": "client",
     "demos": [
-      "select-basic.tsx",
+      "select-demo.tsx",
+      "select-small.tsx",
+      "select-beside-trigger.tsx",
+      "select-top.tsx",
+      "select-left.tsx",
+      "select-right.tsx",
+      "select-inline-start.tsx",
+      "select-inline-end.tsx",
+      "select-align-start.tsx",
+      "select-align-end.tsx",
+      "select-offset.tsx",
       "select-groups.tsx",
-      "select-sizes.tsx",
       "select-scrolling.tsx",
-      "select-invalid.tsx"
+      "select-multiple.tsx",
+      "select-disabled-item.tsx",
+      "select-invalid.tsx",
+      "select-disabled.tsx",
+      "select-read-only.tsx"
     ]
   },
   "select-field": {
     "title": "Select Field",
     "rsc": "server",
     "demos": [
-      "select-field-basic.tsx",
-      "select-field-sizes.tsx",
-      "select-field-states.tsx",
-      "select-field-form.tsx"
+      "select-field-demo.tsx",
+      "select-field-small.tsx",
+      "select-field-error.tsx",
+      "select-field-disabled.tsx",
+      "select-field-read-only.tsx",
+      "select-field-form-error.tsx"
     ]
   },
   "selection-item": {

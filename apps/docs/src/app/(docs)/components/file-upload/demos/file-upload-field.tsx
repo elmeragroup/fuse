@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Field } from "@elmeragroup/fuse/field";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 import type { FileRejection } from "@elmeragroup/fuse/file-upload";
@@ -46,7 +45,7 @@ export function FileUploadField() {
           setError(rejectionMessage(rejections));
         }}>
         <FileUpload.Dropzone>
-          <FileUpload.Trigger render={<Button variant="outline" size="sm" />}>Choose file</FileUpload.Trigger>
+          <FileUpload.Trigger>Choose file</FileUpload.Trigger>
           <FileUpload.Description>{name ?? "Drop a photo here"}</FileUpload.Description>
         </FileUpload.Dropzone>
       </FileUpload.Root>

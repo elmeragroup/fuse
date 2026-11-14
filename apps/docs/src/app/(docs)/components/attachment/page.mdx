@@ -1,15 +1,21 @@
 ---
 lede: >
-  A file or image with its upload state and the actions on it.
+  A file or image with its upload state and the actions on it. Picking and uploading files stay in your app.
 ---
 
-import { AttachmentBasic } from "./demos/attachment-basic";
+import { AttachmentDemo } from "./demos/attachment-demo";
+import { AttachmentSmall } from "./demos/attachment-small";
+import { AttachmentExtraSmall } from "./demos/attachment-extra-small";
+import { AttachmentVertical } from "./demos/attachment-vertical";
 import { AttachmentImage } from "./demos/attachment-image";
-import { AttachmentStates } from "./demos/attachment-states";
-import { AttachmentSizes } from "./demos/attachment-sizes";
-import { AttachmentGroupDemo } from "./demos/attachment-group";
-import { AttachmentTrigger } from "./demos/attachment-trigger";
-import { AttachmentUpload } from "./demos/attachment-upload";
+import { AttachmentAspectRatio } from "./demos/attachment-aspect-ratio";
+import { AttachmentIdle } from "./demos/attachment-idle";
+import { AttachmentUploading } from "./demos/attachment-uploading";
+import { AttachmentProcessing } from "./demos/attachment-processing";
+import { AttachmentError } from "./demos/attachment-error";
+import { AttachmentGroup } from "./demos/attachment-group";
+import { AttachmentDialogTrigger } from "./demos/attachment-dialog-trigger";
+import { AttachmentLinkTrigger } from "./demos/attachment-link-trigger";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -17,98 +23,87 @@ export const metadata = componentMetadata("attachment");
 
 <ComponentIntro slug="attachment" />
 
-<Prose>
+<DefaultDemo slug="attachment" file="attachment-demo.tsx">
+  <AttachmentDemo />
+</DefaultDemo>
 
-`Attachment.Root` holds one file: `Attachment.Media` with an icon or a picture, `Attachment.Content` with the `Attachment.Title` and `Attachment.Description`, and `Attachment.Actions` with one `Attachment.Action` per action. Fuse shows the file and its state. Picking files and uploading them stay in your app, which sets the root's `state` as the upload moves on.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Attachment } from "@elmeragroup/fuse/attachment";
+import { FileArrowUp, X } from "@elmeragroup/fuse/icons";
 
-<Demo slug="attachment" id="basic" title="Basic" file="attachment-basic.tsx">
-  <AttachmentBasic />
+<Attachment.Root>
+  <Attachment.Media>
+    <FileArrowUp />
+  </Attachment.Media>
+  <Attachment.Content>
+    <Attachment.Title>meter-readings.pdf</Attachment.Title>
+    <Attachment.Description>PDF · 240 KB</Attachment.Description>
+  </Attachment.Content>
+  <Attachment.Actions>
+    <Attachment.Action aria-label="Remove meter-readings.pdf">
+      <X />
+    </Attachment.Action>
+  </Attachment.Actions>
+</Attachment.Root>
+```
+
+## Examples
+
+<Demo slug="attachment" id="small" title="Small" level={3} file="attachment-small.tsx">
+  <AttachmentSmall />
 </Demo>
 
-<Prose>
+<Demo slug="attachment" id="extra-small" title="Extra small" level={3} file="attachment-extra-small.tsx">
+  <AttachmentExtraSmall />
+</Demo>
 
-## Image
+<Demo slug="attachment" id="vertical" title="Vertical" level={3} file="attachment-vertical.tsx">
+  <AttachmentVertical />
+</Demo>
 
-`variant="image"` on the media frames an `img` in a square, which the image fills and crops to. `orientation="vertical"` stacks a tile with the media on top, and its actions float in the media's top end corner on a `secondary` fill, so they stay visible on any photo. For another shape, put an `Attachment.AspectRatio` inside the media with one of the [AspectRatio](/components/aspect-ratio) ratios.
-
-</Prose>
-
-<Demo slug="attachment" id="image-tiles" title="Image tiles" file="attachment-image.tsx">
+<Demo slug="attachment" id="image" title="Image" level={3} file="attachment-image.tsx">
   <AttachmentImage />
 </Demo>
 
-<Prose>
-
-## States
-
-`state` takes `idle`, `uploading`, `processing`, `error` or `done`, and defaults to `done`. `idle` dashes the border. `uploading` and `processing` sweep a highlight across the title and dim image media, and the title stays still under reduced motion. `error` tints the border, the media and the description with the error role. The state only styles the attachment, so write it in words in `Attachment.Description`.
-
-</Prose>
-
-<Demo slug="attachment" id="every-state" title="Every state" file="attachment-states.tsx">
-  <AttachmentStates />
+<Demo slug="attachment" id="aspect-ratio" title="Aspect ratio" level={3} file="attachment-aspect-ratio.tsx">
+  <AttachmentAspectRatio />
 </Demo>
 
-<Prose>
-
-## Sizes
-
-`size` takes `default`, `sm` or `xs` and sets the padding, the media and the text.
-
-</Prose>
-
-<Demo slug="attachment" id="three-sizes" title="Three sizes" file="attachment-sizes.tsx">
-  <AttachmentSizes />
+<Demo slug="attachment" id="idle" title="Idle" level={3} file="attachment-idle.tsx">
+  <AttachmentIdle />
 </Demo>
 
-<Prose>
-
-## Group
-
-`Attachment.Group` lays attachments out in one row that scrolls sideways and snaps to each attachment. An edge fades while more attachments lie past it. The group is a list, and each root inside it is a list item. In a right-to-left app, wrap the app in Base UI's `DirectionProvider` as well as setting `dir`, since Base UI measures the scrolled edges from it.
-
-</Prose>
-
-<Demo slug="attachment" id="scrolling-group" title="Scrolling group" file="attachment-group.tsx">
-  <AttachmentGroupDemo />
+<Demo slug="attachment" id="uploading" title="Uploading" level={3} file="attachment-uploading.tsx">
+  <AttachmentUploading />
 </Demo>
 
-<Prose>
-
-## Trigger
-
-`Attachment.Trigger` turns the whole attachment into one control that opens a preview or a link. It covers the attachment under its actions, so a click on an action never reaches it. It renders a `button`. Compose it with a dialog through `<Dialog.Trigger render={<Attachment.Trigger aria-label="…" />} />`, or make it a link with `render={<a href="…" />}`. Place it before `Attachment.Actions`, so it comes first in tab order.
-
-</Prose>
-
-<Demo slug="attachment" id="dialog-and-link" title="Dialog and link triggers" file="attachment-trigger.tsx">
-  <AttachmentTrigger />
+<Demo slug="attachment" id="processing" title="Processing" level={3} file="attachment-processing.tsx">
+  <AttachmentProcessing />
 </Demo>
 
-<Prose>
-
-## Upload
-
-This demo wires `FileTrigger` from `@elmeragroup/fuse/file-trigger` to a list of attachments. Each picked file starts as `uploading` and turns `done` when the pretend upload ends. An image previews through an object URL from `URL.createObjectURL`, and removing the file revokes that URL.
-
-</Prose>
-
-<Demo slug="attachment" id="file-upload" title="Upload with FileTrigger" file="attachment-upload.tsx">
-  <AttachmentUpload />
+<Demo slug="attachment" id="error" title="Error" level={3} file="attachment-error.tsx">
+  <AttachmentError />
 </Demo>
 
-<Prose>
+<Demo slug="attachment" id="group" title="Group" level={3} file="attachment-group.tsx">
+  <AttachmentGroup />
+</Demo>
 
-## Accessibility
+<Demo
+  slug="attachment"
+  id="dialog-trigger"
+  title="Dialog trigger"
+  level={3}
+  file="attachment-dialog-trigger.tsx">
+  <AttachmentDialogTrigger />
+</Demo>
 
-- **Name icon-only actions.** Give each `Attachment.Action` an `aria-label` that names the action and the file, such as "Remove floor-plan.pdf". Its type requires one.
-- **Name the trigger.** `Attachment.Trigger` holds no text, so its `aria-label` says what activating it does, such as "Preview inspection-report.pdf".
-- **Say why an upload failed.** The error state is a colour. Put the reason in `Attachment.Description`, such as "Upload failed. The file is over 10 MB."
-- **Name the group.** Give `Attachment.Group` an `aria-label` or `aria-labelledby`. It names the list.
-
-</Prose>
+<Demo slug="attachment" id="link-trigger" title="Link trigger" level={3} file="attachment-link-trigger.tsx">
+  <AttachmentLinkTrigger />
+</Demo>
 
 <ApiReference slug="attachment" />
 

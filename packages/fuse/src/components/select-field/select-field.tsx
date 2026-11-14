@@ -10,60 +10,75 @@ import type { SelectTriggerProps } from "../select/select";
 
 type SelectRootProps<Value> = SelectRootType.Props<Value, false>;
 
+/** The props of {@link SelectField}. */
 export type SelectFieldProps<Value = unknown> = {
-  /** Visible label, rendered as `Field.Label`. */
+  /**
+   * The visible label, rendered as `Field.Label` above the trigger. For a label row with an info
+   * button, or a label beside the trigger, compose `Field.Root` and the `Select` parts instead.
+   */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description` below the error. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as an error `Form` holds under its
-   * `name` or the required message.
+   * The error message, rendered as `Field.Error` under the trigger, ahead of the description,
+   * while it is truthy. Pass `isInvalid` with it, so the trigger is marked invalid too. Without
+   * it, the field shows its own error, such as one `Form` holds under its `name` or the required
+   * message.
    */
   errorMessage?: ReactNode;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Forwards `required` to `Select.Root`. */
+  /** Makes a selection required, so an empty submit is blocked with the required message. */
   isRequired?: boolean;
-  /** Forwards `disabled` to `Field.Root` and `Select.Root`. */
+  /** Disables the field and the trigger. */
   isDisabled?: boolean;
   /**
-   * Forwards `readOnly` to `Select.Root`; the trigger uses `bg-muted`. The trigger stays
-   * focusable and its popup still opens to show the options, but no choice changes the value.
+   * Makes the select read-only, with the muted read-only fill. The trigger stays focusable and
+   * its popup still opens to show the options, but no choice changes the value. The value still
+   * submits under `name`.
    */
   isReadOnly?: boolean;
   /**
-   * Native `name` the selection submits under, forwarded to `Field.Root`. A `Form` error under it
-   * shows below the trigger until the selection changes.
+   * The `name` the selection submits under, and under which `Form` routes its errors. A `Form`
+   * error under it shows below the trigger until the selection changes, and a new `errors` object
+   * shows it again.
    */
   name?: string;
-  /** The `id` of the form the selection submits with, forwarded to `Select.Root`. */
+  /** The `id` of the form the selection submits with, when the field sits outside it. */
   form?: string;
-  /** Shown in the trigger while nothing is selected, forwarded to `Select.Value`. */
+  /** The text the trigger shows while nothing is selected. */
   placeholder?: ReactNode;
-  /** Controlled selection; `null` selects nothing. */
+  /**
+   * The selection, for a controlled field. `null` selects nothing. The field takes one value; for
+   * multiple selection, compose `Field.Root` and the `Select` parts.
+   */
   value?: SelectRootProps<Value>["value"];
-  /** Uncontrolled initial selection. */
+  /** The starting selection of an uncontrolled field. */
   defaultValue?: SelectRootProps<Value>["defaultValue"];
   /** Called with the new selection and Base UI's event details. */
   onValueChange?: SelectRootProps<Value>["onValueChange"];
-  /** The options' labels by value, so the trigger can show a label before the popup opens. */
+  /**
+   * The options' labels by value. Pass them, so the trigger shows the selected label before the
+   * popup has opened.
+   */
   items?: SelectRootProps<Value>["items"];
-  /** The label of an object value, for the trigger. */
+  /** Returns the label of an object value, for the trigger. */
   itemToStringLabel?: SelectRootProps<Value>["itemToStringLabel"];
-  /** The submitted string of an object value. */
+  /** Returns the string an object value submits as. */
   itemToStringValue?: SelectRootProps<Value>["itemToStringValue"];
   /** Compares an object value with an option's value. */
   isItemEqualToValue?: SelectRootProps<Value>["isItemEqualToValue"];
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
-  /** Extra classes, merged onto `Select.Trigger`. */
+  /** Extra classes for `Select.Trigger`, which fills the field's width. */
   triggerClassName?: string;
-  /** The options, normally `Select.Item`s, rendered inside `Select.Content`. */
+  /** The options, as `Select.Item`s, rendered inside `Select.Content`. */
   children?: ReactNode;
+  /** The trigger button. It also takes every prop `SelectField` does not name. */
+  ref?: SelectTriggerProps["ref"];
 } & Omit<
   SelectTriggerProps,
-  "children" | "className" | "disabled" | "name" | "form" | "value" | "defaultValue"
+  "children" | "className" | "disabled" | "name" | "form" | "value" | "defaultValue" | "ref"
 >;
 
 /**
@@ -96,6 +111,7 @@ export function SelectField<Value = unknown>({
   className,
   triggerClassName,
   children,
+  size = "default",
   ...props
 }: SelectFieldProps<Value>): ReactElement {
   return (
@@ -121,7 +137,7 @@ export function SelectField<Value = unknown>({
         required={isRequired}
         disabled={isDisabled}
         readOnly={isReadOnly}>
-        <SelectTrigger className={cn("w-full", triggerClassName)} {...props}>
+        <SelectTrigger className={cn("w-full", triggerClassName)} size={size} {...props}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>

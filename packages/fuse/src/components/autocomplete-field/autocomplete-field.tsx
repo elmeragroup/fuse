@@ -13,8 +13,9 @@ import { FieldFrame } from "../field/field-frame";
 
 /**
  * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as
- * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`) or leaves to
- * the compound: `inline`, since it always renders the popup.
+ * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`), the ones it
+ * redeclares with its own docs and the Root's types (`value`, `onValueChange`, `filter`,
+ * `itemToStringValue`), or leaves to the compound: `inline`, since it always renders the popup.
  */
 type AutocompleteFieldOwnedRootProps =
   | "items"
@@ -24,7 +25,11 @@ type AutocompleteFieldOwnedRootProps =
   | "required"
   | "readOnly"
   | "inline"
-  | "children";
+  | "children"
+  | "value"
+  | "onValueChange"
+  | "filter"
+  | "itemToStringValue";
 
 /**
  * `AutocompleteField` takes the field's props, the input's `placeholder`, `showTrigger`,
@@ -39,44 +44,73 @@ export type AutocompleteFieldProps<
   Filtered extends readonly unknown[] = readonly never[],
   ItemValue = ListItemOf<Items extends readonly never[] ? Filtered : Items>,
 > = Omit<AutocompleteRootProps<ItemValue>, AutocompleteFieldOwnedRootProps> & {
-  /** Visible label, rendered as `Field.Label`. It names the input. */
+  /**
+   * The visible label, rendered as `Field.Label` 4px above the input. It names the input. For a
+   * label row with an info button, or a horizontal field, compose `Field.Root` and the
+   * `Autocomplete` parts instead.
+   */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description` below the error. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as an error `Form` holds under its
-   * `name` or the required message.
+   * The error message, rendered as `Field.Error` under the input, ahead of the description,
+   * while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it,
+   * the field shows its own error, such as one `Form` holds under its `name` or the required
+   * message.
    */
   errorMessage?: ReactNode;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Forwards `required` to `Autocomplete.Root`, which marks the input required. */
+  /** Makes the input required, so an empty submit is blocked with the required message. */
   isRequired?: boolean;
-  /** Forwards `disabled` to `Field.Root` and `Autocomplete.Root`, which disable the input and its buttons. */
+  /** Disables the field, the input and its buttons. */
   isDisabled?: boolean;
   /**
-   * Forwards `readOnly` to `Autocomplete.Root`; the input's field box uses `bg-muted`. The input
-   * stays focusable and its popup still opens to show the suggestions, but neither picking one,
-   * typing nor the clear button changes the text.
+   * Makes the input read-only, with the muted read-only fill. The input stays focusable and its
+   * popup still opens to show the suggestions, but picking one, typing and the clear button change
+   * nothing. The text still submits under `name`.
    */
   isReadOnly?: boolean;
   /**
-   * Native `name` the text submits under, forwarded to `Field.Root`. A `Form` error under it
-   * shows below the input until the user edits the text.
+   * The `name` the text submits under, and under which `Form` routes its errors. A `Form` error
+   * under it shows below the input, also in the first HTML a server renders, until the user edits
+   * the text.
    */
   name?: string;
-  /** Shown in the empty input, forwarded to `Autocomplete.Input`. */
+  /**
+   * The text in the input, for a controlled field, whether the user typed it or picked a
+   * suggestion. Text that matches no suggestion stays on blur and submits as it is.
+   */
+  value?: AutocompleteRootProps<ItemValue>["value"];
+  /**
+   * Called with the input's text on every change. It receives only the string, so capture a
+   * picked item in `Autocomplete.Item`'s `onClick`, which runs on a click and on Enter while the
+   * item is highlighted.
+   */
+  onValueChange?: AutocompleteRootProps<ItemValue>["onValueChange"];
+  /**
+   * The function that matches items against the text. For a search that runs elsewhere, such as
+   * a register lookup on a server, pass `filter={null}` and the results as `items`, and the list
+   * shows them as given. Keep the request and its state in your component, pass the empty list's
+   * states as `Autocomplete.Empty`'s children and the rest as `status`.
+   */
+  filter?: AutocompleteRootProps<ItemValue>["filter"];
+  /**
+   * Returns the text an object item fills the input with and submits. With groups, it receives
+   * one item of a group, not the group. A `{ value, label }` item uses its `label` without it.
+   */
+  itemToStringValue?: AutocompleteRootProps<ItemValue>["itemToStringValue"];
+  /** The text the empty input shows. */
   placeholder?: string;
   /**
-   * Renders the caret button that opens the whole list. The list opens as the user types, so
-   * the field has none by default. It hides while the clear button shows.
-   * @default false
+   * Renders the caret button, which opens the whole list for browsing. The list opens as the user
+   * types, so the field has no caret unless you pass this. The caret hides while the clear button
+   * shows. Its name is the locale dictionary's `toggle` string.
    */
   showTrigger?: boolean;
   /**
-   * Renders a button that empties the input while it holds text.
-   * @default false
+   * Renders a button that empties the input while it holds text. Its name is the locale
+   * dictionary's `clear` string.
    */
   showClear?: boolean;
   /**
@@ -86,27 +120,36 @@ export type AutocompleteFieldProps<
    * results, as `Autocomplete.Empty`'s children instead.
    */
   status?: ReactNode;
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
-  /** Extra classes, merged onto the input's field box, which fills the field's width. */
+  /** Extra classes for the input's field box, which fills the field's width. */
   inputClassName?: string;
-  /** The input the user types in. `inputRef` is the Root's hidden input. */
+  /**
+   * The input the user types in. `inputRef` is the Root's hidden input. The props the field does
+   * not name, `id` included, go to `Autocomplete.Root`, and the label points at that `id`.
+   */
   ref?: Ref<HTMLInputElement>;
   /**
-   * The items to suggest: a flat array, or an array of groups that each carry their own
-   * `items`. Nullish entries are not supported.
+   * The items to suggest: a flat array, or an array of groups that each carry a `value` and their
+   * own `items`. Nullish entries are not supported. Base UI filters them against the text in the
+   * locale of `LocaleProvider`. A group whose items all fail to match hides with them.
    */
   items?: (Items & NoInfer<ListItems<Items, ItemValue>>) | undefined;
   /**
-   * Filtered items to display in the list. When given, the list shows these instead of
-   * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
-   * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
-   * list, such as with Base UI's `useFilter()` hook.
+   * The items the list shows, for filtering outside the list, such as with Base UI's
+   * `useFilter()` hook. When given, the list shows these and does not filter `items` itself.
+   * With `items` also given, this array keeps its own flat or grouped structure. Nullish entries
+   * are not supported, as in `items`.
    */
   filteredItems?: (Filtered & NoInfer<ListItems<Filtered, ItemValue>>) | undefined;
   /**
-   * The popup's content, such as `Autocomplete.Empty` and `Autocomplete.List`, rendered inside
-   * `Autocomplete.Content`.
+   * The popup's content, rendered inside `Autocomplete.Content`. Pass an `Autocomplete.List` that
+   * renders each item as an `Autocomplete.Item`, and an `Autocomplete.Empty` beside it for the
+   * list that matches nothing. The Empty needs `items`, since it shows only while the filtered
+   * items are empty. For groups, render each group through `Autocomplete.Collection` inside the
+   * List, as an `Autocomplete.Group` that takes the group's `items`, with an
+   * `Autocomplete.Label` and a second `Autocomplete.Collection` for its rows. An
+   * `Autocomplete.Separator` draws the rule between groups.
    */
   children?: ReactNode;
 };
