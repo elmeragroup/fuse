@@ -40,199 +40,197 @@ import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
 import { CountryPickerScope, SubmittedValueControl } from "./phone-field-context";
 
+/** The props of {@link PhoneNumberField}. */
 export type PhoneNumberFieldProps = {
-  /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
+  /**
+   * The number, for a controlled field. The field decodes it as a URI component when it arrives.
+   * Leave it out for an uncontrolled field.
+   */
   value?: string;
   /**
-   * Initial number of an uncontrolled field, read on mount as `value` is. A native form reset
-   * restores it, read again under the current props, and calls `onCountryChange` when that
-   * changes the country; `""` restores an empty number in `defaultCountryCode`. Without a
+   * The starting number of an uncontrolled field, read on mount as `value` is. A native form reset
+   * restores it, reads it again under the current props, and calls `onCountryChange` when that
+   * changes the country. `""` restores an empty number in `defaultCountryCode`. Without a
    * `defaultValue`, a reset clears the digits and keeps the country. A later change leaves the
-   * shown number alone and becomes the next reset's target. Ignored while `value` is set, even
-   * to `""`.
+   * shown number alone and becomes the next reset's target. The field ignores it while `value` is
+   * set, even to `""`.
    */
   defaultValue?: string;
   /**
-   * Proposes a formatted output value. Controlled fields display it after parent acceptance.
-   * Called only when the proposal differs from the value the parent holds: `value`, compared
-   * exactly, or the output an uncontrolled field already shows. So deleting a separator, which
-   * keeps the number, calls nothing, while a parent that stores another form of the number,
-   * such as national digits, hears every proposal. Also called once as hydration commits, with
-   * a number typed or autofilled before the client scripts attached, under the same rule; a
+   * Proposes a number in `outputFormat`. A controlled field shows it once the parent accepts it.
+   * The field calls it only when the proposal differs from the number the parent holds: `value`,
+   * compared exactly, or the output an uncontrolled field already shows. So deleting a separator,
+   * which keeps the number, calls nothing, while a parent that stores another form of the number,
+   * such as national digits, hears every proposal. It is also called once as hydration commits,
+   * with a number typed or autofilled before the client scripts ran, under the same rule. A
    * controlled parent accepts or rejects it like any other proposal.
    */
   onChange?: (value: string) => void;
   /**
-   * Initial country. Must be a libphonenumber country with a packaged flag asset. A code the
-   * picker does not offer (outside `countries`, excluded, or untyped) falls back to `NO` when
-   * offered, else the first offered country in catalog order. Ignored while `countryCode` is
-   * set.
-   * @default "NO"
+   * The starting country. It must be a libphonenumber country with a packaged flag. A code the
+   * picker does not offer, because it is outside `countries`, excluded or untyped, falls back to
+   * `NO` when the picker offers it, else to the first offered country in catalog order. The field
+   * ignores it while `countryCode` is set.
    */
   defaultCountryCode?: Extract<CountryCode, FlagAssetCode>;
   /**
-   * Authoritative controlled country, paired with `onCountryChange`, in place of
-   * `defaultCountryCode`; omit it for an uncontrolled country.
+   * The country, for a controlled country. Pass it with `onCountryChange`, in place of
+   * `defaultCountryCode`. Leave it out for an uncontrolled country.
+   *
    * The field shows the country a controlled `value` names with its own `+` or `00` prefix while
-   * `autoDetectCountry` is on, else a proposal's country the parent holds, else `countryCode`; a
-   * value without a prefix, or an uncontrolled `defaultValue`, is read in `countryCode`.
-   * A new `countryCode`, or a `countries` or `metadata` change that resolves it to another
-   * country, acts like a pick: it clears the digits unless `preserveOnCountryChange` keeps them,
-   * and proposes the result through `onChange`; a change that leaves the country in place keeps
-   * the number.
-   * A pick, or a country detected while typing or pasting, is a proposal the field shows once the
-   * parent sets `countryCode` to it; a parent that keeps its code returns the field to it.
-   * An uncontrolled number reports a pick's number only once the field shows it, so a rejected
-   * pick reports nothing.
-   * `onCountryChange` hears each country that disagrees with `countryCode` once, and never the
-   * code the parent just set.
-   * A code the picker does not offer resolves as `defaultCountryCode` does.
-   * Removing `countryCode` keeps the country and number the field shows.
+   * `autoDetectCountry` is on, else the country of a proposal the parent holds, else
+   * `countryCode`. It reads a value without a prefix, or an uncontrolled `defaultValue`, in
+   * `countryCode`.
+   *
+   * A new `countryCode`, or a `countries` or `metadata` change that resolves it to another country,
+   * acts like a pick. It clears the digits unless `preserveOnCountryChange` keeps them, and
+   * proposes the result through `onChange`. A change that leaves the country in place keeps the
+   * number.
+   *
+   * A pick, or a country detected while typing or pasting, is a proposal. The field shows it once
+   * the parent sets `countryCode` to it, and a parent that keeps its code returns the field to it.
+   * An uncontrolled number reports a pick's number only once the field shows it, so a rejected pick
+   * reports nothing. Each proposal reaches `onChange` once, whatever order the parent answers in.
+   *
+   * A proposal the parent has not answered yet keeps waiting through a render with the same props,
+   * and through a change to `defaultValue`, `defaultCountryCode` or `preserveOnCountryChange`
+   * alone. It also waits through a change to `outputFormat`, `international`, `formatOnType`,
+   * `autoDetectCountry`, `metadata` or `countries` that keeps `value` and `countryCode`, while
+   * `countries` still offers the proposal's country. An answer to one half of it keeps it waiting
+   * for the other, in either order: `countryCode` set to its country, or a `value` that is its
+   * number in a countryless form of the parent's own, such as national digits. A code that only
+   * falls back to the proposal's country is no answer. A proposal answered in full ends, as does
+   * one whose number the parent holds while the value names another country. Any other change
+   * drops it.
+   *
+   * A code the picker does not offer resolves as `defaultCountryCode` does. Removing `countryCode`
+   * keeps the country and number the field shows.
    */
   countryCode?: Extract<CountryCode, FlagAssetCode>;
   /**
-   * Custom/trimmed metadata. Replacement reconciles the picker while preserving existing
-   * international identity. A shallow copy, such as `{ ...metadata }` written in a render, is the
-   * same metadata and replaces nothing. To limit the picker, pass `countries` instead: trimmed
-   * metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller: the field
-   * imports its full default metadata either way.
+   * Your own or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps
+   * the international identity of the number shown. A shallow copy, such as `{ ...metadata }`
+   * written in a render, is the same metadata and replaces nothing. To limit the picker, pass
+   * `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It
+   * does not make the bundle smaller, since the field imports its full default metadata either way.
    */
   metadata?: MetadataJson;
   /**
-   * The countries the picker offers, as ISO codes. The metadata still parses every number:
-   * detection only selects a listed country, so a number from another one stays in
-   * international form beside the selected country, as with trimmed metadata. With one
-   * country the field shows its flag and dial code as plain context instead of a picker.
-   * Codes outside the catalog, without a packaged flag or in the product exclusions are
-   * ignored, and a list that leaves no country throws. A change that drops the selected
-   * country keeps the shown number's international identity, except a controlled `raw` value,
-   * which names no country and reads again in the one that remains. The rows sort by name
-   * whatever the list's order.
-   * @default every country in the catalog
+   * The countries the picker offers, as ISO codes. Every country by default. The metadata still
+   * parses every number. Detection only selects a listed country, so a number from another one
+   * stays in international form beside the selected country, as with trimmed metadata. With one
+   * country, the field shows its flag and dial code as plain text instead of a picker. The field
+   * ignores codes outside the catalog, without a packaged flag or in the product exclusions, and
+   * a list that leaves no country throws. A change that drops the selected country keeps the shown
+   * number's international identity, except a controlled `raw` value, which names no country and
+   * is read again in the country that remains. The rows sort by name whatever the list's order.
    */
   countries?: readonly Extract<CountryCode, FlagAssetCode>[];
   /**
-   * Detect country from a `+`/`00` prefix while typing or pasting.
-   * @default true
+   * Picks the country from a `+` or `00` prefix as the user types or pastes. Pass `false` to keep
+   * the selected country.
    */
   autoDetectCountry?: boolean;
   /**
-   * Preserve entered digits and international prefixes in the display. Accepted national drafts stay national.
-   * @default false
+   * Keeps the typed digits and international prefixes in the display. An accepted national draft
+   * stays national.
    */
   international?: boolean;
   /**
-   * Keep digits when switching country. Default clears them, and calls `onChange` with `""`
-   * unless the parent already holds `""`.
-   * @default false
+   * Keeps the digits when the country changes. Otherwise a country change clears them, and calls
+   * `onChange` with `""` unless the parent already holds `""`.
    */
   preserveOnCountryChange?: boolean;
-  /**
-   * Format of `onChange` and the hidden submit input.
-   * @default "e164"
-   */
+  /** The format `onChange` reports and the hidden input submits. */
   outputFormat?: "e164" | "international" | "national" | "raw";
   /**
-   * As-you-type display formatting. A national entry keeps the trunk prefix it was typed with,
-   * so a Swedish "0701234567" shows "070-123 45 67", and one typed without it stays ungrouped.
-   * A number detected from a `+` or `00` prefix shows in the national format.
-   * @default false
+   * Formats the display as the user types. A national entry keeps the trunk prefix it was typed
+   * with, so a Swedish "0701234567" shows "070-123 45 67", and one typed without it stays
+   * ungrouped. A number detected from a `+` or `00` prefix shows in the national format.
    */
   formatOnType?: boolean;
   /**
-   * Called when the selected picker country changes. With `countryCode` set, called instead once
-   * as each disagreement starts: the country of a proposal waiting for the parent, else the one
-   * shown, differing from `countryCode`. A proposal that moves the country calls it before
-   * `onChange`, so a parent that takes both at once reads the number in the new country.
+   * Called when the selected country changes. With `countryCode` set, it is called instead once as
+   * each disagreement starts, with the country of a proposal waiting for the parent, else the one
+   * shown, when it differs from `countryCode`. It never hears the code the parent just set. A
+   * proposal that moves the country calls it before `onChange`, so a parent that takes both at
+   * once reads the number in the new country.
    */
   onCountryChange?: (country: { code: Extract<CountryCode, FlagAssetCode>; dialCode: string }) => void;
-  /** Visible label, rendered as `Field.Label`. */
+  /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows a `Form` error under `name`, or the visible input's own constraint message.
+   * The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so
+   * the field is marked invalid too. Without it, the field shows a `Form` error under `name`, or
+   * the number input's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Placeholder for the visible number input. */
+  /** The number input's placeholder text. */
   placeholder?: string;
-  /** Trailing content inside the InputGroup. */
+  /** Content at the end of the field box, such as a button that acts on the number. */
   endContent?: ReactNode;
-  /**
-   * Forwards `invalid` to `Field.Root`. InputGroup gets `aria-invalid || undefined`.
-   * @default false
-   */
+  /** Marks the field invalid, with the invalid look on the field box. */
   isInvalid?: boolean;
-  /**
-   * Disables editing and both visible and hidden form inputs.
-   * @default false
-   */
+  /** Disables editing, the country picker, and both the visible and the hidden input. */
   isDisabled?: boolean;
   /**
-   * Blocks edits, including paste and country changes, while preserving focus and form submission.
-   * The field takes the muted read-only fill.
-   * @default false
+   * Blocks edits, paste and country changes. The field stays focusable and still submits, with
+   * the muted read-only fill.
    */
   isReadOnly?: boolean;
-  /** Forwards `required` to the visible input, so native constraint validation blocks an empty submit. */
+  /** Makes the number input required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
-   * Hidden input gets `name`; the visible input gets `${name}-display-value`.
-   * Unset, neither input submits. Inside a `Form`, the field shows `errors[name]`, clears it
-   * when the number it submits changes, and gives `onFormSubmit` that number under `name`, in
-   * `outputFormat`.
+   * The name the number submits under, from a hidden input. The visible input takes
+   * `${name}-display-value`. Without it, neither input submits. Inside a `Form`, the field shows
+   * the form's error under this name, removes it when the submitted number changes, and gives
+   * `onFormSubmit` the number under this name, in `outputFormat`.
    */
   name?: string;
   /**
-   * Control size of the field box, the InputGroup around the country picker and the number.
-   * Emitted as `data-size`. `"default"` maps to the `md` control size; `"sm"` maps to the `sm`
-   * control size. The country picker's search box in the popup keeps the default size.
-   * @default "default"
+   * The control size of the field box around the country picker and the number, also written as
+   * `data-size`. `default` is the md control size, and `sm` the sm one. The search box in the
+   * country popup keeps the default size.
    */
   size?: InputGroupRootProps["size"];
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
   /**
-   * Explicit override for the built-in `selectCountry` dictionary key: the country popup's name
-   * and the country trigger's description. The trigger's name is its visible dial code and the
-   * selected country, such as "+47 Norway".
+   * Replaces the `selectCountry` text of the locale dictionary: the country popup's name and the
+   * country button's description. The button's name is its visible dial code and the selected
+   * country, such as "+47 Norway".
    */
   selectCountryLabel?: string;
-  /** Explicit override for the built-in `searchCountries` dictionary key. */
+  /** Replaces the `searchCountries` text of the locale dictionary, the country search box's name. */
   searchCountriesLabel?: string;
-  /** Explicit override for the built-in `noCountries` dictionary key. */
+  /** Replaces the `noCountries` text of the locale dictionary, shown when no country matches. */
   noCountriesFoundText?: string;
-  /**
-   * Portal target for the country picker. Defaults to the nearest enclosing
-   * `ThemeScope` element.
-   */
+  /** Where the country popup renders. It defaults to the nearest `ThemeScope` element. */
   container?: OverlayContainerProps["container"];
-  /** Native `id` forwarded to the visible input when defined. */
+  /** The number input's `id`. */
   id?: ComponentProps<"input">["id"];
-  /** Native `autoFocus` forwarded to the visible input. */
+  /** Focuses the number input when the field mounts. */
   autoFocus?: ComponentProps<"input">["autoFocus"];
-  /** Native `onBlur` forwarded to the visible input. */
+  /** Called when the number input loses focus. */
   onBlur?: ComponentProps<"input">["onBlur"];
-  /**
-   * Native `inputMode` forwarded to the visible input.
-   * @default "tel"
-   */
+  /** The number input's `inputMode`, which picks the on-screen keyboard. */
   inputMode?: ComponentProps<"input">["inputMode"];
-  /** Native `enterKeyHint` forwarded to the visible input. */
+  /** The number input's `enterKeyHint`. */
   enterKeyHint?: ComponentProps<"input">["enterKeyHint"];
-  /** Native `autoComplete`, also forwarded to Combobox.Root. */
+  /** The number input's `autoComplete`, also passed to the country picker. */
   autoComplete?: ComponentProps<"input">["autoComplete"];
-  /** Accessible name forwarded to the visible input when defined. */
+  /** The number input's name when there is no `label`. It names the field box too. */
   "aria-label"?: ComponentProps<"input">["aria-label"];
-  /** Accessible name reference forwarded to the visible input when defined. */
+  /** The ids of the elements that name the number input, in place of `label`. */
   "aria-labelledby"?: ComponentProps<"input">["aria-labelledby"];
-  /** Description reference forwarded to the visible input when defined. */
+  /** The ids of the elements that describe the number input. */
   "aria-describedby"?: ComponentProps<"input">["aria-describedby"];
   /**
-   * Marks the number input required for assistive technology only, forwarded when defined.
-   * It doesn't validate: an empty field still submits. Use `isRequired` for the native
-   * constraint, and this for a rule a schema can relax.
+   * Marks the number input required for screen readers only. It does not validate, so an empty
+   * field still submits. Use `isRequired` for the browser's constraint check, and this for a rule
+   * a schema can relax.
    */
   "aria-required"?: ComponentProps<"input">["aria-required"];
 };
@@ -329,11 +327,11 @@ function isSameCountry(left: PhoneNumberCountry, right: PhoneNumberCountry): boo
 }
 
 /**
- * Labeled phone composite over Field + InputGroup. The country popup is the library
- * `Combobox.Content/List/Item/Empty`; Root, the flag Trigger, and the popup's search
- * Input stay raw `@base-ui/react` primitives.
- * Client — it owns input and country state, effects, callbacks, focus restoration, and
- * `Intl.DisplayNames`.
+ * A labeled phone number field with a country picker, over Field and InputGroup. The country
+ * popup is the library's `Combobox.Content`, `List`, `Item` and `Empty`. Its Root, the flag
+ * trigger and the popup's search input stay raw Base UI primitives. It is a client component,
+ * because it holds the number and country state, the effects and callbacks, focus restoration
+ * and `Intl.DisplayNames`.
  */
 export function PhoneNumberField({
   label,
@@ -362,6 +360,12 @@ export function PhoneNumberField({
   "aria-labelledby": ariaLabelledby,
   "aria-describedby": ariaDescribedby,
   "aria-required": ariaRequired,
+  defaultCountryCode = "NO",
+  autoDetectCountry = true,
+  international = false,
+  preserveOnCountryChange = false,
+  outputFormat = "e164",
+  formatOnType = false,
   ...stateOptions
 }: PhoneNumberFieldProps): ReactElement {
   const numberInputRef = useRef<HTMLInputElement>(null);
@@ -383,6 +387,12 @@ export function PhoneNumberField({
 
   const phone = usePhoneNumberFieldState({
     ...stateOptions,
+    defaultCountryCode,
+    autoDetectCountry,
+    international,
+    preserveOnCountryChange,
+    outputFormat,
+    formatOnType,
     inputRef: numberInputRef,
   });
   useFormReset(numberInputRef, phone.onReset);

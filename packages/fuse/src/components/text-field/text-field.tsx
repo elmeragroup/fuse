@@ -8,61 +8,68 @@ import { Input } from "../input/input";
 import type { InputProps } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
 
+/** The props of {@link TextField}. */
 export type TextFieldProps = {
-  /** Visible label, rendered as `Field.Label`. */
+  /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as an error `Form` holds under its
-   * `name` or a native constraint message.
+   * The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so
+   * the input is marked invalid too. Without it, the field shows its own error, such as one `Form`
+   * holds under its `name` or the browser's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Controlled value. */
+  /** The value, for a controlled field. */
   value?: string;
-  /** Uncontrolled initial value. `null` is coerced to `undefined` before reaching the input. */
+  /** The starting value of an uncontrolled field. `null` reads as no value. */
   defaultValue?: string | null;
-  /** Called with the string value, not the native event. */
+  /** Called with the input's text on every edit. */
   onChange?: (value: string) => void;
-  /** Native `name` forwarded to the inner input. */
+  /** The input's `name`, which it submits under, and under which `Form` routes its errors. */
   name?: string;
-  /** Native `placeholder` forwarded to the inner input. */
+  /** The input's placeholder text. */
   placeholder?: string;
-  /** Hides the root via the recipe and the inner input via the native `hidden` attribute. */
+  /** Hides the whole field and the input. */
   hidden?: boolean;
-  /** Forwards `readOnly` to the inner input, which then takes the muted read-only fill. */
+  /** Makes the input read-only, with the muted read-only fill. */
   isReadOnly?: boolean;
-  /** Forwards `disabled` to `Field.Root` and the inner input. */
+  /** Disables the field and the input. */
   isDisabled?: boolean;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Forwards `required` to the inner input. */
+  /** Makes the input required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
-  /** Shows a spinner in the label row. Forces that row to exist even without `label`. */
+  /** Shows a spinner at the end of the label row. The row shows even without `label`. */
   isPending?: boolean;
-  /** Shows a check in the label row and wins the crossfade over `isPending`. */
+  /**
+   * Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows
+   * even without `label`.
+   */
   isSuccess?: boolean;
-  /** Trailing inline icon. Activates the `isIconActive` recipe axis. */
+  /** An icon at the input's end. Mark it `aria-hidden` when it only decorates. */
   icon?: ReactNode;
   /**
-   * Digits-only guard, forwarded to the inner `Input`. Non-digit characters are stripped from
-   * typing, paste and autofill, so only digits reach `onChange`, and `maxLength` counts digits,
-   * so a pasted `912 34 567` fits `maxLength={8}` whole. Sets `inputMode="numeric"` unless the
-   * caller passes `inputMode`. Input's `filter` lists the paths where the browser's own length
-   * handling still applies.
+   * Keeps digits only, forwarded to the inner `Input`. Only digits reach `onChange`. It sets
+   * `inputMode="numeric"` unless you pass `inputMode`. `maxLength` counts digits when the browser
+   * sends a cancelable `beforeinput` on a type with a selection API, so a pasted `912 34 567` fits
+   * `maxLength={8}` whole. Under `type="email"`, and for autofill that sends no cancelable
+   * `beforeinput`, the browser cuts the text to `maxLength` first. There a pasted `912 34 567`
+   * becomes `912345`. Input's `filter` lists the types and paths.
    */
   filter?: InputProps["filter"];
-  /** `card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input. */
+  /**
+   * The look. `card` puts the label, a large borderless input and the description beside it in a
+   * card. `inline` hides the input's border and fill until hover, focus or an invalid state.
+   * Unset is a plain `Input` under its label.
+   */
   variant?: "card" | "inline";
   /**
-   * Control size of the inner Input's field box, forwarded to `Input`. `"default"` maps to the
-   * `md` control size; `"sm"` maps to the `sm` control size. It replaces the native numeric `size`
-   * attribute.
-   * @default "default"
+   * The input's control size. `default` is the md control size, and `sm` the sm one. It
+   * replaces the native numeric `size` attribute.
    */
   size?: InputProps["size"];
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
 } & Omit<
   ComponentProps<"input">,
@@ -70,8 +77,8 @@ export type TextFieldProps = {
 >;
 
 /**
- * Labeled single-line field composite over Field and Input. Client component, because its
- * change handler reads the input's value for `onChange`.
+ * A labeled single-line text field: a `Field.Root` with its label, an `Input`, and the
+ * description and error. It is a client component, because its change handler reads the input.
  */
 export function TextField({
   label,
@@ -91,6 +98,7 @@ export function TextField({
   isSuccess = false,
   icon,
   variant,
+  size = "default",
   className,
   ...props
 }: TextFieldProps): ReactElement {
@@ -137,6 +145,7 @@ export function TextField({
           defaultValue={defaultValue ?? undefined}
           onChange={handleChange}
           placeholder={placeholder}
+          size={size}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
           {...props}

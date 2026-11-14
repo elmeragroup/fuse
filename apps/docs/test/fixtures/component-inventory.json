@@ -597,16 +597,18 @@
     "title": "Field",
     "rsc": "client",
     "demos": [
-      "field-basic.tsx",
+      "field-demo.tsx",
+      "field-horizontal.tsx",
+      "field-responsive.tsx",
       "field-error.tsx",
       "field-validation.tsx",
-      "field-orientations.tsx",
-      "field-from-parts.tsx",
+      "field-disabled.tsx",
       "field-set.tsx",
+      "field-legend-label.tsx",
       "field-set-description.tsx",
       "field-grid-set.tsx",
-      "field-choice-card.tsx",
-      "field-separator.tsx"
+      "field-separator.tsx",
+      "field-choice-card.tsx"
     ]
   },
   "file-trigger": {
@@ -700,11 +702,12 @@
     "title": "Input",
     "rsc": "client",
     "demos": [
-      "input-basic.tsx",
-      "input-sizes.tsx",
-      "input-types.tsx",
-      "input-states.tsx",
-      "input-in-field.tsx",
+      "input-demo.tsx",
+      "input-small.tsx",
+      "input-disabled.tsx",
+      "input-read-only.tsx",
+      "input-invalid.tsx",
+      "input-file.tsx",
       "input-numeric.tsx"
     ]
   },
@@ -712,14 +715,20 @@
     "title": "Input Group",
     "rsc": "client",
     "demos": [
-      "input-group-icons.tsx",
-      "input-group-sizes.tsx",
-      "input-group-buttons.tsx",
-      "input-group-block.tsx",
+      "input-group-demo.tsx",
+      "input-group-small.tsx",
+      "input-group-inline-end.tsx",
+      "input-group-block-start.tsx",
+      "input-group-block-end.tsx",
+      "input-group-button.tsx",
+      "input-group-button-small.tsx",
+      "input-group-icon-button.tsx",
+      "input-group-icon-button-small.tsx",
+      "input-group-kbd.tsx",
       "input-group-textarea.tsx",
       "input-group-invalid.tsx",
-      "input-group-kbd.tsx",
-      "input-group-field.tsx",
+      "input-group-disabled.tsx",
+      "input-group-read-only.tsx",
       "input-group-numeric.tsx"
     ]
   },
@@ -861,13 +870,16 @@
     "title": "Number Field",
     "rsc": "client",
     "demos": [
-      "number-field-basic.tsx",
-      "number-field-sizes.tsx",
+      "number-field-demo.tsx",
+      "number-field-small.tsx",
       "number-field-denomination.tsx",
-      "number-field-format.tsx",
+      "number-field-currency.tsx",
+      "number-field-percent.tsx",
       "number-field-error.tsx",
-      "number-field-states.tsx",
-      "number-field-uncontrolled.tsx",
+      "number-field-disabled.tsx",
+      "number-field-read-only.tsx",
+      "number-field-pending.tsx",
+      "number-field-success.tsx",
       "number-field-commit.tsx"
     ]
   },
@@ -886,15 +898,21 @@
     "title": "Phone Number Field",
     "rsc": "client",
     "demos": [
-      "phone-number-field-basic.tsx",
-      "phone-number-field-sizes.tsx",
+      "phone-number-field-demo.tsx",
+      "phone-number-field-small.tsx",
       "phone-number-field-international.tsx",
-      "phone-number-field-detect.tsx",
+      "phone-number-field-format-on-type.tsx",
+      "phone-number-field-without-detection.tsx",
       "phone-number-field-countries.tsx",
+      "phone-number-field-single-country.tsx",
       "phone-number-field-controlled-country.tsx",
       "phone-number-field-form.tsx",
-      "phone-number-field-i18n.tsx",
-      "phone-number-field-states.tsx"
+      "phone-number-field-locale.tsx",
+      "phone-number-field-custom-labels.tsx",
+      "phone-number-field-error.tsx",
+      "phone-number-field-disabled.tsx",
+      "phone-number-field-read-only.tsx",
+      "phone-number-field-end-content.tsx"
     ]
   },
   "pie-chart": {
@@ -1048,7 +1066,15 @@
   "search-field": {
     "title": "Search Field",
     "rsc": "client",
-    "demos": ["search-field-basic.tsx", "search-field-sizes.tsx", "search-field-validation.tsx"]
+    "demos": [
+      "search-field-demo.tsx",
+      "search-field-small.tsx",
+      "search-field-with-text.tsx",
+      "search-field-submit.tsx",
+      "search-field-error.tsx",
+      "search-field-disabled.tsx",
+      "search-field-read-only.tsx"
+    ]
   },
   "select": {
     "title": "Select",
@@ -1288,32 +1314,40 @@
     "title": "Text Field",
     "rsc": "client",
     "demos": [
-      "text-field-basic.tsx",
-      "text-field-sizes.tsx",
-      "text-field-error.tsx",
-      "text-field-states.tsx",
-      "text-field-pending-success.tsx",
-      "text-field-icon.tsx",
-      "text-field-numeric.tsx",
+      "text-field-demo.tsx",
+      "text-field-small.tsx",
       "text-field-card.tsx",
-      "text-field-inline.tsx"
+      "text-field-inline.tsx",
+      "text-field-error.tsx",
+      "text-field-disabled.tsx",
+      "text-field-read-only.tsx",
+      "text-field-pending.tsx",
+      "text-field-success.tsx",
+      "text-field-icon.tsx",
+      "text-field-numeric.tsx"
     ]
   },
   "textarea": {
     "title": "Textarea",
     "rsc": "server",
-    "demos": ["textarea-basic.tsx", "textarea-sizes.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]
+    "demos": [
+      "textarea-demo.tsx",
+      "textarea-small.tsx",
+      "textarea-disabled.tsx",
+      "textarea-read-only.tsx",
+      "textarea-invalid.tsx"
+    ]
   },
   "textarea-field": {
     "title": "Textarea Field",
     "rsc": "client",
     "demos": [
-      "textarea-field-basic.tsx",
-      "textarea-field-sizes.tsx",
+      "textarea-field-demo.tsx",
+      "textarea-field-small.tsx",
       "textarea-field-counter.tsx",
-      "textarea-field-uncontrolled.tsx",
       "textarea-field-error.tsx",
-      "textarea-field-disabled.tsx"
+      "textarea-field-disabled.tsx",
+      "textarea-field-read-only.tsx"
     ]
   },
   "timeline-list": {

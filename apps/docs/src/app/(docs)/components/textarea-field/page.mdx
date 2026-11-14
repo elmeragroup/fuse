@@ -3,12 +3,12 @@ lede: >
   A labeled multiline text input with an optional character counter.
 ---
 
-import { TextareaFieldBasic } from "./demos/textarea-field-basic";
-import { TextareaFieldSizes } from "./demos/textarea-field-sizes";
+import { TextareaFieldDemo } from "./demos/textarea-field-demo";
+import { TextareaFieldSmall } from "./demos/textarea-field-small";
 import { TextareaFieldCounter } from "./demos/textarea-field-counter";
-import { TextareaFieldUncontrolled } from "./demos/textarea-field-uncontrolled";
 import { TextareaFieldError } from "./demos/textarea-field-error";
 import { TextareaFieldDisabled } from "./demos/textarea-field-disabled";
+import { TextareaFieldReadOnly } from "./demos/textarea-field-read-only";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,28 +16,39 @@ export const metadata = componentMetadata("textarea-field");
 
 <ComponentIntro slug="textarea-field" />
 
-<Demo slug="textarea-field" id="basic" title="Basic" file="textarea-field-basic.tsx">
-  <TextareaFieldBasic />
+<DefaultDemo slug="textarea-field" file="textarea-field-demo.tsx">
+  <TextareaFieldDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { TextareaField } from "@elmeragroup/fuse/textarea-field";
+
+<TextareaField label="Delivery notes" maxLength={120} />
+```
+
+## Examples
+
+<Demo slug="textarea-field" id="small" title="Small" level={3} file="textarea-field-small.tsx">
+  <TextareaFieldSmall />
 </Demo>
 
-<Demo slug="textarea-field" id="sizes" title="Sizes" file="textarea-field-sizes.tsx">
-  <TextareaFieldSizes />
-</Demo>
-
-<Demo slug="textarea-field" id="counter" title="Counter" file="textarea-field-counter.tsx">
+<Demo slug="textarea-field" id="counter" title="Counter" level={3} file="textarea-field-counter.tsx">
   <TextareaFieldCounter />
 </Demo>
 
-<Demo slug="textarea-field" id="uncontrolled" title="Uncontrolled" file="textarea-field-uncontrolled.tsx">
-  <TextareaFieldUncontrolled />
-</Demo>
-
-<Demo slug="textarea-field" id="error" title="Error" file="textarea-field-error.tsx">
+<Demo slug="textarea-field" id="error" title="Error" level={3} file="textarea-field-error.tsx">
   <TextareaFieldError />
 </Demo>
 
-<Demo slug="textarea-field" id="disabled" title="Disabled" file="textarea-field-disabled.tsx">
+<Demo slug="textarea-field" id="disabled" title="Disabled" level={3} file="textarea-field-disabled.tsx">
   <TextareaFieldDisabled />
+</Demo>
+
+<Demo slug="textarea-field" id="read-only" title="Read-only" level={3} file="textarea-field-read-only.tsx">
+  <TextareaFieldReadOnly />
 </Demo>
 
 <ApiReference slug="textarea-field" />

@@ -3,12 +3,14 @@ lede: >
   Label, description, and error wiring for form controls.
 ---
 
-import { FieldBasic } from "./demos/field-basic";
+import { FieldDemo } from "./demos/field-demo";
+import { FieldHorizontal } from "./demos/field-horizontal";
+import { FieldResponsive } from "./demos/field-responsive";
 import { FieldErrorDemo } from "./demos/field-error";
 import { FieldValidationDemo } from "./demos/field-validation";
-import { FieldOrientations } from "./demos/field-orientations";
-import { FieldFromParts } from "./demos/field-from-parts";
+import { FieldDisabled } from "./demos/field-disabled";
 import { FieldSetDemo } from "./demos/field-set";
+import { FieldLegendLabel } from "./demos/field-legend-label";
 import { FieldSetDescriptionDemo } from "./demos/field-set-description";
 import { FieldGridSetDemo } from "./demos/field-grid-set";
 import { FieldSeparatorDemo } from "./demos/field-separator";
@@ -20,75 +22,81 @@ export const metadata = componentMetadata("field");
 
 <ComponentIntro slug="field" />
 
+<DefaultDemo slug="field" file="field-demo.tsx">
+  <FieldDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Field } from "@elmeragroup/fuse/field";
+import { Input } from "@elmeragroup/fuse/input";
+
+<Field.Root>
+  <Field.Label>Email</Field.Label>
+  <Input type="email" />
+  <Field.Error />
+  <Field.Description>Work address preferred.</Field.Description>
+</Field.Root>
+```
+
+## Composition
+
 <Prose>
 
-Controls that need a visible label, description, or error get the wiring from `Field.Root`.
+Put one control in a `Field.Root`, with the `Field.Label`, `Field.Error` and `Field.Description` that belong to it. The root points the label at the control and adds the error and description to the control's `aria-describedby`. Fuse's controls, such as `Input` and `Checkbox`, take this wiring from the root around them. A `Textarea` takes it through `Field.Control`'s `render`. The field components, such as `TextField` and `NumberField`, render the root and its parts themselves, so build a field from parts only for a control that has no field component, such as an `InputGroup`. `Field.Set` groups fields under a `Field.Legend`, and `Field.Group` stacks them.
 
 </Prose>
 
-<Demo slug="field" id="basic" title="Basic" file="field-basic.tsx">
-  <FieldBasic />
+## Examples
+
+<Demo slug="field" id="horizontal" title="Horizontal" level={3} file="field-horizontal.tsx">
+  <FieldHorizontal />
 </Demo>
 
-<Demo slug="field" id="error" title="Error message" file="field-error.tsx">
+<Demo slug="field" id="responsive" title="Responsive" level={3} file="field-responsive.tsx">
+  <FieldResponsive />
+</Demo>
+
+<Demo slug="field" id="error" title="Error message" level={3} file="field-error.tsx">
   <FieldErrorDemo />
 </Demo>
 
-<Prose>
-
-`Field.Error` without children shows the field's own message instead: an error from `Form`'s `errors` under the field's name, a `validate` result, or the browser's constraint message, which is in the browser's language rather than the app's. Pass children, or a `validate` that returns your own copy, when the message has to be localized or validation lives outside the field.
-
-Put `Field.Error` directly after the control, ahead of any `Field.Description`, so the message sits right under a field in error. The labeled composites, such as `TextField` and `SelectField`, place theirs there too.
-
-</Prose>
-
-<Demo slug="field" id="validation" title="Built-in validation" file="field-validation.tsx">
+<Demo slug="field" id="validation" title="Validation" level={3} file="field-validation.tsx">
   <FieldValidationDemo />
 </Demo>
 
-<Demo slug="field" id="orientations" title="Orientations" file="field-orientations.tsx">
-  <FieldOrientations />
+<Demo slug="field" id="disabled" title="Disabled" level={3} file="field-disabled.tsx">
+  <FieldDisabled />
 </Demo>
 
-<Prose>
-
-A vertical `Field.Root` stacks its label, control, error and description 4px apart at both densities, as the labeled composites do, so a field built from parts, such as one around an `InputGroup` or an `Autocomplete` with an info button in its label row, lines up with a `TextField` or an `AutocompleteField` beside it. A horizontal `Field.Root` sets its control beside its label by the field gap, which follows density.
-
-</Prose>
-
-<Demo slug="field" id="from-parts" title="Built from parts" file="field-from-parts.tsx">
-  <FieldFromParts />
-</Demo>
-
-<Demo slug="field" id="set" title="Field set" file="field-set.tsx">
+<Demo slug="field" id="set" title="Field set" level={3} file="field-set.tsx">
   <FieldSetDemo />
 </Demo>
 
-<Prose>
+<Demo slug="field" id="legend-label" title="Label legend" level={3} file="field-legend-label.tsx">
+  <FieldLegendLabel />
+</Demo>
 
-A `Field.Description` inside a `Field.Set` but outside any `Field.Root` describes the fieldset through `aria-describedby`. Inside a `Field.Root`, it describes that field's control instead.
-
-</Prose>
-
-<Demo slug="field" id="set-description" title="Field set description" file="field-set-description.tsx">
+<Demo
+  slug="field"
+  id="set-description"
+  title="Field set description"
+  level={3}
+  file="field-set-description.tsx">
   <FieldSetDescriptionDemo />
 </Demo>
 
-<Prose>
-
-`Field.Legend` renders a `div`, so a grid `Field.Set` places it in the first cell. Pass `render={<legend />}` to render a native legend instead. The browser keeps a fieldset's first `legend` out of the grid, so the first field takes the first cell, and the legend still names the set.
-
-</Prose>
-
-<Demo slug="field" id="grid-set" title="Grid field set" file="field-grid-set.tsx">
+<Demo slug="field" id="grid-set" title="Grid field set" level={3} file="field-grid-set.tsx">
   <FieldGridSetDemo />
 </Demo>
 
-<Demo slug="field" id="separator" title="Separator" file="field-separator.tsx">
+<Demo slug="field" id="separator" title="Separator" level={3} file="field-separator.tsx">
   <FieldSeparatorDemo />
 </Demo>
 
-<Demo slug="field" id="choice-card" title="Choice card" file="field-choice-card.tsx">
+<Demo slug="field" id="choice-card" title="Choice card" level={3} file="field-choice-card.tsx">
   <FieldChoiceCard />
 </Demo>
 

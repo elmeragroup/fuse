@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Uncontrolled initial value. `null` is coerced to `undefined` before reaching the input.",
+          "description": "The starting value of an uncontrolled field. `null` reads as no value.",
           "required": false
         },
         {
@@ -35,7 +35,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or a native constraint message.",
+          "description": "The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the browser's constraint message.",
           "required": false
         },
         {
@@ -53,7 +53,7 @@
           "type": "\"numeric\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Digits-only guard, forwarded to the inner `Input`. Non-digit characters are stripped from typing, paste and autofill, so only digits reach `onChange`, and `maxLength` counts digits, so a pasted `912 34 567` fits `maxLength={8}` whole. Sets `inputMode=\"numeric\"` unless the caller passes `inputMode`. Input's `filter` lists the paths where the browser's own length handling still applies.",
+          "description": "Keeps digits only, forwarded to the inner `Input`. Only digits reach `onChange`. It sets `inputMode=\"numeric\"` unless you pass `inputMode`. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API, so a pasted `912 34 567` fits `maxLength={8}` whole. Under `type=\"email\"`, and for autofill that sends no cancelable `beforeinput`, the browser cuts the text to `maxLength` first. There a pasted `912 34 567` becomes `912345`. Input's `filter` lists the types and paths.",
           "required": false
         },
         {
@@ -62,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the root via the recipe and the inner input via the native `hidden` attribute.",
+          "description": "Hides the whole field and the input.",
           "required": false
         },
         {
@@ -71,7 +71,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trailing inline icon. Activates the `isIconActive` recipe axis.",
+          "description": "An icon at the input's end. Mark it `aria-hidden` when it only decorates.",
           "required": false
         },
         {
@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and the inner input.",
+          "description": "Disables the field and the input.",
           "required": false
         },
         {
@@ -89,7 +89,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, with the invalid look.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a spinner in the label row. Forces that row to exist even without `label`.",
+          "description": "Shows a spinner at the end of the label row. The row shows even without `label`.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to the inner input, which then takes the muted read-only fill.",
+          "description": "Makes the input read-only, with the muted read-only fill.",
           "required": false
         },
         {
@@ -116,7 +116,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to the inner input.",
+          "description": "Makes the input required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -125,7 +125,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a check in the label row and wins the crossfade over `isPending`.",
+          "description": "Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
           "required": false
         },
         {
@@ -134,7 +134,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`.",
+          "description": "The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`.",
           "required": false
         },
         {
@@ -143,7 +143,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` forwarded to the inner input.",
+          "description": "The input's `name`, which it submits under, and under which `Form` routes its errors.",
           "required": false
         },
         {
@@ -152,7 +152,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the string value, not the native event.",
+          "description": "Called with the input's text on every edit.",
           "required": false
         },
         {
@@ -161,7 +161,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `placeholder` forwarded to the inner input.",
+          "description": "The input's placeholder text.",
           "required": false
         },
         {
@@ -169,8 +169,8 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Control size of the inner Input's field box, forwarded to `Input`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute.",
+          "defaultValue": "\"default\"",
+          "description": "The input's control size. `default` is the md control size, and `sm` the sm one. It replaces the native numeric `size` attribute.",
           "required": false,
           "values": [
             "default",
@@ -183,7 +183,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value.",
+          "description": "The value, for a controlled field.",
           "required": false
         },
         {
@@ -192,7 +192,7 @@
           "type": "\"card\" | \"inline\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "`card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input.",
+          "description": "The look. `card` puts the label, a large borderless input and the description beside it in a card. `inline` hides the input's border and fill until hover, focus or an invalid state. Unset is a plain `Input` under its label.",
           "required": false,
           "values": [
             "card",

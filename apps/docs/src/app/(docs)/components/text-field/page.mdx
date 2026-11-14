@@ -3,15 +3,17 @@ lede: >
   A labeled single-line text input.
 ---
 
-import { TextFieldBasic } from "./demos/text-field-basic";
-import { TextFieldSizes } from "./demos/text-field-sizes";
-import { TextFieldError } from "./demos/text-field-error";
-import { TextFieldStates } from "./demos/text-field-states";
-import { TextFieldPendingSuccess } from "./demos/text-field-pending-success";
-import { TextFieldIcon } from "./demos/text-field-icon";
-import { TextFieldNumeric } from "./demos/text-field-numeric";
+import { TextFieldDemo } from "./demos/text-field-demo";
+import { TextFieldSmall } from "./demos/text-field-small";
 import { TextFieldCard } from "./demos/text-field-card";
 import { TextFieldInline } from "./demos/text-field-inline";
+import { TextFieldError } from "./demos/text-field-error";
+import { TextFieldDisabled } from "./demos/text-field-disabled";
+import { TextFieldReadOnly } from "./demos/text-field-read-only";
+import { TextFieldPending } from "./demos/text-field-pending";
+import { TextFieldSuccess } from "./demos/text-field-success";
+import { TextFieldIcon } from "./demos/text-field-icon";
+import { TextFieldNumeric } from "./demos/text-field-numeric";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -19,44 +21,59 @@ export const metadata = componentMetadata("text-field");
 
 <ComponentIntro slug="text-field" />
 
-<Demo slug="text-field" id="basic" title="Basic" file="text-field-basic.tsx">
-  <TextFieldBasic />
+<DefaultDemo slug="text-field" file="text-field-demo.tsx">
+  <TextFieldDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { TextField } from "@elmeragroup/fuse/text-field";
+
+<TextField label="Email" description="Work address preferred." />
+```
+
+## Examples
+
+<Demo slug="text-field" id="small" title="Small" level={3} file="text-field-small.tsx">
+  <TextFieldSmall />
 </Demo>
 
-<Demo slug="text-field" id="sizes" title="Sizes" file="text-field-sizes.tsx">
-  <TextFieldSizes />
-</Demo>
-
-<Demo slug="text-field" id="error" title="Error" file="text-field-error.tsx">
-  <TextFieldError />
-</Demo>
-
-<Demo slug="text-field" id="states" title="States" file="text-field-states.tsx">
-  <TextFieldStates />
-</Demo>
-
-<Demo
-  slug="text-field"
-  id="pending-success"
-  title="Pending and success"
-  file="text-field-pending-success.tsx">
-  <TextFieldPendingSuccess />
-</Demo>
-
-<Demo slug="text-field" id="icon" title="Trailing icon" file="text-field-icon.tsx">
-  <TextFieldIcon />
-</Demo>
-
-<Demo slug="text-field" id="numeric" title="Numeric filter" file="text-field-numeric.tsx">
-  <TextFieldNumeric />
-</Demo>
-
-<Demo slug="text-field" id="card" title="Card" file="text-field-card.tsx">
+<Demo slug="text-field" id="card" title="Card" level={3} file="text-field-card.tsx">
   <TextFieldCard />
 </Demo>
 
-<Demo slug="text-field" id="inline" title="Inline" file="text-field-inline.tsx">
+<Demo slug="text-field" id="inline" title="Inline" level={3} file="text-field-inline.tsx">
   <TextFieldInline />
+</Demo>
+
+<Demo slug="text-field" id="error" title="Error" level={3} file="text-field-error.tsx">
+  <TextFieldError />
+</Demo>
+
+<Demo slug="text-field" id="disabled" title="Disabled" level={3} file="text-field-disabled.tsx">
+  <TextFieldDisabled />
+</Demo>
+
+<Demo slug="text-field" id="read-only" title="Read-only" level={3} file="text-field-read-only.tsx">
+  <TextFieldReadOnly />
+</Demo>
+
+<Demo slug="text-field" id="pending" title="Pending" level={3} file="text-field-pending.tsx">
+  <TextFieldPending />
+</Demo>
+
+<Demo slug="text-field" id="success" title="Success" level={3} file="text-field-success.tsx">
+  <TextFieldSuccess />
+</Demo>
+
+<Demo slug="text-field" id="icon" title="Trailing icon" level={3} file="text-field-icon.tsx">
+  <TextFieldIcon />
+</Demo>
+
+<Demo slug="text-field" id="numeric" title="Numeric filter" level={3} file="text-field-numeric.tsx">
+  <TextFieldNumeric />
 </Demo>
 
 <ApiReference slug="text-field" />

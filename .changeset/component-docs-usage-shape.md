@@ -85,6 +85,24 @@ and `Avatar.Group` its stacking on `children`. `CheckboxItem` and `RadioItem` de
 `isSubSectionSelectable` default, and `Slider` and `Meter` their range and step defaults, all
 values they already had, so the API reference shows them. The public types are unchanged.
 
+`Field`, `Input`, `InputGroup`, `Textarea`, `TextField`, `TextareaField`, `NumberField`,
+`SearchField` and `PhoneNumberField` now document their rules on the props they concern.
+`Field.Root` documents each `orientation`, and that a responsive root needs a `Field.Group`.
+`Field.Error` documents on `children` when it shows its own message and where to place it,
+`Field.Description` whether it describes a field or a set, `Field.Set` its `aria-describedby`
+and `disabled`, `Field.Legend` a native legend in a grid set on `render`, and `Field.Label` the
+choice row and choice card on `children`. `Input`, `Textarea` and `InputGroup.Input` document on
+`aria-label` how to give them a visible label, and `Textarea` that it takes a `Field.Root`'s
+wiring only through `Field.Control`'s `render`. `InputGroup.Root` documents on `children` that
+its state comes from its direct input or textarea, and `InputGroup.Addon` documents `align` and
+what an addon holds. `NumberField` documents `onChange` against `onValueCommitted` and the locale
+behind `formatOptions`, `SearchField` its Enter, Escape and clear button behaviour, and
+`PhoneNumberField` country detection and how a controlled country answers a proposal.
+`TextField` declares its `size` default, and `PhoneNumberField` its `defaultCountryCode`,
+`autoDetectCountry`, `international`, `preserveOnCountryChange`, `outputFormat` and `formatOnType`
+defaults, all values they already had, so the API reference shows them. The public types are
+unchanged.
+
 Fixed: in a horizontal `CheckboxGroup`, `RadioGroup`, `CheckboxItemGroup` or `RadioItemGroup`, each
 `CheckboxItem`, `RadioItem` or `SelectionItem.Shell` card filled the line, so the cards stacked.
 The cards now share the line in equal widths, and a `basis-*` class on a row sets the width below

@@ -2,32 +2,29 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
-import { Form } from "@elmeragroup/fuse/form";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 export function PhoneNumberFieldForm() {
   const [submitted, setSubmitted] = useState("");
   return (
-    <Form<{ phone: string }>
-      onFormSubmit={(values) => {
-        setSubmitted(`phone=${values.phone}`);
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const phone = event.currentTarget.elements.namedItem("phone");
+        setSubmitted(phone instanceof HTMLInputElement ? `phone=${phone.value}` : "");
+      }}
+      onReset={() => {
+        setSubmitted("");
       }}>
-      <div className="flex flex-col gap-4">
-        <PhoneNumberField
-          label="Mobile"
-          name="phone"
-          defaultValue="+4741234567"
-          description="Starts from a saved number; Reset brings it back. Save submits it in E.164."
-        />
-        <div className="flex gap-2">
-          <Button type="submit">Save</Button>
-          <Button type="reset" variant="outline">
-            Reset
-          </Button>
-        </div>
-        {submitted ? <p>{submitted}</p> : null}
+      <PhoneNumberField label="Mobile" name="phone" defaultValue="+4741234567" />
+      <div className="flex gap-2">
+        <button type="submit">Save</button>
+        <button type="reset">Reset</button>
       </div>
-    </Form>
+      <p role="status" className="text-sm text-muted-foreground">
+        {submitted}
+      </p>
+    </form>
   );
 }

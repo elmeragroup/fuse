@@ -17,98 +17,110 @@ import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
 import { numberFieldVariants } from "./number-field-variants";
 
+/** The props of {@link NumberField}. */
 export type NumberFieldProps = {
-  /** Visible label, rendered as `Field.Label`. */
+  /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as a native constraint message.
+   * The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so
+   * the input is marked invalid too. Without it, the field shows its own error, such as the
+   * browser's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Shows a spinner in the label row. Forces that row to exist even without `label`. */
+  /** Shows a spinner at the end of the label row. The row shows even without `label`. */
   isPending?: boolean;
-  /** Shows a check in the label row and wins the crossfade over `isPending`. */
+  /**
+   * Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows
+   * even without `label`.
+   */
   isSuccess?: boolean;
-  /** Forwards `invalid` to `Field.Root`, and `aria-invalid` to the field box for its invalid look. */
+  /** Marks the field invalid, with the invalid look on the field box. */
   isInvalid?: boolean;
-  /** Forwards `disabled` to `Field.Root` and `NumberField.Root`; the group uses `bg-muted`. */
+  /** Disables the field, with the muted fill. */
   isDisabled?: boolean;
-  /** Forwards `readOnly` to `NumberField.Root`; the group uses `bg-muted`. */
+  /** Makes the field read-only, with the muted fill. */
   isReadOnly?: boolean;
-  /** Forwards `required` to `NumberField.Root`. */
+  /** Makes the field required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
-   * Control size of the field box, the group around the input and the steppers. Emitted as
-   * `data-size`. `"default"` maps to the `md` control size; `"sm"` maps to the `sm` control size.
-   * The steppers fill the box's height at both sizes.
-   * @default "default"
+   * The control size of the field box around the input and the steppers, also written as
+   * `data-size`. `default` is the md control size, and `sm` the sm one. The steppers fill the
+   * box's height at both sizes.
    */
   size?: "sm" | "default";
-  /** Unit suffix rendered between the input and the steppers (visual only). */
+  /**
+   * A unit shown between the input and the steppers, such as `kWh`. It is not part of the input's
+   * name or value, so say the unit in `label` or `description` too.
+   */
   denomination?: string;
   /**
-   * Controlled value; `NaN` is the controlled empty state. `undefined` — passed or
-   * omitted — is uncontrolled, as with React's own inputs.
+   * The value, for a controlled field. `NaN` is an empty controlled field. `undefined`, passed or
+   * left out, makes the field uncontrolled, as with React's own inputs.
    */
   value?: number;
-  /** Uncontrolled initial value. */
+  /** The starting value of an uncontrolled field. */
   defaultValue?: number;
   /**
-   * Called with the numeric value, not the event. A cleared input reports `NaN`
-   * (`onChange?.(next ?? NaN)`).
+   * Called with the number on every change, each typed character included. A cleared input
+   * reports `NaN`. To act once per change, such as to save or fetch, use `onValueCommitted`.
    */
   onChange?: (value: number) => void;
   /**
-   * Called once with the numeric value when the user finishes a change: when the input blurs
-   * after typing, when a stepper press ends, and on each arrow, Home or End key press. It does
-   * not fire on each typed character, and Enter does not commit. A cleared input reports `NaN`.
+   * Called once with the number when the user finishes a change: when the input blurs after
+   * typing, when a stepper press ends, and on each arrow, Home or End key press. It does not fire
+   * on each typed character, and Enter does not commit. A cleared input reports `NaN`. Save or
+   * fetch from it.
    */
   onValueCommitted?: (value: number) => void;
-  /** Lower bound, forwarded as base-ui `min`. */
+  /** The lowest value the field takes. */
   minValue?: number;
-  /** Upper bound, forwarded as base-ui `max`. */
+  /** The highest value the field takes. */
   maxValue?: number;
   /**
-   * Step amount for arrows and steppers. Omitted, they step by 1 and a typed value is held to no
-   * step grid. Given with `minValue`, a typed value must also land on the step grid counted from
-   * `minValue`, or native validation blocks submission, as with `<input type="number" min step>`;
-   * pass `step={1}` to accept whole numbers only. Without `minValue`, a step never constrains a
-   * typed value.
+   * How far the arrow keys and steppers move the value. Left out, they step by 1 and a typed value
+   * is held to no step grid. With `minValue`, a typed value must also land on the step grid
+   * counted from `minValue`, or native validation blocks the submit, as with
+   * `<input type="number" min step>`. Pass `step={1}` to accept whole numbers only. Without
+   * `minValue`, a step never limits a typed value.
    */
   step?: number;
-  /** Formatting options, forwarded as base-ui `format`. Locale comes from the provider. */
+  /**
+   * How the value is shown and announced, as `Intl.NumberFormatOptions`, such as
+   * `{ style: "currency", currency: "NOK" }`. The locale, and with it the grouping and decimal
+   * separators, comes from the `LocaleProvider`.
+   */
   formatOptions?: Intl.NumberFormatOptions;
-  /** Native `name` forwarded to the primitive (hidden input for form submission). */
+  /** The name the field submits its number under. */
   name?: string;
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
   /**
-   * Accessible name forwarded to the input for label-less usage. Without a visible `label`, the
-   * steppers' names end with it too ("Increase Quantity").
+   * The input's name when there is no `label`. The steppers' names then end with it too, as in
+   * "Increase Quantity".
    */
   "aria-label"?: string;
   /**
-   * The increment stepper's own name, which its accessible name follows with the field's name
-   * ("Increase Quantity"). Defaults to the locale dictionary.
+   * The increase stepper's own word, which its name follows with the field's name, as in
+   * "Increase Quantity". It defaults to the locale's word.
    */
   increaseLabel?: string;
   /**
-   * The decrement stepper's own name, which its accessible name follows with the field's name
-   * ("Decrease Quantity"). Defaults to the locale dictionary.
+   * The decrease stepper's own word, which its name follows with the field's name, as in
+   * "Decrease Quantity". It defaults to the locale's word.
    */
   decreaseLabel?: string;
-  /** Native `autoFocus` forwarded to the input. */
+  /** Focuses the input when the field mounts, but not when a form reset remounts it. */
   autoFocus?: boolean;
-  /** Forwarded to `NumberField.Root`. */
+  /** The id of Base UI's `NumberField.Root`. */
   id?: string;
 };
 
 /**
- * Labeled number field composite over Field + base-ui NumberField.
- * Client — it owns the reset remount and change handler, and reads locale
- * from the provider.
+ * A labeled number field with steppers and locale-aware formatting. It is a client component,
+ * because it remounts on a native form reset, calls `onChange` with the number and reads the
+ * locale.
  */
 export function NumberField({
   label,

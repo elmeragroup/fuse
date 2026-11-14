@@ -3,10 +3,5 @@
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
 export function TextareaFieldDisabled() {
-  return (
-    <div className="flex flex-col gap-3">
-      <TextareaField label="Disabled" isDisabled defaultValue="Cannot edit" />
-      <TextareaField label="Required" isRequired placeholder="Required notes" />
-    </div>
-  );
+  return <TextareaField label="Delivery notes" defaultValue="Ring twice." isDisabled />;
 }

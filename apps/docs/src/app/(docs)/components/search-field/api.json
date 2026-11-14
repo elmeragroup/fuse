@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name of the clear button. Defaults to the `searchField.clear` row of the locale dictionary; an explicit string wins.",
+          "description": "The clear button's name. It defaults to the `searchField.clear` row of the locale dictionary, \"Clear search\" in English. The button shows while the field holds text. It is out of the tab order, since Escape clears from the input, and a press keeps focus, and on touch the on-screen keyboard, on the input.",
           "required": false
         },
         {
@@ -35,7 +35,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial value, restored by a native form reset.",
+          "description": "The starting value of an uncontrolled field. A native form reset restores it.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -53,7 +53,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` while the field is invalid: through `isInvalid`, its own constraint validation or an error `Form` holds under its `name`. Without it, the field shows that `Form` error or the native constraint message itself.",
+          "description": "The error message, rendered as `Field.Error` while the field is invalid: through `isInvalid`, its own constraint check, or an error `Form` holds under its `name`. Without it, the field shows that `Form` error or the browser's constraint message.",
           "required": false
         },
         {
@@ -62,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and the inner input, and disables the clear button.",
+          "description": "Disables the field, the input and the clear button.",
           "required": false
         },
         {
@@ -71,7 +71,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, with the invalid look.",
           "required": false
         },
         {
@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to the inner input, which then takes the muted read-only fill. It also disables the clear button, Enter and Escape.",
+          "description": "Makes the input read-only, with the muted read-only fill. It disables the clear button, Escape no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior, so Enter can submit a surrounding form and Escape can close an enclosing `Dialog`.",
           "required": false
         },
         {
@@ -89,7 +89,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to the inner input.",
+          "description": "Makes the input required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`. It names the searchbox.",
+          "description": "The visible label, rendered as `Field.Label`, which names the searchbox. Without it, name the field with `aria-label`.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` forwarded to the inner input. Inside a `Form`, its errors are keyed by it.",
+          "description": "The name the input submits its text under. Inside a `Form`, the field shows the error the form holds under this name, and an edit or a clear removes it.",
           "required": false
         },
         {
@@ -116,7 +116,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the string value, not the native event, on every edit and on a clear.",
+          "description": "Called with the input's text on every edit and on a clear.",
           "required": false
         },
         {
@@ -125,7 +125,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called after the clear button or Escape empties the field.",
+          "description": "Called after the clear button or Escape empties the field. Escape empties a field that holds text and stops there, so a `Dialog` or `Sheet` around the field stays open. On an empty field, Escape reaches them and closes them as usual.",
           "required": false
         },
         {
@@ -134,7 +134,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt, Control, Meta or Shift. Given, Enter in an editable field never submits the surrounding form; omitted, Enter keeps its native behaviour and submits it.",
+          "description": "Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt, Control, Meta or Shift. With it, no Enter in an editable field submits the surrounding form. Without it, Enter submits the form, as in any text input.",
           "required": false
         },
         {
@@ -143,7 +143,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `placeholder` forwarded to the inner input.",
+          "description": "The input's placeholder text.",
           "required": false
         },
         {
@@ -152,7 +152,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The clear button follows it.",
+          "description": "The control size of the field box, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The clear button follows it.",
           "required": false,
           "values": [
             "default",
@@ -165,7 +165,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value.",
+          "description": "The value, for a controlled field.",
           "required": false
         }
       ]
