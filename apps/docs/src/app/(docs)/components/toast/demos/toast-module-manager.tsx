@@ -9,7 +9,7 @@ const toastManager = Toast.createToastManager();
 
 // Plain code outside React, such as a timer or a query-cache listener.
 function syncReadings(): void {
-  const id = toastManager.add({ type: "loading", title: "Syncing readings…" });
+  const id = toastManager.add({ type: "loading", title: "Syncing readings" });
   setTimeout(() => {
     toastManager.update(id, {
       type: "success",
@@ -22,6 +22,8 @@ function syncReadings(): void {
 export function ToastModuleManager() {
   const viewportRef = useRef<HTMLDivElement>(null);
   return (
+    // `container` and `absolute` keep the stack inside this preview. An app renders one
+    // viewport, fixed to the window.
     <div ref={viewportRef} className="max-w-sm relative min-h-[28rem] w-full">
       <Toast.Provider toastManager={toastManager}>
         <Button variant="outline" onClick={syncReadings}>

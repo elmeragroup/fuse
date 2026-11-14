@@ -1,13 +1,29 @@
 ---
 lede: >
-  Preview. A server-drawn chart for a table cell or a stat tile, with no client JavaScript.
+  Preview, so names and props can change until Fuse's first stable release. A server-drawn chart for
+  a table cell or a stat tile, with no client JavaScript.
 ---
 
+import { SparklineArea } from "./demos/sparkline-area";
+import { SparklineBar } from "./demos/sparkline-bar";
+import { SparklineCurveBasis } from "./demos/sparkline-curve-basis";
+import { SparklineCurveBump } from "./demos/sparkline-curve-bump";
+import { SparklineCurveLinear } from "./demos/sparkline-curve-linear";
+import { SparklineCurveMonotoneY } from "./demos/sparkline-curve-monotone-y";
+import { SparklineCurveNatural } from "./demos/sparkline-curve-natural";
+import { SparklineCurveStep } from "./demos/sparkline-curve-step";
+import { SparklineCurveStepAfter } from "./demos/sparkline-curve-step-after";
+import { SparklineCurveStepBefore } from "./demos/sparkline-curve-step-before";
+import { SparklineDemo } from "./demos/sparkline-demo";
+import { SparklineEmphasis } from "./demos/sparkline-emphasis";
+import { SparklineGap } from "./demos/sparkline-gap";
 import { SparklineGlide } from "./demos/sparkline-glide";
-import { SparklineHourlyPrice } from "./demos/sparkline-hourly-price";
-import { SparklineNegative } from "./demos/sparkline-negative";
-import { SparklineTable } from "./demos/sparkline-table";
-import { SparklineVariants } from "./demos/sparkline-variants";
+import { SparklineNegativeArea } from "./demos/sparkline-negative-area";
+import { SparklineNegativeBars } from "./demos/sparkline-negative-bars";
+import { SparklineNoEntrance } from "./demos/sparkline-no-entrance";
+import { SparklineNoHover } from "./demos/sparkline-no-hover";
+import { SparklineReference } from "./demos/sparkline-reference";
+import { SparklineServer } from "./demos/sparkline-server";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,42 +31,128 @@ export const metadata = componentMetadata("sparkline");
 
 <ComponentIntro slug="sparkline" />
 
-<Prose>
+<DefaultDemo slug="sparkline" file="sparkline-demo.tsx">
+  <SparklineDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. `Sparkline` calls no hook, so a server component renders it with no client JavaScript. A Sparkline is an image with no keyboard stop: its name is the `aria-label` followed by a sentence that names the lowest and highest values, and with `start`, `interval` and `timeZone` their slots.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Sparkline } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-<Demo slug="sparkline" id="hourly-price" title="Hourly price" file="sparkline-hourly-price.tsx">
-  <SparklineHourlyPrice />
+<Sparkline aria-label="Spot price tonight" data={prices} locale="en-US" />
+```
+
+## Examples
+
+<Demo slug="sparkline" id="area" title="Area" level={3} file="sparkline-area.tsx">
+  <SparklineArea />
 </Demo>
 
-<Demo slug="sparkline" id="variants" title="Variants" file="sparkline-variants.tsx">
-  <SparklineVariants />
+<Demo slug="sparkline" id="bar" title="Bars" level={3} file="sparkline-bar.tsx">
+  <SparklineBar />
 </Demo>
 
-<Prose>
+<Demo slug="sparkline" id="linear" title="Linear curve" level={3} file="sparkline-curve-linear.tsx">
+  <SparklineCurveLinear />
+</Demo>
 
-A line wipes in from the left as it enters the page, an area fills behind it, and bars grow from the baseline. Re-inserting the element replays the entrance, as a keyed row a sort moves or a panel shown again does, and `data-intro="none"` turns it off. A pointer over a value shows a dashed crosshair and a dot there, fades the rest of the series and draws the line around the value, or the value's bar, at full strength. Moving to the next value cross-fades the marks. All of it is CSS, so it needs no client JavaScript: motion stays off under `prefers-reduced-motion`, and the hover shows only on a device that hovers. It adds no tab stop and nothing to the accessible name, which already names the lowest and highest values. Each value's hover costs about half a kilobyte of markup, so `data-hover="none"` leaves it out where many Sparklines render at once, such as one per row of a long table. An area fades from its values toward 0, above and below the zero line; an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar rounds the corners of its far end by `--chart-bar-radius`.
+<Demo
+  slug="sparkline"
+  id="monotone-y"
+  title="Monotone y curve"
+  level={3}
+  file="sparkline-curve-monotone-y.tsx">
+  <SparklineCurveMonotoneY />
+</Demo>
 
-</Prose>
+<Demo slug="sparkline" id="natural" title="Natural curve" level={3} file="sparkline-curve-natural.tsx">
+  <SparklineCurveNatural />
+</Demo>
 
-<Prose>
+<Demo slug="sparkline" id="step" title="Step curve" level={3} file="sparkline-curve-step.tsx">
+  <SparklineCurveStep />
+</Demo>
 
-For hover that moves rather than cross-fades, wrap one or more Sparklines in `SparklineHover`. It is a client component, and a server component can render it around server-rendered Sparklines: it reads each value's place from their markup, so the data stays on the server. Once it hydrates, one crosshair, one dot and, on a line or an area, one band that re-strokes the line glide from value to value on the spring a chart's crosshair follows, which quickens with the pointer and picks up from wherever the marks show mid-glide. A hovered bar still lifts at once. Under `prefers-reduced-motion` the marks move at once, and new data or a pointer that already rests on a value as the page hydrates places them at once on the hovered value. The marks glide in shares of the box, so a resize keeps them on the hovered value. A Sparkline inside nested wrappers follows the nearest one, and keeps its CSS hover until that one hydrates. Before it hydrates, or with no script, the Sparklines keep their CSS hover. A Sparkline with `data-hover="none"` has no hover for it to move, and it leaves that one be. `render` puts its behavior on another element, such as the tile that holds the Sparklines.
+<Demo
+  slug="sparkline"
+  id="step-before"
+  title="Step before curve"
+  level={3}
+  file="sparkline-curve-step-before.tsx">
+  <SparklineCurveStepBefore />
+</Demo>
 
-</Prose>
+<Demo
+  slug="sparkline"
+  id="step-after"
+  title="Step after curve"
+  level={3}
+  file="sparkline-curve-step-after.tsx">
+  <SparklineCurveStepAfter />
+</Demo>
 
-<Demo slug="sparkline" id="glide" title="Gliding hover" file="sparkline-glide.tsx">
+<Demo slug="sparkline" id="bump" title="Bump curve" level={3} file="sparkline-curve-bump.tsx">
+  <SparklineCurveBump />
+</Demo>
+
+<Demo slug="sparkline" id="basis" title="Basis curve" level={3} file="sparkline-curve-basis.tsx">
+  <SparklineCurveBasis />
+</Demo>
+
+<Demo
+  slug="sparkline"
+  id="emphasis"
+  title="Emphasis on the highest value"
+  level={3}
+  file="sparkline-emphasis.tsx">
+  <SparklineEmphasis />
+</Demo>
+
+<Demo slug="sparkline" id="reference" title="Reference line" level={3} file="sparkline-reference.tsx">
+  <SparklineReference />
+</Demo>
+
+<Demo slug="sparkline" id="gap" title="Missing value" level={3} file="sparkline-gap.tsx">
+  <SparklineGap />
+</Demo>
+
+<Demo
+  slug="sparkline"
+  id="negative-bars"
+  title="Bars below zero"
+  level={3}
+  file="sparkline-negative-bars.tsx">
+  <SparklineNegativeBars />
+</Demo>
+
+<Demo
+  slug="sparkline"
+  id="negative-area"
+  title="Area below zero"
+  level={3}
+  file="sparkline-negative-area.tsx">
+  <SparklineNegativeArea />
+</Demo>
+
+<Demo slug="sparkline" id="no-hover" title="No hover" level={3} file="sparkline-no-hover.tsx">
+  <SparklineNoHover />
+</Demo>
+
+<Demo slug="sparkline" id="no-entrance" title="No entrance" level={3} file="sparkline-no-entrance.tsx">
+  <SparklineNoEntrance />
+</Demo>
+
+<Demo slug="sparkline" id="glide" title="Gliding hover" level={3} file="sparkline-glide.tsx">
   <SparklineGlide />
 </Demo>
 
-<Demo slug="sparkline" id="negative" title="Below zero" file="sparkline-negative.tsx">
-  <SparklineNegative />
-</Demo>
-
-<Demo slug="sparkline" id="table" title="In a table" file="sparkline-table.tsx">
-  <SparklineTable />
+<Demo slug="sparkline" id="server-component" title="Server component" level={3} file="sparkline-server.tsx">
+  <SparklineServer />
 </Demo>
 
 <ApiReference slug="sparkline" />
+
+<ComponentTokens slug="sparkline" />

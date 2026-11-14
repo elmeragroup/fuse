@@ -1,12 +1,21 @@
 ---
 lede: >
-  A site navigation bar whose triggers open link panels in one shared popup.
-  Use it for top-level site sections, not for app actions.
+  A site navigation bar whose triggers open link panels in one shared popup. Use it for top-level site
+  sections. For a menu of actions, use DropdownMenu.
 ---
 
-import { NavigationMenuBasic } from "./demos/navigation-menu-basic";
+import { NavigationMenuDemo } from "./demos/navigation-menu-demo";
+import { NavigationMenuTop } from "./demos/navigation-menu-top";
+import { NavigationMenuLeft } from "./demos/navigation-menu-left";
+import { NavigationMenuRight } from "./demos/navigation-menu-right";
+import { NavigationMenuInlineStart } from "./demos/navigation-menu-inline-start";
+import { NavigationMenuInlineEnd } from "./demos/navigation-menu-inline-end";
+import { NavigationMenuAlignCenter } from "./demos/navigation-menu-align-center";
+import { NavigationMenuAlignEnd } from "./demos/navigation-menu-align-end";
+import { NavigationMenuVertical } from "./demos/navigation-menu-vertical";
+import { NavigationMenuIndicator } from "./demos/navigation-menu-indicator";
 import { NavigationMenuLinks } from "./demos/navigation-menu-links";
-import { NavigationMenuLinkCards } from "./demos/navigation-menu-link-cards";
+import { NavigationMenuLinkDescriptions } from "./demos/navigation-menu-link-descriptions";
 import { NavigationMenuNested } from "./demos/navigation-menu-nested";
 import { NavigationMenuNestedInline } from "./demos/navigation-menu-nested-inline";
 import { NavigationMenuRouterLink } from "./demos/navigation-menu-router-link";
@@ -17,69 +26,115 @@ export const metadata = componentMetadata("navigation-menu");
 
 <ComponentIntro slug="navigation-menu" />
 
-<Prose>
+<DefaultDemo slug="navigation-menu" file="navigation-menu-demo.tsx">
+  <NavigationMenuDemo />
+</DefaultDemo>
 
-`NavigationMenu.Root` renders a `<nav>` landmark, so name it with `aria-label`. It also
-renders the popup that every `NavigationMenu.Content` opens into. Moving between triggers
-resizes that one popup rather than opening a second. `side` and `align` place it against the
-open trigger, under it by default.
+## Usage
 
-A trigger opens on hover, on click, and on Enter or ArrowDown. Escape closes the panel
-and returns focus to the trigger. Mark the current page's link with `active`, which sets
-`aria-current="page"`. For a router link, pass it through `render`.
+{/* prettier-ignore */}
+```tsx
+import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
-For a menu of actions, use DropdownMenu.
+<NavigationMenu.Root aria-label="Main">
+  <NavigationMenu.List>
+    <NavigationMenu.Item>
+      <NavigationMenu.Trigger>Customers</NavigationMenu.Trigger>
+      <NavigationMenu.Content>
+        <NavigationMenu.Link href="/electricity">Electricity</NavigationMenu.Link>
+      </NavigationMenu.Content>
+    </NavigationMenu.Item>
+  </NavigationMenu.List>
+</NavigationMenu.Root>
+```
 
-</Prose>
+## Examples
 
-<Demo slug="navigation-menu" id="basic" title="Basic" file="navigation-menu-basic.tsx">
-  <NavigationMenuBasic />
+<Demo slug="navigation-menu" id="top" title="Top" level={3} file="navigation-menu-top.tsx">
+  <NavigationMenuTop />
 </Demo>
 
-<Demo slug="navigation-menu" id="links" title="Links only" file="navigation-menu-links.tsx">
+<Demo slug="navigation-menu" id="left" title="Left" level={3} file="navigation-menu-left.tsx">
+  <NavigationMenuLeft />
+</Demo>
+
+<Demo slug="navigation-menu" id="right" title="Right" level={3} file="navigation-menu-right.tsx">
+  <NavigationMenuRight />
+</Demo>
+
+<Demo
+  slug="navigation-menu"
+  id="inline-start"
+  title="Inline start"
+  level={3}
+  file="navigation-menu-inline-start.tsx">
+  <NavigationMenuInlineStart />
+</Demo>
+
+<Demo
+  slug="navigation-menu"
+  id="inline-end"
+  title="Inline end"
+  level={3}
+  file="navigation-menu-inline-end.tsx">
+  <NavigationMenuInlineEnd />
+</Demo>
+
+<Demo
+  slug="navigation-menu"
+  id="align-center"
+  title="Align center"
+  level={3}
+  file="navigation-menu-align-center.tsx">
+  <NavigationMenuAlignCenter />
+</Demo>
+
+<Demo slug="navigation-menu" id="align-end" title="Align end" level={3} file="navigation-menu-align-end.tsx">
+  <NavigationMenuAlignEnd />
+</Demo>
+
+<Demo slug="navigation-menu" id="vertical" title="Vertical" level={3} file="navigation-menu-vertical.tsx">
+  <NavigationMenuVertical />
+</Demo>
+
+<Demo slug="navigation-menu" id="indicator" title="Indicator" level={3} file="navigation-menu-indicator.tsx">
+  <NavigationMenuIndicator />
+</Demo>
+
+<Demo slug="navigation-menu" id="links" title="Links only" level={3} file="navigation-menu-links.tsx">
   <NavigationMenuLinks />
 </Demo>
 
-<Demo slug="navigation-menu" id="link-cards" title="Rich link cards" file="navigation-menu-link-cards.tsx">
-  <NavigationMenuLinkCards />
+<Demo
+  slug="navigation-menu"
+  id="link-descriptions"
+  title="Link descriptions"
+  level={3}
+  file="navigation-menu-link-descriptions.tsx">
+  <NavigationMenuLinkDescriptions />
 </Demo>
 
-A link can hold more than a label. Give it a title and a one-line description, and lay a
-panel's links out in a grid.
-
-<Demo slug="navigation-menu" id="nested" title="Nested submenus" file="navigation-menu-nested.tsx">
+<Demo slug="navigation-menu" id="nested" title="Nested submenu" level={3} file="navigation-menu-nested.tsx">
   <NavigationMenuNested />
 </Demo>
-
-A `NavigationMenu.Root` inside a `NavigationMenu.Content` is a submenu. It renders a `<div>`
-rather than a second landmark, and it opens its own popup. Set `orientation="vertical"` and
-`side="right"` so it opens beside its trigger while the outer panel stays open.
 
 <Demo
   slug="navigation-menu"
   id="nested-inline"
-  title="Nested inline submenus"
+  title="Nested inline submenu"
+  level={3}
   file="navigation-menu-nested-inline.tsx">
   <NavigationMenuNestedInline />
 </Demo>
 
-An `inline` submenu renders no popup. Place a `NavigationMenu.Viewport` beside its list, and
-the open item's content shows there, so the panel swaps as the pointer moves down the list.
-The arrow keys move focus between triggers, and Enter or Space shows the focused trigger's
-content. Its triggers have no caret, because the content is always in view. `defaultValue`
-opens the first item with the outer panel. Below the `sm` breakpoint the list stacks above
-the viewport.
-
 <Demo
   slug="navigation-menu"
   id="router-link"
-  title="Custom router link"
+  title="Router link"
+  level={3}
   file="navigation-menu-router-link.tsx">
   <NavigationMenuRouterLink />
 </Demo>
-
-For client-side routing, pass your router's link to `NavigationMenu.Link` through `render`.
-The link keeps its `active` state and `aria-current`.
 
 <ApiReference slug="navigation-menu" />
 

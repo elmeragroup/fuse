@@ -25,18 +25,24 @@ export function ItemRootElement({
   return <div {...itemRootProps({ variant, size, className })} {...props} />;
 }
 
-/**
- * The row's leading media. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a
- * rounded square. Beside a description, `default` and `image` media top-align with the content,
- * and `icon` media centres its glyph on the title's first line. A height or size class sets the
- * box of `default` and `icon` media. `image` media takes its size from the row's size, so resizing
- * it takes a size class under the matching row-size group variant.
- */
-export function ItemMedia({
-  className,
-  variant = "default",
-  ...props
-}: ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>): ReactElement {
+/** `Item.Media` takes a native `div`'s props and the media `variant`. */
+type ItemMediaProps = ComponentProps<"div"> & {
+  /**
+   * The media's frame. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a
+   * rounded square sized by the row's `size`. Beside a description, `default` and `image` media
+   * top-align with the content, and `icon` media centres its glyph on the title's first line.
+   */
+  variant?: VariantProps<typeof itemMediaVariants>["variant"];
+  /**
+   * Extra classes, merged after the media's own. A height or size class sets the box of `default`
+   * and `icon` media. To resize `image` media, add a size class under the matching row size, such
+   * as `group-data-[size=sm]/item:size-10`.
+   */
+  className?: ComponentProps<"div">["className"];
+};
+
+/** The row's leading media. */
+export function ItemMedia({ className, variant = "default", ...props }: ItemMediaProps): ReactElement {
   return (
     <div
       data-slot="item-media"
@@ -47,48 +53,55 @@ export function ItemMedia({
   );
 }
 
+/** The column of the title and the description. It takes the row's spare width. */
 export function ItemContent({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="item-content" className={cn(itemContentClass, className)} {...props} />;
 }
 
+/** The row's title, in the label type. */
 export function ItemTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, className)} {...props} />;
 }
 
+/** The row's description, clamped to two lines. */
 export function ItemDescription({ className, ...props }: ComponentProps<"p">): ReactElement {
   return <p data-slot="item-description" className={cn(itemDescriptionClass, className)} {...props} />;
 }
 
+/** The row's trailing controls, centred on the row. */
 export function ItemActions({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="item-actions" className={cn(itemActionsClass, className)} {...props} />;
 }
 
+/** A full-width line above the row's media and content. */
 export function ItemHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="item-header" className={cn(itemHeaderClass, className)} {...props} />;
 }
 
+/** A full-width line below the row's media and content, which can collapse. */
 export function ItemFooter({
   children,
   className,
   mode = "default",
   inert,
   ...props
-}: ComponentProps<"div"> &
-  VariantProps<typeof itemFooterVariants> & {
-    /**
-     * Footer content, wrapped in the inner `item-footer-content` element. `mode="hidden"`
-     * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
-     * and `visible` animates the row's height with a fade and a short slide, so content below
-     * the footer moves smoothly instead of jumping. Both modes clip content that reaches more
-     * than 0.25rem (4px at the default 16px root) past the footer's content box, including
-     * absolutely positioned content with no positioned ancestor inside the footer: the content
-     * element is its containing block, so it positions against that element. That ring room is
-     * part of the content element's box, so a zero-inset item flush against a scroll container's
-     * edge should keep 0.25rem of inset there or the room scrolls. A `default` footer never
-     * clips, and switching to it snaps.
-     */
-    children?: ReactNode;
-  }): ReactElement {
+}: ComponentProps<"div"> & {
+  /**
+   * Whether the footer shows. `hidden` collapses its row to zero height, clips it and makes it
+   * inert. Switching between `hidden` and `visible` animates the height with a fade and a short
+   * slide, so content below moves instead of jumping. Switching to `default` snaps.
+   */
+  mode?: VariantProps<typeof itemFooterVariants>["mode"];
+  /**
+   * The footer's content, wrapped in an inner `item-footer-content` element. A `hidden` or
+   * `visible` footer clips content that reaches more than 0.25rem past that element's box.
+   * That includes absolutely positioned content with no positioned ancestor inside the footer,
+   * which positions against the inner element. Keep 0.25rem of inset
+   * on a zero-inset item flush against a scroll container's edge, or that room scrolls. A
+   * `default` footer never clips.
+   */
+  children?: ReactNode;
+}): ReactElement {
   const { root, content } = itemFooterVariants({ mode });
   return (
     <div

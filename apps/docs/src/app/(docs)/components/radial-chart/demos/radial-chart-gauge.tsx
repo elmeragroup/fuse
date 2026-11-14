@@ -34,7 +34,7 @@ export function RadialChartGauge() {
       <RadialChart.Center>
         <RadialChart.CenterValue />
       </RadialChart.Center>
-      <RadialChart.Legend />
+      <RadialChart.Table />
       <RadialChart.Tooltip />
     </RadialChart.Root>
   );

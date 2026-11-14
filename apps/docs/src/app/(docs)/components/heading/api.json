@@ -28,11 +28,11 @@
         },
         {
           "name": "font",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"normal\" | \"semi-bold\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The font weight. Setting it replaces the level's theme weight, and so does a weight class in `className`.",
           "required": false,
           "values": [
             "default",
@@ -46,7 +46,7 @@
           "type": "HeadingLevel | undefined",
           "shortType": null,
           "defaultValue": "2",
-          "description": "Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`. For levels 1 to 3 it also picks the theme's default size, line height and weight: `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is omitted, and `--heading-<level>-weight` when `font` is omitted. Neutral themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at 500; branded themes set h1 to 24/32 and h2 and h3 to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.",
+          "description": "The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. For levels 1 to 3 it also picks the theme's size, line height and weight: `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is unset, and `--heading-<level>-weight` when `font` is unset. Neutral themes set h1 to 24/33, h2 to 18/24.75 and h3 to 16/22, all at 500. Branded themes set h1 to 24/32 and h2 and h3 to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.",
           "required": false
         },
         {
@@ -71,11 +71,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The type size. Setting it replaces the level's theme size and line height with the recipe's, so use it only where a heading must differ from its level. A size class in `className` replaces them too.",
           "required": false,
           "values": [
             "2xl",

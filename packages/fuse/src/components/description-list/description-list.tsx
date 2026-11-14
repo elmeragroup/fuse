@@ -4,43 +4,78 @@ import { cn } from "../../styles/cn";
 import { labelTypeClass } from "../../styles/label-type";
 import { DescriptionListHeading } from "./description-list-heading";
 
+/** `DescriptionList.Root` takes a native `div`'s props. */
 export type DescriptionListRootProps = ComponentProps<"div">;
+/** `DescriptionList.Content` takes a native `dl`'s props, the `layout` and `dividers`. */
 export type DescriptionListContentProps = ComponentProps<"dl"> & {
   /**
    * How each Item's terms and details sit. `responsive` stacks the details under the term on
-   * phones and sets them in two columns from `sm` up, with a rule between Items at every width
-   * unless `dividers` is `false`. `inline` is for label/value rows in cards and summaries: each Item
-   * shares its own row between its term and details, whatever the other Items hold. The details
-   * sits beside its term, at the end of the row. When the two don't fit on one line, both wrap
-   * within the row: each keeps its longest word and they share the rest, so a short one leaves the
-   * other room. Only when the term's longest word and the details' longest word can't share the row
-   * does the details move under its term, still at the end, rather than break a word; a word wider
-   * than the whole row then breaks in the details. Inline rows take the label type, have no rules
-   * and space with the small surface gap, and the term is not muted. A colour class on a cell wins
-   * in both layouts. The inline cells' padding, sizing and alignment come from the list, so override
-   * them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's
-   * row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
+   * phones and sets them in two columns from `sm` up, with a rule between Items.
+   *
+   * `inline` is for label and value rows in receipts, order summaries and price boxes. Each Item
+   * shares its own row between its term and details, with the details at the end of the row.
+   * When the two do not fit on one line, both wrap within the row. Only when the term's longest
+   * word and the details' longest word cannot share the row does the details move under its term,
+   * and a word wider than the whole row then breaks in the details. Inline rows take the label
+   * type, follow density as field labels do, space with the small surface gap and have no rules.
+   * The term is not muted: add `text-muted-foreground` to a term to mute it, or `font-medium` to a
+   * details to stress it. To group rows, use one inline list per group. Consecutive inline lists
+   * space with the large surface gap.
+   *
+   * A colour class on a term or details wins in both layouts. To override the inline cells'
+   * padding, sizing and alignment, use a `[:where([data-layout=inline]>*)>&]:` class or a CSS
+   * rule. To override an inline Item's row, wrap and gap, use a `[:where([data-layout=inline])>&]:`
+   * class.
    */
   layout?: "responsive" | "inline";
   /**
    * Whether a responsive list draws a rule above every Item but the first. Pass `false` for a list
-   * whose rows need no rules, such as one inside a card that already separates it. Set once per
-   * list: it reaches only this list's own Items, so a list nested inside keeps its own rules. An
-   * inline list draws no rules either way, so `dividers` has no effect there. Defaults to `true`.
+   * whose rows need no rules, such as one inside a card that already separates it. It reaches only
+   * this list's own Items, so a list nested inside keeps its own rules. An inline list draws no
+   * rules either way.
    */
   dividers?: boolean;
+  /**
+   * The list's Items. Wrap each term and its details in a `DescriptionList.Item`, the `<div>`
+   * HTML allows around one name-value group. Do not mix Items with bare terms and details: HTML
+   * forbids it, the inline layout styles cells only inside an Item, and rules fall between Items.
+   */
+  children?: ComponentProps<"dl">["children"];
 };
-export type DescriptionListItemProps = ComponentProps<"div">;
-export type DescriptionListTermProps = ComponentProps<"dt">;
-export type DescriptionListDetailsProps = ComponentProps<"dd">;
+/** `DescriptionList.Item` takes a native `div`'s props. */
+export type DescriptionListItemProps = ComponentProps<"div"> & {
+  /**
+   * The group's terms and details. An Item can hold several terms of one details, or several
+   * details of one term. Its last term pairs with its first details, and earlier terms and later
+   * details take rows of their own.
+   */
+  children?: ComponentProps<"div">["children"];
+};
+/** `DescriptionList.Term` takes a native `dt`'s props. */
+export type DescriptionListTermProps = ComponentProps<"dt"> & {
+  /**
+   * The term. It wraps at its spaces and hyphens, so a hyphenated label such as "Målepunkt-ID" can
+   * split at the hyphen beside a long value. Write it with a non-breaking hyphen, U+2011, to keep
+   * it whole.
+   */
+  children?: ComponentProps<"dt">["children"];
+};
+/** `DescriptionList.Details` takes a native `dd`'s props. */
+export type DescriptionListDetailsProps = ComponentProps<"dd"> & {
+  /**
+   * The value. In a `layout="inline"` list, it wraps between its words beside its term. There, an
+   * email address too wide to sit beside its term moves under it whole, and one wider than the row
+   * breaks inside it. Put a `<wbr>` before the `@` to let it break at the `@` instead, which often
+   * keeps it beside its term.
+   */
+  children?: ComponentProps<"dd">["children"];
+};
 export type { DescriptionListHeadingProps } from "./description-list-heading";
 
 /**
- * Semantic `<dl>/<dt>/<dd>` composite. Every name-value group sits in an `Item`, the `<div>`
- * HTML allows around one group, so a list never mixes Items and bare terms and details. A
- * server compound: it owns no state, handlers or browser APIs. `Heading` is a client
- * `useRender` island, so other outline levels stay possible without making this module a
- * client boundary.
+ * A semantic `<dl>`, `<dt>` and `<dd>` list. A server compound: it owns no state, handlers or
+ * browser APIs. `Heading` is a client `useRender` part, so other outline levels stay possible
+ * without making this module a client boundary.
  */
 function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;

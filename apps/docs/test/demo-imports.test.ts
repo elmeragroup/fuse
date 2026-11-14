@@ -20,31 +20,15 @@ const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@tanstack\/
 const CARVE_OUTS = new Map<string, readonly string[]>([
   // A year of hours would fill the demo's printed source, so it reads one data module.
   ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
-  // Two months of hours for the month switch's Sparklines, 1,465 values.
-  ["chart/demos/chart-month-usage-and-price.tsx", ["./data/no1-household-hourly-2025-09-2025-10"]],
   ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
-  // The 24-hour profile averages the same two months of hours by clock hour.
-  [
-    "radar-chart/demos/radar-chart-hours.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  // The clock's day, week and last-week demos read the same two months of hours.
-  [
-    "clock-chart/demos/clock-chart-load-profile.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  [
-    "clock-chart/demos/clock-chart-last-week.tsx",
-    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
-  ],
-  ["clock-chart/demos/clock-chart-week.tsx", ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"]],
   // Link's router demo shows `render` composing the docs app's own router link.
-  ["link/demos/link-next.tsx", ["next/link"]],
+  ["link/demos/link-router.tsx", ["next/link"]],
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
-  // The server demo needs a consumer's own "use client" rows to pass its SubSections through.
-  ["selection-item/demos/selection-item-server.tsx", ["./client/plan-rows"]],
+  // The server row demos need a consumer's own "use client" rows to pass their SubSections through.
+  ["selection-item/demos/selection-item-server-checkbox-rows.tsx", ["./client/plan-rows"]],
+  ["selection-item/demos/selection-item-server-radio-rows.tsx", ["./client/plan-rows"]],
 ]);
 
 /**

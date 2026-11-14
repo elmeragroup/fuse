@@ -6,7 +6,7 @@ import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 export function DropdownMenuSubmenu() {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger render={<Button variant="outline" />}>Open</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger render={<Button variant="outline" />}>Tab</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item>New tab</DropdownMenu.Item>
         <DropdownMenu.Item>New window</DropdownMenu.Item>

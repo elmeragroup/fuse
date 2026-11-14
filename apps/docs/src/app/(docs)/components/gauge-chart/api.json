@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. Every part draws from `value`, and nothing in the chart takes focus.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns the entrance sweep off.",
+          "description": "\"none\" turns off the entrance, in which the track scales out and the fill sweeps from the minimum to the reading the first time the gauge comes into view.",
           "required": false
         },
         {
@@ -89,7 +89,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "number | null",
           "shortType": null,
           "defaultValue": null,
-          "description": "The reading, in the domain's own unit, such as 3.9 kWh. A value past either end draws at that end and sets `data-over-max` or `data-under-min` on the figure, while the centre and the meter's text keep the true number. Null shows `GaugeChart.Empty`. A value that is not a finite number throws `non-finite-value` in development and draws as null in production.",
+          "description": "The reading, in the domain's own unit, such as 3.9 kWh. A value past either end draws at that end and sets `data-over-max` or `data-under-min` on the figure, while the centre and the meter's text keep the true number. A new reading sweeps on from wherever the dial shows, also mid-sweep, and the centre's digits roll to it. Under reduced motion and in print the dial draws at rest at once. Null shows `GaugeChart.Empty`, and the dial is no meter until a reading arrives. A value that is not a finite number throws `non-finite-value` in development and draws as null in production.",
           "required": true
         },
         {
@@ -107,7 +107,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format, which the centre, the meter's text and the ruler's labels read.",
+          "description": "The value format, which the centre, the meter's text and the ruler's labels read. A screen reader reads the dial as a meter, with its name, its domain and the value in this format.",
           "required": false
         }
       ]
@@ -155,7 +155,7 @@
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "Where the range starts, in the domain's unit.",
+          "description": "Where the range starts, in the domain's unit. A Zone draws at the rim, and the track scales in to make room for it.",
           "required": true
         },
         {
@@ -209,7 +209,7 @@
           "type": "\"notches\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"notches\"",
-          "description": "The track's look, which `Fill` and `Glow` follow. \"notches\" draws 40 notches over the sweep, every notch and every gap alike; \"solid\" draws one band with softly rounded ends. \"notches\" by default.",
+          "description": "The track's look, which `Fill` and `Glow` follow. \"notches\" draws 40 notches over the sweep, every notch and every gap alike, and the fill lights each notch it passes. \"solid\" draws one band with softly rounded ends.",
           "required": false,
           "values": [
             "notches",
@@ -240,7 +240,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
+          "description": "The colour role of the fill, or of the glow that casts it.",
           "required": false,
           "values": [
             "chart-1",
@@ -288,7 +288,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
+          "description": "The colour role of the fill, or of the glow that casts it.",
           "required": false,
           "values": [
             "chart-1",
@@ -363,7 +363,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The intervals between `min` and `max`, a whole number of 1 or more. By default the domain's round step for about five majors, each split by the step's leading digit: 0–5 kWh takes 25, a tick each 0.2 kWh.",
+          "description": "The intervals between `min` and `max`, a whole number of 1 or more. By default the domain's round step for about five majors, each split by the step's leading digit, so 0 to 5 kWh takes 25, a tick each 0.2 kWh.",
           "required": false
         },
         {
@@ -372,7 +372,7 @@
           "type": "\"inside\" | \"outside\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"inside\"",
-          "description": "Where the ruler sits: \"inside\" the track, or \"outside\" it at the rim, where the dial makes room for it and its labels. \"inside\" by default.",
+          "description": "Where the ruler sits. \"inside\" draws it inside the track, and \"outside\" at the rim, where the dial makes room for it and its labels.",
           "required": false,
           "values": [
             "inside",
@@ -412,7 +412,7 @@
           "type": "\"line\" | \"triangle\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"line\"",
-          "description": "The needle's shape: a \"line\" with round ends, or a slim \"triangle\". \"line\" by default.",
+          "description": "The needle's shape, a \"line\" with round ends or a slim \"triangle\".",
           "required": false,
           "values": [
             "line",
@@ -443,7 +443,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The sector's colour role. \"chart-1\" by default.",
+          "description": "The sector's colour role.",
           "required": false,
           "values": [
             "chart-1",
@@ -473,7 +473,7 @@
           "type": "\"conic\" | \"flat\" | \"radial\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"conic\"",
-          "description": "The wedge's look: \"conic\" brightens toward the reading's edge, \"radial\" brightens toward the rim, and \"flat\" paints one tint. \"conic\" by default.",
+          "description": "The wedge's look. \"conic\" brightens toward the reading's edge, \"radial\" brightens toward the rim, and \"flat\" paints one tint.",
           "required": false,
           "values": [
             "conic",
@@ -505,7 +505,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The ring's colour role. \"chart-1\" by default.",
+          "description": "The ring's colour role. The ring draws the reading as a thin ring outside the track, its remainder dimmed. With `startAngle={0}` and `endAngle={360}` on Root the ring closes.",
           "required": false,
           "values": [
             "chart-1",
@@ -553,7 +553,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The dots' colour role. \"chart-1\" by default.",
+          "description": "The dots' colour role.",
           "required": false,
           "values": [
             "chart-1",
@@ -574,7 +574,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "4",
-          "description": "How many rings of dots, 1 to 6, the outermost just inside the track. 4 by default.",
+          "description": "How many rings of dots, 1 to 6, the outermost just inside the track.",
           "required": false
         },
         {
@@ -592,7 +592,7 @@
           "type": "\"even\" | \"fade\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"even\"",
-          "description": "The rings' look: \"even\", every ring alike, or \"fade\", each ring fainter toward the centre. \"even\" by default.",
+          "description": "The rings' look. \"even\" draws every ring alike, and \"fade\" each ring fainter toward the centre.",
           "required": false,
           "values": [
             "even",

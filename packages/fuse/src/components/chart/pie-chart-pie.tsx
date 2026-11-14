@@ -31,7 +31,10 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type PieChartPieProps = ChartLayerProps & {
-  /** A fraction of the outer radius, from 0 to 0.5. The plot keeps its aspect, so pixels would mean nothing. */
+  /**
+   * The slices' corner radius as a fraction of the outer radius, from 0 to 0.5. It is a fraction
+   * because the plot keeps its aspect.
+   */
   cornerRadius?: number;
 };
 

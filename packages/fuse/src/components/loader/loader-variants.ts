@@ -1,13 +1,12 @@
 import { tv } from "../../styles/tv";
 
 /**
- * PUBLIC slot recipe. Consumers composing their own pending
- * states borrow it from `@elmeragroup/fuse/loader`.
+ * The public slot recipe. Consumers who build their own pending state import it from
+ * `@elmeragroup/fuse/loader`.
  *
- * - `variant` is intentionally single-valued (`default`) so future arms
- *   (muted/inverse) are additive, not breaking.
- * - `size` is a decorative icon-glyph axis, not a control size:
- * wrapper padding stays `p-4`.
+ * - `variant` has one value, `default`, so a later value, such as muted or inverse, adds to the
+ *   type instead of breaking it.
+ * - `size` sets a decorative icon glyph, not a control, so the wrapper padding stays `p-4`.
  */
 export const loaderVariants = tv({
   slots: {

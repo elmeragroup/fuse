@@ -20,14 +20,14 @@ type AlertActionHandler = ComponentProps<typeof Button>["onClick"];
 type AlertActionProps =
   | {
       /**
-       * When both `onAction` and `actionLabel` are set, renders a `Button` in
-       * `Item.Actions`. Forwarded as the button's `onClick` — the client
-       * boundary is the consumer's.
+       * Runs when the action button is clicked. The alert renders the button only when this and
+       * `actionLabel` are both set. `Alert.Root` is a server component, so pass the handler from a
+       * client component.
        */
       onAction: AlertActionHandler;
       /**
-       * Accessible name and visible children of the action button. Required
-       * together with `onAction`; must be self-describing.
+       * The action button's label and accessible name. Set it together with `onAction`, and write
+       * a label that makes sense without the alert text, such as "Retry sync".
        */
       actionLabel: ReactNode;
     }
@@ -45,36 +45,42 @@ const ALERT_ICONS = {
 } as const;
 
 export type AlertRootProps = ComponentProps<"div"> &
-  VariantProps<typeof alertVariants> &
   AlertActionProps & {
+    /** The status. It sets the alert's colours and its icon. */
+    variant?: VariantProps<typeof alertVariants>["variant"];
     /**
-     * Live-region role. Defaults to `alert`, announced assertively, interrupting the user, when
-     * the alert is inserted or its content changes: keep it for errors and warnings that need
-     * attention now. Pass `status` for an informational message announced politely, after the
-     * reader finishes. Screen readers announce a status region only when its content changes
-     * while it is already in the DOM, so keep `Alert.Root` mounted and swap its children. Pass
-     * `none` for a static notice that is not announced.
+     * The live-region role. A screen reader announces an `alert` at once, interrupting the user,
+     * when it is inserted or its content changes. Keep `alert` for errors and warnings that need
+     * attention now. Pass `status` for an informational message, which the screen reader
+     * announces after it finishes speaking. It announces a status region only when its content
+     * changes while the region is in the DOM, so keep `Alert.Root` mounted and swap its children.
+     * Pass `none` for a static notice that is not announced.
      */
     role?: AriaRole;
+    /**
+     * The alert's text, an `Alert.Title` and an optional `Alert.Description`. Render both as
+     * direct children of `Alert.Root`, where the density catalog finds them.
+     */
+    children?: ReactNode;
   };
 
 export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight"> & {
   /**
-   * Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`,
-   * `success → CheckCircle`, `info → Info`.
+   * The status whose glyph it draws. `default` and `info` draw Info, `warning` draws Warning,
+   * `destructive` draws WarningOctagon and `success` draws CheckCircle.
    */
   variant: AlertVariant;
   /**
-   * Phosphor weight. Bold is the library default; `regular` draws a thinner stroke and
-   * `fill` is reserved for selected or active states.
+   * The Phosphor stroke weight. `regular` draws a thinner stroke. Keep `fill` for selected or
+   * active states.
    */
   weight?: ComponentProps<typeof Info>["weight"];
 };
 
 export type AlertTitleProps = ComponentProps<"h3"> & {
   /**
-   * Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3` so an
-   * alert titles itself without assuming its place in the document outline.
+   * The heading level. `1` to `6` renders `h1` to `h6`. Set the level that fits the alert into
+   * the page's heading outline.
    */
   level?: AlertTitleLevel;
 };
@@ -82,9 +88,8 @@ export type AlertTitleProps = ComponentProps<"h3"> & {
 export type AlertDescriptionProps = ComponentProps<"div">;
 
 /**
- * Status alert composite over the library Item family. Server —
- * it owns no state, effects, or browser APIs; `onAction` is a forwarded consumer
- * handler.
+ * A status message built on Item. It is a server component with no state, effects or browser
+ * APIs. It passes `onAction` to its button as the click handler.
  */
 function AlertRoot({
   children,
@@ -121,17 +126,25 @@ function AlertRoot({
   );
 }
 
-function AlertIcon({ variant, className, ...props }: AlertIconProps): ReactElement {
+/** The status glyph `Alert.Root` draws, for use outside an alert. It is always decorative. */
+function AlertIcon({ variant, weight = "bold", className, ...props }: AlertIconProps): ReactElement {
   const { icon } = alertVariants({ variant });
   const Glyph = ALERT_ICONS[variant];
 
-  return <Glyph data-slot="alert-icon" className={cn(icon(), className)} {...props} aria-hidden="true" />;
+  return (
+    <Glyph
+      data-slot="alert-icon"
+      weight={weight}
+      className={cn(icon(), className)}
+      {...props}
+      aria-hidden="true"
+    />
+  );
 }
 
 /**
- * The alert's heading, an `h3` unless `level` says otherwise. Its text follows document density,
- * 14px dense and 16px comfortable, at `font-medium` so it stands apart from the body. Render it
- * as a direct child of `Alert.Root`: the density catalog finds the alert's text parts there.
+ * The alert's heading, an `h3` unless `level` sets another level. Its text follows document
+ * density, 14px dense and 16px comfortable, at `font-medium`, a heavier weight than the body.
  */
 function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProps): ReactElement {
   const TitleTag = `h${level}` as const;
@@ -145,11 +158,9 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 }
 
 /**
- * Renders the alert body as a `div` without Item.Description's two-line clamp, so it can
- * hold full instructions, paragraphs and lists. Its text follows document density, 14px dense
- * and 16px comfortable, at regular weight, and takes the variant's text colour from
- * `Alert.Root`, the same colour as the title. Render it as a direct child of `Alert.Root`, as
- * `Alert.Title`.
+ * The alert body, a `div` without Item.Description's two-line clamp, so it can hold
+ * paragraphs and lists. Its text follows document density, 14px dense and 16px comfortable, at
+ * regular weight. It takes the variant's text colour from `Alert.Root`, as the title does.
  */
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();

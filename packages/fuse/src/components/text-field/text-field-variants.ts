@@ -8,10 +8,10 @@ import { fieldFrameVariants } from "../field/field-frame-variants";
 const frame = fieldFrameVariants();
 
 /**
- * PUBLIC slot recipe. Layout slots compose FieldFrame
- * recipe slots so the documented names stay stable while the frame owns the defaults.
- * No size axis — TextField's `size` goes to the inner Input, whose field box writes it. The ref's unused textarea
- * slot is omitted.
+ * Public slot recipe. Its layout slots compose the FieldFrame recipe's slots, so the documented
+ * names stay stable while the frame owns the defaults. It has no size axis, because TextField's
+ * `size` goes to the inner Input, whose field box writes it. The reference's unused textarea slot
+ * is left out.
  */
 export const textFieldVariants = tv({
   slots: {

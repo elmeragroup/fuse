@@ -159,13 +159,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: CollapsiblePanelState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "Classes for the panel, or a function of its state that returns them. The panel clips what reaches past its settled box, such as a popover, an absolutely positioned child or a focus ring at the edge. To turn off both the clipping and the height transition, set `className` to `h-auto data-starting-style:h-auto data-ending-style:h-auto overflow-visible transition-none`.",
           "required": false
         },
         {

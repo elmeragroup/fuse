@@ -39,7 +39,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The popup's content, such as `Autocomplete.Empty` and `Autocomplete.List`, rendered inside `Autocomplete.Content`.",
+          "description": "The popup's content, rendered inside `Autocomplete.Content`. Pass an `Autocomplete.List` that renders each item as an `Autocomplete.Item`, and an `Autocomplete.Empty` beside it for the list that matches nothing. The Empty needs `items`, since it shows only while the filtered items are empty. For groups, render each group through `Autocomplete.Collection` inside the List, as an `Autocomplete.Group` that takes the group's `items`, with an `Autocomplete.Label` and a second `Autocomplete.Collection` for its rows. An `Autocomplete.Separator` draws the rule between groups.",
           "required": false
         },
         {
@@ -48,7 +48,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -79,7 +79,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description` below the error.",
           "required": false
         },
         {
@@ -88,18 +88,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or the required message.",
+          "description": "The error message, rendered as `Field.Error` under the input, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
           "required": false
         },
         {
           "name": "filter",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((item: ItemValue, query: string, itemToString?: ((item: ItemValue) => string) | undefined) => boolean) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Filter function used to match items against the input query.",
+          "description": "The function that matches items against the text. For a search that runs elsewhere, such as a register lookup on a server, pass `filter={null}` and the results as `items`, and the list shows them as given. Keep the request and its state in your component, pass the empty list's states as `Autocomplete.Empty`'s children and the rest as `status`.",
           "required": false
         },
         {
@@ -108,7 +106,7 @@
           "type": "(Filtered & NoInfer<ListItems<Filtered, ItemValue>>) | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Filtered items to display in the list. When given, the list shows these instead of filtering `items` itself. With `items` also given, this array keeps its flat or grouped structure. Nullish entries are not supported, as in `items`. Use it to filter outside the list, such as with Base UI's `useFilter()` hook.",
+          "description": "The items the list shows, for filtering outside the list, such as with Base UI's `useFilter()` hook. When given, the list shows these and does not filter `items` itself. With `items` also given, this array keeps its own flat or grouped structure. Nullish entries are not supported, as in `items`.",
           "required": false
         },
         {
@@ -161,7 +159,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the input's field box, which fills the field's width.",
+          "description": "Extra classes for the input's field box, which fills the field's width.",
           "required": false
         },
         {
@@ -181,7 +179,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and `Autocomplete.Root`, which disable the input and its buttons.",
+          "description": "Disables the field, the input and its buttons.",
           "required": false
         },
         {
@@ -190,7 +188,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, with the invalid look.",
           "required": false
         },
         {
@@ -199,7 +197,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to `Autocomplete.Root`; the input's field box uses `bg-muted`. The input stays focusable and its popup still opens to show the suggestions, but neither picking one, typing nor the clear button changes the text.",
+          "description": "Makes the input read-only, with the muted read-only fill. The input stays focusable and its popup still opens to show the suggestions, but picking one, typing and the clear button change nothing. The text still submits under `name`.",
           "required": false
         },
         {
@@ -208,18 +206,16 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to `Autocomplete.Root`, which marks the input required.",
+          "description": "Makes the input required, so an empty submit is blocked with the required message.",
           "required": false
         },
         {
           "name": "itemToStringValue",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((itemValue: ItemValue) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When the item values are objects (`<Autocomplete.Item value={object}>`), this function converts the object value to a string representation for both display in the input and form submission. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
+          "description": "Returns the text an object item fills the input with and submits. With groups, it receives one item of a group, not the group. A `{ value, label }` item uses its `label` without it.",
           "required": false
         },
         {
@@ -228,7 +224,7 @@
           "type": "(Items & NoInfer<ListItems<Items, ItemValue>>) | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The items to suggest: a flat array, or an array of groups that each carry their own `items`. Nullish entries are not supported.",
+          "description": "The items to suggest: a flat array, or an array of groups that each carry a `value` and their own `items`. Nullish entries are not supported. Base UI filters them against the text in the locale of `LocaleProvider`. A group whose items all fail to match hides with them.",
           "required": false
         },
         {
@@ -248,7 +244,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`. It names the input.",
+          "description": "The visible label, rendered as `Field.Label` 4px above the input. It names the input. For a label row with an info button, or a horizontal field, compose `Field.Root` and the `Autocomplete` parts instead.",
           "required": false
         },
         {
@@ -307,7 +303,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` the text submits under, forwarded to `Field.Root`. A `Form` error under it shows below the input until the user edits the text.",
+          "description": "The `name` the text submits under, and under which `Form` routes its errors. A `Form` error under it shows below the input, also in the first HTML a server renders, until the user edits the text.",
           "required": false
         },
         {
@@ -345,13 +341,11 @@
         },
         {
           "name": "onValueChange",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((value: string, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called when the input value of the autocomplete changes.",
+          "description": "Called with the input's text on every change. It receives only the string, so capture a picked item in `Autocomplete.Item`'s `onClick`, which runs on a click and on Enter while the item is highlighted.",
           "required": false
         },
         {
@@ -382,7 +376,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shown in the empty input, forwarded to `Autocomplete.Input`.",
+          "description": "The text the empty input shows.",
           "required": false
         },
         {
@@ -391,7 +385,7 @@
           "type": "Ref<HTMLInputElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The input the user types in. `inputRef` is the Root's hidden input.",
+          "description": "The input the user types in. `inputRef` is the Root's hidden input. The props the field does not name, `id` included, go to `Autocomplete.Root`, and the label points at that `id`.",
           "required": false
         },
         {
@@ -400,7 +394,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders a button that empties the input while it holds text.",
+          "description": "Renders a button that empties the input while it holds text. Its name is the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -409,7 +403,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders the caret button that opens the whole list. The list opens as the user types, so the field has none by default. It hides while the clear button shows.",
+          "description": "Renders the caret button, which opens the whole list for browsing. The list opens as the user types, so the field has no caret unless you pass this. The caret hides while the clear button shows. Its name is the locale dictionary's `toggle` string.",
           "required": false
         },
         {
@@ -434,13 +428,11 @@
         },
         {
           "name": "value",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | number | readonly string[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The input value of the autocomplete. Use when controlled.",
+          "description": "The text in the input, for a controlled field, whether the user typed it or picked a suggestion. Text that matches no suggestion stays on blur and submits as it is.",
           "required": false
         },
         {

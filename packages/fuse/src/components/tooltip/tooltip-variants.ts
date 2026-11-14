@@ -7,10 +7,11 @@ import { overlayPopupMotionClass } from "../overlay/overlay-classes";
  * `@elmeragroup/fuse/tooltip`, and the workspace-only recipe catalog re-exports it for the Figma
  * component sync.
  *
- * - `popup` takes the shared motion set but neither the composed popup surface nor the timing
- *   rung: it inverts the fill and flies frameless, and `ring-0` could not subtract the surface's
- *   `ring-foreground/10`, since width and colour are separate tailwind-merge conflict groups.
- *   Untimed is deliberate. The Tooltip shell rounds and pads it; it is at most 320px wide.
+ * - `popup` takes the shared motion set but not the composed popup surface or the timing rung.
+ *   It inverts the fill and has no ring, and `ring-0` could not remove the surface's
+ *   `ring-foreground/10`, because width and colour are separate tailwind-merge conflict groups.
+ *   It has no timing on purpose. The Tooltip shell rounds and pads it, and it is at most 320px
+ *   wide.
  * - `arrow` is a 10px square in the popup's fill, turned 45° and pulled half out of the popup's
  *   edge on its side. Base UI writes its offset along that edge inline.
  */

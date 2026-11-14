@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. The plot is one tab stop. ArrowRight and ArrowLeft move to the next and previous point, by x and then y, and Home and End go to the first and last point. ArrowDown and ArrowUp move the series focus, all series first, and the walk then stays in the focused series. Enter and Space pin the tooltip, and Escape hides it.",
           "required": false
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values and repeated points are valid, and every one draws. A row whose x or y is null or undefined has no point. Every cell is serialisable, so a server component passes it.",
+          "description": "Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values and repeated points are valid, and every one draws. A row whose x or y is null or undefined has no point. Every cell is serialisable, so a server component passes it. On a data update the axes glide to fit the new points over the chart's update time. They move at once under reduced motion and when the chart holds more than 5,000 points.",
           "required": true
         },
         {
@@ -89,7 +89,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         },
         {
@@ -116,7 +116,7 @@
           "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Values the x domain must reach, such as 0 °C.",
+          "description": "Values the x domain must reach, such as 0 °C. A `ReferenceLine` outside the domains draws nothing, so list its x here to bring it in.",
           "required": false
         },
         {
@@ -134,7 +134,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The x measure's name, such as \"Ukemiddeltemperatur\", which the tooltip, the options, the description and the table's header print. The dictionary's \"x-verdi\" is the default. The axis title is `XAxis`'s own `label`.",
+          "description": "The x measure's name, such as \"Ukemiddeltemperatur\", which the tooltip, the options, the description and the table's header print. The dictionary's \"x-verdi\" is the default. The axis title is `XAxis`'s own `label`. The plot's one option names the active point's series, then its x and y under `xLabel` and `yLabel`.",
           "required": false
         },
         {
@@ -143,7 +143,7 @@
           "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Values the y domain must reach. A scatter leaves 0 out unless it is listed here.",
+          "description": "Values the y domain must reach. A scatter leaves 0 out unless it is listed here. A `ReferenceLine` outside the domains draws nothing, so list its y here to bring it in.",
           "required": false
         },
         {
@@ -188,7 +188,7 @@
           "type": "\"both\" | \"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"both\"",
-          "description": "Which lines to draw, in screen directions: \"horizontal\" lines at the y ticks, \"vertical\" lines at the x ticks, or \"both\", the default, since both axes are numbers.",
+          "description": "Which lines to draw, in screen directions. \"horizontal\" draws lines at the y ticks, \"vertical\" at the x ticks, and \"both\" at both, since both axes are numbers.",
           "required": false,
           "values": [
             "both",
@@ -211,7 +211,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The line style. \"solid\" by default.",
+          "description": "The line style.",
           "required": false,
           "values": [
             "dashed",
@@ -269,7 +269,7 @@
           "type": "\"dot\" | \"none\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"none\"",
-          "description": "The tick mark. \"none\" by default.",
+          "description": "The tick mark. \"dot\" draws a dot at each tick.",
           "required": false,
           "values": [
             "dot",
@@ -318,7 +318,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. \"start\" by default.",
+          "description": "\"start\" draws the axis at the left edge and \"end\" at the right.",
           "required": false,
           "values": [
             "end",
@@ -358,7 +358,7 @@
           "type": "readonly [x: number, y: number] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Not on a horizontal line. Not on a vertical line. A segment's first point, as `[x, y]`.",
+          "description": "A segment's first point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`.",
           "required": false
         },
         {
@@ -385,7 +385,7 @@
           "type": "readonly [x: number, y: number] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Not on a horizontal line. Not on a vertical line. A segment's last point, as `[x, y]`.",
+          "description": "A segment's last point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`.",
           "required": false
         },
         {
@@ -393,8 +393,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The line's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's tone.",
           "required": false,
           "values": [
             "default",
@@ -446,7 +446,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The line style. \"solid\" by default.",
+          "description": "The line style.",
           "required": false,
           "values": [
             "dashed",
@@ -485,7 +485,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on a horizontal line. The x value a vertical line marks. Not on a segment.",
+          "description": "The x value a vertical line marks. A line takes a `y`, an `x`, or a `from` and a `to`.",
           "required": false
         },
         {
@@ -494,7 +494,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The y value a horizontal line marks. Not on a vertical line. Not on a segment.",
+          "description": "The y value a horizontal line marks. A line takes a `y`, an `x`, or a `from` and a `to`.",
           "required": false
         }
       ]
@@ -521,7 +521,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the points draw. An unknown key throws `unknown-key`.",
+          "description": "The series the points draw. An unknown key throws `unknown-key`. A series draws all its points as one SVG path, so 100,000 points stay one element per series, and a data update redraws the path in place. Overlapping dots of one series never darken each other.",
           "required": true
         },
         {
@@ -530,7 +530,7 @@
           "type": "\"lg\" | \"md\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"md\"",
-          "description": "The dots' diameter: \"sm\" is 5 px, \"md\" 8 px and \"lg\" 11 px. \"md\" by default.",
+          "description": "The dots' diameter. \"sm\" is 5 px, \"md\" 8 px and \"lg\" 11 px.",
           "required": false,
           "values": [
             "lg",
@@ -584,7 +584,7 @@
           "type": "ScatterCurve | undefined",
           "shortType": null,
           "defaultValue": "\"linear\"",
-          "description": "The curve through the points, in x order, ties by y. \"linear\" by default, which draws a fitted line through its points as straight segments. \"step-after\" holds each y until the next x, as a tariff step does.",
+          "description": "The d3 curve through the points, in x order, ties by y. \"linear\" draws straight segments between the points. \"step-after\" holds each y until the next x, as a tariff step does.",
           "required": false,
           "values": [
             "basis",
@@ -603,7 +603,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the line joins. An unknown key throws `unknown-key`.",
+          "description": "The series the line joins. An unknown key throws `unknown-key`. Fuse fits nothing, so compute a fitted line in the app and pass its points as a series of their own.",
           "required": true
         },
         {
@@ -621,7 +621,7 @@
           "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line.",
+          "description": "The line's look. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line.",
           "required": false,
           "values": [
             "dashed",
@@ -663,7 +663,7 @@
           "type": "\"dot\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ring\"",
-          "description": "The mark on the active point. \"ring\" by default, a ring around the point in its series' colour. \"dot\" draws a filled dot inside a ring of the surface the chart rests on, `--surface`, for a series a Line draws alone.",
+          "description": "The mark on the active point. \"ring\" draws a ring around the point in its series' colour. \"dot\" draws a filled dot inside a ring of the surface the chart rests on, `--surface`, for a series a Line draws alone.",
           "required": false,
           "values": [
             "dot",
@@ -712,7 +712,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The popup's surface. \"default\" by default.",
+          "description": "The popup's surface. \"frosted\" is translucent, so its cut-outs show the surface beneath the popup.",
           "required": false,
           "values": [
             "default",
@@ -834,7 +834,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "description": "Where the legend sits around the plot.",
           "required": false,
           "values": [
             "bottom",
@@ -935,7 +935,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 points it pages by row range.",
           "required": false
         },
         {
@@ -1114,7 +1114,7 @@
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
           "defaultValue": "\"dots\"",
-          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "description": "The pattern drawn behind the marks.",
           "required": false,
           "values": [
             "4-pointed-star",

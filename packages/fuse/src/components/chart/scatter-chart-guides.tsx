@@ -22,11 +22,11 @@ import { xValueText, yFormatOf } from "./scatter-chart-text";
  */
 export type ScatterChartGridProps = ChartLayerProps & {
   /**
-   * Which lines to draw, in screen directions: "horizontal" lines at the y ticks, "vertical" lines
-   * at the x ticks, or "both", the default, since both axes are numbers.
+   * Which lines to draw, in screen directions. "horizontal" draws lines at the y ticks, "vertical"
+   * at the x ticks, and "both" at both, since both axes are numbers.
    */
   orientation?: "horizontal" | "vertical" | "both";
-  /** The line style. "solid" by default. */
+  /** The line style. */
   variant?: "solid" | "dashed";
 };
 
@@ -40,7 +40,7 @@ export type ScatterChartXAxisProps = ChartLayerProps & {
   format?: ValueFormat;
   /** The axis title, such as "Ukemiddeltemperatur (°C)". */
   label?: string;
-  /** The tick mark. "none" by default. */
+  /** The tick mark. "dot" draws a dot at each tick. */
   tick?: "none" | "dot";
 };
 
@@ -54,7 +54,7 @@ export type ScatterChartYAxisProps = ChartLayerProps & {
   format?: ValueFormat;
   /** The axis title, such as "kWh per uke". */
   label?: string;
-  /** "start" draws the axis at the left edge and "end" at the right. "start" by default. */
+  /** "start" draws the axis at the left edge and "end" at the right. */
   side?: "start" | "end";
 };
 
@@ -67,41 +67,41 @@ export type ScatterChartYAxisProps = ChartLayerProps & {
 export type ScatterChartReferenceLineProps = ChartLayerProps &
   (
     | {
-        /** The y value a horizontal line marks. */
+        /** The y value a horizontal line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         y: number;
-        /** Not on a horizontal line. */
+        /** The x value a vertical line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         x?: never;
-        /** Not on a horizontal line. */
+        /** A segment's first point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         from?: never;
-        /** Not on a horizontal line. */
+        /** A segment's last point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         to?: never;
       }
     | {
-        /** The x value a vertical line marks. */
+        /** The x value a vertical line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         x: number;
-        /** Not on a vertical line. */
+        /** The y value a horizontal line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         y?: never;
-        /** Not on a vertical line. */
+        /** A segment's first point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         from?: never;
-        /** Not on a vertical line. */
+        /** A segment's last point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         to?: never;
       }
     | {
-        /** A segment's first point, as `[x, y]`. */
+        /** A segment's first point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         from: readonly [x: number, y: number];
-        /** A segment's last point, as `[x, y]`. */
+        /** A segment's last point, as `[x, y]`. A line takes a `y`, an `x`, or a `from` and a `to`. */
         to: readonly [x: number, y: number];
-        /** Not on a segment. */
+        /** The x value a vertical line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         x?: never;
-        /** Not on a segment. */
+        /** The y value a horizontal line marks. A line takes a `y`, an `x`, or a `from` and a `to`. */
         y?: never;
       }
   ) & {
     /** The visible label. `{value}` prints the line's value in Root's formats. */
     label?: string;
-    /** The line style. "solid" by default. */
+    /** The line style. */
     variant?: "solid" | "dashed";
-    /** The line's tone. "default" by default. */
+    /** The line's tone. */
     tone?: ChartTone;
   };
 
@@ -295,7 +295,7 @@ export function ScatterChartYAxis({
 export function ScatterChartReferenceLine({
   label,
   variant = "solid",
-  tone,
+  tone = "default",
   className,
   style,
   ...props

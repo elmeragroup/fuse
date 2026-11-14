@@ -7,10 +7,10 @@ import { Field } from "@elmeragroup/fuse/field";
 import { Switch } from "@elmeragroup/fuse/switch";
 
 export function SwitchForm() {
-  const [submitted, setSubmitted] = useState<string>("");
+  const [submitted, setSubmitted] = useState("");
   return (
     <form
-      className="flex flex-col gap-4"
+      className="flex flex-col items-start gap-4"
       onSubmit={(event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -21,7 +21,9 @@ export function SwitchForm() {
         <Switch name="notifications" value="on" defaultChecked />
       </Field.Root>
       <Button type="submit">Save</Button>
-      {submitted ? <p>Submitted: {submitted}</p> : null}
+      <p role="status" className="text-sm">
+        {submitted ? `Submitted: ${submitted}` : ""}
+      </p>
     </form>
   );
 }

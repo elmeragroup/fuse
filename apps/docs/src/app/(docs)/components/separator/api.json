@@ -14,13 +14,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "Extra classes, merged after the line's own. A vertical line stretches to the height of its flex row. For a shorter one, add `data-vertical:h-4 data-vertical:self-auto` and centre the row with `items-center`. The line's own `data-vertical:self-stretch` wins over `self-center`, so `h-4 self-center` leaves the line at the top of the row.",
           "required": false
         },
         {

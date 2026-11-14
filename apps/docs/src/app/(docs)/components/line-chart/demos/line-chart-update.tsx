@@ -38,7 +38,7 @@ export function LineChartUpdate() {
   const [start, setStart] = useState(0);
   return (
     <div className="flex w-full flex-col items-start gap-4">
-      <Button variant="outline" onClick={() => setStart((value) => value + 1)}>
+      <Button variant="outline" size="sm" onClick={() => setStart((value) => value + 1)}>
         Next reading
       </Button>
       <LineChart.Root

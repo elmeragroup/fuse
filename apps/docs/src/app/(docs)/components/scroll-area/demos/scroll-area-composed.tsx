@@ -10,8 +10,7 @@ export function ScrollAreaComposed() {
       <ScrollAreaPrimitive.Viewport className="size-full rounded-[inherit]">
         <ScrollAreaPrimitive.Content>
           <div className="text-sm h-[480px] w-[720px] p-4">
-            Two-axis content. Root only ships one bar; compose two <code>ScrollArea.Bar</code>s on the base-ui
-            primitive for both axes.
+            Content wider and taller than the area scrolls on both axes, with one bar for each.
           </div>
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>

@@ -3,33 +3,32 @@
 import { RadialChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-// Yesterday's consumption in each part of the day against its daily target, in kilowatt-hours.
-const day = [
-  { part: "morning", kwh: 9.2, target: 12 },
-  { part: "daytime", kwh: 6.1, target: 10 },
-  { part: "evening", kwh: 11.4, target: 14 },
+// This month's consumption against each group's budget, in kWh.
+const rings = [
+  { budget: "heating", kwh: 412, limit: 500 },
+  { budget: "water", kwh: 168, limit: 200 },
+  { budget: "charging", kwh: 133, limit: 180 },
 ];
 
-const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 1 } as const;
-
 const config = {
-  morning: { label: "Morning", color: "chart-1", format: energy },
-  daytime: { label: "Daytime", color: "chart-2", format: energy },
-  evening: { label: "Evening", color: "chart-3", format: energy },
+  heating: { label: "Heating", color: "chart-1" },
+  water: { label: "Hot water", color: "chart-2" },
+  charging: { label: "Car charging", color: "chart-3" },
 } as const satisfies ChartConfig;
 
 export function RadialChartDotted() {
   return (
     <RadialChart.Root
-      data={day}
+      data={rings}
       config={config}
-      nameKey="part"
+      nameKey="budget"
       valueKey="kwh"
-      maxKey="target"
-      aria-label="Yesterday against the daily targets">
+      maxKey="limit"
+      valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
+      aria-label="Usage against budget this month">
       <RadialChart.Bar variant="dotted" />
-      <RadialChart.Legend />
       <RadialChart.Tooltip />
+      <RadialChart.Table />
     </RadialChart.Root>
   );
 }

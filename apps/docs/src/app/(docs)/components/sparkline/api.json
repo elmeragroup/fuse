@@ -15,7 +15,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The consumer's name. The accessible name appends the generated range sentence to it.",
+          "description": "The Sparkline's name. A Sparkline is an image with no keyboard stop, and its accessible name is this text followed by the generated range sentence, which names the lowest and highest values.",
           "required": true
         },
         {
@@ -98,7 +98,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" leaves hover out: no value shows a crosshair, a dot or a highlight under the pointer. Hover writes a region of about half a kilobyte and five elements per value: a 30-value line is about 18 KB and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about 106 KB against 7 KB. Pass \"none\" where many Sparklines render at once, such as one per row of a long table.",
+          "description": "\"none\" leaves hover out. With hover, a pointer over a value shows a dashed crosshair and a dot there, fades the rest of the series and draws the line around the value, or the value's bar, at full strength, and moving to the next value cross-fades the marks. The hover is CSS, shows only on a device that hovers, and adds no tab stop and nothing to the accessible name. It writes a region of about half a kilobyte and five elements per value, so a 30-value line is about 18 KB and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about 106 KB against 7 KB. Pass \"none\" where many Sparklines render at once, such as one per row of a long table.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns the entrance off. The entrance plays whenever the svg enters the document, so it replays when the element is inserted again: a keyed row that a sort moves, or a panel shown again. Pass \"none\" where that happens, such as a Sparkline in a sortable table. Reduced motion draws the marks at rest either way.",
+          "description": "\"none\" turns the entrance off. A line wipes in from the left, an area fills behind it, and bars grow from the baseline. The entrance plays whenever the svg enters the document, so it replays when the element is inserted again, as a keyed row that a sort moves or a panel shown again is. Pass \"none\" where that happens, such as a Sparkline in a sortable table. Reduced motion draws the marks at rest either way.",
           "required": false
         },
         {
@@ -152,7 +152,7 @@
           "type": "Interval | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Only with `start`. Each value's slot length.",
+          "description": "Each value's slot length. Pass it with `start` and `timeZone`.",
           "required": false,
           "values": [
             "day",
@@ -221,7 +221,7 @@
           "type": "SupportedLocale",
           "shortType": null,
           "defaultValue": null,
-          "description": "The locale of the range sentence. A hook-free component cannot read LocaleProvider.",
+          "description": "The locale of the range sentence. Sparkline calls no hook, so a server component renders it with no client JavaScript, and it cannot read LocaleProvider.",
           "required": true,
           "values": [
             "en-US",
@@ -245,7 +245,7 @@
           "type": "ChartInstant | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Without a start, the range sentence names no slots. The first value's slot start. With all three, the range sentence names the slots of the lowest and highest values.",
+          "description": "The first value's slot start. Pass `start`, `interval` and `timeZone` together, and the range sentence names the slots of the lowest and highest values. Without them it names no slots.",
           "required": false
         },
         {
@@ -263,7 +263,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Only with `start`. The IANA zone the slot labels read in.",
+          "description": "The IANA zone the slot labels read in. Pass it with `start` and `interval`.",
           "required": false
         },
         {
@@ -272,7 +272,7 @@
           "type": "\"area\" | \"bar\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The mark. \"line\" by default.",
+          "description": "The mark. \"line\" by default. An area fades from its values toward 0, above and below the zero line, and an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar rounds the corners of its far end by `--chart-bar-radius`.",
           "required": false,
           "values": [
             "area",
@@ -290,8 +290,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "One or more `Sparkline`s, whose hover marks glide on a spring once the wrapper hydrates. A server component can render the wrapper around server-rendered Sparklines, and the data stays on the server. Before it hydrates, or with no script, the Sparklines keep their CSS hover. A step to another value glides the crosshair, the dot and the band that re-strokes a line or an area, and a hovered bar lifts at once. Under reduced motion the marks move at once. A Sparkline inside nested wrappers follows the nearest one, and the wrapper leaves a Sparkline with `data-hover=\"none\"` alone. Pass `render` to put the behavior on another element, such as the tile that holds the Sparklines.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {

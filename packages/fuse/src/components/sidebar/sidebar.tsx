@@ -85,9 +85,9 @@ import {
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE } from "./sidebar-width";
 
 /**
- * Cookie the open state persists to. HARD invariant: the funnel
- * `layout.tsx` server-reads `cookieStore.get("sidebar:state")` for SSR open-state, so the
- * shadcn template's underscore-separated name would silently break it.
+ * The cookie a page Sidebar writes its open state to. Keep the colon: the funnel `layout.tsx`
+ * reads `cookieStore.get("sidebar:state")` on the server for the first paint, so the shadcn
+ * template's underscore name would break it without an error.
  */
 export const SIDEBAR_COOKIE_NAME = "sidebar:state";
 /** Cookie lifetime in seconds: seven days. */
@@ -120,29 +120,29 @@ function isSidebarShortcut(event: KeyboardEvent): boolean {
 }
 
 export type SidebarContextValue = {
-  /** Derived from `open`. */
+  /** `expanded` while `open` is true, `collapsed` otherwise. */
   state: "expanded" | "collapsed";
-  /** Desktop open state — controlled or internal. */
+  /** The desktop open state, controlled or the Provider's own. */
   open: boolean;
   /**
    * Accepts a boolean or an updater. At `bounds="page"` it writes the cookie on every call,
    * controlled or not; at `bounds="container"` it never does.
    */
   setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
-  /** Mobile Sheet state — controlled or internal; session-only, never cookie-persisted. */
+  /** The mobile Sheet's open state, controlled or the Provider's own. It lasts for the session only. */
   openMobile: boolean;
   /**
    * Accepts a boolean or an updater, as a React state setter does. When the Provider takes
    * `openMobile`, it reports the request through `onOpenMobileChange` instead.
    */
   setOpenMobile: Dispatch<SetStateAction<boolean>>;
-  /** From the package-private viewport probe; `false` on the server and first client render. */
+  /** Whether the viewport is below 768px. It is `false` on the server and the first client render. */
   isMobile: boolean;
-  /** Toggles `openMobile` on mobile, `setOpen(o => !o)` on desktop. */
+  /** Toggles `openMobile` on mobile and `open` on desktop. */
   toggleSidebar: () => void;
 };
 
-/** Toggle, title and description copy; the dictionary defaults unless overridden. */
+/** The toggle label and the mobile Sheet's title and description. */
 export type SidebarLabels = {
   toggle: string;
   title: string;
@@ -171,8 +171,8 @@ function useSidebarInternal(): SidebarInternalContextValue {
 }
 
 /**
- * The Provider's open/mobile state and toggle. Throws outside
- * `Sidebar.Provider`.
+ * Reads the Provider's desktop and mobile open state and its setters, such as `toggleSidebar` for a
+ * trigger of your own. It throws outside `Sidebar.Provider`.
  */
 export function useSidebar(): SidebarContextValue {
   return useSidebarInternal().value;
@@ -209,28 +209,30 @@ function useOpenRequests(open: boolean): (value: SetStateAction<boolean>) => boo
 
 export type SidebarProviderProps = ComponentProps<"div"> & {
   /**
-   * Uncontrolled initial open state. SSR pattern: parse the `sidebar:state` cookie
-   * server-side and pass it here.
-   * @default true
+   * The desktop open state on first render. The Provider reads it once, so a later value changes
+   * nothing. A page Sidebar writes its state to the `sidebar:state` cookie on every change. To
+   * restore it without a flash, read that cookie in a server layout with `cookies()` and pass it
+   * here. A value read on the client arrives after hydration, which renders the server's value,
+   * so a client-only read has to control `open` instead.
    */
   defaultOpen?: boolean;
-  /** Controlled open state. */
+  /** The desktop open state, for a Sidebar you control. */
   open?: boolean;
   /**
-   * Controlled setter. When provided, internal state is bypassed; at `bounds="page"` the cookie
-   * is still written on every change.
+   * Called with the requested desktop open state. When you pass it, the Provider keeps no state
+   * of its own. At `bounds="page"` it still writes the cookie on every change.
    */
   onOpenChange?: (open: boolean) => void;
   /**
-   * Controlled open state of the phone Sheet the Root becomes below the mobile breakpoint, so a
-   * host can close it from outside, such as after a navigation. Session-only: never written to
-   * the cookie. Uncontrolled, it starts closed.
+   * The open state of the Sheet the Root becomes below 768px, so a host can close it from outside,
+   * such as after a navigation. It lasts for the session only and is never written to the cookie.
+   * Uncontrolled, it starts closed.
    */
   openMobile?: boolean;
   /**
-   * Controlled setter for the phone Sheet. Called with the requested state when the Trigger, the
-   * shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it;
-   * when provided, internal state is bypassed.
+   * Called with the requested Sheet state when the Trigger, the shortcut, the Sheet's own
+   * dismissal or `useSidebar().setOpenMobile` asks to open or close it. When you pass it, the
+   * Provider keeps no Sheet state of its own, and the host decides.
    */
   onOpenMobileChange?: (open: boolean) => void;
   /**
@@ -239,24 +241,22 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
    * Ctrl+B from anywhere in the document. `container` fills its container's height, which the
    * host must define, keeps the rail inside it, writes no cookie, so a host that wants the state
    * kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside
-   * the Provider's React tree. An `Inset` taller than the container is clipped, so the host
-   * scrolls the inset's own content. The mobile Sheet still follows the viewport's width.
-   * @default "page"
+   * the Provider's React tree, so a page Sidebar around it keeps the shortcut everywhere else. An
+   * `Inset` taller than the container is clipped, so the host scrolls the inset's own content. The
+   * mobile Sheet still follows the viewport's width.
    */
   bounds?: SidebarBounds;
   /**
-   * Copy overrides for the Trigger/Rail label and the mobile Sheet's sr-only title and
-   * description. Defaults to the locale dictionary (`sidebar.*`).
+   * Text for the Trigger's and Rail's label and the mobile Sheet's screen reader title and
+   * description. Each one left out comes from the locale dictionary's `sidebar.*` entries.
    */
   labels?: Partial<SidebarLabels>;
 };
 
 /**
- * Owns the open state, persists it to the `sidebar:state` cookie and toggles it on the keyboard
- * shortcut: ⌘B on Apple platforms and Ctrl+B elsewhere. The shortcut stands aside for a keydown
- * another handler already prevented, one mid-composition and one typed into a text field. A
- * contained Sidebar inside a page one takes ⌘B from inside itself first; the page Sidebar keeps it
- * everywhere else.
+ * Holds the open state, writes it to the `sidebar:state` cookie and toggles it on ⌘B on Apple
+ * platforms and Ctrl+B elsewhere. The shortcut ignores a keydown another handler already
+ * prevented, one mid-composition and one typed into a text field.
  */
 export function SidebarProvider({
   defaultOpen = true,
@@ -394,39 +394,44 @@ export function SidebarProvider({
   );
 }
 
-export type SidebarRootProps = ComponentProps<"div"> & {
+export type SidebarRootProps = Omit<ComponentProps<"div">, "style" | "children"> & {
   /**
-   * Edge the rail anchors to. Emitted as `data-side`; drives gap rotation, container
-   * offsets, border side and rail cursors.
-   * @default "left"
+   * The edge the rail sits on. The root writes it as `data-side`. For `right`, keep the Root
+   * before `Sidebar.Inset` and pass `className="flex-row-reverse"` to `Sidebar.Provider`, so the
+   * rail's spacer moves to the right edge and the Inset still reads the Root's state.
    */
   side?: "left" | "right";
   /**
-   * `floating` pads the rail and rounds/shadows the inner surface; `inset` pads the rail
-   * and lets the sibling `Sidebar.Inset` react through peer selectors; `sidebar` is flush
-   * with an edge border.
-   * @default "sidebar"
+   * The rail style. `sidebar` sits flush with the edge behind a border. `floating` pads the rail
+   * and rounds and shadows its surface. `inset` pads the rail and shows the `Sidebar.Inset` beside
+   * it as a card.
    */
   variant?: "sidebar" | "floating" | "inset";
   /**
-   * `offcanvas` slides the rail off-screen when collapsed; `icon` collapses to
-   * `--sidebar-width-icon`; `none` renders the static branch — which still emits
-   * `group peer` and `data-state/variant/side` for inset compositions.
-   * @default "offcanvas"
+   * How the rail collapses. `offcanvas` slides it off the edge, `icon` narrows it to
+   * `--sidebar-width-icon` with only the icons showing, and `none` keeps it open. A `none` root
+   * still writes `data-state`, `data-variant` and `data-side` for an `inset` layout.
    */
   collapsible?: "offcanvas" | "icon" | "none";
-  /** Text direction, forwarded to the mobile Sheet content (RTL). */
+  /** The text direction of the mobile Sheet, such as `rtl`. */
   dir?: string;
+  /**
+   * Inline styles. The root's element props land on a different element in each layout: the rail
+   * container on desktop, the Sheet's dialog below 768px and the root `div` with
+   * `collapsible="none"`. In the Sheet, `style` merges over the mobile `--sidebar-width`, so it can
+   * set the Sheet's width.
+   */
+  style?: ComponentProps<"div">["style"];
+  /**
+   * The rail's sections: `Sidebar.Header`, `Sidebar.Content`, `Sidebar.Footer` and
+   * `Sidebar.Rail`. Below 768px they show in a Sheet, under a close button.
+   */
+  children?: ComponentProps<"div">["children"];
 };
 
 /**
- * The sidebar surface. Its element props (`id`, `aria-*`, `data-*`, handlers, `style`)
- * land on a different element per branch:
- * - desktop: the `sidebar-container`, fixed to the viewport or, under a
- *   `bounds="container"` Provider, positioned in the Provider's box;
- * - mobile: the sheet dialog, with `style` merged over the mobile `--sidebar-width`, so a
- *   caller's `style` can override the width;
- * - `collapsible="none"`: the static root div.
+ * The rail. On desktop it is fixed to the viewport or, under a `bounds="container"` Provider,
+ * placed in the Provider's box. Below 768px it is a Sheet.
  */
 export function SidebarRoot({
   side = "left",
@@ -443,9 +448,9 @@ export function SidebarRoot({
   const panel = sidebarPanelVariants({ variant, bounds });
 
   if (collapsible === "none") {
-    // Funnel deviation from the shadcn template: the inset wizard dialogs
-    // rely on a sibling Inset's `peer-data-[variant=inset]:` and the wrapper's
-    // `has-data-[variant=inset]:`, so this branch keeps group/peer + data-state/variant/side.
+    // This differs from the shadcn template. The funnel's inset wizard dialogs rely on a sibling
+    // Inset's `peer-data-[variant=inset]:` and the wrapper's `has-data-[variant=inset]:`, so this
+    // branch keeps `group peer` and `data-state`, `data-variant` and `data-side`.
     return (
       <div
         data-slot="sidebar"
@@ -516,16 +521,13 @@ export function SidebarRoot({
 }
 
 export type SidebarTriggerProps = ButtonProps & {
-  /**
-   * Accessible name for the icon-only trigger. Defaults to the locale
-   * dictionary `sidebar.toggle`.
-   */
+  /** The trigger's accessible name. Unset, it is the locale dictionary's `sidebar.toggle`. */
   "aria-label"?: string;
 };
 
 /**
- * Icon button that toggles the sidebar. It declares the keyboard shortcut in
- * `aria-keyshortcuts`; a consumer value replaces it.
+ * The icon button that toggles the Sidebar. It names the keyboard shortcut in
+ * `aria-keyshortcuts`, and an `aria-keyshortcuts` you pass replaces it.
  */
 export function SidebarTrigger({
   className,
@@ -560,10 +562,10 @@ export function SidebarTrigger({
 export type SidebarRailProps = ComponentProps<"button">;
 
 /**
- * Reopen control. `visible` re-enables it under the collapsed offcanvas panel's
- * `visibility: hidden`: a hidden ancestor leaves it out of the accessibility tree and tab
- * order, but a `visible` descendant is painted and clickable again. (`inert` cannot be
- * undone from inside, which is why the panel does not use it.)
+ * The strip along the rail's inner edge that toggles the Sidebar on click, for the pointer only.
+ * The collapsed offcanvas panel is `visibility: hidden`, which keeps it out of the accessibility
+ * tree and the tab order, and the rail's `visible` paints it and makes it clickable again. The
+ * panel does not use `inert`, because a descendant cannot undo it.
  */
 export function SidebarRail({ className, ...props }: SidebarRailProps): ReactElement {
   const { value, labels } = useSidebarInternal();
@@ -581,13 +583,16 @@ export function SidebarRail({ className, ...props }: SidebarRailProps): ReactEle
   );
 }
 
-export type SidebarInsetProps = useRender.ComponentProps<"main">;
+export type SidebarInsetProps = Omit<useRender.ComponentProps<"main">, "render"> & {
+  /**
+   * The element the column renders. Unset, it is a `<main>` landmark. A layout that already has
+   * its own `<main>` passes `<div />`, and the column keeps its slot and its card look beside an
+   * `inset` rail.
+   */
+  render?: useRender.ComponentProps<"main">["render"];
+};
 
-/**
- * The main column beside the Sidebar. It renders a `<main>` landmark by default; a host that
- * already has its own `<main>` passes `render={<div />}` and keeps the column's slot and look,
- * including the inset card beside an `inset` panel.
- */
+/** The main column beside the Sidebar. */
 export function SidebarInset({ className, render, ...props }: SidebarInsetProps): ReactElement {
   return useRender({
     defaultTagName: "main",
@@ -603,14 +608,17 @@ export function SidebarInset({ className, render, ...props }: SidebarInsetProps)
 }
 
 /**
- * Typed as `ComponentProps<"input">` (string `className`) rather than the base-ui Input's
- * props, whose `className` can be a render-prop function `cn` cannot merge.
- * Composes the library Input's control so the shared `focusRing` ships with the field box, and
- * keeps the native numeric `size` attribute. It is a row of the sidebar, so it is `--row-h` tall
- * and takes no field size prop; it writes the default one, so its inset and type are md.
+ * The props of `Sidebar.Input`, a native input's. It takes a string `className`, not Base UI
+ * Input's state function, which `cn` cannot merge, and it keeps the native numeric `size`
+ * attribute.
  */
 export type SidebarInputProps = ComponentProps<"input">;
 
+/**
+ * A search field for the rail, such as in `Sidebar.Header`. It uses Input's control, so the
+ * shared focus ring comes with the field box. It is a rail row, `--row-h` tall, with the md inset
+ * and type, and takes no field size.
+ */
 export function SidebarInput({ className, ...props }: SidebarInputProps): ReactElement {
   return (
     <InputControl
@@ -643,6 +651,7 @@ export function SidebarFooter({ className, ...props }: SidebarFooterProps): Reac
 
 export type SidebarSeparatorProps = SeparatorProps;
 
+/** A line between two groups of the rail. */
 export function SidebarSeparator({ className, ...props }: SidebarSeparatorProps): ReactElement {
   return (
     <Separator
@@ -655,6 +664,7 @@ export function SidebarSeparator({ className, ...props }: SidebarSeparatorProps)
 
 export type SidebarContentProps = ComponentProps<"div">;
 
+/** The rail's scrolling body, between the header and the footer. */
 export function SidebarContent({ className, ...props }: SidebarContentProps): ReactElement {
   return <div data-slot="sidebar-content" className={cn(sidebarContentClass, className)} {...props} />;
 }
@@ -671,6 +681,7 @@ export function SidebarGroup({ className, ...props }: SidebarGroupProps): ReactE
 
 export type SidebarGroupLabelProps = useRender.ComponentProps<"div">;
 
+/** A group's heading. It hides in the collapsed icon rail. */
 export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupLabelProps): ReactElement {
   return useRender({
     defaultTagName: "div",
@@ -687,6 +698,7 @@ export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupL
 
 export type SidebarGroupActionProps = useRender.ComponentProps<"button">;
 
+/** A button at the end of a group's label, such as one that adds an item. Give it an `aria-label`. */
 export function SidebarGroupAction({ className, render, ...props }: SidebarGroupActionProps): ReactElement {
   return useRender({
     defaultTagName: "button",
@@ -709,6 +721,7 @@ export function SidebarGroupAction({ className, render, ...props }: SidebarGroup
 
 export type SidebarGroupContentProps = ComponentProps<"div">;
 
+/** A group's body, under its label. */
 export function SidebarGroupContent({ className, ...props }: SidebarGroupContentProps): ReactElement {
   return (
     <div data-slot="sidebar-group-content" className={cn(sidebarGroupContentClass, className)} {...props} />
@@ -717,42 +730,49 @@ export function SidebarGroupContent({ className, ...props }: SidebarGroupContent
 
 export type SidebarMenuProps = ComponentProps<"ul">;
 
+/** The list of menu items. */
 export function SidebarMenu({ className, ...props }: SidebarMenuProps): ReactElement {
   return <ul data-slot="sidebar-menu" className={cn(sidebarMenuClass, className)} {...props} />;
 }
 
 export type SidebarMenuItemProps = ComponentProps<"li">;
 
+/** One entry of a menu, holding a menu button and its action, badge or submenu. */
 export function SidebarMenuItem({ className, ...props }: SidebarMenuItemProps): ReactElement {
   return <li data-slot="sidebar-menu-item" className={cn(sidebarMenuItemClass, className)} {...props} />;
 }
 
-/**
- * A menu row. Given `aria-disabled="true"`, the row looks disabled but keeps pointer events,
- * so its Tooltip still opens, and it cancels its own activation: a click or a keyboard Enter
- * neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
- * runs `onAuxClick`.
- */
-export type SidebarMenuButtonProps = useRender.ComponentProps<"button"> &
-  VariantProps<typeof sidebarMenuButtonVariants> & {
-    /**
-     * Current item. Emits `data-active` and the accent background/foreground; pair with
-     * `aria-current="page"` at the call site.
-     * @default false
-     */
-    isActive?: boolean;
-    /**
-     * Collapsed icon-mode label. The button becomes the tooltip trigger (one DOM node is the
-     * menu button, the caller's `render` element and the trigger); the content sits on the
-     * right and is only visible while the desktop rail is collapsed. A string is shorthand
-     * for `{ children }`.
-     */
-    tooltip?: string | TooltipContentProps;
-  };
+/** The props of `Sidebar.MenuButton`, a menu row. */
+export type SidebarMenuButtonProps = Omit<useRender.ComponentProps<"button">, "aria-disabled"> & {
+  /** The row style. `outline` gives the row a fill and a 1px ring in the sidebar border colour. */
+  variant?: VariantProps<typeof sidebarMenuButtonVariants>["variant"];
+  /**
+   * The row height. `default` takes the density's row height, `sm` is 28px with smaller type, and
+   * `lg` is 48px.
+   */
+  size?: VariantProps<typeof sidebarMenuButtonVariants>["size"];
+  /**
+   * Marks the current item. The row gets `data-active` and the accent fill. Pass
+   * `aria-current="page"` on its link yourself.
+   */
+  isActive?: boolean;
+  /**
+   * The label to show beside the collapsed icon rail. The row becomes the tooltip's trigger, so
+   * one element is the row, your `render` element and the trigger. The tooltip opens to the right
+   * and only while the desktop rail is collapsed. A string is short for `{ children }`.
+   */
+  tooltip?: string | TooltipContentProps;
+  /**
+   * Pass `"true"` to make the row unavailable. It looks disabled but keeps pointer events, so its
+   * tooltip still opens. A click or Enter neither follows its link nor runs `onClick`, and a
+   * middle-click neither opens a new tab nor runs `onAuxClick`.
+   */
+  "aria-disabled"?: useRender.ComponentProps<"button">["aria-disabled"];
+};
 
 /**
- * The collapsed-rail tooltip. It — not `Sidebar.MenuButton` — is the context consumer,
- * so a menu button without a `tooltip` does not re-render when the rail toggles. The root
+ * The collapsed-rail tooltip. It reads the context, not `Sidebar.MenuButton`, so a menu button
+ * without a `tooltip` does not re-render when the rail toggles. The root
  * is disabled, not unmounted, while the rail is expanded or on mobile: Base UI then closes
  * an open hover or focus state instead of keeping it for the collapse, and the trigger
  * element, with its focus, survives the toggle.
@@ -773,6 +793,7 @@ function SidebarMenuButtonTooltip({
   );
 }
 
+/** A menu row, a `<button>` unless `render` passes a link. */
 export function SidebarMenuButton({
   render,
   isActive = false,
@@ -805,13 +826,16 @@ export function SidebarMenuButton({
 
 export type SidebarMenuActionProps = useRender.ComponentProps<"button"> & {
   /**
-   * Hides the action at `md:` and up until the menu item is hovered or focused within, or
-   * the action reports `aria-expanded` (an open dropdown keeps it visible).
-   * @default false
+   * Hides the action from 768px up until its menu item is hovered or holds focus, or the action
+   * has `aria-expanded`, so an open dropdown keeps it in view.
    */
   showOnHover?: boolean;
 };
 
+/**
+ * A button at the end of a menu row, such as a dropdown trigger. Give it an `aria-label`. It
+ * hides in the collapsed icon rail.
+ */
 export function SidebarMenuAction({
   className,
   render,
@@ -842,23 +866,21 @@ export function SidebarMenuAction({
 
 export type SidebarMenuBadgeProps = ComponentProps<"div">;
 
+/** A count at the end of a menu row. */
 export function SidebarMenuBadge({ className, ...props }: SidebarMenuBadgeProps): ReactElement {
   return <div data-slot="sidebar-menu-badge" className={cn(sidebarMenuBadgeClass, className)} {...props} />;
 }
 
 export type SidebarMenuSkeletonProps = ComponentProps<"div"> & {
-  /**
-   * Renders a square icon placeholder before the text bar.
-   * @default false
-   */
+  /** Draws a square icon placeholder before the text bar. */
   showIcon?: boolean;
 };
 
 /**
- * The text bar's width is CSS-deterministic: `--skeleton-width` cycles
- * five values in the 50–90% band by the parent row's `:nth-child` position, so two mounts
- * produce identical DOM and server and client agree — the ref randomized the width per mount,
- * a hydration mismatch by construction.
+ * A placeholder menu row while items load. CSS sets the text bar's width: `--skeleton-width`
+ * cycles five values from 50% to 90% by the row's `:nth-child` position, so the server and the
+ * client render the same DOM. The shadcn template picked a random width per mount, which could
+ * not hydrate.
  */
 export function SidebarMenuSkeleton({
   className,
@@ -877,36 +899,38 @@ export function SidebarMenuSkeleton({
 
 export type SidebarMenuSubProps = ComponentProps<"ul">;
 
+/** A nested list under a menu item. It hides in the collapsed icon rail. */
 export function SidebarMenuSub({ className, ...props }: SidebarMenuSubProps): ReactElement {
   return <ul data-slot="sidebar-menu-sub" className={cn(sidebarMenuSubClass, className)} {...props} />;
 }
 
 export type SidebarMenuSubItemProps = ComponentProps<"li">;
 
+/** One entry of a submenu. */
 export function SidebarMenuSubItem({ className, ...props }: SidebarMenuSubItemProps): ReactElement {
   return (
     <li data-slot="sidebar-menu-sub-item" className={cn(sidebarMenuSubItemClass, className)} {...props} />
   );
 }
 
-/**
- * A sub-menu row, an anchor by default. Given `aria-disabled="true"`, the row looks disabled
- * and cancels its own activation: a click or a keyboard Enter neither follows the link nor
- * runs `onClick`, and a middle-click neither opens a new tab nor runs `onAuxClick`.
- */
-export type SidebarMenuSubButtonProps = useRender.ComponentProps<"a"> & {
+/** The props of `Sidebar.MenuSubButton`, a submenu row. */
+export type SidebarMenuSubButtonProps = Omit<useRender.ComponentProps<"a">, "aria-disabled"> & {
   /**
-   * Row size, emitted as `data-size`. `md` takes the md control size's height and the
-   * density type pair; `sm` takes the sm control size's height and fixed `text-sm`.
-   * @default "md"
+   * The row size, written as `data-size`. `md` takes the md control height and the density's
+   * type, and `sm` the sm control height and `text-sm`.
    */
   size?: "sm" | "md";
-  /**
-   * Current item. Emits `data-active` and the accent background/foreground.
-   * @default false
-   */
+  /** Marks the current item. The row gets `data-active` and the accent fill. */
   isActive?: boolean;
+  /**
+   * Pass `"true"` to make the row unavailable. It looks disabled, a click or Enter neither
+   * follows its link nor runs `onClick`, and a middle-click neither opens a new tab nor runs
+   * `onAuxClick`.
+   */
+  "aria-disabled"?: useRender.ComponentProps<"a">["aria-disabled"];
 };
+
+/** A submenu row, an `<a>` unless `render` passes another element. */
 
 export function SidebarMenuSubButton({
   render,
@@ -931,7 +955,10 @@ export function SidebarMenuSubButton({
 
 export type SidebarIconProps = ComponentProps<"div">;
 
-/** Funnel addition (no shadcn equivalent): centers a brand mark in the footer, full width in icon mode. */
+/**
+ * Centres a brand mark in the footer, full width in the collapsed icon rail. The shadcn template
+ * has no such part.
+ */
 export function SidebarIcon({ className, ...props }: SidebarIconProps): ReactElement {
   return <div data-slot="sidebar-icon" className={cn(sidebarIconClass, className)} {...props} />;
 }

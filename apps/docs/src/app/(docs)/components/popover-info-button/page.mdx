@@ -3,10 +3,30 @@ lede: >
   A small info button that opens a popover with a short explainer.
 ---
 
-import { PopoverInfoButtonBasic } from "./demos/popover-info-button-basic";
-import { PopoverInfoButtonSizes } from "./demos/popover-info-button-sizes";
-import { PopoverInfoButtonI18n } from "./demos/popover-info-button-i18n";
+import { PopoverInfoButtonDemo } from "./demos/popover-info-button-demo";
+import { PopoverInfoButtonVariantDefault } from "./demos/popover-info-button-variant-default";
+import { PopoverInfoButtonVariantSecondary } from "./demos/popover-info-button-variant-secondary";
+import { PopoverInfoButtonVariantOutline } from "./demos/popover-info-button-variant-outline";
+import { PopoverInfoButtonVariantDestructive } from "./demos/popover-info-button-variant-destructive";
+import { PopoverInfoButtonVariantSuccess } from "./demos/popover-info-button-variant-success";
+import { PopoverInfoButtonVariantLink } from "./demos/popover-info-button-variant-link";
+import { PopoverInfoButtonContentSizeSm } from "./demos/popover-info-button-content-size-sm";
+import { PopoverInfoButtonContentSizeLg } from "./demos/popover-info-button-content-size-lg";
+import { PopoverInfoButtonContentSizeXl } from "./demos/popover-info-button-content-size-xl";
+import { PopoverInfoButtonContentSize2xl } from "./demos/popover-info-button-content-size-2xl";
+import { PopoverInfoButtonContentSize3xl } from "./demos/popover-info-button-content-size-3xl";
+import { PopoverInfoButtonContentSize4xl } from "./demos/popover-info-button-content-size-4xl";
+import { PopoverInfoButtonContentSize5xl } from "./demos/popover-info-button-content-size-5xl";
+import { PopoverInfoButtonContentSize6xl } from "./demos/popover-info-button-content-size-6xl";
+import { PopoverInfoButtonContentSize7xl } from "./demos/popover-info-button-content-size-7xl";
+import { PopoverInfoButtonIconXs } from "./demos/popover-info-button-icon-xs";
+import { PopoverInfoButtonIconSm } from "./demos/popover-info-button-icon-sm";
+import { PopoverInfoButtonIcon } from "./demos/popover-info-button-icon";
+import { PopoverInfoButtonIconLg } from "./demos/popover-info-button-icon-lg";
+import { PopoverInfoButtonLabel } from "./demos/popover-info-button-label";
 import { PopoverInfoButtonRichText } from "./demos/popover-info-button-rich-text";
+import { PopoverInfoButtonParagraphs } from "./demos/popover-info-button-paragraphs";
+import { PopoverInfoButtonTitle } from "./demos/popover-info-button-title";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,29 +34,214 @@ export const metadata = componentMetadata("popover-info-button");
 
 <ComponentIntro slug="popover-info-button" />
 
-<Demo slug="popover-info-button" id="basic" title="Basic" file="popover-info-button-basic.tsx">
-  <PopoverInfoButtonBasic />
+<DefaultDemo slug="popover-info-button" file="popover-info-button-demo.tsx">
+  <PopoverInfoButtonDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
+
+<PopoverInfoButton label="About grid rent">
+  The grid rent is the fee you pay for using the electricity grid.
+</PopoverInfoButton>
+```
+
+## Examples
+
+<Demo
+  slug="popover-info-button"
+  id="variant-default"
+  title="Default"
+  level={3}
+  file="popover-info-button-variant-default.tsx">
+  <PopoverInfoButtonVariantDefault />
 </Demo>
 
-<Demo slug="popover-info-button" id="sizes" title="Content sizes" file="popover-info-button-sizes.tsx">
-  <PopoverInfoButtonSizes />
+<Demo
+  slug="popover-info-button"
+  id="variant-secondary"
+  title="Secondary"
+  level={3}
+  file="popover-info-button-variant-secondary.tsx">
+  <PopoverInfoButtonVariantSecondary />
 </Demo>
 
-<Demo slug="popover-info-button" id="rich-text" title="Rich text" file="popover-info-button-rich-text.tsx">
+<Demo
+  slug="popover-info-button"
+  id="variant-outline"
+  title="Outline"
+  level={3}
+  file="popover-info-button-variant-outline.tsx">
+  <PopoverInfoButtonVariantOutline />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="variant-destructive"
+  title="Destructive"
+  level={3}
+  file="popover-info-button-variant-destructive.tsx">
+  <PopoverInfoButtonVariantDestructive />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="variant-success"
+  title="Success"
+  level={3}
+  file="popover-info-button-variant-success.tsx">
+  <PopoverInfoButtonVariantSuccess />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="variant-link"
+  title="Link"
+  level={3}
+  file="popover-info-button-variant-link.tsx">
+  <PopoverInfoButtonVariantLink />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-sm"
+  title="Small content"
+  level={3}
+  file="popover-info-button-content-size-sm.tsx">
+  <PopoverInfoButtonContentSizeSm />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-lg"
+  title="Large content"
+  level={3}
+  file="popover-info-button-content-size-lg.tsx">
+  <PopoverInfoButtonContentSizeLg />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-xl"
+  title="Extra large content"
+  level={3}
+  file="popover-info-button-content-size-xl.tsx">
+  <PopoverInfoButtonContentSizeXl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-2xl"
+  title="2XL content"
+  level={3}
+  file="popover-info-button-content-size-2xl.tsx">
+  <PopoverInfoButtonContentSize2xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-3xl"
+  title="3XL content"
+  level={3}
+  file="popover-info-button-content-size-3xl.tsx">
+  <PopoverInfoButtonContentSize3xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-4xl"
+  title="4XL content"
+  level={3}
+  file="popover-info-button-content-size-4xl.tsx">
+  <PopoverInfoButtonContentSize4xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-5xl"
+  title="5XL content"
+  level={3}
+  file="popover-info-button-content-size-5xl.tsx">
+  <PopoverInfoButtonContentSize5xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-6xl"
+  title="6XL content"
+  level={3}
+  file="popover-info-button-content-size-6xl.tsx">
+  <PopoverInfoButtonContentSize6xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="content-size-7xl"
+  title="7XL content"
+  level={3}
+  file="popover-info-button-content-size-7xl.tsx">
+  <PopoverInfoButtonContentSize7xl />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="icon-xs"
+  title="Icon extra small"
+  level={3}
+  file="popover-info-button-icon-xs.tsx">
+  <PopoverInfoButtonIconXs />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="icon-sm"
+  title="Icon small"
+  level={3}
+  file="popover-info-button-icon-sm.tsx">
+  <PopoverInfoButtonIconSm />
+</Demo>
+
+<Demo slug="popover-info-button" id="icon" title="Icon" level={3} file="popover-info-button-icon.tsx">
+  <PopoverInfoButtonIcon />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="icon-lg"
+  title="Icon large"
+  level={3}
+  file="popover-info-button-icon-lg.tsx">
+  <PopoverInfoButtonIconLg />
+</Demo>
+
+<Demo slug="popover-info-button" id="label" title="Label" level={3} file="popover-info-button-label.tsx">
+  <PopoverInfoButtonLabel />
+</Demo>
+
+<Demo
+  slug="popover-info-button"
+  id="rich-text"
+  title="Rich text"
+  level={3}
+  file="popover-info-button-rich-text.tsx">
   <PopoverInfoButtonRichText />
 </Demo>
 
-The body flows inline content, such as a bold word or a link, as one paragraph, so translated rich
-text needs no wrapper. Consecutive blocks, such as two paragraphs, are spaced by the small surface
-gap.
-
-<Demo slug="popover-info-button" id="i18n" title="Translated label" file="popover-info-button-i18n.tsx">
-  <PopoverInfoButtonI18n />
+<Demo
+  slug="popover-info-button"
+  id="paragraphs"
+  title="Paragraphs"
+  level={3}
+  file="popover-info-button-paragraphs.tsx">
+  <PopoverInfoButtonParagraphs />
 </Demo>
 
-`label` names both the button and the popover it opens, so prefer a specific label such as
-"About grid rent" over the default "More information". A `Popover.Title` in the content names the
-popover instead.
+<Demo slug="popover-info-button" id="title" title="Title" level={3} file="popover-info-button-title.tsx">
+  <PopoverInfoButtonTitle />
+</Demo>
 
 <ApiReference slug="popover-info-button" />
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import type { MenuRadioGroupChangeEventDetails } from "@base-ui/react/menu";
@@ -15,13 +15,14 @@ import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/o
 import { dropdownMenuVariants } from "./dropdown-menu-variants";
 
 const dropdownMenuSlots = dropdownMenuVariants();
-/** Shared item face. Module-private — Item and LinkItem render it. */
+/** The shared item face, module-private, which Item and LinkItem render. */
 const dropdownMenuItemClassName = dropdownMenuSlots.item();
 /** CheckboxItem's and RadioItem's face: the item with room for the trailing indicator. */
 const dropdownMenuCheckableItemClassName = dropdownMenuSlots.checkableItem();
 const dropdownMenuItemIndicatorClassName = dropdownMenuSlots.itemIndicator();
 const dropdownMenuSeparatorClassName = dropdownMenuSlots.separator();
 
+/** Renders the menu popup in a portal. `DropdownMenu.Content` renders one for you. */
 export function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
@@ -66,10 +67,12 @@ function DropdownMenuPopup({
   );
 }
 
+/** Holds the menu's open state and connects its trigger to its popup. */
 export function DropdownMenuRoot(props: ComponentProps<typeof MenuPrimitive.Root>): ReactElement {
   return <MenuPrimitive.Root {...props} />;
 }
 
+/** Opens the menu. It renders a plain `button`; pass `render` to render another element. */
 export function DropdownMenuTrigger({
   className,
   ...props
@@ -85,8 +88,8 @@ export function DropdownMenuTrigger({
 
 export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
   /**
-   * How the popup aligns to the trigger on the cross axis. Menus lead from the trigger
-   * edge (unlike Popover/Tooltip, which default to `"center"`).
+   * How the popup lines up with the trigger along the side it opens on. A menu defaults to
+   * `start`, where Popover and Tooltip default to `center`.
    */
   align?: ComponentProps<typeof MenuPrimitive.Positioner>["align"];
 } & Omit<OverlayPositionerProps<ComponentProps<typeof MenuPrimitive.Positioner>>, "align"> &
@@ -119,17 +122,28 @@ export function DropdownMenuContent({
   );
 }
 
-export function DropdownMenuGroup(props: ComponentProps<typeof MenuPrimitive.Group>): ReactElement {
+type DropdownMenuGroupProps = ComponentProps<typeof MenuPrimitive.Group> & {
+  /**
+   * The group's items, with an optional `DropdownMenu.Label` that names them. A label names
+   * the items of the group it sits in, so render it inside a group.
+   */
+  children?: ReactNode;
+};
+
+/** Groups related items. */
+export function DropdownMenuGroup(props: DropdownMenuGroupProps): ReactElement {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
 export type DropdownMenuLabelProps = ComponentProps<typeof MenuPrimitive.GroupLabel> & {
   /**
-   * Pads the label to align with indicator-bearing items. Emitted as `data-inset`.
+   * Pads the label's start by the width of a 16px icon and its gap, so its text lines up with
+   * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
 };
 
+/** Names the items of the `DropdownMenu.Group` it sits in. */
 export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProps): ReactElement {
   return (
     <MenuPrimitive.GroupLabel
@@ -143,17 +157,15 @@ export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLa
 
 export type DropdownMenuItemProps = ComponentProps<typeof MenuPrimitive.Item> & {
   /**
-   * Pads the item to align with indicator-bearing items. Emitted as `data-inset`.
+   * Pads the item's start by the width of a 16px icon and its gap, so its text lines up with
+   * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
-  /**
-   * Visual tone. The value stays `"destructive"` for consumer compat; classes use
-   * `error` tokens.
-   * @default "default"
-   */
+  /** The item's colour. `destructive` paints it in the `error` colour, for an action such as Delete. */
   variant?: "default" | "destructive";
 };
 
+/** A menu action. */
 export function DropdownMenuItem({
   className,
   inset,
@@ -171,6 +183,7 @@ export function DropdownMenuItem({
   );
 }
 
+/** A menu item that is a link. Pass `href`, or a router link through `render`. */
 export function DropdownMenuLinkItem({
   className,
   ...props
@@ -186,11 +199,13 @@ export function DropdownMenuLinkItem({
 
 export type DropdownMenuCheckboxItemProps = ComponentProps<typeof MenuPrimitive.CheckboxItem> & {
   /**
-   * Pads the item to align with indicator-bearing items. Emitted as `data-inset`.
+   * Pads the item's start by the width of a 16px icon and its gap, so its text lines up with
+   * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
 };
 
+/** A menu item that toggles a setting, with a check mark at its end while checked. */
 export function DropdownMenuCheckboxItem({
   className,
   children,
@@ -217,8 +232,8 @@ export function DropdownMenuCheckboxItem({
 
 /**
  * Narrows the group's selected value to one string union. Base UI types `value` and
- * `onValueChange` as `any`; the generic ties the group's three props together, not the
- * items — `RadioItem.value` stays `any`, so membership is still checked at runtime.
+ * `onValueChange` as `any`. The generic ties the group's three props together, but not the
+ * items. `RadioItem.value` stays `any`, so only the runtime checks an item's value.
  */
 export type DropdownMenuRadioGroupProps<T extends string> = Omit<
   ComponentProps<typeof MenuPrimitive.RadioGroup>,
@@ -226,22 +241,27 @@ export type DropdownMenuRadioGroupProps<T extends string> = Omit<
 > &
   (
     | {
-        /** Controlled selected value: one member of the group's string union. */
+        /**
+         * The selected value, one member of the group's string union `T`. The group does not
+         * check `DropdownMenu.RadioItem` values against `T`, so a mistyped item value still
+         * compiles.
+         */
         value?: T;
-        /** Uncontrolled initially selected value: one member of the group's string union. */
+        /** Not allowed with `value`. */
         defaultValue?: never;
       }
     | {
-        /** Controlled selected value: one member of the group's string union. */
+        /** Not allowed with `defaultValue`. */
         value?: never;
-        /** Uncontrolled initially selected value: one member of the group's string union. */
+        /** The value selected at first, when the group holds its own state. One member of `T`. */
         defaultValue?: T;
       }
   ) & {
-    /** Called with the selected value, narrowed to `T`, and base-ui's change details. */
+    /** Runs when the selection changes, with the new value as `T` and Base UI's change details. */
     onValueChange?: (value: T, eventDetails: MenuRadioGroupChangeEventDetails) => void;
   };
 
+/** Groups radio items, of which one is selected. */
 export function DropdownMenuRadioGroup<T extends string>(
   props: DropdownMenuRadioGroupProps<T>
 ): ReactElement {
@@ -250,11 +270,13 @@ export function DropdownMenuRadioGroup<T extends string>(
 
 export type DropdownMenuRadioItemProps = ComponentProps<typeof MenuPrimitive.RadioItem> & {
   /**
-   * Pads the item to align with indicator-bearing items. Emitted as `data-inset`.
+   * Pads the item's start by the width of a 16px icon and its gap, so its text lines up with
+   * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
 };
 
+/** A menu item in a radio group, with a check mark at its end while selected. */
 export function DropdownMenuRadioItem({
   className,
   children,
@@ -277,6 +299,7 @@ export function DropdownMenuRadioItem({
   );
 }
 
+/** A line between groups of items. */
 export function DropdownMenuSeparator({
   className,
   ...props
@@ -290,6 +313,7 @@ export function DropdownMenuSeparator({
   );
 }
 
+/** A keyboard shortcut at the end of an item. It is text only, and binds no key. */
 export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"span">): ReactElement {
   return (
     <span
@@ -300,17 +324,20 @@ export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"sp
   );
 }
 
+/** Holds a submenu's open state. Escape in the submenu closes the parent menu too. */
 export function DropdownMenuSub(props: ComponentProps<typeof MenuPrimitive.SubmenuRoot>): ReactElement {
   return <MenuPrimitive.SubmenuRoot closeParentOnEsc {...props} />;
 }
 
 export type DropdownMenuSubTriggerProps = ComponentProps<typeof MenuPrimitive.SubmenuTrigger> & {
   /**
-   * Pads the trigger to align with indicator-bearing items. Emitted as `data-inset`.
+   * Pads the trigger's start by the width of a 16px icon and its gap, so its text lines up with
+   * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
 };
 
+/** The item that opens a submenu, with a caret at its end. */
 export function DropdownMenuSubTrigger({
   className,
   inset,
@@ -330,22 +357,16 @@ export function DropdownMenuSubTrigger({
 }
 
 export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Popup> & {
-  /**
-   * How the popup aligns to its SubTrigger on the cross axis.
-   */
+  /** How the submenu lines up with its `DropdownMenu.SubTrigger` along the side it opens on. */
   align?: ComponentProps<typeof MenuPrimitive.Positioner>["align"];
   /**
-   * Offset along the alignment axis, in pixels. Negative tucks the submenu's first
-   * item level with its trigger.
+   * The submenu's shift along the side it opens on, in pixels. The default `-3` lines the
+   * submenu's first item up with its trigger.
    */
   alignOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["alignOffset"];
-  /**
-   * Which side of the SubTrigger the popup is placed on.
-   */
+  /** The side of the `DropdownMenu.SubTrigger` the submenu opens on. */
   side?: ComponentProps<typeof MenuPrimitive.Positioner>["side"];
-  /**
-   * Distance from the SubTrigger, in pixels. Flush against the parent menu by default.
-   */
+  /** The gap between the `DropdownMenu.SubTrigger` and the submenu, in pixels. The default `0` puts the submenu against the parent menu. */
   sideOffset?: ComponentProps<typeof MenuPrimitive.Positioner>["sideOffset"];
 } & OverlayContainerProps;
 

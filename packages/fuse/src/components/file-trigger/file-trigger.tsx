@@ -21,39 +21,45 @@ import { FileUploadTrigger } from "../file-upload/file-upload-trigger";
  */
 export type FileTriggerProps = Omit<
   useRender.ComponentProps<"button">,
-  "render" | "ref" | "disabled" | "onSelect" | "type"
+  "render" | "ref" | "disabled" | "onSelect" | "type" | "children"
 > &
   Pick<LabelButtonProps, "variant"> &
   Pick<FileUploadRootProps, "capture"> & {
     /**
-     * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
-     * a picked file that fails it reaches `onReject` with `"type"`.
+     * The file types to take, in the `accept` attribute's syntax, such as `"image/*,.pdf"`. The
+     * picker receives it as it is, and a picked file that fails it reaches `onReject` with
+     * `"type"`.
      */
     accept?: FileUploadRootProps["accept"];
     /**
-     * Take more than one file. Without it, a pick in which more than one file passes `accept`
+     * Takes more than one file. Without it, a pick in which more than one file passes `accept`
      * rejects each of those with `"count"`. `accept` is checked first, so a file that fails it is
      * rejected with `"type"` and never counts.
      */
     multiple?: FileUploadRootProps["multiple"];
     /** The picker selects a folder, and `onSelect` receives its files. */
     directory?: FileUploadRootProps["directory"];
-    /** Disable the button and ignore picks. */
+    /** Disables the button and ignores picks. */
     disabled?: FileUploadRootProps["disabled"];
     /** Receives the files that passed `accept` and the count rule, in a fresh array for each pick. */
     onSelect?: FileUploadRootProps["onSelect"];
     /**
-     * Receives the files that did not pass, each with its `reason`. For one pick it runs right
+     * Receives the files that did not pass, each with its `reason`. For one pick, it runs right
      * after `onSelect`, in the same task.
      */
     onReject?: FileUploadRootProps["onReject"];
-    /** The Button's label size: `xs`, `sm` (the default), `default` or `lg`. */
+    /** The button's size, as on `Button`. */
     size?: LabelButtonSize;
     /**
-     * Leading icon on/off. Defaults to on: a camera with `capture`, a folder with `directory`, a
-     * paperclip otherwise. It is decorative, so the children name the button.
+     * Shows the leading icon: a camera with `capture`, a folder with `directory` and a paperclip
+     * otherwise. The icon is decorative, so the children name the button.
      */
     withIcon?: boolean;
+    /**
+     * The button's label, which names it. The trigger renders the button and a hidden file input
+     * with no element around them, so it joins a `ButtonGroup` as a `Button` does.
+     */
+    children?: useRender.ComponentProps<"button">["children"];
     /** The visible button. */
     ref?: Ref<HTMLButtonElement>;
   };
@@ -75,7 +81,7 @@ function childrenOnly(props: { children?: ReactNode }): ReactElement {
  * runs the same `accept` and count check as FileUpload. `onSelect` receives the files that pass,
  * in a new array for each pick, and `onReject` the rest, each with its `reason`. It renders no
  * wrapper: the button and its hidden input are children of the surrounding element.
- * Client — the Root owns the hidden input and the callbacks.
+ * It is a client component, because the Root owns the hidden input and the callbacks.
  */
 export function FileTrigger({
   accept,

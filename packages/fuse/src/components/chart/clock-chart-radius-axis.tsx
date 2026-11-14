@@ -25,7 +25,11 @@ import type { MarkCover } from "./layout/ring-labels";
  * @beta
  */
 export type ClockChartRadiusAxisProps = ChartLayerProps & {
-  /** The tick label format. The first series' `format` is the default. */
+  /**
+   * The tick label format. The first series' `format` is the default. The values show beside the 12
+   * o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where they
+   * clear the marks and the labels, so a crowded dial shows fewer values.
+   */
   format?: ValueFormat;
 };
 

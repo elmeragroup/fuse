@@ -20,13 +20,12 @@ import { checkboxVariants } from "./checkbox-variants";
 const slots = checkboxVariants();
 
 /**
- * Unlabeled 16px checkbox over the base-ui primitive. Client component, because base-ui
- * Checkbox owns the checked state. The indicator is internal: Phosphor regular `Minus`
- * when indeterminate, `Check` otherwise. Labeled usage composes `Field.Root` and
- * `Field.Label`, or `CheckboxItem`. A disabled checkbox dims to 50% on its own, also
- * outside a field. The box rounds with `rounded-md` capped at 4px in every theme. Native form
- * reset, including React's reset after a form action, keeps the current state and what the form
- * submits in step; an uncontrolled checkbox does not return to `defaultChecked`.
+ * A 16px checkbox with no label, built on Base UI's checkbox, which owns the checked state. It
+ * shows a `Minus` while indeterminate and a `Check` otherwise. Label it with `Field.Root` and
+ * `Field.Label`, or use `CheckboxItem`. A disabled checkbox dims to 50% inside or outside a
+ * field. The box rounds with `rounded-md`, capped at 4px in every theme. A native form reset,
+ * including React's reset after a form action, keeps the shown state and the submitted value in
+ * step. An uncontrolled checkbox does not return to `defaultChecked`.
  */
 export function Checkbox({
   className,
@@ -52,63 +51,66 @@ export function Checkbox({
 }
 
 export type CheckboxGroupProps = {
-  /** Fieldset legend, rendered as `Field.Legend variant="label"`. The legend row is omitted when absent. */
+  /** The group's visible name, rendered as `Field.Legend variant="label"`. Leave it out to drop the legend row. */
   label?: string;
   /**
-   * Hides the legend visually and keeps it as the group's accessible name, for a group
-   * under a heading that already names it. The first option moves up into the legend's
-   * place. Default `false`.
+   * Hides the legend visually and keeps it as the group's accessible name. Use it for a group
+   * under a heading that already names it. The first option moves up into the legend's place.
    */
   isLabelHidden?: boolean;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text under the options, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as a native constraint message.
+   * The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows
+   * its own validation error instead, such as a native constraint message.
    */
   errorMessage?: ReactNode;
   /**
-   * Layout of the group primitive, and of CheckboxItemGroup's stacked-card list.
-   * Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected
-   * `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped
-   * by `--surface-gap-lg`
-   * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
+   * How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins
+   * `CheckboxItem` rows into one card with a line between rows. `horizontal` wraps them in a row
+   * `--surface-gap-lg` apart, and each `CheckboxItem` row is a card of its own. The cards share the
+   * line in equal widths. A `basis-*` class on a row sets the width below which it wraps.
    */
   orientation?: "vertical" | "horizontal";
-  /** Controlled selected values. */
+  /**
+   * Controlled selected values. The group decides which members with a `value` are checked, so
+   * their own `checked` and `defaultChecked` have no effect.
+   */
   value?: string[];
-  /** Uncontrolled initial selected values. */
+  /**
+   * Uncontrolled initial selected values. Start a member checked by listing its `value` here, not
+   * with its `defaultChecked`, which the group ignores.
+   */
   defaultValue?: string[];
-  /** Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`. */
+  /** Called with the selected values as a `string[]` when the selection changes. */
   onChange?: (value: string[]) => void;
   /**
-   * Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate
-   * from whether the group's value is a subset of these members.
+   * Every member value, for a group with a `parent` checkbox. The parent is checked when all of
+   * them are selected, indeterminate when some are, and unchecked when none are. Checking it
+   * selects them all.
    */
   allValues?: string[];
-  /** Forwards `disabled` to `Field.Root` and the group primitive. */
+  /** Disables every option. */
   isDisabled?: boolean;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, so the options show the invalid face. */
   isInvalid?: boolean;
-  /**
-   * Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no
-   * `name`; Field context threads it to member hidden inputs. RadioGroup puts
-   * `name` on its primitive — the face is the same `name?: string` either way.
-   */
+  /** The form field name every checked option submits its `value` under. */
   name?: string;
-  /** Forwarded to the group primitive. */
+  /** The `id` of the element that holds the options. */
   id?: string;
-  /** Extra classes, merged onto the group primitive via `cn`. */
+  /** Extra classes for the element that holds the options. */
   className?: string;
-  /** Group members — typically `Checkbox` or `CheckboxItem`. */
+  /**
+   * The options. Write each `Checkbox` in a `Field.Item` with a `Field.Label` around it and its
+   * text, or use `CheckboxItem` rows.
+   */
   children?: ReactNode;
 };
 
 /**
- * Labeled checkbox group composite over Field and base-ui CheckboxGroup. Client component,
- * because it wires Field validity and the group primitive. Native form reset, including
- * React's reset after a form action, keeps the selection and what the form submits in step for
- * Fuse members; an uncontrolled group does not return to `defaultValue`.
+ * A labeled group of checkboxes, built on Field and Base UI's checkbox group. A native form
+ * reset, including React's reset after a form action, keeps the selection of Fuse members and
+ * the submitted values in step. An uncontrolled group does not return to `defaultValue`.
  */
 export function CheckboxGroup({
   label,
@@ -157,10 +159,9 @@ export function CheckboxGroup({
 }
 
 /**
- * Stacked-card group: `CheckboxGroup` wrapping children in the private
- * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
- * outer group and to that list: vertical remains connected `flex-col gap-0`;
- * horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded cards.
+ * A `CheckboxGroup` for `CheckboxItem` rows, which it puts in a `role="list"`. A vertical
+ * group joins the rows into one card. A horizontal group wraps them, `--surface-gap-lg`
+ * apart, each a card of its own.
  */
 export function CheckboxItemGroup({ orientation = "vertical", ...props }: CheckboxGroupProps): ReactElement {
   // The default is spelled here because the docs API extractor reads a part's
@@ -173,20 +174,17 @@ export function CheckboxItemGroup({ orientation = "vertical", ...props }: Checkb
 }
 
 export type CheckboxDescriptionProps = {
-  /** Typically a `Checkbox`. */
+  /** The labeled checkbox the note sits beside, usually a `Field.Root` holding a `Checkbox`. */
   children?: ReactNode;
   /**
-   * Trailing note. A string renders as a muted `<small>`; any other node renders
-   * intact. Visual-only — not wired to `aria-describedby`. Use Field description
-   * wiring when programmatic association is required.
+   * The note after the checkbox. A string renders as a muted `<small>`, and any other node
+   * renders as given. Screen readers do not read it as the checkbox's description. Use
+   * `Field.Description` when they should.
    */
   describedBy?: ReactNode;
 };
 
-/**
- * Inline "checkbox + trailing note" row. The note is
- * visual-only; it does not become an accessible description.
- */
+/** A row with a checkbox and a note after it. The note is not the checkbox's accessible description. */
 export function CheckboxDescription({ children, describedBy }: CheckboxDescriptionProps): ReactElement {
   // Only a string `describedBy` becomes the muted `<small>` note.
   return (

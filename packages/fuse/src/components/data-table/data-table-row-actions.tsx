@@ -16,7 +16,10 @@ export type DataTableRowActionsProps = Omit<
   ComponentProps<typeof DropdownMenuTrigger>,
   "children" | "render"
 > & {
-  /** The trigger's accessible name, distinct per row, such as "Actions for order 4711". */
+  /**
+   * The trigger's accessible name, distinct per row, such as "Actions for order 4711". Pass it when
+   * you render the menu outside `actionsColumn`, which builds it from the row's name.
+   */
   label: string;
   /** The menu's items: `DropdownMenu.Item`, including `variant="destructive"`, and separators. */
   children: ReactNode;

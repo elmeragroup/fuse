@@ -52,17 +52,23 @@ import { slotOf } from "./layout/x-domain";
 export type ChartReferenceLineProps = ChartLayerProps &
   (
     | {
-        /** The value the line marks. */
+        /** The value the line marks. A line takes a `y` or an `x`. */
         y: number;
-        /** Not on a value line. */
+        /**
+         * The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a
+         * `y` or an `x`.
+         */
         x?: never;
         /** How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x` line. */
         format?: ValueFormat;
       }
     | {
-        /** The x the line marks. An x string on a time axis throws `x-type-mismatch`. */
+        /**
+         * The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a
+         * `y` or an `x`.
+         */
         x: ChartX;
-        /** Not on an x line. */
+        /** The value the line marks. A line takes a `y` or an `x`. */
         y?: never;
         /** How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x` line. */
         format?: XFormat;
@@ -70,9 +76,9 @@ export type ChartReferenceLineProps = ChartLayerProps &
   ) & {
     /** The visible label. `{value}` prints the line's value. */
     label?: string;
-    /** The line style. "solid" by default. */
+    /** The line style. */
     variant?: "solid" | "dashed";
-    /** The line's tone. "default" by default. */
+    /** The line's tone. */
     tone?: ChartTone;
   };
 
@@ -84,33 +90,51 @@ export type ChartReferenceLineProps = ChartLayerProps &
 export type ChartReferenceAreaProps = ChartLayerProps &
   (
     | {
-        /** The band's first value. */
+        /** The band's first value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y1: number;
-        /** The band's last value. */
+        /** The band's last value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y2: number;
-        /** Not on a value band. */
+        /**
+         * The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes
+         * `y1` and `y2`, or `x1` and `x2`.
+         */
         x1?: never;
-        /** Not on a value band. */
+        /**
+         * The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1`
+         * and `y2`, or `x1` and `x2`.
+         */
         x2?: never;
-        /** How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an `XFormat` for `x1` and `x2`. */
+        /**
+         * How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an
+         * `XFormat` for `x1` and `x2`.
+         */
         format?: ValueFormat;
       }
     | {
-        /** The band's first x. An x string on a time axis throws `x-type-mismatch`. */
+        /**
+         * The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes
+         * `y1` and `y2`, or `x1` and `x2`.
+         */
         x1: ChartX;
-        /** The band's last x. An x string on a time axis throws `x-type-mismatch`. */
+        /**
+         * The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1`
+         * and `y2`, or `x1` and `x2`.
+         */
         x2: ChartX;
-        /** Not on an x band. */
+        /** The band's first value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y1?: never;
-        /** Not on an x band. */
+        /** The band's last value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y2?: never;
-        /** How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an `XFormat` for `x1` and `x2`. */
+        /**
+         * How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an
+         * `XFormat` for `x1` and `x2`.
+         */
         format?: XFormat;
       }
   ) & {
     /** The visible label. `{value}` prints the range. */
     label?: string;
-    /** The band's tone. "default" by default. */
+    /** The band's tone. */
     tone?: ChartTone;
   };
 
@@ -512,8 +536,14 @@ function toggle(node: Element, name: string, on: boolean): void {
  *
  * @beta
  */
-export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps): ReactElement {
-  const { label, variant = "solid", tone = "default", className } = props;
+export function ChartReferenceLine({
+  label,
+  variant = "solid",
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ChartReferenceLineProps): ReactElement {
   const context = useChartRoot("Chart.ReferenceLine");
   const layout = usePlotLayout("Chart.ReferenceLine");
   const strings = CHART_STRINGS[context.locale];
@@ -605,8 +635,13 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
  *
  * @beta
  */
-export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps): ReactElement {
-  const { label, tone = "default", className } = props;
+export function ChartReferenceArea({
+  label,
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ChartReferenceAreaProps): ReactElement {
   const context = useChartRoot("Chart.ReferenceArea");
   const layout = usePlotLayout("Chart.ReferenceArea");
   const strings = CHART_STRINGS[context.locale];

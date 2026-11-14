@@ -13,21 +13,22 @@ import { inputVariants } from "./input-class";
 
 /**
  * The props of {@link InputControl}: the native input attributes, the native numeric `size`
- * included, plus the digits-only guard.
+ * included, and the digits-only filter.
  */
 export type InputControlProps = ComponentProps<"input"> & {
   /**
-   * Digits-only guard. Non-digit characters are stripped from every path — typing, paste,
-   * autofill — before `onChange` and Field validation read the value.
-   * `maxLength` counts digits where the filter runs first: a cancelable `beforeinput` on an input
-   * type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted
-   * `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling
-   * and are stripped afterwards: `type="email"`, or autofill that sends no cancelable
-   * `beforeinput`, is cut to `maxLength` first. The filter is meant for text-like types:
-   * under `type="number"` it also strips the sign and the decimal separator.
-   * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
-   * uncontrolled numeric input restores its `defaultValue` on native form reset without
-   * calling `onChange`.
+   * Keeps digits only. The input strips every other character, typed, pasted or autofilled,
+   * before `onChange` and Field validation read the value. It sets `inputMode="numeric"` unless
+   * you pass `inputMode`. Use it with a text-like type, since under `type="number"` it also
+   * strips the sign and the decimal separator.
+   *
+   * `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a
+   * selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits
+   * `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input
+   * strips it: under a type without a selection API, such as `email`, and for autofill that sends
+   * no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An uncontrolled
+   * numeric input restores its
+   * `defaultValue` on a native form reset without calling `onChange`.
    */
   filter?: "numeric";
 };
@@ -153,16 +154,21 @@ export function InputControl({
   );
 }
 
-export type InputProps = Omit<InputControlProps, "size"> & {
+/** The props of {@link Input}. */
+export type InputProps = Omit<InputControlProps, "size" | "aria-label"> & {
   /**
-   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
-   * size; `"sm"` maps to the `sm` control size. It replaces the native numeric `size` attribute;
-   * set the width with a class instead.
-   * @default "default"
+   * The control size, also written as `data-size`. `default` is the md control size, and `sm`
+   * the sm one. It replaces the native numeric `size` attribute, so set the width with a class.
    */
   size?: "sm" | "default";
+  /**
+   * The input's name when no visible label names it. For a visible label, put the input in a
+   * `Field.Root` with a `Field.Label` instead.
+   */
+  "aria-label"?: ComponentProps<"input">["aria-label"];
 };
 
+/** A single-line text input in a field box. */
 export function Input({ className, size = "default", ...props }: InputProps): ReactElement {
   return <InputControl data-size={size} className={cn(inputVariants({ size }), className)} {...props} />;
 }

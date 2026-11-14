@@ -7,24 +7,31 @@ import { cn } from "../../styles/cn";
 import { LoaderDefaultLabel } from "./loader-default-label";
 import { loaderVariants } from "./loader-variants";
 
-export type LoaderProps = HTMLAttributes<HTMLDivElement> &
-  VariantProps<typeof loaderVariants> & {
-    /**
-     * The text the status region announces, rendered visually hidden inside it. Defaults to the
-     * `aria-label`, then to the locale dictionary's "Loading".
-     */
-    label?: string;
-  };
+/** `Loader` takes a native `div`'s props, the recipe's axes and the announced `label`. */
+export type LoaderProps = HTMLAttributes<HTMLDivElement> & {
+  /** The colour. `default` is the only value. */
+  variant?: VariantProps<typeof loaderVariants>["variant"];
+  /** The spinner's size. The padding around it stays the same. */
+  size?: VariantProps<typeof loaderVariants>["size"];
+  /**
+   * The text the Loader's polite status region announces, visually hidden. Without it, the region
+   * reads the `aria-label`, then "Loading" in the reader's locale. A live region announces only a
+   * change to its text, so keep the Loader mounted while loading runs, or render it inside a live
+   * region that is already mounted.
+   */
+  label?: string;
+};
 
-/**
- * Server spinner: a polite `role="status"` region around a decorative spinning `SpinnerGap` and
- * visually hidden text. A live region announces changes to its text, so the text is `label`,
- * then the `aria-label`, then the locale dictionary's "Loading". Mount the Loader where it stays
- * mounted while loading runs, or render it inside a region that already is, so the text arrives
- * as a change. It owns no state, handlers or browser APIs; only the dictionary default renders
- * through a small client child.
- */
-export function Loader({ className, variant, size, label, ...props }: LoaderProps): ReactElement {
+/** A spinner in a polite status region, for a pending state. */
+export function Loader({
+  className,
+  // Restates the recipe's defaults so the API extractor records them, until it reads recipe
+  // defaults itself (elmeragroup/internal#39).
+  variant = "default",
+  size = "default",
+  label,
+  ...props
+}: LoaderProps): ReactElement {
   const { base, icon } = loaderVariants({ variant, size });
   const text = label ?? props["aria-label"];
 

@@ -3,11 +3,14 @@ lede: >
   A button that stays pressed until it is pressed again.
 ---
 
-import { ToggleBasic } from "./demos/toggle-basic";
-import { ToggleVariants } from "./demos/toggle-variants";
-import { ToggleSizes } from "./demos/toggle-sizes";
+import { ToggleDemo } from "./demos/toggle-demo";
+import { ToggleOutline } from "./demos/toggle-outline";
+import { ToggleExtraSmall } from "./demos/toggle-extra-small";
+import { ToggleSmall } from "./demos/toggle-small";
+import { ToggleLarge } from "./demos/toggle-large";
 import { ToggleIconOnly } from "./demos/toggle-icon-only";
-import { ToggleControlled } from "./demos/toggle-controlled";
+import { TogglePressed } from "./demos/toggle-pressed";
+import { ToggleDisabled } from "./demos/toggle-disabled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,24 +18,47 @@ export const metadata = componentMetadata("toggle");
 
 <ComponentIntro slug="toggle" />
 
-<Demo slug="toggle" id="basic" title="Basic" file="toggle-basic.tsx">
-  <ToggleBasic />
+<DefaultDemo slug="toggle" file="toggle-demo.tsx">
+  <ToggleDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Toggle } from "@elmeragroup/fuse/toggle";
+
+<Toggle>Favorite</Toggle>
+```
+
+## Examples
+
+<Demo slug="toggle" id="outline" title="Outline" level={3} file="toggle-outline.tsx">
+  <ToggleOutline />
 </Demo>
 
-<Demo slug="toggle" id="variants" title="Variants" file="toggle-variants.tsx">
-  <ToggleVariants />
+<Demo slug="toggle" id="extra-small" title="Extra small" level={3} file="toggle-extra-small.tsx">
+  <ToggleExtraSmall />
 </Demo>
 
-<Demo slug="toggle" id="sizes" title="Sizes" file="toggle-sizes.tsx">
-  <ToggleSizes />
+<Demo slug="toggle" id="small" title="Small" level={3} file="toggle-small.tsx">
+  <ToggleSmall />
 </Demo>
 
-<Demo slug="toggle" id="icon-only" title="Icon only" file="toggle-icon-only.tsx">
+<Demo slug="toggle" id="large" title="Large" level={3} file="toggle-large.tsx">
+  <ToggleLarge />
+</Demo>
+
+<Demo slug="toggle" id="icon-only" title="Icon only" level={3} file="toggle-icon-only.tsx">
   <ToggleIconOnly />
 </Demo>
 
-<Demo slug="toggle" id="controlled" title="Controlled" file="toggle-controlled.tsx">
-  <ToggleControlled />
+<Demo slug="toggle" id="pressed" title="Pressed" level={3} file="toggle-pressed.tsx">
+  <TogglePressed />
+</Demo>
+
+<Demo slug="toggle" id="disabled" title="Disabled" level={3} file="toggle-disabled.tsx">
+  <ToggleDisabled />
 </Demo>
 
 <ApiReference slug="toggle" />

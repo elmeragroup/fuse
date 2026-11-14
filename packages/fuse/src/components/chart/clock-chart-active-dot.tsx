@@ -37,7 +37,10 @@ import { pathNumber } from "./layout/rounding";
 export type ClockChartActiveDotProps = ChartLayerProps & {
   /** The series the dot follows. */
   dataKey: string;
-  /** The dot's look. "default" by default. "ping" sends a ring out from the dot once a second. */
+  /**
+   * The dot's look. "ring" is hollow, "halo" sits in a faint halo, and "ping" sends a ring out from
+   * the dot once a second.
+   */
   variant?: "default" | "ring" | "halo" | "ping";
 };
 

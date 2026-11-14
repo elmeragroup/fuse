@@ -40,7 +40,10 @@ import { springEasing } from "./layout/spring";
  * @beta
  */
 export type RadialChartBarProps = ChartLayerProps & {
-  /** The ring's look. "default" by default. */
+  /**
+   * The ring's look. "dotted" draws 40 dots per sweep and fills the value's share of them, whole
+   * dots only.
+   */
   variant?: "default" | "dotted";
 };
 

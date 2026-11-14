@@ -37,66 +37,73 @@ export type ComboboxFieldProps<
   Filtered extends readonly unknown[] = readonly never[],
   Value = ListItemOf<Items extends readonly never[] ? Filtered : Items>,
 > = Omit<ComboboxRootProps<Value>, ComboboxFieldOwnedRootProps> & {
-  /** Visible label, rendered as `Field.Label`. It names the input. */
+  /**
+   * The visible label, rendered as `Field.Label` 4px above the input. It names the input. For a
+   * label row with an info button, or a label beside the input, compose `Field.Root` and the
+   * `Combobox` parts instead.
+   */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description` below the error. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as an error `Form` holds under its
-   * `name` or the required message.
+   * The error message, rendered as `Field.Error` under the input, ahead of the description,
+   * while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it,
+   * the field shows its own error, such as one `Form` holds under its `name` or the required
+   * message.
    */
   errorMessage?: ReactNode;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Forwards `required` to `Combobox.Root`, which marks the input required. */
+  /** Makes a selection required, so an empty submit is blocked with the required message. */
   isRequired?: boolean;
-  /** Forwards `disabled` to `Field.Root` and `Combobox.Root`, which disable the input and its buttons. */
+  /** Disables the field, the input and its buttons. */
   isDisabled?: boolean;
   /**
-   * Forwards `readOnly` to `Combobox.Root`; the input's field box uses `bg-muted`. The input stays
-   * focusable and its popup still opens to show the options, but neither choosing one, typing nor
-   * the clear button changes the selection.
+   * Makes the combobox read-only, with the muted read-only fill. The input stays focusable and its
+   * popup still opens to show the options, but choosing one, typing and the clear button change
+   * nothing. The value still submits under `name`.
    */
   isReadOnly?: boolean;
   /**
-   * Native `name` the selected value submits under, forwarded to `Field.Root`. A `Form` error
-   * under it shows below the input until the selection changes.
+   * The `name` the selected value submits under, once, and under which `Form` routes its errors.
+   * A `Form` error under it shows below the input, also in the first HTML a server renders, until
+   * the selection changes. A new `errors` object shows it again.
    */
   name?: string;
-  /** Shown in the empty input, forwarded to `Combobox.Input`. */
+  /** The text the empty input shows. */
   placeholder?: string;
-  /**
-   * Renders the caret button that opens the list. It hides while the clear button shows.
-   * @default true
-   */
+  /** Renders the caret button that opens the list. It hides while the clear button shows. */
   showTrigger?: boolean;
-  /**
-   * Renders a button that clears the selection while there is one.
-   * @default false
-   */
+  /** Renders a button that clears the selection while there is one. */
   showClear?: boolean;
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
-  /** Extra classes, merged onto the input's field box, which fills the field's width. */
+  /** Extra classes for the input's field box, which fills the field's width. */
   inputClassName?: string;
-  /** The input the user types in. `inputRef` is the Root's hidden input. */
+  /**
+   * The input the user types in. `inputRef` is the Root's hidden input. The props the field does
+   * not name, `id` included, go to `Combobox.Root`, and the label points at that `id`.
+   */
   ref?: Ref<HTMLInputElement>;
   /**
    * The options: a flat array, or an array of groups that each carry their own `items`. Nullish
-   * entries are not supported.
+   * entries are not supported. With object items, the item type sets the value's type and what
+   * `itemToStringLabel` and `itemToStringValue` receive. The field takes one selection, which
+   * `value`, `defaultValue` and `onValueChange` hold. For multiple selection or chips, compose
+   * `Field.Root` and the `Combobox` parts.
    */
   items?: (Items & NoInfer<ListItems<Items, Value>>) | undefined;
   /**
-   * Filtered options to display in the list. When given, the list shows these instead of
-   * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
-   * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
-   * list, such as with Base UI's `useFilter()` hook.
+   * The options the list shows, for filtering outside the list, such as with Base UI's
+   * `useFilter()` hook. When given, the list shows these and does not filter `items` itself.
+   * With `items` also given, this array keeps its own flat or grouped structure. Nullish entries
+   * are not supported, as in `items`.
    */
   filteredItems?: (Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined;
   /**
-   * The popup's content, such as `Combobox.Empty` and `Combobox.List`, rendered inside
-   * `Combobox.Content`.
+   * The popup's content, rendered inside `Combobox.Content`. Pass a `Combobox.List` that renders
+   * each item as a `Combobox.Item`, and a `Combobox.Empty` beside it for a search that matches
+   * nothing.
    */
   children?: ReactNode;
 };

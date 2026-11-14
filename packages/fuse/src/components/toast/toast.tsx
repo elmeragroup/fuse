@@ -30,7 +30,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastStrings } from "./intl";
 import { toastVariants, toastViewportVariants } from "./toast-variants";
 
-/** Resolved once at module scope — these slots carry no status axis (no per-render work). */
+/** Resolved once at module scope, because these slots have no status axis. */
 const { content, title, description } = toastVariants();
 
 export type ToastStatus = "error" | "info" | "success" | "warning" | "loading";
@@ -39,8 +39,8 @@ type ToastPriority = "low" | "high";
 
 export type ToastManagerAddOptions<Data extends object = object> = Omit<PrimitiveAddOptions<Data>, "type"> & {
   /**
-   * Styled status. Unset is the neutral surface. Drives `-soft` chrome and the
-   * accessible priority default unless `priority` is set.
+   * The toast's status, which sets its colours and icon. Unset, the toast is neutral. It also
+   * sets the default `priority`: `error` is `high`, and every other status is `low`.
    */
   type?: ToastStatus;
 };
@@ -50,27 +50,32 @@ export type ToastManagerUpdateOptions<Data extends object = object> = Omit<
   "type"
 > & {
   /**
-   * Styled status. An update that changes `type` and omits `priority` derives
-   * the new default; omitting both preserves the existing priority. Explicit
-   * `type: undefined` clears status to neutral and derives low priority.
+   * The toast's new status. An update that sets `type` without `priority` also sets the
+   * priority the new status defaults to. An update without either keeps the priority.
+   * `type: undefined` makes the toast neutral with `low` priority.
    */
   type?: ToastStatus;
 };
 
 export type ToastManagerPromiseOptions<Value, Data extends object = object> = {
   /**
-   * Loading state — a description string or a full options object. Omit it to show
-   * nothing until the promise settles.
+   * The loading toast, as a description string or an options object. Leave it out to show no
+   * toast until the promise settles.
    */
   loading?: string | ToastManagerUpdateOptions<Data>;
-  /** Success state after the promise resolves. A returned `type` replaces `"success"`. */
+  /**
+   * The toast after the promise resolves, as a description string, an options object or a
+   * function of the resolved value. A `type` it returns, such as `"warning"`, replaces
+   * `"success"` and sets the priority.
+   */
   success:
     | string
     | ToastManagerUpdateOptions<Data>
     | ((result: Value) => string | ToastManagerUpdateOptions<Data>);
   /**
-   * Error state after the promise rejects. Defaults high/assertive. A returned `type`
-   * replaces `"error"`.
+   * The toast after the promise rejects, as a description string, an options object or a
+   * function of the error. Its priority defaults to `high`, which screen readers announce at
+   * once. A `type` it returns replaces `"error"` and sets the priority.
    */
   error:
     | string
@@ -84,15 +89,16 @@ export type UseToastManagerReturnValue<Data extends object = object> = {
   close: (toastId?: string) => void;
   update: <T extends Data = Data>(toastId: string, options: ToastManagerUpdateOptions<T>) => void;
   /**
-   * Shows a toast for the life of `promise`. With `loading`, a loading toast appears at
-   * once and moves to the settled state; without it, the settled toast is the first one
-   * shown. The settled status is the `type` that `success` or `error` returns, else
-   * `"success"` or `"error"`, and priority derives from that status unless the state
-   * sets `priority`. A `success` factory that throws moves the toast to the error state.
-   * A loading toast the user closed stays closed when the promise settles.
+   * Shows a toast for the life of `promise`. With `loading`, a loading toast appears at once
+   * and changes to the settled toast. Without it, the settled toast is the first one shown.
+   * The settled status is the `type` that `success` or `error` returns, or else `"success"`
+   * or `"error"`. The priority follows that status unless the state sets `priority`. A
+   * `success` factory that throws shows the error toast. If the loading toast closes before
+   * the promise settles, no settled toast appears.
    *
-   * @returns The original promise's value, or a rejection with its error (or the error a
-   *   state factory threw). The error toast does not consume the rejection.
+   * @returns A new promise. It resolves with the promise's value, or rejects with its error
+   *   or with the error a state factory threw. The error toast does not handle the
+   *   rejection, so handle the returned promise.
    */
   promise: <Value, T extends Data = Data>(
     promise: Promise<Value>,
@@ -114,7 +120,7 @@ const STATUS_ICONS = {
   loading: SpinnerGap,
 };
 
-/** Resolved once per status at module scope — the axis is a closed six-value set. */
+/** Resolved once per status at module scope, because the axis has a closed set of six values. */
 const STATUS_SLOTS = {
   neutral: toastVariants({ status: "neutral" }),
   error: toastVariants({ status: "error" }),
@@ -164,13 +170,13 @@ type PromiseStateInput<Value, Data extends object> =
   | ((result: Value) => string | ToastManagerUpdateOptions<Data>);
 
 /**
- * The two guards below ask a runtime question about consumer input, and both used to
- * spell it `Object.prototype.toString.call(…)` — an obfuscation that passed the lint
- * rule without answering it. They are honest `typeof` checks with a named disable now.
+ * The two guards below ask a runtime question about consumer input. Both used to spell it
+ * `Object.prototype.toString.call(…)`, which passed the lint rule without answering it. They
+ * are now `typeof` checks with a named disable.
  *
- * Neither can borrow the shared `isTextNode`/`isTextValueNode` helpers: those narrow a
- * `ReactNode`, and these values are Toast's own manager unions — an options object is
- * not a `ReactNode`, and no shared guard narrows a callable.
+ * Neither can use the shared `isTextNode` or `isTextValueNode` helpers. Those narrow a
+ * `ReactNode`, and these values are Toast's own manager unions. An options object is not a
+ * `ReactNode`, and no shared guard narrows a callable.
  */
 function isShorthandDescription<Data extends object>(
   value: string | ToastManagerUpdateOptions<Data>
@@ -256,9 +262,22 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
 }
 
 /**
- * Imperative toast manager for a tree under `Toast.Provider`. Returns the live
- * `toasts` array plus `add` / `update` / `close` / `promise`, which keep their
- * identity as toasts change, so effects can list them as dependencies.
+ * Returns the toast manager of the nearest `Toast.Provider`. It holds the current `toasts`
+ * and the `add`, `update`, `close` and `promise` methods. The methods keep their identity as
+ * toasts change, so an effect can list them as dependencies.
+ *
+ * `promise(promise, { loading, success, error })` shows a toast for the life of `promise`.
+ * With `loading`, a loading toast appears at once and changes to the settled toast. Leave
+ * `loading` out to show no toast until the promise settles. The settled toast has the
+ * `success` or `error` status, unless that state sets its own `type`. An `error` state that
+ * returns `type: "warning"` shows a warning with `low` priority, where an error toast has
+ * `high` priority. A state's own `priority` wins over its status. A `success` function that
+ * throws shows the error toast. If the user or `close` closes the loading toast before the
+ * promise settles, no settled toast appears.
+ *
+ * `promise` returns a new promise, not the one you passed. It resolves with that promise's
+ * value, or rejects with its error or with the error a `success` or `error` function threw.
+ * The error toast does not handle the rejection, so handle the returned promise.
  */
 export function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
   const { toasts, add, update, close } = ToastPrimitive.useToastManager<Data>();
@@ -301,18 +320,17 @@ function storeConnection(manager: CreateToastManagerReturnValue): ConnectToastSt
 let mintedToastIds = 0;
 
 /**
- * Module-scope manager for code outside the React tree (timers, query-cache
- * listeners). Same `add` / `update` / `close` / `promise` methods as the hook,
- * with no reactive `toasts` array. Pass the result, or a spread copy of it, to
+ * Creates a toast manager for code outside the React tree, such as a timer or a query-cache
+ * listener. Create it at module scope. It has the hook's `add`, `update`, `close` and
+ * `promise` methods, without the `toasts` array. Pass it, or a spread copy of it, to
  * `<Toast.Provider toastManager={…}>`.
  *
- * The manager queues calls made before that provider connects, including calls made
- * before it mounts and calls from mount effects in its subtree, and replays them in
- * call order when it connects. `add` returns the toast id at once either way, so a
- * queued toast can still be updated or closed. A minted id is unique across managers.
- * Mount a manager in one provider at a time: the most recently connected provider
- * receives every call, and once it unmounts, calls queue again even while an earlier
- * provider stays mounted.
+ * The manager queues calls made before that provider connects, including calls made before
+ * it mounts and calls from mount effects in its subtree. It replays them in call order when
+ * the provider connects. `add` returns the toast id at once either way, so a queued toast can
+ * still be updated or closed. A minted id is unique across managers. Mount a manager in one
+ * provider at a time. The provider that connected last receives every call, and once it
+ * unmounts, calls queue again even while an earlier provider stays mounted.
  */
 export function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
   let store: PrimitiveManager | undefined;
@@ -402,14 +420,19 @@ function ToastManagerBridge({ connect }: { connect: ConnectToastStore }): null {
 
 export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provider>, "toastManager"> & {
   /**
-   * Optional manager from `Toast.createToastManager()` so non-React code
-   * (timers, query-cache listeners) can dispatch through the same adapter as
-   * `Toast.useToastManager()`. The manager queues calls made before this provider
-   * connects and replays them in order.
+   * A manager from `Toast.createToastManager()`, for code outside React, such as a timer or a
+   * query-cache listener, to raise toasts in this provider. The manager queues calls made
+   * before this provider connects and replays them in order.
    */
   toastManager?: CreateToastManagerReturnValue;
+  /**
+   * The part of the app that raises toasts, and one `Toast.Viewport`. Use one provider and
+   * one viewport for the app's notification stack.
+   */
+  children?: ReactNode;
 };
 
+/** Holds the toast stack for its subtree. */
 export function ToastProvider({ toastManager, children, ...props }: ToastProviderProps): ReactElement {
   const connect = toastManager === undefined ? undefined : storeConnection(toastManager);
   return (
@@ -466,11 +489,12 @@ const ToastPlacementContext = createContext<ToastPlacementContextValue>({
 export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> &
   OverlayContainerProps & {
     /**
-     * Where the toast stack sits from the `sm` breakpoint up: a top or bottom edge, aligned
-     * left, center or right. A top placement stacks downward and enters from above. Toasts
-     * dismiss by swiping toward the anchored edge and toward their side (right for center),
-     * unless a `Toast.Root` sets `swipeDirection`. Below `sm` every placement sits at the
-     * bottom, spans the screen width and swipes down or right.
+     * Where the toast stack sits from the `sm` breakpoint up. It names the top or bottom edge
+     * and a left, center or right alignment. A top placement stacks downward, and its toasts
+     * slide in from above. A toast dismisses with a swipe toward its edge or toward its side,
+     * or toward the right in a centered stack, unless its `Toast.Root` sets `swipeDirection`.
+     * Below `sm`, every placement sits at the bottom, spans the screen width and swipes down or
+     * right.
      */
     placement?: VariantProps<typeof toastViewportVariants>["placement"];
   };
@@ -542,6 +566,7 @@ export function ToastRoot({
   );
 }
 
+/** The toast's body, which hides behind the front toast while the stack is collapsed. */
 export function ToastContent({
   className,
   ...props
@@ -555,6 +580,7 @@ export function ToastContent({
   );
 }
 
+/** The toast's title. Unless you pass children, it shows the toast's `title`. */
 export function ToastTitle({
   className,
   ...props
@@ -564,6 +590,7 @@ export function ToastTitle({
   );
 }
 
+/** The toast's description. Unless you pass children, it shows the toast's `description`. */
 export function ToastDescription({
   className,
   ...props
@@ -577,6 +604,7 @@ export function ToastDescription({
   );
 }
 
+/** The toast's action, a small outline Button that renders the toast's `actionProps`. */
 export function ToastAction({
   className,
   ...props
@@ -593,9 +621,9 @@ export function ToastAction({
 
 export type ToastCloseProps = ComponentProps<typeof ToastPrimitive.Close> & {
   /**
-   * Accessible name for the icon-only close button. An explicit `aria-label` wins over
-   * it; both default to the locale dictionary `toast.close`. Visible children replace
-   * the icon face and name the control themselves.
+   * The accessible name of the icon close button. An `aria-label` wins over it. Unset, both
+   * read `overlay.close` from the locale dictionary. Visible children replace the icon and
+   * name the button themselves.
    */
   label?: string;
 };
@@ -604,6 +632,7 @@ function hasVisibleChildren(children: ReactNode): boolean {
   return children != null && children !== false && children !== true && children !== "";
 }
 
+/** Closes the toast from its top-right corner. Without children, it is a ghost icon Button. */
 export function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
   const closeClassName = mergeClassName(className, "absolute top-2 right-2 text-muted-foreground");

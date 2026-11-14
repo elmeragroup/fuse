@@ -7,7 +7,7 @@ import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
-import { parseComponentPage } from "../scripts/lib/page-source.ts";
+import { COMPOSITION_PAGES, parseComponentPage } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import {
   missingNavRoutes,
@@ -18,6 +18,7 @@ import {
 import { readRscStatus } from "../scripts/lib/rsc-status.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
+import { readComponentApi } from "../src/lib/api-source";
 import type { DocsComponent } from "../src/lib/docs-model";
 import { STATIC_PAGES } from "../src/lib/pages";
 import { STUDIO_PAGES } from "../src/studio/registration";
@@ -73,22 +74,25 @@ describe("authored page.mdx as generation input", () => {
 
   it("folds a `>` lede and reads the demos the page renders, in order", () => {
     const parsed = parseComponentPage(
-      page(
-        '<Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">',
+      usagePage([
+        ...USAGE,
+        "## Examples",
+        "",
+        '<Demo slug="button" id="variants" title="Variants" level={3} file="button-variant-matrix.tsx">',
         "  <ButtonVariantMatrix />",
         "</Demo>",
         "",
-        '<Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">',
+        '<Demo slug="button" id="sizes" title="Sizes" level={3} file="button-sizes.tsx">',
         "  <ButtonSizes />",
-        "</Demo>"
-      ),
+        "</Demo>",
+      ]),
       "button",
       "button/page.mdx"
     );
     expect(parsed.lede).toBe("First line second line");
     expect(parsed.demos).toEqual([
-      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx", depth: 2 },
-      { id: "sizes", title: "Sizes", file: "button-sizes.tsx", depth: 2 },
+      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx", depth: 3 },
+      { id: "sizes", title: "Sizes", file: "button-sizes.tsx", depth: 3 },
     ]);
   });
 
@@ -143,20 +147,6 @@ describe("authored page.mdx as generation input", () => {
     expect(parsed.demos.map((demo) => demo.file)).toEqual(["button-outline.tsx", "button-ghost.tsx"]);
   });
 
-  it("reads a page without the Usage shape as before: no default stage, no Usage code", () => {
-    const parsed = parseComponentPage(
-      page('<Demo slug="button" id="a" title="A" file="a.tsx" />', "", "## Limits"),
-      "button",
-      "button/page.mdx"
-    );
-    expect(parsed.defaultDemo).toBeNull();
-    expect(parsed.usage).toBeNull();
-    expect(parsed.sections).toEqual([
-      { kind: "demo", id: "a", title: "A", depth: 2 },
-      { kind: "heading", id: "limits", title: "Limits", depth: 2 },
-    ]);
-  });
-
   // `title` is the one frontmatter key that used to be legal: the page title is derived
   // from the slug, so a page that still declares one fails instead of carrying a second
   // name. An arbitrary key is rejected by the same branch, named in the message.
@@ -165,24 +155,24 @@ describe("authored page.mdx as generation input", () => {
     ["an unknown frontmatter key, named", "---\nlede: Y\nnope: 1\n---\n", /unknown frontmatter key "nope"/],
     ["a missing lede", "---\nlede:\n---\n", /"lede" is required/],
     [
+      "a component page with no <DefaultDemo>",
+      page('<Demo slug="button" id="a" title="A" file="a.tsx" />', "", "## Limits"),
+      /x\.mdx: a component page follows the Usage shape, but it renders no <DefaultDemo>/,
+    ],
+    [
       "a <Demo> missing its file attribute",
-      page('<Demo slug="button" id="a" title="A" />'),
+      usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level={3} />']),
       /missing its "file" attribute/,
     ],
     [
       "a <Demo> naming another page's slug",
-      page('<Demo slug="card" id="a" title="A" file="a.tsx" />'),
+      usagePage([...USAGE, "## Examples", '<Demo slug="card" id="a" title="A" level={3} file="a.tsx" />']),
       /names slug "card" on the "button" page/,
     ],
     [
-      "a level-3 <Demo> with no heading before it",
-      page('<Demo slug="button" id="a" title="A" level={3} file="a.tsx" />'),
-      /needs a "##" heading before it/,
-    ],
-    [
-      "a <Demo> heading level other than 2 or 3",
-      page("## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />'),
-      /must be 2 or 3, not 4/,
+      "a <Demo> heading level other than 3",
+      usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />']),
+      /must be a level=\{3\} example, not level 4/,
     ],
     [
       "a Usage-shaped page with no code block under Usage",
@@ -209,7 +199,7 @@ describe("authored page.mdx as generation input", () => {
       /the demo "a" is not a level=\{3\} demo under "## Examples"/,
     ],
     [
-      "a level-2 demo under Examples on a Usage-shaped page",
+      "a demo with no level under Examples on a Usage-shaped page",
       usagePage([
         "## Usage",
         "",
@@ -220,7 +210,7 @@ describe("authored page.mdx as generation input", () => {
         "## Examples",
         '<Demo slug="button" id="a" title="A" file="a.tsx" />',
       ]),
-      /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+      /must be a level=\{3\} example, not level unset/,
     ],
     [
       "prose on a Usage-shaped page",
@@ -265,32 +255,147 @@ describe("authored page.mdx as generation input", () => {
     ],
     [
       "a second <DefaultDemo>",
-      page('<DefaultDemo slug="button" file="a.tsx" />', '<DefaultDemo slug="button" file="b.tsx" />'),
+      usagePage(['<DefaultDemo slug="button" file="b.tsx" />', ...USAGE, "## Examples"]),
       /at most one <DefaultDemo>/,
     ],
   ] as const)("rejects %s rather than ignoring it", (_case, source, message) => {
     expect(() => parseComponentPage(source, "button", "x.mdx")).toThrow(message);
   });
 
+  describe("the Composition section", () => {
+    const [allowed = ""] = COMPOSITION_PAGES.keys();
+    const COMPOSITION = [
+      "## Composition",
+      "",
+      "<Prose>",
+      "",
+      "Put each field inside the form.",
+      "",
+      "</Prose>",
+      "",
+    ];
+    const EXAMPLE = `<Demo slug="${allowed}" id="a" title="A" level={3} file="a.tsx" />`;
+
+    /** A Usage-shaped page of the first page allowed a Composition section, around `body`. */
+    function allowedPage(body: readonly string[]): string {
+      return page(
+        `<ComponentIntro slug="${allowed}" />`,
+        `<DefaultDemo slug="${allowed}" file="demo.tsx" />`,
+        "",
+        ...body,
+        "",
+        `<ApiReference slug="${allowed}" />`,
+        `<ComponentTokens slug="${allowed}" />`
+      );
+    }
+
+    it("reads it between Usage and Examples, with its markdown and at most one code block", () => {
+      const parsed = parseComponentPage(
+        allowedPage([
+          ...USAGE,
+          "## Composition",
+          "",
+          "<Prose>",
+          "",
+          "Put each field inside the form.",
+          "",
+          "```tsx",
+          "<B />",
+          "```",
+          "",
+          "</Prose>",
+          "",
+          "## Examples",
+          EXAMPLE,
+        ]),
+        allowed,
+        "x.mdx"
+      );
+      expect(parsed.usage).toBe("<A />");
+      expect(parsed.composition).toBe("Put each field inside the form.\n\n```tsx\n<B />\n```");
+      expect(parsed.sections).toEqual([
+        { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "composition", title: "Composition", depth: 2 },
+        { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+        { kind: "demo", id: "a", title: "A", depth: 3 },
+      ]);
+    });
+
+    it("rejects it on a page outside COMPOSITION_PAGES", () => {
+      expect(COMPOSITION_PAGES.has("button")).toBe(false);
+      expect(() =>
+        parseComponentPage(usagePage([...USAGE, ...COMPOSITION, "## Examples"]), "button", "x.mdx")
+      ).toThrow(/"button" is not in COMPOSITION_PAGES/);
+    });
+
+    it.each([
+      [
+        "after Examples",
+        [...USAGE, "## Examples", EXAMPLE, "", ...COMPOSITION],
+        /its headings are ## Usage, ## Examples, ## Composition, not "## Usage", an optional "## Composition", then "## Examples"/,
+      ],
+      [
+        "before Usage",
+        [...COMPOSITION, ...USAGE, "## Examples"],
+        /its headings are ## Composition, ## Usage, ## Examples/,
+      ],
+      [
+        "with two code blocks",
+        [
+          ...USAGE,
+          "## Composition",
+          "<Prose>",
+          "```tsx",
+          "<B />",
+          "```",
+          "```tsx",
+          "<C />",
+          "```",
+          "</Prose>",
+          "## Examples",
+        ],
+        /"## Composition" holds 2 code blocks, not one at most/,
+      ],
+      [
+        "with a demo in it",
+        [...USAGE, ...COMPOSITION, EXAMPLE, "", "## Examples"],
+        /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+      ],
+      [
+        "as markdown outside <Prose>",
+        [...USAGE, "## Composition", "", "Put each field inside the form.", "", "## Examples"],
+        /"## Composition" is not one <Prose> block of markdown/,
+      ],
+      [
+        "as two <Prose> blocks",
+        [...USAGE, ...COMPOSITION, "<Prose>", "More.", "</Prose>", "## Examples"],
+        /"## Composition" renders 2 <Prose> blocks, not one/,
+      ],
+      [
+        "with <Prose> elsewhere on the page",
+        ["<Prose>", "A rule.", "</Prose>", ...USAGE, ...COMPOSITION, "## Examples"],
+        /it renders <Prose> outside "## Composition"/,
+      ],
+    ] as const)("rejects it %s", (_case, body, message) => {
+      expect(() => parseComponentPage(allowedPage(body), allowed, "x.mdx")).toThrow(message);
+    });
+  });
+
   it("collects ATX headings for the TOC and reads fenced code as source, not structure", () => {
+    const fenced = [
+      "## not a heading",
+      '<Demo slug="button" id="fenced" title="Fenced" file="fenced.tsx" />',
+    ];
     const parsed = parseComponentPage(
-      page(
-        "## Composition limits",
-        "",
-        "```tsx",
-        "## not a heading",
-        '<Demo slug="button" id="fenced" title="Fenced" file="fenced.tsx" />',
-        "```",
-        "",
-        "### Details"
-      ),
+      usagePage(["## Usage", "", "```tsx", ...fenced, "```", "", "## Examples"]),
       "button",
       "button/page.mdx"
     );
     expect(parsed.sections).toEqual([
-      { kind: "heading", id: "composition-limits", title: "Composition limits", depth: 2 },
-      { kind: "heading", id: "details", title: "Details", depth: 3 },
+      { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+      { kind: "heading", id: "examples", title: "Examples", depth: 2 },
     ]);
+    expect(parsed.usage).toBe(fenced.join("\n"));
     expect(parsed.demos).toEqual([]);
   });
 });
@@ -466,14 +571,17 @@ describe("markdown endpoint rendering", () => {
     slug: "widget",
     title: "Widget",
     lede: "A widget.",
-    intro: "",
     apis: [{ slug: "widget", entry: "@elmeragroup/fuse/widget" }],
     sourcePath: "packages/fuse/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",
-    rsc: "client",
-    sections: [{ kind: "demo", id: "basic", title: "Basic", depth: 2 }],
-    usage: null,
+    sections: [
+      { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+      { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+      { kind: "demo", id: "basic", title: "Basic", depth: 3 },
+    ],
+    usage: 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />',
+    composition: null,
     demos: [
       {
         id: "basic",
@@ -529,13 +637,15 @@ describe("markdown endpoint rendering", () => {
     expect(markdown).toContain("Recipe axis.");
   });
 
-  it("mirrors a Usage-shaped page: H1, lede, Usage code, the examples with their source, API, tokens", () => {
-    const usage = 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />';
+  it("mirrors a Usage-shaped page: H1, lede, Usage code, Composition, the examples with their source, API, tokens", () => {
+    const { usage } = component;
+    const composition = "Put each `Widget.Item` inside a `Widget`.";
     const markdown = renderComponentMarkdown({
       ...component,
-      usage,
+      composition,
       sections: [
         { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "composition", title: "Composition", depth: 2 },
         { kind: "heading", id: "examples", title: "Examples", depth: 2 },
         { kind: "demo", id: "basic", title: "Basic", depth: 3 },
       ],
@@ -544,6 +654,7 @@ describe("markdown endpoint rendering", () => {
     expect(headings).toEqual([
       "# Widget",
       "## Usage",
+      "## Composition",
       "## Examples",
       "### Basic",
       "## API reference",
@@ -551,94 +662,22 @@ describe("markdown endpoint rendering", () => {
       "## Tokens consumed",
     ]);
     expect(markdown).toContain(`## Usage\n\n\`\`\`tsx\n${usage}\n\`\`\``);
+    expect(markdown).toContain(`## Composition\n\n${composition}\n\n## Examples`);
     expect(markdown).toContain(
       "### Basic\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx`"
     );
     expect(markdown).toContain("export function WidgetBasic() {}");
-    // The page itself shows no import list or RSC line, so its mirror leaves them out too.
+    // The Usage code imports the page's one entry, so the endpoint lists no other import.
     expect(markdown).not.toContain("- Import:");
-    expect(markdown).not.toContain("- RSC:");
-  });
-
-  it("prints each heading once: the intro's under the lede, none for a prose heading over its demo", () => {
-    const page = parseComponentPage(
-      [
-        "---",
-        "lede: A widget.",
-        "---",
-        "<Prose>",
-        "",
-        "## Composition limits",
-        "",
-        "One bar per root.",
-        "",
-        "### Two axes",
-        "",
-        "Mount two bars.",
-        "",
-        "</Prose>",
-        "",
-        '<Demo slug="widget" id="basic" title="Basic" file="widget-basic.tsx" />',
-        "",
-        "<Prose>",
-        "",
-        "## Thumbnails",
-        "",
-        "Map your own indicators.",
-        "",
-        "</Prose>",
-        "",
-        '<Demo slug="widget" id="thumbnails" title="Thumbnails" file="widget-thumbnails.tsx" />',
-      ].join("\n"),
-      "widget",
-      "widget/page.mdx"
-    );
-    const thumbnails = {
-      id: "thumbnails",
-      title: "Thumbnails",
-      sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx",
-      source: "export function WidgetThumbnails() {}",
-    };
-    const markdown = renderComponentMarkdown({
-      ...component,
-      intro: page.intro,
-      sections: page.sections,
-      demos: [...component.demos, thumbnails],
-    });
-    const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
-    expect(headings).toEqual([
-      "# Widget",
-      "## Composition limits",
-      "### Two axes",
-      "## Basic",
-      "## Thumbnails",
-      "## API reference",
-      "### Widget · RSC: client",
-      "## Tokens consumed",
-    ]);
-    expect(markdown).toContain(
-      "# Widget\n\nA widget.\n\n## Composition limits\n\nOne bar per root.\n\n### Two axes\n\nMount two bars.\n"
-    );
-    expect(markdown).toContain(
-      "## Thumbnails\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx`"
-    );
-    // Both prose headings stay in the outline.
-    expect(page.sections.map((section) => section.id)).toEqual([
-      "composition-limits",
-      "two-axes",
-      "basic",
-      "thumbnails",
-      "thumbnails",
-    ]);
   });
 });
 
-describe("Collapsible settle override (collapsible/page.mdx)", () => {
-  // The page hands readers the exact utilities that settle `Collapsible.Content`. That sentence
-  // is only true while each one cancels what the library actually applies, and the library side
-  // is spread over two files — `panelHeightTransition` and the height variable `Content`
-  // appends. So read all three strings from source rather than restating any of them here: a
-  // change to either library file fails this test instead of quietly rotting the prose.
+describe("Collapsible settle override (Collapsible.Content className)", () => {
+  // The `className` row of `Collapsible.Content` hands readers the exact utilities that settle
+  // the panel. That sentence is true only while each one cancels what the library applies, and
+  // the library side is spread over two files, `panelHeightTransition` and the height variable
+  // `Content` appends. So the test reads all three strings from their sources and restates none,
+  // and a change to either library file fails it.
   const readOne = (file: string, pattern: RegExp): string => {
     // oxlint-disable-next-line fuse/no-source-reading-tests -- docs drift contract: the page's settle utilities must cancel what the library applies, read from the two library files that apply it
     const match = pattern.exec(readFileSync(join(repoRoot, file), "utf8"));
@@ -659,10 +698,17 @@ describe("Collapsible settle override (collapsible/page.mdx)", () => {
     ),
   ].join(" ");
 
-  const documented = readOne(
-    "apps/docs/src/app/(docs)/components/collapsible/page.mdx",
-    /set its `className` to\s+`([^`]+)`/
-  );
+  const documented = ((): string => {
+    // Readers see the generated API reference, so the override is read from its row.
+    const description = readComponentApi("collapsible")
+      .parts.find((part) => part.name === "Collapsible.Content")
+      ?.props.find((prop) => prop.name === "className")?.description;
+    const match = /set `className` to\s+`([^`]+)`/u.exec(description ?? "");
+    if (match?.[1] === undefined) {
+      throw new Error("No settle override in the Collapsible.Content className row");
+    }
+    return match[1];
+  })();
 
   // Clipping and the height animation are the two things the page promises to switch off;
   // `ease-out` and `duration-150` need no counterpart once `transition` is cancelled.

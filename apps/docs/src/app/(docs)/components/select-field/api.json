@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
           "name": "children",
@@ -18,7 +18,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The options, normally `Select.Item`s, rendered inside `Select.Content`.",
+          "description": "The options, as `Select.Item`s, rendered inside `Select.Content`.",
           "required": false
         },
         {
@@ -27,7 +27,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -36,7 +36,7 @@
           "type": "Value | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Uncontrolled initial selection.",
+          "description": "The starting selection of an uncontrolled field.",
           "required": false
         },
         {
@@ -45,7 +45,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description` below the error.",
           "required": false
         },
         {
@@ -54,7 +54,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or the required message.",
+          "description": "The error message, rendered as `Field.Error` under the trigger, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the trigger is marked invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
           "required": false
         },
         {
@@ -63,7 +63,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The `id` of the form the selection submits with, forwarded to `Select.Root`.",
+          "description": "The `id` of the form the selection submits with, when the field sits outside it.",
           "required": false
         },
         {
@@ -72,7 +72,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and `Select.Root`.",
+          "description": "Disables the field and the trigger.",
           "required": false
         },
         {
@@ -81,7 +81,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, with the invalid look.",
           "required": false
         },
         {
@@ -99,7 +99,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to `Select.Root`; the trigger uses `bg-muted`. The trigger stays focusable and its popup still opens to show the options, but no choice changes the value.",
+          "description": "Makes the select read-only, with the muted read-only fill. The trigger stays focusable and its popup still opens to show the options, but no choice changes the value. The value still submits under `name`.",
           "required": false
         },
         {
@@ -108,7 +108,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to `Select.Root`.",
+          "description": "Makes a selection required, so an empty submit is blocked with the required message.",
           "required": false
         },
         {
@@ -117,7 +117,7 @@
           "type": "((itemValue: Value) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The label of an object value, for the trigger.",
+          "description": "Returns the label of an object value, for the trigger.",
           "required": false
         },
         {
@@ -126,7 +126,7 @@
           "type": "((itemValue: Value) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The submitted string of an object value.",
+          "description": "Returns the string an object value submits as.",
           "required": false
         },
         {
@@ -135,7 +135,7 @@
           "type": "readonly Group<any>[] | readonly { label: ReactNode; value: any; }[] | Record<string, ReactNode> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The options' labels by value, so the trigger can show a label before the popup opens.",
+          "description": "The options' labels by value. Pass them, so the trigger shows the selected label before the popup has opened.",
           "required": false
         },
         {
@@ -144,7 +144,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`.",
+          "description": "The visible label, rendered as `Field.Label` above the trigger. For a label row with an info button, or a label beside the trigger, compose `Field.Root` and the `Select` parts instead.",
           "required": false
         },
         {
@@ -153,7 +153,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` the selection submits under, forwarded to `Field.Root`. A `Form` error under it shows below the trigger until the selection changes.",
+          "description": "The `name` the selection submits under, and under which `Form` routes its errors. A `Form` error under it shows below the trigger until the selection changes, and a new `errors` object shows it again.",
           "required": false
         },
         {
@@ -182,7 +182,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shown in the trigger while nothing is selected, forwarded to `Select.Value`.",
+          "description": "The text the trigger shows while nothing is selected.",
+          "required": false
+        },
+        {
+          "name": "ref",
+          "origin": "declared",
+          "type": "Ref<HTMLButtonElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The trigger button. It also takes every prop `SelectField` does not name.",
           "required": false
         },
         {
@@ -201,8 +210,8 @@
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Control size of the trigger box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "defaultValue": "\"default\"",
+          "description": "The trigger's control size, emitted as `data-size`. `default` is the md control size, and `sm` the sm one.",
           "required": false,
           "values": [
             "default",
@@ -226,7 +235,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto `Select.Trigger`.",
+          "description": "Extra classes for `Select.Trigger`, which fills the field's width.",
           "required": false
         },
         {
@@ -235,7 +244,7 @@
           "type": "Value | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Controlled selection; `null` selects nothing.",
+          "description": "The selection, for a controlled field. `null` selects nothing. The field takes one value; for multiple selection, compose `Field.Root` and the `Select` parts.",
           "required": false
         }
       ]

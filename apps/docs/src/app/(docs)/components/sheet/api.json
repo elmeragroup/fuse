@@ -28,7 +28,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Contents of the sheet. Rendered inside `VirtualKeyboardProvider` so the panel stays usable when the on-screen keyboard opens.",
+          "description": "The sheet's trigger and content. They render inside Base UI's `VirtualKeyboardProvider`, which keeps the panel above the on-screen keyboard.",
           "required": false
         },
         {
@@ -147,7 +147,7 @@
           "type": "\"bottom\" | \"left\" | \"right\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"right\"",
-          "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
+          "description": "The screen edge the panel slides in from. On touch, a swipe toward that edge dismisses the sheet.",
           "required": false,
           "values": [
             "bottom",
@@ -497,7 +497,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "description": "The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary.",
           "required": false
         },
         {
@@ -506,7 +506,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -548,16 +548,16 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Renders the built-in corner dismiss affordance — the shared overlay close helper (`Button variant=\"ghost\" size=\"icon-sm\"`) as a `Sheet.Close`.",
+          "description": "Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner.",
           "required": false
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"md\"",
+          "description": "The panel's maximum width on the `left` and `right` sides, from the `sm` breakpoint up. `sm` to `7xl` cap it at Tailwind's container width of the same name, and `8xl`, `9xl` and `10xl` at 1366px, 1536px and 1920px, never past 90% of the viewport's width. Below `sm`, and always on the `top` and `bottom` sides, the panel is full width and `size` does nothing.",
           "required": false,
           "values": [
             "10xl",

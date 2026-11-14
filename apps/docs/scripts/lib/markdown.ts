@@ -6,7 +6,7 @@
 
 import type { ApiSameAs } from "../../src/lib/api-same-as.ts";
 import type { ApiFunction, ApiPart, DocsApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
-import { CLIENT_PART_NOTE, groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
+import { groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
 
 /**
  * Turns accumulated lines into a finished markdown document: collapsed blank runs, no
@@ -113,14 +113,6 @@ function renderApiReference(component: DocsComponent): string[] {
   });
 }
 
-/**
- * The stylesheet an entry needs beside Fuse's own, which a consumer reading only the markdown
- * would otherwise miss. A `Map`, so `get` gives the `undefined` arm without an assertion.
- */
-const ENTRY_STYLESHEETS = new Map<string, string>([
-  ["@elmeragroup/fuse/chart", "@elmeragroup/fuse/chart.css"],
-]);
-
 /** One demo as a markdown section at the page's heading level: its title, file and whole source. */
 function renderDemo(demo: DocsComponent["demos"][number], depth: number): string[] {
   return [
@@ -146,39 +138,23 @@ function renderTokens(component: DocsComponent): string[] {
   ];
 }
 
-/** The page's import, stylesheet, RSC and source facts. */
-function renderFacts(component: DocsComponent): string[] {
-  // The stylesheet belongs to the page's own entry; an extra entry styles through it.
-  const stylesheet = ENTRY_STYLESHEETS.get(component.apis[0].entry);
-  return [
-    // One import line per entry the API reference documents, the page's own first.
-    ...component.apis.map(({ entry }) => `- Import: \`import { ... } from "${entry}";\``),
-    ...(stylesheet === undefined
-      ? []
-      : [`- Stylesheet: \`import "${stylesheet}";\`, once, beside Fuse's own`]),
-    `- RSC: ${component.rsc}${component.rsc === "client" ? `. ${CLIENT_PART_NOTE}` : ""}`,
-    `- Source: \`${component.sourcePath}\``,
-    "",
-  ];
-}
-
 /**
  * The page's headings and demos in page order. A demo prints at its heading level with its
- * source, and the Usage heading carries the Usage code. A heading the intro printed is not printed
- * again. The endpoint holds no prose, so a heading that nothing follows before the next heading or
- * demo of its level or above is left out.
+ * source, the Usage heading carries the Usage code, and the Composition heading its markdown.
+ * Other headings carry no prose, so a heading that nothing follows before the next heading or demo
+ * of its level or above is left out.
  */
 function renderSections(component: DocsComponent): string[] {
   const demos = new Map(component.demos.map((demo) => [demo.id, demo]));
-  const { sections, usage } = component;
+  const { sections, usage, composition } = component;
   return sections.flatMap((section, index): string[] => {
     if (section.kind === "demo") {
       const demo = demos.get(section.id);
       return demo === undefined ? [] : renderDemo(demo, section.depth);
     }
-    if (section.intro === true) return [];
     const heading = [`${"#".repeat(section.depth)} ${section.title}`, ""];
-    if (section.id === "usage" && usage !== null) return [...heading, "```tsx", usage, "```", ""];
+    if (section.id === "usage") return [...heading, "```tsx", usage, "```", ""];
+    if (section.id === "composition" && composition !== null) return [...heading, composition, ""];
     const next = sections[index + 1];
     // A demo prints its own heading, so one at this level or above ends the section too.
     const empty = next === undefined || next.depth <= section.depth;
@@ -186,10 +162,16 @@ function renderSections(component: DocsComponent): string[] {
   });
 }
 
+/** The import line of one entry the API reference documents. */
+function importLine({ entry }: { readonly entry: string }): string {
+  return `- Import: \`import { ... } from "${entry}";\``;
+}
+
 /**
- * Renders one component's markdown endpoint: the H1 and lede, the intro, the import, RSC and
- * source facts, the page's sections in page order, the API reference and the tokens. A page in
- * the Usage shape shows no import list or RSC line, so its mirror leaves the facts out too.
+ * Renders one component's markdown endpoint: the H1 and lede, the import of each extra entry, the
+ * page's sections in page order, the API reference and the tokens. The Usage code imports only the
+ * page's own entry, so the endpoint lists the import of each extra entry, such as
+ * `@elmeragroup/fuse/command-virtual` on the Command page.
  */
 export function renderComponentMarkdown(component: DocsComponent): string {
   return finishMarkdown([
@@ -197,8 +179,8 @@ export function renderComponentMarkdown(component: DocsComponent): string {
     "",
     component.lede,
     "",
-    ...(component.intro === "" ? [] : [component.intro, ""]),
-    ...(component.usage === null ? renderFacts(component) : []),
+    ...component.apis.slice(1).map(importLine),
+    "",
     ...renderSections(component),
     "## API reference",
     "",

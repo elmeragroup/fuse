@@ -22,7 +22,7 @@ export function TableInFrame() {
             <Table.Cell>Issued</Table.Cell>
             <Table.Cell>NOK 1 240</Table.Cell>
           </Table.Row>
-          <Table.Row data-state="selected">
+          <Table.Row>
             <Table.Cell>#1043</Table.Cell>
             <Table.Cell>Paid</Table.Cell>
             <Table.Cell>NOK 890</Table.Cell>

@@ -1,14 +1,25 @@
 ---
 lede: >
-  Preview. Radar charts, one spoke per row and up to 4 series as polygons over them.
+  Preview, so names and props can change until Fuse's first stable release. Radar charts, one spoke
+  per row and up to 4 series as polygons over them.
 ---
 
+import { RadarChartActiveDot } from "./demos/radar-chart-active-dot";
 import { RadarChartAreas } from "./demos/radar-chart-areas";
+import { RadarChartCircleGrid } from "./demos/radar-chart-circle-grid";
+import { RadarChartDashedLine } from "./demos/radar-chart-dashed-line";
+import { RadarChartDemo } from "./demos/radar-chart-demo";
 import { RadarChartDeviation } from "./demos/radar-chart-deviation";
+import { RadarChartDots } from "./demos/radar-chart-dots";
 import { RadarChartEmpty } from "./demos/radar-chart-empty";
-import { RadarChartHours } from "./demos/radar-chart-hours";
+import { RadarChartFrostedTooltip } from "./demos/radar-chart-frosted-tooltip";
+import { RadarChartGlow } from "./demos/radar-chart-glow";
 import { RadarChartLoading } from "./demos/radar-chart-loading";
-import { RadarChartWeekdays } from "./demos/radar-chart-weekdays";
+import { RadarChartMissing } from "./demos/radar-chart-missing";
+import { RadarChartNoEntrance } from "./demos/radar-chart-no-entrance";
+import { RadarChartOutline } from "./demos/radar-chart-outline";
+import { RadarChartQuietLine } from "./demos/radar-chart-quiet-line";
+import { RadarChartRingDots } from "./demos/radar-chart-ring-dots";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,52 +27,95 @@ export const metadata = componentMetadata("radar-chart");
 
 <ComponentIntro slug="radar-chart" />
 
-<Prose>
+<DefaultDemo slug="radar-chart" file="radar-chart-demo.tsx">
+  <RadarChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row's spoke points to 12 o'clock and the rest follow clockwise. The radius is a value axis: the centre is 0, or the domain's minimum when a value is negative, and the rim is the largest value or `max`. A filled radar is an Area and a Line, and an outline radar is a Line alone.
+## Usage
 
-Hover a spoke, or focus the chart and use the arrow keys, to read it. Left and right move between spokes, and up and down move between series. The series other than the nearest dim, and the active dot rides the polygon's edges to the next spoke. Where a reading is missing, the Line leaves out the edges either side of it, and the dot fades out over that break and back in past it. The grid and the labels draw at once, and each series grows from the centre the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same spoke releases it.
+{/* prettier-ignore */}
+```tsx
+import { RadarChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-</Prose>
+<RadarChart.Root data={data} config={config} nameKey="day" aria-label="Mean day per weekday">
+  <RadarChart.Grid />
+  <RadarChart.AngleAxis />
+  <RadarChart.RadiusAxis />
+  <RadarChart.Area dataKey="kwh" />
+  <RadarChart.Line dataKey="kwh" />
+  <RadarChart.Tooltip />
+  <RadarChart.Table />
+</RadarChart.Root>
+```
 
-## Profiles
+## Examples
 
-A cyclic profile, such as the days of a week, reads well round a radar, since the last spoke sits beside the first. `variant="dashed"` sets last year's line apart.
-
-<Demo slug="radar-chart" id="weekdays" title="Weekdays" file="radar-chart-weekdays.tsx">
-  <RadarChartWeekdays />
+<Demo slug="radar-chart" id="circle-grid" title="Circle grid" level={3} file="radar-chart-circle-grid.tsx">
+  <RadarChartCircleGrid />
 </Demo>
 
-The 24 clock hours draw on a circular grid, with September as a quiet reference line.
-
-<Demo slug="radar-chart" id="hours" title="Hours of the day" file="radar-chart-hours.tsx">
-  <RadarChartHours />
+<Demo slug="radar-chart" id="outline" title="Outline" level={3} file="radar-chart-outline.tsx">
+  <RadarChartOutline />
 </Demo>
 
-## Comparing series
+<Demo slug="radar-chart" id="dashed-line" title="Dashed line" level={3} file="radar-chart-dashed-line.tsx">
+  <RadarChartDashedLine />
+</Demo>
 
-A radar compares at most 4 series. A fifth config key fails the type check, and at runtime it throws in development and draws the first four in production. This demo compares four price areas' use per metering point on 16 October 2026, by consumption group, as an index where 100 is the group's use per metering point over all five areas. NO1's industry uses a quarter of the national mean per meter.
+<Demo slug="radar-chart" id="quiet-line" title="Quiet line" level={3} file="radar-chart-quiet-line.tsx">
+  <RadarChartQuietLine />
+</Demo>
 
-<Demo slug="radar-chart" id="areas" title="Price areas" file="radar-chart-areas.tsx">
+<Demo slug="radar-chart" id="dots" title="Dots" level={3} file="radar-chart-dots.tsx">
+  <RadarChartDots />
+</Demo>
+
+<Demo slug="radar-chart" id="ring-dots" title="Ring dots" level={3} file="radar-chart-ring-dots.tsx">
+  <RadarChartRingDots />
+</Demo>
+
+<Demo slug="radar-chart" id="active-dot" title="Active dot" level={3} file="radar-chart-active-dot.tsx">
+  <RadarChartActiveDot />
+</Demo>
+
+<Demo slug="radar-chart" id="glow" title="Glow" level={3} file="radar-chart-glow.tsx">
+  <RadarChartGlow />
+</Demo>
+
+<Demo
+  slug="radar-chart"
+  id="frosted-tooltip"
+  title="Frosted tooltip"
+  level={3}
+  file="radar-chart-frosted-tooltip.tsx">
+  <RadarChartFrostedTooltip />
+</Demo>
+
+<Demo slug="radar-chart" id="missing" title="Missing reading" level={3} file="radar-chart-missing.tsx">
+  <RadarChartMissing />
+</Demo>
+
+<Demo slug="radar-chart" id="areas" title="Four series" level={3} file="radar-chart-areas.tsx">
   <RadarChartAreas />
 </Demo>
 
-A negative value moves the centre to the domain's minimum, and the grid draws a solid zero ring. Each area fills between the zero ring and its value, so a fill always reads as distance from 0. This demo is a server component.
-
-<Demo slug="radar-chart" id="deviation" title="Deviation from the mean" file="radar-chart-deviation.tsx">
+<Demo slug="radar-chart" id="deviation" title="Values below zero" level={3} file="radar-chart-deviation.tsx">
   <RadarChartDeviation />
 </Demo>
 
-## Loading and empty states
+<Demo slug="radar-chart" id="no-entrance" title="No entrance" level={3} file="radar-chart-no-entrance.tsx">
+  <RadarChartNoEntrance />
+</Demo>
 
-<Demo slug="radar-chart" id="loading" title="Loading" file="radar-chart-loading.tsx">
+<Demo slug="radar-chart" id="loading" title="Loading" level={3} file="radar-chart-loading.tsx">
   <RadarChartLoading />
 </Demo>
 
-A chart with no reading shows `RadarChart.Empty`, and it has no tab stop.
-
-<Demo slug="radar-chart" id="empty" title="No data" file="radar-chart-empty.tsx">
+<Demo slug="radar-chart" id="empty" title="No data" level={3} file="radar-chart-empty.tsx">
   <RadarChartEmpty />
 </Demo>
 
 <ApiReference slug="radar-chart" />
+
+<ComponentTokens slug="radar-chart" />

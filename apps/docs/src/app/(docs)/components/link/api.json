@@ -7,38 +7,62 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/link/link.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 288,
+      "forwardedCount": 285,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The link text. Name the destination, as in \"Read the invoice help articles\", not \"click here\". An inline SVG after the text, marked `data-icon=\"inline-end\"`, draws one `em` square in the link's colour and stays on the last word's line. Mark one before the text `data-icon=\"inline-start\"`.",
+          "required": false
+        },
+        {
+          "name": "href",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The destination: another page, a section of this page, or a file. For an action, such as opening a dialog or saving a form, use a Button. A screen reader announces a link as a link, and Space does not activate it.",
+          "required": false
+        },
+        {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Your router's link element, with its own destination prop, such as `<NextLink href=\"/invoices/1042\" />` or React Router's `<RouterLink to=\"/invoices/1042\" />`. Link merges its classes, `data-slot` and props onto it, and the router handles the click. A `className` on the element, a string or a state callback, merges after Link's classes and wins a conflict.",
+          "required": false
+        },
+        {
+          "name": "target",
+          "origin": "declared",
+          "type": "HTMLAttributeAnchorTarget | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Set `_blank`, with `rel=\"noreferrer\"`, to open another site in a new tab. Say that the link opens a new tab in text a screen reader reads, such as an `sr-only` span in `children`.",
           "required": false
         },
         {
           "name": "truncate",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "false",
+          "description": "Cuts a long link to its container's width with an ellipsis. Give the link a box to fit, such as a flex row with a set width, and keep the full text in reach, such as on the page it opens.",
           "required": false
         },
         {
           "name": "underline",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"always\" | \"hover\" | \"none\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"always\"",
+          "description": "How a reader tells the link from its sentence. `always` underlines at rest in a dimmed line and draws it in the full colour under the pointer. Keep it in running text, where nothing else marks the link. `hover` underlines only under the pointer, for a place that already reads as links, such as a row of footer links. `none` never underlines and fades the text under the pointer, for a link a container marks, such as a card's title.",
           "required": false,
           "values": [
             "always",
@@ -48,11 +72,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"brand\" | \"default\" | \"error\" | \"foreground\" | \"muted\" | \"primary\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The text colour. `default` takes the colour of the text around it, so a link in an error message is the error colour. The others set a text role. Some themes set `primary` to the text colour, so keep the underline wherever colour is the only other difference.",
           "required": false,
           "values": [
             "brand",
@@ -65,11 +89,11 @@
         },
         {
           "name": "weight",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"bold\" | \"normal\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The link's own weight. Unset, the link takes the weight of its sentence, as it always takes the sentence's font, size and line height.",
           "required": false,
           "values": [
             "bold",

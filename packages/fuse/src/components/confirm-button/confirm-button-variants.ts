@@ -1,7 +1,7 @@
 /**
- * Module-private recipe. Empty keys exist so
- * `VariantProps` aligns with Button's variant axis; only destructive/success
- * add armed styling. No recipe default — undefined variant adds nothing.
+ * The module-private recipe. It lists every Button variant, so `VariantProps` matches Button's
+ * `variant` axis, and only `destructive` and `success` add an armed style. It has no default, and
+ * an unset variant adds no class.
  */
 import { tv } from "../../styles/tv";
 

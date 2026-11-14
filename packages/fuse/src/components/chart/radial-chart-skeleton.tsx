@@ -12,7 +12,7 @@ import type { ChartDomProps } from "./chart-types";
  * @beta
  */
 export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
-  /** A fraction of the outer radius, as on Root. */
+  /** The fraction of the outer radius where the innermost ring starts. Pass Root's `innerRadius`. */
   innerRadius?: number;
   /** The loader's name. The dictionary's "Laster diagram" is the default. */
   label?: string;

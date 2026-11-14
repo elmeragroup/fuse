@@ -3,11 +3,22 @@ lede: >
   A modal window that sits above the page and blocks interaction behind it.
 ---
 
-import { DialogBasic } from "./demos/dialog-basic";
-import { DialogSizes } from "./demos/dialog-sizes";
+import { DialogDemo } from "./demos/dialog-demo";
+import { DialogSizeSm } from "./demos/dialog-size-sm";
+import { DialogSizeLg } from "./demos/dialog-size-lg";
+import { DialogSizeXl } from "./demos/dialog-size-xl";
+import { DialogSize2xl } from "./demos/dialog-size-2xl";
+import { DialogSize3xl } from "./demos/dialog-size-3xl";
+import { DialogSize4xl } from "./demos/dialog-size-4xl";
+import { DialogSize5xl } from "./demos/dialog-size-5xl";
+import { DialogSize6xl } from "./demos/dialog-size-6xl";
+import { DialogSize7xl } from "./demos/dialog-size-7xl";
+import { DialogSize8xl } from "./demos/dialog-size-8xl";
+import { DialogSize9xl } from "./demos/dialog-size-9xl";
+import { DialogSize10xl } from "./demos/dialog-size-10xl";
 import { DialogFooterClose } from "./demos/dialog-footer-close";
-import { DialogForm } from "./demos/dialog-form";
 import { DialogNoCloseButton } from "./demos/dialog-no-close-button";
+import { DialogForm } from "./demos/dialog-form";
 import { DialogScrolling } from "./demos/dialog-scrolling";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -16,35 +27,95 @@ export const metadata = componentMetadata("dialog");
 
 <ComponentIntro slug="dialog" />
 
-<Demo slug="dialog" id="basic" title="Basic" file="dialog-basic.tsx">
-  <DialogBasic />
+<DefaultDemo slug="dialog" file="dialog-demo.tsx">
+  <DialogDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Dialog } from "@elmeragroup/fuse/dialog";
+
+<Dialog.Root>
+  <Dialog.Trigger>Move the meter reading</Dialog.Trigger>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Move the meter reading</Dialog.Title>
+      <Dialog.Description>The old contract is closed.</Dialog.Description>
+    </Dialog.Header>
+  </Dialog.Content>
+</Dialog.Root>
+```
+
+## Examples
+
+<Demo slug="dialog" id="size-sm" title="Small" level={3} file="dialog-size-sm.tsx">
+  <DialogSizeSm />
 </Demo>
 
-<Demo slug="dialog" id="sizes" title="Sizes" file="dialog-sizes.tsx">
-  <DialogSizes />
+<Demo slug="dialog" id="size-lg" title="Large" level={3} file="dialog-size-lg.tsx">
+  <DialogSizeLg />
 </Demo>
 
-<Demo slug="dialog" id="footer-close" title="Footer close action" file="dialog-footer-close.tsx">
+<Demo slug="dialog" id="size-xl" title="Extra large" level={3} file="dialog-size-xl.tsx">
+  <DialogSizeXl />
+</Demo>
+
+<Demo slug="dialog" id="size-2xl" title="2XL" level={3} file="dialog-size-2xl.tsx">
+  <DialogSize2xl />
+</Demo>
+
+<Demo slug="dialog" id="size-3xl" title="3XL" level={3} file="dialog-size-3xl.tsx">
+  <DialogSize3xl />
+</Demo>
+
+<Demo slug="dialog" id="size-4xl" title="4XL" level={3} file="dialog-size-4xl.tsx">
+  <DialogSize4xl />
+</Demo>
+
+<Demo slug="dialog" id="size-5xl" title="5XL" level={3} file="dialog-size-5xl.tsx">
+  <DialogSize5xl />
+</Demo>
+
+<Demo slug="dialog" id="size-6xl" title="6XL" level={3} file="dialog-size-6xl.tsx">
+  <DialogSize6xl />
+</Demo>
+
+<Demo slug="dialog" id="size-7xl" title="7XL" level={3} file="dialog-size-7xl.tsx">
+  <DialogSize7xl />
+</Demo>
+
+<Demo slug="dialog" id="size-8xl" title="8XL" level={3} file="dialog-size-8xl.tsx">
+  <DialogSize8xl />
+</Demo>
+
+<Demo slug="dialog" id="size-9xl" title="9XL" level={3} file="dialog-size-9xl.tsx">
+  <DialogSize9xl />
+</Demo>
+
+<Demo slug="dialog" id="size-10xl" title="10XL" level={3} file="dialog-size-10xl.tsx">
+  <DialogSize10xl />
+</Demo>
+
+<Demo slug="dialog" id="footer-close" title="Footer close button" level={3} file="dialog-footer-close.tsx">
   <DialogFooterClose />
-</Demo>
-
-In the branded light themes a dialog fills with the page tint, so the white fields and selection rows inside it stand apart as they do on the page.
-
-<Demo slug="dialog" id="form" title="Form" file="dialog-form.tsx">
-  <DialogForm />
 </Demo>
 
 <Demo
   slug="dialog"
   id="no-close-button"
   title="Without the corner close button"
+  level={3}
   file="dialog-no-close-button.tsx">
   <DialogNoCloseButton />
 </Demo>
 
-For long content, mark the heading `isFocusable` and pass its ref to `initialFocus` so opening the dialog starts at the top.
+<Demo slug="dialog" id="form" title="Form" level={3} file="dialog-form.tsx">
+  <DialogForm />
+</Demo>
 
-<Demo slug="dialog" id="scrolling" title="Scrolling content" file="dialog-scrolling.tsx">
+<Demo slug="dialog" id="scrolling" title="Scrolling content" level={3} file="dialog-scrolling.tsx">
   <DialogScrolling />
 </Demo>
 

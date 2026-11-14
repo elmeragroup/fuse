@@ -5,8 +5,14 @@ import { expectTypeOf, test } from "vitest";
 import type { TextareaProps } from "@elmeragroup/fuse/textarea";
 import { Textarea } from "@elmeragroup/fuse/textarea";
 
+// Textarea redeclares `aria-label` to document it. Flattening both sides to one object type
+// compares their exact keys and property types, which the intersection alone would not match.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("TextareaProps is the native textarea surface plus the field size, with no render prop", () => {
-  expectTypeOf<TextareaProps>().toEqualTypeOf<ComponentProps<"textarea"> & { size?: "sm" | "default" }>();
+  expectTypeOf<Flat<TextareaProps>>().toEqualTypeOf<
+    Flat<ComponentProps<"textarea"> & { size?: "sm" | "default" }>
+  >();
 
   const _area = <Textarea aria-label="Notes" maxLength={200} rows={4} />;
   const _sm = <Textarea size="sm" aria-label="Notes" />;

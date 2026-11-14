@@ -1,10 +1,24 @@
 ---
 lede: >
-  A button that opens the file picker.
+  A button that opens the file picker. For an area that also takes dropped and pasted files, use FileUpload.
 ---
 
-import { FileTriggerBasic } from "./demos/file-trigger-basic";
-import { FileTriggerModes } from "./demos/file-trigger-modes";
+import { FileTriggerDemo } from "./demos/file-trigger-demo";
+import { FileTriggerOutline } from "./demos/file-trigger-outline";
+import { FileTriggerSecondary } from "./demos/file-trigger-secondary";
+import { FileTriggerGhost } from "./demos/file-trigger-ghost";
+import { FileTriggerDestructive } from "./demos/file-trigger-destructive";
+import { FileTriggerSuccess } from "./demos/file-trigger-success";
+import { FileTriggerLink } from "./demos/file-trigger-link";
+import { FileTriggerExtraSmall } from "./demos/file-trigger-extra-small";
+import { FileTriggerDefaultSize } from "./demos/file-trigger-default-size";
+import { FileTriggerLarge } from "./demos/file-trigger-large";
+import { FileTriggerBackCamera } from "./demos/file-trigger-back-camera";
+import { FileTriggerFrontCamera } from "./demos/file-trigger-front-camera";
+import { FileTriggerFolder } from "./demos/file-trigger-folder";
+import { FileTriggerWithoutIcon } from "./demos/file-trigger-without-icon";
+import { FileTriggerAccept } from "./demos/file-trigger-accept";
+import { FileTriggerDisabled } from "./demos/file-trigger-disabled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,36 +26,96 @@ export const metadata = componentMetadata("file-trigger");
 
 <ComponentIntro slug="file-trigger" />
 
-<Prose>
+<DefaultDemo slug="file-trigger" file="file-trigger-demo.tsx">
+  <FileTriggerDemo />
+</DefaultDemo>
 
-`FileTrigger` runs a pick through the same check as [FileUpload](/components/file-upload). `onSelect` receives the files that pass, in a new array for each pick, and `onReject` receives the rest, each with its `reason`. A file that fails `accept` is rejected with `"type"`. Without `multiple`, when more than one file passes `accept`, each of those is rejected with `"count"`.
+## Usage
 
-`FileTrigger` renders the button and a hidden file input and nothing around them, so it joins a [ButtonGroup](/components/button-group) as a Button does. For an area that also takes dropped and pasted files, use [FileUpload](/components/file-upload).
+{/* prettier-ignore */}
+```tsx
+import { FileTrigger } from "@elmeragroup/fuse/file-trigger";
 
-</Prose>
+<FileTrigger accept="image/png,.pdf" onSelect={setFiles}>
+  Attach file
+</FileTrigger>
+```
 
-<Prose>
+## Examples
 
-## Accepted files
-
-The basic trigger takes PNG, JPEG and PDF files, and lists the files it rejects.
-
-</Prose>
-
-<Demo slug="file-trigger" id="basic" title="Basic" file="file-trigger-basic.tsx">
-  <FileTriggerBasic />
+<Demo slug="file-trigger" id="outline" title="Outline" level={3} file="file-trigger-outline.tsx">
+  <FileTriggerOutline />
 </Demo>
 
-<Prose>
+<Demo slug="file-trigger" id="secondary" title="Secondary" level={3} file="file-trigger-secondary.tsx">
+  <FileTriggerSecondary />
+</Demo>
 
-## Camera and folders
+<Demo slug="file-trigger" id="ghost" title="Ghost" level={3} file="file-trigger-ghost.tsx">
+  <FileTriggerGhost />
+</Demo>
 
-`capture` asks a phone to take a new photo, and `directory` picks a folder's files. The leading icon follows the mode; `withIcon={false}` drops it.
+<Demo slug="file-trigger" id="destructive" title="Destructive" level={3} file="file-trigger-destructive.tsx">
+  <FileTriggerDestructive />
+</Demo>
 
-</Prose>
+<Demo slug="file-trigger" id="success" title="Success" level={3} file="file-trigger-success.tsx">
+  <FileTriggerSuccess />
+</Demo>
 
-<Demo slug="file-trigger" id="modes" title="Modes" file="file-trigger-modes.tsx">
-  <FileTriggerModes />
+<Demo slug="file-trigger" id="link" title="Link" level={3} file="file-trigger-link.tsx">
+  <FileTriggerLink />
+</Demo>
+
+<Demo slug="file-trigger" id="extra-small" title="Extra small" level={3} file="file-trigger-extra-small.tsx">
+  <FileTriggerExtraSmall />
+</Demo>
+
+<Demo
+  slug="file-trigger"
+  id="default-size"
+  title="Default size"
+  level={3}
+  file="file-trigger-default-size.tsx">
+  <FileTriggerDefaultSize />
+</Demo>
+
+<Demo slug="file-trigger" id="large" title="Large" level={3} file="file-trigger-large.tsx">
+  <FileTriggerLarge />
+</Demo>
+
+<Demo slug="file-trigger" id="back-camera" title="Back camera" level={3} file="file-trigger-back-camera.tsx">
+  <FileTriggerBackCamera />
+</Demo>
+
+<Demo
+  slug="file-trigger"
+  id="front-camera"
+  title="Front camera"
+  level={3}
+  file="file-trigger-front-camera.tsx">
+  <FileTriggerFrontCamera />
+</Demo>
+
+<Demo slug="file-trigger" id="folder" title="Folder" level={3} file="file-trigger-folder.tsx">
+  <FileTriggerFolder />
+</Demo>
+
+<Demo
+  slug="file-trigger"
+  id="without-icon"
+  title="Without icon"
+  level={3}
+  file="file-trigger-without-icon.tsx">
+  <FileTriggerWithoutIcon />
+</Demo>
+
+<Demo slug="file-trigger" id="accept" title="Accepted files" level={3} file="file-trigger-accept.tsx">
+  <FileTriggerAccept />
+</Demo>
+
+<Demo slug="file-trigger" id="disabled" title="Disabled" level={3} file="file-trigger-disabled.tsx">
+  <FileTriggerDisabled />
 </Demo>
 
 <ApiReference slug="file-trigger" />

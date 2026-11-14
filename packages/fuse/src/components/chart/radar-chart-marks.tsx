@@ -35,7 +35,10 @@ import type { SpokeStates } from "./radar-chart-part";
  * @beta
  */
 export type RadarChartAreaProps = ChartLayerProps & {
-  /** The series the area fills. */
+  /**
+   * The series the area fills, between the zero ring and the series' edge, so a fill always reads as
+   * distance from 0. A filled radar is an Area and a Line of the same series.
+   */
   dataKey: string;
 };
 
@@ -45,9 +48,15 @@ export type RadarChartAreaProps = ChartLayerProps & {
  * @beta
  */
 export type RadarChartLineProps = ChartLayerProps & {
-  /** The series the outline draws. */
+  /**
+   * The series the outline draws. An outline radar is a Line alone. Where a reading is missing, the
+   * Line leaves out the edges either side of it.
+   */
   dataKey: string;
-  /** The outline's look. "default" by default. */
+  /**
+   * The outline's look. "dashed" dashes every edge, and "quiet" draws a thin, faint reference, such
+   * as last year's series.
+   */
   variant?: "default" | "dashed" | "quiet";
 };
 
@@ -59,7 +68,7 @@ export type RadarChartLineProps = ChartLayerProps & {
 export type RadarChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
-  /** The dot's look. "default" by default. */
+  /** The dot's look. "ring" draws each dot hollow, in a ring of the series' colour. */
   variant?: "default" | "ring";
 };
 

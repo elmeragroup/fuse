@@ -37,7 +37,7 @@ import type { LiveLineChartTimeFormat } from "./live-line-chart-text";
  * @beta
  */
 export type LiveLineChartGridProps = ChartLayerProps & {
-  /** The line style. "solid" by default. */
+  /** The line style, solid or dashed. */
   variant?: "solid" | "dashed";
 };
 
@@ -62,7 +62,10 @@ export type LiveLineChartXAxisProps = ChartLayerProps & {
 export type LiveLineChartYAxisProps = ChartLayerProps & {
   /** The tick label format. Root's `valueFormat` by default. */
   format?: ValueFormat;
-  /** "start" draws the axis at the left edge and "end" at the right. "start" by default. */
+  /**
+   * "start" draws the axis at the left edge and "end" at the right. With a `Badge`, keep it at
+   * "start", since the badge takes the end column.
+   */
   side?: "start" | "end";
 };
 

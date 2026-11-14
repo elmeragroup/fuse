@@ -3,10 +3,30 @@ lede: >
   Body paragraphs.
 ---
 
-import { TextBasic } from "./demos/text-basic";
-import { TextSizes } from "./demos/text-sizes";
-import { TextVariants } from "./demos/text-variants";
-import { TextLeadingWeight } from "./demos/text-leading-weight";
+import { TextDemo } from "./demos/text-demo";
+import { TextForeground } from "./demos/text-foreground";
+import { TextPrimary } from "./demos/text-primary";
+import { TextBrand } from "./demos/text-brand";
+import { TextMuted } from "./demos/text-muted";
+import { TextSuccess } from "./demos/text-success";
+import { TextDestructive } from "./demos/text-destructive";
+import { TextInherit } from "./demos/text-inherit";
+import { TextSizeXs } from "./demos/text-size-xs";
+import { TextSizeSm } from "./demos/text-size-sm";
+import { TextSizeLg } from "./demos/text-size-lg";
+import { TextSizeXl } from "./demos/text-size-xl";
+import { TextSize2xl } from "./demos/text-size-2xl";
+import { TextLeadingNone } from "./demos/text-leading-none";
+import { TextLeadingTight } from "./demos/text-leading-tight";
+import { TextLeadingSnug } from "./demos/text-leading-snug";
+import { TextLeadingRelaxed } from "./demos/text-leading-relaxed";
+import { TextLeadingLoose } from "./demos/text-leading-loose";
+import { TextMedium } from "./demos/text-medium";
+import { TextBold } from "./demos/text-bold";
+import { TextLeft } from "./demos/text-left";
+import { TextCenter } from "./demos/text-center";
+import { TextRight } from "./demos/text-right";
+import { TextJustify } from "./demos/text-justify";
 import { TextTruncate } from "./demos/text-truncate";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -15,23 +35,114 @@ export const metadata = componentMetadata("text");
 
 <ComponentIntro slug="text" />
 
-<Demo slug="text" id="basic" title="Basic" file="text-basic.tsx">
-  <TextBasic />
+<DefaultDemo slug="text" file="text-demo.tsx">
+  <TextDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Text } from "@elmeragroup/fuse/text";
+
+<Text>Estimated consumption for the period is 1 240 kWh.</Text>
+```
+
+## Examples
+
+<Demo slug="text" id="foreground" title="Foreground" level={3} file="text-foreground.tsx">
+  <TextForeground />
 </Demo>
 
-<Demo slug="text" id="sizes" title="Sizes" file="text-sizes.tsx">
-  <TextSizes />
+<Demo slug="text" id="primary" title="Primary" level={3} file="text-primary.tsx">
+  <TextPrimary />
 </Demo>
 
-<Demo slug="text" id="variants" title="Variants" file="text-variants.tsx">
-  <TextVariants />
+<Demo slug="text" id="brand" title="Brand" level={3} file="text-brand.tsx">
+  <TextBrand />
 </Demo>
 
-<Demo slug="text" id="leading-weight" title="Leading and weight" file="text-leading-weight.tsx">
-  <TextLeadingWeight />
+<Demo slug="text" id="muted" title="Muted" level={3} file="text-muted.tsx">
+  <TextMuted />
 </Demo>
 
-<Demo slug="text" id="truncate" title="Truncate" file="text-truncate.tsx">
+<Demo slug="text" id="success" title="Success" level={3} file="text-success.tsx">
+  <TextSuccess />
+</Demo>
+
+<Demo slug="text" id="destructive" title="Destructive" level={3} file="text-destructive.tsx">
+  <TextDestructive />
+</Demo>
+
+<Demo slug="text" id="inherit" title="Inherit" level={3} file="text-inherit.tsx">
+  <TextInherit />
+</Demo>
+
+<Demo slug="text" id="size-xs" title="Extra small" level={3} file="text-size-xs.tsx">
+  <TextSizeXs />
+</Demo>
+
+<Demo slug="text" id="size-sm" title="Small" level={3} file="text-size-sm.tsx">
+  <TextSizeSm />
+</Demo>
+
+<Demo slug="text" id="size-lg" title="Large" level={3} file="text-size-lg.tsx">
+  <TextSizeLg />
+</Demo>
+
+<Demo slug="text" id="size-xl" title="Extra large" level={3} file="text-size-xl.tsx">
+  <TextSizeXl />
+</Demo>
+
+<Demo slug="text" id="size-2xl" title="2XL" level={3} file="text-size-2xl.tsx">
+  <TextSize2xl />
+</Demo>
+
+<Demo slug="text" id="leading-none" title="Leading none" level={3} file="text-leading-none.tsx">
+  <TextLeadingNone />
+</Demo>
+
+<Demo slug="text" id="leading-tight" title="Leading tight" level={3} file="text-leading-tight.tsx">
+  <TextLeadingTight />
+</Demo>
+
+<Demo slug="text" id="leading-snug" title="Leading snug" level={3} file="text-leading-snug.tsx">
+  <TextLeadingSnug />
+</Demo>
+
+<Demo slug="text" id="leading-relaxed" title="Leading relaxed" level={3} file="text-leading-relaxed.tsx">
+  <TextLeadingRelaxed />
+</Demo>
+
+<Demo slug="text" id="leading-loose" title="Leading loose" level={3} file="text-leading-loose.tsx">
+  <TextLeadingLoose />
+</Demo>
+
+<Demo slug="text" id="medium" title="Medium weight" level={3} file="text-medium.tsx">
+  <TextMedium />
+</Demo>
+
+<Demo slug="text" id="bold" title="Bold" level={3} file="text-bold.tsx">
+  <TextBold />
+</Demo>
+
+<Demo slug="text" id="left" title="Left" level={3} file="text-left.tsx">
+  <TextLeft />
+</Demo>
+
+<Demo slug="text" id="center" title="Center" level={3} file="text-center.tsx">
+  <TextCenter />
+</Demo>
+
+<Demo slug="text" id="right" title="Right" level={3} file="text-right.tsx">
+  <TextRight />
+</Demo>
+
+<Demo slug="text" id="justify" title="Justify" level={3} file="text-justify.tsx">
+  <TextJustify />
+</Demo>
+
+<Demo slug="text" id="truncate" title="Truncate" level={3} file="text-truncate.tsx">
   <TextTruncate />
 </Demo>
 

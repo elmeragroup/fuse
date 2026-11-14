@@ -3,9 +3,29 @@ lede: >
   Inline text.
 ---
 
-import { SpanBasic } from "./demos/span-basic";
-import { SpanSizes } from "./demos/span-sizes";
-import { SpanVariants } from "./demos/span-variants";
+import { SpanDemo } from "./demos/span-demo";
+import { SpanForeground } from "./demos/span-foreground";
+import { SpanPrimary } from "./demos/span-primary";
+import { SpanBrand } from "./demos/span-brand";
+import { SpanMuted } from "./demos/span-muted";
+import { SpanSuccess } from "./demos/span-success";
+import { SpanDestructive } from "./demos/span-destructive";
+import { SpanInherit } from "./demos/span-inherit";
+import { SpanSizeXs } from "./demos/span-size-xs";
+import { SpanSizeSm } from "./demos/span-size-sm";
+import { SpanSizeLg } from "./demos/span-size-lg";
+import { SpanSizeXl } from "./demos/span-size-xl";
+import { SpanSize2xl } from "./demos/span-size-2xl";
+import { SpanLeadingNone } from "./demos/span-leading-none";
+import { SpanLeadingTight } from "./demos/span-leading-tight";
+import { SpanLeadingRelaxed } from "./demos/span-leading-relaxed";
+import { SpanLeadingLoose } from "./demos/span-leading-loose";
+import { SpanMedium } from "./demos/span-medium";
+import { SpanBold } from "./demos/span-bold";
+import { SpanLeft } from "./demos/span-left";
+import { SpanCenter } from "./demos/span-center";
+import { SpanRight } from "./demos/span-right";
+import { SpanJustify } from "./demos/span-justify";
 import { SpanTruncate } from "./demos/span-truncate";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -14,19 +34,112 @@ export const metadata = componentMetadata("span");
 
 <ComponentIntro slug="span" />
 
-<Demo slug="span" id="basic" title="Basic" file="span-basic.tsx">
-  <SpanBasic />
+<DefaultDemo slug="span" file="span-demo.tsx">
+  <SpanDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Span } from "@elmeragroup/fuse/span";
+
+<p>
+  Invoice <Span variant="muted">10041</Span> is due on 12 April.
+</p>
+```
+
+## Examples
+
+<Demo slug="span" id="foreground" title="Foreground" level={3} file="span-foreground.tsx">
+  <SpanForeground />
 </Demo>
 
-<Demo slug="span" id="sizes" title="Sizes" file="span-sizes.tsx">
-  <SpanSizes />
+<Demo slug="span" id="primary" title="Primary" level={3} file="span-primary.tsx">
+  <SpanPrimary />
 </Demo>
 
-<Demo slug="span" id="variants" title="Variants" file="span-variants.tsx">
-  <SpanVariants />
+<Demo slug="span" id="brand" title="Brand" level={3} file="span-brand.tsx">
+  <SpanBrand />
 </Demo>
 
-<Demo slug="span" id="truncate" title="Truncate" file="span-truncate.tsx">
+<Demo slug="span" id="muted" title="Muted" level={3} file="span-muted.tsx">
+  <SpanMuted />
+</Demo>
+
+<Demo slug="span" id="success" title="Success" level={3} file="span-success.tsx">
+  <SpanSuccess />
+</Demo>
+
+<Demo slug="span" id="destructive" title="Destructive" level={3} file="span-destructive.tsx">
+  <SpanDestructive />
+</Demo>
+
+<Demo slug="span" id="inherit" title="Inherit" level={3} file="span-inherit.tsx">
+  <SpanInherit />
+</Demo>
+
+<Demo slug="span" id="size-xs" title="Extra small" level={3} file="span-size-xs.tsx">
+  <SpanSizeXs />
+</Demo>
+
+<Demo slug="span" id="size-sm" title="Small" level={3} file="span-size-sm.tsx">
+  <SpanSizeSm />
+</Demo>
+
+<Demo slug="span" id="size-lg" title="Large" level={3} file="span-size-lg.tsx">
+  <SpanSizeLg />
+</Demo>
+
+<Demo slug="span" id="size-xl" title="Extra large" level={3} file="span-size-xl.tsx">
+  <SpanSizeXl />
+</Demo>
+
+<Demo slug="span" id="size-2xl" title="2XL" level={3} file="span-size-2xl.tsx">
+  <SpanSize2xl />
+</Demo>
+
+<Demo slug="span" id="leading-none" title="Leading none" level={3} file="span-leading-none.tsx">
+  <SpanLeadingNone />
+</Demo>
+
+<Demo slug="span" id="leading-tight" title="Leading tight" level={3} file="span-leading-tight.tsx">
+  <SpanLeadingTight />
+</Demo>
+
+<Demo slug="span" id="leading-relaxed" title="Leading relaxed" level={3} file="span-leading-relaxed.tsx">
+  <SpanLeadingRelaxed />
+</Demo>
+
+<Demo slug="span" id="leading-loose" title="Leading loose" level={3} file="span-leading-loose.tsx">
+  <SpanLeadingLoose />
+</Demo>
+
+<Demo slug="span" id="medium" title="Medium weight" level={3} file="span-medium.tsx">
+  <SpanMedium />
+</Demo>
+
+<Demo slug="span" id="bold" title="Bold" level={3} file="span-bold.tsx">
+  <SpanBold />
+</Demo>
+
+<Demo slug="span" id="left" title="Left" level={3} file="span-left.tsx">
+  <SpanLeft />
+</Demo>
+
+<Demo slug="span" id="center" title="Center" level={3} file="span-center.tsx">
+  <SpanCenter />
+</Demo>
+
+<Demo slug="span" id="right" title="Right" level={3} file="span-right.tsx">
+  <SpanRight />
+</Demo>
+
+<Demo slug="span" id="justify" title="Justify" level={3} file="span-justify.tsx">
+  <SpanJustify />
+</Demo>
+
+<Demo slug="span" id="truncate" title="Truncate" level={3} file="span-truncate.tsx">
   <SpanTruncate />
 </Demo>
 

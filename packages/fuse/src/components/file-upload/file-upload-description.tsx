@@ -14,14 +14,19 @@ import { fileUploadVariants } from "./file-upload-variants";
 
 const styles = fileUploadVariants();
 
-/** `FileUpload.Description` takes a `p`'s props plus Base UI's `render`. */
-export type FileUploadDescriptionProps = useRender.ComponentProps<"p">;
+type FileUploadDescriptionBaseProps = useRender.ComponentProps<"p">;
 
-/**
- * A hint about what the FileUpload takes, such as "Up to 3 files, 10 MB each". While it is
- * mounted, it describes every `FileUpload.Trigger` in the Root, by the id its element ends up
- * with: the consumer's `id`, one from a `render` element, or a generated one.
- */
+/** `FileUpload.Description` takes a `p`'s props plus Base UI's `render`. */
+export type FileUploadDescriptionProps = Omit<FileUploadDescriptionBaseProps, "children"> & {
+  /**
+   * What the Root takes, such as "Images or PDFs, up to 3 files of 5 MB each". While it is
+   * mounted, it describes every `FileUpload.Trigger` in the Root, by the id its element ends up
+   * with: the consumer's `id`, one from a `render` element, or a generated one.
+   */
+  children?: FileUploadDescriptionBaseProps["children"];
+};
+
+/** A hint about what the FileUpload takes, which describes its Triggers. */
 export function FileUploadDescription({
   className,
   render,

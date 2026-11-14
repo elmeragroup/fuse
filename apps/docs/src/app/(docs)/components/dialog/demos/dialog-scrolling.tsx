@@ -12,19 +12,17 @@ export function DialogScrolling() {
   return (
     <Dialog.Root>
       <Dialog.Trigger render={<Button variant="outline" />}>Open the full terms</Dialog.Trigger>
-      <Dialog.Content size="lg" initialFocus={titleRef}>
+      <Dialog.Content initialFocus={titleRef}>
         <Dialog.Header>
           <Dialog.Title ref={titleRef} isFocusable>
             Full terms
           </Dialog.Title>
-          <Dialog.Description>
-            The popup caps its height and scrolls its own content instead of the page.
-          </Dialog.Description>
+          <Dialog.Description>The standard agreement for household customers.</Dialog.Description>
         </Dialog.Header>
         <div className="flex flex-col gap-4">
           {clauses.map((clause) => (
             <p key={clause}>
-              Clause {clause}. Delivery, metering, invoicing, and notice periods follow the standard agreement
+              Clause {clause}. Delivery, metering, invoicing and notice periods follow the standard agreement
               for household customers.
             </p>
           ))}

@@ -9,8 +9,27 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "aria-hidden",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides the cap from screen readers, which read it otherwise. Set it when the cap only repeats a shortcut that its control declares in `aria-keyshortcuts`.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The key: a word such as `Esc`, a glyph such as `⌘`, or an icon. Kbd never detects the platform, so the server and the browser render the same cap. Pass `⌘` or `Ctrl` yourself where your app knows the platform.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "KbdGroup",
@@ -19,8 +38,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Kbd` caps of one combination, pressed together. In an `InputGroup` addon, make the group, or a lone cap, the addon's direct child, so the caps round with the addon's inner corner.",
+          "required": false
+        }
+      ]
     }
   ]
 }

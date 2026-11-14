@@ -22,10 +22,9 @@ const slots = radioVariants();
 const rowSlots = radioRowVariants();
 
 /**
- * Unlabeled 16px radio over the base-ui primitive. Client component, because base-ui
- * Radio owns the checked state. The indicator is an 8px primary-foreground dot. Labeled
- * usage composes `Radio` or `RadioItem`. A disabled item dims to 50% on its own, also
- * outside a label.
+ * A 16px radio with no label, built on Base UI's radio, which owns the checked state. A checked
+ * radio shows an 8px dot. For a labeled option use `Radio` or `RadioItem`. A disabled radio dims
+ * to 50% inside or outside a label.
  */
 export function RadioGroupItem({
   className,
@@ -49,77 +48,65 @@ export function RadioGroupItem({
 }
 
 export type RadioGroupProps = {
-  /** Fieldset legend, rendered as `Field.Legend variant="label"` in the header row. */
+  /** The group's visible name, rendered as `Field.Legend variant="label"` in the header row. */
   label?: string;
   /**
-   * Hides the legend visually and keeps it as the group's accessible name, for a group
-   * under a heading that already names it. The first option moves up into the legend's
-   * place; while `isPending`, the spinner row stays visible. Default `false`.
+   * Hides the legend visually and keeps it as the group's accessible name. Use it for a group
+   * under a heading that already names it. The first option moves up into the legend's place.
+   * While `isPending`, the spinner row stays visible.
    */
   isLabelHidden?: boolean;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text under the options, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as a native constraint message.
+   * The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows
+   * its own validation error instead, such as a native constraint message.
    */
   errorMessage?: ReactNode;
   /**
-   * Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the
-   * radiogroup while true; omitted when pending is false or absent. The header
-   * row renders when `label` or `isPending` is truthy. An unlabeled pending group
-   * renders that status row with no legend element.
+   * Shows a spinner at the end of the header row and sets `aria-busy` on the group, for options
+   * that are still loading. The spinner is decorative. A pending group without a `label` still
+   * renders the header row, with no legend.
    */
   isPending?: boolean;
   /**
-   * Layout of the group primitive, and of RadioItemGroup's stacked-card list.
-   * Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected
-   * `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped
-   * by `--surface-gap-lg`
-   * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
-   * Default `"vertical"`.
+   * How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins
+   * `RadioItem` rows into one card with a line between rows. `horizontal` wraps them in a row
+   * `--surface-gap-lg` apart, and each `RadioItem` row is a card of its own. The cards share the
+   * line in equal widths. A `basis-*` class on a row sets the width below which it wraps.
    */
   orientation?: "vertical" | "horizontal";
   /**
-   * Controlled selected value. `null` is passed through to keep the primitive
-   * controlled with nothing selected, so clearing a selected value does not
-   * switch it to uncontrolled state.
+   * The selected value, for a controlled group. Pass `null` for no selection: the group stays
+   * controlled, so clearing the selection does not make it uncontrolled.
    */
   value?: string | null;
-  /** Uncontrolled initial selected value. */
+  /** The value selected on mount, for an uncontrolled group. */
   defaultValue?: string;
-  /**
-   * Called with the selected `string`, not the event. Mapped from base-ui
-   * `onValueChange` with `String(next)`.
-   */
+  /** Called with the newly selected value as a `string`. */
   onChange?: (value: string) => void;
-  /** Forwards `disabled` to `Field.Root` and the group primitive. */
+  /** Disables every option. */
   isDisabled?: boolean;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, so the options show the invalid face. */
   isInvalid?: boolean;
-  /** Forwards `readOnly` to the group primitive. */
+  /** Makes the group read-only: it shows its selection but a click does not change it. */
   isReadOnly?: boolean;
-  /** Forwards `required` to the group primitive. */
+  /** Requires a selection before the form submits. */
   isRequired?: boolean;
-  /**
-   * Set directly on the base-ui radio-group primitive, which supports `name`.
-   * CheckboxGroup threads `name` through Field instead — same external face,
-   * different plumbing.
-   */
+  /** The form field name the selected option submits its `value` under. */
   name?: string;
-  /** Forwarded to the group primitive. */
+  /** The `id` of the element that holds the options. */
   id?: string;
-  /** Extra classes, merged onto the group primitive via `cn`. */
+  /** Extra classes for the element that holds the options. */
   className?: string;
-  /** Group members — typically `Radio`, `RadioItem`, or `RadioIconButton`. */
+  /** The options: `Radio`, `RadioItem` or `RadioIconButton`. */
   children?: ReactNode;
 };
 
 /**
- * Labeled radio group composite over Field and base-ui RadioGroup. Client component,
- * because it wires Field validity and the group primitive. Native form reset, including
- * React's reset after a form action, keeps the selection and what the form submits in step for
- * Fuse members; an uncontrolled group does not return to `defaultValue`.
+ * A labeled group of radios, built on Field and Base UI's radio group. A native form reset,
+ * including React's reset after a form action, keeps the selection of Fuse members and the
+ * submitted value in step. An uncontrolled group does not return to `defaultValue`.
  */
 export function RadioGroup({
   label,
@@ -173,10 +160,9 @@ export function RadioGroup({
 }
 
 /**
- * Stacked-card group: `RadioGroup` wrapping children in the private
- * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
- * outer group and to that list: vertical remains connected `flex-col gap-0`;
- * horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded cards.
+ * A `RadioGroup` for `RadioItem` rows, which it puts in a `role="list"`. A vertical group joins
+ * the rows into one card. A horizontal group wraps them, `--surface-gap-lg` apart, each a card
+ * of its own.
  */
 export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGroupProps): ReactElement {
   // The default is spelled here because the docs API extractor reads a part's
@@ -189,21 +175,17 @@ export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGrou
 }
 
 export type RadioProps = {
-  /** Member value in the group. */
+  /** The value the group takes when this option is selected. */
   value: string;
-  /** Forwards `disabled` to the inner `RadioGroupItem`. */
+  /** Disables the option and dims the radio and its label text. */
   isDisabled?: boolean;
-  /** Extra classes, merged onto `Field.Item` via `cn`. */
+  /** Extra classes for the row's `Field.Item`. */
   className?: string;
-  /** Visible label content. The whole row is the click target. */
+  /** The option's label. A click anywhere on it selects the option. */
   children?: ReactNode;
 };
 
-/**
- * Compact labeled radio row over `Field.Item` + base-ui `Field.Label`.
- * The whole label is the click target. A disabled row dims the control and the label
- * content once each. The control dims itself, so the label dims only its content.
- */
+/** A radio with its label, in a `Field.Item`. A click anywhere on the label selects it. */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
     <FieldItem className={cn(rowSlots.root(), className)}>
@@ -219,31 +201,26 @@ export type RadioIconButtonProps = Omit<
   ComponentProps<typeof RadioPrimitive.Root>,
   "value" | "disabled" | "className" | "children" | "aria-label"
 > & {
-  /** Member value in the group. */
+  /** The value the group takes when this option is selected. */
   value: string;
-  /** Forwards `disabled` to the radio root. */
+  /** Disables the option. */
   isDisabled?: boolean;
   /**
-   * Icon-button size mapped onto the control sizes like Button: `icon-xxs`
-   * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
-   * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
-   * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.
+   * The button's size, matching Button's icon sizes. `icon-xxs` and `icon-xs` take the `xs`
+   * control height with a 12px and a 14px icon, `icon-sm` the `sm` height and `icon` the `md`
+   * height with a 16px icon, and `icon-lg` the `lg` height with a 20px icon. An icon with its
+   * own `size-*` class keeps it.
    */
   size?: NonNullable<VariantProps<typeof radioIconButtonVariants>["size"]>;
-  /** Extra classes, merged via `cn`. */
+  /** Extra classes for the button. */
   className?: string;
   /** The icon. */
   children?: ReactNode;
-  /**
-   * Required accessible name, because `RadioIconButton` renders only an icon.
-   */
+  /** The option's accessible name. It is required, because the button shows only an icon. */
   "aria-label": string;
 };
 
-/**
- * Icon-only segmented radio over the base-ui radio root.
- * Client — base-ui Radio owns checked state.
- */
+/** An icon-only radio button, built on Base UI's radio, for a row of icon choices. */
 export function RadioIconButton({
   value,
   isDisabled,

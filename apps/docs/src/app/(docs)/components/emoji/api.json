@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 488,
+      "forwardedCount": 487,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Size the face with a `size-*` class, such as `size-5`.",
+          "required": false
+        },
         {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "description": "The face's accessible name. With it, the SVG is `role=\"img\"` with this `aria-label`. Without it, the face is decorative and hidden from screen readers.",
           "required": false
         }
       ]
@@ -29,15 +38,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 488,
+      "forwardedCount": 487,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Size the face with a `size-*` class, such as `size-5`.",
+          "required": false
+        },
         {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "description": "The face's accessible name. With it, the SVG is `role=\"img\"` with this `aria-label`. Without it, the face is decorative and hidden from screen readers.",
           "required": false
         }
       ]
@@ -49,15 +67,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 488,
+      "forwardedCount": 487,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Size the face with a `size-*` class, such as `size-5`.",
+          "required": false
+        },
         {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "description": "The face's accessible name. With it, the SVG is `role=\"img\"` with this `aria-label`. Without it, the face is decorative and hidden from screen readers.",
           "required": false
         }
       ]
@@ -69,15 +96,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 488,
+      "forwardedCount": 487,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Size the face with a `size-*` class, such as `size-5`.",
+          "required": false
+        },
         {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "description": "The face's accessible name. With it, the SVG is `role=\"img\"` with this `aria-label`. Without it, the face is decorative and hidden from screen readers.",
           "required": false
         }
       ]
@@ -89,15 +125,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 488,
+      "forwardedCount": 487,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Size the face with a `size-*` class, such as `size-5`.",
+          "required": false
+        },
         {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. When set, the svg is `role=\"img\"` with this `aria-label`. When omitted, the svg is decorative (`aria-hidden` + `focusable=\"false\"`).",
+          "description": "The face's accessible name. With it, the SVG is `role=\"img\"` with this `aria-label`. Without it, the face is decorative and hidden from screen readers.",
           "required": false
         }
       ]

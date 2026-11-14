@@ -3,12 +3,27 @@ lede: >
   Radio controls, with a labeled group and a selectable card variant.
 ---
 
-import { RadioGroupBasic } from "./demos/radio-group-basic";
+import { RadioGroupDemo } from "./demos/radio-group-demo";
+import { RadioGroupHorizontal } from "./demos/radio-group-horizontal";
+import { RadioGroupDescription } from "./demos/radio-group-description";
+import { RadioGroupError } from "./demos/radio-group-error";
+import { RadioGroupDisabled } from "./demos/radio-group-disabled";
+import { RadioGroupDisabledOption } from "./demos/radio-group-disabled-option";
+import { RadioGroupReadOnly } from "./demos/radio-group-read-only";
 import { RadioGroupPending } from "./demos/radio-group-pending";
-import { RadioGroupLabelHidden } from "./demos/radio-group-label-hidden";
+import { RadioGroupHiddenLabel } from "./demos/radio-group-hidden-label";
+import { RadioGroupCleared } from "./demos/radio-group-cleared";
 import { RadioItemGroupDemo } from "./demos/radio-item-group";
+import { RadioItemGroupHorizontal } from "./demos/radio-item-group-horizontal";
+import { RadioItemControlEnd } from "./demos/radio-item-control-end";
+import { RadioItemActions } from "./demos/radio-item-actions";
+import { RadioItemSubSection } from "./demos/radio-item-sub-section";
+import { RadioItemDisabled } from "./demos/radio-item-disabled";
 import { RadioIconButtonDemo } from "./demos/radio-icon-button";
-import { RadioControlledNull } from "./demos/radio-controlled-null";
+import { RadioIconButtonExtraExtraSmall } from "./demos/radio-icon-button-extra-extra-small";
+import { RadioIconButtonExtraSmall } from "./demos/radio-icon-button-extra-small";
+import { RadioIconButtonLarge } from "./demos/radio-icon-button-large";
+import { RadioIconButtonSmall } from "./demos/radio-icon-button-small";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,34 +31,142 @@ export const metadata = componentMetadata("radio-group");
 
 <ComponentIntro slug="radio-group" />
 
-<Demo slug="radio-group" id="basic" title="Basic" file="radio-group-basic.tsx">
-  <RadioGroupBasic />
+<DefaultDemo slug="radio-group" file="radio-group-demo.tsx">
+  <RadioGroupDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Radio, RadioGroup } from "@elmeragroup/fuse/radio-group";
+
+<RadioGroup label="Contract" defaultValue="fixed">
+  <Radio value="fixed">Fixed price</Radio>
+  <Radio value="spot">Spot price</Radio>
+</RadioGroup>
+```
+
+## Examples
+
+<Demo slug="radio-group" id="horizontal" title="Horizontal" level={3} file="radio-group-horizontal.tsx">
+  <RadioGroupHorizontal />
 </Demo>
 
-<Demo slug="radio-group" id="pending" title="Pending" file="radio-group-pending.tsx">
+<Demo slug="radio-group" id="description" title="Description" level={3} file="radio-group-description.tsx">
+  <RadioGroupDescription />
+</Demo>
+
+<Demo slug="radio-group" id="error" title="Error" level={3} file="radio-group-error.tsx">
+  <RadioGroupError />
+</Demo>
+
+<Demo slug="radio-group" id="disabled" title="Disabled" level={3} file="radio-group-disabled.tsx">
+  <RadioGroupDisabled />
+</Demo>
+
+<Demo
+  slug="radio-group"
+  id="disabled-option"
+  title="Disabled option"
+  level={3}
+  file="radio-group-disabled-option.tsx">
+  <RadioGroupDisabledOption />
+</Demo>
+
+<Demo slug="radio-group" id="read-only" title="Read-only" level={3} file="radio-group-read-only.tsx">
+  <RadioGroupReadOnly />
+</Demo>
+
+<Demo slug="radio-group" id="pending" title="Pending" level={3} file="radio-group-pending.tsx">
   <RadioGroupPending />
 </Demo>
 
-<Demo slug="radio-group" id="label-hidden" title="Hidden label" file="radio-group-label-hidden.tsx">
-  <RadioGroupLabelHidden />
+<Demo slug="radio-group" id="hidden-label" title="Hidden label" level={3} file="radio-group-hidden-label.tsx">
+  <RadioGroupHiddenLabel />
 </Demo>
 
-<Demo slug="radio-group" id="item-group" title="Item group" file="radio-item-group.tsx">
+<Demo slug="radio-group" id="cleared" title="Cleared selection" level={3} file="radio-group-cleared.tsx">
+  <RadioGroupCleared />
+</Demo>
+
+<Demo slug="radio-group" id="item-group" title="Item group" level={3} file="radio-item-group.tsx">
   <RadioItemGroupDemo />
 </Demo>
 
-<Prose>
+<Demo
+  slug="radio-group"
+  id="item-group-horizontal"
+  title="Horizontal item group"
+  level={3}
+  file="radio-item-group-horizontal.tsx">
+  <RadioItemGroupHorizontal />
+</Demo>
 
-Item group rows draw their edges and the lines between them from theme roles. [Theming on the SelectionItem page](/components/selection-item#theming) lists them, with stacked, checked and horizontal examples.
+<Demo
+  slug="radio-group"
+  id="item-control-end"
+  title="Item with the radio at the end"
+  level={3}
+  file="radio-item-control-end.tsx">
+  <RadioItemControlEnd />
+</Demo>
 
-</Prose>
+<Demo slug="radio-group" id="item-actions" title="Item actions" level={3} file="radio-item-actions.tsx">
+  <RadioItemActions />
+</Demo>
 
-<Demo slug="radio-group" id="icon-button" title="Icon button" file="radio-icon-button.tsx">
+<Demo
+  slug="radio-group"
+  id="item-sub-section"
+  title="Item sub-section"
+  level={3}
+  file="radio-item-sub-section.tsx">
+  <RadioItemSubSection />
+</Demo>
+
+<Demo slug="radio-group" id="item-disabled" title="Disabled item" level={3} file="radio-item-disabled.tsx">
+  <RadioItemDisabled />
+</Demo>
+
+<Demo slug="radio-group" id="icon-button" title="Icon buttons" level={3} file="radio-icon-button.tsx">
   <RadioIconButtonDemo />
 </Demo>
 
-<Demo slug="radio-group" id="controlled-null" title="Controlled null" file="radio-controlled-null.tsx">
-  <RadioControlledNull />
+<Demo
+  slug="radio-group"
+  id="icon-button-extra-extra-small"
+  title="Icon buttons extra extra small"
+  level={3}
+  file="radio-icon-button-extra-extra-small.tsx">
+  <RadioIconButtonExtraExtraSmall />
+</Demo>
+
+<Demo
+  slug="radio-group"
+  id="icon-button-extra-small"
+  title="Icon buttons extra small"
+  level={3}
+  file="radio-icon-button-extra-small.tsx">
+  <RadioIconButtonExtraSmall />
+</Demo>
+
+<Demo
+  slug="radio-group"
+  id="icon-button-small"
+  title="Icon buttons small"
+  level={3}
+  file="radio-icon-button-small.tsx">
+  <RadioIconButtonSmall />
+</Demo>
+
+<Demo
+  slug="radio-group"
+  id="icon-button-large"
+  title="Icon buttons large"
+  level={3}
+  file="radio-icon-button-large.tsx">
+  <RadioIconButtonLarge />
 </Demo>
 
 <ApiReference slug="radio-group" />

@@ -22,15 +22,26 @@ import type { PlotFrame } from "./layout/plot-frame";
  * @beta
  */
 export type ChartAreaProps = ChartLayerProps & {
-  /** The series the area draws. An unknown key throws `unknown-key`. */
+  /**
+   * The series the area draws. An unknown key throws `unknown-key`. The area fills from 0, so it
+   * throws `baseline-required` under `yBaseline="none"`. It draws the fill only, and a `Line` on the
+   * same key draws its edge. The spans of estimated, bridged and projected readings fill hatched.
+   */
   dataKey: string;
   /**
-   * The fill's look. "gradient" by default, which fades from the value toward the baseline, and
-   * "gradient-reverse" fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted",
+   * The fill's look. "gradient" fades from the value toward the baseline, and "gradient-reverse"
+   * fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted",
    * "lines" and "hatched" fill with a texture of the series colour.
    */
   variant?: "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines" | "hatched";
-  /** The curve along the area's edge. "monotone" by default. */
+  /**
+   * The d3 curve along the area's edge.
+   * "monotone" stays monotone along the category axis, so it runs along x, and along y under
+   * `orientation="horizontal"`. "monotone-y" is d3's monotoneY, monotone along screen y in either
+   * orientation. "step-after" and "step-before" run each reading across
+   * its whole cell, so the last hour of a day keeps its run. They need `xScale="band"` and throw
+   * `step-curve-needs-cells` under "point".
+   */
   curve?: ChartCurve;
 };
 

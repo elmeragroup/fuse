@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. The plot is one tab stop. Hover a slot, or focus the chart and use the arrow keys, to read it. ArrowLeft and ArrowRight step one slot and wrap round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a week and a month round a year, and ArrowUp and ArrowDown move between series. On a touch screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a second tap on the same slot releases it.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "TConfig & ChartSeriesConfigCheck<TConfig, TRow> & ChartClockFieldCheck<TConfig, TCycle>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Keyed by series, as in `Chart.Root`, with its cartesian fields: `stack`, a series `interval` that nests in the cycle, `projectedFrom`, `qualityKey`, `missing` and a threshold `color`. Its `barVariant` is \"default\" or \"gradient\".",
+          "description": "Keyed by series, as in `Chart.Root`, with its cartesian fields: `stack`, a series `interval` that nests in the cycle, `projectedFrom`, `qualityKey`, `missing` and a threshold `color`. Its `barVariant` is \"default\" or \"gradient\". A threshold colour paints each wedge by its own value's side. Add a dashed `ReferenceLine` at the threshold to draw the ring the colours split at.",
           "required": true
         },
         {
@@ -62,7 +62,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per slot. A row outside the period throws `row-outside-period` in development.",
+          "description": "The rows, one per slot. A row outside the period throws `row-outside-period` in development. With no reading the chart shows `Empty` and has no tab stop. A server component can render the chart when every prop is plain data.",
           "required": true
         },
         {
@@ -80,7 +80,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns the entrance off.",
+          "description": "\"none\" turns off the entrance, in which each slot rises from its base as a clockwise wedge opens the first time the chart comes into view.",
           "required": false
         },
         {
@@ -115,8 +115,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The hole's radius as a share of the dial's, where the domain's minimum sits. 0.3 by default.",
+          "defaultValue": "0.3",
+          "description": "The hole's radius as a share of the dial's, where the domain's minimum sits.",
           "required": false
         },
         {
@@ -134,7 +134,7 @@
           "type": "ChartInstant | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The current instant: Now's hand, the pending readings after it and `fallback=\"now\"`.",
+          "description": "The current instant, which sets Now's hand, the pending readings after it and `fallback=\"now\"`. A live day draws up to `now`.",
           "required": false
         },
         {
@@ -160,8 +160,8 @@
           "origin": "declared",
           "type": "\"linear\" | \"radial\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "How a value's radius grows. \"radial\" by default keeps area true, so a ring twice the value covers twice the area, and \"linear\" keeps radius true.",
+          "defaultValue": "\"radial\"",
+          "description": "How a value's radius grows. `radial` keeps area true, so a ring twice the value covers twice the area, and `linear` keeps radius true. Use `linear` for a value that reads as a length, such as a price, so a negative value hangs inward from the zero ring.",
           "required": false,
           "values": [
             "linear",
@@ -200,8 +200,8 @@
           "origin": "declared",
           "type": "\"diverging\" | \"expand\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "How stacks combine. \"diverging\" by default.",
+          "defaultValue": "\"diverging\"",
+          "description": "How the series of a stack id add up. `diverging` stacks negative values apart from positive ones. `expand` scales each slot's stack to a total of 1, so each part reads as its share.",
           "required": false,
           "values": [
             "diverging",
@@ -232,7 +232,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         },
         {
@@ -267,8 +267,8 @@
           "origin": "declared",
           "type": "\"none\" | \"zero\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "\"zero\" puts 0 in the radius domain, \"none\" fits the data. \"zero\" by default. A Column or an Area under \"none\" throws `baseline-required`, since each draws its value as the length from 0, and a Line draws.",
+          "defaultValue": "\"zero\"",
+          "description": "`zero` puts 0 in the radius domain, and `none` fits the data. A Column or an Area under `none` throws `baseline-required`, since each draws its value as the length from 0. A Line draws under either.",
           "required": false,
           "values": [
             "none",
@@ -326,7 +326,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The curve through the readings round the dial. \"monotone\" by default.",
+          "description": "The curve through the readings round the dial.",
           "required": false,
           "values": [
             "basis",
@@ -346,7 +346,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the line draws. An unknown key throws `unknown-key`.",
+          "description": "The series the line draws. An unknown key throws `unknown-key`. To compare a cycle with an earlier one, such as today with the same day last week, put the earlier reading in a second column on the same rows and draw it as a dashed or quiet Line.",
           "required": true
         },
         {
@@ -364,7 +364,7 @@
           "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last week.",
+          "description": "The line's look. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last week.",
           "required": false,
           "values": [
             "dashed",
@@ -397,7 +397,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The curve along the area's edge. \"monotone\" by default.",
+          "description": "The curve along the area's edge. Pass the Line's curve, so the fill's edge meets the line.",
           "required": false,
           "values": [
             "basis",
@@ -435,7 +435,7 @@
           "type": "\"dotted\" | \"gradient\" | \"gradient-reverse\" | \"hatched\" | \"lines\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
-          "description": "The fill's look. \"gradient\" by default, which fades from the value toward the zero ring, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
+          "description": "The fill's look. \"gradient\" fades from the value toward the zero ring, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
           "required": false,
           "values": [
             "dotted",
@@ -470,7 +470,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the wedges draw, in the look its config's `barVariant` names.",
+          "description": "The series the wedges draw, in the look its config's `barVariant` names. Columns of one config `stack` stack, and the stack keeps a pixel floor for each wedge so a sliver still shows.",
           "required": true
         },
         {
@@ -542,7 +542,7 @@
           "type": "\"default\" | \"halo\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default. \"ring\" is hollow and \"halo\" sits in a faint halo.",
+          "description": "The dot's look. \"ring\" is hollow and \"halo\" sits in a faint halo.",
           "required": false,
           "values": [
             "default",
@@ -592,7 +592,7 @@
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default. \"ping\" sends a ring out from the dot once a second.",
+          "description": "The dot's look. \"ring\" is hollow, \"halo\" sits in a faint halo, and \"ping\" sends a ring out from the dot once a second.",
           "required": false,
           "values": [
             "default",
@@ -661,7 +661,7 @@
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default.",
+          "description": "The dot's look. \"ring\" is hollow, \"halo\" sits in a faint halo, and \"ping\" sends a ring out from the dot once a second.",
           "required": false,
           "values": [
             "default",
@@ -775,7 +775,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The rings' and spokes' line style. \"solid\" by default. The zero ring stays solid.",
+          "description": "The rings' and spokes' line style. The zero ring stays solid.",
           "required": false,
           "values": [
             "dashed",
@@ -806,7 +806,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label format. The cycle's own, hours, weekdays or months, is the default.",
+          "description": "The label format. The cycle's own, hours, weekdays or months, is the default. The labels thin by one stride for the whole dial. Each label follows its slot, so on a 25-hour day 06 sits at 100.8° and the repeated 02 labels once.",
           "required": false
         },
         {
@@ -842,7 +842,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. The first series' `format` is the default.",
+          "description": "The tick label format. The first series' `format` is the default. The values show beside the 12 o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where they clear the marks and the labels, so a crowded dial shows fewer values.",
           "required": false
         },
         {
@@ -878,7 +878,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints. How `{value}` in `label` prints the instant the spoke marks. By default a dial of slots shorter than a day prints it in \"time\", and a coarser dial prints its slot's label.",
+          "description": "How `{value}` in `label` prints. A ring prints its value in this value format. A spoke prints its instant, by default in \"time\" on a dial of slots shorter than a day and as its slot's label on a coarser dial.",
           "required": false
         },
         {
@@ -904,8 +904,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The line's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's tone.",
           "required": false,
           "values": [
             "default",
@@ -944,8 +944,8 @@
           "origin": "declared",
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The line style. \"solid\" by default.",
+          "defaultValue": "\"solid\"",
+          "description": "The line style.",
           "required": false,
           "values": [
             "dashed",
@@ -976,7 +976,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on a value ring. The instant the spoke marks. A string throws `x-type-mismatch`.",
+          "description": "The instant the spoke marks. A line takes a `y` or an `x`, not both. A string throws `x-type-mismatch`, and an `x` outside the cycle draws nothing.",
           "required": false
         },
         {
@@ -985,7 +985,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value the ring marks. Not on a spoke.",
+          "description": "The value the ring marks. A line takes a `y` or an `x`, not both. A `y` outside the radius domain draws nothing, so widen the domain with Root's `yInclude` to show it.",
           "required": false
         }
       ]
@@ -1012,7 +1012,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints the range. How `{value}` in `label` prints the range's ends, the first slot's start and the last slot's end, joined by an en dash. A range preset prints each end in its point form, as \"hour-range\" does in \"hour\". By default a dial of slots shorter than a day prints them in \"time\", and a coarser dial prints the first and the last slot's labels, as the cartesian ReferenceArea prints them.",
+          "description": "How `{value}` in `label` prints the range. An annulus prints its values in this value format. A sector prints its ends, the first slot's start and the last slot's end, joined by an en dash, and a range preset prints each end in its point form, as \"hour-range\" does in \"hour\". By default a dial of slots shorter than a day prints a sector's ends in \"time\", and a coarser dial prints the first and the last slot's labels.",
           "required": false
         },
         {
@@ -1038,8 +1038,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The band's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The band's tone.",
           "required": false,
           "values": [
             "default",
@@ -1085,7 +1085,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on an annulus. The sector's first instant. A string throws `x-type-mismatch`.",
+          "description": "The sector's first instant. A band takes `y1` and `y2` or `x1` and `x2`. A string throws `x-type-mismatch`, and a sector outside the cycle draws nothing.",
           "required": false
         },
         {
@@ -1094,7 +1094,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on an annulus. Its last instant.",
+          "description": "The sector's last instant. A band takes `y1` and `y2` or `x1` and `x2`.",
           "required": false
         },
         {
@@ -1103,7 +1103,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The annulus's first value. Not on a sector.",
+          "description": "The annulus's first value. A band takes `y1` and `y2` or `x1` and `x2`. The annulus clips to the radius domain, and one outside it draws nothing.",
           "required": false
         },
         {
@@ -1112,7 +1112,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Its last value. Not on a sector.",
+          "description": "The annulus's last value. A band takes `y1` and `y2` or `x1` and `x2`.",
           "required": false
         }
       ]
@@ -1148,7 +1148,7 @@
           "type": "\"band\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"line\"",
-          "description": "\"line\" draws a hand through the active slot, \"band\" its whole sector. \"line\" by default.",
+          "description": "\"line\" draws a hand through the active slot, and \"band\" its whole sector.",
           "required": false,
           "values": [
             "band",
@@ -1179,7 +1179,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible label on the hand inside its tip, such as \"Nå\".",
+          "description": "The visible label on the hand inside its tip, such as \"Nå\". It shows only where it clears the hole, so on a narrow dial the hand and its dot mark Now alone.",
           "required": false
         },
         {
@@ -1197,7 +1197,7 @@
           "type": "ChartTone | undefined",
           "shortType": null,
           "defaultValue": "\"default\"",
-          "description": "The hand's tone. \"default\" by default. A muted label keeps the full muted text, and only the hand fades.",
+          "description": "The hand's tone. A muted label keeps the full muted text, and only the hand fades.",
           "required": false,
           "values": [
             "default",
@@ -1274,7 +1274,7 @@
           "type": "ChartFallback | undefined",
           "shortType": null,
           "defaultValue": "\"now\"",
-          "description": "The datum to print when nothing is active. \"now\" by default.",
+          "description": "The datum to print when nothing is active.",
           "required": false,
           "values": [
             "first",
@@ -1478,7 +1478,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -1518,7 +1518,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The popup's surface. \"default\" by default.",
+          "description": "The popup's surface. \"frosted\" is translucent, so its cut-outs show the surface beneath the popup.",
           "required": false,
           "values": [
             "default",
@@ -1745,7 +1745,7 @@
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"square\"",
-          "description": "The swatch's shape. \"square\" by default.",
+          "description": "The swatch's shape.",
           "required": false,
           "values": [
             "bar",
@@ -1867,7 +1867,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -1953,7 +1953,7 @@
           "type": "ChartFallback | undefined",
           "shortType": null,
           "defaultValue": "\"last\"",
-          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "description": "The datum to print when nothing is active: the first or last reading, the lowest or highest, or the slot that contains Root's `now`.",
           "required": false,
           "values": [
             "first",
@@ -2066,7 +2066,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.",
+          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie. The group is one tab stop, which Tab enters at the pressed toggle or the first. The arrows move between toggles, Enter or Space presses one, and pressing the pressed toggle clears the selection.",
           "required": false
         },
         {
@@ -2084,7 +2084,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the group sits around the plot. \"bottom\" by default.",
+          "description": "Where the group sits around the plot.",
           "required": false,
           "values": [
             "bottom",
@@ -2198,7 +2198,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -2338,7 +2338,7 @@
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
           "defaultValue": "\"dots\"",
-          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "description": "The pattern drawn behind the marks.",
           "required": false,
           "values": [
             "4-pointed-star",

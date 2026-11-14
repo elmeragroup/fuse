@@ -30,7 +30,7 @@ export type SkeletonRevealSharedProps = Omit<useRender.ComponentProps<"div">, "c
   reveal?: SkeletonRevealMode;
   /**
    * Read to screen readers while loading, in place of the skeleton, such as "Loading invoices".
-   * Defaults to the locale dictionary's "Loading".
+   * The root is `aria-busy` meanwhile. Defaults to the locale dictionary's "Loading".
    */
   label?: string;
   /**
@@ -46,7 +46,7 @@ export type SkeletonRevealSharedProps = Omit<useRender.ComponentProps<"div">, "c
 export type SkeletonRevealChildrenProps = SkeletonRevealSharedProps & {
   /** Shows the skeleton drawn from `children` instead of `children` themselves. */
   loading: boolean;
-  /** The content, which is also what the skeleton is drawn from. */
+  /** The content, which the skeleton is drawn from while `loading`. */
   children: ReactNode;
   data?: never;
   sample?: never;
@@ -65,7 +65,21 @@ export type SkeletonRevealDataProps<T> = SkeletonRevealSharedProps & {
   sample?: T;
   /** Shows the skeleton over `data` too, as for a refetch. It is drawn from the data on screen. */
   loading?: boolean;
-  /** Renders the data, or the sample the skeleton is drawn from. */
+  /**
+   * Renders the data, or the stand-in the skeleton is drawn from: the data on screen, the last data
+   * shown, or `sample`. While loading, the content renders unseen, and the skeleton draws a bar over
+   * each line of its text and a block over each control, avatar, badge or image. The skeleton takes
+   * the content's exact space, so the page does not move when the data arrives. When the content
+   * is taller or shorter than its skeleton, the root eases to the new height, at once under reduced
+   * motion.
+   *
+   * The skeleton is hidden from screen readers and inert, and the content can take focus once it
+   * replaces the skeleton. Form controls in the skeleton are neither submitted nor validated with
+   * their form, and Fuse overlays in it, such as a Dialog left open, do not open. Keep any portal of
+   * your own in the content closed while it loads. Before the page hydrates, the skeleton strikes a
+   * thick bar through each line of text. Mark your own markup with `data-skeleton="block"` to draw
+   * it as one block, or with `data-skeleton="ignore"` to leave it and everything inside it out.
+   */
   children: (data: T) => ReactNode;
 };
 
@@ -169,22 +183,11 @@ function viewOf<T>(props: SkeletonRevealProps<T>, last: RevealState<T>["last"]):
 }
 
 /**
- * Draws a loading skeleton from the real content and reveals the content over it. While loading,
- * the content renders unseen with sample data, the last data shown or the data on screen, and a
- * layer of bones is measured from it: one bar per line of text and one block per control, avatar,
- * badge or media part. The skeleton takes exactly the content's space, so callers keep no second
- * copy of the layout. When the content arrives, `reveal` decides how it replaces the skeleton, and
- * the root eases its height when the content differs in size from its skeleton.
- *
- * The root is a `div` with `aria-busy` while loading and a visually hidden `label`; the skeleton is
- * hidden from assistive tech and inert, and the content is reachable only once it replaces the
- * skeleton. Form controls in the skeleton, or in content on its way out, are neither submitted
- * nor validated with their form, though they show the form's errors. Fuse overlays there open
- * nothing: no popup, focus trap or scroll lock. A portal of your own in the content, outside Fuse's
- * overlays, is yours to keep closed while the skeleton draws from it. Before hydration, or without
- * JavaScript, the skeleton paints text as thick strike-through bars, and covers media, until its
- * bones are measured. Mark consumer markup with `data-skeleton="block"` to draw it as one block, or
- * `data-skeleton="ignore"` to leave it and everything inside it out.
+ * Draws a loading skeleton from the real content and reveals the content over it: a layer of bones
+ * measured from the content rendered unseen. Form controls in content on its way out are not
+ * submitted or validated either, though they show the form's errors, and Fuse overlays there open
+ * no popup, focus trap or scroll lock. Without JavaScript the skeleton also covers media until its
+ * bones are measured.
  *
  * @template T - The data the children render, in the data form.
  * @param props - `loading` and plain children, or `data`, `sample` and a render function, with the

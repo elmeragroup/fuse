@@ -1,10 +1,12 @@
 ---
 lede: >
-  Page navigation with previous, next, and numbered links.
+  Page navigation with previous, next and numbered links.
 ---
 
-import { PaginationBasic } from "./demos/pagination-basic";
+import { PaginationDemo } from "./demos/pagination-demo";
 import { PaginationEllipsis } from "./demos/pagination-ellipsis";
+import { PaginationNarrow } from "./demos/pagination-narrow";
+import { PaginationCustomText } from "./demos/pagination-custom-text";
 import { PaginationControlled } from "./demos/pagination-controlled";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -13,17 +15,48 @@ export const metadata = componentMetadata("pagination");
 
 <ComponentIntro slug="pagination" />
 
-Page controls wrap onto additional rows when the container is narrow, keeping Previous and Next reachable.
+<DefaultDemo slug="pagination" file="pagination-demo.tsx">
+  <PaginationDemo />
+</DefaultDemo>
 
-<Demo slug="pagination" id="basic" title="Basic" file="pagination-basic.tsx">
-  <PaginationBasic />
-</Demo>
+## Usage
 
-<Demo slug="pagination" id="ellipsis" title="Ellipsis" file="pagination-ellipsis.tsx">
+{/* prettier-ignore */}
+```tsx
+import { Pagination } from "@elmeragroup/fuse/pagination";
+
+<Pagination.Root>
+  <Pagination.Content>
+    <Pagination.Item>
+      <Pagination.Previous href="?page=1" />
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Link href="?page=2" isActive>
+        2
+      </Pagination.Link>
+    </Pagination.Item>
+    <Pagination.Item>
+      <Pagination.Next href="?page=3" />
+    </Pagination.Item>
+  </Pagination.Content>
+</Pagination.Root>
+```
+
+## Examples
+
+<Demo slug="pagination" id="ellipsis" title="Ellipsis" level={3} file="pagination-ellipsis.tsx">
   <PaginationEllipsis />
 </Demo>
 
-<Demo slug="pagination" id="controlled" title="Controlled" file="pagination-controlled.tsx">
+<Demo slug="pagination" id="narrow" title="Narrow container" level={3} file="pagination-narrow.tsx">
+  <PaginationNarrow />
+</Demo>
+
+<Demo slug="pagination" id="custom-text" title="Custom text" level={3} file="pagination-custom-text.tsx">
+  <PaginationCustomText />
+</Demo>
+
+<Demo slug="pagination" id="controlled" title="Controlled" level={3} file="pagination-controlled.tsx">
   <PaginationControlled />
 </Demo>
 

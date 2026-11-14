@@ -83,7 +83,6 @@ export function RadarChartAreas() {
       <RadarChart.Line dataKey="no2" />
       <RadarChart.Line dataKey="no3" />
       <RadarChart.Line dataKey="no4" />
-      <RadarChart.Dots dataKey="no1" variant="ring" />
       <RadarChart.Legend />
       <RadarChart.Tooltip />
       <RadarChart.Table />

@@ -139,13 +139,13 @@ export function ChartTotalPrice() {
       data={rows}
       config={config}
       xKey="start"
+      defaultActiveX={new Date("2026-05-24T18:00:00+02:00")}
       interval="quarter-hour"
       timeZone="Europe/Stockholm"
       aria-label="Total electricity price per quarter, 24 May 2026, illustrative">
       <Chart.Grid />
       <Chart.YAxis />
       <Chart.XAxis />
-      <Chart.Crosshair />
       <Chart.Bar dataKey="spot" />
       <Chart.Bar dataKey="markup" />
       <Chart.Bar dataKey="grid" />
@@ -155,7 +155,7 @@ export function ChartTotalPrice() {
         <Chart.TooltipItems />
         <Chart.TooltipTotal stack="total" />
       </Chart.Tooltip>
-      <Chart.LegendToggleGroup />
+      <Chart.Legend />
       <Chart.Table />
     </Chart.Root>
   );

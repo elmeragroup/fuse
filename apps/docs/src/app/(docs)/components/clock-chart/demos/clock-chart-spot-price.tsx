@@ -42,9 +42,6 @@ export function ClockChartSpotPrice() {
       <ClockChart.RadiusAxis />
       <ClockChart.Column dataKey="ore" />
       <ClockChart.ReferenceLine y={average} variant="dashed" />
-      <ClockChart.Scrubber variant="band" />
-      <ClockChart.Center />
-      <ClockChart.Legend />
       <ClockChart.Tooltip />
       <ClockChart.Table />
     </ClockChart.Root>

@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 279,
+      "forwardedCount": 278,
       "props": [
         {
           "name": "actionLabel",
@@ -17,7 +17,16 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name and visible children of the action button. Required together with `onAction`; must be self-describing.",
+          "description": "The action button's label and accessible name. Set it together with `onAction`, and write a label that makes sense without the alert text, such as \"Retry sync\".",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The alert's text, an `Alert.Title` and an optional `Alert.Description`. Render both as direct children of `Alert.Root`, where the density catalog finds them.",
           "required": false
         },
         {
@@ -26,7 +35,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When both `onAction` and `actionLabel` are set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's.",
+          "description": "Runs when the action button is clicked. The alert renders the button only when this and `actionLabel` are both set. `Alert.Root` is a server component, so pass the handler from a client component.",
           "required": false
         },
         {
@@ -35,16 +44,16 @@
           "type": "AriaRole | undefined",
           "shortType": null,
           "defaultValue": "\"alert\"",
-          "description": "Live-region role. Defaults to `alert`, announced assertively, interrupting the user, when the alert is inserted or its content changes: keep it for errors and warnings that need attention now. Pass `status` for an informational message announced politely, after the reader finishes. Screen readers announce a status region only when its content changes while it is already in the DOM, so keep `Alert.Root` mounted and swap its children. Pass `none` for a static notice that is not announced.",
+          "description": "The live-region role. A screen reader announces an `alert` at once, interrupting the user, when it is inserted or its content changes. Keep `alert` for errors and warnings that need attention now. Pass `status` for an informational message, which the screen reader announces after it finishes speaking. It announces a status region only when its content changes while the region is in the DOM, so keep `Alert.Root` mounted and swap its children. Pass `none` for a static notice that is not announced.",
           "required": false
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"info\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The status. It sets the alert's colours and its icon.",
           "required": false,
           "values": [
             "default",
@@ -72,7 +81,7 @@
           "type": "AlertVariant",
           "shortType": null,
           "defaultValue": null,
-          "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`, `info → Info`.",
+          "description": "The status whose glyph it draws. `default` and `info` draw Info, `warning` draws Warning, `destructive` draws WarningOctagon and `success` draws CheckCircle.",
           "required": true,
           "values": [
             "default",
@@ -87,8 +96,8 @@
           "origin": "declared",
           "type": "\"bold\" | \"fill\" | \"regular\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Phosphor weight. Bold is the library default; `regular` draws a thinner stroke and `fill` is reserved for selected or active states.",
+          "defaultValue": "\"bold\"",
+          "description": "The Phosphor stroke weight. `regular` draws a thinner stroke. Keep `fill` for selected or active states.",
           "required": false,
           "values": [
             "bold",
@@ -113,7 +122,7 @@
           "type": "AlertTitleLevel | undefined",
           "shortType": null,
           "defaultValue": "3",
-          "description": "Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3` so an alert titles itself without assuming its place in the document outline.",
+          "description": "The heading level. `1` to `6` renders `h1` to `h6`. Set the level that fits the alert into the page's heading outline.",
           "required": false
         }
       ]

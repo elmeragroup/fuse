@@ -18,7 +18,7 @@ export function CollapsibleControlled() {
           Toggle panel
         </Collapsible.Trigger>
         <Collapsible.Content>
-          <p className="pt-2">Controlled from the button above and from the trigger.</p>
+          <p className="pt-2">The button above and the trigger both open this panel.</p>
         </Collapsible.Content>
       </Collapsible.Root>
     </div>

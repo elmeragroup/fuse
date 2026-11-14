@@ -25,8 +25,9 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 /**
- * `side` → primitive `swipeDirection`. Swiping toward the anchored edge dismisses;
- * the mapping is the component's spine and must not be exposed as a separate prop.
+ * Maps each `side` to the primitive's `swipeDirection`, so a swipe toward the anchored edge
+ * dismisses the sheet. The sheet derives the direction from `side` and never exposes it as a
+ * prop of its own.
  */
 export const SIDE_TO_SWIPE_DIRECTION = {
   top: "up",
@@ -42,14 +43,14 @@ const SheetSideContext = createContext<SheetSide>("right");
 const sheetContentVariants = tv({
   base: cn(
     overlayModalFillClass,
-    // `--overlay-width` is set by the `size` axis below; these two selectors gate the
-    // cap to left/right at `sm:` rather than repeating every rung.
+    // The `size` axis below sets `--overlay-width`. These two selectors apply the cap to the
+    // left and right sides from `sm` up, so the axis needs no per-side copy of each size.
     "data-[side=left]:sm:max-w-(--overlay-width) data-[side=right]:sm:max-w-(--overlay-width)",
     "text-sm shadow-lg ease-out pointer-events-auto fixed bg-clip-padding transition-transform duration-200 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*150ms)] data-ending-style:ease-[cubic-bezier(0.23,1,0.32,1)] data-swiping:transition-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:[transform:translateY(100%)] data-[side=bottom]:data-starting-style:[transform:translateY(100%)] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=left]:border-r data-[side=left]:data-ending-style:[transform:translateX(-100%)] data-[side=left]:data-starting-style:[transform:translateX(-100%)] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:[transform:translateX(var(--drawer-swipe-movement-x,0px))] data-[side=right]:border-l data-[side=right]:data-ending-style:[transform:translateX(100%)] data-[side=right]:data-starting-style:[transform:translateX(100%)] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))] data-[side=top]:border-b data-[side=top]:data-ending-style:[transform:translateY(-100%)] data-[side=top]:data-starting-style:[transform:translateY(-100%)]"
   ),
   variants: {
-    // Gated to the left/right sides at `sm:` by the base selectors above; top/bottom
-    // panels are `h-auto` and full width, so the axis is inert for them.
+    // The base selectors above apply it to the left and right sides from `sm` up. Top and
+    // bottom panels are `h-auto` and full width, so the axis does nothing for them.
     size: overlaySizeVariants.variants.size,
   },
   defaultVariants: {
@@ -62,18 +63,18 @@ export type SheetRootProps = Omit<
   "swipeDirection" | "children"
 > & {
   /**
-   * Edge the panel anchors to. Also selects the swipe-to-dismiss direction
-   * (`top` → up, `right` → right, `bottom` → down, `left` → left).
-   * @default "right"
+   * The screen edge the panel slides in from. On touch, a swipe toward that edge dismisses
+   * the sheet.
    */
   side?: SheetSide;
   /**
-   * Contents of the sheet. Rendered inside `VirtualKeyboardProvider` so the panel
-   * stays usable when the on-screen keyboard opens.
+   * The sheet's trigger and content. They render inside Base UI's `VirtualKeyboardProvider`,
+   * which keeps the panel above the on-screen keyboard.
    */
   children?: ReactNode;
 };
 
+/** Holds the sheet's open state and side, and connects its trigger to its panel. */
 export function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
   // A sheet in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
   const override = useOverlayRootOverride();
@@ -86,6 +87,7 @@ export function SheetRoot({ side = "right", children, ...props }: SheetRootProps
   );
 }
 
+/** Opens the sheet. It renders a plain `button`; pass `render` to render another element. */
 export function SheetTrigger({
   className,
   ...props
@@ -99,6 +101,7 @@ export function SheetTrigger({
   );
 }
 
+/** Closes the sheet. It renders a plain `button`; pass `render` to render another element. */
 export function SheetClose({
   className,
   ...props
@@ -112,10 +115,12 @@ export function SheetClose({
   );
 }
 
+/** Renders the scrim and panel in a portal. `Sheet.Content` renders one for you. */
 export function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/** The scrim behind the panel. `Sheet.Content` renders one for you. */
 export function SheetOverlay({
   className,
   ...props
@@ -137,22 +142,24 @@ export function SheetOverlay({
 export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
   VariantProps<typeof sheetContentVariants> & {
     /**
-     * Renders the built-in corner dismiss affordance — the shared overlay close
-     * helper (`Button variant="ghost" size="icon-sm"`) as a `Sheet.Close`.
+     * The panel's maximum width on the `left` and `right` sides, from the `sm` breakpoint up.
+     * `sm` to `7xl` cap it at Tailwind's container width of the same name, and `8xl`, `9xl` and
+     * `10xl` at 1366px, 1536px and 1920px, never past 90% of the viewport's width. Below `sm`,
+     * and always on the `top` and `bottom` sides, the panel is full width and `size` does nothing.
      */
+    size?: VariantProps<typeof sheetContentVariants>["size"];
+    /** Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner. */
     showCloseButton?: boolean;
   } & OverlayContainerProps & {
-    /**
-     * Accessible name for the built-in corner close button. Defaults to the locale
-     * dictionary.
-     */
+    /** The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. */
     closeLabel?: string;
   };
 
+/** The sheet panel, with its scrim and portal. */
 export function SheetContent({
   className,
   children,
-  size,
+  size = "md",
   showCloseButton = true,
   container,
   closeLabel,
@@ -190,6 +197,7 @@ export function SheetContent({
   );
 }
 
+/** Stacks the title and description at the top of the panel. */
 export function SheetHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -200,6 +208,10 @@ export function SheetHeader({ className, ...props }: ComponentProps<"div">): Rea
   );
 }
 
+/**
+ * The panel's scrolling region. It takes the height the header and footer leave, so they stay
+ * in place while the body scrolls.
+ */
 export function SheetBody({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -213,6 +225,7 @@ export function SheetBody({ className, ...props }: ComponentProps<"div">): React
   );
 }
 
+/** The sheet's actions, stacked at the bottom of the panel. */
 export function SheetFooter({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -223,6 +236,7 @@ export function SheetFooter({ className, ...props }: ComponentProps<"div">): Rea
   );
 }
 
+/** The sheet's title, which names the panel. */
 export function SheetTitle({
   className,
   ...props
@@ -236,6 +250,7 @@ export function SheetTitle({
   );
 }
 
+/** The sheet's description, which describes the panel. */
 export function SheetDescription({
   className,
   ...props

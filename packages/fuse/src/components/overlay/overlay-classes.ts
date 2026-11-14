@@ -128,7 +128,8 @@ const overlayPopupVariants = tv({
     /**
      * The modal fill and its paired text role, which Dialog (and AlertDialog through it) and
      * Sheet compose after their faces. The `dialog` role aliases the popover pair except in
-     * branded light, where it is the page tint. `Command.Content` stays on the popover fill. It
+     * branded light, where it is the page tint, so the white fields and selection rows in a
+     * modal stand apart from it as they do on the page. `Command.Content` stays on the popover fill. It
      * states the fill as `--surface`, so a chart in the modal cuts out of the dialog colour.
      */
     modalFill:

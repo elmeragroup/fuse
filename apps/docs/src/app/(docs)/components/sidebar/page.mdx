@@ -1,13 +1,29 @@
 ---
 lede: >
-  An app navigation rail that collapses, docks, and turns into a sheet on mobile.
+  An app navigation rail that collapses, docks and turns into a sheet on mobile.
 ---
 
-import { SidebarAppFrame } from "./demos/sidebar-app-frame";
-import { SidebarIconCollapse } from "./demos/sidebar-icon-collapse";
-import { SidebarMobileSheet } from "./demos/sidebar-mobile-sheet";
+import { SidebarDemo } from "./demos/sidebar-demo";
+import { SidebarFloating } from "./demos/sidebar-floating";
 import { SidebarInsetVariant } from "./demos/sidebar-inset-variant";
-import { SidebarMenuRich } from "./demos/sidebar-menu-rich";
+import { SidebarRight } from "./demos/sidebar-right";
+import { SidebarIconCollapse } from "./demos/sidebar-icon-collapse";
+import { SidebarNotCollapsible } from "./demos/sidebar-not-collapsible";
+import { SidebarOutlineButtons } from "./demos/sidebar-outline-buttons";
+import { SidebarSmallButtons } from "./demos/sidebar-small-buttons";
+import { SidebarLargeButtons } from "./demos/sidebar-large-buttons";
+import { SidebarLinks } from "./demos/sidebar-links";
+import { SidebarDisabledItem } from "./demos/sidebar-disabled-item";
+import { SidebarTwoGroups } from "./demos/sidebar-two-groups";
+import { SidebarGroupAction } from "./demos/sidebar-group-action";
+import { SidebarMenuAction } from "./demos/sidebar-menu-action";
+import { SidebarActionOnHover } from "./demos/sidebar-action-on-hover";
+import { SidebarMenuBadge } from "./demos/sidebar-menu-badge";
+import { SidebarSubmenu } from "./demos/sidebar-submenu";
+import { SidebarSmallSubmenu } from "./demos/sidebar-small-submenu";
+import { SidebarLoading } from "./demos/sidebar-loading";
+import { SidebarMobileSheet } from "./demos/sidebar-mobile-sheet";
+import { SidebarSavedState } from "./demos/sidebar-saved-state";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,50 +31,133 @@ export const metadata = componentMetadata("sidebar");
 
 <ComponentIntro slug="sidebar" />
 
-On mobile, the navigation sheet includes a visible close button above its content.
+<DefaultDemo slug="sidebar" file="sidebar-demo.tsx">
+  <SidebarDemo />
+</DefaultDemo>
 
-<Prose>
+## Usage
 
-`Sidebar.Provider` writes the desktop open state to the `sidebar:state` cookie on every change, so a server layout can read it with `cookies()` and pass `defaultOpen` for a first paint that matches.
+{/* prettier-ignore */}
+```tsx
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
 
-</Prose>
+<Sidebar.Provider>
+  <Sidebar.Root>
+    <Sidebar.Content>
+      <Sidebar.Group>
+        <Sidebar.GroupLabel>Sales</Sidebar.GroupLabel>
+        <Sidebar.GroupContent>
+          <Sidebar.Menu>
+            <Sidebar.MenuItem>
+              <Sidebar.MenuButton isActive>Orders</Sidebar.MenuButton>
+            </Sidebar.MenuItem>
+          </Sidebar.Menu>
+        </Sidebar.GroupContent>
+      </Sidebar.Group>
+    </Sidebar.Content>
+    <Sidebar.Rail />
+  </Sidebar.Root>
+  <Sidebar.Inset>
+    <Sidebar.Trigger />
+  </Sidebar.Inset>
+</Sidebar.Provider>
+```
 
-<Demo slug="sidebar" id="app-frame" title="Application frame" file="sidebar-app-frame.tsx">
-  <SidebarAppFrame />
+## Examples
+
+<Demo slug="sidebar" id="floating" title="Floating" level={3} file="sidebar-floating.tsx">
+  <SidebarFloating />
 </Demo>
 
-<Prose>
-
-A Sidebar inside a box on the page, such as an embedded app pane or a demo, takes `bounds="container"` on `Sidebar.Provider`. It fills the box's height, so the box needs a defined height. The desktop rail stays inside the box. The Provider writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`. ⌘B, or Ctrl+B, toggles it only from inside the Sidebar, so a page Sidebar around it keeps the shortcut everywhere else. The mobile Sheet still switches on the viewport's width. The demos below use it.
-
-</Prose>
-
-<Demo slug="sidebar" id="icon-collapse" title="Icon collapse" file="sidebar-icon-collapse.tsx">
-  <SidebarIconCollapse />
-</Demo>
-
-<Prose>
-
-Below 768px `Sidebar.Root` becomes a Sheet. Its open state is session-only and starts closed. A host that closes it from outside, such as after a navigation, passes `openMobile` and `onOpenMobileChange` to `Sidebar.Provider`. The Trigger, ⌘B, the Sheet's own dismissal and `useSidebar().setOpenMobile` then report through `onOpenMobileChange`, and the host decides.
-
-</Prose>
-
-<Demo slug="sidebar" id="mobile-sheet" title="Mobile Sheet" file="sidebar-mobile-sheet.tsx">
-  <SidebarMobileSheet />
-</Demo>
-
-<Demo slug="sidebar" id="inset-variant" title="Inset variant" file="sidebar-inset-variant.tsx">
+<Demo slug="sidebar" id="inset" title="Inset" level={3} file="sidebar-inset-variant.tsx">
   <SidebarInsetVariant />
 </Demo>
 
-<Prose>
+<Demo slug="sidebar" id="right" title="Right side" level={3} file="sidebar-right.tsx">
+  <SidebarRight />
+</Demo>
 
-`Sidebar.Inset` renders a `<main>` landmark. A layout that already has its own `<main>` passes `render={<div />}`, and the column keeps its slot and its inset card look.
+<Demo slug="sidebar" id="icon-collapse" title="Icon collapse" level={3} file="sidebar-icon-collapse.tsx">
+  <SidebarIconCollapse />
+</Demo>
 
-</Prose>
+<Demo
+  slug="sidebar"
+  id="not-collapsible"
+  title="Not collapsible"
+  level={3}
+  file="sidebar-not-collapsible.tsx">
+  <SidebarNotCollapsible />
+</Demo>
 
-<Demo slug="sidebar" id="menu-rich" title="Rich menu" file="sidebar-menu-rich.tsx">
-  <SidebarMenuRich />
+<Demo
+  slug="sidebar"
+  id="outline-buttons"
+  title="Outline buttons"
+  level={3}
+  file="sidebar-outline-buttons.tsx">
+  <SidebarOutlineButtons />
+</Demo>
+
+<Demo slug="sidebar" id="small-buttons" title="Small buttons" level={3} file="sidebar-small-buttons.tsx">
+  <SidebarSmallButtons />
+</Demo>
+
+<Demo slug="sidebar" id="large-buttons" title="Large buttons" level={3} file="sidebar-large-buttons.tsx">
+  <SidebarLargeButtons />
+</Demo>
+
+<Demo slug="sidebar" id="links" title="Links" level={3} file="sidebar-links.tsx">
+  <SidebarLinks />
+</Demo>
+
+<Demo slug="sidebar" id="disabled-item" title="Disabled item" level={3} file="sidebar-disabled-item.tsx">
+  <SidebarDisabledItem />
+</Demo>
+
+<Demo slug="sidebar" id="two-groups" title="Two groups" level={3} file="sidebar-two-groups.tsx">
+  <SidebarTwoGroups />
+</Demo>
+
+<Demo slug="sidebar" id="group-action" title="Group action" level={3} file="sidebar-group-action.tsx">
+  <SidebarGroupAction />
+</Demo>
+
+<Demo slug="sidebar" id="menu-action" title="Menu action" level={3} file="sidebar-menu-action.tsx">
+  <SidebarMenuAction />
+</Demo>
+
+<Demo
+  slug="sidebar"
+  id="action-on-hover"
+  title="Action on hover"
+  level={3}
+  file="sidebar-action-on-hover.tsx">
+  <SidebarActionOnHover />
+</Demo>
+
+<Demo slug="sidebar" id="menu-badge" title="Menu badge" level={3} file="sidebar-menu-badge.tsx">
+  <SidebarMenuBadge />
+</Demo>
+
+<Demo slug="sidebar" id="submenu" title="Submenu" level={3} file="sidebar-submenu.tsx">
+  <SidebarSubmenu />
+</Demo>
+
+<Demo slug="sidebar" id="small-submenu" title="Small submenu" level={3} file="sidebar-small-submenu.tsx">
+  <SidebarSmallSubmenu />
+</Demo>
+
+<Demo slug="sidebar" id="loading" title="Loading" level={3} file="sidebar-loading.tsx">
+  <SidebarLoading />
+</Demo>
+
+<Demo slug="sidebar" id="mobile-sheet" title="Mobile Sheet" level={3} file="sidebar-mobile-sheet.tsx">
+  <SidebarMobileSheet />
+</Demo>
+
+<Demo slug="sidebar" id="saved-state" title="Saved open state" level={3} file="sidebar-saved-state.tsx">
+  <SidebarSavedState />
 </Demo>
 
 <ApiReference slug="sidebar" />

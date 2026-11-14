@@ -53,11 +53,11 @@ export const sidebarGroupActionBoxClass = cn(
 );
 
 /**
- * `Sidebar.MenuButton` recipe — package-private, never a facade export. The workspace-only
- * recipe catalog re-exports it for the Figma component sync.
- * The ref's template strings verbatim (`cva` → `tv`), with two locked rewrites: the
+ * The `Sidebar.MenuButton` recipe. It is package-private and never a facade export, and the
+ * workspace-only recipe catalog re-exports it for the Figma component sync. It keeps the shadcn
+ * template's class strings, moved from `cva` to `tv`, with two fixed rewrites. The
  * `group-has-data-[sidebar=menu-action]` selector keys on `data-slot`, and the
- * `ring-sidebar-ring` focus literals are the canonical `focusRing`.
+ * `ring-sidebar-ring` focus literals are the shared `focusRing`.
  *
  * The default row reads the row metrics, as menu rows do: `--row-h` tall, padded inline with
  * `--row-px`. The `h-7` / `h-12` sizes are shell-local navigation-rail geometry, `fixed`
@@ -99,8 +99,8 @@ function subButtonSize(size: "sm" | "md"): string {
 }
 
 /**
- * `Sidebar.MenuSubButton` size axis — package-private, re-exported by the workspace-only recipe
- * catalog for the Figma component sync. Each size takes the control size's
+ * The `Sidebar.MenuSubButton` size axis. It is package-private, and the workspace-only recipe
+ * catalog re-exports it for the Figma component sync. Each size takes the control size's
  * height and type: `md` the md height with the density type pair, `sm` the sm height with
  * the fixed `text-sm`. The row keeps its own inset and gap.
  */
@@ -141,8 +141,8 @@ export const sidebarWrapperVariants = tv({
 });
 
 /**
- * The desktop panel's parts — package-private, re-exported by the workspace-only recipe catalog
- * for the Figma component sync.
+ * The desktop panel's parts. They are package-private, and the workspace-only recipe catalog
+ * re-exports them for the Figma component sync.
  * - `root`: the `group peer` anchor that carries `data-state`, `data-collapsible`, `data-variant`
  *   and `data-side`. It shows from `md:`; below it the mobile Sheet stands in.
  * - `staticRoot`: the `collapsible="none"` panel, a full-height column at `--sidebar-width`.

@@ -22,7 +22,19 @@ import type { SparklineMarkPlace } from "./sparkline-marks";
  *
  * @beta
  */
-export type SparklineHoverProps = useRender.ComponentProps<"div">;
+export type SparklineHoverProps = useRender.ComponentProps<"div"> & {
+  /**
+   * One or more `Sparkline`s, whose hover marks glide on a spring once the wrapper hydrates. A
+   * server component can render the wrapper around server-rendered Sparklines, and the data stays
+   * on the server. Before it hydrates, or with no script, the Sparklines keep their CSS hover. A
+   * step to another value glides the crosshair, the dot and the band that re-strokes a line or an
+   * area, and a hovered bar lifts at once. Under reduced motion the marks move at once. A Sparkline
+   * inside nested wrappers follows the nearest one, and the wrapper leaves a Sparkline with
+   * `data-hover="none"` alone. Pass `render` to put the behavior on another element, such as the
+   * tile that holds the Sparklines.
+   */
+  children?: useRender.ComponentProps<"div">["children"];
+};
 
 /** The groups a glide translates, inside a Sparkline's `sparkline-glide` group. */
 type Movers = {

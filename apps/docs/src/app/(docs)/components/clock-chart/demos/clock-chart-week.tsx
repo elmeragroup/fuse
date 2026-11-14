@@ -3,49 +3,34 @@
 import { ClockChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-import {
-  HOURLY_AUTUMN_KWH,
-  HOURLY_AUTUMN_START,
-} from "../../chart/demos/data/no1-household-hourly-2025-09-2025-10";
+// One household's consumption per day in the ISO week from Monday 12 October 2026, in kWh.
+const KWH = [36.9, 36.4, 35.1, 35.6, 37.1, 41.8, 43.5];
 
-const HOUR = 3_600_000;
-
-/** The week from Monday 13 October 2025 in Oslo. */
-const monday = Date.parse("2025-10-12T22:00:00Z");
-const first = (monday - Date.parse(HOURLY_AUTUMN_START)) / HOUR;
-
-// One reading an hour for the whole week. The weekend's sector marks Saturday and Sunday, so every
-// hour's tooltip lists the one reading it has.
-const hours = HOURLY_AUTUMN_KWH.slice(first, first + 168).map((kwh, hour) => ({
-  start: monday + hour * HOUR,
-  kwh,
-}));
-
-/** Saturday 00:00 and Sunday 23:00, the weekend's first and last hours. */
-const saturday = monday + 120 * HOUR;
-const lastHour = monday + 167 * HOUR;
-
-const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 2 } as const;
+// Monday 12 October 2026 starts at 22:00 UTC on the 11th, since Oslo is on summer time.
+const days = KWH.map((kwh, day) => ({ start: new Date(Date.UTC(2026, 9, 11 + day, 22)), kwh }));
 
 const config = {
-  kwh: { label: "Consumption", color: "chart-1", format: energy },
+  kwh: {
+    label: "Consumption",
+    color: "chart-1",
+    format: { preset: "energy", unit: "kWh", maximumFractionDigits: 1 },
+  },
 } as const satisfies ChartConfig;
 
 export function ClockChartWeek() {
   return (
     <ClockChart.Root
-      data={hours}
+      data={days}
       config={config}
       xKey="start"
       cycle="week"
+      interval="day"
       timeZone="Europe/Oslo"
-      interval="hour"
-      aria-label="A household's week, weekdays against the weekend">
+      aria-label="A household's consumption per day, week 42 of 2026">
       <ClockChart.Grid />
-      <ClockChart.ReferenceArea x1={saturday} x2={lastHour} label="Weekend" />
       <ClockChart.AngleAxis />
+      <ClockChart.RadiusAxis />
       <ClockChart.Column dataKey="kwh" />
-      <ClockChart.Legend />
       <ClockChart.Tooltip />
       <ClockChart.Table />
     </ClockChart.Root>

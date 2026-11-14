@@ -20,8 +20,8 @@ import { liveValueText } from "./live-line-chart-text";
  */
 export type LiveLineChartLineProps = ChartLayerProps & {
   /**
-   * The curve through the readings. "monotone" by default, which never overshoots a reading. Every
-   * curve it takes stays between the readings around each segment, so the line stays in the plot.
+   * The curve through the readings. "monotone" never overshoots a reading. Every curve it takes
+   * stays between the readings around each segment, so the line stays in the plot.
    */
   curve?: LiveLineChartCurve;
 };
@@ -32,11 +32,12 @@ export type LiveLineChartLineProps = ChartLayerProps & {
  * @beta
  */
 export type LiveLineChartAreaProps = ChartLayerProps & {
-  /** The curve through the readings, the same as the Line's. "monotone" by default. */
+  /** The curve through the readings. Pass the Line's curve, so the fill's edge meets the line. */
   curve?: LiveLineChartCurve;
   /**
-   * The fill. "gradient" by default, which fades from the line's paint to nothing at the plot's
-   * bottom edge, and "solid" fills at `--chart-area-opacity`.
+   * The fill. "gradient" fades from the line's paint to nothing at the plot's bottom edge, and
+   * "solid" fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over
+   * the fill.
    */
   variant?: "gradient" | "solid";
 };
@@ -48,8 +49,8 @@ export type LiveLineChartAreaProps = ChartLayerProps & {
  */
 export type LiveLineChartLiveDotProps = ChartLayerProps & {
   /**
-   * The dot's look. "ping" by default, which sends a ring out from the dot once a cycle, and
-   * reduced motion stops the ring. "default" draws the dot alone.
+   * The dot's look. "ping" sends a ring out from the dot once a cycle, which stops while Root is
+   * `paused` and under reduced motion. "default" draws the dot alone.
    */
   variant?: "ping" | "default";
 };
@@ -102,8 +103,8 @@ function useLivePath(part: string, curve: LiveLineChartCurve, pathOf: typeof liv
  * The line through the readings, which runs from the window's left edge on through the latest
  * reading to the right edge, now, at the latest value. It scrolls with the clock, and a new reading
  * grows out of the last one as the value axis eases to fit. It fades in from the left edge, where
- * the readings leave the window, and its first drawing fades in. It is plot output, so it is hidden from screen readers, which read
- * the same readings from the plot's option and the table.
+ * the readings leave the window, and its first drawing fades in. It is plot output, so it is
+ * hidden from screen readers, which read the same readings from the plot's option and the table.
  *
  * @beta
  */

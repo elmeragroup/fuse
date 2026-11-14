@@ -91,10 +91,10 @@ export function ComboboxRoot<
      */
     items?: (Items & NoInfer<ListItems<Items, Value>>) | undefined;
     /**
-     * Filtered items to display in the list. When given, the list shows these instead of
-     * filtering `items` itself. With `items` also given, this array keeps its flat or grouped
-     * structure. Nullish entries are not supported, as in `items`. Use it to filter outside the
-     * list, such as with Base UI's `useFilter()` hook.
+     * The items the list shows, for filtering outside the list, such as with Base UI's
+     * `useFilter()` hook. When given, the list shows these and does not filter `items` itself.
+     * With `items` also given, this array keeps its own flat or grouped structure. Nullish
+     * entries are not supported, as in `items`.
      */
     filteredItems?: (Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined;
   }
@@ -122,10 +122,18 @@ export function ComboboxRoot<
   );
 }
 
+/**
+ * Renders the selection. Its `children` function receives the selected item, or the array of
+ * them with `multiple`, as for the chips in `Combobox.Chips`.
+ */
 export function ComboboxValue({ ...props }: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 }
 
+/**
+ * The button that opens the popup, with a caret after its children. `Combobox.Input` renders its
+ * own; use this one when the search input sits inside `Combobox.Content`.
+ */
 export function ComboboxTrigger({
   className,
   children,
@@ -142,14 +150,16 @@ export function ComboboxTrigger({
   );
 }
 
+/** The props of {@link ComboboxClear}. */
 export type ComboboxClearProps = ComponentProps<typeof ComboboxPrimitive.Clear> & {
   /**
-   * Accessible name for the icon-only clear button. An explicit `aria-label` wins over it;
-   * both default to the locale dictionary.
+   * The accessible name of the icon-only clear button. An `aria-label` wins over it. Unset, the
+   * name is the locale dictionary's `clear` string.
    */
   label?: string;
 };
 
+/** The icon button that clears the input and the selection. */
 export function ComboboxClear({
   className,
   label,
@@ -171,55 +181,49 @@ export function ComboboxClear({
   );
 }
 
+/** The props of {@link ComboboxInput}. */
 export type ComboboxInputProps = Omit<
   ComponentProps<typeof ComboboxPrimitive.Input>,
   "children" | "className" | "size"
 > & {
   /**
-   * Control size of the field box, the outer InputGroup. Emitted as `data-size`. `"default"`
-   * maps to the `md` control size; `"sm"` maps to the `sm` control size. It replaces the native
-   * numeric `size` attribute; set the width with a class instead.
-   * @default "default"
+   * The control size of the field box, the outer InputGroup, emitted as `data-size`. `default` is
+   * the md control size, and `sm` the sm one. It replaces the native numeric `size` attribute, so
+   * set the width with a class.
    */
   size?: InputGroupRootProps["size"];
   /**
-   * The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead: the Root's id is the
-   * one `Field.Label` points at, so an id here leaves the label's `for` unmatched.
+   * The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead. `Field.Label` points at
+   * the Root's id, so an id here leaves the label's `for` unmatched.
    */
   id?: string;
   /**
-   * Renders the caret trigger button in the inline-end addon.
-   * Hidden at runtime whenever a clear button is present in the group.
-   * @default true
+   * Renders the caret button in the inline-end addon. The caret hides while the group holds a
+   * clear button. Pass `false` for a search input inside `Combobox.Content`.
    */
   showTrigger?: boolean;
   /**
-   * Renders `Combobox.Clear` in the inline-end addon.
-   * @default false
+   * Renders `Combobox.Clear` in the inline-end addon. It shows while an item is selected, and the
+   * caret hides while it shows.
    */
   showClear?: boolean;
   /**
-   * Disables the input and the trigger/clear buttons. Combines with `disabled` on
-   * `Combobox.Root` and `Field.Root`: any of the three disables the input.
-   * @default false
+   * Disables the input and its caret and clear buttons. `disabled` on `Combobox.Root` or
+   * `Field.Root` disables the input too.
    */
   disabled?: boolean;
-  /**
-   * Extra classes, applied to the outer InputGroup (`w-auto`), not the input element.
-   */
+  /** Extra classes for the outer InputGroup, which is `w-auto`, not for the input element. */
   className?: string;
-  /**
-   * Rendered inside the InputGroup after the addon (extra addons, hidden inputs).
-   */
+  /** Content after the inline-end addon inside the InputGroup, such as another addon or a hidden input. */
   children?: ReactNode;
   /**
-   * Accessible name for the auto-rendered Clear button when `showClear`. Defaults to
-   * the locale dictionary.
+   * The accessible name of the clear button that `showClear` renders. Unset, it is the locale
+   * dictionary's `clear` string.
    */
   clearLabel?: string;
   /**
-   * Accessible name for the auto-rendered caret trigger when `showTrigger`. Defaults to
-   * the locale dictionary.
+   * The accessible name of the caret button that `showTrigger` renders. Unset, it is the locale
+   * dictionary's `toggle` string.
    */
   triggerLabel?: string;
 };
@@ -282,15 +286,19 @@ export function ComboboxInput({
   );
 }
 
+/** The props of {@link ComboboxContent}. */
 export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof ComboboxPrimitive.Positioner>> & {
     /**
-     * Element, ref, or virtual element to position against. Pass `useComboboxAnchor()`'s
-     * ref; also flips `data-external-anchor` on the popup.
+     * The element, ref or virtual element the popup positions against and takes its minimum width
+     * from. Pass the ref from `useComboboxAnchor()` that you put on `Combobox.Chips` or another
+     * element. It sets `data-external-anchor` on the popup. Unset, the popup anchors to
+     * `Combobox.Input`'s field box, or to `Combobox.Trigger` when the input sits in the popup.
      */
     anchor?: ComponentProps<typeof ComboboxPrimitive.Positioner>["anchor"];
   } & OverlayContainerProps;
 
+/** The popup that holds the list, portalled with its positioner. */
 export function ComboboxContent({
   className,
   side = "bottom",
@@ -339,6 +347,7 @@ export function ComboboxList({
   );
 }
 
+/** An option, with a check while it is selected. */
 export function ComboboxItem({
   className,
   children,
@@ -357,6 +366,7 @@ export function ComboboxItem({
   );
 }
 
+/** A group of options. Pass the group's `items` and render them with a `Combobox.Collection`. */
 export function ComboboxGroup({
   className,
   ...props
@@ -366,6 +376,7 @@ export function ComboboxGroup({
   );
 }
 
+/** The label of a `Combobox.Group`. */
 export function ComboboxLabel({
   className,
   ...props
@@ -379,12 +390,17 @@ export function ComboboxLabel({
   );
 }
 
+/** Renders each item of the nearest `items` through its `children` function. */
 export function ComboboxCollection({
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Collection>): ReactElement {
   return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />;
 }
 
+/**
+ * The row that shows while no item matches. Unset `children` show the locale dictionary's `empty`
+ * string.
+ */
 export function ComboboxEmpty({
   className,
   children,
@@ -401,6 +417,7 @@ export function ComboboxEmpty({
   );
 }
 
+/** A line between groups of options. */
 export function ComboboxSeparator({
   className,
   ...props
@@ -414,13 +431,12 @@ export function ComboboxSeparator({
   );
 }
 
+/** The props of {@link ComboboxChips}. */
 export type ComboboxChipsProps = ComponentProps<typeof ComboboxPrimitive.Chips> & {
   /**
-   * Control size of the chips field box. Emitted as `data-size`. `"default"` maps to the `md`
-   * control size; `"sm"` maps to the `sm` control size. The box's minimum height, inset, gap and
-   * text follow it, and a row of chips still fits the sm height. More chips than one row holds
-   * grow the box at both sizes.
-   * @default "default"
+   * The control size of the chips field box, emitted as `data-size`. `default` is the md control
+   * size, and `sm` the sm one. The box's minimum height, inset, gap and text follow it, and one
+   * row of chips fits the sm height. At both sizes, chips that do not fit one row grow the box.
    */
   size?: "sm" | "default";
 };
@@ -446,16 +462,14 @@ export function ComboboxChips({ className, size = "default", ...props }: Combobo
   );
 }
 
+/** The props of {@link ComboboxChip}. */
 export type ComboboxChipProps = ComponentProps<typeof ComboboxPrimitive.Chip> & {
-  /**
-   * Renders the chip-remove button with an `X`.
-   * @default true
-   */
+  /** Renders the chip's remove button, an `X`. */
   showRemove?: boolean;
   /**
-   * Accessible name for the remove button. Defaults to dictionary `removeItem`
-   * formatted with the chip's string children, then `itemToStringLabel(value)`.
-   * When neither yields text, the localized "Remove" string with no trailing space.
+   * The accessible name of the remove button. Unset, it is the dictionary's `removeItem` string
+   * with the chip's text children, or else with `itemToStringLabel(value)`. When neither gives
+   * text, it is the localized "Remove" string with no trailing space.
    */
   removeLabel?: string;
 };
@@ -486,6 +500,7 @@ function stringifyChipValue(value: ReactNode, itemToStringLabel?: ComboboxItemLa
   return chipItemName(value);
 }
 
+/** One selected item in `Combobox.Chips`, with a remove button. */
 export function ComboboxChip({
   ref,
   className,
@@ -561,6 +576,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
   );
 }
 
+/** The text input inside `Combobox.Chips`, after the chips. */
 export function ComboboxChipsInput({
   className,
   ...props
@@ -594,8 +610,8 @@ export function ComboboxChipsInput({
 }
 
 /**
- * Typed ref helper to anchor `Combobox.Content` to an external element
- * (e.g. the `Combobox.Chips` container or an `InputGroup.Root`).
+ * Returns a ref to put on the element `Combobox.Content` anchors to, such as `Combobox.Chips` or
+ * an `InputGroup.Root`. Pass the same ref to `Combobox.Content`'s `anchor`.
  */
 export function useComboboxAnchor(): RefObject<HTMLDivElement | null> {
   return useRef<HTMLDivElement | null>(null);

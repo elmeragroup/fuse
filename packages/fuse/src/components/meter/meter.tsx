@@ -17,32 +17,34 @@ import type { MeterIconName } from "./meter-tone";
 import { meterVariants } from "./meter-variants";
 
 export type MeterProps = {
-  /** Visible label, rendered as `Meter.Label`. */
+  /** The visible label. */
   label?: string;
   /**
-   * Color and icon semantics. `"inverted"` is a mode name, not a Tailwind variant.
-   * @default "default"
+   * What the bar's colour and icon say about the value. The bar is low up to 80% of the range,
+   * high above 80%, full at 100% and exceeded above `maxValue`.
+   *
+   * - `default`: more is worse. Low is success, high is a warning, and full or exceeded is an
+   *   error. High, full and exceeded show the warning icon.
+   * - `inverted`: more is better. Low is an error, high is a warning, full is success and
+   *   exceeded is an error, with no icon.
+   * - `success-only-when-full`: only full is success, with the success icon. Every other level
+   *   is an error with the warning icon.
+   * - `neutral`: the primary colour at every level, with no icon.
    */
   mode?: MeterMode;
-  /** Current value. */
+  /** The current value. */
   value: number;
-  /**
-   * Lower bound, forwarded as base-ui `min`.
-   * @default 0
-   */
+  /** The low end of the range. */
   minValue?: number;
-  /**
-   * Upper bound, forwarded as base-ui `max`. A `value` above it — including the default 100 — resolves to `EXCEEDED_MAX_VALUE`.
-   * @default 100
-   */
+  /** The high end of the range. A `value` above it shows as exceeded. */
   maxValue?: number;
-  /** Replaces the auto-formatted `Meter.Value`. */
+  /** Text that replaces the formatted value at the end of the label row, such as `"82 of 120 GB"`. */
   valueLabel?: ReactNode;
-  /** Accessible name for the Warning icon. Defaults to the locale dictionary. */
+  /** The accessible name of the warning icon. Unset, it comes from the locale dictionary. */
   warningLabel?: string;
-  /** Accessible name for the CheckCircle icon. Defaults to the locale dictionary. */
+  /** The accessible name of the success icon. Unset, it comes from the locale dictionary. */
   successLabel?: string;
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the root. */
   className?: string;
 } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">;
 
@@ -75,15 +77,15 @@ function MeterIcon({
 }
 
 /**
- * Labeled meter composite over base-ui Meter. It displays a read-only value and is never
- * an input. Client component, because it reads the locale from the provider.
+ * A labeled meter built on Base UI's meter. It shows a read-only value and is never an input.
+ * It reads the locale from the provider, so it is a client component.
  */
 export function Meter({
   label,
   mode = "default",
   value,
-  minValue,
-  maxValue,
+  minValue = 0,
+  maxValue = 100,
   valueLabel,
   warningLabel,
   successLabel,
@@ -92,10 +94,8 @@ export function Meter({
 }: MeterProps): ReactElement {
   const { locale } = useLocale();
   const strings = useLocalizedStrings(meterStrings);
-  const min = minValue ?? 0;
-  const max = maxValue ?? 100;
-  const percentage = meterPercentage(value, min, max);
-  const level = getMeterLevel(value, max, percentage);
+  const percentage = meterPercentage(value, minValue, maxValue);
+  const level = getMeterLevel(value, maxValue, percentage);
   const warningName = warningLabel ?? strings.format("warning");
   const successName = successLabel ?? strings.format("success");
 
@@ -106,8 +106,8 @@ export function Meter({
     <MeterPrimitive.Root
       data-slot="meter"
       value={value}
-      min={min}
-      max={max}
+      min={minValue}
+      max={maxValue}
       locale={locale}
       className={cn(slots.root(), className)}
       {...props}>

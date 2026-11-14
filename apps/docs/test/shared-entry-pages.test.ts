@@ -133,7 +133,8 @@ describe("the generated chart references", () => {
   }
 
   it("names the chart stylesheet on every chart endpoint and on no other page", () => {
-    const line = '- Stylesheet: `import "@elmeragroup/fuse/chart.css";`, once, beside Fuse\'s own';
+    // Each chart page imports it in its Usage code, which the endpoint prints.
+    const line = 'import "@elmeragroup/fuse/chart.css";';
     for (const slug of [
       "chart",
       "bar-chart",
@@ -142,11 +143,13 @@ describe("the generated chart references", () => {
       "radar-chart",
       "scatter-chart",
       "live-line-chart",
+      "gauge-chart",
+      "clock-chart",
       "sparkline",
     ]) {
       expect(endpoint(slug), slug).toContain(line);
     }
-    expect(endpoint("badge")).not.toContain("- Stylesheet:");
+    expect(endpoint("badge")).not.toContain("chart.css");
   });
 
   it("writes one sentence for an alias page and one line per repeated part", () => {
@@ -172,18 +175,6 @@ describe("the generated chart references", () => {
     );
     expect(markdown).not.toMatch(/### formatChartValue · RSC: server\n\nSource: [^\n]*\n\nNo own props/u);
     expect(markdown).not.toContain("forwarded props from `typescript`");
-  });
-
-  it("puts the page intro under the lede and says a Server Component can render a client part", () => {
-    const markdown = endpoint("chart");
-    expect(markdown).toContain("The chart entry is a preview.");
-    expect(markdown.indexOf("The chart entry is a preview.")).toBeLessThan(
-      markdown.indexOf("Source: `apps/docs/")
-    );
-    expect(markdown).toContain(
-      "- RSC: client. A Server Component can still render it and pass it serialisable props."
-    );
-    expect(endpoint("sparkline")).toContain("- RSC: server\n");
   });
 
   it("renders the alias sentence and the owner links on the pages", async () => {

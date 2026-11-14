@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 294,
+      "forwardedCount": 293,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The textarea's name when no visible label names it. For a visible label, put it in a `Field.Root` with a `Field.Label` and pass it to `Field.Control`'s `render`, as in `<Field.Control render={<Textarea />} />`. A bare `Textarea` in a root is not wired to it.",
+          "required": false
+        },
         {
           "name": "size",
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The size sets the inline inset and the type; the box keeps its 64px minimum and grows with its text at both sizes.",
+          "description": "The control size, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The size sets the inline inset and the text size. At both sizes the box is at least 64px tall and grows with its text.",
           "required": false,
           "values": [
             "default",

@@ -21,18 +21,32 @@ import { runMargins } from "./layout/plot-frame";
  * @beta
  */
 export type ChartLineProps = ChartLayerProps & {
-  /** The series the line draws. An unknown key throws `unknown-key`. */
+  /**
+   * The series the line draws. An unknown key throws `unknown-key`. A missing reading leaves a gap,
+   * and a reading between two gaps draws a dot. Config `missing: "connect"` bridges a gap with a
+   * dashed segment instead. The segments that touch an estimated reading and the tail from config
+   * `projectedFrom` draw dashed too.
+   *
+   * A data update moves the line to its new readings, with its dots and markers on it. An update
+   * that appends a reading and drops the first slides the line along the axis, one that shares no
+   * slot pairs the old and new readings by position, and any other change of slots crossfades.
+   * Above 2,000 slots in the window, the line draws the lowest, highest, first and last reading of
+   * each pixel column, so every spike stays.
+   */
   dataKey: string;
   /**
-   * The line's look. "default" by default. "dashed" dashes the whole line, "flowing" runs its
+   * The line's look. "dashed" dashes the whole line, "flowing" runs its
    * dashes along it, which reduced motion stops, and "quiet" draws a thin, faint line for a
    * reference series such as last year.
    */
   variant?: "default" | "dashed" | "flowing" | "quiet";
   /**
-   * The curve through the readings. "monotone" by default. "step-after" and "step-before" run each
-   * reading across its whole cell, so they need `xScale="band"` and throw `step-curve-needs-cells`
-   * under "point".
+   * The d3 curve through the readings.
+   * "monotone" stays monotone along the category axis, so it runs along x, and along y under
+   * `orientation="horizontal"`. "monotone-y" is d3's monotoneY, monotone along screen y in either
+   * orientation. "step-after" and "step-before" run each reading across
+   * its whole cell, so the last hour of a day keeps its run. They need `xScale="band"` and throw
+   * `step-curve-needs-cells` under "point".
    */
   curve?: ChartCurve;
 };

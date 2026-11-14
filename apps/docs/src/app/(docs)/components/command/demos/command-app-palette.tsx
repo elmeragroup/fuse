@@ -151,9 +151,12 @@ function PageOf({ route }: { route: Route }): ReactElement {
 }
 
 /**
- * The app's layout, with one palette for every page. The header button opens it; the docs site
- * keeps ⌘K and Ctrl+K for its own palette. The Root stays mounted while the pages change, and its
- * `items` are the page's commands above the app's own.
+ * The app's layout, with one palette for every page. The Root stays mounted while the pages
+ * change, and its `items` are the page's commands above the app's own. Fuse has no registry of
+ * commands, so each page passes its commands to the layout through `usePageCommands`, a hook the
+ * app writes. An app listens for its shortcut, such as ⌘K and Ctrl+K, on `document`. This demo
+ * opens from its header button only, because the docs site keeps ⌘K and Ctrl+K for its own
+ * palette.
  */
 export function CommandAppPalette() {
   const [route, setRoute] = useState<Route>({ page: "customers" });
@@ -218,6 +221,8 @@ export function CommandAppPalette() {
                 Customers
               </Button>
             </nav>
+            {/* Command.Trigger works only inside the Root, so a button elsewhere controls `open`.
+                Closing returns focus to the element that had it when the palette opened. */}
             <Button
               variant="outline"
               size="sm"

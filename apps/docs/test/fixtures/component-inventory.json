@@ -1,149 +1,235 @@
 {
   "accordion": {
     "title": "Accordion",
-    "rsc": "client",
     "demos": [
-      "accordion-basic.tsx",
+      "accordion-demo.tsx",
+      "accordion-card.tsx",
+      "accordion-infodropdown.tsx",
+      "accordion-radius-lg.tsx",
+      "accordion-radius-xl.tsx",
       "accordion-multiple.tsx",
-      "accordion-variants.tsx",
-      "accordion-controlled.tsx",
+      "accordion-disabled-item.tsx",
       "accordion-leading-indicator.tsx",
+      "accordion-controlled.tsx",
       "accordion-hidden-until-found.tsx"
     ]
   },
   "action-bar": {
     "title": "Action Bar",
-    "rsc": "client",
-    "demos": ["action-bar-basic.tsx", "action-bar-pagination.tsx"]
+    "demos": [
+      "action-bar-demo.tsx",
+      "action-bar-above-footer.tsx",
+      "action-bar-narrow.tsx",
+      "action-bar-count-text.tsx"
+    ]
   },
   "alert": {
     "title": "Alert",
-    "rsc": "server",
     "demos": [
-      "alert-variants.tsx",
+      "alert-demo.tsx",
+      "alert-info.tsx",
+      "alert-destructive.tsx",
+      "alert-warning.tsx",
+      "alert-success.tsx",
       "alert-action.tsx",
       "alert-title-only.tsx",
       "alert-heading-level.tsx",
-      "alert-list.tsx"
+      "alert-list.tsx",
+      "alert-status.tsx",
+      "alert-icon-fill.tsx",
+      "alert-icon-regular.tsx"
     ]
   },
   "alert-dialog": {
     "title": "Alert Dialog",
-    "rsc": "client",
     "demos": [
-      "alert-dialog-destructive.tsx",
+      "alert-dialog-demo.tsx",
       "alert-dialog-neutral.tsx",
+      "alert-dialog-size-sm.tsx",
+      "alert-dialog-size-lg.tsx",
+      "alert-dialog-size-xl.tsx",
+      "alert-dialog-size-2xl.tsx",
+      "alert-dialog-size-3xl.tsx",
+      "alert-dialog-size-4xl.tsx",
+      "alert-dialog-size-5xl.tsx",
+      "alert-dialog-size-6xl.tsx",
+      "alert-dialog-size-7xl.tsx",
+      "alert-dialog-size-8xl.tsx",
+      "alert-dialog-size-9xl.tsx",
+      "alert-dialog-size-10xl.tsx",
       "alert-dialog-pending.tsx",
-      "alert-dialog-custom-icon.tsx"
+      "alert-dialog-action-disabled.tsx",
+      "alert-dialog-close-after-action.tsx",
+      "alert-dialog-custom-icon.tsx",
+      "alert-dialog-cancel-label.tsx"
     ]
   },
   "area-chart": {
     "title": "Area Chart",
-    "rsc": "client",
     "demos": [
-      "area-chart-daily-usage.tsx",
-      "area-chart-entrance.tsx",
-      "area-chart-price.tsx",
+      "area-chart-demo.tsx",
+      "area-chart-solid.tsx",
+      "area-chart-gradient-reverse.tsx",
+      "area-chart-dotted.tsx",
+      "area-chart-lines.tsx",
+      "area-chart-hatched.tsx",
+      "area-chart-curve-linear.tsx",
+      "area-chart-curve-monotone-y.tsx",
+      "area-chart-curve-natural.tsx",
+      "area-chart-curve-step.tsx",
+      "area-chart-curve-step-before.tsx",
+      "area-chart-curve-step-after.tsx",
+      "area-chart-curve-bump.tsx",
+      "area-chart-curve-basis.tsx",
       "area-chart-stacked.tsx",
-      "area-chart-threshold.tsx",
-      "area-chart-variants.tsx"
+      "area-chart-price.tsx",
+      "area-chart-threshold.tsx"
     ]
   },
   "aspect-ratio": {
     "title": "Aspect Ratio",
-    "rsc": "server",
-    "demos": ["aspect-ratio-basic.tsx", "aspect-ratio-ratios.tsx", "aspect-ratio-portrait.tsx"]
+    "demos": [
+      "aspect-ratio-demo.tsx",
+      "aspect-ratio-square.tsx",
+      "aspect-ratio-four-three.tsx",
+      "aspect-ratio-three-four.tsx",
+      "aspect-ratio-three-two.tsx",
+      "aspect-ratio-two-three.tsx",
+      "aspect-ratio-nine-sixteen.tsx",
+      "aspect-ratio-custom.tsx"
+    ]
   },
   "attachment": {
     "title": "Attachment",
-    "rsc": "client",
     "demos": [
-      "attachment-basic.tsx",
+      "attachment-demo.tsx",
+      "attachment-small.tsx",
+      "attachment-extra-small.tsx",
+      "attachment-vertical.tsx",
       "attachment-image.tsx",
-      "attachment-states.tsx",
-      "attachment-sizes.tsx",
+      "attachment-aspect-ratio.tsx",
+      "attachment-idle.tsx",
+      "attachment-uploading.tsx",
+      "attachment-processing.tsx",
+      "attachment-error.tsx",
       "attachment-group.tsx",
-      "attachment-trigger.tsx",
-      "attachment-upload.tsx"
+      "attachment-dialog-trigger.tsx",
+      "attachment-link-trigger.tsx"
     ]
   },
   "autocomplete": {
     "title": "Autocomplete",
-    "rsc": "client",
-    "demos": ["autocomplete-sizes.tsx", "autocomplete-custom-layout.tsx"]
+    "demos": [
+      "autocomplete-demo.tsx",
+      "autocomplete-small.tsx",
+      "autocomplete-clear-button.tsx",
+      "autocomplete-caret.tsx",
+      "autocomplete-top.tsx",
+      "autocomplete-left.tsx",
+      "autocomplete-right.tsx",
+      "autocomplete-inline-start.tsx",
+      "autocomplete-inline-end.tsx",
+      "autocomplete-align-center.tsx",
+      "autocomplete-align-end.tsx",
+      "autocomplete-offset.tsx",
+      "autocomplete-groups.tsx",
+      "autocomplete-invalid.tsx",
+      "autocomplete-disabled.tsx",
+      "autocomplete-read-only.tsx"
+    ]
   },
   "autocomplete-field": {
     "title": "Autocomplete Field",
-    "rsc": "server",
     "demos": [
-      "autocomplete-field-basic.tsx",
+      "autocomplete-field-demo.tsx",
+      "autocomplete-field-clear-button.tsx",
       "autocomplete-field-caret.tsx",
       "autocomplete-field-groups.tsx",
-      "autocomplete-field-company-search.tsx"
+      "autocomplete-field-server-search.tsx",
+      "autocomplete-field-error.tsx",
+      "autocomplete-field-disabled.tsx",
+      "autocomplete-field-read-only.tsx",
+      "autocomplete-field-form-error.tsx"
     ]
   },
   "avatar": {
     "title": "Avatar",
-    "rsc": "client",
-    "demos": ["avatar-basic.tsx", "avatar-fallback.tsx", "avatar-sizes.tsx", "avatar-group.tsx"]
+    "demos": [
+      "avatar-demo.tsx",
+      "avatar-fallback.tsx",
+      "avatar-initials.tsx",
+      "avatar-size.tsx",
+      "avatar-beside-name.tsx",
+      "avatar-group.tsx"
+    ]
   },
   "badge": {
     "title": "Badge",
-    "rsc": "server",
-    "demos": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"]
+    "demos": [
+      "badge-demo.tsx",
+      "badge-secondary.tsx",
+      "badge-destructive.tsx",
+      "badge-success.tsx",
+      "badge-warning.tsx",
+      "badge-info.tsx",
+      "badge-soft-destructive.tsx",
+      "badge-soft-success.tsx",
+      "badge-soft-warning.tsx",
+      "badge-soft-info.tsx",
+      "badge-outline.tsx",
+      "badge-outline-secondary.tsx",
+      "badge-outline-destructive.tsx",
+      "badge-outline-success.tsx",
+      "badge-outline-warning.tsx",
+      "badge-outline-info.tsx",
+      "badge-muted.tsx",
+      "badge-accent.tsx",
+      "badge-card.tsx",
+      "badge-small.tsx",
+      "badge-large.tsx"
+    ]
   },
   "bar-chart": {
     "title": "Bar Chart",
-    "rsc": "client",
     "demos": [
+      "bar-chart-demo.tsx",
       "bar-chart-basic.tsx",
-      "bar-chart-blocks.tsx",
-      "bar-chart-buffer.tsx",
-      "bar-chart-capacity-step.tsx",
-      "bar-chart-config.tsx",
-      "bar-chart-date-pill.tsx",
-      "bar-chart-dst-days.tsx",
-      "bar-chart-emphasis.tsx",
-      "bar-chart-entrance.tsx",
-      "bar-chart-expandable.tsx",
-      "bar-chart-glowing.tsx",
-      "bar-chart-gradient-colors.tsx",
-      "bar-chart-horizontal.tsx",
-      "bar-chart-hourly-groups.tsx",
-      "bar-chart-hover-highlight.tsx",
-      "bar-chart-hover-trace.tsx",
-      "bar-chart-icons.tsx",
-      "bar-chart-isometric.tsx",
-      "bar-chart-loading.tsx",
-      "bar-chart-monospace.tsx",
-      "bar-chart-month-to-date.tsx",
-      "bar-chart-month-vs-last-year.tsx",
-      "bar-chart-percent.tsx",
-      "bar-chart-price-levels.tsx",
-      "bar-chart-price-line.tsx",
-      "bar-chart-price-spike.tsx",
-      "bar-chart-server.tsx",
       "bar-chart-stacked.tsx",
-      "bar-chart-streamed.tsx",
+      "bar-chart-percent.tsx",
+      "bar-chart-horizontal.tsx",
+      "bar-chart-hatched.tsx",
+      "bar-chart-duotone.tsx",
+      "bar-chart-duotone-reverse.tsx",
+      "bar-chart-gradient.tsx",
+      "bar-chart-striped.tsx",
+      "bar-chart-blocks.tsx",
+      "bar-chart-expandable.tsx",
+      "bar-chart-isometric.tsx",
+      "bar-chart-emphasis.tsx",
+      "bar-chart-buffer.tsx",
+      "bar-chart-month-to-date.tsx",
+      "bar-chart-price-levels.tsx",
+      "bar-chart-price-spike.tsx",
+      "bar-chart-icons.tsx",
+      "bar-chart-active-dot.tsx",
+      "bar-chart-fall-back-day.tsx",
+      "bar-chart-spring-forward-day.tsx",
       "bar-chart-update.tsx",
-      "bar-chart-variants.tsx",
-      "bar-chart-year-over-year.tsx",
-      "bar-chart-year-vs-last-year.tsx"
+      "bar-chart-streamed.tsx",
+      "bar-chart-server.tsx"
     ]
   },
   "breadcrumb": {
     "title": "Breadcrumb",
-    "rsc": "client",
     "demos": [
-      "breadcrumb-basic.tsx",
+      "breadcrumb-demo.tsx",
       "breadcrumb-custom-separator.tsx",
       "breadcrumb-ellipsis.tsx",
-      "breadcrumb-render-link.tsx"
+      "breadcrumb-router-link.tsx"
     ]
   },
   "button": {
     "title": "Button",
-    "rsc": "client",
     "demos": [
       "button-demo.tsx",
       "button-outline.tsx",
@@ -172,154 +258,323 @@
   },
   "button-group": {
     "title": "Button Group",
-    "rsc": "client",
     "demos": [
-      "button-group-basic.tsx",
+      "button-group-demo.tsx",
       "button-group-vertical.tsx",
-      "button-group-split-button.tsx",
+      "button-group-separator.tsx",
+      "button-group-horizontal-separator.tsx",
       "button-group-text.tsx",
       "button-group-nested.tsx"
     ]
   },
   "calendar": {
     "title": "Calendar",
-    "rsc": "client",
-    "demos": ["calendar-basic.tsx", "calendar-months.tsx", "calendar-bounds.tsx", "calendar-controlled.tsx"]
+    "demos": [
+      "calendar-demo.tsx",
+      "calendar-several-months.tsx",
+      "calendar-page-by-one-month.tsx",
+      "calendar-week-starts-monday.tsx",
+      "calendar-bounds.tsx",
+      "calendar-unavailable-dates.tsx",
+      "calendar-disabled.tsx",
+      "calendar-read-only.tsx",
+      "calendar-canceled-change.tsx"
+    ]
   },
   "card": {
     "title": "Card",
-    "rsc": "server",
     "demos": [
-      "card-basic.tsx",
+      "card-demo.tsx",
       "card-content-only.tsx",
-      "card-with-action.tsx",
+      "card-action.tsx",
       "card-tag.tsx",
+      "card-title-icon.tsx",
       "card-horizontal.tsx",
-      "card-item-rows.tsx",
-      "card-nested.tsx",
-      "card-sizes.tsx",
+      "card-large.tsx",
       "card-sections.tsx",
-      "card-section-button.tsx"
+      "card-section-media.tsx",
+      "card-section-button.tsx",
+      "card-section-link.tsx",
+      "card-section-link-unavailable.tsx"
     ]
   },
   "carousel": {
     "title": "Carousel",
-    "rsc": "client",
     "demos": [
-      "carousel-basic.tsx",
+      "carousel-demo.tsx",
+      "carousel-vertical.tsx",
       "carousel-several.tsx",
       "carousel-status.tsx",
       "carousel-thumbnails.tsx",
       "carousel-autoplay.tsx",
-      "carousel-vertical.tsx",
+      "carousel-start-page.tsx",
+      "carousel-heading-name.tsx",
       "carousel-controlled.tsx"
     ]
   },
   "chart": {
     "title": "Chart",
-    "rsc": "client",
     "demos": [
-      "chart-axis-titles.tsx",
-      "chart-background.tsx",
-      "chart-composed-bar-group-line.tsx",
+      "chart-demo.tsx",
+      "chart-interval-second.tsx",
+      "chart-interval-minute.tsx",
+      "chart-interval-quarter-hour.tsx",
+      "chart-interval-day.tsx",
+      "chart-interval-week.tsx",
+      "chart-interval-month.tsx",
+      "chart-interval-year.tsx",
+      "chart-entrance-right.tsx",
+      "chart-entrance-center.tsx",
+      "chart-entrance-edges.tsx",
+      "chart-entrance-none.tsx",
       "chart-composed-basic.tsx",
-      "chart-composed-bump.tsx",
-      "chart-composed-dashed.tsx",
-      "chart-composed-dots.tsx",
-      "chart-composed-flowing.tsx",
-      "chart-composed-glowing.tsx",
+      "chart-composed-bar-group-line.tsx",
+      "chart-usage-and-price.tsx",
+      "chart-panel-no-zero-baseline.tsx",
       "chart-composed-gradient-colors.tsx",
-      "chart-composed-hover-highlight.tsx",
-      "chart-composed-loading.tsx",
-      "chart-composed-variants.tsx",
-      "chart-crosshair.tsx",
-      "chart-empty.tsx",
+      "chart-composed-dots.tsx",
+      "chart-dots-halo.tsx",
+      "chart-dots-ring.tsx",
+      "chart-active-dot.tsx",
+      "chart-active-dot-halo.tsx",
+      "chart-active-dot-ping.tsx",
+      "chart-active-dot-ring.tsx",
+      "chart-marker.tsx",
+      "chart-marker-halo.tsx",
+      "chart-marker-ping.tsx",
+      "chart-marker-ring.tsx",
+      "chart-active-value-line.tsx",
+      "chart-composed-glowing.tsx",
       "chart-headline.tsx",
-      "chart-hourly-usage.tsx",
-      "chart-legend-toggles.tsx",
-      "chart-month-usage-and-price.tsx",
-      "chart-prosumer-day.tsx",
-      "chart-reference-area.tsx",
-      "chart-reference-line.tsx",
-      "chart-table.tsx",
-      "chart-tick-dot.tsx",
-      "chart-tooltip-anchor.tsx",
-      "chart-tooltip-default.tsx",
+      "chart-headline-first.tsx",
+      "chart-headline-min.tsx",
+      "chart-headline-now.tsx",
       "chart-tooltip-frosted.tsx",
+      "chart-tooltip-anchor.tsx",
       "chart-total-price.tsx",
-      "chart-usage-and-price.tsx"
+      "chart-active-point.tsx",
+      "chart-legend-toggles.tsx",
+      "chart-legend-top.tsx",
+      "chart-legend-start.tsx",
+      "chart-legend-end.tsx",
+      "chart-swatch-square-outline.tsx",
+      "chart-swatch-circle.tsx",
+      "chart-swatch-circle-outline.tsx",
+      "chart-swatch-line.tsx",
+      "chart-swatch-bar.tsx",
+      "chart-legend-value-first.tsx",
+      "chart-legend-value-min.tsx",
+      "chart-legend-value-max.tsx",
+      "chart-legend-value-now.tsx",
+      "chart-legend-toggles-top.tsx",
+      "chart-legend-toggles-start.tsx",
+      "chart-legend-toggles-end.tsx",
+      "chart-crosshair.tsx",
+      "chart-crosshair-line.tsx",
+      "chart-crosshair-fade-top.tsx",
+      "chart-crosshair-fade-bottom.tsx",
+      "chart-crosshair-fade-none.tsx",
+      "chart-slot-label.tsx",
+      "chart-reference-line-dashed.tsx",
+      "chart-reference-line-muted.tsx",
+      "chart-reference-line-error.tsx",
+      "chart-reference-area-muted.tsx",
+      "chart-reference-area-error.tsx",
+      "chart-brush.tsx",
+      "chart-axis-titles.tsx",
+      "chart-grid-dashed.tsx",
+      "chart-grid-vertical.tsx",
+      "chart-grid-both.tsx",
+      "chart-tick-dot.tsx",
+      "chart-y-axis-end.tsx",
+      "chart-background.tsx",
+      "chart-background-4-pointed-star.tsx",
+      "chart-background-bubbles.tsx",
+      "chart-background-cross-hatch.tsx",
+      "chart-background-diagonal-lines.tsx",
+      "chart-background-falling-triangles.tsx",
+      "chart-background-grid.tsx",
+      "chart-background-overlapping-circles.tsx",
+      "chart-background-plus.tsx",
+      "chart-background-tiny-checkers.tsx",
+      "chart-background-wiggle-lines.tsx",
+      "chart-table.tsx",
+      "chart-table-column.tsx",
+      "chart-empty.tsx",
+      "chart-composed-loading.tsx",
+      "chart-loading-area.tsx",
+      "chart-loading-line.tsx"
     ]
   },
   "checkbox": {
     "title": "Checkbox",
-    "rsc": "client",
     "demos": [
-      "checkbox-basic.tsx",
+      "checkbox-demo.tsx",
+      "checkbox-checked.tsx",
+      "checkbox-indeterminate.tsx",
+      "checkbox-disabled.tsx",
+      "checkbox-read-only.tsx",
+      "checkbox-invalid.tsx",
       "checkbox-group.tsx",
+      "checkbox-group-horizontal.tsx",
+      "checkbox-group-description.tsx",
+      "checkbox-group-error.tsx",
+      "checkbox-group-disabled.tsx",
+      "checkbox-group-hidden-label.tsx",
+      "checkbox-parent.tsx",
       "checkbox-item-group.tsx",
-      "checkbox-tristate.tsx",
-      "checkbox-description.tsx"
+      "checkbox-item-group-horizontal.tsx",
+      "checkbox-item-control-end.tsx",
+      "checkbox-item-actions.tsx",
+      "checkbox-item-sub-section.tsx",
+      "checkbox-item-disabled.tsx",
+      "checkbox-description.tsx",
+      "checkbox-description-link.tsx"
     ]
   },
   "checkbox-card": {
     "title": "Checkbox Card",
-    "rsc": "client",
     "demos": [
-      "checkbox-card-basic.tsx",
+      "checkbox-card-demo.tsx",
+      "checkbox-card-muted.tsx",
+      "checkbox-card-checked.tsx",
+      "checkbox-card-disabled.tsx",
       "checkbox-card-tags.tsx",
-      "checkbox-card-right-content.tsx",
-      "checkbox-card-variants.tsx",
-      "checkbox-card-group.tsx"
+      "checkbox-card-extra-content.tsx",
+      "checkbox-card-right-content.tsx"
     ]
   },
   "clock-chart": {
     "title": "Clock Chart",
-    "rsc": "client",
     "demos": [
-      "clock-chart-empty.tsx",
-      "clock-chart-fall-back.tsx",
-      "clock-chart-heating-year.tsx",
-      "clock-chart-last-week.tsx",
-      "clock-chart-load-profile.tsx",
-      "clock-chart-loading.tsx",
-      "clock-chart-server.tsx",
-      "clock-chart-solar.tsx",
+      "clock-chart-demo.tsx",
+      "clock-chart-linear-radius.tsx",
+      "clock-chart-stacked.tsx",
+      "clock-chart-expand.tsx",
+      "clock-chart-tooltip-total.tsx",
+      "clock-chart-no-baseline.tsx",
+      "clock-chart-line.tsx",
+      "clock-chart-line-dashed.tsx",
+      "clock-chart-line-flowing.tsx",
+      "clock-chart-line-quiet.tsx",
+      "clock-chart-area.tsx",
+      "clock-chart-area-solid.tsx",
+      "clock-chart-area-gradient-reverse.tsx",
+      "clock-chart-area-dotted.tsx",
+      "clock-chart-area-lines.tsx",
+      "clock-chart-area-hatched.tsx",
+      "clock-chart-curve-linear.tsx",
+      "clock-chart-curve-monotone-y.tsx",
+      "clock-chart-curve-natural.tsx",
+      "clock-chart-curve-step.tsx",
+      "clock-chart-curve-step-before.tsx",
+      "clock-chart-curve-step-after.tsx",
+      "clock-chart-curve-bump.tsx",
+      "clock-chart-curve-basis.tsx",
+      "clock-chart-dots.tsx",
+      "clock-chart-dots-halo.tsx",
+      "clock-chart-dots-ring.tsx",
+      "clock-chart-active-dot.tsx",
+      "clock-chart-active-dot-halo.tsx",
+      "clock-chart-active-dot-ping.tsx",
+      "clock-chart-active-dot-ring.tsx",
+      "clock-chart-marker.tsx",
+      "clock-chart-marker-halo.tsx",
+      "clock-chart-marker-ping.tsx",
+      "clock-chart-marker-ring.tsx",
+      "clock-chart-value-label.tsx",
+      "clock-chart-emphasis.tsx",
+      "clock-chart-glow.tsx",
+      "clock-chart-dashed-grid.tsx",
+      "clock-chart-reference-line.tsx",
+      "clock-chart-reference-line-dashed.tsx",
+      "clock-chart-reference-line-muted.tsx",
+      "clock-chart-reference-line-error.tsx",
+      "clock-chart-reference-spoke.tsx",
+      "clock-chart-reference-area.tsx",
+      "clock-chart-reference-area-muted.tsx",
+      "clock-chart-reference-area-error.tsx",
+      "clock-chart-reference-sector.tsx",
+      "clock-chart-scrubber.tsx",
+      "clock-chart-scrubber-band.tsx",
+      "clock-chart-now.tsx",
+      "clock-chart-now-muted.tsx",
+      "clock-chart-now-error.tsx",
+      "clock-chart-past-fade.tsx",
+      "clock-chart-emphasis-now.tsx",
+      "clock-chart-center.tsx",
+      "clock-chart-active-value-first.tsx",
+      "clock-chart-active-value-last.tsx",
+      "clock-chart-active-value-max.tsx",
+      "clock-chart-active-value-min.tsx",
+      "clock-chart-frosted-tooltip.tsx",
       "clock-chart-spot-price.tsx",
-      "clock-chart-week.tsx"
+      "clock-chart-fall-back.tsx",
+      "clock-chart-solar.tsx",
+      "clock-chart-week.tsx",
+      "clock-chart-heating-year.tsx",
+      "clock-chart-no-entrance.tsx",
+      "clock-chart-server.tsx",
+      "clock-chart-loading.tsx",
+      "clock-chart-empty.tsx"
     ]
   },
   "code": {
     "title": "Code",
-    "rsc": "server",
-    "demos": ["code-basic.tsx", "code-scroll.tsx"]
+    "demos": ["code-demo.tsx", "code-named-region.tsx"]
   },
   "collapsible": {
     "title": "Collapsible",
-    "rsc": "client",
-    "demos": ["collapsible-basic.tsx", "collapsible-controlled.tsx", "collapsible-hidden-until-found.tsx"]
+    "demos": [
+      "collapsible-demo.tsx",
+      "collapsible-disabled.tsx",
+      "collapsible-controlled.tsx",
+      "collapsible-hidden-until-found.tsx"
+    ]
   },
   "combobox": {
     "title": "Combobox",
-    "rsc": "client",
     "demos": [
-      "combobox-basic.tsx",
-      "combobox-sizes.tsx",
+      "combobox-demo.tsx",
+      "combobox-small.tsx",
+      "combobox-clear-button.tsx",
+      "combobox-top.tsx",
+      "combobox-left.tsx",
+      "combobox-right.tsx",
+      "combobox-inline-start.tsx",
+      "combobox-inline-end.tsx",
+      "combobox-align-center.tsx",
+      "combobox-align-end.tsx",
+      "combobox-offset.tsx",
       "combobox-groups.tsx",
-      "combobox-multi-chips.tsx",
-      "combobox-input-group-anchor.tsx"
+      "combobox-multiple.tsx",
+      "combobox-chips-small.tsx",
+      "combobox-popup-search.tsx",
+      "combobox-disabled-item.tsx",
+      "combobox-invalid.tsx",
+      "combobox-disabled.tsx",
+      "combobox-read-only.tsx"
     ]
   },
   "combobox-field": {
     "title": "Combobox Field",
-    "rsc": "server",
-    "demos": ["combobox-field-basic.tsx", "combobox-field-form.tsx"]
+    "demos": [
+      "combobox-field-demo.tsx",
+      "combobox-field-clear-button.tsx",
+      "combobox-field-without-caret.tsx",
+      "combobox-field-error.tsx",
+      "combobox-field-disabled.tsx",
+      "combobox-field-read-only.tsx",
+      "combobox-field-form-error.tsx"
+    ]
   },
   "command": {
     "title": "Command",
-    "rsc": "client",
     "demos": [
+      "command-demo.tsx",
       "command-dialog.tsx",
       "command-groups.tsx",
+      "command-shortcuts.tsx",
       "command-pages.tsx",
       "command-kept-query.tsx",
       "command-escape-back.tsx",
@@ -330,300 +585,525 @@
   },
   "confirm-button": {
     "title": "Confirm Button",
-    "rsc": "client",
-    "demos": ["confirm-button-destructive.tsx", "confirm-button-success.tsx", "confirm-button-icon.tsx"]
+    "demos": [
+      "confirm-button-demo.tsx",
+      "confirm-button-outline.tsx",
+      "confirm-button-secondary.tsx",
+      "confirm-button-ghost.tsx",
+      "confirm-button-link.tsx",
+      "confirm-button-destructive.tsx",
+      "confirm-button-success.tsx",
+      "confirm-button-extra-small.tsx",
+      "confirm-button-small.tsx",
+      "confirm-button-large.tsx",
+      "confirm-button-icon.tsx",
+      "confirm-button-icon-extra-small.tsx",
+      "confirm-button-icon-small.tsx",
+      "confirm-button-icon-large.tsx",
+      "confirm-button-icon-inline.tsx",
+      "confirm-button-pending.tsx",
+      "confirm-button-visually-disabled.tsx",
+      "confirm-button-disabled.tsx"
+    ]
   },
   "data-table": {
     "title": "Data Table",
-    "rsc": "client",
     "demos": [
-      "data-table-client-paged.tsx",
+      "data-table-demo.tsx",
+      "data-table-pagination.tsx",
       "data-table-server-paged.tsx",
-      "data-table-cell-override.tsx",
-      "data-table-selection.tsx",
-      "data-table-inventory.tsx"
+      "data-table-sorting.tsx",
+      "data-table-column-visibility.tsx",
+      "data-table-row-selection.tsx",
+      "data-table-row-press.tsx",
+      "data-table-row-actions.tsx",
+      "data-table-formatted-cells.tsx",
+      "data-table-cell-overrides.tsx",
+      "data-table-loading.tsx",
+      "data-table-empty.tsx",
+      "data-table-plain-parts.tsx"
     ]
   },
   "data-table-filter": {
     "title": "Data Table Filter",
-    "rsc": "client",
     "demos": [
-      "data-table-filter-client.tsx",
+      "data-table-filter-demo.tsx",
       "data-table-filter-server.tsx",
       "data-table-filter-high-cardinality.tsx",
-      "data-table-filter-calendar.tsx"
+      "data-table-filter-toggle.tsx",
+      "data-table-filter-composed-bar.tsx",
+      "data-table-filter-values-footer.tsx",
+      "data-table-filter-date-calendar.tsx"
     ]
   },
   "date-field": {
     "title": "Date Field",
-    "rsc": "server",
     "demos": [
-      "date-field-basic.tsx",
-      "date-field-states.tsx",
-      "date-field-time.tsx",
-      "date-field-zoned.tsx",
+      "date-field-demo.tsx",
+      "date-field-small.tsx",
+      "date-field-date-and-time.tsx",
+      "date-field-hour-granularity.tsx",
+      "date-field-second-granularity.tsx",
+      "date-field-24-hour-clock.tsx",
+      "date-field-time-zone.tsx",
+      "date-field-hidden-time-zone.tsx",
+      "date-field-empty-zoned-field.tsx",
+      "date-field-without-leading-zeros.tsx",
       "date-field-bounds.tsx",
-      "date-field-form.tsx",
-      "date-field-parts.tsx"
+      "date-field-unavailable-dates.tsx",
+      "date-field-error.tsx",
+      "date-field-disabled.tsx",
+      "date-field-read-only.tsx",
+      "date-field-required.tsx",
+      "date-field-form-error.tsx",
+      "date-field-date-input-parts.tsx"
     ]
   },
   "date-picker": {
     "title": "Date Picker",
-    "rsc": "client",
     "demos": [
-      "date-picker-basic.tsx",
-      "date-picker-states.tsx",
-      "date-picker-time.tsx",
-      "date-picker-time-input.tsx",
+      "date-picker-demo.tsx",
+      "date-picker-small.tsx",
+      "date-picker-trigger-at-start.tsx",
+      "date-picker-date-and-time.tsx",
+      "date-picker-hour-granularity.tsx",
+      "date-picker-second-granularity.tsx",
+      "date-picker-24-hour-clock.tsx",
+      "date-picker-time-zone.tsx",
+      "date-picker-hidden-time-zone.tsx",
+      "date-picker-empty-zoned-picker.tsx",
+      "date-picker-keep-open-on-select.tsx",
+      "date-picker-week-starts-monday.tsx",
+      "date-picker-several-months.tsx",
+      "date-picker-page-by-one-month.tsx",
+      "date-picker-without-leading-zeros.tsx",
       "date-picker-presets.tsx",
-      "date-picker-form.tsx",
-      "date-picker-controlled.tsx"
+      "date-picker-bounds.tsx",
+      "date-picker-unavailable-dates.tsx",
+      "date-picker-error.tsx",
+      "date-picker-disabled.tsx",
+      "date-picker-read-only.tsx",
+      "date-picker-required.tsx",
+      "date-picker-form-error.tsx",
+      "date-picker-time-in-the-popup.tsx",
+      "date-picker-canceled-change.tsx"
     ]
   },
   "date-range-picker": {
     "title": "Date Range Picker",
-    "rsc": "client",
     "demos": [
-      "date-range-picker-basic.tsx",
-      "date-range-picker-states.tsx",
-      "date-range-picker-months.tsx",
-      "date-range-picker-time.tsx",
+      "date-range-picker-demo.tsx",
+      "date-range-picker-small.tsx",
+      "date-range-picker-date-and-time.tsx",
+      "date-range-picker-hour-granularity.tsx",
+      "date-range-picker-second-granularity.tsx",
+      "date-range-picker-24-hour-clock.tsx",
+      "date-range-picker-time-zone.tsx",
+      "date-range-picker-hidden-time-zone.tsx",
+      "date-range-picker-empty-zoned-picker.tsx",
+      "date-range-picker-keep-open-on-select.tsx",
+      "date-range-picker-week-starts-monday.tsx",
+      "date-range-picker-several-months.tsx",
+      "date-range-picker-page-by-one-month.tsx",
+      "date-range-picker-without-leading-zeros.tsx",
       "date-range-picker-presets.tsx",
-      "date-range-picker-form.tsx"
+      "date-range-picker-bounds.tsx",
+      "date-range-picker-unavailable-dates.tsx",
+      "date-range-picker-error.tsx",
+      "date-range-picker-disabled.tsx",
+      "date-range-picker-read-only.tsx",
+      "date-range-picker-required.tsx",
+      "date-range-picker-form-error.tsx",
+      "date-range-picker-parts.tsx"
     ]
   },
   "description-list": {
     "title": "Description List",
-    "rsc": "server",
     "demos": [
-      "description-list-basic.tsx",
-      "description-list-multi-details.tsx",
-      "description-list-responsive.tsx",
+      "description-list-demo.tsx",
       "description-list-no-dividers.tsx",
       "description-list-inline.tsx",
-      "description-list-inline-rows.tsx",
-      "description-list-long-values.tsx"
+      "description-list-inline-groups.tsx",
+      "description-list-long-values.tsx",
+      "description-list-several-details.tsx",
+      "description-list-several-terms.tsx"
     ]
   },
   "dialog": {
     "title": "Dialog",
-    "rsc": "client",
     "demos": [
-      "dialog-basic.tsx",
-      "dialog-sizes.tsx",
+      "dialog-demo.tsx",
+      "dialog-size-sm.tsx",
+      "dialog-size-lg.tsx",
+      "dialog-size-xl.tsx",
+      "dialog-size-2xl.tsx",
+      "dialog-size-3xl.tsx",
+      "dialog-size-4xl.tsx",
+      "dialog-size-5xl.tsx",
+      "dialog-size-6xl.tsx",
+      "dialog-size-7xl.tsx",
+      "dialog-size-8xl.tsx",
+      "dialog-size-9xl.tsx",
+      "dialog-size-10xl.tsx",
       "dialog-footer-close.tsx",
-      "dialog-form.tsx",
       "dialog-no-close-button.tsx",
+      "dialog-form.tsx",
       "dialog-scrolling.tsx"
     ]
   },
   "dropdown-menu": {
     "title": "Dropdown Menu",
-    "rsc": "client",
     "demos": [
-      "dropdown-menu-basic.tsx",
+      "dropdown-menu-demo.tsx",
+      "dropdown-menu-top.tsx",
+      "dropdown-menu-left.tsx",
+      "dropdown-menu-right.tsx",
+      "dropdown-menu-inline-start.tsx",
+      "dropdown-menu-inline-end.tsx",
+      "dropdown-menu-align-center.tsx",
+      "dropdown-menu-align-end.tsx",
+      "dropdown-menu-offset.tsx",
+      "dropdown-menu-group-label.tsx",
+      "dropdown-menu-shortcuts.tsx",
+      "dropdown-menu-destructive.tsx",
+      "dropdown-menu-disabled.tsx",
+      "dropdown-menu-inset.tsx",
       "dropdown-menu-checkboxes.tsx",
       "dropdown-menu-radio-group.tsx",
       "dropdown-menu-submenu.tsx",
-      "dropdown-menu-links.tsx",
-      "dropdown-menu-destructive.tsx"
+      "dropdown-menu-links.tsx"
     ]
   },
   "emoji": {
     "title": "Emoji",
-    "rsc": "server",
-    "demos": ["emoji-faces.tsx", "emoji-labeled.tsx", "emoji-sizing.tsx"]
+    "demos": [
+      "emoji-demo.tsx",
+      "emoji-slightly-frowning-face.tsx",
+      "emoji-neutral-face.tsx",
+      "emoji-loudly-crying-face.tsx",
+      "emoji-partying-face.tsx",
+      "emoji-label.tsx",
+      "emoji-beside-text.tsx"
+    ]
   },
   "empty": {
     "title": "Empty",
-    "rsc": "server",
     "demos": [
-      "empty-basic.tsx",
+      "empty-demo.tsx",
       "empty-outline.tsx",
-      "empty-with-actions.tsx",
-      "empty-media-variants.tsx",
+      "empty-outline-dashed.tsx",
+      "empty-illustration.tsx",
+      "empty-actions.tsx",
       "empty-inline-link.tsx"
     ]
   },
   "field": {
     "title": "Field",
-    "rsc": "client",
     "demos": [
-      "field-basic.tsx",
+      "field-demo.tsx",
+      "field-horizontal.tsx",
+      "field-responsive.tsx",
       "field-error.tsx",
       "field-validation.tsx",
-      "field-orientations.tsx",
-      "field-from-parts.tsx",
+      "field-disabled.tsx",
       "field-set.tsx",
+      "field-legend-label.tsx",
       "field-set-description.tsx",
       "field-grid-set.tsx",
-      "field-choice-card.tsx",
-      "field-separator.tsx"
+      "field-separator.tsx",
+      "field-choice-card.tsx"
     ]
   },
   "file-trigger": {
     "title": "File Trigger",
-    "rsc": "client",
-    "demos": ["file-trigger-basic.tsx", "file-trigger-modes.tsx"]
+    "demos": [
+      "file-trigger-demo.tsx",
+      "file-trigger-outline.tsx",
+      "file-trigger-secondary.tsx",
+      "file-trigger-ghost.tsx",
+      "file-trigger-destructive.tsx",
+      "file-trigger-success.tsx",
+      "file-trigger-link.tsx",
+      "file-trigger-extra-small.tsx",
+      "file-trigger-default-size.tsx",
+      "file-trigger-large.tsx",
+      "file-trigger-back-camera.tsx",
+      "file-trigger-front-camera.tsx",
+      "file-trigger-folder.tsx",
+      "file-trigger-without-icon.tsx",
+      "file-trigger-accept.tsx",
+      "file-trigger-disabled.tsx"
+    ]
   },
   "file-upload": {
     "title": "File Upload",
-    "rsc": "client",
     "demos": [
-      "file-upload-compact.tsx",
-      "file-upload-limits.tsx",
+      "file-upload-demo.tsx",
       "file-upload-picker.tsx",
+      "file-upload-limits.tsx",
+      "file-upload-folders.tsx",
       "file-upload-field.tsx",
+      "file-upload-invalid.tsx",
       "file-upload-form.tsx",
-      "file-upload-folders.tsx"
+      "file-upload-disabled.tsx"
     ]
   },
   "form": {
     "title": "Form",
-    "rsc": "client",
-    "demos": ["form-server-errors.tsx", "form-schema-validation.tsx"]
+    "demos": [
+      "form-demo.tsx",
+      "form-server-errors.tsx",
+      "form-validate-on-change.tsx",
+      "form-validate-on-blur.tsx"
+    ]
   },
   "frame": {
     "title": "Frame",
-    "rsc": "server",
     "demos": [
-      "frame-basic.tsx",
-      "frame-layouts.tsx",
-      "frame-collapsible-panels.tsx",
+      "frame-demo.tsx",
+      "frame-stacked.tsx",
       "frame-flush.tsx",
+      "frame-collapsible-panels.tsx",
       "frame-with-table.tsx",
-      "frame-key-value-table.tsx"
+      "frame-panel-table.tsx"
     ]
   },
   "gauge-chart": {
     "title": "Gauge Chart",
-    "rsc": "client",
     "demos": [
-      "gauge-chart-battery.tsx",
-      "gauge-chart-capacity-step.tsx",
-      "gauge-chart-charging.tsx",
-      "gauge-chart-empty.tsx",
+      "gauge-chart-demo.tsx",
+      "gauge-chart-zone.tsx",
+      "gauge-chart-solid-track.tsx",
+      "gauge-chart-glow.tsx",
+      "gauge-chart-ruler.tsx",
+      "gauge-chart-outside-ruler.tsx",
+      "gauge-chart-needle.tsx",
+      "gauge-chart-triangle-needle.tsx",
+      "gauge-chart-sector.tsx",
+      "gauge-chart-flat-sector.tsx",
+      "gauge-chart-radial-sector.tsx",
+      "gauge-chart-dots.tsx",
+      "gauge-chart-fading-dots.tsx",
+      "gauge-chart-progress-ring.tsx",
+      "gauge-chart-closed-ring.tsx",
+      "gauge-chart-over-max.tsx",
       "gauge-chart-live.tsx",
+      "gauge-chart-no-entrance.tsx",
       "gauge-chart-loading.tsx",
-      "gauge-chart-price-area.tsx",
-      "gauge-chart-spot-price.tsx"
+      "gauge-chart-empty.tsx"
     ]
   },
   "heading": {
     "title": "Heading",
-    "rsc": "client",
-    "demos": ["heading-basic.tsx", "heading-sizes.tsx", "heading-variants.tsx", "heading-modifiers.tsx"]
+    "demos": [
+      "heading-demo.tsx",
+      "heading-level-1.tsx",
+      "heading-level-3.tsx",
+      "heading-level-4.tsx",
+      "heading-level-5.tsx",
+      "heading-level-6.tsx",
+      "heading-size-sm.tsx",
+      "heading-size-default.tsx",
+      "heading-size-lg.tsx",
+      "heading-size-xl.tsx",
+      "heading-size-2xl.tsx",
+      "heading-size-3xl.tsx",
+      "heading-size-4xl.tsx",
+      "heading-size-5xl.tsx",
+      "heading-size-6xl.tsx",
+      "heading-foreground.tsx",
+      "heading-primary.tsx",
+      "heading-brand.tsx",
+      "heading-muted.tsx",
+      "heading-destructive.tsx",
+      "heading-inherit.tsx",
+      "heading-font-default.tsx",
+      "heading-font-normal.tsx",
+      "heading-semi-bold.tsx",
+      "heading-left.tsx",
+      "heading-center.tsx",
+      "heading-right.tsx",
+      "heading-uppercase.tsx"
+    ]
   },
   "input": {
     "title": "Input",
-    "rsc": "client",
     "demos": [
-      "input-basic.tsx",
-      "input-sizes.tsx",
-      "input-types.tsx",
-      "input-states.tsx",
-      "input-in-field.tsx",
+      "input-demo.tsx",
+      "input-small.tsx",
+      "input-disabled.tsx",
+      "input-read-only.tsx",
+      "input-invalid.tsx",
+      "input-file.tsx",
       "input-numeric.tsx"
     ]
   },
   "input-group": {
     "title": "Input Group",
-    "rsc": "client",
     "demos": [
-      "input-group-icons.tsx",
-      "input-group-sizes.tsx",
-      "input-group-buttons.tsx",
-      "input-group-block.tsx",
+      "input-group-demo.tsx",
+      "input-group-small.tsx",
+      "input-group-inline-end.tsx",
+      "input-group-block-start.tsx",
+      "input-group-block-end.tsx",
+      "input-group-button.tsx",
+      "input-group-button-small.tsx",
+      "input-group-icon-button.tsx",
+      "input-group-icon-button-small.tsx",
+      "input-group-kbd.tsx",
       "input-group-textarea.tsx",
       "input-group-invalid.tsx",
-      "input-group-kbd.tsx",
-      "input-group-field.tsx",
+      "input-group-disabled.tsx",
+      "input-group-read-only.tsx",
       "input-group-numeric.tsx"
     ]
   },
   "item": {
     "title": "Item",
-    "rsc": "client",
     "demos": [
-      "item-basic.tsx",
-      "item-as-link.tsx",
-      "item-as-button.tsx",
-      "item-group.tsx",
-      "item-link-group.tsx",
-      "item-compact-group.tsx",
-      "item-media-variants.tsx",
+      "item-demo.tsx",
+      "item-muted.tsx",
+      "item-outline.tsx",
+      "item-small.tsx",
+      "item-extra-small.tsx",
+      "item-icon-media.tsx",
+      "item-image-media.tsx",
+      "item-default-media.tsx",
+      "item-header.tsx",
+      "item-footer.tsx",
       "item-footer-reveal.tsx",
-      "item-sizes.tsx"
+      "item-group.tsx",
+      "item-separator.tsx",
+      "item-compact-group.tsx",
+      "item-as-link.tsx",
+      "item-unavailable-link.tsx",
+      "item-as-button.tsx"
     ]
   },
   "kbd": {
     "title": "Kbd",
-    "rsc": "server",
-    "demos": ["kbd-keys.tsx", "kbd-combination.tsx", "kbd-input-group.tsx"]
+    "demos": [
+      "kbd-demo.tsx",
+      "kbd-in-a-sentence.tsx",
+      "kbd-combination.tsx",
+      "kbd-glyph.tsx",
+      "kbd-icon.tsx",
+      "kbd-shortcut-hint.tsx"
+    ]
   },
   "line-chart": {
     "title": "Line Chart",
-    "rsc": "client",
     "demos": [
-      "line-chart-basic.tsx",
-      "line-chart-curves.tsx",
-      "line-chart-date-pill.tsx",
-      "line-chart-glow.tsx",
-      "line-chart-large.tsx",
-      "line-chart-markers.tsx",
+      "line-chart-demo.tsx",
+      "line-chart-point-scale.tsx",
+      "line-chart-no-zero-baseline.tsx",
+      "line-chart-curve-linear.tsx",
+      "line-chart-curve-monotone-y.tsx",
+      "line-chart-curve-natural.tsx",
+      "line-chart-curve-step.tsx",
+      "line-chart-curve-step-before.tsx",
+      "line-chart-curve-step-after.tsx",
+      "line-chart-curve-bump.tsx",
+      "line-chart-curve-basis.tsx",
+      "line-chart-dashed.tsx",
+      "line-chart-flowing.tsx",
+      "line-chart-quiet.tsx",
+      "line-chart-missing.tsx",
+      "line-chart-connected-gap.tsx",
       "line-chart-quality.tsx",
+      "line-chart-projection.tsx",
       "line-chart-reveal.tsx",
-      "line-chart-spot-price.tsx",
       "line-chart-update.tsx",
-      "line-chart-variants.tsx"
+      "line-chart-large.tsx"
     ]
   },
   "link": {
     "title": "Link",
-    "rsc": "client",
     "demos": [
-      "link-basic.tsx",
-      "link-running-text.tsx",
-      "link-underline.tsx",
-      "link-colors.tsx",
+      "link-demo.tsx",
+      "link-foreground.tsx",
+      "link-primary.tsx",
+      "link-brand.tsx",
+      "link-muted.tsx",
+      "link-error.tsx",
+      "link-underline-hover.tsx",
+      "link-no-underline.tsx",
+      "link-normal-weight.tsx",
+      "link-bold.tsx",
+      "link-truncate.tsx",
       "link-external.tsx",
-      "link-next.tsx",
-      "link-truncate.tsx"
+      "link-router.tsx"
     ]
   },
   "list-detail": {
     "title": "List Detail",
-    "rsc": "client",
-    "demos": ["list-detail-basic.tsx", "list-detail-never.tsx"]
+    "demos": [
+      "list-detail-demo.tsx",
+      "list-detail-split-4xl.tsx",
+      "list-detail-split-5xl.tsx",
+      "list-detail-never.tsx"
+    ]
   },
   "live-line-chart": {
     "title": "Live Line Chart",
-    "rsc": "client",
-    "demos": ["live-line-chart-basic.tsx", "live-line-chart-polish.tsx"]
+    "demos": [
+      "live-line-chart-demo.tsx",
+      "live-line-chart-paused.tsx",
+      "live-line-chart-dashed-grid.tsx",
+      "live-line-chart-axis-end.tsx",
+      "live-line-chart-area.tsx",
+      "live-line-chart-solid-area.tsx",
+      "live-line-chart-curve-linear.tsx",
+      "live-line-chart-curve-step.tsx",
+      "live-line-chart-curve-step-before.tsx",
+      "live-line-chart-curve-step-after.tsx",
+      "live-line-chart-curve-bump.tsx",
+      "live-line-chart-curve-basis.tsx",
+      "live-line-chart-dot.tsx",
+      "live-line-chart-badge.tsx",
+      "live-line-chart-frosted-tooltip.tsx"
+    ]
   },
   "loader": {
     "title": "Loader",
-    "rsc": "server",
-    "demos": ["loader-sizes.tsx", "loader-inline.tsx"]
+    "demos": [
+      "loader-demo.tsx",
+      "loader-small.tsx",
+      "loader-medium.tsx",
+      "loader-large.tsx",
+      "loader-extra-large.tsx",
+      "loader-label.tsx"
+    ]
   },
   "meter": {
     "title": "Meter",
-    "rsc": "client",
     "demos": [
-      "meter-basic.tsx",
-      "meter-modes.tsx",
+      "meter-demo.tsx",
+      "meter-high.tsx",
+      "meter-full.tsx",
+      "meter-exceeded.tsx",
+      "meter-inverted.tsx",
+      "meter-success-only-when-full.tsx",
+      "meter-neutral.tsx",
       "meter-value-label.tsx",
-      "meter-range.tsx",
-      "meter-neutral.tsx"
+      "meter-range.tsx"
     ]
   },
   "navigation-menu": {
     "title": "Navigation Menu",
-    "rsc": "client",
     "demos": [
-      "navigation-menu-basic.tsx",
+      "navigation-menu-demo.tsx",
+      "navigation-menu-top.tsx",
+      "navigation-menu-left.tsx",
+      "navigation-menu-right.tsx",
+      "navigation-menu-inline-start.tsx",
+      "navigation-menu-inline-end.tsx",
+      "navigation-menu-align-center.tsx",
+      "navigation-menu-align-end.tsx",
+      "navigation-menu-vertical.tsx",
+      "navigation-menu-indicator.tsx",
       "navigation-menu-links.tsx",
-      "navigation-menu-link-cards.tsx",
+      "navigation-menu-link-descriptions.tsx",
       "navigation-menu-nested.tsx",
       "navigation-menu-nested-inline.tsx",
       "navigation-menu-router-link.tsx"
@@ -631,389 +1111,650 @@
   },
   "number-field": {
     "title": "Number Field",
-    "rsc": "client",
     "demos": [
-      "number-field-basic.tsx",
-      "number-field-sizes.tsx",
+      "number-field-demo.tsx",
+      "number-field-small.tsx",
       "number-field-denomination.tsx",
-      "number-field-format.tsx",
+      "number-field-currency.tsx",
+      "number-field-percent.tsx",
       "number-field-error.tsx",
-      "number-field-states.tsx",
-      "number-field-uncontrolled.tsx",
+      "number-field-disabled.tsx",
+      "number-field-read-only.tsx",
+      "number-field-pending.tsx",
+      "number-field-success.tsx",
       "number-field-commit.tsx"
     ]
   },
   "pagination": {
     "title": "Pagination",
-    "rsc": "client",
-    "demos": ["pagination-basic.tsx", "pagination-ellipsis.tsx", "pagination-controlled.tsx"]
+    "demos": [
+      "pagination-demo.tsx",
+      "pagination-ellipsis.tsx",
+      "pagination-narrow.tsx",
+      "pagination-custom-text.tsx",
+      "pagination-controlled.tsx"
+    ]
   },
   "phone-number-field": {
     "title": "Phone Number Field",
-    "rsc": "client",
     "demos": [
-      "phone-number-field-basic.tsx",
-      "phone-number-field-sizes.tsx",
+      "phone-number-field-demo.tsx",
+      "phone-number-field-small.tsx",
       "phone-number-field-international.tsx",
-      "phone-number-field-detect.tsx",
+      "phone-number-field-format-on-type.tsx",
+      "phone-number-field-without-detection.tsx",
       "phone-number-field-countries.tsx",
+      "phone-number-field-single-country.tsx",
       "phone-number-field-controlled-country.tsx",
       "phone-number-field-form.tsx",
-      "phone-number-field-i18n.tsx",
-      "phone-number-field-states.tsx"
+      "phone-number-field-locale.tsx",
+      "phone-number-field-custom-labels.tsx",
+      "phone-number-field-error.tsx",
+      "phone-number-field-disabled.tsx",
+      "phone-number-field-read-only.tsx",
+      "phone-number-field-end-content.tsx"
     ]
   },
   "pie-chart": {
     "title": "Pie Chart",
-    "rsc": "client",
     "demos": [
-      "pie-chart-appliances.tsx",
-      "pie-chart-bill.tsx",
-      "pie-chart-capacity-step.tsx",
-      "pie-chart-empty.tsx",
-      "pie-chart-loading.tsx",
+      "pie-chart-demo.tsx",
+      "pie-chart-outside-labels.tsx",
+      "pie-chart-share-labels.tsx",
+      "pie-chart-donut.tsx",
+      "pie-chart-active-slice.tsx",
+      "pie-chart-centre-share.tsx",
+      "pie-chart-pad-angle.tsx",
+      "pie-chart-rounded.tsx",
       "pie-chart-semicircle.tsx",
-      "pie-chart-server.tsx"
+      "pie-chart-other-slice.tsx",
+      "pie-chart-gauge.tsx",
+      "pie-chart-over-max.tsx",
+      "pie-chart-estimated.tsx",
+      "pie-chart-glow.tsx",
+      "pie-chart-frosted-tooltip.tsx",
+      "pie-chart-tooltip-share.tsx",
+      "pie-chart-no-entrance.tsx",
+      "pie-chart-update.tsx",
+      "pie-chart-server.tsx",
+      "pie-chart-loading.tsx",
+      "pie-chart-empty.tsx"
     ]
   },
   "popover": {
     "title": "Popover",
-    "rsc": "client",
     "demos": [
-      "popover-basic.tsx",
+      "popover-demo.tsx",
+      "popover-top.tsx",
+      "popover-left.tsx",
+      "popover-right.tsx",
+      "popover-inline-start.tsx",
+      "popover-inline-end.tsx",
+      "popover-align-start.tsx",
+      "popover-align-end.tsx",
+      "popover-offset.tsx",
       "popover-arrow.tsx",
-      "popover-placement.tsx",
       "popover-controlled.tsx",
       "popover-anchor.tsx"
     ]
   },
   "popover-info-button": {
     "title": "Popover Info Button",
-    "rsc": "client",
     "demos": [
-      "popover-info-button-basic.tsx",
-      "popover-info-button-sizes.tsx",
+      "popover-info-button-demo.tsx",
+      "popover-info-button-variant-default.tsx",
+      "popover-info-button-variant-secondary.tsx",
+      "popover-info-button-variant-outline.tsx",
+      "popover-info-button-variant-destructive.tsx",
+      "popover-info-button-variant-success.tsx",
+      "popover-info-button-variant-link.tsx",
+      "popover-info-button-content-size-sm.tsx",
+      "popover-info-button-content-size-lg.tsx",
+      "popover-info-button-content-size-xl.tsx",
+      "popover-info-button-content-size-2xl.tsx",
+      "popover-info-button-content-size-3xl.tsx",
+      "popover-info-button-content-size-4xl.tsx",
+      "popover-info-button-content-size-5xl.tsx",
+      "popover-info-button-content-size-6xl.tsx",
+      "popover-info-button-content-size-7xl.tsx",
+      "popover-info-button-icon-xs.tsx",
+      "popover-info-button-icon-sm.tsx",
+      "popover-info-button-icon.tsx",
+      "popover-info-button-icon-lg.tsx",
+      "popover-info-button-label.tsx",
       "popover-info-button-rich-text.tsx",
-      "popover-info-button-i18n.tsx"
+      "popover-info-button-paragraphs.tsx",
+      "popover-info-button-title.tsx"
     ]
   },
   "radar-chart": {
     "title": "Radar Chart",
-    "rsc": "client",
     "demos": [
+      "radar-chart-demo.tsx",
+      "radar-chart-circle-grid.tsx",
+      "radar-chart-outline.tsx",
+      "radar-chart-dashed-line.tsx",
+      "radar-chart-quiet-line.tsx",
+      "radar-chart-dots.tsx",
+      "radar-chart-ring-dots.tsx",
+      "radar-chart-active-dot.tsx",
+      "radar-chart-glow.tsx",
+      "radar-chart-frosted-tooltip.tsx",
+      "radar-chart-missing.tsx",
       "radar-chart-areas.tsx",
       "radar-chart-deviation.tsx",
-      "radar-chart-empty.tsx",
-      "radar-chart-hours.tsx",
+      "radar-chart-no-entrance.tsx",
       "radar-chart-loading.tsx",
-      "radar-chart-weekdays.tsx"
+      "radar-chart-empty.tsx"
     ]
   },
   "radial-chart": {
     "title": "Radial Chart",
-    "rsc": "client",
     "demos": [
-      "radial-chart-budgets.tsx",
+      "radial-chart-demo.tsx",
       "radial-chart-dotted.tsx",
-      "radial-chart-empty.tsx",
-      "radial-chart-gauge.tsx",
-      "radial-chart-loading.tsx",
+      "radial-chart-budgets.tsx",
+      "radial-chart-active-ring.tsx",
       "radial-chart-month-to-date.tsx",
-      "radial-chart-over-budget.tsx"
+      "radial-chart-one-max.tsx",
+      "radial-chart-no-max.tsx",
+      "radial-chart-over-budget.tsx",
+      "radial-chart-gauge.tsx",
+      "radial-chart-estimated.tsx",
+      "radial-chart-glow.tsx",
+      "radial-chart-frosted-tooltip.tsx",
+      "radial-chart-no-entrance.tsx",
+      "radial-chart-loading.tsx",
+      "radial-chart-empty.tsx"
     ]
   },
   "radio-group": {
     "title": "Radio Group",
-    "rsc": "client",
     "demos": [
-      "radio-group-basic.tsx",
+      "radio-group-demo.tsx",
+      "radio-group-horizontal.tsx",
+      "radio-group-description.tsx",
+      "radio-group-error.tsx",
+      "radio-group-disabled.tsx",
+      "radio-group-disabled-option.tsx",
+      "radio-group-read-only.tsx",
       "radio-group-pending.tsx",
-      "radio-group-label-hidden.tsx",
+      "radio-group-hidden-label.tsx",
+      "radio-group-cleared.tsx",
       "radio-item-group.tsx",
+      "radio-item-group-horizontal.tsx",
+      "radio-item-control-end.tsx",
+      "radio-item-actions.tsx",
+      "radio-item-sub-section.tsx",
+      "radio-item-disabled.tsx",
       "radio-icon-button.tsx",
-      "radio-controlled-null.tsx"
+      "radio-icon-button-extra-extra-small.tsx",
+      "radio-icon-button-extra-small.tsx",
+      "radio-icon-button-small.tsx",
+      "radio-icon-button-large.tsx"
     ]
   },
   "range-calendar": {
     "title": "Range Calendar",
-    "rsc": "client",
     "demos": [
-      "range-calendar-basic.tsx",
-      "range-calendar-months.tsx",
-      "range-calendar-unavailable.tsx",
-      "range-calendar-controlled.tsx"
+      "range-calendar-demo.tsx",
+      "range-calendar-several-months.tsx",
+      "range-calendar-page-by-one-month.tsx",
+      "range-calendar-week-starts-monday.tsx",
+      "range-calendar-reset-on-leave.tsx",
+      "range-calendar-bounds.tsx",
+      "range-calendar-unavailable-dates.tsx",
+      "range-calendar-disabled.tsx",
+      "range-calendar-read-only.tsx",
+      "range-calendar-canceled-change.tsx"
     ]
   },
   "scatter-chart": {
     "title": "Scatter Chart",
-    "rsc": "client",
     "demos": [
+      "scatter-chart-demo.tsx",
+      "scatter-chart-small-points.tsx",
+      "scatter-chart-large-points.tsx",
+      "scatter-chart-quiet-points.tsx",
+      "scatter-chart-no-entrance.tsx",
+      "scatter-chart-line.tsx",
+      "scatter-chart-curve-basis.tsx",
+      "scatter-chart-curve-bump.tsx",
+      "scatter-chart-curve-monotone.tsx",
+      "scatter-chart-curve-natural.tsx",
+      "scatter-chart-curve-step.tsx",
+      "scatter-chart-curve-step-after.tsx",
+      "scatter-chart-curve-step-before.tsx",
+      "scatter-chart-line-dashed.tsx",
+      "scatter-chart-line-flowing.tsx",
+      "scatter-chart-line-quiet.tsx",
       "scatter-chart-signature.tsx",
-      "scatter-chart-basic.tsx",
-      "scatter-chart-sizes.tsx",
-      "scatter-chart-reference-lines.tsx",
-      "scatter-chart-curves.tsx",
+      "scatter-chart-reference-x.tsx",
+      "scatter-chart-reference-y.tsx",
+      "scatter-chart-reference-segment.tsx",
+      "scatter-chart-grid-dashed.tsx",
+      "scatter-chart-grid-horizontal.tsx",
+      "scatter-chart-grid-vertical.tsx",
+      "scatter-chart-tick-dot.tsx",
+      "scatter-chart-y-axis-end.tsx",
+      "scatter-chart-active-dot-dot.tsx",
+      "scatter-chart-tooltip-frosted.tsx",
+      "scatter-chart-tooltip-parts.tsx",
+      "scatter-chart-legend-top.tsx",
+      "scatter-chart-legend-start.tsx",
+      "scatter-chart-legend-end.tsx",
       "scatter-chart-large.tsx",
       "scatter-chart-live.tsx"
     ]
   },
   "scroll-area": {
     "title": "Scroll Area",
-    "rsc": "client",
     "demos": [
-      "scroll-area-vertical.tsx",
+      "scroll-area-demo.tsx",
       "scroll-area-horizontal.tsx",
       "scroll-area-always.tsx",
+      "scroll-area-auto.tsx",
       "scroll-area-max-height.tsx",
       "scroll-area-composed.tsx"
     ]
   },
   "search-field": {
     "title": "Search Field",
-    "rsc": "client",
-    "demos": ["search-field-basic.tsx", "search-field-sizes.tsx", "search-field-validation.tsx"]
+    "demos": [
+      "search-field-demo.tsx",
+      "search-field-small.tsx",
+      "search-field-with-text.tsx",
+      "search-field-submit.tsx",
+      "search-field-error.tsx",
+      "search-field-disabled.tsx",
+      "search-field-read-only.tsx"
+    ]
   },
   "select": {
     "title": "Select",
-    "rsc": "client",
     "demos": [
-      "select-basic.tsx",
+      "select-demo.tsx",
+      "select-small.tsx",
+      "select-beside-trigger.tsx",
+      "select-top.tsx",
+      "select-left.tsx",
+      "select-right.tsx",
+      "select-inline-start.tsx",
+      "select-inline-end.tsx",
+      "select-align-start.tsx",
+      "select-align-end.tsx",
+      "select-offset.tsx",
       "select-groups.tsx",
-      "select-sizes.tsx",
       "select-scrolling.tsx",
-      "select-invalid.tsx"
+      "select-multiple.tsx",
+      "select-disabled-item.tsx",
+      "select-invalid.tsx",
+      "select-disabled.tsx",
+      "select-read-only.tsx"
     ]
   },
   "select-field": {
     "title": "Select Field",
-    "rsc": "server",
     "demos": [
-      "select-field-basic.tsx",
-      "select-field-sizes.tsx",
-      "select-field-states.tsx",
-      "select-field-form.tsx"
+      "select-field-demo.tsx",
+      "select-field-small.tsx",
+      "select-field-error.tsx",
+      "select-field-disabled.tsx",
+      "select-field-read-only.tsx",
+      "select-field-form-error.tsx"
     ]
   },
   "selection-item": {
     "title": "Selection Item",
-    "rsc": "client",
     "demos": [
-      "selection-item-basic.tsx",
-      "selection-item-subsection.tsx",
-      "selection-item-selectable-subsection.tsx",
-      "selection-item-server.tsx",
+      "selection-item-demo.tsx",
+      "selection-item-checked.tsx",
       "selection-item-control-end.tsx",
-      "selection-item-stacked.tsx",
-      "selection-item-disabled.tsx",
+      "selection-item-actions.tsx",
+      "selection-item-sub-section.tsx",
+      "selection-item-revealed-sub-section.tsx",
+      "selection-item-selectable-sub-section.tsx",
       "selection-item-icon.tsx",
-      "selection-item-radio-stack.tsx",
-      "selection-item-checkbox-adjacent.tsx",
+      "selection-item-disabled.tsx",
+      "selection-item-disabled-checked.tsx",
+      "selection-item-stacked.tsx",
       "selection-item-horizontal.tsx",
-      "selection-item-disabled-rows.tsx",
-      "selection-item-disabled-group.tsx"
+      "selection-item-server-shell.tsx",
+      "selection-item-server-checkbox-rows.tsx",
+      "selection-item-server-radio-rows.tsx"
     ]
   },
   "separator": {
     "title": "Separator",
-    "rsc": "client",
-    "demos": ["separator-horizontal.tsx", "separator-vertical.tsx", "separator-header.tsx"]
+    "demos": ["separator-demo.tsx", "separator-vertical.tsx", "separator-short-vertical.tsx"]
   },
   "sheet": {
     "title": "Sheet",
-    "rsc": "client",
     "demos": [
-      "sheet-basic.tsx",
-      "sheet-sides.tsx",
-      "sheet-sizes.tsx",
+      "sheet-demo.tsx",
+      "sheet-left.tsx",
+      "sheet-top.tsx",
+      "sheet-bottom.tsx",
+      "sheet-size-sm.tsx",
+      "sheet-size-lg.tsx",
+      "sheet-size-xl.tsx",
+      "sheet-size-2xl.tsx",
+      "sheet-size-3xl.tsx",
+      "sheet-size-4xl.tsx",
+      "sheet-size-5xl.tsx",
+      "sheet-size-6xl.tsx",
+      "sheet-size-7xl.tsx",
+      "sheet-size-8xl.tsx",
+      "sheet-size-9xl.tsx",
+      "sheet-size-10xl.tsx",
+      "sheet-no-close-button.tsx",
       "sheet-form.tsx",
       "sheet-scrolling.tsx"
     ]
   },
   "show": {
     "title": "Show",
-    "rsc": "server",
-    "demos": ["show-basic.tsx"]
+    "demos": ["show-demo.tsx", "show-hidden.tsx", "show-toggle.tsx"]
   },
   "sidebar": {
     "title": "Sidebar",
-    "rsc": "client",
     "demos": [
-      "sidebar-app-frame.tsx",
-      "sidebar-icon-collapse.tsx",
-      "sidebar-mobile-sheet.tsx",
+      "sidebar-demo.tsx",
+      "sidebar-floating.tsx",
       "sidebar-inset-variant.tsx",
-      "sidebar-menu-rich.tsx"
+      "sidebar-right.tsx",
+      "sidebar-icon-collapse.tsx",
+      "sidebar-not-collapsible.tsx",
+      "sidebar-outline-buttons.tsx",
+      "sidebar-small-buttons.tsx",
+      "sidebar-large-buttons.tsx",
+      "sidebar-links.tsx",
+      "sidebar-disabled-item.tsx",
+      "sidebar-two-groups.tsx",
+      "sidebar-group-action.tsx",
+      "sidebar-menu-action.tsx",
+      "sidebar-action-on-hover.tsx",
+      "sidebar-menu-badge.tsx",
+      "sidebar-submenu.tsx",
+      "sidebar-small-submenu.tsx",
+      "sidebar-loading.tsx",
+      "sidebar-mobile-sheet.tsx",
+      "sidebar-saved-state.tsx"
     ]
   },
   "skeleton": {
     "title": "Skeleton",
-    "rsc": "server",
     "demos": [
-      "skeleton-basic.tsx",
-      "skeleton-card.tsx",
+      "skeleton-demo.tsx",
+      "skeleton-circle.tsx",
       "skeleton-reveal-fit.tsx",
-      "skeleton-reveal-modes.tsx",
-      "skeleton-reveal-height.tsx"
+      "skeleton-reveal-together.tsx",
+      "skeleton-reveal-sequence.tsx",
+      "skeleton-reveal-height.tsx",
+      "skeleton-reveal-refetch.tsx",
+      "skeleton-reveal-plain-children.tsx",
+      "skeleton-reveal-markers.tsx"
     ]
   },
   "slider": {
     "title": "Slider",
-    "rsc": "client",
     "demos": [
-      "slider-basic.tsx",
+      "slider-demo.tsx",
+      "slider-show-value.tsx",
+      "slider-description.tsx",
       "slider-range.tsx",
+      "slider-thumb-labels.tsx",
+      "slider-steps.tsx",
       "slider-format.tsx",
       "slider-vertical.tsx",
       "slider-disabled.tsx",
       "slider-invalid.tsx",
-      "slider-label-less.tsx",
+      "slider-aria-label.tsx",
       "slider-commit.tsx"
     ]
   },
   "span": {
     "title": "Span",
-    "rsc": "client",
-    "demos": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"]
+    "demos": [
+      "span-demo.tsx",
+      "span-foreground.tsx",
+      "span-primary.tsx",
+      "span-brand.tsx",
+      "span-muted.tsx",
+      "span-success.tsx",
+      "span-destructive.tsx",
+      "span-inherit.tsx",
+      "span-size-xs.tsx",
+      "span-size-sm.tsx",
+      "span-size-lg.tsx",
+      "span-size-xl.tsx",
+      "span-size-2xl.tsx",
+      "span-leading-none.tsx",
+      "span-leading-tight.tsx",
+      "span-leading-relaxed.tsx",
+      "span-leading-loose.tsx",
+      "span-medium.tsx",
+      "span-bold.tsx",
+      "span-left.tsx",
+      "span-center.tsx",
+      "span-right.tsx",
+      "span-justify.tsx",
+      "span-truncate.tsx"
+    ]
   },
   "sparkline": {
     "title": "Sparkline",
-    "rsc": "server",
     "demos": [
-      "sparkline-hourly-price.tsx",
-      "sparkline-variants.tsx",
+      "sparkline-demo.tsx",
+      "sparkline-area.tsx",
+      "sparkline-bar.tsx",
+      "sparkline-curve-linear.tsx",
+      "sparkline-curve-monotone-y.tsx",
+      "sparkline-curve-natural.tsx",
+      "sparkline-curve-step.tsx",
+      "sparkline-curve-step-before.tsx",
+      "sparkline-curve-step-after.tsx",
+      "sparkline-curve-bump.tsx",
+      "sparkline-curve-basis.tsx",
+      "sparkline-emphasis.tsx",
+      "sparkline-reference.tsx",
+      "sparkline-gap.tsx",
+      "sparkline-negative-bars.tsx",
+      "sparkline-negative-area.tsx",
+      "sparkline-no-hover.tsx",
+      "sparkline-no-entrance.tsx",
       "sparkline-glide.tsx",
-      "sparkline-negative.tsx",
-      "sparkline-table.tsx"
+      "sparkline-server.tsx"
     ]
   },
   "switch": {
     "title": "Switch",
-    "rsc": "client",
     "demos": [
-      "switch-basic.tsx",
-      "switch-sizes.tsx",
-      "switch-states.tsx",
-      "switch-in-field.tsx",
+      "switch-demo.tsx",
+      "switch-small.tsx",
+      "switch-checked.tsx",
+      "switch-disabled.tsx",
+      "switch-disabled-checked.tsx",
+      "switch-read-only.tsx",
+      "switch-invalid.tsx",
       "switch-form.tsx"
     ]
   },
   "table": {
     "title": "Table",
-    "rsc": "server",
     "demos": [
-      "table-basic.tsx",
+      "table-demo.tsx",
+      "table-selected-row.tsx",
+      "table-footer.tsx",
       "table-in-frame.tsx",
-      "vertical-table-data.tsx",
-      "vertical-table-compact.tsx"
+      "vertical-table-demo.tsx",
+      "vertical-table-compact.tsx",
+      "vertical-table-bold-row.tsx",
+      "vertical-table-wrapping-text.tsx",
+      "vertical-table-wrapping-key.tsx",
+      "vertical-table-loading.tsx",
+      "vertical-table-rows-as-children.tsx"
     ]
   },
   "tabs": {
     "title": "Tabs",
-    "rsc": "client",
-    "demos": [
-      "tabs-basic.tsx",
-      "tabs-line.tsx",
-      "tabs-vertical.tsx",
-      "tabs-with-icons.tsx",
-      "tabs-disabled.tsx"
-    ]
+    "demos": ["tabs-demo.tsx", "tabs-line.tsx", "tabs-vertical.tsx", "tabs-icons.tsx", "tabs-disabled.tsx"]
   },
   "text": {
     "title": "Text",
-    "rsc": "client",
     "demos": [
-      "text-basic.tsx",
-      "text-sizes.tsx",
-      "text-variants.tsx",
-      "text-leading-weight.tsx",
+      "text-demo.tsx",
+      "text-foreground.tsx",
+      "text-primary.tsx",
+      "text-brand.tsx",
+      "text-muted.tsx",
+      "text-success.tsx",
+      "text-destructive.tsx",
+      "text-inherit.tsx",
+      "text-size-xs.tsx",
+      "text-size-sm.tsx",
+      "text-size-lg.tsx",
+      "text-size-xl.tsx",
+      "text-size-2xl.tsx",
+      "text-leading-none.tsx",
+      "text-leading-tight.tsx",
+      "text-leading-snug.tsx",
+      "text-leading-relaxed.tsx",
+      "text-leading-loose.tsx",
+      "text-medium.tsx",
+      "text-bold.tsx",
+      "text-left.tsx",
+      "text-center.tsx",
+      "text-right.tsx",
+      "text-justify.tsx",
       "text-truncate.tsx"
     ]
   },
   "text-field": {
     "title": "Text Field",
-    "rsc": "client",
     "demos": [
-      "text-field-basic.tsx",
-      "text-field-sizes.tsx",
-      "text-field-error.tsx",
-      "text-field-states.tsx",
-      "text-field-pending-success.tsx",
-      "text-field-icon.tsx",
-      "text-field-numeric.tsx",
+      "text-field-demo.tsx",
+      "text-field-small.tsx",
       "text-field-card.tsx",
-      "text-field-inline.tsx"
+      "text-field-inline.tsx",
+      "text-field-error.tsx",
+      "text-field-disabled.tsx",
+      "text-field-read-only.tsx",
+      "text-field-pending.tsx",
+      "text-field-success.tsx",
+      "text-field-icon.tsx",
+      "text-field-numeric.tsx"
     ]
   },
   "textarea": {
     "title": "Textarea",
-    "rsc": "server",
-    "demos": ["textarea-basic.tsx", "textarea-sizes.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]
+    "demos": [
+      "textarea-demo.tsx",
+      "textarea-small.tsx",
+      "textarea-disabled.tsx",
+      "textarea-read-only.tsx",
+      "textarea-invalid.tsx"
+    ]
   },
   "textarea-field": {
     "title": "Textarea Field",
-    "rsc": "client",
     "demos": [
-      "textarea-field-basic.tsx",
-      "textarea-field-sizes.tsx",
+      "textarea-field-demo.tsx",
+      "textarea-field-small.tsx",
       "textarea-field-counter.tsx",
-      "textarea-field-uncontrolled.tsx",
       "textarea-field-error.tsx",
-      "textarea-field-disabled.tsx"
+      "textarea-field-disabled.tsx",
+      "textarea-field-read-only.tsx"
     ]
   },
   "timeline-list": {
     "title": "Timeline List",
-    "rsc": "server",
-    "demos": ["timeline-list-basic.tsx", "timeline-list-rich.tsx"]
+    "demos": ["timeline-list-demo.tsx", "timeline-list-date-time.tsx", "timeline-list-links.tsx"]
   },
   "toast": {
     "title": "Toast",
-    "rsc": "client",
     "demos": [
-      "toast-statuses.tsx",
+      "toast-demo.tsx",
+      "toast-info.tsx",
+      "toast-success.tsx",
+      "toast-warning.tsx",
+      "toast-error.tsx",
+      "toast-loading.tsx",
       "toast-action.tsx",
       "toast-promise.tsx",
-      "toast-stacking.tsx",
-      "toast-placement.tsx",
+      "toast-promise-error.tsx",
+      "toast-limit.tsx",
+      "toast-top-left.tsx",
+      "toast-top-center.tsx",
+      "toast-top-right.tsx",
+      "toast-bottom-left.tsx",
+      "toast-bottom-center.tsx",
       "toast-module-manager.tsx"
     ]
   },
   "toggle": {
     "title": "Toggle",
-    "rsc": "client",
     "demos": [
-      "toggle-basic.tsx",
-      "toggle-variants.tsx",
-      "toggle-sizes.tsx",
+      "toggle-demo.tsx",
+      "toggle-outline.tsx",
+      "toggle-extra-small.tsx",
+      "toggle-small.tsx",
+      "toggle-large.tsx",
       "toggle-icon-only.tsx",
-      "toggle-controlled.tsx"
+      "toggle-pressed.tsx",
+      "toggle-disabled.tsx"
     ]
   },
   "toggle-group": {
     "title": "Toggle Group",
-    "rsc": "client",
     "demos": [
-      "toggle-group-single.tsx",
-      "toggle-group-multiple.tsx",
-      "toggle-group-outline-segmented.tsx",
+      "toggle-group-demo.tsx",
+      "toggle-group-outline.tsx",
+      "toggle-group-extra-small.tsx",
+      "toggle-group-small.tsx",
+      "toggle-group-large.tsx",
       "toggle-group-vertical.tsx",
-      "toggle-group-sizes.tsx"
+      "toggle-group-segmented.tsx",
+      "toggle-group-segmented-outline.tsx",
+      "toggle-group-multiple.tsx",
+      "toggle-group-icons.tsx",
+      "toggle-group-disabled.tsx",
+      "toggle-group-disabled-item.tsx"
     ]
   },
   "toolbar": {
     "title": "Toolbar",
-    "rsc": "client",
     "demos": [
-      "toolbar-basic.tsx",
-      "toolbar-toggle-group.tsx",
-      "toolbar-popups.tsx",
+      "toolbar-demo.tsx",
+      "toolbar-vertical.tsx",
+      "toolbar-disabled-button.tsx",
+      "toolbar-disabled-group.tsx",
+      "toolbar-disabled.tsx",
+      "toolbar-link.tsx",
       "toolbar-input.tsx",
-      "toolbar-vertical.tsx"
+      "toolbar-toggle-group.tsx",
+      "toolbar-menu.tsx",
+      "toolbar-tooltip.tsx"
     ]
   },
   "tooltip": {
     "title": "Tooltip",
-    "rsc": "client",
-    "demos": ["tooltip-basic.tsx", "tooltip-sides.tsx", "tooltip-delay.tsx", "tooltip-controlled.tsx"]
+    "demos": [
+      "tooltip-demo.tsx",
+      "tooltip-bottom.tsx",
+      "tooltip-left.tsx",
+      "tooltip-right.tsx",
+      "tooltip-inline-start.tsx",
+      "tooltip-inline-end.tsx",
+      "tooltip-align-start.tsx",
+      "tooltip-align-end.tsx",
+      "tooltip-offset.tsx",
+      "tooltip-track-cursor-x.tsx",
+      "tooltip-track-cursor-y.tsx",
+      "tooltip-track-cursor-both.tsx",
+      "tooltip-delay.tsx",
+      "tooltip-root-delay.tsx",
+      "tooltip-controlled.tsx"
+    ]
   }
 }

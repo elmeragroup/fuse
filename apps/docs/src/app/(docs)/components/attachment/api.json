@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The parts of one file: `Attachment.Media` with an icon or a picture, `Attachment.Content` with the `Attachment.Title` and `Attachment.Description`, and `Attachment.Actions` with one `Attachment.Action` per action. An `Attachment.Trigger` goes before `Attachment.Actions`.",
+          "required": false
+        },
+        {
           "name": "orientation",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
-          "description": "",
+          "description": "The layout, written to `data-orientation`. `horizontal` lays the media beside the content. `vertical` stacks a tile with the media on top, and its actions float in the media's top end corner on a `secondary` fill, so they stay visible on any photo.",
           "required": false,
           "values": [
             "horizontal",
@@ -26,11 +35,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"sm\" | \"xs\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The padding, the media and the text size.",
           "required": false,
           "values": [
             "default",
@@ -44,7 +53,7 @@
           "type": "AttachmentState | undefined",
           "shortType": null,
           "defaultValue": "\"done\"",
-          "description": "The upload lifecycle, written to `data-state`. It only styles: `idle` dashes the border, `uploading` and `processing` sweep the title and dim image media, and `error` tints the border, the media and the description. Say the state in words in `Attachment.Description`.",
+          "description": "The upload lifecycle, written to `data-state`. Your app picks and uploads the files, and sets `state` as the upload moves on. It only styles: `idle` dashes the border, `uploading` and `processing` sweep a highlight across the title and dim image media, and `error` tints the border, the media and the description with the error role. Under reduced motion, the title stays still. The error state is a colour, so say the state, and the reason an upload failed, in words in `Attachment.Description`.",
           "required": false,
           "values": [
             "done",
@@ -64,8 +73,35 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 272,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The list's name. Give the group an `aria-label` or an `aria-labelledby`.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The ids of the elements that name the list, in place of `aria-label`.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Attachment.Root`s, each one an item of the list. They sit in one row that scrolls sideways and snaps to each attachment, and an edge fades while more attachments lie past it, on the side right-to-left text starts from too. Base UI measures those edges from its `DirectionProvider`, so in a right-to-left app, wrap the app in one as well as setting `dir`.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -123,11 +159,11 @@
       "props": [
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"icon\" | \"image\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"icon\"",
-          "description": "",
+          "description": "What the square holds, written to `data-variant`. `icon` holds an icon or a status glyph, such as a Loader. `image` frames an `img` placed directly inside the media in the square, which the image fills and crops to. Image media stays at 60% opacity until the root's `state` is `idle` or `done`. For another shape, put an `Attachment.AspectRatio` inside the media with one of AspectRatio's ratios.",
           "required": false,
           "values": [
             "icon",
@@ -143,15 +179,33 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content, which fills the frame. Give an `img` or `video` `size-full object-cover`, so it crops to the frame instead of stretching. Round and fill the child, not the frame.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes. Give the frame a width, such as `w-full max-w-md`, and its height follows the ratio. An `aspect-*` class, such as `aspect-[7/5]`, replaces the ratio.",
+          "required": false
+        },
         {
           "name": "ratio",
           "origin": "declared",
           "type": "AspectRatioValue",
           "shortType": null,
           "defaultValue": null,
-          "description": "The frame's width to height, one of `\"1:1\"`, `\"4:3\"`, `\"3:4\"`, `\"3:2\"`, `\"2:3\"`, `\"16:9\"` and `\"9:16\"`. It has no default. A consumer `aspect-*` class, such as `aspect-[7/5]`, replaces it.",
+          "description": "The frame's width to height, written to `data-ratio`. It is required. For a ratio outside the set, pass an `aspect-*` class in `className`.",
           "required": true,
           "values": [
             "16:9",
@@ -192,8 +246,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The detail, such as the size, the progress or the reason an upload failed, such as \"Upload failed. The file is over 10 MB.\" The root's `state` only styles, so write the state here in words.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Attachment.Actions",
@@ -221,7 +285,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Defines a string value that labels the current element.",
+          "description": "The button's name, which says the action and the file, such as \"Remove floor-plan.pdf\". The type requires it, since the button holds only an icon.",
           "required": true
         },
         {
@@ -326,7 +390,7 @@
           "type": "IconButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"icon-xs\"",
-          "description": "One of Button's icon sizes. Defaults to `icon-xs`, a 24px target when dense.",
+          "description": "One of Button's icon sizes. `icon-xs` is a 24px target when dense.",
           "required": false,
           "values": [
             "icon",
@@ -372,20 +436,26 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/attachment/attachment-trigger.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 290,
+      "forwardedCount": 289,
       "props": [
         {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The trigger's name, which says what activating it does, such as \"Preview inspection-report.pdf\". Give it one, since it holds no text of its own.",
+          "required": false
+        },
+        {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The element to render, a `<button type=\"button\">` by default, so it never submits a form it sits in. `render={<a href=\"…\" />}` makes it a link. A link takes no `disabled`, so mark an unavailable one `aria-disabled=\"true\"`, and it cancels its own activation. A dialog's trigger composes it as it composes `Button`: `<Dialog.Trigger render={<Attachment.Trigger aria-label=\"Preview report.pdf\" />} />`.",
           "required": false
         }
       ]

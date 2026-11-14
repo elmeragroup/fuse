@@ -1,8 +1,8 @@
 import { toastShellClass } from "../../styles/inner-corner/toast";
 /**
- * Module-private slot recipe. Not exported from the public entry —
- * there is no proven recipe-borrowing use. `status` is derived from the toast's
- * `type`, not a consumer prop, and is not a control size.
+ * The module-private slot recipe. The public entry does not export it, because no consumer has
+ * needed to borrow it. Toast derives `status` from the toast's `type`. It is not a consumer prop
+ * and not a control size.
  */
 import { tv } from "../../styles/tv";
 import { overlayPopupFillClass } from "../overlay/overlay-classes";

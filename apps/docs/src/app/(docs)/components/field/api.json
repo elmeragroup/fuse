@@ -80,11 +80,11 @@
         },
         {
           "name": "orientation",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"responsive\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "",
+          "description": "How the parts sit, also written as `data-orientation`. `vertical` stacks the label, control, error and description 4px apart at both densities, as the labeled composites do, so a field built from parts lines up with a `TextField` beside it. It stretches each child to the field's width, except a `Checkbox` or `Switch`. `horizontal` sets the control beside its label, a gap apart that follows density. `responsive` is vertical until the nearest `Field.Group` is 28rem wide, then horizontal. Outside a `Field.Group` it stays vertical.",
           "required": false,
           "values": [
             "horizontal",
@@ -173,8 +173,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 277,
+      "forwardedCount": 276,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label text. With a `Checkbox` as a direct child, the label is a choice row with a pointer cursor. With a horizontal `Field.Root` as its child, holding the `Checkbox` and a `Field.Content`, the label is a bordered choice card. The checkbox then belongs to the inner root, so set `htmlFor` to the checkbox's `id`.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -229,8 +238,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The supporting text. Inside a `Field.Root` it describes the root's control. Inside a `Field.Set` and outside any root, it describes the set, so it can follow a `Field.Legend`. Elsewhere it is a plain paragraph.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -274,8 +292,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The message. Children always show, so render the part only while the field is in error, or pass `match` to show them for one validity state. Without children, the part shows the field's own message, and nothing while it has none: an error `Form` holds under the field's name, a `validate` result on `Field.Root`, or the browser's constraint message, which is in the browser's language. Several messages render as a list. To localize the message, pass children or a `validate` that returns your copy. Place the part directly after the control, ahead of any `Field.Description`, as the labeled composites do.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -462,8 +489,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 278,
+      "forwardedCount": 276,
       "props": [
+        {
+          "name": "aria-describedby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The ids of elements that describe the set. Outside a `Field.Root`, the set adds the ids of the `Field.Description` parts it holds after these. Inside a root, those descriptions describe the root's control instead.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -473,6 +509,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disables every field in the set. A set inside a disabled set is disabled too. It also disables the parts that are not a field themselves, such as a date picker's trigger and calendar.",
           "required": false
         },
         {
@@ -522,13 +567,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, FieldsetLegendState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Replaces the rendered element, a `div` by default. In a grid `Field.Set`, pass `render={<legend />}`: the browser keeps a fieldset's first `legend` out of the grid, so the first field takes the first cell, and the legend still names the set. A `div` legend takes the first cell itself.",
           "required": false
         },
         {
@@ -548,7 +591,7 @@
           "type": "\"label\" | \"legend\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"legend\"",
-          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset at a fixed 16/24px, `\"label\"` reads the label type pair to match a `Field.Label`.",
+          "description": "The text size, also written as `data-variant`. `legend` titles the set at a fixed 16px on a 24px line. `label` takes the label text size, to match a `Field.Label`.",
           "required": false,
           "values": [
             "label",
@@ -572,7 +615,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Optional inline content rendered over the rule — a label for the break between two groups of fields. Its presence is reflected as `data-content`.",
+          "description": "Text over the rule, such as a name for the fields after it. The separator writes `data-content=\"true\"` when it has children.",
           "required": false
         }
       ]

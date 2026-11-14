@@ -82,7 +82,6 @@ import {
   repoRelative,
   fuseSrc,
 } from "./lib/paths.ts";
-import { readRscStatus } from "./lib/rsc-status.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
@@ -153,17 +152,13 @@ function buildComponent(
     slug,
     title: paths.title,
     lede: page.lede,
-    intro: page.intro,
     apis: [toApiEntry(own), ...extras.map(toApiEntry)],
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
-    // The page's status is the implementation module's own directive,
-    // whether or not the artifact has a part declared there; the markdown endpoint
-    // publishes it.
-    rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     sections: page.sections,
     usage: page.usage,
+    composition: page.composition,
     demos,
     parts: apiParts.map((part) => {
       const reference = functions.get(part.name);
@@ -295,8 +290,8 @@ function linkSharedParts(component: DocsComponent, shared: SharedParts): DocsCom
 const CHART_ENTRY = "@elmeragroup/fuse/chart";
 
 /**
- * The TOC entries of a page's sections. Each depth-2 heading or demo is an entry, in page order,
- * and the depth-3 demos after a heading nest under it. Deeper headings stay out.
+ * The TOC entries of a page's sections. Each depth-2 heading is an entry, in page order, and the
+ * demos after a heading nest under it. Deeper headings stay out.
  */
 function tocSections(sections: readonly PageSection[]): readonly TocItem[] {
   const items: { entry: TocItem; children: TocItem[] }[] = [];
@@ -308,7 +303,7 @@ function tocSections(sections: readonly PageSection[]): readonly TocItem[] {
     if (section.depth === 2) {
       items.push({ entry, children: [] });
     } else if (section.kind === "demo") {
-      // The page reader rejects an example before the page's first depth-2 heading.
+      // The page reader puts every demo under `## Examples`.
       items.at(-1)?.children.push(entry);
     }
   }

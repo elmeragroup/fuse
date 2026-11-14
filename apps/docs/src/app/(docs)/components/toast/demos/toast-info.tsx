@@ -1,0 +1,41 @@
+"use client";
+
+import { useRef } from "react";
+
+import { Button } from "@elmeragroup/fuse/button";
+import { Toast } from "@elmeragroup/fuse/toast";
+
+function ShowButton() {
+  const toastManager = Toast.useToastManager();
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() =>
+        toastManager.add({
+          type: "info",
+          title: "Prices refreshing",
+          description: "Spot prices update every 15 minutes.",
+        })
+      }>
+      Refresh prices
+    </Button>
+  );
+}
+
+export function ToastInfo() {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  return (
+    // `container` and `absolute` keep the stack inside this preview. An app renders one
+    // viewport, fixed to the window.
+    <div ref={viewportRef} className="max-w-sm relative min-h-[28rem] w-full">
+      <Toast.Provider>
+        <ShowButton />
+        <Toast.Viewport
+          container={viewportRef}
+          className="sm:right-0 sm:bottom-0 sm:w-full absolute right-0 bottom-0 w-full"
+        />
+      </Toast.Provider>
+    </div>
+  );
+}

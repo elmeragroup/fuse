@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Landmark label. Defaults to the locale dictionary; an explicit `aria-label` wins over this prop.",
+          "description": "The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
           "required": false
         }
       ]
@@ -47,20 +47,17 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/breadcrumb/breadcrumb.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
       "forwardedCount": 288,
       "props": [
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Your router's link element, with its own destination prop, such as `<NextLink href=\"/\" />` or React Router's `<RouterLink to=\"/\" />`. The link merges its classes and props onto it, and the router handles the click.",
           "required": false
         }
       ]
@@ -82,8 +79,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 281,
-      "props": []
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The mark between two items. Unset, it is a caret. Pass an icon or a character such as `/`. An `<svg>` child draws at 14px. The separator is hidden from screen readers.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Breadcrumb.Ellipsis",
@@ -100,7 +107,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Screen-reader-only copy for omitted items. Defaults to the locale dictionary",
+          "description": "The screen reader text for the items the ellipsis stands for. Unset, it comes from the locale dictionary.",
           "required": false
         }
       ]

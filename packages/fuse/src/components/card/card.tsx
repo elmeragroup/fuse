@@ -13,18 +13,47 @@ import {
 
 // Every part takes `direction`; only the root takes the card's `size`, so the typography `size`
 // of `Card.Title` and `Card.Description` stays their own.
-type CardVariantProps = Pick<VariantProps<typeof cardVariants>, "direction">;
+type CardVariantProps = {
+  /**
+   * The card's layout. `horizontal` sets the header, content and footer side by side and wraps
+   * whole parts onto a new row as the container narrows, keeping a title with its description.
+   * Pass the same value to the root and to every part. Sections take no `direction`, so use them
+   * in a vertical card.
+   */
+  direction?: VariantProps<typeof cardVariants>["direction"];
+};
 
 type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
 
 type CardRootProps = CardDivProps & {
   /**
-   * The card's surface tier, which pads its sections, gaps them and sets their inner corner.
+   * The card's surface tier, which pads its parts, gaps them and sets their inner corner.
    * `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with
-   * too, so the card's text starts on their edge. `lg` takes the large
-   * tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.
+   * too, so the card's text starts on their edge. `lg` takes the large tier, `--surface-pad-lg`,
+   * for a card that holds long prose or is a page's main panel. A card nested in another takes
+   * its own `size`, not its parent's.
    */
   size?: keyof typeof cardVariants.variants.size;
+  /**
+   * The card's parts. Give it a `Card.Header` if it needs one, then a `Card.Content` and a
+   * `Card.Footer`, or a run of `Card.Section` and `Card.SectionButton` parts. In a vertical card,
+   * a content or footer that opens the card pads every side with the card's tier, and one below
+   * another part drops its top padding, so the tier is also the gap between them. A horizontal
+   * card pads itself and gaps its parts with the tier. Sections make up the whole body. A
+   * `Card.Content` or `Card.Footer` beside them gets no divider line, so put that content in a
+   * last section.
+   */
+  children?: HTMLAttributes<HTMLDivElement>["children"];
+  /**
+   * Extra classes, merged after the card's own. A border colour class replaces the card's edge
+   * colour, a shadow size class such as `shadow-md` replaces its shadow, and a shadow colour class
+   * tints the shadow. To recolour the edge or shadow of many cards, set `--card-border` or
+   * `--card-shadow` on the `ThemeScope` or another element around them. A `bg-*` class that
+   * changes the fill should set `--surface` and `--surface-muted-foreground` to match, as in
+   * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`,
+   * so a chart inside cuts its seams out of the new fill.
+   */
+  className?: HTMLAttributes<HTMLDivElement>["className"];
 };
 
 type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -32,48 +61,62 @@ type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
   CardVariantProps & {
     /**
-     * Heading element level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`, so
-     * a card titles itself without assuming its place in the document outline.
+     * The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. The default `3`
+     * suits a card in a page section. Set the level that fits the card's place in the outline.
      */
     level?: CardTitleLevel;
-    /** Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`. */
+    /** The title's type size. */
     size?: NonNullable<VariantProps<typeof cardTitleVariants>["size"]>;
     /**
-     * Rendered before `children` — the title becomes a flex row (`items-center gap-x-1.5`)
-     * and any `svg` is sized to `5`.
+     * An icon before the title text. The title becomes a flex row, and an `svg` is sized to
+     * `size-5`. Mark a decorative icon `aria-hidden`.
      */
     icon?: ReactNode;
   };
 
 type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
   CardVariantProps & {
-    /** Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`. */
+    /** The description's type size. */
     size?: NonNullable<VariantProps<typeof cardDescriptionVariants>["size"]>;
   };
 
+type CardSectionMediaProps = HTMLAttributes<HTMLSpanElement> & {
+  /**
+   * The section's icon, sized to `size-5`. Put the media first in a `Card.Section` or
+   * `Card.SectionButton`. The section becomes two columns, the icon centred on the section's
+   * height beside the content. In a `Card.Section`, put the content in a `Card.Content`. In a
+   * `Card.SectionButton`, put it in a plain `span`, because a button holds phrasing content only.
+   */
+  children?: ReactNode;
+};
+
 /**
  * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
- * content and footer publish it less their padding too. The root and its sections write their
- * `direction` as `data-direction`: a vertical card pads its sections, a horizontal one pads itself.
+ * content and footer publish it less their padding too. The root and its parts write their
+ * `direction` as `data-direction`: a vertical card pads its parts, a horizontal one pads itself.
  * The root writes its `size` as `data-size` and publishes its tier to the sections it holds.
- * Its 1px edge is the theme's `--card-border`: `--border` in neutral themes and a zero-alpha
- * colour in branded ones. A border colour class still wins. It casts Tailwind's `shadow-xs` in
- * the theme's `--card-shadow`: 5% black in neutral themes and zero alpha in branded ones. A
- * shadow size class replaces it, and a shadow colour class tints it.
+ * Its 1px edge is the theme's `--card-border`, which is `--border` in neutral themes and a
+ * zero-alpha colour in branded ones. It casts Tailwind's `shadow-xs` in the theme's
+ * `--card-shadow`, which is 5% black in neutral themes and zero alpha in branded ones. In a
+ * branded theme only its fill sets a card apart from the page tint, so a card nested in another
+ * card shows no edge.
  *
  * It states its `card` fill as `--surface`, the colour of the fill an element sits on, so a
  * chart in it cuts its rings and seams out of the card, and its muted text as
- * `--surface-muted-foreground`, which a chart's chips read. A `bg-*` class that changes the fill
- * changes both beside it, as in
- * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`.
+ * `--surface-muted-foreground`, which a chart's chips read.
  */
-function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
+function CardRoot({
+  className,
+  direction = "vertical",
+  size = "default",
+  ...props
+}: CardRootProps): ReactElement {
   const { base } = cardVariants({ direction, size });
 
   return (
     <div
       data-slot="card"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       data-size={size}
       className={cn(base(), className)}
       {...props}
@@ -81,20 +124,20 @@ function CardRoot({ className, direction, size = "default", ...props }: CardRoot
   );
 }
 
-function CardHeader({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardHeader({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardHeader } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-header"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardHeader(), className)}
       {...props}
     />
   );
 }
 
-function CardTag({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardTag({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardTag } = cardVariants({ direction });
 
   return <div data-slot="card-tag" className={cn(cardTag(), className)} {...props} />;
@@ -103,7 +146,7 @@ function CardTag({ className, direction, ...props }: CardDivProps): ReactElement
 function CardTitle({
   children,
   className,
-  direction,
+  direction = "vertical",
   level = 3,
   size = "2xl",
   icon,
@@ -133,7 +176,7 @@ function CardTitle({
 
 function CardDescription({
   className,
-  direction,
+  direction = "vertical",
   size = "sm",
   ...props
 }: CardDescriptionProps): ReactElement {
@@ -148,7 +191,7 @@ function CardDescription({
   );
 }
 
-function CardAction({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardAction({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardAction } = cardVariants({ direction });
 
   return <div data-slot="card-action" className={cn(cardAction(), className)} {...props} />;
@@ -156,28 +199,28 @@ function CardAction({ className, direction, ...props }: CardDivProps): ReactElem
 
 /**
  * A card's body. Inside a `Card.Section` it is the section's content column, beside a
- * `Card.SectionMedia`, and drops its own padding, since the section pads.
+ * `Card.SectionMedia`, and drops its own padding, because the section pads.
  */
-function CardContent({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardContent({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardContent } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-content"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardContent(), className)}
       {...props}
     />
   );
 }
 
-function CardFooter({ className, direction, ...props }: CardDivProps): ReactElement {
+function CardFooter({ className, direction = "vertical", ...props }: CardDivProps): ReactElement {
   const { cardFooter } = cardVariants({ direction });
 
   return (
     <div
       data-slot="card-footer"
-      data-direction={direction ?? "vertical"}
+      data-direction={direction}
       className={cn(cardFooter(), className)}
       {...props}
     />
@@ -185,14 +228,11 @@ function CardFooter({ className, direction, ...props }: CardDivProps): ReactElem
 }
 
 /**
- * One of a vertical card's stacked sections of equal weight. Sections form the card's body under
- * one optional `Card.Header`: a `Card.Content` or `Card.Footer` beside them takes no divider, so
- * put that content in a section instead. A section pads every side with the card's tier, a 1px
- * `--card-section-divider` line separates it from the part above, and the first and last
- * sections round with the card's corners. A `Card.SectionMedia` as its first child makes it a
- * two-column grid with the media centred beside a `Card.Content`, the unpadded content column.
- * A horizontal card pads itself, so sections take no `direction` and belong in a vertical card.
- * A whole section that acts is a `Card.SectionButton`.
+ * One of a vertical card's stacked sections of equal weight. A section pads every side with the
+ * card's tier. A 1px line in the theme's `--card-section-divider` runs above every section that
+ * has a part above it, from edge to edge: `--border` in neutral themes and the page tint,
+ * `--background`, in branded ones. The first and last sections round with the card's corners, so
+ * a fill follows them. A footer after sections takes no line and no top padding.
  */
 function CardSection({ className, ...props }: HTMLAttributes<HTMLDivElement>): ReactElement {
   const { section } = cardSectionVariants();
@@ -200,12 +240,8 @@ function CardSection({ className, ...props }: HTMLAttributes<HTMLDivElement>): R
   return <div data-slot="card-section" className={cn(section(), className)} {...props} />;
 }
 
-/**
- * The icon column of a `Card.Section` or `Card.SectionButton`. The section becomes a two-column
- * grid, this column and the content, with the icon centred on the section's height. An `svg` is
- * sized to `5`. It is a `span`, so it is phrasing content inside a section button.
- */
-function CardSectionMedia({ className, ...props }: HTMLAttributes<HTMLSpanElement>): ReactElement {
+/** The icon column of a `Card.Section` or `Card.SectionButton`, a `span` so a section button can hold it. */
+function CardSectionMedia({ className, ...props }: CardSectionMediaProps): ReactElement {
   const { media } = cardSectionVariants();
 
   return <span data-slot="card-section-media" className={cn(media(), className)} {...props} />;

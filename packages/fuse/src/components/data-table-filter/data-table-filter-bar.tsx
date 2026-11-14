@@ -90,13 +90,25 @@ function useSegmentRef(fieldId: string, ref: Ref<HTMLElement> | undefined): RefC
 }
 
 /** The props of `DataTableFilter.Bar`: Base UI Toolbar Root's. */
-export type DataTableFilterBarProps = ComponentProps<typeof ToolbarPrimitive.Root>;
+type ToolbarRootProps = ComponentProps<typeof ToolbarPrimitive.Root>;
+
+/** `DataTableFilter.Bar` takes Base UI Toolbar Root's props. */
+export type DataTableFilterBarProps = ToolbarRootProps & {
+  /**
+   * The `DataTableFilter.Trigger`, the `DataTableFilter.Chips` and `DataTableFilter.Clear`.
+   * Defaults to those three. The bar stays one line high however many filters it holds, so a
+   * search field or table beside it never moves. The chips sit in one strip that scrolls sideways,
+   * by touch, trackpad, keyboard focus or a vertical mouse wheel, and an end of the strip fades
+   * only while chips hide past it. Clear follows the last chip, or sits at the bar's end once the
+   * chips overflow. The Trigger is a square icon button named "Filter" at every width. Below a
+   * 36rem bar width Clear hides its label behind its icon, and its name stays "Clear filters".
+   */
+  children?: ToolbarRootProps["children"];
+};
 
 /**
- * The filter bar, a toolbar that is one Tab stop with arrow-key roving. Without children it
- * renders the Trigger, the chips and Clear on one line, so its height never grows with the
- * filters. It is named "Filters" unless `aria-label` says otherwise. Below a 36rem container
- * width a container query hides Clear's label behind its icon.
+ * The filter bar, a toolbar that is one Tab stop with arrow-key roving. It is named "Filters"
+ * unless `aria-label` says otherwise. A container query hides Clear's label.
  */
 export function DataTableFilterBar({ className, children, ...props }: DataTableFilterBarProps): ReactElement {
   const { state, meta } = useFilterInternals("DataTableFilter.Bar");

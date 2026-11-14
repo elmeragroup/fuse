@@ -1,15 +1,42 @@
 ---
 lede: >
-  Preview. Points and curves over a numeric x axis.
+  Preview, so names and props can change until Fuse's first stable release. Points that plot a
+  number against a number, such as weekly consumption against the week's mean temperature.
 ---
 
-import { ScatterChartBasic } from "./demos/scatter-chart-basic";
-import { ScatterChartCurves } from "./demos/scatter-chart-curves";
+import { ScatterChartCurveBasis } from "./demos/scatter-chart-curve-basis";
+import { ScatterChartCurveBump } from "./demos/scatter-chart-curve-bump";
+import { ScatterChartCurveMonotone } from "./demos/scatter-chart-curve-monotone";
+import { ScatterChartCurveNatural } from "./demos/scatter-chart-curve-natural";
+import { ScatterChartCurveStep } from "./demos/scatter-chart-curve-step";
+import { ScatterChartCurveStepAfter } from "./demos/scatter-chart-curve-step-after";
+import { ScatterChartCurveStepBefore } from "./demos/scatter-chart-curve-step-before";
+import { ScatterChartDemo } from "./demos/scatter-chart-demo";
 import { ScatterChartLarge } from "./demos/scatter-chart-large";
+import { ScatterChartLargePoints } from "./demos/scatter-chart-large-points";
+import { ScatterChartLine } from "./demos/scatter-chart-line";
+import { ScatterChartLineDashed } from "./demos/scatter-chart-line-dashed";
+import { ScatterChartLineFlowing } from "./demos/scatter-chart-line-flowing";
+import { ScatterChartLineQuiet } from "./demos/scatter-chart-line-quiet";
 import { ScatterChartLive } from "./demos/scatter-chart-live";
-import { ScatterChartReferenceLines } from "./demos/scatter-chart-reference-lines";
+import { ScatterChartNoEntrance } from "./demos/scatter-chart-no-entrance";
+import { ScatterChartQuietPoints } from "./demos/scatter-chart-quiet-points";
+import { ScatterChartReferenceSegment } from "./demos/scatter-chart-reference-segment";
+import { ScatterChartReferenceX } from "./demos/scatter-chart-reference-x";
+import { ScatterChartReferenceY } from "./demos/scatter-chart-reference-y";
 import { ScatterChartSignature } from "./demos/scatter-chart-signature";
-import { ScatterChartSizes } from "./demos/scatter-chart-sizes";
+import { ScatterChartSmallPoints } from "./demos/scatter-chart-small-points";
+import { ScatterChartGridDashed } from "./demos/scatter-chart-grid-dashed";
+import { ScatterChartGridHorizontal } from "./demos/scatter-chart-grid-horizontal";
+import { ScatterChartGridVertical } from "./demos/scatter-chart-grid-vertical";
+import { ScatterChartTickDots } from "./demos/scatter-chart-tick-dot";
+import { ScatterChartYAxisEnd } from "./demos/scatter-chart-y-axis-end";
+import { ScatterChartActiveDotDot } from "./demos/scatter-chart-active-dot-dot";
+import { ScatterChartTooltipFrosted } from "./demos/scatter-chart-tooltip-frosted";
+import { ScatterChartTooltipParts } from "./demos/scatter-chart-tooltip-parts";
+import { ScatterChartLegendTop } from "./demos/scatter-chart-legend-top";
+import { ScatterChartLegendStart } from "./demos/scatter-chart-legend-start";
+import { ScatterChartLegendEnd } from "./demos/scatter-chart-legend-end";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -17,93 +44,282 @@ export const metadata = componentMetadata("scatter-chart");
 
 <ComponentIntro slug="scatter-chart" />
 
-<Prose>
+<DefaultDemo slug="scatter-chart" file="scatter-chart-demo.tsx">
+  <ScatterChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. `ScatterChart` plots a number against a number, such as weekly consumption against the week's mean temperature. Each row is one point: `xKey` and `yKey` name its two number columns, and `seriesKey` names the column that says which series it belongs to. Config is keyed by those series values. Repeated x values and repeated points are valid, and every one draws.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { ScatterChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-<Demo slug="scatter-chart" id="signature" title="Energy signature" file="scatter-chart-signature.tsx">
-  <ScatterChartSignature />
-</Demo>
+<ScatterChart.Root
+  data={data}
+  config={config}
+  xKey="tempC"
+  yKey="kwh"
+  seriesKey="series"
+  aria-label="Weekly use against mean temperature">
+  <ScatterChart.XAxis />
+  <ScatterChart.YAxis />
+  <ScatterChart.Points dataKey="house" />
+  <ScatterChart.Tooltip />
+  <ScatterChart.Table />
+</ScatterChart.Root>
+```
 
-<Prose>
-
-This year's weeks draw as large dots, last year's as small pale ones, and the normal consumption as a line. Fuse fits nothing: the app computes the normal line and passes its points as a series of their own, which `ScatterChart.Line` joins.
-
-</Prose>
-
-<Demo slug="scatter-chart" id="basic" title="Basic" file="scatter-chart-basic.tsx">
-  <ScatterChartBasic />
-</Demo>
-
-## Sizes and looks
-
-<Prose>
-
-`size` takes a named step: `"sm"` draws 5 px dots, `"md"` 8 px and `"lg"` 11 px. `variant="quiet"` draws pale dots for a reference series, such as last year. Overlapping dots of one series never darken each other.
-
-</Prose>
-
-<Demo slug="scatter-chart" id="sizes" title="Sizes and looks" file="scatter-chart-sizes.tsx">
-  <ScatterChartSizes />
-</Demo>
-
-## Reference lines
-
-<Prose>
-
-`ScatterChart.ReferenceLine` takes a `y` for a horizontal line, an `x` for a vertical one, or a `from` and a `to` for a segment between two points. A line outside the domains draws nothing, so pass its value in Root's `xInclude` or `yInclude` to bring it in.
-
-</Prose>
+## Examples
 
 <Demo
   slug="scatter-chart"
-  id="freezing-and-budget"
-  title="Freezing point and budget"
-  file="scatter-chart-reference-lines.tsx">
-  <ScatterChartReferenceLines />
+  id="small-points"
+  title="Small points"
+  level={3}
+  file="scatter-chart-small-points.tsx">
+  <ScatterChartSmallPoints />
 </Demo>
 
-## Curves over a numeric x
-
-<Prose>
-
-A numeric x axis is `ScatterChart`. `ScatterChart.Line` joins a series' points in x order, so the same chart draws a curve whose samples sit unevenly along x, such as a charging curve or a tariff's steps under `curve="step-after"`. `curve` takes the d3 curves `Chart.Line` takes, with `"linear"` as the default. Category and time axes stay on [`Chart`](/components/chart).
-
-</Prose>
-
-<Demo slug="scatter-chart" id="curves" title="Charging curve" file="scatter-chart-curves.tsx">
-  <ScatterChartCurves />
+<Demo
+  slug="scatter-chart"
+  id="large-points"
+  title="Large points"
+  level={3}
+  file="scatter-chart-large-points.tsx">
+  <ScatterChartLargePoints />
 </Demo>
 
-## Large data and updates
+<Demo
+  slug="scatter-chart"
+  id="quiet-points"
+  title="Quiet points"
+  level={3}
+  file="scatter-chart-quiet-points.tsx">
+  <ScatterChartQuietPoints />
+</Demo>
 
-<Prose>
+<Demo
+  slug="scatter-chart"
+  id="no-entrance"
+  title="No entrance"
+  level={3}
+  file="scatter-chart-no-entrance.tsx">
+  <ScatterChartNoEntrance />
+</Demo>
 
-Each series draws all its points as one SVG path, so 100,000 points stay two elements, and a data update redraws each path in place. The pointer finds the nearest point through a grid index in well under a millisecond. On a data update the axes glide to fit the new points over the chart's update time, unless the reader prefers reduced motion or the chart holds more than 5,000 points, where they move at once.
+<Demo slug="scatter-chart" id="line" title="Line" level={3} file="scatter-chart-line.tsx">
+  <ScatterChartLine />
+</Demo>
 
-</Prose>
+<Demo slug="scatter-chart" id="basis" title="Basis curve" level={3} file="scatter-chart-curve-basis.tsx">
+  <ScatterChartCurveBasis />
+</Demo>
 
-<Demo slug="scatter-chart" id="large" title="100,000 points" file="scatter-chart-large.tsx">
+<Demo slug="scatter-chart" id="bump" title="Bump curve" level={3} file="scatter-chart-curve-bump.tsx">
+  <ScatterChartCurveBump />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="monotone"
+  title="Monotone curve"
+  level={3}
+  file="scatter-chart-curve-monotone.tsx">
+  <ScatterChartCurveMonotone />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="natural"
+  title="Natural curve"
+  level={3}
+  file="scatter-chart-curve-natural.tsx">
+  <ScatterChartCurveNatural />
+</Demo>
+
+<Demo slug="scatter-chart" id="step" title="Step curve" level={3} file="scatter-chart-curve-step.tsx">
+  <ScatterChartCurveStep />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="step-after"
+  title="Step after curve"
+  level={3}
+  file="scatter-chart-curve-step-after.tsx">
+  <ScatterChartCurveStepAfter />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="step-before"
+  title="Step before curve"
+  level={3}
+  file="scatter-chart-curve-step-before.tsx">
+  <ScatterChartCurveStepBefore />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="dashed-line"
+  title="Dashed line"
+  level={3}
+  file="scatter-chart-line-dashed.tsx">
+  <ScatterChartLineDashed />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="flowing-line"
+  title="Flowing line"
+  level={3}
+  file="scatter-chart-line-flowing.tsx">
+  <ScatterChartLineFlowing />
+</Demo>
+
+<Demo slug="scatter-chart" id="quiet-line" title="Quiet line" level={3} file="scatter-chart-line-quiet.tsx">
+  <ScatterChartLineQuiet />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="signature"
+  title="Fitted line as a series"
+  level={3}
+  file="scatter-chart-signature.tsx">
+  <ScatterChartSignature />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="vertical-reference-line"
+  title="Vertical reference line"
+  level={3}
+  file="scatter-chart-reference-x.tsx">
+  <ScatterChartReferenceX />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="horizontal-reference-line"
+  title="Horizontal reference line"
+  level={3}
+  file="scatter-chart-reference-y.tsx">
+  <ScatterChartReferenceY />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="reference-segment"
+  title="Reference segment"
+  level={3}
+  file="scatter-chart-reference-segment.tsx">
+  <ScatterChartReferenceSegment />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="grid-dashed"
+  title="Dashed grid"
+  level={3}
+  file="scatter-chart-grid-dashed.tsx">
+  <ScatterChartGridDashed />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="grid-horizontal"
+  title="Horizontal grid lines"
+  level={3}
+  file="scatter-chart-grid-horizontal.tsx">
+  <ScatterChartGridHorizontal />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="grid-vertical"
+  title="Vertical grid lines"
+  level={3}
+  file="scatter-chart-grid-vertical.tsx">
+  <ScatterChartGridVertical />
+</Demo>
+
+<Demo slug="scatter-chart" id="tick-dots" title="Tick dots" level={3} file="scatter-chart-tick-dot.tsx">
+  <ScatterChartTickDots />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="value-axis-at-the-end"
+  title="Value axis at the end"
+  level={3}
+  file="scatter-chart-y-axis-end.tsx">
+  <ScatterChartYAxisEnd />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="active-dot-dot"
+  title="Filled active dot"
+  level={3}
+  file="scatter-chart-active-dot-dot.tsx">
+  <ScatterChartActiveDotDot />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="tooltip-frosted"
+  title="Frosted tooltip"
+  level={3}
+  file="scatter-chart-tooltip-frosted.tsx">
+  <ScatterChartTooltipFrosted />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="tooltip-parts"
+  title="Tooltip parts"
+  level={3}
+  file="scatter-chart-tooltip-parts.tsx">
+  <ScatterChartTooltipParts />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="legend-top"
+  title="Legend at the top"
+  level={3}
+  file="scatter-chart-legend-top.tsx">
+  <ScatterChartLegendTop />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="legend-start"
+  title="Legend at the start"
+  level={3}
+  file="scatter-chart-legend-start.tsx">
+  <ScatterChartLegendStart />
+</Demo>
+
+<Demo
+  slug="scatter-chart"
+  id="legend-end"
+  title="Legend at the end"
+  level={3}
+  file="scatter-chart-legend-end.tsx">
+  <ScatterChartLegendEnd />
+</Demo>
+
+<Demo slug="scatter-chart" id="large" title="100,000 points" level={3} file="scatter-chart-large.tsx">
   <ScatterChartLarge />
 </Demo>
 
-<Demo slug="scatter-chart" id="live" title="Live readings" file="scatter-chart-live.tsx">
+<Demo slug="scatter-chart" id="live" title="Live readings" level={3} file="scatter-chart-live.tsx">
   <ScatterChartLive />
 </Demo>
 
-## Keyboard
-
-<Prose>
-
-The plot is one tab stop, and its one option names the active point: its series, then its x and y with Root's `xLabel` and `yLabel`.
-
-| Where | Keys                                                                                                                                                                                                                                                                                     |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chart | ArrowRight and ArrowLeft move to the next and previous point, by x, then y. Home and End go to the first and last point. ArrowDown and ArrowUp move the series focus, all series first, and the walk then stays in the focused series. Enter and Space pin the tooltip. Escape hides it. |
-| Table | The table's button and the page buttons are native buttons. Past 500 points the table pages by row range.                                                                                                                                                                                |
-
-</Prose>
-
 <ApiReference slug="scatter-chart" />
+
+<ComponentTokens slug="scatter-chart" />

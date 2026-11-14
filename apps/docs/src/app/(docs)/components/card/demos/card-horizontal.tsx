@@ -4,7 +4,7 @@ import { Card } from "@elmeragroup/fuse/card";
 
 export function CardHorizontal() {
   return (
-    <Card.Root direction="horizontal">
+    <Card.Root direction="horizontal" className="w-full">
       <Card.Header direction="horizontal">
         <Card.Title direction="horizontal">Meter 707057500012345678</Card.Title>
         <Card.Description direction="horizontal">Storgata 1, 0155 Oslo.</Card.Description>

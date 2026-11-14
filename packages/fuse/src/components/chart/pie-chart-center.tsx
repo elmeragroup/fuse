@@ -23,7 +23,11 @@ import type { ChartLayerProps } from "./chart-types";
  * @beta
  */
 export type PieChartCenterProps = ChartLayerProps & {
-  /** The centre's content, such as `CenterValue` over a `CenterLabel`. */
+  /**
+   * The centre's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the
+   * hole. Its text never shrinks below 12 px. When the lines overflow the square it drops every line
+   * but the value, and then the value.
+   */
   children?: ReactNode;
 };
 
@@ -33,7 +37,10 @@ export type PieChartCenterProps = ChartLayerProps & {
  * @beta
  */
 export type PieChartCenterLabelProps = ChartLayerProps & {
-  /** The label text, such as "av" between the value and the maximum. */
+  /**
+   * The label text, such as "av" between the value and the maximum. It stays the same whatever is
+   * active, and it may hold the centre's numbers, as in "av" before a `CenterMax`.
+   */
   children?: ReactNode;
 };
 
@@ -43,7 +50,10 @@ export type PieChartCenterLabelProps = ChartLayerProps & {
  * @beta
  */
 export type PieChartCenterNameProps = ChartLayerProps & {
-  /** The text with nothing active, such as "Total" under the total. */
+  /**
+   * The text with nothing active, such as "Total" under the total. With a slice or ring active the
+   * line prints that item's config label instead. A hole narrower than 4rem leaves the line out.
+   */
   children?: ReactNode;
 };
 

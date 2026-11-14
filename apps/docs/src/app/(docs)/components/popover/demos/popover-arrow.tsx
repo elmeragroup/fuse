@@ -3,22 +3,16 @@
 import { Button } from "@elmeragroup/fuse/button";
 import { Popover } from "@elmeragroup/fuse/popover";
 
-const sides = ["top", "bottom", "left", "right"] as const;
-
 export function PopoverArrow() {
   return (
-    <div className="flex flex-wrap gap-2">
-      {sides.map((side) => (
-        <Popover.Root key={side}>
-          <Popover.Trigger render={<Button variant="outline" />}>{side}</Popover.Trigger>
-          <Popover.Content showArrow side={side}>
-            <Popover.Header>
-              <Popover.Title>Dimensions</Popover.Title>
-              <Popover.Description>The arrow follows {side} placement.</Popover.Description>
-            </Popover.Header>
-          </Popover.Content>
-        </Popover.Root>
-      ))}
-    </div>
+    <Popover.Root>
+      <Popover.Trigger render={<Button variant="outline" />}>Delivery window</Popover.Trigger>
+      <Popover.Content showArrow>
+        <Popover.Header>
+          <Popover.Title>Delivery window</Popover.Title>
+          <Popover.Description>Orders placed before 14:00 ship the same day.</Popover.Description>
+        </Popover.Header>
+      </Popover.Content>
+    </Popover.Root>
   );
 }

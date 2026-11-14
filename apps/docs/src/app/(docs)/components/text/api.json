@@ -32,7 +32,7 @@
           "type": "keyof IntrinsicElements | undefined",
           "shortType": "Union",
           "defaultValue": "\"p\"",
-          "description": "Tag name rendered when `render` is omitted. Kept from the ref for compat — `\"span\"` and `\"div\"` are common. Defaults to `\"p\"`.",
+          "description": "The tag rendered when `render` is unset, such as `\"span\"` or `\"div\"`.",
           "required": false,
           "values": [
             "a",
@@ -217,11 +217,11 @@
         },
         {
           "name": "leading",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"loose\" | \"none\" | \"relaxed\" | \"snug\" | \"tight\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The line height. When unset, `sm`, `default` and `lg` text reads the theme's `--paragraph-leading-sm`, `--paragraph-leading-base` and `--paragraph-leading-lg`, and the other sizes are relaxed. A leading or size class in `className` replaces the theme's line height too.",
           "required": false,
           "values": [
             "loose",
@@ -237,16 +237,16 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host element via base-ui `useRender`. `elementType` stays alongside for the existing call sites that pass a tag name.",
+          "description": "Replaces the host element. Prefer it to `elementType` for a component or an element with props.",
           "required": false
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The font size. Descendants take the same font size. Descendants without their own line height inherit the Text's, so a `<strong>` inside keeps the paragraph's type. An element's own line height wins, such as a `Span`'s default `snug`.",
           "required": false,
           "values": [
             "2xl",
@@ -271,7 +271,7 @@
           "origin": "recipe-axis",
           "type": "\"brand\" | \"default\" | \"destructive\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "",
           "required": false,
           "values": [
@@ -288,11 +288,11 @@
         },
         {
           "name": "weight",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"bold\" | \"medium\" | \"normal\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"normal\"",
+          "description": "The font weight. `bold` renders at the medium weight, which caps body text weight.",
           "required": false,
           "values": [
             "bold",

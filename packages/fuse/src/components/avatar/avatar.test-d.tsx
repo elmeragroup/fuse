@@ -4,6 +4,10 @@ import { expectTypeOf, test } from "vitest";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 
+// Group redeclares `children` to document it. Flattening both sides to one object type compares
+// their exact keys and property types, which the intersection alone would not match.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("parts take the primitive passthrough surface and no as prop, and Group is a plain div part with no primitive props", () => {
   const _root = (
     <Avatar.Root className="size-10" aria-label="Ada Lovelace">
@@ -32,7 +36,7 @@ test("parts take the primitive passthrough surface and no as prop, and Group is 
   );
   const _groupRef = <Avatar.Group ref={null} />;
 
-  expectTypeOf<ComponentProps<typeof Avatar.Group>>().toEqualTypeOf<ComponentProps<"div">>();
+  expectTypeOf<Flat<ComponentProps<typeof Avatar.Group>>>().toEqualTypeOf<Flat<ComponentProps<"div">>>();
 
   // @ts-expect-error Group is a native div, not a Base UI part
   const _noRender = <Avatar.Group render={<section />} />;

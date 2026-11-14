@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 287,
+      "forwardedCount": 286,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The textarea's name when there is no `label`.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -26,7 +35,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial value, restored with its counter by native form reset.",
+          "description": "The starting value of an uncontrolled field. A native form reset restores it and its count.",
           "required": false
         },
         {
@@ -35,7 +44,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -44,7 +53,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so the textarea is marked invalid too. Without it, the field shows its own error, such as the browser's constraint message.",
           "required": false
         },
         {
@@ -53,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and the inner textarea.",
+          "description": "Disables the field and the textarea.",
           "required": false
         },
         {
@@ -62,7 +71,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, with the invalid look.",
           "required": false
         },
         {
@@ -71,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to the inner textarea.",
+          "description": "Makes the textarea required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -80,7 +89,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`.",
+          "description": "The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`.",
           "required": false
         },
         {
@@ -89,7 +98,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `maxLength`, also drives the `current/max` character counter. `0` is set.",
+          "description": "The most characters the textarea takes. It also shows a `current/max` counter at the end of the label row, including for `0`.",
           "required": false
         },
         {
@@ -98,7 +107,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the string value, not the native event.",
+          "description": "Called with the textarea's text on every edit.",
           "required": false
         },
         {
@@ -107,7 +116,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the inner Textarea's field box, forwarded to `Textarea`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "description": "The textarea's control size. `default` is the md control size, and `sm` the sm one.",
           "required": false,
           "values": [
             "default",
@@ -120,7 +129,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the inner `Textarea`.",
+          "description": "Extra classes for the inner `Textarea`.",
           "required": false
         },
         {
@@ -129,7 +138,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value.",
+          "description": "The value, for a controlled field.",
           "required": false
         }
       ]

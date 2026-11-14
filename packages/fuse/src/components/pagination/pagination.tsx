@@ -12,7 +12,7 @@ import { buttonVariants } from "../button/button-variants";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
 
-/** Resolved once at module scope — the recipe is prop-independent here (no per-render work). */
+/** Resolved once at module scope, because these slots take no props. */
 const { base, content, link, linkIcon, ellipsis, ellipsisIcon } = paginationVariants();
 
 /**
@@ -40,69 +40,67 @@ type PaginationDirection = keyof typeof EDGES;
 
 export type PaginationRootProps = ComponentProps<"nav"> & {
   /**
-   * Landmark label. Defaults to the locale dictionary; an explicit `aria-label`
-   * wins over this prop.
+   * The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label`
+   * wins over it.
    */
   label?: string;
 };
 
-/** Wrapping row of page links; edge controls stay reachable in narrow containers. */
-export type PaginationContentProps = ComponentProps<"ul">;
+/** Props for `Pagination.Content`, the row of page links. */
+export type PaginationContentProps = Omit<ComponentProps<"ul">, "children"> & {
+  /**
+   * The `Pagination.Item`s, one per link or ellipsis. In a narrow container the row wraps onto
+   * more lines, so Previous and Next stay in reach.
+   */
+  children?: ComponentProps<"ul">["children"];
+};
 export type PaginationItemProps = ComponentProps<"li">;
 
 export type PaginationLinkProps = {
   /**
-   * Current page. Renders `aria-current="page"` and the outline button variant;
-   * inactive links omit the attribute entirely.
+   * Marks the current page. The link gets `aria-current="page"` and the outline button style.
+   * Other links have no `aria-current`.
    */
   isActive?: boolean;
-  /**
-   * Recipe size axis borrowed from Button. Defaults to `"icon"`.
-   */
+  /** The link's size, one of Button's sizes. */
   size?: ButtonProps["size"];
 } & ComponentProps<"a">;
 
 export type PaginationPreviousProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
-  /**
-   * Recipe size axis borrowed from Button. Defaults to `"default"`.
-   */
+  /** The link's size, one of Button's sizes. */
   size?: ButtonProps["size"];
-  /**
-   * Visible Previous copy. Defaults to the locale dictionary.
-   */
+  /** The visible text beside the caret. Unset, it comes from the locale dictionary. */
   text?: string;
   /**
-   * Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.
+   * The link's accessible name, such as "Go to previous page". Unset, it comes from the locale
+   * dictionary. An `aria-label` wins over it.
    */
   label?: string;
 };
 
 export type PaginationNextProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
-  /**
-   * Recipe size axis borrowed from Button. Defaults to `"default"`.
-   */
+  /** The link's size, one of Button's sizes. */
   size?: ButtonProps["size"];
-  /**
-   * Visible Next copy. Defaults to the locale dictionary.
-   */
+  /** The visible text beside the caret. Unset, it comes from the locale dictionary. */
   text?: string;
   /**
-   * Accessible name. Defaults to the locale dictionary; an explicit `aria-label` wins.
+   * The link's accessible name, such as "Go to next page". Unset, it comes from the locale
+   * dictionary. An `aria-label` wins over it.
    */
   label?: string;
 };
 
 export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
-   * Screen-reader-only ellipsis copy. Defaults to the locale dictionary.
+   * The screen reader text for the pages the ellipsis stands for. Unset, it comes from the locale
+   * dictionary.
    */
   label?: string;
 };
 
 /**
- * Client page-navigation compound. Anchors are styled via
- * the borrowed public `buttonVariants`; landmark, Previous/Next, and ellipsis
- * copy come from the provider dictionary.
+ * Links between the pages of a list. The links take Button's public `buttonVariants`. The landmark
+ * name, the Previous and Next text and the ellipsis text come from the locale dictionary.
  */
 export function PaginationRoot({
   className,
@@ -123,14 +121,17 @@ export function PaginationRoot({
   );
 }
 
+/** The row of page links. */
 export function PaginationContent({ className, ...props }: PaginationContentProps): ReactElement {
   return <ul data-slot="pagination-content" className={cn(content(), className)} {...props} />;
 }
 
+/** One entry of the row, holding a link or an ellipsis. */
 export function PaginationItem({ className, ...props }: PaginationItemProps): ReactElement {
   return <li data-slot="pagination-item" className={className} {...props} />;
 }
 
+/** A link to one page. */
 export function PaginationLink({
   className,
   isActive,
@@ -174,14 +175,17 @@ function PaginationEdge({
   );
 }
 
+/** The link to the previous page, with a caret before its text. */
 export function PaginationPrevious({ size = "default", ...props }: PaginationPreviousProps): ReactElement {
   return <PaginationEdge direction="previous" size={size} {...props} />;
 }
 
+/** The link to the next page, with a caret after its text. */
 export function PaginationNext({ size = "default", ...props }: PaginationNextProps): ReactElement {
   return <PaginationEdge direction="next" size={size} {...props} />;
 }
 
+/** Three dots that stand for pages left out of the row. */
 export function PaginationEllipsis({ className, label, ...props }: PaginationEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(paginationStrings);
 

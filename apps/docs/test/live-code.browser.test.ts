@@ -149,48 +149,44 @@ describe("Live code", () => {
   });
 
   it("reaches every site by keyboard and outlines the one whose row is highlighted", async () => {
-    // Oracle: the Badge Variants demo at a phone's width. It has one `<Badge` site per line that
-    // writes one, in source order. Its filled badges render from the first after `FILLED.map`, one
-    // badge per name the source's `FILLED` lists, and the demo's own `info` badge shows how that
-    // site renders `variant="info"`.
+    // Oracle: the Button group Nested demo at a phone's width. It has one site per line that
+    // opens a `<Button` or `<ButtonGroup.Root` tag, in source order. Its page buttons render from
+    // the first `<Button` after `PAGES.map`, one button per name the source's `PAGES` lists, and
+    // Button writes the size it draws to `data-size`.
     const source = readDemoSource({
       section: "components",
-      slug: "badge",
-      file: "badge-variants.tsx",
+      slug: "button-group",
+      file: "button-group-nested.tsx",
     }).source;
     const lines = source.split("\n");
-    const filledAt = lines.findIndex((line) => line.includes("FILLED.map"));
-    const filledLine = lines.findIndex((line, index) => index > filledAt && line.includes("<Badge")) + 1;
-    const siteLabels = lines.flatMap((line, index) =>
-      line.includes("<Badge") ? [`<Badge> · line ${String(index + 1)}`] : []
-    );
+    const pagesAt = lines.findIndex((line) => line.includes("PAGES.map"));
+    const pagesLine = lines.findIndex((line, index) => index > pagesAt && line.includes("<Button ")) + 1;
+    const siteLabels = lines.flatMap((line, index) => {
+      const part = /<(Button|ButtonGroup\.Root)[\s>]/u.exec(line)?.[1];
+      return part === undefined ? [] : [`<${part}> · line ${String(index + 1)}`];
+    });
     expect(siteLabels.length).toBeGreaterThan(1);
-    const filledNames = [
-      ...(/const FILLED = \[([^\]]*)\]/u.exec(source)?.[1] ?? "").matchAll(/"([^"]+)"/gu),
+    const pageNames = [
+      ...(/const PAGES = \[([^\]]*)\]/u.exec(source)?.[1] ?? "").matchAll(/"([^"]+)"/gu),
     ].map(([, name]) => name ?? "");
-    expect(filledNames).toContain("warning");
+    expect(pageNames.length).toBeGreaterThan(1);
     const context = await browser().newContext({
       colorScheme: "light",
       reducedMotion: "reduce",
       viewport: { width: 390, height: 700 },
     });
     const page = await context.newPage();
-    await page.goto(`${docsBaseUrl()}/components/badge`, { waitUntil: "load" });
+    await page.goto(`${docsBaseUrl()}/components/button-group`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#variants") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#nested") });
     await waitForDemoHydration(frame);
     await frame.evaluate((element) => element.scrollIntoView({ block: "center" }));
     const stage = frame.locator("[data-demo-stage]");
-    expect(await stage.locator("a, button, input, [tabindex]").count()).toBe(0);
-    const warning = stage.getByText("warning", { exact: true });
-    // What the reader sees of a badge's variant: its fill, text and border colours.
-    const look = async (badge: typeof warning): Promise<readonly string[]> =>
-      badge.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [style.backgroundColor, style.color, style.borderTopColor];
-      });
-    const infoLook = await look(stage.getByText("info", { exact: true }));
-    expect(await look(warning)).not.toEqual(infoLook);
+    const pageButtons = stage.getByRole("group", { name: "Pages" }).getByRole("button");
+    const previous = stage.getByRole("button", { name: "Previous" });
+    const sizes = async (buttons: typeof previous): Promise<readonly (string | null)[]> =>
+      buttons.evaluateAll((elements) => elements.map((element) => element.getAttribute("data-size")));
+    expect(await sizes(pageButtons)).toEqual(pageNames.map(() => "sm"));
     // The stage control, in the footer, is the frame's one tab stop before the view switch: Tab
     // leaves it for the switch, and Shift+Tab comes back to it.
     const control = frame.getByRole("button", { name: "Edit props" });
@@ -242,11 +238,11 @@ describe("Live code", () => {
       })
     );
     expect(walked).toEqual(rendered);
-    const filled = menu.getByRole("group").filter({ hasText: `<Badge> · line ${String(filledLine)}` });
-    const variant = filled.getByRole("menuitem", { name: /^variant/u });
-    await variant.focus();
+    const pagesSite = menu.getByRole("group").filter({ hasText: `<Button> · line ${String(pagesLine)}` });
+    const size = pagesSite.getByRole("menuitem", { name: /^size/u });
+    await size.focus();
 
-    // Highlighting the row outlines exactly the filled badges, box for box, in the editor's own
+    // Highlighting the row outlines exactly the page buttons, box for box, in the editor's own
     // layer beside the stage.
     const outline = frame.locator("[data-stage-outline]");
     const outlined = async (): Promise<readonly { x: number; y: number; width: number; height: number }[]> =>
@@ -258,9 +254,9 @@ describe("Live code", () => {
       );
     await expect.poll(async () => outline.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
     const expected = await Promise.all(
-      filledNames.map(async (name) => {
-        const box = await stage.getByText(name, { exact: true }).boundingBox();
-        if (box === null) throw new Error(`The ${name} badge has no box.`);
+      pageNames.map(async (name) => {
+        const box = await pageButtons.getByText(name, { exact: true }).boundingBox();
+        if (box === null) throw new Error(`The page ${name} button has no box.`);
         return box;
       })
     );
@@ -276,10 +272,11 @@ describe("Live code", () => {
 
     // The outline holds while the row's submenu is open, and the edit lands on the site.
     await page.keyboard.press("Enter");
-    await page.getByRole("menuitemradio", { name: "info", exact: true }).focus();
+    await page.getByRole("menuitemradio", { name: "default", exact: true }).focus();
     expect(await outline.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
     await page.keyboard.press("Enter");
-    await expect.poll(async () => look(warning)).toEqual(infoLook);
+    await expect.poll(async () => sizes(pageButtons)).toEqual(pageNames.map(() => "default"));
+    expect(await previous.getAttribute("data-size")).toBe("icon-sm");
     // A row of no site, such as Copy, clears it.
     await menu.getByRole("menuitem", { name: "Copy code" }).focus();
     await expect.poll(async () => outline.evaluate((element) => getComputedStyle(element).opacity)).toBe("0");
@@ -297,9 +294,9 @@ describe("Live code", () => {
     // around that row without moving it. Measured boxes and hit-testing, independent of the code.
     const context = await browser().newContext({ colorScheme: "light", viewport: DESKTOP_VIEWPORT });
     const page = await context.newPage();
-    await page.goto(`${docsBaseUrl()}/components/badge`, { waitUntil: "load" });
+    await page.goto(`${docsBaseUrl()}/components/button-group`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#variants") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#nested") });
     await waitForDemoHydration(frame);
     await frame.evaluate((element) => element.scrollIntoView({ block: "center" }));
     const control = frame.getByRole("button", { name: "Edit props" });
@@ -353,18 +350,19 @@ describe("Live code", () => {
     ).toBe(true);
     await expectOnControl();
 
-    // The filled badges' `variant` row sits too low for five of its 19 options below it.
-    const variant = menu
+    // The Next button's `size` row, the menu's last, sits too low for five of its nine options
+    // below it.
+    const sizeRow = menu
       .getByRole("group")
-      .filter({ has: page.getByRole("menuitem", { name: /^variant/u }) })
+      .filter({ has: page.getByRole("menuitem", { name: /^size/u }) })
       .last()
-      .getByRole("menuitem", { name: /^variant/u });
-    await variant.scrollIntoViewIfNeeded();
-    const rowBefore = await box(variant);
-    await variant.click();
+      .getByRole("menuitem", { name: /^size/u });
+    await sizeRow.scrollIntoViewIfNeeded();
+    const rowBefore = await box(sizeRow);
+    await sizeRow.click();
     await settled(options);
     await settled(menu);
-    const row = await box(variant);
+    const row = await box(sizeRow);
     const header = await box(options.locator("> :first-child"));
     expect(header.top).toBeLessThanOrEqual(row.top + 0.5);
     expect(header.bottom).toBeGreaterThanOrEqual(row.bottom - 0.5);
@@ -643,12 +641,12 @@ describe("Live code", () => {
   });
 
   it("edits a popup's part from the stage control, and applies the edit when the popup opens", async () => {
-    // Oracle: the Basic Dropdown Menu demo, whose items render only while its menu is open. Its
-    // Profile item's tag is the line above the line that reads "Profile".
+    // Oracle: the Shortcuts Dropdown Menu demo, whose items render only while its menu is open.
+    // Its Profile item's tag is the line above the line that reads "Profile".
     const lines = readDemoSource({
       section: "components",
       slug: "dropdown-menu",
-      file: "dropdown-menu-basic.tsx",
+      file: "dropdown-menu-shortcuts.tsx",
     }).source.split("\n");
     const profileLine = lines.findIndex((line) => line.includes("Profile"));
     expect(lines[profileLine - 1]?.trim()).toBe("<DropdownMenu.Item>");
@@ -656,9 +654,9 @@ describe("Live code", () => {
     const page = await context.newPage();
     await page.goto(`${docsBaseUrl()}/components/dropdown-menu`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#basic") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#shortcuts") });
     await waitForDemoHydration(frame);
-    const opener = frame.locator("[data-demo-stage]").getByRole("button", { name: "Open" });
+    const opener = frame.locator("[data-demo-stage]").getByRole("button", { name: "Account" });
     await opener.click();
     const profile = page.getByRole("menuitem", { name: /^Profile/u });
     await profile.waitFor();
@@ -690,12 +688,12 @@ describe("Live code", () => {
   });
 
   it("drops a previewed value the stage cannot render, keeps the stage working and names the value", async () => {
-    // Oracle: the Basic Date Picker holds a PlainDate, which an hour granularity rejects.
+    // Oracle: the Small Date Picker holds a PlainDate, which an hour granularity rejects.
     const context = await browser().newContext({ colorScheme: "light", reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.goto(`${docsBaseUrl()}/components/date-picker`, { waitUntil: "load" });
     await waitForDocsShellHydration(page);
-    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h2#basic") });
+    const frame = page.locator("section[data-demo-frame]", { has: page.locator("h3#small") });
     await waitForDemoHydration(frame);
     const stage = frame.locator("[data-demo-stage]");
     await frame.getByRole("button", { name: "Edit props" }).click();

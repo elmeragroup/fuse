@@ -1,14 +1,19 @@
 ---
 lede: >
-  A bar of controls that is one Tab stop, with the arrow keys moving between its items.
-  Use it for actions on one object, such as a document, a selection or a canvas.
+  A bar of controls that is one Tab stop, with the arrow keys moving between its items. Use it for
+  actions on one object, such as a document, a selection or a canvas.
 ---
 
-import { ToolbarBasic } from "./demos/toolbar-basic";
-import { ToolbarToggleGroup } from "./demos/toolbar-toggle-group";
-import { ToolbarPopups } from "./demos/toolbar-popups";
-import { ToolbarInput } from "./demos/toolbar-input";
+import { ToolbarDemo } from "./demos/toolbar-demo";
 import { ToolbarVertical } from "./demos/toolbar-vertical";
+import { ToolbarDisabledButton } from "./demos/toolbar-disabled-button";
+import { ToolbarDisabledGroup } from "./demos/toolbar-disabled-group";
+import { ToolbarDisabled } from "./demos/toolbar-disabled";
+import { ToolbarLink } from "./demos/toolbar-link";
+import { ToolbarInput } from "./demos/toolbar-input";
+import { ToolbarToggleGroup } from "./demos/toolbar-toggle-group";
+import { ToolbarMenu } from "./demos/toolbar-menu";
+import { ToolbarTooltip } from "./demos/toolbar-tooltip";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,59 +21,65 @@ export const metadata = componentMetadata("toolbar");
 
 <ComponentIntro slug="toolbar" />
 
-<Prose>
+<DefaultDemo slug="toolbar" file="toolbar-demo.tsx">
+  <ToolbarDemo />
+</DefaultDemo>
 
-`Toolbar.Root` paints the bar: a bordered popover fill with 4px of padding between its edge and
-its items. Name it with `aria-label`. Tab moves focus into the bar and out of it again. Inside,
-the arrow keys move between items and wrap at the ends. Set `loopFocus={false}` to stop at the
-ends instead.
+## Usage
 
-`Toolbar.Button`, `Toolbar.Link` and `Toolbar.Input` only place an item in that focus order.
-Each takes its look from the control it renders, such as
-`render={<Button variant="ghost" size="sm" />}`. A disabled item stays in the arrow-key order,
-so a keyboard user still finds it. The bar publishes `--inner-corner`, so a custom block in it
-that rounds with `rounded-inner` sits concentric with the bar.
+{/* prettier-ignore */}
+```tsx
+import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
-For a toolbar that only switches between options, use ToggleGroup on its own.
+<Toolbar.Root aria-label="Invoice">
+  <Toolbar.Button>Download</Toolbar.Button>
+  <Toolbar.Separator />
+  <Toolbar.Button>Delete</Toolbar.Button>
+</Toolbar.Root>
+```
 
-</Prose>
+## Examples
 
-<Demo slug="toolbar" id="basic" title="Basic" file="toolbar-basic.tsx">
-  <ToolbarBasic />
-</Demo>
-
-`Toolbar.Group` lays out related items together. `disabled` on `Toolbar.Group`, or on
-`Toolbar.Root` for the whole bar, disables the buttons and inputs inside; they stay in the
-arrow-key order. A `Toolbar.Link` cannot be disabled.
-`Toolbar.Separator` draws a line across the bar between groups.
-
-<Demo slug="toolbar" id="toggle-group" title="Toggle group" file="toolbar-toggle-group.tsx">
-  <ToolbarToggleGroup />
-</Demo>
-
-A ToggleGroup inside a toolbar joins the toolbar's arrow-key order instead of keeping its own.
-A single Toggle joins it through `Toolbar.Button`'s `render`.
-
-<Demo slug="toolbar" id="popups" title="Menus, popovers and tooltips" file="toolbar-popups.tsx">
-  <ToolbarPopups />
-</Demo>
-
-A Popover or DropdownMenu trigger goes in `Toolbar.Button`'s `render`. A tooltip wraps the
-other way round: pass the `Toolbar.Button` to `Tooltip.Trigger`'s `render`.
-
-<Demo slug="toolbar" id="input" title="Links and an input" file="toolbar-input.tsx">
-  <ToolbarInput />
-</Demo>
-
-The arrow keys move a text input's caret as well as the toolbar's focus. Put at most one
-`Toolbar.Input` in a horizontal toolbar, as its last item.
-
-<Demo slug="toolbar" id="vertical" title="Vertical" file="toolbar-vertical.tsx">
+<Demo slug="toolbar" id="vertical" title="Vertical" level={3} file="toolbar-vertical.tsx">
   <ToolbarVertical />
 </Demo>
 
-With `orientation="vertical"` the bar stacks its items, the up and down arrows move between
-them, and separators turn horizontal.
+<Demo
+  slug="toolbar"
+  id="disabled-button"
+  title="Disabled button"
+  level={3}
+  file="toolbar-disabled-button.tsx">
+  <ToolbarDisabledButton />
+</Demo>
+
+<Demo slug="toolbar" id="disabled-group" title="Disabled group" level={3} file="toolbar-disabled-group.tsx">
+  <ToolbarDisabledGroup />
+</Demo>
+
+<Demo slug="toolbar" id="disabled" title="Disabled toolbar" level={3} file="toolbar-disabled.tsx">
+  <ToolbarDisabled />
+</Demo>
+
+<Demo slug="toolbar" id="link" title="Link" level={3} file="toolbar-link.tsx">
+  <ToolbarLink />
+</Demo>
+
+<Demo slug="toolbar" id="input" title="Input" level={3} file="toolbar-input.tsx">
+  <ToolbarInput />
+</Demo>
+
+<Demo slug="toolbar" id="toggle-group" title="Toggle group" level={3} file="toolbar-toggle-group.tsx">
+  <ToolbarToggleGroup />
+</Demo>
+
+<Demo slug="toolbar" id="menu" title="Menu" level={3} file="toolbar-menu.tsx">
+  <ToolbarMenu />
+</Demo>
+
+<Demo slug="toolbar" id="tooltip" title="Tooltip" level={3} file="toolbar-tooltip.tsx">
+  <ToolbarTooltip />
+</Demo>
 
 <ApiReference slug="toolbar" />
 

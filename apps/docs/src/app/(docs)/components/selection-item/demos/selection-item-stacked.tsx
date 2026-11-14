@@ -1,30 +1,29 @@
 "use client";
 
+import { Checkbox } from "@elmeragroup/fuse/checkbox";
 import { Field } from "@elmeragroup/fuse/field";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
-import { Switch } from "@elmeragroup/fuse/switch";
 
 export function SelectionItemStacked() {
   return (
     <Field.Root>
-      {/* The wrapper stacks the shells connected; the Field root keeps its own gap around it. */}
       <div className="flex flex-col">
-        <SelectionItem.Shell dataSlot="radio-item" control={<Switch />}>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox />}>
           <SelectionItem.Content>
-            <SelectionItem.Title>Spot</SelectionItem.Title>
-            <SelectionItem.Description>Hourly price, no lock-in.</SelectionItem.Description>
+            <SelectionItem.Title>Price alert</SelectionItem.Title>
+            <SelectionItem.Description>A text message when the spot price peaks.</SelectionItem.Description>
           </SelectionItem.Content>
         </SelectionItem.Shell>
-        <SelectionItem.Shell dataSlot="radio-item" control={<Switch defaultChecked />}>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox defaultChecked />}>
           <SelectionItem.Content>
-            <SelectionItem.Title>Fixed</SelectionItem.Title>
-            <SelectionItem.Description>Locked for 12 months.</SelectionItem.Description>
+            <SelectionItem.Title>Electric car charging</SelectionItem.Title>
+            <SelectionItem.Description>A night rate for your home charger.</SelectionItem.Description>
           </SelectionItem.Content>
         </SelectionItem.Shell>
-        <SelectionItem.Shell dataSlot="radio-item" control={<Switch />}>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox />}>
           <SelectionItem.Content>
-            <SelectionItem.Title>Variable</SelectionItem.Title>
-            <SelectionItem.Description>Monthly average with a markup.</SelectionItem.Description>
+            <SelectionItem.Title>Solar sell-back</SelectionItem.Title>
+            <SelectionItem.Description>Sell what your panels produce to the grid.</SelectionItem.Description>
           </SelectionItem.Content>
         </SelectionItem.Shell>
       </div>

@@ -28,11 +28,11 @@
         },
         {
           "name": "leading",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"loose\" | \"none\" | \"relaxed\" | \"snug\" | \"tight\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"snug\"",
+          "description": "The line height. Span defaults to `snug`, Tailwind's 1.375 ratio. It does not take the theme's paragraph line height, as a Text without `leading` does.",
           "required": false,
           "values": [
             "loose",
@@ -48,7 +48,7 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host element via base-ui `useRender`. The host stays a `span` when omitted — the forced-span identity is kept.",
+          "description": "Replaces the host `span`.",
           "required": false
         },
         {
@@ -56,7 +56,7 @@
           "origin": "recipe-axis",
           "type": "\"2xl\" | \"default\" | \"lg\" | \"sm\" | \"xl\" | \"xs\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "",
           "required": false,
           "values": [
@@ -82,7 +82,7 @@
           "origin": "recipe-axis",
           "type": "\"brand\" | \"default\" | \"destructive\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "",
           "required": false,
           "values": [
@@ -99,11 +99,11 @@
         },
         {
           "name": "weight",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"bold\" | \"medium\" | \"normal\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"normal\"",
+          "description": "The font weight. `bold` renders at the medium weight, which caps body text weight.",
           "required": false,
           "values": [
             "bold",

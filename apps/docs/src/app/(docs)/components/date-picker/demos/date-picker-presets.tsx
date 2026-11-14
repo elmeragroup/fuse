@@ -5,7 +5,6 @@ import { DatePicker, DatePickerField } from "@elmeragroup/fuse/date-picker";
 export function DatePickerPresets() {
   return (
     <DatePickerField
-      className="max-w-xs w-full"
       label="Start date"
       defaultValue={Temporal.PlainDate.from("2026-10-05")}
       presetGroup={

@@ -26,15 +26,24 @@ const DEFAULT_PAGE_SIZES: readonly number[] = [10, 25, 50, 100];
 
 /** Props for `DataTable.Pagination`. */
 export type DataTablePaginationProps = Omit<ComponentProps<"div">, "children"> & {
-  /** The paginated table, from `useTable` with `rowPaginationFeature`. */
+  /**
+   * The paginated table, from `useTable` with `rowPaginationFeature`. Registering that feature
+   * alone pages the rows ten at a time. Keep the table's `data` stable between renders: TanStack
+   * resets the page index when `data` changes identity.
+   */
   table: PaginationSource;
   /**
-   * The page total. It is the only source of Next and Last. Without it the table's own page count
-   * is the known total. Pass `{ kind: "unknown", hasMore }` for a cursor API: the status then reads
-   * "Page N" and Last stays disabled.
+   * The page total, which alone decides Next and Last. Pass it when the server pages the rows.
+   * Without it the table's own page count is the known total. `{ kind: "known", pageCount }` reads
+   * "Page N of M". `{ kind: "unknown", hasMore }`, for a cursor API, reads "Page N" and keeps Last
+   * disabled.
    */
   total?: PaginationTotal;
-  /** The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100. */
+  /**
+   * The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50,
+   * 100. Picking one calls `table.setPageSize` and keeps the page index; reset the index in
+   * `onPaginationChange` if your data needs that.
+   */
   pageSizes?: readonly number[];
   /** Label of the rows-per-page select. Defaults to the locale dictionary. */
   rowsPerPageLabel?: string;

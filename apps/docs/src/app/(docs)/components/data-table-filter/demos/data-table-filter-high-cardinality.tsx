@@ -5,13 +5,12 @@ import {
   columnFilteringFeature,
   createFacetedRowModel,
   createFacetedUniqueValues,
+  createColumnHelper,
   createFilteredRowModel,
-  createPaginatedRowModel,
-  rowPaginationFeature,
   tableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 
-import { createFuseTableHook } from "@elmeragroup/fuse/data-table";
 import {
   createDataTableFilterFn,
   DataTableFilter,
@@ -76,8 +75,6 @@ const PRODUCT_OPTIONS = MATERIALS.flatMap((material) =>
   )
 );
 
-const PRODUCT_LABELS = new Map(PRODUCT_OPTIONS.map((option) => [option.value, option.label]));
-
 const ORDER_FILTERS = defineFilterFields<Order>()({
   customer: { kind: "text", label: "Customer", icon: <User /> },
   // Every list of values shows its first 50 matches and asks for more typing. Count order puts the
@@ -111,34 +108,18 @@ function OrderEditor() {
 
 const dataTableFilter = createDataTableFilterFn();
 
-const { useAppTable: useOrdersTable, createAppColumnHelper } = createFuseTableHook({
-  features: tableFeatures({
-    columnFilteringFeature,
-    columnFacetingFeature,
-    rowPaginationFeature,
-    filteredRowModel: createFilteredRowModel(),
-    facetedRowModel: createFacetedRowModel(),
-    facetedUniqueValues: createFacetedUniqueValues(),
-    paginatedRowModel: createPaginatedRowModel(),
-    filterFns: { dataTableFilter },
-  }),
-  defaultColumn: { filterFn: "dataTableFilter" },
-  getRowId: (order: Order) => order.id,
+const features = tableFeatures({
+  columnFilteringFeature,
+  columnFacetingFeature,
+  filteredRowModel: createFilteredRowModel(),
+  facetedRowModel: createFacetedRowModel(),
+  facetedUniqueValues: createFacetedUniqueValues(),
+  filterFns: { dataTableFilter },
 });
 
-const columns = createAppColumnHelper<Order>();
-const COLUMNS = columns.columns([
-  columns.accessor("id", {
-    header: "Order",
-    enableColumnFilter: false,
-    cell: ({ cell }) => <cell.TextCell />,
-  }),
-  columns.accessor("customer", { header: "Customer", cell: ({ cell }) => <cell.TextCell /> }),
-  columns.accessor("product", {
-    header: "Product",
-    cell: ({ row }) => PRODUCT_LABELS.get(row.original.product),
-  }),
-]);
+const columns = createColumnHelper<typeof features, Order>();
+// In client mode TanStack filters only the ids that are columns, so each field needs one.
+const COLUMNS = columns.columns([columns.accessor("customer", {}), columns.accessor("product", {})]);
 
 const CUSTOMERS = ["Aurora Bakeri", "Fjellstue AS", "Havbris Sjømat", "Nordlys Kafé", "Bryggen Bokhandel"];
 
@@ -158,30 +139,32 @@ const INITIAL_FILTERS = [
 ];
 
 export function DataTableFilterHighCardinality() {
-  const table = useOrdersTable({
+  const table = useTable({
+    features,
     columns: COLUMNS,
     data: ORDERS,
-    initialState: { pagination: { pageIndex: 0, pageSize: 6 }, columnFilters: INITIAL_FILTERS },
+    defaultColumn: { filterFn: "dataTableFilter" },
+    getRowId: (order) => order.id,
+    initialState: { columnFilters: INITIAL_FILTERS },
   });
 
   return (
-    <table.AppTable>
-      <DataTableFilter.Root table={table} fields={ORDER_FILTERS}>
-        <div className="flex w-full min-w-0 flex-col gap-4">
-          <DataTableFilter.Bar aria-label="Order filters" />
-          <DataTableFilter.Content>
-            <DataTableFilter.FieldList>
-              <ProductFooter />
-            </DataTableFilter.FieldList>
-            <OrderEditor />
-          </DataTableFilter.Content>
-          <DataTableFilter.ValueContent>
-            <OrderEditor />
-          </DataTableFilter.ValueContent>
-          <table.Content aria-label="Orders" />
-          <table.Pagination />
-        </div>
-      </DataTableFilter.Root>
-    </table.AppTable>
+    <DataTableFilter.Root table={table} fields={ORDER_FILTERS}>
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        <DataTableFilter.Bar aria-label="Order filters" />
+        <DataTableFilter.Content>
+          <DataTableFilter.FieldList>
+            <ProductFooter />
+          </DataTableFilter.FieldList>
+          <OrderEditor />
+        </DataTableFilter.Content>
+        <DataTableFilter.ValueContent>
+          <OrderEditor />
+        </DataTableFilter.ValueContent>
+        <output className="text-sm text-muted-foreground tabular-nums">
+          {table.getRowModel().rows.length} of {ORDERS.length} orders
+        </output>
+      </div>
+    </DataTableFilter.Root>
   );
 }

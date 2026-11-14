@@ -3,19 +3,21 @@ lede: >
   The card row behind `CheckboxItem` and `RadioItem`. It needs a `Field.Root` for context.
 ---
 
-import { SelectionItemBasic } from "./demos/selection-item-basic";
-import { SelectionItemSubsection } from "./demos/selection-item-subsection";
-import { SelectionItemSelectableSubsection } from "./demos/selection-item-selectable-subsection";
+import { SelectionItemDemo } from "./demos/selection-item-demo";
+import { SelectionItemChecked } from "./demos/selection-item-checked";
 import { SelectionItemControlEnd } from "./demos/selection-item-control-end";
-import { SelectionItemStacked } from "./demos/selection-item-stacked";
-import { SelectionItemDisabled } from "./demos/selection-item-disabled";
+import { SelectionItemActions } from "./demos/selection-item-actions";
+import { SelectionItemSubSection } from "./demos/selection-item-sub-section";
+import { SelectionItemRevealedSubSection } from "./demos/selection-item-revealed-sub-section";
+import { SelectionItemSelectableSubSection } from "./demos/selection-item-selectable-sub-section";
 import { SelectionItemIcon } from "./demos/selection-item-icon";
-import { SelectionItemRadioStack } from "./demos/selection-item-radio-stack";
-import { SelectionItemCheckboxAdjacent } from "./demos/selection-item-checkbox-adjacent";
+import { SelectionItemDisabled } from "./demos/selection-item-disabled";
+import { SelectionItemDisabledChecked } from "./demos/selection-item-disabled-checked";
+import { SelectionItemStacked } from "./demos/selection-item-stacked";
 import { SelectionItemHorizontal } from "./demos/selection-item-horizontal";
-import { SelectionItemDisabledRows } from "./demos/selection-item-disabled-rows";
-import { SelectionItemDisabledGroup } from "./demos/selection-item-disabled-group";
-import { SelectionItemServer } from "./demos/selection-item-server";
+import { SelectionItemServerShell } from "./demos/selection-item-server-shell";
+import { SelectionItemServerCheckboxRows } from "./demos/selection-item-server-checkbox-rows";
+import { SelectionItemServerRadioRows } from "./demos/selection-item-server-radio-rows";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -23,139 +25,135 @@ export const metadata = componentMetadata("selection-item");
 
 <ComponentIntro slug="selection-item" />
 
-<Demo slug="selection-item" id="basic" title="Basic" file="selection-item-basic.tsx">
-  <SelectionItemBasic />
+<DefaultDemo slug="selection-item" file="selection-item-demo.tsx">
+  <SelectionItemDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { Field } from "@elmeragroup/fuse/field";
+import { SelectionItem } from "@elmeragroup/fuse/selection-item";
+
+<Field.Root>
+  <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox />}>
+    <SelectionItem.Content>
+      <SelectionItem.Title>Price alert</SelectionItem.Title>
+      <SelectionItem.Description>A text message when the spot price peaks.</SelectionItem.Description>
+    </SelectionItem.Content>
+  </SelectionItem.Shell>
+</Field.Root>
+```
+
+## Examples
+
+<Demo slug="selection-item" id="checked" title="Checked" level={3} file="selection-item-checked.tsx">
+  <SelectionItemChecked />
 </Demo>
-
-<Demo slug="selection-item" id="subsection" title="Sub-section" file="selection-item-subsection.tsx">
-  <SelectionItemSubsection />
-</Demo>
-
-<Prose>
-
-A click on a `SubSection` stays outside the click target, so a field or button in it never toggles the row. In a client component, a Fragment or wrapper around a `SubSection` hides it from the row, so pass such a band through the shell's `subSections`. When the sub-section only describes the option, pass `isSubSectionSelectable` to `CheckboxItem`, `RadioItem` or `SelectionItem.Shell`: a click on its text, its band or the padding beside it then toggles the control, and links, buttons and fields in it keep their own clicks. The control's name stays the label row. Leave it off when the sub-section reveals fields under the control.
-
-</Prose>
 
 <Demo
   slug="selection-item"
-  id="selectable-subsection"
-  title="Selectable sub-section"
-  file="selection-item-selectable-subsection.tsx">
-  <SelectionItemSelectableSubsection />
-</Demo>
-
-<Prose>
-
-A server component can write the rows too. `SelectionItem.SubSection` renders on the server, and a row finds it among its direct children whether the server or the client wrote them. That holds for a `SelectionItem.Shell` in the server component and for a `CheckboxItem` or `RadioItem` that a client component renders around the children the server component passes it.
-
-</Prose>
-
-<Demo slug="selection-item" id="server-component" title="Server component" file="selection-item-server.tsx">
-  <SelectionItemServer />
-</Demo>
-
-<Demo slug="selection-item" id="control-end" title="Control at the end" file="selection-item-control-end.tsx">
+  id="control-end"
+  title="Control at the end"
+  level={3}
+  file="selection-item-control-end.tsx">
   <SelectionItemControlEnd />
 </Demo>
 
-<Demo slug="selection-item" id="stacked" title="Stacked" file="selection-item-stacked.tsx">
-  <SelectionItemStacked />
+<Demo slug="selection-item" id="actions" title="Actions" level={3} file="selection-item-actions.tsx">
+  <SelectionItemActions />
 </Demo>
 
-<Demo slug="selection-item" id="disabled" title="Disabled" file="selection-item-disabled.tsx">
-  <SelectionItemDisabled />
+<Demo
+  slug="selection-item"
+  id="sub-section"
+  title="Sub-section"
+  level={3}
+  file="selection-item-sub-section.tsx">
+  <SelectionItemSubSection />
 </Demo>
 
-<Prose>
+<Demo
+  slug="selection-item"
+  id="revealed-sub-section"
+  title="Revealed sub-section"
+  level={3}
+  file="selection-item-revealed-sub-section.tsx">
+  <SelectionItemRevealedSubSection />
+</Demo>
 
-`RadioItem` and `CheckboxItem` take no icon. To show one beside the control, compose `SelectionItem.Shell` and pass the control and the icon together as `control`. Hide the icon with `aria-hidden`, so the row's title and description stay the control's name.
+<Demo
+  slug="selection-item"
+  id="selectable-sub-section"
+  title="Selectable sub-section"
+  level={3}
+  file="selection-item-selectable-sub-section.tsx">
+  <SelectionItemSelectableSubSection />
+</Demo>
 
-</Prose>
-
-<Demo slug="selection-item" id="icon" title="Icon beside the control" file="selection-item-icon.tsx">
+<Demo
+  slug="selection-item"
+  id="icon"
+  title="Icon beside the control"
+  level={3}
+  file="selection-item-icon.tsx">
   <SelectionItemIcon />
 </Demo>
 
-<Prose>
-
-## Theming
-
-A row's edges come from four theme roles. In a vertical group, the rows share one line per join. In a horizontal group, each row is a card of its own and draws no divider. Neutral themes outline every row in `--border` and box a checked row in `--primary`. Branded themes draw no outer edge, only a grey line between stacked rows, so the control alone shows which row is checked.
-
-</Prose>
-
-<Demo
-  slug="selection-item"
-  id="radio-stack"
-  title="Stacked radio items"
-  file="selection-item-radio-stack.tsx">
-  <SelectionItemRadioStack />
+<Demo slug="selection-item" id="disabled" title="Disabled" level={3} file="selection-item-disabled.tsx">
+  <SelectionItemDisabled />
 </Demo>
 
 <Demo
   slug="selection-item"
-  id="checkbox-adjacent"
-  title="Adjacent checked rows"
-  file="selection-item-checkbox-adjacent.tsx">
-  <SelectionItemCheckboxAdjacent />
+  id="disabled-checked"
+  title="Disabled and checked"
+  level={3}
+  file="selection-item-disabled-checked.tsx">
+  <SelectionItemDisabledChecked />
 </Demo>
 
-<Demo slug="selection-item" id="horizontal" title="Horizontal group" file="selection-item-horizontal.tsx">
+<Demo slug="selection-item" id="stacked" title="Stacked rows" level={3} file="selection-item-stacked.tsx">
+  <SelectionItemStacked />
+</Demo>
+
+<Demo
+  slug="selection-item"
+  id="horizontal"
+  title="Horizontal group"
+  level={3}
+  file="selection-item-horizontal.tsx">
   <SelectionItemHorizontal />
 </Demo>
 
-<Prose>
-
-| Role                              | Neutral                           | Branded                    | Draws                                           |
-| --------------------------------- | --------------------------------- | -------------------------- | ----------------------------------------------- |
-| `--selection-border`              | `var(--border)`                   | `oklch(0 0 0 / 0)`         | A row's outer edge                              |
-| `--selection-checked-border`      | `var(--primary)`                  | `var(--selection-border)`  | A checked row's edge: the box around it         |
-| `--selection-divider`             | `var(--selection-border)`         | `var(--border)`            | The line between two stacked rows               |
-| `--selection-checked-divider`     | `var(--selection-checked-border)` | `var(--selection-divider)` | The lines above and below a checked stacked row |
-| `--selection-disabled-background` | `var(--muted)`                    | `var(--card)`              | A disabled row's fill                           |
-| `--selection-disabled-hatch`      | `oklch(0 0 0 / 0.02)`             | `oklch(0 0 0 / 0)`         | The stripes of a disabled row's 45° hatch       |
-| `--selection-disabled-foreground` | `var(--foreground)`               | `var(--muted-foreground)`  | A disabled row's title and other label row text |
-
-The theme settings menu in the docs header switches the demos above between the neutral and the branded identity, so both looks show on the same rows.
-
-A row disabled on its own, or through a disabled group, takes the three disabled roles. Switch the theme on the two demos below to compare them. Neutral themes fill the row with `--muted` under faint black stripes and keep the title's colour. Branded themes keep the card fill of an enabled row with no stripes. What marks a branded disabled row is its control at 50%, its title greyed to `--muted-foreground` and the `not-allowed` cursor. A description keeps its own muted text, and a `SubSection` keeps its colours.
-
-</Prose>
-
 <Demo
   slug="selection-item"
-  id="disabled-rows"
-  title="Disabled rows, one checked"
-  file="selection-item-disabled-rows.tsx">
-  <SelectionItemDisabledRows />
+  id="server-shell"
+  title="Server shell"
+  level={3}
+  file="selection-item-server-shell.tsx">
+  <SelectionItemServerShell />
 </Demo>
 
 <Demo
   slug="selection-item"
-  id="disabled-group"
-  title="Disabled group"
-  file="selection-item-disabled-group.tsx">
-  <SelectionItemDisabledGroup />
+  id="server-checkbox-rows"
+  title="Server checkbox rows"
+  level={3}
+  file="selection-item-server-checkbox-rows.tsx">
+  <SelectionItemServerCheckboxRows />
 </Demo>
 
-<Prose>
-
-A checked row's `bg-muted` tint and a disabled row's fill win over a background class on the row, such as `bg-background` for a list that shows its surface through. To change the disabled fill, set `--selection-disabled-background` instead, for example to `var(--background)`.
-
-The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved, and cards keep their `--card-border` edge. To give branded rows back an outer edge:
-
-```tsx
-import type { CSSProperties } from "react";
-
-<ThemeScope theme={theme} style={{ "--selection-border": "var(--border)" } as CSSProperties}>
-  <RadioItemGroup label="Payment method">{/* … */}</RadioItemGroup>
-</ThemeScope>;
-```
-
-The [theming handbook](/handbook/theming#how-it-resolves) explains how the identity layers set these roles.
-
-</Prose>
+<Demo
+  slug="selection-item"
+  id="server-radio-rows"
+  title="Server radio rows"
+  level={3}
+  file="selection-item-server-radio-rows.tsx">
+  <SelectionItemServerRadioRows />
+</Demo>
 
 <ApiReference slug="selection-item" />
 

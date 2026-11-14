@@ -384,9 +384,20 @@ const PresetsContext = createContext<PresetsContextValue | undefined>(undefined)
 
 /** `DatePicker.Presets` takes a `div`'s props, Base UI's `render` and the pane's own. */
 export type DatePickerPresetsProps = Omit<useRender.ComponentProps<"div">, "defaultValue" | "onChange"> & {
-  /** The checked preset's value, when the parent owns it. `null` checks none. */
+  /**
+   * The `DatePicker.PresetItem`s. Each is a native radio inside its label, so the whole row is the
+   * target, and the arrow keys move between them.
+   */
+  children?: useRender.ComponentProps<"div">["children"];
+  /**
+   * The checked preset's value, when the parent owns it. `null` checks none. Clear it yourself, in
+   * the picker's `onValueChange`, when the value changes any other way.
+   */
   value?: string | null;
-  /** The preset checked first, when the pane owns its value. */
+  /**
+   * The preset checked first, when the pane owns its value. Such a pane clears its key when the
+   * picker's value changes any other way: a day, typing, a time or a form reset.
+   */
   defaultValue?: string | null;
   /**
    * Called with the key of a preset pressed or chosen by key while it was not checked. A preset
@@ -394,7 +405,8 @@ export type DatePickerPresetsProps = Omit<useRender.ComponentProps<"div">, "defa
    * value. For a preset with one, the picker's `onValueChange` runs first: canceling there refuses
    * the whole press, and this is never called. This runs once the picker's value is committed;
    * canceling it keeps the checked preset as it was, and does not undo that value.
-   * `details.reason` is `"preset-press"`, and `details.trigger` the preset's radio.
+   * `details.reason` is `"preset-press"`, `details.event` the DOM event and `details.trigger` the
+   * preset's radio.
    */
   onValueChange?: (value: string, details: DatePickerPresetsValueChangeEventDetails) => void;
   /** The pane's accessible name. An explicit `aria-label` wins over it; both win over "Date presets". */

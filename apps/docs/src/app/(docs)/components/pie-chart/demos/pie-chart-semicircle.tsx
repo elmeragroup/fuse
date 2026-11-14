@@ -3,42 +3,37 @@
 import { PieChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-// One month's consumption split into the grid tariff's rate periods, in kilowatt-hours.
-const periods = [
-  { period: "day", kwh: 412 },
-  { period: "night", kwh: 238 },
-  { period: "weekend", kwh: 151 },
+// One household's electricity bill for October, in kroner.
+const bill = [
+  { part: "energy", kr: 612 },
+  { part: "rent", kr: 438 },
+  { part: "taxes", kr: 287 },
+  { part: "fee", kr: 49 },
 ];
 
-const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 0 } as const;
-
 const config = {
-  day: { label: "Day", color: "chart-1", format: energy },
-  night: { label: "Night", color: "chart-2", format: energy },
-  weekend: { label: "Weekend", color: "chart-3", format: energy },
+  energy: { label: "Energy", color: "chart-1" },
+  rent: { label: "Grid rent", color: "chart-2" },
+  taxes: { label: "Taxes", color: "chart-3" },
+  fee: { label: "Monthly fee", color: "chart-4" },
 } as const satisfies ChartConfig;
 
 export function PieChartSemicircle() {
   return (
     <PieChart.Root
-      data={periods}
+      data={bill}
       config={config}
-      nameKey="period"
-      valueKey="kwh"
+      nameKey="part"
+      valueKey="kr"
+      valueFormat={{ style: "currency", currency: "NOK", maximumFractionDigits: 0 }}
       startAngle={-90}
       endAngle={90}
       innerRadius={0.55}
-      padAngle={1}
-      aria-label="Consumption per rate period in October">
+      aria-label="Electricity bill for October">
       <PieChart.Pie />
-      <PieChart.Labels position="inside">
-        <PieChart.LegendShare />
-      </PieChart.Labels>
-      <PieChart.Center>
-        <PieChart.CenterValue />
-      </PieChart.Center>
-      <PieChart.Legend />
+      <PieChart.Labels />
       <PieChart.Tooltip />
+      <PieChart.Table />
     </PieChart.Root>
   );
 }

@@ -40,7 +40,6 @@ export function ChartComposedBarGroupLine() {
         <Chart.Bar dataKey="production" />
       </Chart.BarGroup>
       <Chart.Line dataKey="production" />
-      <Chart.Dots dataKey="production" />
       <Chart.Legend />
       <Chart.Tooltip />
       <Chart.Table />

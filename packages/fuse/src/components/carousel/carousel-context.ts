@@ -137,8 +137,9 @@ export function useCarouselContext(part: string): CarouselContextValue {
 
 /**
  * The enclosing `Carousel.Root`'s state, actions and configuration, for a custom control such as
- * a thumbnail strip or a page count of your own. The result keeps its identity until one of them
- * changes.
+ * a thumbnail strip or a page count of your own. `state` has `index`, `pageCount`, `canPrevious`,
+ * `canNext` and `rotating`. `actions` has `goTo`, `previous`, `next`, `play` and `stop`. `meta`
+ * has `orientation`. The result keeps its identity until one of them changes.
  *
  * @returns The current page, the page count, whether each direction can move and whether the
  *   pages rotate; the actions that change them; and the orientation.

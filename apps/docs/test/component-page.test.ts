@@ -17,7 +17,7 @@ describe("component page anatomy", () => {
       'href="https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"'
     );
     expect(html).toContain("View source");
-    // The import line and the page's own RSC status appear only on the markdown endpoint.
+    // The intro carries neither an import line nor a client or server badge. Usage holds the imports.
     const intro = html.slice(html.indexOf("<h1"), html.indexOf("data-demo-frame"));
     expect(intro).not.toContain("@elmeragroup/fuse/button");
     expect(intro).not.toMatch(/>(?:client|server)</u);
@@ -152,8 +152,8 @@ describe("component page anatomy", () => {
     const html = await fetchText("/components/scroll-area");
     expect(html).toContain('href="#api-reference"');
     expect(html).toContain('href="#tokens-consumed"');
-    expect(html).toContain('href="#vertical"');
-    expect(html).toContain('href="#composition-limits"');
-    expect(html).toContain('id="composition-limits"');
+    expect(html).toContain('href="#horizontal"');
+    expect(html).toContain('href="#usage"');
+    expect(html).toContain('id="usage"');
   });
 });

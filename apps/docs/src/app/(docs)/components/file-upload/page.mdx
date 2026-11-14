@@ -3,12 +3,14 @@ lede: >
   An area that takes files from the picker, a drop or a paste, and checks them against `accept`.
 ---
 
-import { FileUploadCompact } from "./demos/file-upload-compact";
-import { FileUploadLimits } from "./demos/file-upload-limits";
+import { FileUploadDemo } from "./demos/file-upload-demo";
 import { FileUploadPicker } from "./demos/file-upload-picker";
+import { FileUploadLimits } from "./demos/file-upload-limits";
 import { FileUploadFolders } from "./demos/file-upload-folders";
 import { FileUploadField } from "./demos/file-upload-field";
+import { FileUploadInvalid } from "./demos/file-upload-invalid";
 import { FileUploadForm } from "./demos/file-upload-form";
+import { FileUploadDisabled } from "./demos/file-upload-disabled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,102 +18,54 @@ export const metadata = componentMetadata("file-upload");
 
 <ComponentIntro slug="file-upload" />
 
-<Prose>
+<DefaultDemo slug="file-upload" file="file-upload-demo.tsx">
+  <FileUploadDemo />
+</DefaultDemo>
 
-`FileUpload.Root` holds the hidden file input and the rules: `accept`, `multiple` and `directory`. `FileUpload.Dropzone` is the area files drop on, `FileUpload.Trigger` opens the picker, and `FileUpload.Description` is the hint that describes the Trigger. Every source ends in the same check. `onSelect` receives the files that pass, in a new array that is yours to keep. `onReject` receives the rest, each with a `reason`: `"type"` for a file that fails `accept`, `"count"` for each of them when a Root without `multiple` gets more than one file that passes `accept`, `"directory"` for a folder while `directory` is off, and `"unreadable"` for a file in a dropped folder that the browser could not read.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Button } from "@elmeragroup/fuse/button";
+import { FileUpload } from "@elmeragroup/fuse/file-upload";
 
-<Demo slug="file-upload" id="compact" title="Compact drop zone" file="file-upload-compact.tsx">
-  <FileUploadCompact />
-</Demo>
+<FileUpload.Root accept="image/*,.pdf" multiple onSelect={setFiles}>
+  <FileUpload.Dropzone>
+    <FileUpload.Trigger render={<Button size="sm" />}>Add files</FileUpload.Trigger>
+    <FileUpload.Description>Images or PDFs.</FileUpload.Description>
+  </FileUpload.Dropzone>
+</FileUpload.Root>
+```
 
-<Prose>
+## Examples
 
-## Drop zone
-
-A drag over the Dropzone sets `data-drop-target`, which turns its dashed border solid on the soft primary fill. When the drop is certain to fail, because a single-file Root gets several files whose types pass `accept` or every file's type misses `accept`, the zone shows the not-allowed cursor and stays as it is. Safari hides the files until the drop, so there the check waits for the drop. A click on the Dropzone's empty surface opens the picker as well. That path is for the pointer only, so keep a Trigger inside the zone for the keyboard. Render the Trigger as a Fuse button with `render={<Button size="sm" />}`.
-
-While any Root is mounted, a file dropped outside every Dropzone does nothing, so a missed drop never opens the file in the tab.
-
-## Limits
-
-FileUpload checks `accept` and `multiple`. Limits such as a file count or a size are the app's own, so check them in `onSelect` before you keep a file. This demo keeps up to 3 files of 5 MB each, shows each as an [Attachment](/components/attachment), and builds one alert from `onReject` and its own limits. An image previews through an object URL, which removing the file revokes.
-
-</Prose>
-
-<Demo slug="file-upload" id="attachment-limits" title="Attachments with limits" file="file-upload-limits.tsx">
-  <FileUploadLimits />
-</Demo>
-
-<Prose>
-
-## Without a Dropzone
-
-Without a Dropzone, the Trigger and the Description are a plain picker. A paste still works while focus is inside the Root.
-
-</Prose>
-
-<Demo slug="file-upload" id="picker-only" title="Picker only" file="file-upload-picker.tsx">
+<Demo slug="file-upload" id="picker-only" title="Picker only" level={3} file="file-upload-picker.tsx">
   <FileUploadPicker />
 </Demo>
 
-<Prose>
-
-## In a Field
-
-Inside a `Field.Root`, the FileUpload wires to the Field the way an input does. Inside a Field, render one `FileUpload.Trigger`; the Field's label, description and error belong to it. Give it an `id` through its own `id` prop, not its `render` element, which the label does not follow. `Field.Label` names the Trigger after its own text, so this Trigger reads "Choose file Meter photo", and a click on the label opens the picker. The Trigger is described by its own `aria-describedby` ids, then by `Field.Description` and `Field.Error` in the order the Field lists them, then by each `FileUpload.Description`. An invalid Field marks the Trigger `aria-invalid`, and the Trigger alone paints the error border and ring, so the Dropzone around it keeps its dashed border. A disabled `Field.Root` or `Field.Set` disables the FileUpload. This demo marks the Field invalid when `onReject` reports a rejection, and its `Field.Error` names each `reason`: a file that is not an image, a second photo on the single-file Root, or a folder.
-
-</Prose>
-
-<Demo slug="file-upload" id="field" title="In a Field" file="file-upload-field.tsx">
-  <FileUploadField />
+<Demo slug="file-upload" id="limits" title="Limits" level={3} file="file-upload-limits.tsx">
+  <FileUploadLimits />
 </Demo>
 
-<Prose>
-
-## Posting with a form
-
-To post files with a native form, give the Root a `name` and the controlled `files` it posts, and add each pick from `onSelect` to `files`. The Root writes `files` into a hidden input of its own, apart from the picker, so a submit or `new FormData(form)` carries exactly that list under `name`. The picker stays empty between picks, so picking a file that is already posted still reaches `onSelect`. A pick that is rejected, or that the parent does not add, never changes what is posted, and removing a file from `files` removes it from the post. An empty list posts as a native file input with no selection does, with one empty entry. Inside a `Field.Root` with a `name`, that name posts the files, as it does for other controls. A native form reset, including the one React runs after a form action, leaves `files` and the post as they are. A disabled Root posts nothing. Without `files`, the Root posts nothing, and `name` without `files` is a type error.
-
-`required` asks for at least one file in `files`; an empty list and no `files` at all both count as none, as a native file input with no selection does. A native form's submit then stops and moves focus to the first enabled Trigger, as this demo shows. Inside a `Field.Root`, the Trigger is the Field's control and `files` its value, validated as the Field's `validationMode` says, on the Trigger's blur in `onBlur` mode, and on a Base UI `Form` submit. With no files, `Field.Error match="valueMissing"` describes the Trigger and marks it `aria-invalid`, and a `Form` focuses it; `onFormSubmit` receives the files under the Field's `name`. Adding a file clears the error, as typing does in a text field. Opening the picker validates nothing. A disabled Root is never required.
-
-</Prose>
-
-<Demo slug="file-upload" id="form" title="Posting with a form" file="file-upload-form.tsx">
-  <FileUploadForm />
-</Demo>
-
-<Prose>
-
-## Folder uploads
-
-`directory` makes the picker choose folders, and a dropped folder expands into the files inside it, at any depth. Each file's `webkitRelativePath` holds its path inside the folder, such as `photos/2024/meter.jpg`, for a dropped folder as for a picked one.
-
-</Prose>
-
-<Demo slug="file-upload" id="folders" title="Folders" file="file-upload-folders.tsx">
+<Demo slug="file-upload" id="folders" title="Folders" level={3} file="file-upload-folders.tsx">
   <FileUploadFolders />
 </Demo>
 
-<Prose>
+<Demo slug="file-upload" id="field" title="In a Field" level={3} file="file-upload-field.tsx">
+  <FileUploadField />
+</Demo>
 
-## Paste
+<Demo slug="file-upload" id="invalid" title="Invalid" level={3} file="file-upload-invalid.tsx">
+  <FileUploadInvalid />
+</Demo>
 
-A paste adds its files while focus is anywhere inside the Root, such as on the Trigger. A text field inside the Root keeps its own paste.
+<Demo slug="file-upload" id="form" title="Posting with a form" level={3} file="file-upload-form.tsx">
+  <FileUploadForm />
+</Demo>
 
-## Custom sources
-
-`useFileUpload()` gives a part inside the Root its `state`, with `dragging` and `disabled`, and its `actions`. `actions.open()` opens the picker from a click or another user gesture. `actions.add(files)` sends files from another source through the same check as a pick.
-
-## Accessibility
-
-- **Keep a Trigger.** The Dropzone's drop and click work by pointer only. The Trigger is the keyboard path to the picker.
-- **Describe the limits.** Put what the Root takes in `FileUpload.Description`, such as "Images or PDFs, up to 3 files of 5 MB each". It describes every Trigger in the Root.
-- **Label it with a Field.** A `Field.Label` adds the field's name to the Trigger's own text, and `Field.Error` describes the Trigger while the Field is invalid.
-- **Say what was rejected.** `onReject` reports each file and the reason. Show it in words, for example in an [Alert](/components/alert), which announces itself.
-
-</Prose>
+<Demo slug="file-upload" id="disabled" title="Disabled" level={3} file="file-upload-disabled.tsx">
+  <FileUploadDisabled />
+</Demo>
 
 <ApiReference slug="file-upload" />
 

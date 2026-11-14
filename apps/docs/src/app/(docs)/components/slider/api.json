@@ -15,7 +15,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for label-less usage. A range joins it to each thumb's name.",
+          "description": "The accessible name for a slider with no `label`. A range joins it to each thumb's name.",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -33,7 +33,7 @@
           "type": "Value | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial value. An array of two or more numbers renders one thumb per entry; a one-number array is read as that number. It is read on mount and again on a native form reset, as React reads its own inputs' defaults.",
+          "description": "The value on mount, for an uncontrolled slider. An array of two or more numbers renders one thumb per entry, and a one-number array is read as that number. The slider reads it on mount and again on a native form reset, as React reads its own inputs' defaults.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -51,7 +51,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead.",
+          "description": "The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows its own validation error instead.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "NumberFormatOptions | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Formatting options for the shown value and each thumb's `aria-valuetext`, forwarded as base-ui `format`. Locale comes from the provider.",
+          "description": "Number format options for the value `showValue` shows and the value a screen reader announces for each thumb. The locale comes from the provider.",
           "required": false
         },
         {
@@ -69,7 +69,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and `Slider.Root`; the thumb shows the disabled state face.",
+          "description": "Disables the slider, so the thumb shows the disabled face.",
           "required": false
         },
         {
@@ -78,7 +78,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`; the thumb shows the invalid state face.",
+          "description": "Marks the field invalid, so the thumb shows the invalid face.",
           "required": false
         },
         {
@@ -87,7 +87,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`; it names the thumb of a single-value slider.",
+          "description": "The visible label, rendered as `Field.Label`. It names the thumb of a single-value slider.",
           "required": false
         },
         {
@@ -95,8 +95,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Step for PageUp, PageDown and Shift with an arrow. Defaults to 10.",
+          "defaultValue": "10",
+          "description": "The step for PageUp, PageDown and Shift with an arrow key.",
           "required": false
         },
         {
@@ -104,8 +104,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Upper bound, forwarded as base-ui `max`. Defaults to 100.",
+          "defaultValue": "100",
+          "description": "The highest value.",
           "required": false
         },
         {
@@ -113,8 +113,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Lower bound, forwarded as base-ui `min`. Defaults to 0.",
+          "defaultValue": "0",
+          "description": "The lowest value.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` forwarded to the primitive, so the value submits with a form.",
+          "description": "The form field name the value submits under.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
           "type": "((value: ReportedValue<Value>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the new value on every change while it moves. A range keeps the shape of `value`, with each element widened to `number`. A native form reset does not call it.",
+          "description": "Called with the new value on every change while a thumb moves. A range reports an array of the same length as `value`. A native form reset does not call it.",
           "required": false
         },
         {
@@ -141,7 +141,7 @@
           "type": "((value: ReportedValue<Value>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the final value when the user finishes a change. It fires once when a thumb drag or a track press ends, if the press moved the value at any point, even when the value ends where it started. It also fires on each key press that changes the value. A range reports the same shape as `onChange`. It does not fire while a thumb drags, or for a press that never moved the value.",
+          "description": "Called with the final value when the user finishes a change. It fires once when a thumb drag or a track press ends, if the press moved the value at any point, even when the value ends where it started. It also fires on each key press that changes the value. A range reports the same shape as `onChange`. It does not fire while a thumb drags, or for a press that never moved the value. Save or fetch from here rather than from `onChange`.",
           "required": false
         },
         {
@@ -150,7 +150,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
-          "description": "Layout axis. A vertical slider fills its parent's height, and its control below the label row keeps at least 160px.",
+          "description": "The slider's axis. A vertical slider fills its parent's height below the label row, so give the parent a height. Its control keeps at least 160px.",
           "required": false,
           "values": [
             "horizontal",
@@ -163,7 +163,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows the formatted value at the end of the label row; a range joins its values with an en dash.",
+          "description": "Shows the formatted value at the end of the label row. A range joins its values with an en dash.",
           "required": false
         },
         {
@@ -171,8 +171,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Step for the arrow keys and the snap grid, counted from `minValue`. Defaults to 1.",
+          "defaultValue": "1",
+          "description": "The step for the arrow keys and the snap grid, counted from `minValue`.",
           "required": false
         },
         {
@@ -190,7 +190,7 @@
           "type": "Value | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value. `Value` is a `number`, or an array of at least two numbers with one value per thumb for a range. A one-number array from untyped code is read as that number, so `onChange` reports a number. `undefined`, passed or omitted, is uncontrolled, as with React's own inputs.",
+          "description": "The value, for a controlled slider. `Value` is a `number`, or an array of at least two numbers, one per thumb, for a range. A one-number array from untyped code is read as that number, so `onChange` reports a number. `undefined`, passed or omitted, makes the slider uncontrolled, as with React's own inputs. A slider suits known bounds where a rough position is enough. For an exact number, give a NumberField the same value beside it.",
           "required": false
         }
       ]

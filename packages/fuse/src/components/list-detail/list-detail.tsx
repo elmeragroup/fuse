@@ -88,8 +88,9 @@ function useDetailContext(part: string): DetailContextValue {
 
 export type ListDetailRootProps = useRender.ComponentProps<"div"> & {
   /**
-   * Whether the detail Sheet is open. Set it when the user opens an item. From the breakpoint
-   * the pane shows the item instead, so the root answers an `open` there with
+   * Whether the detail Sheet is open. The app holds the selected item, and `open` says only
+   * whether its Sheet is open. Set it when the user opens an item, and follow `onOpenChange`.
+   * From the breakpoint the pane shows the item instead, so the root answers an `open` there with
    * `onOpenChange(false)`, and the Sheet stays closed until the root narrows with focus in the
    * pane.
    */
@@ -97,29 +98,32 @@ export type ListDetailRootProps = useRender.ComponentProps<"div"> & {
   /**
    * Called when the Sheet asks to open or close, when the pane takes over an open Sheet's item,
    * and when the root stops splitting with focus inside the pane, which opens the Sheet.
+   *
+   * A change of layout, from the root's width, the root font size or `split`, keeps focus where
+   * the user was. Losing the split with focus inside the pane opens the Sheet, which takes focus.
+   * With focus elsewhere the list keeps it. Gaining the split with focus inside the Sheet moves
+   * focus to the pane, after any menu or dialog open in the Sheet has closed. A Sheet that opened
+   * because the root narrowed returns focus, when it closes, to the list item that last held
+   * focus.
    */
   onOpenChange: (open: boolean) => void;
   /**
-   * The root width from which the detail sits beside the list.
-   * @default "4xl"
+   * The root width from which the detail is a complementary pane beside the list. Below it, the
+   * detail opens in a Sheet over the list. The breakpoint is a container query on the root, so it
+   * follows the room the root has: a Sidebar opening beside it narrows it as a smaller window
+   * does. The root takes its width from its parent. The server renders the split layout, and CSS
+   * hides the pane in a root narrower than the breakpoint, so the first paint matches before any
+   * script runs. Pass `never` to keep the detail in a Sheet at every width, for a list that needs
+   * all of its width, such as a wide table.
    */
   split?: ListDetailSplit;
 };
 
 /**
  * A list with the detail of its open item: a pane beside the list from the `split` width of the
- * root, a Sheet over the list below it. The breakpoint is a container query on the root, so it
- * follows the room the root has, and the root takes its width from its parent.
- *
- * The server renders the split layout, and CSS hides the pane while the root is narrower than
- * the breakpoint, so the first paint matches the root's width. The client then follows the same
- * container query and swaps the pane for the Sheet below the breakpoint.
- *
- * A change of layout, from the root's width, the root font size or `split`, keeps the user where
- * they were. Losing the split with focus inside the pane opens the Sheet, which takes focus; with
- * focus elsewhere the list keeps it. Gaining the split with focus inside the Sheet moves focus to
- * the pane. The detail's content remounts on a change of layout, so keep a draft it must not lose
- * in state above it.
+ * root, and a Sheet over the list below it. The client follows the same container query as the
+ * server-rendered CSS, at the root's layout width and the current root font size, and swaps the
+ * pane for the Sheet below the breakpoint.
  */
 export function ListDetailRoot({
   open,
@@ -314,15 +318,33 @@ export function ListDetailList({ className, render, ref, ...props }: ListDetailL
   });
 }
 
-export type ListDetailDetailProps = useRender.ComponentProps<"aside"> &
-  Pick<SheetContentProps, "size" | "showCloseButton" | "closeLabel">;
+export type ListDetailDetailProps = Omit<useRender.ComponentProps<"aside">, "children" | "aria-label"> & {
+  /**
+   * The open item's detail, with a `ListDetail.Title` that names the pane and the Sheet's dialog.
+   * The pane shows at every width from the breakpoint, so render an empty state here while
+   * nothing is selected. The content remounts on a change of layout, so keep a draft it must not
+   * lose in state above it.
+   */
+  children?: useRender.ComponentProps<"aside">["children"];
+  /**
+   * The pane's or the dialog's name while no `ListDetail.Title` is mounted, such as while nothing
+   * is selected. The element props, `className`, `ref` and `render` land on whichever is mounted.
+   */
+  "aria-label"?: useRender.ComponentProps<"aside">["aria-label"];
+  /** The Sheet's maximum width, as on `Sheet.Content`. It applies below the breakpoint only. */
+  size?: SheetContentProps["size"];
+  /** Shows the Sheet's corner close button. It applies below the breakpoint only. */
+  showCloseButton?: boolean;
+  /**
+   * The Sheet's corner close button's accessible name. Unset, it reads `overlay.close` from the
+   * locale dictionary. It applies below the breakpoint only.
+   */
+  closeLabel?: string;
+};
 
 /**
  * The open item's detail: a complementary `<aside>` beside the list in the split layout, and the
- * Sheet's dialog below the breakpoint. A `ListDetail.Title` inside names both. Its element props,
- * `className`, `ref` and `render` land on whichever is mounted, so an `aria-label` names the pane,
- * or the dialog, whenever no Title is mounted, such as while nothing is selected. `size`,
- * `showCloseButton` and `closeLabel` are the Sheet's and apply below the breakpoint only.
+ * Sheet's dialog below the breakpoint.
  */
 export function ListDetailDetail({
   className,
@@ -422,13 +444,19 @@ export function ListDetailTitle({ className, render, id, ...props }: ListDetailT
   );
 }
 
-export type ListDetailCloseProps = ComponentProps<typeof SheetClose>;
+type SheetCloseProps = ComponentProps<typeof SheetClose>;
 
-/**
- * Closes the detail Sheet. It renders only below the breakpoint, where the detail is a Sheet, so
- * a detail can place it in its own header in both layouts. Compose it with a button through
- * `render`, as `Sheet.Close` composes.
- */
+/** The props of `ListDetail.Close`, which are `Sheet.Close`'s. */
+export type ListDetailCloseProps = Omit<SheetCloseProps, "render"> & {
+  /**
+   * The button that closes the Sheet, such as `<button type="button" aria-label="Close details" />`,
+   * as `Sheet.Close` composes. The close renders only below the breakpoint, where the detail is a
+   * Sheet, so a detail can keep it in its own header in both layouts.
+   */
+  render?: SheetCloseProps["render"];
+};
+
+/** Closes the detail Sheet. */
 export function ListDetailClose(props: ListDetailCloseProps): ReactElement | null {
   const { layout } = useDetailContext("Close");
   return layout === "overlay" ? <SheetClose {...props} /> : null;

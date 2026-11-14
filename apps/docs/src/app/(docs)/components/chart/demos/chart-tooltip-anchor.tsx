@@ -23,6 +23,7 @@ export function ChartTooltipTop() {
       data={hours}
       config={config}
       xKey="start"
+      defaultActiveX={new Date(Date.UTC(2026, 9, 17, 5))}
       interval="hour"
       timeZone="Europe/Oslo"
       aria-label="Usage per hour, 17 October">

@@ -1,19 +1,21 @@
 /**
- * Twemoji-derived face SVGs. Graphics remain CC BY 4.0 — see
- * packages/fuse/THIRD_PARTY_NOTICES.md and licenses/twemoji-CC-BY-4.0.txt.
+ * Face SVGs from Twemoji. The graphics stay CC BY 4.0, as
+ * packages/fuse/THIRD_PARTY_NOTICES.md and licenses/twemoji-CC-BY-4.0.txt state.
  *
- * Hex fills are brand-independent illustration artwork, intentionally exempt
- * from the tokens-only rule. `no-primitive-colors` targets
- * Tailwind palette classes, not SVG attribute fills.
+ * The hex fills are illustration artwork that no brand changes, so the tokens-only rule does not
+ * apply to them. `no-primitive-colors` checks Tailwind palette classes, not SVG fill attributes.
  */
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-export type EmojiProps = ComponentProps<"svg"> & {
+/** An Emoji face takes a native `svg` element's props plus its `label`. */
+export type EmojiProps = Omit<ComponentProps<"svg">, "className"> & {
   /**
-   * Accessible name. When set, the svg is `role="img"` with this `aria-label`.
-   * When omitted, the svg is decorative (`aria-hidden` + `focusable="false"`).
+   * The face's accessible name. With it, the SVG is `role="img"` with this `aria-label`. Without
+   * it, the face is decorative and hidden from screen readers.
    */
   label?: string;
+  /** Extra classes. Size the face with a `size-*` class, such as `size-5`. */
+  className?: ComponentProps<"svg">["className"];
 };
 
 function EmojiSvg({ label, children, ...props }: EmojiProps & { children: ReactNode }): ReactElement {
@@ -32,6 +34,7 @@ function EmojiSvg({ label, children, ...props }: EmojiProps & { children: ReactN
   );
 }
 
+/** The slightly frowning face, 🙁. */
 function SlightlyFrowningFace(props: EmojiProps): ReactElement {
   return (
     <EmojiSvg {...props}>
@@ -46,6 +49,7 @@ function SlightlyFrowningFace(props: EmojiProps): ReactElement {
   );
 }
 
+/** The slightly smiling face, 🙂. */
 function SlightlySmilingFace(props: EmojiProps): ReactElement {
   return (
     <EmojiSvg {...props}>
@@ -60,6 +64,7 @@ function SlightlySmilingFace(props: EmojiProps): ReactElement {
   );
 }
 
+/** The neutral face, 😐. */
 function NeutralFace(props: EmojiProps): ReactElement {
   return (
     <EmojiSvg {...props}>
@@ -74,6 +79,7 @@ function NeutralFace(props: EmojiProps): ReactElement {
   );
 }
 
+/** The loudly crying face, 😭. */
 function LoudlyCryingFace(props: EmojiProps): ReactElement {
   return (
     <EmojiSvg {...props}>
@@ -93,6 +99,7 @@ function LoudlyCryingFace(props: EmojiProps): ReactElement {
   );
 }
 
+/** The partying face, 🥳. */
 function PartyingFace(props: EmojiProps): ReactElement {
   return (
     <EmojiSvg {...props}>
@@ -156,6 +163,7 @@ NeutralFace.displayName = "Emoji.NeutralFace";
 LoudlyCryingFace.displayName = "Emoji.LoudlyCryingFace";
 PartyingFace.displayName = "Emoji.PartyingFace";
 
+/** The Emoji faces, as `Emoji.SlightlySmilingFace` and its siblings. */
 const Emoji = {
   SlightlyFrowningFace,
   SlightlySmilingFace,
