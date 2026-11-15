@@ -18,13 +18,13 @@ import {
 } from "./clock";
 import { settleFloors } from "./floor-settle";
 
-describe("slot angles (D11)", () => {
+describe("slot angles", () => {
   it("gives every slot of a 25-hour day an equal 14.4°", () => {
-    expect(slotAngles(7, 25)).toEqual({ start: 100.8, end: 115.2, centre: 108 });
+    expect(slotAngles(7, 25)).toEqual({ start: 100.8, end: 115.2, center: 108 });
   });
 
   it("puts slot 0 at 12 o'clock", () => {
-    expect(slotAngles(0, 24)).toEqual({ start: 0, end: 15, centre: 7.5 });
+    expect(slotAngles(0, 24)).toEqual({ start: 0, end: 15, center: 7.5 });
   });
 
   it("points Now at the share of its slot that has passed", () => {
@@ -33,7 +33,7 @@ describe("slot angles (D11)", () => {
   });
 });
 
-describe("the radius (D13)", () => {
+describe("the radius", () => {
   const radii = { inner: 30, outer: 100, domain: [0, 1] } as const;
 
   it("keeps area true under the radial scale", () => {
@@ -49,7 +49,7 @@ describe("the radius (D13)", () => {
   });
 });
 
-describe("the wedge pad (D14)", () => {
+describe("the wedge pad", () => {
   it("cuts a 2 px gap at every radius", () => {
     const { padAngle, padRadius } = wedgePad(24, 100, 2, 2);
     expect(padRadius).toBe(100);
@@ -89,7 +89,7 @@ describe("the wedge pad (D14)", () => {
   });
 });
 
-describe("the column floor (D24)", () => {
+describe("the column floor", () => {
   const axis = columnAxis(100, 1);
 
   it("keeps one device pixel outward for a sliver above the zero ring", () => {

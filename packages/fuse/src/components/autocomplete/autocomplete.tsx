@@ -274,7 +274,7 @@ export type AutocompleteContentProps = ComponentProps<typeof AutocompletePrimiti
   OverlayPositionerProps<ComponentProps<typeof AutocompletePrimitive.Positioner>> &
   OverlayContainerProps;
 
-/** The popup of suggestions, as wide as the field box and portalled into the enclosing theme. */
+/** The popup of suggestions, as wide as the field box and portaled into the enclosing theme. */
 export function AutocompleteContent({
   className,
   side = "bottom",

@@ -1,5 +1,5 @@
-// This is the source entry facade for `@elmeragroup/fuse/select-field`. It holds explicit named
-// re-exports and no `export *`, local declaration or directive. The exports and barrel generators
-// discover this file, so never hand-edit `package.json#exports` or `src/index.ts`.
+// This file is the source entry for `@elmeragroup/fuse/select-field`. It contains only explicit named
+// re-exports, with no `export *`, local declarations or directives. The exports and barrel generators read
+// this file, so change `package.json#exports` and `src/index.ts` only through them.
 export { SelectField } from "./components/select-field/select-field";
 export type { SelectFieldProps } from "./components/select-field/select-field";

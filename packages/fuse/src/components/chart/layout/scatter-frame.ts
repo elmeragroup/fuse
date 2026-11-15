@@ -119,7 +119,7 @@ function snapped(snap: AxisSnap, edge: number, at: number): number {
  * @param diameter - The dot's diameter, as `dotDiameter` rounds it.
  * @returns The center in CSS pixels from the plot's top left.
  */
-export function dotCentre(frame: ScatterFrame, x: number, y: number, diameter: number): PlotPoint {
+export function dotCenter(frame: ScatterFrame, x: number, y: number, diameter: number): PlotPoint {
   const { box } = frame;
   return {
     x: snapped(axisSnap(box, box.left, diameter), box.left, frameX(frame, x)),

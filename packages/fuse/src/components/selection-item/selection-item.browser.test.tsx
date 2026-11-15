@@ -630,9 +630,9 @@ describe("SelectionItem role tokens", () => {
         }
         const title = getComputedStyle(headingNamed(name)).color;
         if (disabled) {
-          expect(title, `${name} title colour`).toBe("rgb(255, 0, 0)");
+          expect(title, `${name} title color`).toBe("rgb(255, 0, 0)");
         } else {
-          expect(title, `${name} title colour`).not.toBe("rgb(255, 0, 0)");
+          expect(title, `${name} title color`).not.toBe("rgb(255, 0, 0)");
         }
         const cursor = disabled ? "not-allowed" : "pointer";
         expect(getComputedStyle(label).cursor, `${name} label`).toBe(cursor);

@@ -17,7 +17,7 @@ import {
   dotRings,
   gaugeOffset,
   gaugePlace,
-  notchCentre,
+  notchCenter,
   notchLayout,
   rangeOffsets,
   reached,
@@ -82,7 +82,7 @@ describe("notchLayout", () => {
     expect(layout.step - layout.width).toBeCloseTo(gap, 12);
     expect(layout.width).toBeCloseTo((270 - 39 * gap) / 40, 12);
     // The last notch ends on the sweep's end.
-    expect(notchCentre(layout, 39) + layout.width / 2).toBeCloseTo(270, 12);
+    expect(notchCenter(layout, 39) + layout.width / 2).toBeCloseTo(270, 12);
     expect(layout.corner).toBeCloseTo(0.015, 12);
   });
 
@@ -102,8 +102,8 @@ describe("a full turn", () => {
     const layout = notchLayout(TURN, 40, { scale: 100, dpr: 1 });
     // 40 gaps share the turn with 40 notches, so a notch and a gap make up 9°.
     expect(layout.step).toBeCloseTo(9, 12);
-    const lastEnd = notchCentre(layout, 39) + layout.width / 2;
-    const firstStart = notchCentre(layout, 0) - layout.width / 2 + 360;
+    const lastEnd = notchCenter(layout, 39) + layout.width / 2;
+    const firstStart = notchCenter(layout, 0) - layout.width / 2 + 360;
     expect(firstStart - lastEnd).toBeCloseTo(layout.step - layout.width, 12);
   });
 

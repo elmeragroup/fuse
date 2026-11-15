@@ -18,7 +18,7 @@ const config = {
   fee: { label: "Monthly fee", color: "chart-4" },
 } as const satisfies ChartConfig;
 
-export function PieChartCentreShare() {
+export function PieChartCenterShare() {
   return (
     <PieChart.Root
       data={bill}

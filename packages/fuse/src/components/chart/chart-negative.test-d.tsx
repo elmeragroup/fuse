@@ -375,7 +375,7 @@ test("a crosshair fades only at named ends, and a SlotLabel takes only an x form
   expectTypeOf([sideways, valued]).toBeArray();
 });
 
-test("a threshold colour is cartesian config with a number and two roles", () => {
+test("a threshold color is cartesian config with a number and two roles", () => {
   const above = { color: "chart-sentiment-negative", label: "Over" } as const;
   const below = { color: "chart-sentiment-positive", label: "Under" } as const;
   const split = { threshold: 0.65, below, above } as const;

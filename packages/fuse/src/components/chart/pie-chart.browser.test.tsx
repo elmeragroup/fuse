@@ -7,7 +7,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
-  centreText,
+  centerText,
   clientPoint,
   dialPoint,
   hoverAt,
@@ -75,7 +75,7 @@ function settle(host: HTMLElement): void {
   for (const animation of host.getAnimations({ subtree: true })) animation.finish();
 }
 
-describe("the slices (d3's pie rule, Q8)", () => {
+describe("the slices, by d3's pie rule", () => {
   it("fills each slice where its share puts it, and picks the slice whose fill holds the pointer", async () => {
     const { host } = renderThemed(<Halves />);
     const svg = pieSvg(host);
@@ -122,7 +122,7 @@ describe("the slices (d3's pie rule, Q8)", () => {
     expect(checked).toBeGreaterThan(40);
   });
 
-  it("dims every slice but the selected category's, and names its toggles with the category word (S2, S9)", async () => {
+  it("dims every slice but the selected category's, and names its toggles with the category word", async () => {
     const { host } = renderThemed(
       <Halves>
         <PieChart.LegendToggleGroup />
@@ -140,7 +140,7 @@ describe("the slices (d3's pie rule, Q8)", () => {
   });
 });
 
-describe("the Other fold (section 8.4)", () => {
+describe("the Other fold", () => {
   it("lists the kept categories and then Other with its count in the Legend", () => {
     // Seven rows past a cap of 6: the two smallest, 4 and 6 of 110, fold into Other.
     renderThemed(
@@ -251,7 +251,7 @@ describe("a folded category named by its key", () => {
   });
 });
 
-describe("Other's quality (section 8.7, Q1)", () => {
+describe("Other's quality", () => {
   // A household's consumption of 60, 30 and 10 kWh under a cap of 2: 30 and 10 fold into Other's
   // 40. Folding is a drawing rule, so Other keeps the quality of the readings it holds: estimated
   // when any is estimated, corrected when any is corrected and none estimated, measured otherwise,
@@ -322,7 +322,7 @@ describe("Other's quality (section 8.7, Q1)", () => {
   });
 });
 
-describe("the centre (section 8.13)", () => {
+describe("the center", () => {
   function Bill({ config }: { readonly config: ChartConfig }) {
     return (
       <LocaleProvider locale="nb-NO">
@@ -350,13 +350,13 @@ describe("the centre (section 8.13)", () => {
 
   it("prints the total with nothing active, then the active slice's value and its share in the pie's set", async () => {
     const { host } = renderThemed(<Bill config={HALVES_CONFIG} />);
-    expect(centreText(host, "pie-chart-center-value")).toBe("1 386 kr");
-    expect(centreText(host, "pie-chart-center-share")).toBe("");
-    expect(centreText(host, "pie-chart-center-max")).toBe("");
+    expect(centerText(host, "pie-chart-center-value")).toBe("1 386 kr");
+    expect(centerText(host, "pie-chart-center-share")).toBe("");
+    expect(centerText(host, "pie-chart-center-max")).toBe("");
     await userEvent.tab();
     await userEvent.keyboard("{ArrowDown}");
-    expect(centreText(host, "pie-chart-center-value")).toBe("438 kr");
-    expect(centreText(host, "pie-chart-center-share")).toBe("32 %");
+    expect(centerText(host, "pie-chart-center-value")).toBe("438 kr");
+    expect(centerText(host, "pie-chart-center-share")).toBe("32 %");
   });
 
   it("prints no total when the categories' formats differ", () => {
@@ -368,7 +368,7 @@ describe("the centre (section 8.13)", () => {
         }}
       />
     );
-    expect(centreText(host, "pie-chart-center-value")).toBe("");
+    expect(centerText(host, "pie-chart-center-value")).toBe("");
   });
 
   // Two formats that name the same options, in another key order or with an option set to
@@ -387,7 +387,7 @@ describe("the centre (section 8.13)", () => {
   )(
     "prints a %s's totals for formats that differ only in %s, as for identical ones",
     (family, _, variant: ValueFormat) => {
-      const centre = (second: ValueFormat): string[] => {
+      const center = (second: ValueFormat): string[] => {
         const config = {
           varme: { label: "Varme", color: "chart-1", format: energy },
           elbil: { label: "Elbil", color: "chart-2", format: second },
@@ -435,16 +435,16 @@ describe("the centre (section 8.13)", () => {
           </LocaleProvider>
         );
         const texts = ["pie-chart-center-value", "pie-chart-center-share", "pie-chart-center-max"].map(
-          (part) => centreText(host, part)
+          (part) => centerText(host, part)
         );
         unmount();
         return texts;
       };
-      const identical = centre(energy);
+      const identical = center(energy);
       // 100 and 50 kWh print a total either way, and a radial chart their 150 of 300 too.
       expect(identical[0]).not.toBe("");
       if (family === "radial") expect(identical.slice(1).every((text) => text !== "")).toBe(true);
-      expect(centre(variant)).toEqual(identical);
+      expect(center(variant)).toEqual(identical);
     }
   );
 
@@ -484,9 +484,9 @@ describe("the centre (section 8.13)", () => {
     }
     const { host, rerender } = renderThemed(<Gauge kwh={3.9} />);
     // 3.9 of 5 is 78 %, which a gauge rounds alone.
-    expect(centreText(host, "pie-chart-center-value")).toBe("3,9");
-    expect(centreText(host, "pie-chart-center-share")).toBe("78 %");
-    expect(centreText(host, "pie-chart-center-max")).toBe("5 kWh");
+    expect(centerText(host, "pie-chart-center-value")).toBe("3,9");
+    expect(centerText(host, "pie-chart-center-share")).toBe("78 %");
+    expect(centerText(host, "pie-chart-center-max")).toBe("5 kWh");
     // The pie layer states data-over-max, which the stylesheet and consumers read.
     expect(pieSvg(host).hasAttribute("data-over-max")).toBe(false);
     rerender(<Gauge kwh={6} />);
@@ -494,7 +494,7 @@ describe("the centre (section 8.13)", () => {
   });
 });
 
-describe("the centre's name line (CenterName)", () => {
+describe("the center's name line (CenterName)", () => {
   // Unit under test: CenterName. Oracle: the config's labels, "Nettleie" for the slice the pointer
   // is on and "Elbil" for the ring the keys reach, and the children with nothing active, as
   // CenterValue prints the active item's value and, at rest, the total.
@@ -525,12 +525,12 @@ describe("the centre's name line (CenterName)", () => {
       </LocaleProvider>
     );
     expect(nameOf(host)).toBe("Totalt");
-    expect(centreText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
+    expect(centerText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
     // Strøm's 44.16 % spans 0° to 159.0°, and Nettleie's 31.60 % from there to 272.7°.
     const point = dialPoint(215, 0.8);
     await hoverAt(...clientPoint(pieSvg(host), point.x, point.y));
     expect(nameOf(host)).toBe("Nettleie");
-    expect(centreText(host, "pie-chart-center-value")).toBe("438\u00a0kr");
+    expect(centerText(host, "pie-chart-center-value")).toBe("438\u00a0kr");
     // The pointer leaves the plot for the page, and after the leave's grace the center rests.
     page
       .getByRole("listbox")
@@ -545,7 +545,7 @@ describe("the centre's name line (CenterName)", () => {
         })
       );
     await expect.poll(() => nameOf(host)).toBe("Totalt");
-    expect(centreText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
+    expect(centerText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
   });
 
   it("names the active ring, beside a CenterLabel that keeps its children and its maximum", async () => {
@@ -583,16 +583,16 @@ describe("the centre's name line (CenterName)", () => {
     const label = host.querySelector('[data-slot="pie-chart-center-label"]');
     expect(nameOf(host)).toBe("I alt");
     expect(label?.firstChild?.textContent).toBe("av ");
-    expect(centreText(host, "pie-chart-center-max")).toBe("300\u00a0kWh");
+    expect(centerText(host, "pie-chart-center-max")).toBe("300\u00a0kWh");
     await userEvent.tab();
     await userEvent.keyboard("{ArrowDown}");
-    expect([centreText(host, "pie-chart-center-value"), nameOf(host)]).toEqual(["50\u00a0kWh", "Elbil"]);
+    expect([centerText(host, "pie-chart-center-value"), nameOf(host)]).toEqual(["50\u00a0kWh", "Elbil"]);
     expect(label?.firstChild?.textContent).toBe("av ");
-    expect(centreText(host, "pie-chart-center-max")).toBe("100\u00a0kWh");
+    expect(centerText(host, "pie-chart-center-max")).toBe("100\u00a0kWh");
   });
 });
 
-describe("a default active category and the fold (L3)", () => {
+describe("a default active category and the fold", () => {
   // Eight appliance categories and seven rows, so the default six-slice cap keeps five and folds the
   // two smallest, lys and lading, into Other. A folding pie starts on Other when
   // `defaultActiveKey` names a folded category. A category with no row is in no slice and folds into
@@ -616,7 +616,7 @@ describe("a default active category and the fold (L3)", () => {
     { part: "lys", kwh: 30 },
     { part: "lading", kwh: 20 },
   ];
-  const centreName = (key: keyof typeof appliances) => {
+  const centerName = (key: keyof typeof appliances) => {
     const host = document.createElement("div");
     host.innerHTML = renderToString(
       <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
@@ -640,15 +640,15 @@ describe("a default active category and the fold (L3)", () => {
   };
 
   it("starts with nothing active when the default names a category with no row", () => {
-    expect(centreName("bad")).toBe("Totalt");
+    expect(centerName("bad")).toBe("Totalt");
   });
 
   it("starts on Other when the default names a folded category", () => {
     // The count joins its word with a no-break space.
-    expect(centreName("lading")).toBe("Annet, 2\u00a0kategorier");
+    expect(centerName("lading")).toBe("Annet, 2\u00a0kategorier");
   });
 
   it("starts on the slice when the default names a kept category", () => {
-    expect(centreName("vann")).toBe("Varmtvann");
+    expect(centerName("vann")).toBe("Varmtvann");
   });
 });

@@ -158,10 +158,10 @@ export function ChartBar({
   const prefix = useSvgIdPrefix("chart-bar");
 
   const picked = useSteady(emphasisSlots(context, series, emphasis), sameItems);
-  const emphasised = useMemo(() => new Set(picked), [picked]);
+  const emphasized = useMemo(() => new Set(picked), [picked]);
   useLayoutEffect(
-    () => registerEmphasis(dataKey, { slots: [...emphasised], label: emphasisLabel }),
-    [registerEmphasis, dataKey, emphasised, emphasisLabel]
+    () => registerEmphasis(dataKey, { slots: [...emphasized], label: emphasisLabel }),
+    [registerEmphasis, dataKey, emphasized, emphasisLabel]
   );
   const variant = config?.barVariant ?? "default";
   // The look the series draws, which its marks, its attributes, its overlay and its swatches read.
@@ -229,7 +229,7 @@ export function ChartBar({
       data-list={stops === undefined ? undefined : ""}
       data-paint={glow?.paint}
       data-series={seriesIndex}
-      data-emphasis={emphasised.size > 0 ? "" : undefined}
+      data-emphasis={emphasized.size > 0 ? "" : undefined}
       aria-hidden="true"
       className={className}
       style={{
@@ -243,9 +243,9 @@ export function ChartBar({
           <defs>{glow.filter(plotGlowRegion(shared.frame.box))}</defs>
         )}
         {shared === null ? null : form === "bars" ? (
-          <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
+          <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasized={emphasized} />
         ) : (
-          <SeriesPaths {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
+          <SeriesPaths {...shared} entering={entering} variant={drawnVariant} emphasized={emphasized} />
         )}
       </svg>
       <svg>{shared === null ? null : <ActiveBar {...shared} variant={drawnVariant} form={form} />}</svg>

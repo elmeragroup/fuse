@@ -41,12 +41,12 @@ describe("Text", () => {
   it("resolves destructive onto text-error and success onto text-success", () => {
     renderThemed(
       <>
-        <Text variant="destructive">Cancelled</Text>
+        <Text variant="destructive">Canceled</Text>
         <Text variant="success">Delivered</Text>
       </>
     );
-    const cancelled = textNamed("Cancelled");
-    expect(getComputedStyle(cancelled).color).toBe(cssVarColor(cancelled, "--error"));
+    const canceled = textNamed("Canceled");
+    expect(getComputedStyle(canceled).color).toBe(cssVarColor(canceled, "--error"));
     expect(getComputedStyle(textNamed("Delivered")).color).toBe(
       cssVarColor(textNamed("Delivered"), "--success")
     );

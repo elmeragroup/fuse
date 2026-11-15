@@ -65,7 +65,7 @@ export type PolarModel = {
    * the clock's, whose PageUp and PageDown move one label unit.
    */
   readonly instructions: "polar" | "cartesian" | "clock";
-  /** The listbox's orientation, "vertical" for pie and radial and "horizontal" for radar, per section 9.3. */
+  /** The listbox's orientation, "vertical" for pie and radial and "horizontal" for radar. */
   readonly orientation: "horizontal" | "vertical";
   /**
    * Whether the arrows wrap past the last option. A pie's and a radar's do, and a radial chart's
@@ -131,8 +131,8 @@ export type PolarModel = {
  * center prints, a radar's spokes and series, or a clock's slots and series.
  */
 export type PolarDrawing =
-  | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
-  | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly centre: CentreModel }
+  | { readonly kind: "pie"; readonly pie: PieDrawing; readonly center: CenterModel }
+  | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly center: CenterModel }
   | { readonly kind: "radar"; readonly radar: RadarDrawing }
   | { readonly kind: "clock"; readonly clock: ClockDrawing };
 
@@ -254,7 +254,7 @@ export type RadarDrawing = {
 };
 
 /** The numbers a center prints, per item and with nothing active. */
-export type CentreModel = {
+export type CenterModel = {
   /** An item's visible label from config, Other's for the folded slice, or null past the items. */
   readonly label: (index: number) => string | null;
   /** An item's reading, its sign kept, or null for a missing one. */
@@ -473,8 +473,8 @@ export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
  * @param model - The Root's model.
  * @returns The center's numbers, or null under a family with no center.
  */
-export function centreOf(model: PolarModel): CentreModel | null {
-  return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.centre : null;
+export function centerOf(model: PolarModel): CenterModel | null {
+  return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.center : null;
 }
 
 /**

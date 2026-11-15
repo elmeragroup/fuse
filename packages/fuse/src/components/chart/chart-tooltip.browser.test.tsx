@@ -271,9 +271,9 @@ describe("a shut tooltip lets go of its point", () => {
     water: { label: "Varmtvann", color: "chart-2", stack: "use", icon: <svg data-icon="water" /> },
   } satisfies ChartConfig;
 
-  /** The tooltip popup, portalled out of the host. */
+  /** The tooltip popup, portaled out of the host. */
   function popupNode(): HTMLElement | null {
-    // The popup is aria-hidden and portalled, read by its slot.
+    // The popup is aria-hidden and portaled, read by its slot.
     return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
   }
 

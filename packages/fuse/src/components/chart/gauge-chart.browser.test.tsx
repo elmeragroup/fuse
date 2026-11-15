@@ -19,7 +19,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, pollFrames, recordFrames } from "../../../test/animation-frames";
 import { render } from "../../../test/browser-render";
-import { centreText } from "../../../test/chart/pie";
+import { centerText } from "../../../test/chart/pie";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   computedContrast,
@@ -205,7 +205,7 @@ describe("the meter", () => {
     expect(figure?.hasAttribute("data-over-max")).toBe(true);
     await expect.element(meter).toHaveAttribute("aria-valuenow", "5");
     await expect.element(meter).toHaveAttribute("aria-valuetext", "5,6\u00a0kilowattimer");
-    expect(centreText(host, "gauge-chart-center-value")).toBe("5,6\u00a0kWh");
+    expect(centerText(host, "gauge-chart-center-value")).toBe("5,6\u00a0kWh");
     expect([needle(host), litCount(host)]).toEqual([135, 40]);
     rerender(<Gauge value={-0.4} intro="none" />);
     // The update sweeps down to the start, and rests there.
@@ -240,7 +240,7 @@ describe("the dial at rest", () => {
     expect(needle(host)).toBeCloseTo(75.6, 6);
     expect(litCount(host)).toBe(31);
     expect(passedTicks(host)).toBe(20);
-    expect(centreText(host, "gauge-chart-center-value")).toBe("3,9\u00a0kWh");
+    expect(centerText(host, "gauge-chart-center-value")).toBe("3,9\u00a0kWh");
   });
 
   it("lights one notch for a value just above min", async () => {
@@ -541,7 +541,7 @@ describe("motion", () => {
   });
 });
 
-describe("the centre", () => {
+describe("the center", () => {
   it("prints a price's number large and its unit small, breaking the unit only before its VAT basis", async () => {
     const { host } = renderThemed(
       <Gauge
@@ -558,7 +558,7 @@ describe("the centre", () => {
     await nextFrames(1);
     const value = host.querySelector('[data-slot="gauge-chart-center-value"]');
     expect(value?.querySelector('[data-part="unit"]')?.textContent).toBe("øre/kWh inkl.\u00a0mva");
-    expect(centreText(host, "gauge-chart-center-value")).toBe("142,3\u00a0øre/kWh inkl.\u00a0mva");
+    expect(centerText(host, "gauge-chart-center-value")).toBe("142,3\u00a0øre/kWh inkl.\u00a0mva");
   });
 });
 

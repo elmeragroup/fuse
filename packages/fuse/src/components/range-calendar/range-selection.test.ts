@@ -140,7 +140,7 @@ describe("pressDay", () => {
     );
   });
 
-  it("keeps a key anchor's focus on the day before at the upper bound, and on the anchor when both neighbours are out", () => {
+  it("keeps a key anchor's focus on the day before at the upper bound, and on the anchor when both neighbors are out", () => {
     const upTo16: RangeRules = { ...plain, bounds: { min: undefined, max: day("2026-10-16") } };
     expect(printedPress(pressDay(null, day("2026-10-16"), upTo16, true))).toBe(
       "anchored 2026-10-16 focus 2026-10-15 within -..2026-10-16"

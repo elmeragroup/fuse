@@ -140,7 +140,7 @@ export function InputGroupAddon({
       onClick={(event) => {
         // The addon is an extension of the group's own control's hit area, except over a
         // nested control, such as a button, a label or a field, which keeps its own click and
-        // focus, and except for a click that bubbles through React from a portalled popup.
+        // focus, and except for a click that bubbles through React from a portaled popup.
         // The own control is the Root's direct input-group-control child: the first input in
         // DOM order can be a field nested in an addon or a combobox's hidden input, and a
         // Textarea group has no input at all.
@@ -186,8 +186,7 @@ export function InputGroupButton({
 export function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElement {
   return (
     <span
-      // The reference implementation omits this slot, which ButtonGroup's `[data-slot]` child
-      // selectors need.
+      // ButtonGroup's `[data-slot]` child selectors need this slot.
       data-slot="input-group-text"
       className={cn(
         fieldReads.type(),

@@ -406,13 +406,13 @@ export function SeriesBars({
   sub,
   variant,
   paint,
-  emphasised,
+  emphasized,
   prefix,
   phase,
   entering,
 }: SeriesDraw & {
   readonly variant: ChartBarVariant;
-  readonly emphasised: ReadonlySet<number>;
+  readonly emphasized: ReadonlySet<number>;
 }): ReactElement {
   const { model, update, now, intro: origin, motion } = context;
   const { bars, needs, missing } = useMemo(
@@ -425,11 +425,11 @@ export function SeriesBars({
         sub,
         variant,
         paint,
-        emphasised,
+        emphasized,
         prefix,
         entering,
       }),
-    [model, update, now, origin, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering]
+    [model, update, now, origin, series, frame, metrics, sub, variant, paint, emphasized, prefix, entering]
   );
   const look = useMemo((): BarLook => ({ variant, frame }), [variant, frame]);
   // A bar that mounts while the entrance waits writes nothing, as its entrance runs in the loop,

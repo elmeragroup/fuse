@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { angleInSweep, pointerAngle, polarPoint, sweepBox, sweepOf } from "./polar-angle";
 
 describe("pointerAngle", () => {
-  it("reads 0 at the exact centre, where atan2(0, −0) would read 180", () => {
+  it("reads 0 at the exact center, where atan2(0, −0) would read 180", () => {
     expect(Math.atan2(0, -0)).toBe(Math.PI);
     expect(pointerAngle(0, 0)).toBe(0);
   });
@@ -53,7 +53,7 @@ describe("angleInSweep", () => {
     expect(angleInSweep(359, sweep)).toBe(359);
   });
 
-  it("holds nothing past a 90 to 270 sweep, where the exact centre's 0 lies outside", () => {
+  it("holds nothing past a 90 to 270 sweep, where the exact center's 0 lies outside", () => {
     expect(angleInSweep(pointerAngle(0, 0), sweepOf(90, 270))).toBeNull();
   });
 });
@@ -100,7 +100,7 @@ describe("sweepBox", () => {
     expect(h).toBeCloseTo(height, 2);
   });
 
-  it("sets the top semicircle's flat edge at the centre's line, at the bottom", () => {
+  it("sets the top semicircle's flat edge at the center's line, at the bottom", () => {
     expect(sweepBox(sweepOf(-90, 90))).toEqual({ left: -1, top: -1, right: 1, bottom: 0 });
   });
 

@@ -19,7 +19,7 @@
  *
  * Known gaps: a shorthand's keywords map to the shorthand's own rows, so `font: 16px
  * ui-monospace` is not read as `font-family`; and argument-dependent subfeatures are mapped only
- * for relative colours and typed `attr()`, so `rgb(100% 0 0)` reads as plain `rgb()` and a
+ * for relative colors and typed `attr()`, so `rgb(100% 0 0)` reads as plain `rgb()` and a
  * single-stop gradient, `linear-gradient(red)`, as plain `linear-gradient()`. A custom
  * property's keywords carry no property context, so `--tracks: subgrid` read through
  * `grid-template-columns: var(--tracks)` is not dated as `subgrid`. Shorthands come from
@@ -173,7 +173,7 @@ const SYNTAX_ROWS = {
 function invalidMappings(): FloorProblem[] {
   return Object.entries({
     FUNCTIONS,
-    RELATIVE_COLOURS,
+    RELATIVE_COLORS,
     UNITS,
     QUERY_FEATURES,
     CONDITION_FUNCTIONS,
@@ -186,10 +186,10 @@ function invalidMappings(): FloorProblem[] {
 }
 
 /**
- * Colour functions to the MDN row of their relative syntax, `rgb(from …)`; the `rgba()` and
+ * Color functions to the MDN row of their relative syntax, `rgb(from …)`; the `rgba()` and
  * `hsla()` aliases share their base function's row.
  */
-const RELATIVE_COLOURS = new Map<string, string>([
+const RELATIVE_COLORS = new Map<string, string>([
   ...["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].map((name): [string, string] => [
     name,
     `css.types.color.${name}.relative_syntax`,
@@ -676,7 +676,7 @@ function addMapped(reading: Reading, table: ReadonlyMap<string, string>, name: s
 }
 
 /**
- * What a value relies on as written: each function and unit, a relative colour's syntax, each
+ * What a value relies on as written: each function and unit, a relative color's syntax, each
  * CSS-wide keyword and, for a property, each keyword MDN has a row for under it.
  */
 function readValue(value: CssNode, property: string | undefined, reading: Reading): void {
@@ -687,7 +687,7 @@ function readValue(value: CssNode, property: string | undefined, reading: Readin
       if (vendorPrefixed(name)) return;
       addMapped(reading, FUNCTIONS, name, `the function ${name}() in FUNCTIONS`);
       if (name === "attr") readAttr(node.children.toArray(), reading);
-      const relative = RELATIVE_COLOURS.get(name);
+      const relative = RELATIVE_COLORS.get(name);
       const first = node.children.first;
       if (relative !== undefined && first?.type === "Identifier" && first.name.toLowerCase() === "from") {
         reading.keys.add(relative);

@@ -17,7 +17,7 @@ import type { ChartLayerProps } from "./chart-types";
 import { useGaugePainter } from "./gauge-chart-painter";
 import type { GaugeDrawing } from "./gauge-chart-painter";
 import { arcPath } from "./layout/arc-path";
-import { bandPath, GAUGE_RADII, NOMINAL_PIXELS, notchCentre, notchLayout, rimBand } from "./layout/gauge";
+import { bandPath, GAUGE_RADII, NOMINAL_PIXELS, notchCenter, notchLayout, rimBand } from "./layout/gauge";
 import type { DialPixels, NotchLayout } from "./layout/gauge";
 import { viewBoxOf } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -40,7 +40,7 @@ function notchPath(layout: NotchLayout): string {
 
 /** The turn that carries a notch from 12 o'clock to its place on the sweep. */
 function notchTurn(sweep: Sweep, layout: NotchLayout, index: number): string {
-  return `rotate(${pathNumber(sweep.start + notchCentre(layout, index) * sweep.direction)})`;
+  return `rotate(${pathNumber(sweep.start + notchCenter(layout, index) * sweep.direction)})`;
 }
 
 /** A dial layer's notches and band, as its group holds them. */

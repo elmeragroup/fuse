@@ -188,7 +188,7 @@ export type ChartRole =
  * A scale, whose color follows the value. Root bins each value into the scale's 7 steps. A bar
  * paints its step, and a line or area paints a gradient along the value axis, so a line or area
  * takes a scale only where it draws its own values. On a stacked series, or under
- * `stackOffset="expand"`, `Chart.Line` and `Chart.Area` throw `scale-colour-on-stack`.
+ * `stackOffset="expand"`, `Chart.Line` and `Chart.Area` throw `scale-color-on-stack`.
  *
  * @beta
  */
@@ -219,7 +219,7 @@ export type ChartThresholdSide = {
  * the series' own `label`. Draw the same number as a `ReferenceLine` so the split reads.
  *
  * Like a scale, it follows the series' own values, so `Chart.Line` and `Chart.Area` throw
- * `scale-colour-on-stack` on a stacked series or under `stackOffset="expand"`. A threshold that
+ * `scale-color-on-stack` on a stacked series or under `stackOffset="expand"`. A threshold that
  * is not a finite number throws `non-finite-threshold` in development, and production paints every
  * value in `below.color`. A `--chart-color-<key>` on Root paints both sides, as it paints every
  * step of a scale. Cartesian config only.
@@ -762,7 +762,7 @@ export type ChartPolarFieldCheck<TConfig> = string extends keyof TConfig
         : TConfig[K] extends { color: ChartPolarColor }
           ? unknown
           : {
-              readonly "PieChart and RadialChart colours are categorical or sequential roles, chart-other, or lists of them": never;
+              readonly "PieChart and RadialChart colors are categorical or sequential roles, chart-other, or lists of them": never;
             };
     };
 
@@ -786,7 +786,7 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig
           // or a threshold, or a color widened to ChartColor, fails too.
           TConfig[K] extends { color: ChartRole | readonly [ChartRole, ChartRole, ...ChartRole[]] }
           ? unknown
-          : { readonly "RadarChart colours are roles or role lists, never a scale or a threshold": never };
+          : { readonly "RadarChart colors are roles or role lists, never a scale or a threshold": never };
     };
 
 /**
@@ -813,7 +813,7 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig
         : TConfig[K] extends { color: ChartRole }
           ? unknown
           : {
-              readonly "ScatterChart colours are single roles, never a scale, a role list or a threshold": never;
+              readonly "ScatterChart colors are single roles, never a scale, a role list or a threshold": never;
             };
     };
 

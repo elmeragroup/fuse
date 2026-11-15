@@ -57,7 +57,7 @@ describe("d3-shape offset vectors", () => {
   });
 });
 
-describe("section 8.2 stacks, written by hand", () => {
+describe("stacks, written by hand", () => {
   it("keeps a mixed-sign slot's signs apart under expand, over the sum of magnitudes", () => {
     const { extents, mixedSignSlots } = stackSeries([[3], [-1]], "expand");
     expect(extents).toEqual([[[0, 0.75]], [[-0.25, 0]]]);

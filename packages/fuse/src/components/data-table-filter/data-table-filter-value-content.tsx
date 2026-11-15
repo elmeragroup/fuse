@@ -139,7 +139,7 @@ export function DataTableFilterValueContent({
               // A ghost chip unmounts once this closes, so its focus goes to a neighbor.
               const index = state.chips.findIndex((chip) => chip.ghost);
               if (index !== -1) {
-                return meta.neighbourOf(state.chips, index) ?? true;
+                return meta.neighborOf(state.chips, index) ?? true;
               }
               // A toggle a pick turned on loses its Value once this closes, so focus goes to Remove.
               const edited = state.chips.find((chip) => chip.id === state.editing);

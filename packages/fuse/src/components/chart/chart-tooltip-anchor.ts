@@ -18,7 +18,7 @@ import type { AnchorInput, AnchorMeasure, ClientPoint, TooltipAnchor } from "./c
 import type { GlideRoute } from "./chart-tooltip-glide";
 import { viewportSize } from "./chart-tooltip-popup";
 import { createChartRoof } from "./chart-tooltip-roof";
-import { WHOLE_BAND, barSpan, centreOf, optionBand } from "./layout/plot-frame";
+import { WHOLE_BAND, barSpan, centerOf, optionBand } from "./layout/plot-frame";
 import { TOOLTIP_EDGE, glidePath, roofRest, tooltipSideOffset } from "./layout/tooltip-place";
 import type { PopupPlace } from "./layout/tooltip-place";
 import { roofOver } from "./layout/tooltip-roof";
@@ -87,8 +87,8 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       // meets the bars, and the focused option's and the crosshair's columns on a vertical one.
       const along = (): readonly [number, number] => {
         if (xScale === "point") {
-          const centre = centreOf(frame, position, "point");
-          return [centre, centre];
+          const center = centerOf(frame, position, "point");
+          return [center, center];
         }
         if (orientation === "vertical") return optionBand(frame, position, "band");
         return barSpan(frame, position, metrics, WHOLE_BAND);
@@ -106,7 +106,7 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const outer = root.getBoundingClientRect();
       const popup = positioner.current?.getBoundingClientRect() ?? new DOMRect();
       const width = popup.width / scaleX;
-      const centre = (start + end) / 2;
+      const center = (start + end) / 2;
       const plotX = (x: number) => (x - surface.left) / scaleX;
       const within = [plotX(outer.left), plotX(outer.right)] as const;
       const viewport = viewportSize();
@@ -123,7 +123,7 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const roof = (spanStart: number, spanEnd: number) => roofOver(profile, spanStart, spanEnd);
       const rest = restAt(memory, slot, (from) =>
         roofRest({
-          centre,
+          center,
           width,
           within,
           viewport: [plotX(TOOLTIP_EDGE), plotX(viewport.width - TOOLTIP_EDGE)],
@@ -151,7 +151,7 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       };
       return {
         box: column,
-        shift: (rest.left + width / 2 - centre) * scaleX,
+        shift: (rest.left + width / 2 - center) * scaleX,
         route: {
           kind: "path",
           turns: (from, to, size, side) =>

@@ -24,7 +24,7 @@ describe("ringBands", () => {
     });
   });
 
-  it("strokes 0.7 of each band, centred in it", () => {
+  it("strokes 0.7 of each band, centered in it", () => {
     for (const { radius, width, inner, outer } of bands) {
       expect(radius).toBeCloseTo((inner + outer) / 2, 12);
       expect(width).toBeCloseTo((0.7 * 70) / 3, 12);

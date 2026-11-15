@@ -110,7 +110,7 @@ export function radarModel(input: RadarInput): PolarModel {
     page: null,
     optionName: (index, focus, order) => optionName(context, index, focus, order),
     pick: (point, pixels) => {
-      // Distance from the center does not change the pick.
+      // The pointer's angle alone picks the spoke, whatever its distance from the center.
       if (count === 0) return null;
       const spoke = spokeAt(pointerAngle(point.x, point.y), count);
       // The nearest series' vertex on the spoke. The held series stays unless another lies nearer

@@ -200,7 +200,7 @@ describe("resolveThemeCatalog", () => {
     expect(fkab.schemes.dark.tokens.secondary.css).toBe("oklch(0.9085589 0.0595841 225.0316)");
   });
 
-  it("reads colours as unrounded sRGB", () => {
+  it("reads colors as unrounded sRGB", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(light("neutral-fkas-private").tokens["sh-identifier"]).toMatchObject({
       css: "#5c6773",
@@ -215,7 +215,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded selection row edge to a zero-alpha colour and its divider to the border, in both schemes", () => {
+  it("resolves the branded selection row edge to a zero-alpha color and its divider to the border, in both schemes", () => {
     // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)` and aliases the checked edge
     // to it, so design tools get a transparent color, not a `transparent` keyword they cannot read.
     for (const scheme of ["light", "dark"] as const) {
@@ -264,7 +264,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded card edge to a zero-alpha colour in both schemes and the neutral one to the border", () => {
+  it("resolves the branded card edge to a zero-alpha color in both schemes and the neutral one to the border", () => {
     // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
       expect(theme("branded-fkse-private").schemes[scheme].tokens["card-border"], scheme).toMatchObject({
@@ -281,7 +281,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded card shadow to a zero-alpha colour in both schemes and the neutral one to 5% black", () => {
+  it("resolves the branded card shadow to a zero-alpha color in both schemes and the neutral one to 5% black", () => {
     // BRANDED_IDENTITY_LAYER writes the shadow as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
       expect(theme("branded-fkse-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({

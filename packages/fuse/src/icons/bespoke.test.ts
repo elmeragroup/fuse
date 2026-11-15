@@ -180,7 +180,7 @@ describe("bespoke icons", () => {
   });
 
   it("namespaces defs ids per asset so no id is defined by two assets", () => {
-    // The next Figma or Sketch intake with generic ids (mask0_1_353, linearGradient-1)
+    // The next Figma or Sketch intake with generic ids, such as mask0_1_353 or linearGradient-1,
     // must fail here instead of colliding with another asset's defs in the DOM.
     const owners = new Map<string, string>();
     let definitions = 0;

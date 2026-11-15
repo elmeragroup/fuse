@@ -51,7 +51,7 @@ describe("ring values along the spoke", () => {
     expect(fitRingLabels(rim, { inner: 0, angles: [label] })).toEqual([240]);
   });
 
-  it("keeps a value off the hole's centre text", () => {
+  it("keeps a value off the hole's center text", () => {
     // The 0.35 ring's value clears text reaching 0.3 R once 0.35 R − 10 ≥ 0.3 R, so R ≥ 200, the
     // 400 px bucket.
     const rings = [0.35, 1].map((radius) => ({ radius, width: 8 }));

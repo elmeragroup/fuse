@@ -117,7 +117,7 @@ describe("pointer picking across Panels", () => {
   });
 });
 
-describe("series selection across Panels (B1-9)", () => {
+describe("series selection across Panels", () => {
   // Usage bars in the first Panel and a price line in the second. A selected series keeps full
   // opacity and the other dims to --chart-hover-dim, 0.45.
   function Selectable() {
@@ -228,7 +228,7 @@ describe("panel rules", () => {
     });
   });
 
-  describe("a plot part that moves between a Panel and the default layout (X1, Q2-1)", () => {
+  describe("a plot part that moves between a Panel and the default layout", () => {
     // One reading of 2 over yInclude [0, 4], Root's and the Panel's, on a 200 px plot: a 100 px bar
     // in either layout.
     const chart = (layout: "panel" | "root" | "both") => (
@@ -290,7 +290,7 @@ describe("panel rules", () => {
     });
   });
 
-  describe("Panel coverage of the current tree (W1)", () => {
+  describe("Panel coverage of the current tree", () => {
     /** Bars drawn, by Panel. */
     const barsByPanel = (host: HTMLElement) =>
       // Panels are layout rows and bars aria-hidden plot output, so slots locate both.
@@ -298,7 +298,7 @@ describe("panel rules", () => {
         (panel) => panel.querySelectorAll('[data-slot="chart-bar"]').length
       );
 
-    it("renders a rerender that replaces w with z in the config and the second Panel at once (Q1-1)", async () => {
+    it("renders a rerender that replaces w with z in the config and the second Panel at once", async () => {
       vi.spyOn(console, "error").mockImplementation(() => undefined);
       const rows = [
         { name: "a", v: 1, w: 2, z: 3 },
@@ -332,7 +332,7 @@ describe("panel rules", () => {
       vi.restoreAllMocks();
     });
 
-    it("renders a rerender that adds b to the config, the data and the Panel together (B1-1)", async () => {
+    it("renders a rerender that adds b to the config, the data and the Panel together", async () => {
       vi.spyOn(console, "error").mockImplementation(() => undefined);
       const chart = (keys: readonly ("a" | "b")[]) => (
         <LocaleProvider locale="nb-NO">

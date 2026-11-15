@@ -135,7 +135,7 @@ describe("dayStatus", () => {
     ["an out-of-bounds day", "2026-10-09", false, false, { disabled: true, unavailable: false }],
     ["an unavailable day", "2026-10-15", false, false, { disabled: false, unavailable: true }],
     ["a selectable day", "2026-10-14", false, false, { disabled: false, unavailable: false }],
-    ["a neighbouring month's day", "2026-10-15", true, false, { disabled: true, unavailable: false }],
+    ["a neighboring month's day", "2026-10-15", true, false, { disabled: true, unavailable: false }],
     ["a day of a disabled calendar", "2026-10-14", false, true, { disabled: true, unavailable: false }],
   ] as const)("marks %s", (_case, input, outsideMonth, disabled, expected) => {
     expect(dayStatus(day(input), outsideMonth, { ...settings, disabled })).toEqual(expected);
@@ -149,7 +149,7 @@ describe("openView", () => {
     expect(printed(opened.visible)).toBe("2026-08+3");
   });
 
-  it("centres three months on a day the bounds leave alone", () => {
+  it("centers three months on a day the bounds leave alone", () => {
     const opened = openView(day("2026-10-14"), 3, NO_BOUNDS);
     expect(opened.focused.toString()).toBe("2026-10-14");
     expect(printed(opened.visible)).toBe("2026-09+3");
@@ -172,7 +172,7 @@ describe("initialVisibleMonths", () => {
     [2, "2026-10+2"],
     [3, "2026-09+3"],
     [4, "2026-09+4"],
-  ])("centres October with %i months as %s", (count, expected) => {
+  ])("centers October with %i months as %s", (count, expected) => {
     expect(printed(initialVisibleMonths(day("2026-10-14"), count, NO_BOUNDS))).toBe(expected);
   });
 

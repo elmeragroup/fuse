@@ -57,7 +57,7 @@ describe("legend toggles", () => {
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-selected")).toBe(false);
   });
 
-  it("draws a 1 px outline on the pressed toggle, which survives forced colours", async () => {
+  it("draws a 1 px outline on the pressed toggle, which survives forced colors", async () => {
     legend();
     const toggle = page.getByRole("button", { name: "Hytte" }).element();
     await userEvent.click(toggle);

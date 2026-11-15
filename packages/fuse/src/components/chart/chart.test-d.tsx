@@ -48,7 +48,7 @@ const browsers = [
 ] as const;
 const spokes = [{ cat: "Hus", a: 1, b: -2 }];
 
-test("the S15 Forbruk og pris composition compiles with no cast", () => {
+test("the Forbruk og pris composition compiles with no cast", () => {
   type Day = { day: Date; kwh: number | null; kwhQuality: ChartQuality | null; price: number | null };
   const config = {
     kwh: {
@@ -287,7 +287,7 @@ test("config keys stay literal, so callbacks report the key union and instants r
   expectTypeOf(charts).toExtend<ReactElement>();
 });
 
-test("a bill's centre names its active part, and its default names a config key", () => {
+test("a bill's center names its active part, and its default names a config key", () => {
   const bill = [
     { part: "energi", kr: 640 },
     { part: "nettleie", kr: 360 },

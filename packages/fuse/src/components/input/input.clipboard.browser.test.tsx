@@ -211,7 +211,7 @@ describe("Input numeric filter", () => {
     await expect.element(email).toHaveValue("912345");
   });
 
-  it("leaves an insertion another listener cancelled alone", () => {
+  it("leaves an insertion another listener canceled alone", () => {
     const changes = vi.fn<(value: string) => void>();
     renderThemed(
       <Input

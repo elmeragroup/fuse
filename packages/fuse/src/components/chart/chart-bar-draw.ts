@@ -74,7 +74,7 @@ export type BarsInput = {
   readonly sub: SubBand;
   readonly variant: ChartBarVariant;
   readonly paint: SeriesPaint;
-  readonly emphasised: ReadonlySet<number>;
+  readonly emphasized: ReadonlySet<number>;
   readonly prefix: string;
   /** Whether the bars draw in Root's waiting entrance, which grows them from their base. */
   readonly entering: boolean;
@@ -148,7 +148,7 @@ function sameFill(fill: string | undefined): SideFills {
 }
 
 /** A grayed paint, a quarter of the way to the muted text role, for the bars emphasis leaves out. */
-function greyed(paint: string): string {
+function grayed(paint: string): string {
   return `color-mix(in oklab, ${paint} 75%, var(--muted-foreground))`;
 }
 
@@ -266,7 +266,7 @@ export function tickEnds(frame: PlotFrame, span: readonly [number, number], zero
  * @returns The bars, the paint servers they need and the missing ticks.
  */
 export function layoutBars(input: BarsInput): BarsLayout {
-  const { context, series, frame, metrics, sub, variant, paint, emphasised, prefix, entering } = input;
+  const { context, series, frame, metrics, sub, variant, paint, emphasized, prefix, entering } = input;
   const { model, update } = context;
   const { domain } = model;
   const window = model.window ?? { first: 0, last: -1 };
@@ -281,11 +281,11 @@ export function layoutBars(input: BarsInput): BarsLayout {
     const reading = series.readings[cell.slot];
     const value = reading?.kind === "reading" ? reading : undefined;
     const own = value === undefined ? undefined : valuePaint(paint, value.value);
-    const emphasis = emphasised.has(cell.slot);
-    const dimmed = emphasised.size > 0 && !emphasis;
-    const barPaint = dimmed ? greyed(own ?? paint.base) : own;
+    const emphasis = emphasized.has(cell.slot);
+    const dimmed = emphasized.size > 0 && !emphasis;
+    const barPaint = dimmed ? grayed(own ?? paint.base) : own;
     const projected = cell.slot >= series.projectedFrom;
-    // The active overlay draws a projected reading in its own paint, never the greyed one.
+    // The active overlay draws a projected reading in its own paint, never the grayed one.
     if (projected) fills.use("projected", own ?? paint.base);
     const kind = fillKind(variant, projected);
     return {

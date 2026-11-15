@@ -219,7 +219,7 @@ describe("PopoverInfoButton", () => {
     expect(labelBox.height, "label height").toBe(line);
     expect(triggerBox.height, "trigger height").toBe(line);
     expect(triggerBox.width, "trigger width").toBe(line);
-    expect(glyphBox.top + glyphBox.height / 2 - labelBox.top, "glyph centre").toBeCloseTo(line / 2, 3);
+    expect(glyphBox.top + glyphBox.height / 2 - labelBox.top, "glyph center").toBeCloseTo(line / 2, 3);
   });
 
   // Oracle: the trigger the popup opens beside. The arrow stays the popup's last child, after the
@@ -244,14 +244,14 @@ describe("PopoverInfoButton", () => {
     expect(arrow.textContent, "arrow holds no body text").toBe("");
     const arrowBox = arrow.getBoundingClientRect();
     const side = dialog.getAttribute("data-side");
-    const [arrowCentre, triggerCentre] =
+    const [arrowCenter, triggerCenter] =
       side === "left" || side === "right"
         ? [arrowBox.top + arrowBox.height / 2, trigger.top + trigger.height / 2]
         : [arrowBox.left + arrowBox.width / 2, trigger.left + trigger.width / 2];
     // Floating UI rounds the arrow's offset to whole pixels.
     expect(
-      Math.abs(arrowCentre - triggerCentre),
-      `arrow centre on the ${String(side)} side`
+      Math.abs(arrowCenter - triggerCenter),
+      `arrow center on the ${String(side)} side`
     ).toBeLessThanOrEqual(1);
   });
 });

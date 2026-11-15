@@ -33,7 +33,7 @@ export type FileUploadDropzoneProps = Omit<FileUploadDropzoneBaseProps, "childre
 };
 
 /**
- * Whether an event happened in the zone's DOM. React bubbles events from portalled content, such
+ * Whether an event happened in the zone's DOM. React bubbles events from portaled content, such
  * as a dialog opened from inside the zone, through the zone, though their DOM sits elsewhere.
  */
 function inZone(target: EventTarget | null, zone: Element): target is Node {
@@ -72,7 +72,7 @@ export function FileUploadDropzone({ className, render, ...props }: FileUploadDr
     [entered, setDropTarget, zoneId]
   );
 
-  // A drag over portalled content is left alone, so the document guard still answers it.
+  // A drag over portaled content is left alone, so the document guard still answers it.
   const onDragEnterOrOver = (event: DragEvent<HTMLDivElement>) => {
     if (state.disabled || !inZone(event.target, event.currentTarget) || !isFileDrag(event.dataTransfer)) {
       return;

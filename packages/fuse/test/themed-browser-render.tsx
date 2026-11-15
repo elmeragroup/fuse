@@ -205,13 +205,13 @@ export function computedOklch(serialized: string): ComputedOklch {
   return { l, c, h };
 }
 
-/** The WCAG contrast ratio between two colours Chromium computed, such as a border and a fill. */
+/** The WCAG contrast ratio between two colors Chromium computed, such as a border and a fill. */
 export function computedContrast(foreground: string, background: string): number {
   const srgb = (value: string) => CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
   return getOrThrow(Wcag.contrastRatio(srgb(foreground), srgb(background)));
 }
 
-/** The colour stops of a computed gradient, such as `getComputedStyle(el).backgroundImage`, in sRGB. */
+/** The color stops of a computed gradient, such as `getComputedStyle(el).backgroundImage`, in sRGB. */
 export function gradientStops(image: string): readonly { r: number; g: number; b: number; alpha: number }[] {
   return [...image.matchAll(/(?:rgba?|oklch|lab)\([^()]*\)/g)].map(([stop]) =>
     CssColor.toSrgb(getOrThrow(CssColor.parse(stop)))
@@ -330,14 +330,14 @@ export function fieldBoxOf(input: HTMLElement): HTMLElement {
 }
 
 /**
- * The computed colour a role token resolves to, read where `host` sits in the cascade.
+ * The computed color a role token resolves to, read where `host` sits in the cascade.
  *
  * `host` must be an element mounted UNDER the `ThemeScope`: the theme attributes selecting the
  * token values are on the scope element, so the `renderThemed` host div is outside them and reads
  * whatever `:root` happens to declare — which for `--primary` is the neutral default, quietly
  * right for `neutral-fkas` and wrong for every other theme. A suite asserting a role token also
  * has to load the theme sheet (`import "../../../dist/themes.css"`); `dist/styles.css` declares no
- * role tokens at all. Both mistakes throw here rather than returning a plausible wrong colour.
+ * role tokens at all. Both mistakes throw here rather than returning a plausible wrong color.
  */
 export function cssVarColor(host: HTMLElement, token: string): string {
   if (host.closest("[data-theme-identity]") === null) {

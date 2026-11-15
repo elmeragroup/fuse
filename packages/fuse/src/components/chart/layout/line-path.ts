@@ -58,7 +58,7 @@ export type PathPlacement = {
    * The span a step run takes around its own slot's center, from cell edge to cell edge over the
    * slot's Root cells, snapped.
    */
-  readonly run: (centre: number, cells: number) => readonly [number, number];
+  readonly run: (center: number, cells: number) => readonly [number, number];
   /**
    * Places a plain step curve's riser, from the unsnapped place halfway between two vertices,
    * snapped as a cell edge is, so a stroked riser covers whole device pixels.

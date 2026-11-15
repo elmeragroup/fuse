@@ -32,11 +32,11 @@ The Fonts page in the docs handbook has the recipes for Next.js, `@fontsource` a
 
 `@elmeragroup/fuse/css` is not only the components' variants and control metrics. Importing it into a Tailwind build also changes these parts of the host theme, whether or not `themes.css` is imported:
 
-- **Role and primitive colours.** Its `@theme inline` block maps every role token (`--color-primary` → `var(--primary)` and so on) and remaps Tailwind's `neutral-50` to `neutral-950` palette onto `--neutral-*`. `themes.css` defines those; without it, `bg-neutral-200` and the other stock neutral utilities resolve to an undefined colour until you define `--neutral-*` yourself.
+- **Role and primitive colors.** Its `@theme inline` block maps every role token (`--color-primary` → `var(--primary)` and so on) and remaps Tailwind's `neutral-50` to `neutral-950` palette onto `--neutral-*`. `themes.css` defines those; without it, `bg-neutral-200` and the other stock neutral utilities resolve to an undefined color until you define `--neutral-*` yourself.
 - **Radius scale.** `rounded-xs` to `rounded-xl` become whole `--radius-step` multiples from `--radius` instead of Tailwind's fixed rems. The step falls back to `0px`, so with your own `--radius` and no `themes.css` every rung is that one radius; `--radius` itself has no fallback. Button rounds with `--radius-button`, which `themes.css` sets per theme; define it (`--radius-button: var(--radius)`) when you skip `themes.css`. Field boxes round with `--radius` until `--radius-step` is `2px`, and then with `--radius-field`, which `themes.css` aliases to `var(--radius)` on each theme element.
 - **State variants.** It declares `data-open`, `data-closed`, `data-checked`, `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal` and `data-vertical` as static variants, wrapped in `:where()`. They replace Tailwind's functional `data-*` variants of the same name in your own classes too: their specificity drops to one class, so a plain `hover:` rule beats a `data-selected:` rule, `data-open:` and the like also match Radix-style `data-state` values, and `data-selected:` matches a present `data-selected` that is not `"false"`, like `data-checked:` and `data-active:`, so it also matches the bare attribute Base UI writes. Other `data-*` names are untouched.
-- **Border colour.** A base-layer rule gives every element, host markup included, `border-color: var(--border, currentcolor)`, so a bare `border` draws in the border role instead of the text colour. Native form widgets (`button`, `input`, `select`, `textarea`, `progress`, `meter`) outside Fuse parts are skipped and keep their own border colour and native look; with preflight, a bare `border` on them stays `currentcolor`, so add `border-border` where you want the role. Any border colour utility still wins, and a host base rule like `* { @apply border-border; }` can go unless it colours those widgets. Import `fuse/css` after `tailwindcss`; a preflight-free build that imports Tailwind's sheets into layers declares `@layer theme, base, components, utilities;` before them.
-- **Preflight-free parts.** Base-layer rules give Fuse's own elements, the ones that carry a `data-slot`, every element rule of Tailwind's preflight, scoped to them: no browser margin, padding, border, button face or control font, no heading size, no link colour or underline, no list markers, collapsed table borders, vertical-only textarea resize, and `hidden` that beats a part's `display` class. Every Fuse element sizes with `box-sizing: border-box`, as under preflight, so a part with a width plus padding or border is that width overall. Under preflight it repeats what preflight sets. Without it, Fuse parts still look as they do with preflight. Host elements without a `data-slot` keep their native look, and any utility wins, except `hidden`, which preflight makes `display: none !important` so it beats a part's display class.
+- **Border color.** A base-layer rule gives every element, host markup included, `border-color: var(--border, currentcolor)`, so a bare `border` draws in the border role instead of the text color. Native form widgets (`button`, `input`, `select`, `textarea`, `progress`, `meter`) outside Fuse parts are skipped and keep their own border color and native look; with preflight, a bare `border` on them stays `currentcolor`, so add `border-border` where you want the role. Any border color utility still wins, and a host base rule like `* { @apply border-border; }` can go unless it colors those widgets. Import `fuse/css` after `tailwindcss`; a preflight-free build that imports Tailwind's sheets into layers declares `@layer theme, base, components, utilities;` before them.
+- **Preflight-free parts.** Base-layer rules give Fuse's own elements, the ones that carry a `data-slot`, every element rule of Tailwind's preflight, scoped to them: no browser margin, padding, border, button face or control font, no heading size, no link color or underline, no list markers, collapsed table borders, vertical-only textarea resize, and `hidden` that beats a part's `display` class. Every Fuse element sizes with `box-sizing: border-box`, as under preflight, so a part with a width plus padding or border is that width overall. Under preflight it repeats what preflight sets. Without it, Fuse parts still look as they do with preflight. Host elements without a `data-slot` keep their native look, and any utility wins, except `hidden`, which preflight makes `display: none !important` so it beats a part's display class.
 - **Also:** `enabled-hover:`, `enabled-active:`, `disabled-state:`, `hit-area-*`, `no-scrollbar`, the `rounded-button`, `rounded-inner`, `font-sans`, `font-heading` and `font-mono` utilities, the `xs`, `lg` and `3xl` breakpoints, `--spacing: 0.25rem`, the `overshoot` easing, `tw-animate-css`, and a reduced-motion rule that switches off transform and layout transitions document-wide.
 
 ### Keeping your own tokens
@@ -53,7 +53,7 @@ A host that migrates one component at a time can keep its own design tokens and 
 }
 
 :root {
-  /* Map the role tokens the components you use read, in any colour notation. */
+  /* Map the role tokens the components you use read, in any color notation. */
   --primary: var(--your-brand);
   --primary-foreground: #fff;
   --radius: 0.5rem;
@@ -61,9 +61,9 @@ A host that migrates one component at a time can keep its own design tokens and 
 }
 ```
 
-Import `fuse/css` before your own `@theme` so your values win where both define one. Each component page in the docs lists the tokens that component reads under "Tokens consumed"; map those, and add the next component's list when you adopt it. Role tokens are whole colours (`oklch()`, `hsl()`, hex), not channel triplets.
+Import `fuse/css` before your own `@theme` so your values win where both define one. Each component page in the docs lists the tokens that component reads under "Tokens consumed"; map those, and add the next component's list when you adopt it. Role tokens are whole colors (`oklch()`, `hsl()`, hex), not channel triplets.
 
-Button's `outline` variant reads `--button-outline` and `--button-outline-width`. Without them it draws a 1px hairline in your `--border`, as neutral themes do. For the branded themes' outline, a 2px ring in the text colour with no shadow, set both:
+Button's `outline` variant reads `--button-outline` and `--button-outline-width`. Without them it draws a 1px hairline in your `--border`, as neutral themes do. For the branded themes' outline, a 2px ring in the text color with no shadow, set both:
 
 ```css
 :root {
@@ -72,7 +72,7 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `Card` casts its small shadow in `--card-shadow`. Without them they take your `--border` and Tailwind's 5% black shadow, as neutral themes do, and `CheckboxCard` and the TextField `card` box always do. For the branded themes' look, where a card stands on the page by its fill alone, set both to a transparent colour. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-coloured surface, such as a nested `Card`, has no outline:
+A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `Card` casts its small shadow in `--card-shadow`. Without them they take your `--border` and Tailwind's 5% black shadow, as neutral themes do, and `CheckboxCard` and the TextField `card` box always do. For the branded themes' look, where a card stands on the page by its fill alone, set both to a transparent color. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-colored surface, such as a nested `Card`, has no outline:
 
 ```css
 :root {
@@ -83,7 +83,7 @@ A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `
 
 The line between a card's stacked `Card.Section` and `Card.SectionButton` parts is `--card-section-divider`. Without it, it takes your `--border`. Branded themes draw it in the page tint, `var(--background)`.
 
-A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as neutral themes do. For the branded themes' look, where stacked rows keep a grey separator but no outer edge and the control alone shows the selection, set the edge to a transparent colour, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline:
+A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as neutral themes do. For the branded themes' look, where stacked rows keep a gray separator but no outer edge and the control alone shows the selection, set the edge to a transparent color, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-colored surface has no outline:
 
 ```css
 :root {
@@ -94,7 +94,7 @@ A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and 
 }
 ```
 
-A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, its title and other label row text take `--selection-disabled-foreground`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha with `--foreground` text, as neutral themes do. For the branded themes' look, where a disabled row keeps the card fill of an enabled row, draws no stripes and greys its title, set:
+A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, its title and other label row text take `--selection-disabled-foreground`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha with `--foreground` text, as neutral themes do. For the branded themes' look, where a disabled row keeps the card fill of an enabled row, draws no stripes and grays its title, set:
 
 ```css
 :root {
@@ -159,7 +159,7 @@ A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<l
 
 h4 to h6 have no roles and stay 16/22 at 500. A `size` or `font` prop, or a `className` size or weight, replaces the roles. `headingVariants()` on its own knows no level and keeps the plain scale.
 
-`Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as neutral themes and every dark theme do. For the branded light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
+`Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text color. Without them a modal takes your `--popover` and `--popover-foreground`, as neutral themes and every dark theme do. For the branded light look, where a modal fills with the page tint so the card-colored fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
 
 ```css
 :root {
@@ -188,7 +188,7 @@ Field boxes round with your `--radius`, as cards and the themes' fields do. For 
 @import "@elmeragroup/fuse/themes.css";
 ```
 
-The standalone stylesheet includes library utilities without Tailwind preflight, plus the base-layer border-colour default described above, which leaves host native form widgets and their native look untouched.
+The standalone stylesheet includes library utilities without Tailwind preflight, plus the base-layer border-color default described above, which leaves host native form widgets and their native look untouched.
 Fuse's own elements, the ones that carry a `data-slot`, take Tailwind preflight's element rules from base-layer rules, so they look as they do with preflight. Every utility and your app's own unlayered reset win over them.
 Keep your app's reset and import `themes.css` in either mode.
 

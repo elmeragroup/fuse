@@ -15,7 +15,7 @@ import { useTapLift } from "./chart-tap-lift";
 import type { ScatterDomains } from "./layout/domain-glide";
 import { buildPointIndex, nearestPoint } from "./layout/point-index";
 import type { PointIndex } from "./layout/point-index";
-import { dotCentre } from "./layout/scatter-frame";
+import { dotCenter } from "./layout/scatter-frame";
 import { focusPoint, pointOf, pointShares, stepPoint, walkPosition } from "./layout/scatter-model";
 import type { ScatterModel } from "./layout/scatter-model";
 import { useScatterFrame, useScatterRoot, useWalkPlace, walkOf } from "./scatter-chart-context";
@@ -218,7 +218,7 @@ export function ScatterSurface({
 
   const naming = { id, name, labelledBy, locale };
   const placed = pointOf(model, place);
-  const centre = frame === null ? null : dotCentre(frame, placed.x, placed.y, 0);
+  const center = frame === null ? null : dotCenter(frame, placed.x, placed.y, 0);
   const { position, size } = walkPosition(model, place, focus);
   const label = scatterOptionName(context, place);
 
@@ -294,9 +294,9 @@ export function ScatterSurface({
           aria-setsize={size}
           aria-describedby={option.entry ? `${id}-description ${id}-instructions` : undefined}
           style={
-            centre === null
+            center === null
               ? undefined
-              : { "--chart-option-x": `${String(centre.x)}px`, "--chart-option-y": `${String(centre.y)}px` }
+              : { "--chart-option-x": `${String(center.x)}px`, "--chart-option-y": `${String(center.y)}px` }
           }
         />
       ))}

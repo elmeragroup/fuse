@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { FocusEvent, RefObject } from "react";
 
 import { documentOrder, isElement, isHTMLElement, isNode, rootNodeChain } from "../../internal/dom-node";
-import type { DateInputNeighbour } from "../date-field/date-input-neighbours";
+import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
 import type { PickerOpenRequest } from "./picker-change-details";
 
 /** One input's focus boundary inside a picker. */
@@ -121,7 +121,7 @@ export type PickerFocusBoundary = {
   /** Whether a node is inside one of the registered inputs. */
   readonly containsInput: (node: Node) => boolean;
   /** The registered input beside an input's element in document order, which focus crosses to. */
-  readonly adjacentInput: DateInputNeighbour;
+  readonly adjacentInput: DateInputNeighbor;
   /** The Root element's focus handler. */
   readonly onFocus: (event: FocusEvent<HTMLElement>) => void;
   /** The Root element's blur handler. */
@@ -149,7 +149,7 @@ export function usePickerFocusBoundary(
     (node: Node) => [...boundaries.current].some((boundary) => boundary.element()?.contains(node) === true),
     []
   );
-  const adjacentInput = useCallback<DateInputNeighbour>((element, direction) => {
+  const adjacentInput = useCallback<DateInputNeighbor>((element, direction) => {
     const elements = [...boundaries.current]
       .flatMap((boundary) => {
         const input = boundary.element();

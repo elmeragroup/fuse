@@ -183,7 +183,7 @@ export type ChartRootContextValue = TextContext & {
    * that draws in the default layout throws it, so a config whose Panels each keep one color
    * family renders.
    */
-  readonly colourRule: ChartCompositionError | null;
+  readonly colorRule: ChartCompositionError | null;
 };
 
 /** What a mounted Panel tells Root: the layout it draws, and its plot for the pointer's pick. */
@@ -268,11 +268,11 @@ export function partOutsidePanel(part: string): ChartCompositionError {
  *   color families.
  */
 export function usePlotLayout(part: string): ChartLayoutContextValue {
-  const { registerRootPart, colourRule } = useChartRoot(part);
+  const { registerRootPart, colorRule } = useChartRoot(part);
   const layout = useChartLayout(part);
   const inRoot = layout.kind === "root";
   useLayoutEffect(() => (inRoot ? registerRootPart(part) : undefined), [inRoot, part, registerRootPart]);
-  if (inRoot && colourRule !== null) throw colourRule;
+  if (inRoot && colorRule !== null) throw colorRule;
   return layout;
 }
 

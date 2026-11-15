@@ -154,7 +154,7 @@ export function ListDetailRoot({
   const list = useRef<HTMLElement | null>(null);
   const listFocus = useRef<HTMLElement | null>(null);
   // The element focus last entered the detail on. React focus events bubble along the React tree,
-  // so focus in the detail's portalled popups, such as its menus, lands here, and so does focus in
+  // so focus in the detail's portaled popups, such as its menus, lands here, and so does focus in
   // a shadow root below it, whose events reach React retargeted to their host.
   const detailFocus = useRef<Element | null>(null);
   const [focusTracking] = useState<FocusTracking>(() => ({

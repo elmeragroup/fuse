@@ -277,14 +277,14 @@ function runPoints(values: readonly number[], run: Run, curve: ChartCurve, pick:
     const [start, end, base, tip] = slotAt(values, slot);
     if ((start + end) / 2 + turn < previous) turn += 360;
     const radius = pick === "tip" ? tip : base;
-    const centre = (start + end) / 2 + turn;
-    angles.push(centre);
+    const center = (start + end) / 2 + turn;
+    angles.push(center);
     edges.push([start + turn, end + turn]);
-    previous = centre;
+    previous = center;
     if (curve === "step-after" || curve === "step-before") {
       // A cell step runs each reading across its whole slot.
       points.push({ angle: start + turn, radius }, { angle: end + turn, radius });
-    } else points.push({ angle: centre, radius });
+    } else points.push({ angle: center, radius });
   }
   return { points, angles, edges };
 }

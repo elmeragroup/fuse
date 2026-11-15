@@ -104,7 +104,7 @@ export function createCarouselInput(
 
   function onPointerCancel(event: PointerEvent): void {
     change(() => {
-      // A touch cancelled for panning is still down; a touch event says when every finger is up.
+      // A touch canceled for panning is still down; a touch event says when every finger is up.
       if (pointers.delete(event.pointerId) && event.pointerType === "touch" && touchEvents) {
         panning = true;
       }
@@ -115,7 +115,7 @@ export function createCarouselInput(
     if (event.touches.length === 0) {
       change(() => {
         panning = false;
-        // Every finger is up, those whose pointer was cancelled and any whose lift came first.
+        // Every finger is up, those whose pointer was canceled and any whose lift came first.
         for (const [id, kind] of pointers) {
           if (kind === "touch") {
             pointers.delete(id);

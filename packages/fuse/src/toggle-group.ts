@@ -1,6 +1,6 @@
-// Source entry for `@elmeragroup/fuse/toggle-group`. It holds explicit named re-exports only, with no
-// `export *`, no local declarations and no directives. The exports and barrel generators discover
-// this file, so never hand-edit package.json#exports or src/index.ts. It exports no public recipe,
-// because Item uses `toggleVariants` from `/toggle`.
+// This file is the source entry for `@elmeragroup/fuse/toggle-group`. It contains only explicit named
+// re-exports, with no `export *`, local declarations or directives. The exports and barrel generators read
+// this file, so change `package.json#exports` and `src/index.ts` only through them. It exports no public
+// recipe, because Item uses `toggleVariants` from `/toggle`.
 export { ToggleGroup } from "./components/toggle-group";
 export type { ToggleGroupRootProps, ToggleGroupItemProps } from "./components/toggle-group/toggle-group";

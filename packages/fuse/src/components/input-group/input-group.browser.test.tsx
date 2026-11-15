@@ -113,17 +113,17 @@ describe("InputGroup", () => {
     expect(document.activeElement).toBe(textboxNamed("Total"));
   });
 
-  it("leaves focus off the own control for a label nested in an addon and for a portalled button", async () => {
+  it("leaves focus off the own control for a label nested in an addon and for a portaled button", async () => {
     const totalFocus: string[] = [];
-    function PortalledButton(): ReactElement {
-      return createPortal(<button type="button">Portalled</button>, document.body);
+    function PortaledButton(): ReactElement {
+      return createPortal(<button type="button">Portaled</button>, document.body);
     }
     renderThemed(
       <InputGroup.Root>
         <InputGroup.Addon>
           <label htmlFor="addon-quantity">Quantity</label>
           <input id="addon-quantity" />
-          <PortalledButton />
+          <PortaledButton />
         </InputGroup.Addon>
         <InputGroup.Input
           aria-label="Total"
@@ -138,8 +138,8 @@ describe("InputGroup", () => {
     expect(document.activeElement).toBe(textboxNamed("Quantity"));
     expect(totalFocus).toEqual([]);
 
-    await userEvent.click(page.getByRole("button", { name: "Portalled", exact: true }));
-    expect(document.activeElement).toBe(roleNamed("button", "Portalled"));
+    await userEvent.click(page.getByRole("button", { name: "Portaled", exact: true }));
+    expect(document.activeElement).toBe(roleNamed("button", "Portaled"));
     expect(totalFocus).toEqual([]);
   });
 

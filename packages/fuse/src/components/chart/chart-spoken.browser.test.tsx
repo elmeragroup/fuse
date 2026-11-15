@@ -45,7 +45,7 @@ const WORDS = {
     estimated: "estimert",
     pending: "ingen data ennå",
     now: "nå",
-    emphasised: "uthevet",
+    emphasized: "uthevet",
     selected: (label: string) => `${label} valgt`,
     cleared: "Ingen serie valgt",
   },
@@ -128,7 +128,7 @@ function S07({ locale }: { readonly locale: Locale }) {
   );
 }
 
-describe.each(LOCALES)("S07's quality states in %s", (locale) => {
+describe.each(LOCALES)("a month's quality states in %s", (locale) => {
   const words = WORDS[locale];
   const unit = (key: keyof typeof NUMBERS) => `${number(key)} ${words.kwh}`;
 
@@ -207,7 +207,7 @@ function S09({ locale }: { readonly locale: Locale }) {
   );
 }
 
-describe.each(LOCALES)("S09 in %s", (locale) => {
+describe.each(LOCALES)("a year-over-year comparison in %s", (locale) => {
   const words = WORDS[locale];
 
   it("reads the change column with the locale's sign words", async () => {
@@ -258,7 +258,7 @@ function S14({ locale, label }: { readonly locale: Locale; readonly label?: stri
   );
 }
 
-describe("S14's emphasised days", () => {
+describe("the emphasized peak days", () => {
   it.each(LOCALES)("speak the dictionary's emphasis word in %s", async (locale) => {
     const words = WORDS[locale];
     const { host } = renderThemed(<S14 locale={locale} />);
@@ -268,11 +268,11 @@ describe("S14's emphasised days", () => {
       ["End", 1],
     ]);
     expect(heard[1]).toBe(
-      `option, ${date("S14 last day date", locale)}: ${words.peak} ${number("peak31")} ${words.kwh}, ${words.emphasised}, not selected, position 31, set size 31`
+      `option, ${date("S14 last day date", locale)}: ${words.peak} ${number("peak31")} ${words.kwh}, ${words.emphasized}, not selected, position 31, set size 31`
     );
   });
 
-  it("speak an explicit emphasisLabel in its place, as section 9.4's S14 phrase does", async () => {
+  it("speak an explicit emphasisLabel in place of the dictionary word", async () => {
     const { host } = renderThemed(<S14 locale="nb-NO" label="teller i effekttrinnet" />);
     await start(host);
     const heard = await phrasesAfter([

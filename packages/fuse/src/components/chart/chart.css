@@ -1,22 +1,22 @@
 @layer theme, base, components, utilities;
 
 /*
-  Fuse's chart styles. Every rule is keyed on data-slot and the data attributes of CONTRACT
-  section 11, and no chart module writes a utility class of its own. Marks are SVG drawn in
-  measured CSS pixels, so these rules paint them and never place them. Only opacity and colour
-  transition here, and the JS loop of chart-motion.ts moves every mark.
+  Fuse's chart styles. Every rule is keyed on data-slot and the chart's data attributes, and no
+  chart module writes a utility class of its own. Marks are SVG drawn in measured CSS pixels, so
+  these rules paint them and never place them. Only opacity and color transition here, and the JS
+  loop of chart-motion.ts moves every mark.
 
   Root carries data-active, data-near and data-pinned, which change on enter and leave, and the
   dim rules read them, each target led by a tag or attribute few parts carry, which Chromium keys
   its restyle on. A pointer move writes the followers' own attributes.
 
   Cut-outs, the rings, seams, halos, chips and faces that part overlapping marks, paint
-  var(--surface, var(--background)). --surface is the colour of the fill an element sits on, which
+  var(--surface, var(--background)). --surface is the color of the fill an element sits on, which
   every container that paints a container role states beside its fill, or the page where none
   does. Text on a chip or halo of the surface reads the muted text paired with it,
   var(--surface-muted-foreground, var(--muted-foreground)), which each host states beside
   --surface. Inverse text that paints var(--background) on a foreground pill is no cut-out and
-  keeps the page colour.
+  keeps the page color.
 */
 
 /*
@@ -367,7 +367,7 @@
   }
 
   /*
-    Each value label centres on its tick, so the lowest label of one Panel and the highest of the
+    Each value label centers on its tick, so the lowest label of one Panel and the highest of the
     next each reach half a 1rem line past their plots. A gap of one line keeps them apart.
   */
   [data-slot="chart-panel"]:nth-child(n + 2 of [data-slot="chart-panel"]) {
@@ -503,7 +503,7 @@
 
   /*
     A scatter chart's single option covers the active point, and a live line chart's its active
-    reading, a 24 px target centred on it, where a touch reader's double tap lands. Once the plot is
+    reading, a 24 px target centered on it, where a touch reader's double tap lands. Once the plot is
     measured, the option writes the point's place. A live option moves every frame, so it rests in
     the plot's middle and writes its offset from there as a translation, which lays nothing out.
   */
@@ -627,11 +627,11 @@
   }
 
   /*
-    An emphasised bar in the current slot also draws a 2 px ring in the foreground role inside its
-    box. Its paint alone can sit close to its greyed neighbours, as a diverging role's middle does,
-    so the ring marks it apart from them by more than colour. An estimated bar keeps its dashed
-    outline instead. The greyed paint of the other bars is the series' own, set where the bar is
-    laid out, so every look greys alike.
+    An emphasized bar in the current slot also draws a 2 px ring in the foreground role inside its
+    box. Its paint alone can sit close to its grayed neighbors, as a diverging role's middle does,
+    so the ring marks it apart from them by more than color. An estimated bar keeps its dashed
+    outline instead. The grayed paint of the other bars is the series' own, set where the bar is
+    laid out, so every look grays alike.
   */
   [data-slot="chart-bar-series"][data-emphasis]
     [data-slot="chart-bar"][data-emphasis][data-time="current"]:not([data-quality="estimated"]) {
@@ -640,7 +640,7 @@
   }
 
   /*
-    An estimated reading draws a dashed outline in the series colour over a lighter fill. The
+    An estimated reading draws a dashed outline in the series color over a lighter fill. The
     active overlay takes the active reading's quality, so hovering keeps the encoding, with a
     heavier outline and fill for the active state.
   */
@@ -704,7 +704,7 @@
 
   /*
     A paint server's content names its paint in --chart-fill or --chart-stop. A mask paints its
-    alpha only, so its content takes the text colour, which is opaque. A rectangle that names its
+    alpha only, so its content takes the text color, which is opaque. A rectangle that names its
     own fill, as the fade mask's gradient ramp does, keeps it.
   */
   [data-slot="chart-bar-series"] :is(pattern, mask) > rect:not([fill]) {
@@ -725,7 +725,7 @@
   }
 
   /*
-    The looks of CONTRACT section 6. Their paint servers live in chart-bar-fills.tsx. The tinted
+    The bar looks. Their paint servers live in chart-bar-fills.tsx. The tinted
     looks draw a 1 px edge in the full paint, so each bar's outline keeps 3:1 against the surface.
   */
   :is(
@@ -813,7 +813,7 @@
   }
 
   /*
-    Glow casts each wrapped series' own colour at half alpha, blurred by a Gaussian of 8 px
+    Glow casts each wrapped series' own color at half alpha, blurred by a Gaussian of 8 px
     standard deviation. A drop-shadow length is the Gaussian's standard deviation.
   */
   [data-slot="chart-glow"] [data-slot="chart-bar-series"]:not([data-paint]) {
@@ -908,7 +908,7 @@
   }
 
   /*
-    A label past the rim sits 6 px out, its centre on its ray, so the room
+    A label past the rim sits 6 px out, its center on its ray, so the room
     above and below the dial holds the gap and its 16 px line, and the room beside it the gap and the
     widest label.
   */
@@ -1016,7 +1016,7 @@
   }
 
   /*
-    A slice paints its own colour, or its role list's gradient, with the surface's seam along its
+    A slice paints its own color, or its role list's gradient, with the surface's seam along its
     edges. It pops along its bisector by the frame's --_px and --_py, its pop's CSS pixels in
     the dial's units, and dims to --chart-hover-dim while another slice is active. A selected
     or highlighted category dims the rest the same way, and every dim fades over 150 ms.
@@ -1090,7 +1090,7 @@
   }
 
   /*
-    A radial chart's rings are stroked centre lines whose dash the frame writes. Each stroke
+    A radial chart's rings are stroked center lines whose dash the frame writes. Each stroke
     fills --chart-ring-fill of its band, which sets the ring's width and the gap to the next ring.
     A dotted ring's dots are round caps of zero-length dashes, faint where its value does not reach.
   */
@@ -1137,7 +1137,7 @@
   }
 
   /*
-    The active ring scales to 1.03 and the rings outside it to 1.02 about the dial's centre, and
+    The active ring scales to 1.03 and the rings outside it to 1.02 about the dial's center, and
     the other rings dim, as slices do. The rules lead with data-chart-ring, which only rings
     carry.
   */
@@ -1186,7 +1186,7 @@
     filter: drop-shadow(0 0 8px color-mix(in oklab, var(--_paint) 50%, transparent));
   }
 
-  /* A label is 12 px text placed in the cell, centred on its point inside, or reading away outside. */
+  /* A label is 12 px text placed in the cell, centered on its point inside, or reading away outside. */
   [data-slot="pie-chart-labels"] > svg {
     position: absolute;
     inset: 0;
@@ -1217,7 +1217,7 @@
     color: var(--_on, var(--foreground));
   }
 
-  /* Inside its slice, a label's value and share read in the slice's on-colour too, never muted. */
+  /* Inside its slice, a label's value and share read in the slice's on-color too, never muted. */
   [data-slot="pie-chart-label"][data-placement="inside"]
     :is([data-slot="chart-legend-value"], [data-slot="chart-legend-share"]) {
     color: inherit;
@@ -1237,7 +1237,7 @@
   }
 
   /*
-    A centre's parts stack in a box, sized to it: a pie's and a clock's the square inscribed in the
+    A center's parts stack in a box, sized to it: a pie's and a clock's the square inscribed in the
     hole, a gauge's its own.
   */
   :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"], [data-slot="gauge-chart-center"])
@@ -1257,7 +1257,7 @@
   }
 
   /*
-    The value scales with the hole, never below the 12 px floor (CONTRACT section 10), and leads the
+    The value scales with the hole, never below the 12 px floor, and leads the
     label beneath it, which a hole narrower than 4rem leaves out, as it would wrap into the rings.
   */
   :is([data-slot="pie-chart-center-value"], [data-slot="gauge-chart-center-value"]) {
@@ -1310,7 +1310,7 @@
     translate: 0 calc(var(--_digit) * -10%);
   }
 
-  /* Until the marks sweep in, the centre's digits wait at 0, and they count up with the sweep. */
+  /* Until the marks sweep in, the center's digits wait at 0, and they count up with the sweep. */
   :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="reel"] {
     --_reel-waiting: var(--_if-root-waiting) 0 0;
     translate: var(--_reel-waiting, 0 calc(var(--_digit) * -10%));
@@ -1320,8 +1320,8 @@
     A gauge is a polar figure whose cell is a meter. Its layers lay out from the rim inward with no
     radius to tune: an outside Ruler takes 0.11 of the radius at the rim, a Zone band 0.08 inside
     it and a ProgressRing 0.06 inside that, and the track, the fill, the glow, the sector, the dots,
-    the inside ruler, the needle and the centre scale in by what they leave, --_gauge-track, about
-    the dial's centre. These rim weights live here alone: Root reads only --_gauge-track back.
+    the inside ruler, the needle and the center scale in by what they leave, --_gauge-track, about
+    the dial's center. These rim weights live here alone: Root reads only --_gauge-track back.
   */
   [data-slot="gauge-chart"] {
     --chart-polar-size: 15rem;
@@ -1488,8 +1488,8 @@
   }
 
   /*
-    A dot the reading has not reached stays at 18 %, and a lit dot takes the full colour. While the
-    entrance waits every dot waits faint. "fade" dims each ring further toward the centre.
+    A dot the reading has not reached stays at 18 %, and a lit dot takes the full color. While the
+    entrance waits every dot waits faint. "fade" dims each ring further toward the center.
   */
   [data-slot="gauge-chart-dot"] {
     --_dot-faint: color-mix(in oklab, var(--_paint) 18%, transparent);
@@ -1507,7 +1507,7 @@
 
   /*
     A Sector is the wedge from the sweep's start to the reading, cut from the band from 0.6 to 0.8
-    of the track's radius, which clears the centre's text: two masks, the band and the conic wedge
+    of the track's radius, which clears the center's text: two masks, the band and the conic wedge
     the frame writes, intersect. "flat"
     paints one 28 % tint, "radial" brightens toward the rim and "conic" toward the reading's edge.
     Below Chrome 120 mask does nothing on an HTML element, which would tint the whole box, so the
@@ -1642,8 +1642,8 @@
   }
 
   /*
-    The centre's parts stack in a box 0.96 wide and 0.68 tall in units of the track's radius, about
-    inside the circle the needle's base clears, kept to the sweep's box, so a half-circle's centre
+    The center's parts stack in a box 0.96 wide and 0.68 tall in units of the track's radius, about
+    inside the circle the needle's base clears, kept to the sweep's box, so a half-circle's center
     sits above its flat edge. Its digits count up as the sweep starts, after --_reel-delay, which
     Root writes from the sweep's own start.
   */
@@ -1666,14 +1666,14 @@
   }
 
   /*
-    The reading keeps to the centre's width, so a long unit, such as a price's VAT basis, wraps
+    The reading keeps to the center's width, so a long unit, such as a price's VAT basis, wraps
     within it instead of overflowing.
   */
   [data-slot="gauge-chart-center-value"] {
     max-width: 100%;
   }
 
-  /* The reading's unit reads small and muted beside its number, and wraps under it when the centre is narrow. */
+  /* The reading's unit reads small and muted beside its number, and wraps under it when the center is narrow. */
   [data-slot="gauge-chart-center-value"] [data-part="unit"] {
     align-self: center;
     font-size: 0.75rem;
@@ -1684,7 +1684,7 @@
 
   /*
     A radar's grid: rings at the radius ticks in the border role, the zero ring solid in the zero
-    line's colour, spokes from the centre to the rim, and the hand along the active spoke.
+    line's color, spokes from the center to the rim, and the hand along the active spoke.
     Each stroke keeps 1 px at any dial size.
   */
   [data-slot="radar-chart-grid"] {
@@ -1714,7 +1714,7 @@
   }
 
   /*
-    A series layer paints its own colour, or its role list's gradient. The Area fills its
+    A series layer paints its own color, or its role list's gradient. The Area fills its
     per-edge quadrilaterals even-odd at --chart-area-opacity, hatched beside an estimated spoke; the
     Line strokes at --chart-stroke, dashed beside one; and each dot is a round cap of a
     zero-length subpath, in a ring of the surface, or hollow for "ring".
@@ -1841,7 +1841,7 @@
     );
   }
 
-  /* Glow casts each wrapped series' own colour, blurred as a line's glow is. */
+  /* Glow casts each wrapped series' own color, blurred as a line's glow is. */
   [data-slot="radar-chart-glow"] {
     display: contents;
   }
@@ -1851,8 +1851,8 @@
   }
 
   /*
-    The spoke labels sit past the rim, each reading away from the centre, and the ring values sit
-    beside the first spoke, each centred on its ring. Both are 12 px text placed in the cell.
+    The spoke labels sit past the rim, each reading away from the center, and the ring values sit
+    beside the first spoke, each centered on its ring. Both are 12 px text placed in the cell.
   */
   :is([data-slot="radar-chart-angle-axis"], [data-slot="radar-chart-radius-axis"]) {
     z-index: 3;
@@ -1878,7 +1878,7 @@
 
   /*
     A clock's grid: the hole's edge, rings at the value ticks in the border role, a solid zero ring
-    in the zero line's colour, and spokes at the cycle's labels. Each stroke keeps 1 px at any dial
+    in the zero line's color, and spokes at the cycle's labels. Each stroke keeps 1 px at any dial
     size, and the dashed grid dashes all but the zero ring.
   */
   [data-slot="clock-chart-grid"] {
@@ -2235,7 +2235,7 @@
   }
 
   /*
-    The cycle's labels sit past the rim, each reading away from the centre, and the ring values
+    The cycle's labels sit past the rim, each reading away from the center, and the ring values
     beside the 12 o'clock spoke, all 12 px text placed in the cell. They thin as the dial
     narrows: each axis is its own size container, so a label hides below the narrowest width that
     holds its stride. The width buckets are tick-fit's.
@@ -2579,7 +2579,7 @@
   }
 
   /*
-    A centre value's number and unit sit on one line while they fit, and on two, centred, when the
+    A center value's number and unit sit on one line while they fit, and on two, centered, when the
     hole is too narrow for both.
   */
   :is(
@@ -2595,7 +2595,7 @@
   }
 
   /*
-    The fit guard: a centre whose lines overflow the hole at the floor keeps only its value, and one
+    The fit guard: a center whose lines overflow the hole at the floor keeps only its value, and one
     whose value alone overflows shows nothing, since the tooltip, legend and table carry it.
   */
   :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"], [data-slot="gauge-chart-center"])
@@ -2824,7 +2824,7 @@
   }
 
   /*
-    A tick dot sits on its band centre in the muted text role, which holds 3:1 as a graphical
+    A tick dot sits on its band center in the muted text role, which holds 3:1 as a graphical
     object. The label may shift to stay inside the axis, so the dot undoes the same clamp and keeps
     to the tick's anchor.
   */
@@ -3283,7 +3283,7 @@
     font-weight: 500;
   }
 
-  /* Swatches carry the series paint, and forced colours keep it. */
+  /* Swatches carry the series paint, and forced colors keep it. */
   /* Figma's Legend draws an 8 px swatch with a 2 px radius and a 4 px gap to its label. */
   [data-slot="chart-swatch"] {
     display: inline-block;
@@ -3399,7 +3399,7 @@
   }
 
   /*
-    A legend item's swatch sits on its label's first line, centred on it, so a label that wraps keeps
+    A legend item's swatch sits on its label's first line, centered on it, so a label that wraps keeps
     its swatch beside its first words.
   */
   [data-slot="chart-legend-item"] {
@@ -3434,7 +3434,7 @@
     transition: opacity 150ms ease;
   }
 
-  /* Pressed shows as an outline too, because forced colours drop the muted background. */
+  /* Pressed shows as an outline too, because forced colors drop the muted background. */
   [data-slot="chart-legend-toggle"][data-pressed] {
     outline: 1px solid var(--foreground);
     outline-offset: -1px;
@@ -3615,8 +3615,8 @@
   }
 
   /*
-    A label paints above the marks with a halo in the surface colour, so a bar under a value
-    label leaves it readable. A muted label keeps the full muted text colour, because only the
+    A label paints above the marks with a halo in the surface color, so a bar under a value
+    label leaves it readable. A muted label keeps the full muted text color, because only the
     line and the band take the muted tone's reduced alpha.
   */
   [data-slot="chart-reference-label"] {
@@ -3653,7 +3653,7 @@
   /*
     On a vertical chart a slot reference labels its line or band from a row above the plot, where
     no bar reaches, and with Panels from the row above its own Panel's plot alone. A line's label
-    centres on the line and a band's starts at the band, and either shifts inward at the plot's
+    centers on the line and a band's starts at the band, and either shifts inward at the plot's
     edges. A 1 px rule starts at its coordinate, so its middle lies half a pixel past it, here and
     for the active value line's pill.
   */
@@ -3863,9 +3863,9 @@
   }
 
   /*
-    Dots, the active dot and markers paint the series colour inside a ring of the surface, so a dot
+    Dots, the active dot and markers paint the series color inside a ring of the surface, so a dot
     over a line or another dot stays apart from it. "ring" is hollow, and "halo" sits in a faint
-    halo of its colour, as the Figma Now indicator draws.
+    halo of its color, as the Figma Now indicator draws.
   */
   [data-slot="chart-dot"] {
     fill: var(--chart-series-paint);
@@ -3921,7 +3921,7 @@
 
   /*
     A scatter series draws its points as one path of zero-length subpaths, whose round caps are the
-    dots, so the stroke is the dot's colour and its width the dot's diameter. One path paints its
+    dots, so the stroke is the dot's color and its width the dot's diameter. One path paints its
     stroke once, so overlapping dots of one series never darken each other. "quiet" draws a pale
     reference series, such as last year.
   */
@@ -4074,7 +4074,7 @@
   }
 
   /*
-    Glow casts a line's or an area's own colour at full alpha. The 9.5 px drop-shadow draws the
+    Glow casts a line's or an area's own color at full alpha. The 9.5 px drop-shadow draws the
     glow spec's line halo.
   */
   [data-slot="chart-glow"]
@@ -4245,7 +4245,7 @@
     translate: calc(var(--_value-x) * 1%) 0;
   }
 
-  /* The highlight re-strokes the line from the centre of the cell before the value to the one after. */
+  /* The highlight re-strokes the line from the center of the cell before the value to the one after. */
   [data-slot="sparkline-path"][data-part="highlight"] {
     clip-path: inset(-50% calc(100% - var(--_band-end) * 1%) -50% calc(var(--_band-start) * 1%)) view-box;
   }
@@ -4399,7 +4399,7 @@
   }
 
   /*
-    Time ticks centre on their instants and fade at the edges as the clock writes. They move every
+    Time ticks center on their instants and fade at the edges as the clock writes. They move every
     frame, so each rests at the axis's start and moves by a translation across the axis, its size
     container, which lays nothing out. The live axes and grid mark themselves data-live, and these
     rules reach only their own children, so a chart nested in one of the live chart's parts, such
@@ -4412,7 +4412,7 @@
   }
 
   /*
-    Value ticks rest at the axis's top and move by the translation the clock writes, which centres
+    Value ticks rest at the axis's top and move by the translation the clock writes, which centers
     each on its height, and the clock writes their edge fade.
   */
   [data-slot="chart-y-axis"][data-live] > [data-part="ticks"] > [data-slot="chart-y-tick"] {
@@ -4420,8 +4420,8 @@
   }
 
   /*
-    The badge sits beside the plot's right edge, centred on the live dot's height, in the line's
-    paint with its on-colour text.
+    The badge sits beside the plot's right edge, centered on the live dot's height, in the line's
+    paint with its on-color text.
   */
   [data-slot="live-line-chart-badge"] {
     grid-area: end;
@@ -4547,7 +4547,7 @@
     }
 
     /*
-      While the entrance plays, a pie or gauge centre's digits count up over it, and afterwards roll
+      While the entrance plays, a pie or gauge center's digits count up over it, and afterwards roll
       on their spring, except while data-snap swaps them on a hover step that came fast.
     */
     :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"])
@@ -4567,7 +4567,7 @@
 
     /*
       As the entrance starts on a chart nothing painted before, each ring's track scales out from
-      the centre, i·80 ms apart. A hydrated chart's tracks stay at rest.
+      the center, i·80 ms apart. A hydrated chart's tracks stay at rest.
     */
     [data-chart-ring-track] {
       animation: var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing)
@@ -4585,7 +4585,7 @@
 
     /*
       As the entrance starts on a gauge nothing painted before, its track, zones and ruler fade in
-      and scale out from the centre to their own scale. A hydrated gauge's stay at rest.
+      and scale out from the center to their own scale. A hydrated gauge's stay at rest.
     */
     :is(
         [data-slot="gauge-chart-track"],
@@ -4752,7 +4752,7 @@
 
   /*
     A printed Panel keeps its axes beside its plot on one page. A Panel paints nothing of its own,
-    so forced colours reach its parts through their own rules.
+    so forced colors reach its parts through their own rules.
   */
   @media print {
     [data-slot="chart-panel"] {
@@ -4761,8 +4761,8 @@
   }
 
   /*
-    Forced colours keep every series colour on the marks, so series stay apart, and draw rules,
-    guides and text in system colours.
+    Forced colors keep every series color on the marks, so series stay apart, and draw rules,
+    guides and text in system colors.
   */
   @media (forced-colors: active) {
     [data-slot="chart-bar-series"],
@@ -4825,8 +4825,8 @@
     }
 
     /*
-      Forced colours give a reference band no pale fill of its own, so the band draws a 1 px edge
-      in the text colour. Its label needs no rule, because forced colours already paint text.
+      Forced colors give a reference band no pale fill of its own, so the band draws a 1 px edge
+      in the text color. Its label needs no rule, because forced colors already paint text.
     */
     [data-slot="chart-reference-area"] > svg > rect {
       fill: none;
@@ -4834,7 +4834,7 @@
       stroke-width: 1px;
     }
 
-    /* A missing reading keeps its dashed tick, in the text colour, so it never reads as a gap. */
+    /* A missing reading keeps its dashed tick, in the text color, so it never reads as a gap. */
     [data-slot="chart-bar-missing"],
     [data-slot="chart-bar-path"][data-quality="missing"] {
       stroke: CanvasText;

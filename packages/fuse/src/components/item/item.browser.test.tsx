@@ -3,7 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
+import { expectActivationCanceled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
 import { MUTED, PANEL, describePartPaint } from "../../../test/surface-paint";
@@ -251,7 +251,7 @@ describe("aria-disabled Item rows", () => {
         </Item.Root>
       );
 
-      await expectActivationCancelled(roleNamed("link", "Profile"), clicks);
+      await expectActivationCanceled(roleNamed("link", "Profile"), clicks);
     }
   );
 

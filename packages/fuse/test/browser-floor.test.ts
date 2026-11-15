@@ -32,22 +32,22 @@ describe("browser-floor reading", () => {
       features: ["css.types.round"],
     },
     {
-      syntax: "a relative colour a parser could resolve",
+      syntax: "a relative color a parser could resolve",
       css: "a{color:rgb(from red r g b)}",
       features: ["css.types.color.rgb.relative_syntax"],
     },
     {
-      syntax: "an rgba() relative colour by its rgb() row",
+      syntax: "an rgba() relative color by its rgb() row",
       css: "a{color:rgba(from red r g b)}",
       features: ["css.types.color.rgb.relative_syntax"],
     },
     {
-      syntax: "an hsla() relative colour by its hsl() row",
+      syntax: "an hsla() relative color by its hsl() row",
       css: "a{color:hsla(from red h s l)}",
       features: ["css.types.color.hsl.relative_syntax"],
     },
     {
-      syntax: "an upper-case relative colour",
+      syntax: "an upper-case relative color",
       css: "a{color:rgb(FROM red r g b)}",
       features: ["css.types.color.rgb.relative_syntax"],
     },

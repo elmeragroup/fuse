@@ -68,7 +68,7 @@ describe("NavigationMenu", () => {
     expect(page.getByRole("link", { name: "Electricity", exact: true }).query()).toBeNull();
   });
 
-  it("opens the content in the popup, portalled into the container outside Root, when the trigger is clicked", async () => {
+  it("opens the content in the popup, portaled into the container outside Root, when the trigger is clicked", async () => {
     function InContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -98,7 +98,7 @@ describe("NavigationMenu", () => {
         <NavigationMenu.Root aria-label="Wide">
           <NavigationMenu.List>
             <NavigationMenu.Item>
-              <NavigationMenu.Trigger>Catalogue</NavigationMenu.Trigger>
+              <NavigationMenu.Trigger>Catalog</NavigationMenu.Trigger>
               <NavigationMenu.Content>
                 <div style={{ width: 600 }}>
                   <NavigationMenu.Link href="#wide">Wide</NavigationMenu.Link>
@@ -108,7 +108,7 @@ describe("NavigationMenu", () => {
           </NavigationMenu.List>
         </NavigationMenu.Root>
       );
-      const trigger = roleNamed("button", "Catalogue");
+      const trigger = roleNamed("button", "Catalog");
       await userEvent.click(trigger);
       const link = await openedLink("Wide");
       const popup = panelControlledBy(trigger);

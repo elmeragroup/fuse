@@ -1,9 +1,8 @@
-// The source entry for `@elmeragroup/fuse/data-table-filter`. It holds explicit named re-exports only,
-// with no `export *`, no local declarations and no directives. The exports and barrel generators
-// find this file, so never edit `package.json#exports` or `src/index.ts` by hand.
-// It is a subpath only. Its types read the optional `@tanstack/react-table` peer, so the root
-// barrel leaves it out, through `OPTIONAL_PEER_ENTRIES` in `scripts/entries.ts`. It exports no
-// public recipe.
+// This file is the source entry for `@elmeragroup/fuse/data-table-filter`. It contains only explicit named
+// re-exports, with no `export *`, local declarations or directives. The exports and barrel generators read
+// this file, so change `package.json#exports` and `src/index.ts` only through them. It is a subpath only. Its
+// types read the optional `@tanstack/react-table` peer, so the root barrel leaves it out, through
+// `OPTIONAL_PEER_ENTRIES` in `scripts/entries.ts`. It exports no public recipe.
 export { DataTableFilter } from "./components/data-table-filter";
 export type {
   DataTableFilterBarProps,

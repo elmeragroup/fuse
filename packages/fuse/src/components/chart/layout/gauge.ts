@@ -176,7 +176,7 @@ export function notchLayout(sweep: Sweep, count: number, pixels: DialPixels): No
  * @param index - The notch, 0 at the start.
  * @returns Degrees from the sweep's start.
  */
-export function notchCentre(layout: NotchLayout, index: number): number {
+export function notchCenter(layout: NotchLayout, index: number): number {
   return layout.width / 2 + index * layout.step;
 }
 

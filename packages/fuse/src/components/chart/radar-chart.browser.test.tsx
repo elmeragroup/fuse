@@ -64,7 +64,7 @@ function rows(a: readonly (number | null)[], b?: readonly (number | null)[]): Sp
   return a.map((value, index) => ({ spoke: `s${String(index)}`, a: value, b: b?.[index] ?? null }));
 }
 
-describe("the pick (R6) and hover (D19)", () => {
+describe("the pick and hover", () => {
   it("picks the nearest spoke by angle and the series whose drawn vertex lies nearest, with hysteresis", async () => {
     const a = [3, 1, 4, 2, 5, 1];
     const b = [1, 4, 2, 5, 2, 3];
@@ -120,7 +120,7 @@ describe("the pick (R6) and hover (D19)", () => {
   });
 });
 
-describe("the description (A1-17)", () => {
+describe("the description", () => {
   it("states a series' unit once after its label, as every series family's description does", () => {
     // The description's form, `Forbruk i kilowattimer: lavest 0,33`: the unit follows the
     // label, and the extremes print without it. Forbruk reads 3, 1,5 and 7 kWh over NO1 to NO3, so

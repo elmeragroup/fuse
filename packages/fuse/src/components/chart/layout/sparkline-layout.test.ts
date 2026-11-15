@@ -52,7 +52,7 @@ describe("sparklineLayout", () => {
     expect(layout.stroke).toBe("M5,100L15,50");
   });
 
-  it("draws an area's lone readings as round caps on its edge beside its empty fill (B2-1)", () => {
+  it("draws an area's lone readings as round caps on its edge beside its empty fill", () => {
     // [10, null, 20] over [0, 20]: 10 sits mid-box in the first cell and 20 at the top of the third.
     const layout = paths({ ...base, variant: "area", data: [10, null, 20] });
     expect([layout.fill, layout.stroke]).toEqual(["", "M5,50ZM25,0Z"]);
@@ -70,7 +70,7 @@ describe("sparklineLayout", () => {
     expect(paths({ ...base, data: [2, 6, 4] }).dot).toBeNull();
   });
 
-  it("gives each reading its cell and a band from the centre before it to the centre after it", () => {
+  it("gives each reading its cell and a band from the center before it to the center after it", () => {
     // Three cells a third of the box wide. The end bands reach a tenth past the box.
     const layout = paths({ ...base, data: [2, 6, 4] });
     expect(layout.readings.map(({ index, x, y, cell, band }) => ({ index, x, y, cell, band }))).toEqual([

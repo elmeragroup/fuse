@@ -13,7 +13,7 @@ import { formatSlot, isClockPreset } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
 import { runMargins } from "./layout/plot-frame";
-import { slotCentre, valueTop } from "./layout/plot-geometry";
+import { slotCenter, valueTop } from "./layout/plot-geometry";
 import type { SlotWindow } from "./layout/slot-window";
 import { fitsEveryBucket, thinTicks } from "./layout/tick-fit";
 import type { ShownTick, TickVisibility } from "./layout/tick-fit";
@@ -143,7 +143,7 @@ function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
     const preset = tickFormat(format, unit, unit !== domain.interval);
     return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, unit, preset, "tick").text;
   };
-  const position = (slot: number): number => slotCentre(window, slot, xScale);
+  const position = (slot: number): number => slotCenter(window, slot, xScale);
   const measure = (coarse: boolean) => {
     // Labels format on demand, so a fit check that stops at its first overlap formats few of them.
     const labels = new Map<number, string>();

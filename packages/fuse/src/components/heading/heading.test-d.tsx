@@ -24,7 +24,7 @@ test("HeadingProps is native heading props plus the recipe axes and level, and t
   expectTypeOf<HeadingProps["className"]>().toEqualTypeOf<string | undefined>();
 
   const _basic = <Heading>Order overview</Heading>;
-  const _levelled = (
+  const _leveled = (
     <Heading level={1} size="sm" variant="muted" align="center">
       Details
     </Heading>

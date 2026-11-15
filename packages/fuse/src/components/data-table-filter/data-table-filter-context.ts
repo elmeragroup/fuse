@@ -200,7 +200,7 @@ export type DataTableFilterInternals = {
     /** Whether a `ValueContent` is registered, which a Value checks in development. */
     readonly hasValueContent: () => boolean;
     /** Focuses the neighbor of the chip at `index`, which is going away, and returns what took focus. */
-    readonly neighbourOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
+    readonly neighborOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
     /** Focuses a chip's first or last segment, else the Trigger, and returns what took focus. */
     readonly focusChipEdge: (fieldId: string, edge: "first" | "last") => HTMLElement | null;
     /** Whether focus left this Root's closing overlay of `kind` for somewhere else. */

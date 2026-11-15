@@ -16,7 +16,7 @@ import { ChartValueRun } from "./chart-value-run";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValueRun } from "./format/value-format";
 import type { ValueRun } from "./format/value-format";
-import { useCentreItem } from "./pie-chart-center";
+import { useCenterItem } from "./pie-chart-center";
 
 /**
  * Props for `PieChart.CenterValue`, a closed part.
@@ -73,17 +73,17 @@ function RollingValue({ run, step }: { readonly run: ValueRun; readonly step: nu
  * @beta
  */
 export function PieChartCenterValue({ format, className, style }: PieChartCenterValueProps): ReactElement {
-  const { centre, active } = useCentreItem("PieChart.CenterValue");
+  const { center, active } = useCenterItem("PieChart.CenterValue");
   const { locale } = useLocale();
   let run: ValueRun | null = null;
-  if (centre !== null && active !== null) {
-    const value = centre.value(active);
+  if (center !== null && active !== null) {
+    const value = center.value(active);
     run =
       value === null
         ? { before: "", number: CHART_STRINGS[locale].missing, after: "" }
-        : formatValueRun(locale, value, format ?? centre.format(active), "full");
-  } else if (centre?.total) {
-    run = formatValueRun(locale, centre.total.value, format ?? centre.total.format, "full");
+        : formatValueRun(locale, value, format ?? center.format(active), "full");
+  } else if (center?.total) {
+    run = formatValueRun(locale, center.total.value, format ?? center.total.format, "full");
   }
   return (
     <span data-slot="pie-chart-center-value" className={className} style={style}>
@@ -102,15 +102,15 @@ export function PieChartCenterValue({ format, className, style }: PieChartCenter
  * @beta
  */
 export function PieChartCenterShare({ format, className, style }: PieChartCenterShareProps): ReactElement {
-  const { centre, active } = useCentreItem("PieChart.CenterShare");
+  const { center, active } = useCenterItem("PieChart.CenterShare");
   const { locale } = useLocale();
   const digits = shareDigits(format);
   const share =
-    centre === null
+    center === null
       ? undefined
       : active === null
-        ? (centre.totalShare(digits) ?? undefined)
-        : centre.share(active, digits);
+        ? (center.totalShare(digits) ?? undefined)
+        : center.share(active, digits);
   return (
     <span data-slot="pie-chart-center-share" className={className} style={style}>
       {share === undefined ? null : <ChartDigitRoll text={shareText(locale, share, format)} step={active} />}
@@ -128,16 +128,16 @@ export function PieChartCenterShare({ format, className, style }: PieChartCenter
  * @beta
  */
 export function PieChartCenterMax({ format, className, style }: PieChartCenterMaxProps): ReactElement {
-  const { centre, active } = useCentreItem("PieChart.CenterMax");
+  const { center, active } = useCenterItem("PieChart.CenterMax");
   const { locale } = useLocale();
-  const max = centre === null ? null : active === null ? centre.totalMax : centre.max(active);
+  const max = center === null ? null : active === null ? center.totalMax : center.max(active);
   const shown =
     format ??
-    (centre === null
+    (center === null
       ? {}
       : active === null
-        ? (centre.total?.format ?? centre.format(0))
-        : centre.format(active));
+        ? (center.total?.format ?? center.format(0))
+        : center.format(active));
   return (
     <span data-slot="pie-chart-center-max" className={className} style={style}>
       {max === null ? null : <RollingValue run={formatValueRun(locale, max, shown, "full")} step={active} />}

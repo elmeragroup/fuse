@@ -90,12 +90,12 @@ export function GaugeChartSector({
       className={className}
       style={{
         "--_paint": `var(--${color})`,
-        // The dial's centre and the sector's radius, as shares of the box.
+        // The dial's center and the sector's radius, as shares of the box.
         "--_cx": cx,
         "--_cy": cy,
         "--_rx": GAUGE_RADII.sector / width,
         "--_ry": GAUGE_RADII.sector / height,
-        // The hole the wedge leaves round the centre, as a share of its reach.
+        // The hole the wedge leaves round the center, as a share of its reach.
         "--_hole": GAUGE_RADII.sectorInner / GAUGE_RADII.sector,
         "--_sector-from": first.from,
         "--_sector-span": first.span,

@@ -31,7 +31,7 @@ export const paginationVariants = tv({
       },
     },
   },
-  // The recipe declares an empty `defaultVariants`. There is no default direction, because
-  // Previous and Next pass the axis.
+  // Required shape: the `elmera/enforce-variant-standard` rule makes every recipe declare
+  // `defaultVariants`. There is no default direction, because Previous and Next pass the axis.
   defaultVariants: {},
 });

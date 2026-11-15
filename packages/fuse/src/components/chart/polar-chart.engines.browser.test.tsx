@@ -31,7 +31,7 @@ afterEach(async () => {
   await virtual.stop();
 });
 
-describe("the polar options' spoken phrases (section 9.4)", () => {
+describe("the polar options' spoken phrases", () => {
   it("speaks a pie's slices with their shares, the folded Other slice with its count, and wraps", async () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
@@ -136,7 +136,7 @@ function Fixture({ onHydrated }: { readonly onHydrated?: () => void }) {
   );
 }
 
-describe("hydration (D18)", () => {
+describe("hydration", () => {
   it("sends the figure, its slices, its description and its table from the server, and draws once hydrated in view", async () => {
     const html = renderToString(<Fixture />);
     expect(html).toContain("Kakediagram med 4\u00a0deler, totalt 100.");
@@ -168,7 +168,7 @@ describe("hydration (D18)", () => {
     }
   });
 
-  it("sends a radial chart's rings, tracks and centre from the server, and hydrates them as they are", async () => {
+  it("sends a radial chart's rings, tracks and center from the server, and hydrates them as they are", async () => {
     function Rings({ onHydrated }: { readonly onHydrated?: () => void }) {
       return (
         <LocaleProvider locale="nb-NO">
@@ -209,7 +209,7 @@ describe("hydration (D18)", () => {
     }
   });
 
-  it("sends a gauge at rest with its meter, lit notches, needle and centre from the server, and hydrates it as it is", async () => {
+  it("sends a gauge at rest with its meter, lit notches, needle and center from the server, and hydrates it as it is", async () => {
     // 3,9 of 0 to 5 kWh is 0.78 of the 270° sweep, the needle at −135° + 210.6° = 75.6°, and
     // round(40 times 0.78) = 31 lit notches. The meter's text is the value's spoken form, whose number
     // each engine's Intl writes.

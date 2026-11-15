@@ -1,13 +1,13 @@
 "use client";
 
 // SCAFFOLD. One plain runnable demo per reviewed scenario. It lives next to the page that renders
-// it and imports through public specifiers (`@elmeragroup/fuse/...`), never `src/` relatives.
+// it and imports through public specifiers, such as `@elmeragroup/fuse/...`, never `src/` relatives.
 //
 // The `"use client"` directive above is written by hand. Nothing copies or rewrites this file:
 // `page.mdx` imports it as an ordinary ESM module, and the demo frame reads this file from disk
 // for the source region.
 //
-// Rename/duplicate this file per example (`{{name}}-<example>.tsx`) and render each one
+// Rename or duplicate this file per example as `{{name}}-<example>.tsx`, and render each one
 // from its own `<Demo … level={3}>` element under `## Examples` in `page.mdx`. Each stage shows
 // one {{pascalCase name}}: its own parts and plain HTML are fine, another Fuse component only
 // when {{pascalCase name}} cannot work without it. A demo file no page renders fails

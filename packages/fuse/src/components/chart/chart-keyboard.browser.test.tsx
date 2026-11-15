@@ -237,7 +237,7 @@ describe("the Escape rule and key safety", () => {
 });
 
 describe("keys per task", () => {
-  it("reaches S06's most consuming hour in six keys", async () => {
+  it("reaches a normal day's most consuming hour in six keys", async () => {
     // Chartability heuristic 38. Hand-written from the committed Elhub rows: 19:00 holds the day's
     // highest household reading, 1.8034 kWh per meter, beside 0.9273 for cabins. Tab enters, End
     // reaches 23:00 and four ArrowLefts step back to 19:00.

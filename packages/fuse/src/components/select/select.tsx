@@ -85,7 +85,7 @@ export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
     alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
   } & OverlayContainerProps;
 
-/** The popup that lists the options, portalled with its positioner and scroll arrows. */
+/** The popup that lists the options, portaled with its positioner and scroll arrows. */
 export function SelectContent({
   className,
   children,

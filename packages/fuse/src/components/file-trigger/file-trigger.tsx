@@ -48,8 +48,9 @@ export type FileTriggerProps = Omit<
      */
     onSelect?: FileUploadRootProps["onSelect"];
     /**
-     * Called when a pick has files that did not pass, with each file and its `reason`. For one pick,
-     * it runs right after `onSelect`, in the same task.
+     * Called when a pick has files that did not pass, with each file and its `reason`. A pick in
+     * which every file fails calls it without `onSelect`. When both run for one pick, `onSelect`
+     * runs first and this runs right after, in the same task.
      */
     onReject?: FileUploadRootProps["onReject"];
     /** The button's size, as on `Button`. */

@@ -251,7 +251,8 @@ function SeriesLayer({
     };
   }, [polar.box, glowing, halo]);
   // The count is the rim's length in device pixels. On a dial of slots narrower than a pixel, an
-  // Area's hatch thins its slots to that count. A new count redraws the last drawn numbers.
+  // Area's hatch groups its slots by device-pixel column and marks every slot in a column when any
+  // one is marked. It keeps every slot. A new count redraws the last drawn numbers.
   useLayoutEffect(() => {
     const node = svg.current;
     if (node === null || look === null) return undefined;

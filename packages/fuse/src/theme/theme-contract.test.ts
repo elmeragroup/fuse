@@ -648,7 +648,7 @@ describe("derived roles", () => {
 describe("branded identity layer roles", () => {
   const rules = THEME_RULES;
 
-  it("sets the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the branded identity", () => {
+  it("sets the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the gray divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the branded identity", () => {
     const branded = {
       "card-border": "oklch(0 0 0 / 0)",
       "card-section-divider": "var(--background)",

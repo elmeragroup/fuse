@@ -144,7 +144,7 @@ export function ownSpan(
  * @param slot - A Root slot.
  * @returns The middle's place, a fraction for a coarse slot of an even count.
  */
-export function ownCentre(
+export function ownCenter(
   series: SeriesModel,
   window: { readonly first: number; readonly last: number },
   slot: number

@@ -57,7 +57,7 @@ describe("coarse series on a quarter-hour grid", () => {
     );
   }
 
-  it("emphasises the hour an explicit quarter names, and marks two quarters of one hour once (W6, Q1-5)", async () => {
+  it("emphasizes the hour an explicit quarter names, and marks two quarters of one hour once", async () => {
     // 00:15 lies in hour 0, which draws one bar from quarter 0, so that bar takes the emphasis.
     // The Marker's 00:15 and 00:30 both fall in hour 0, so it draws one dot.
     const { host } = renderThemed(

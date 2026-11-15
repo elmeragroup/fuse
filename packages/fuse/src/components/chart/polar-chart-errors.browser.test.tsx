@@ -274,7 +274,7 @@ describe("the polar rules in development", () => {
         }}>
         <ClockChart.Line dataKey="kwh" />
       </ClockChart.Root>,
-      composition("scale-colour-on-stack"),
+      composition("scale-color-on-stack"),
     ],
     [
       "a clock ValueLabel outside its Marker",

@@ -39,7 +39,7 @@ const starts = (list: readonly string[]) => list.map((start) => Date.parse(start
 
 describe("interval nesting", () => {
   it.each(ALL.flatMap((root) => ALL.map((series) => [root, series] as const)))(
-    "decides whether %s nests in %s as section 8.8 lists",
+    "decides whether %s nests in %s as the nesting table lists",
     (root, series) => {
       const coarser: readonly Interval[] = NESTS_IN[root];
       expect(intervalNests(root, series)).toBe(root === series || coarser.includes(series));
@@ -127,7 +127,7 @@ describe("Table row spans", () => {
   });
 });
 
-describe("own window slots (X2)", () => {
+describe("own window slots", () => {
   // Root slots 0 to 7, two hours of 4 quarters, as the row-span fixture above.
   const hourly: SeriesModel = {
     key: "kwh",
@@ -152,7 +152,7 @@ describe("own window slots (X2)", () => {
     expect(ownWindowSlots(hourly, { first: 5, last: 7 })).toEqual([5]);
   });
 
-  it("walks each hour's first quarter, before the window when it starts inside an hour (Y4)", () => {
+  it("walks each hour's first quarter, before the window when it starts inside an hour", () => {
     expect(ownWindowFirsts(hourly, { first: 0, last: 7 })).toEqual([0, 4]);
     expect(ownWindowFirsts(hourly, { first: 2, last: 5 })).toEqual([0, 4]);
     expect(ownWindowFirsts(hourly, { first: 5, last: 7 })).toEqual([4]);

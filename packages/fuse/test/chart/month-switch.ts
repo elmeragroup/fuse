@@ -1,7 +1,7 @@
 /**
- * CONTRACT section 8.12's month-switch fixture, written by hand: one value per Oslo day of October
- * 2025, equal to the day of the month, so the window's highest value is its last day. The first load
- * holds 1 to 30 October, and the reload adds the 31st.
+ * The month-switch fixture, written by hand: one value per Oslo day of October 2025, equal to the
+ * day of the month, so the window's highest value is its last day. The first load holds 1 to 30
+ * October, and the reload adds the 31st.
  */
 
 /** One October day. */

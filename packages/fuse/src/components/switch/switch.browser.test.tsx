@@ -213,7 +213,7 @@ describe("Switch", () => {
   it.each([
     ["on its own", ""],
     // A zero-weight child rule, as the docs stage and Fuse's own `:where()` defaults write one.
-    ["under a parent that centres its children's content", "[:where(&>*)]:justify-center"],
+    ["under a parent that centers its children's content", "[:where(&>*)]:justify-center"],
   ])("rests the thumb inside the track at both ends, %s", (_, parent) => {
     renderThemed(
       <div className={parent}>

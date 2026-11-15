@@ -60,7 +60,7 @@ function isElementNode(node: Node): node is Element {
 
 /**
  * Whether a click on a pressable region, such as a table row or a drop zone, presses it. React
- * bubbles a click from portalled content, such as an open menu or a dialog, to the region that
+ * bubbles a click from portaled content, such as an open menu or a dialog, to the region that
  * owns it in the React tree, though its DOM sits outside the region; such a click never presses
  * it. Inside the region, an {@link INTERACTIVE_DESCENDANT} owns its click. A click that ends a text
  * selection reaching into the region, such as a drag to copy an order number, selects rather than

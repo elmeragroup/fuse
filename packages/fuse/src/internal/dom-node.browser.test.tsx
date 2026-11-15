@@ -26,7 +26,7 @@ function frameDocument(): Document {
 }
 
 describe("realm-independent DOM checks", () => {
-  it("recognise nodes, HTML elements and focus roots from another realm", () => {
+  it("recognize nodes, HTML elements and focus roots from another realm", () => {
     const frameDoc = frameDocument();
     const button = frameDoc.createElement("button");
     const host = frameDoc.createElement("div");

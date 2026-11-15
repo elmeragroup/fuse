@@ -35,7 +35,7 @@ import { nextFrames } from "./animation-frames";
 import { withLocale } from "./locale-matrix";
 import { renderThemed, roleNamed } from "./themed-browser-render";
 
-type Status = "draft" | "pending" | "paid" | "overdue" | "cancelled";
+type Status = "draft" | "pending" | "paid" | "overdue" | "canceled";
 type Tag = "priority" | "export" | "manual";
 
 /** One fixture row. */
@@ -132,7 +132,7 @@ export const FIELDS = defineOrderFields({
       { value: "pending", label: "Pending" },
       { value: "paid", label: "Paid" },
       { value: "overdue", label: "Overdue" },
-      { value: "cancelled", label: "Cancelled" },
+      { value: "canceled", label: "Canceled" },
     ],
   },
   tags: {
@@ -414,7 +414,7 @@ export function focusIs(role: Parameters<typeof page.getByRole>[0], name: string
 }
 
 /**
- * Waits for every running animation and transition, such as an overlay's open zoom. A cancelled
+ * Waits for every running animation and transition, such as an overlay's open zoom. A canceled
  * one, such as a transition a newer one replaced, counts as settled. A scroll-linked animation,
  * such as the chip strip's fades, follows its scroll position and never finishes, so only
  * animations on a document's clock count.

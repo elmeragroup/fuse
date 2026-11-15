@@ -52,7 +52,7 @@ function brandSeed(brand: BrandCode, segment: ThemeSegment): string {
   const feature = segmentSheet(palette, segment)?.light.feature ?? BRAND_PALETTES[palette].feature;
   if (cssVarReference(feature) !== undefined) {
     throw new Error(
-      `The ${brand} ${segment} feature seeds the brand ramps, so it must be a colour literal, not ${feature}.`
+      `The ${brand} ${segment} feature seeds the brand ramps, so it must be a color literal, not ${feature}.`
     );
   }
   return feature;

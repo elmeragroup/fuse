@@ -66,14 +66,16 @@ type ColumnLook = {
   readonly clock: ClockDrawing;
   readonly measure: RefObject<DialMeasure>;
   readonly seat: StackSeat | null;
-  readonly emphasised: ReadonlySet<number>;
+  readonly emphasized: ReadonlySet<number>;
   /** The numbers it drew last, which a resize redraws. */
   readonly drawn: { current: MarkValues | null };
 };
 
 /**
- * The slots a series' columns draw at a radius. Up to 2,000 readings, every slot draws. Past that,
- * M4 decimation picks the slots for one column per pixel of the dial's circumference.
+ * The slots a series' columns draw at a radius. Up to 2,000 slots, every slot draws. Past that, M4
+ * decimation splits the slots into about one bucket per CSS pixel of the dial's circumference and
+ * keeps the first, last, lowest and highest reading in each bucket. Slots with a missing reading
+ * count toward the 2,000.
  */
 function shownAt(series: ClockSeries, radius: number): readonly number[] {
   if (series.values.length <= DECIMATE_ABOVE) return series.shown;
@@ -100,7 +102,7 @@ function wedgeGroups(
   clock: ClockDrawing,
   values: MarkValues,
   measure: DialMeasure,
-  emphasised: ReadonlySet<number>,
+  emphasized: ReadonlySet<number>,
   keeps: ReadonlyMap<number, boolean> | null
 ): Map<string, string> {
   const radius = measure.scale > 0 ? measure.scale : NOMINAL_RADIUS;
@@ -129,7 +131,7 @@ function wedgeGroups(
   const emphasis = clockWedges(
     values,
     series.slots,
-    shown.filter((slot) => emphasised.has(slot)),
+    shown.filter((slot) => emphasized.has(slot)),
     padded,
     span,
     () => "emphasis"
@@ -144,10 +146,10 @@ function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkVa
   if (look === null) return;
   look.drawn.current = values;
   const frame = entranceFrame(values);
-  const { series, clock, seat, emphasised } = look;
+  const { series, clock, seat, emphasized } = look;
   const measure = look.measure.current;
   const write = (keeps: ReadonlyMap<number, boolean> | null): void => {
-    const groups = wedgeGroups(series, clock, frame.values, measure, emphasised, keeps);
+    const groups = wedgeGroups(series, clock, frame.values, measure, emphasized, keeps);
     for (const path of group.querySelectorAll("path[data-group]")) {
       writeAttribute(path, "d", groups.get(path.getAttribute("data-group") ?? "") ?? "");
     }
@@ -197,7 +199,7 @@ export function ClockChartColumn({
         : clockDatumSlots(clock, "ClockChart.Column", series, emphasis),
     [clock, series, emphasis]
   );
-  const emphasised = useMemo(() => new Set(picked), [picked]);
+  const emphasized = useMemo(() => new Set(picked), [picked]);
   // The emphasized slots join the store, so their options append the emphasis word.
   useLayoutEffect(() => {
     if (picked.length === 0) return undefined;
@@ -215,8 +217,8 @@ export function ClockChartColumn({
   const drawn = useRef<MarkValues | null>(null);
   const look = useMemo(
     (): ColumnLook | null =>
-      series === undefined ? null : { series, clock, measure, seat, emphasised, drawn },
-    [series, clock, seat, emphasised, drawn]
+      series === undefined ? null : { series, clock, measure, seat, emphasized, drawn },
+    [series, clock, seat, emphasized, drawn]
   );
   const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(polar.motion, drawColumns, look);
   const commit = usePolarCommit(polar.commit, anchor);
@@ -254,7 +256,7 @@ export function ClockChartColumn({
   const [first] = useState(() =>
     series === undefined
       ? new Map<string, string>()
-      : wedgeGroups(series, clock, series.rest, { scale: NOMINAL_RADIUS, dpr: 1 }, emphasised, null)
+      : wedgeGroups(series, clock, series.rest, { scale: NOMINAL_RADIUS, dpr: 1 }, emphasized, null)
   );
   return (
     <svg

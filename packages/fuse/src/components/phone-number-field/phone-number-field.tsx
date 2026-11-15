@@ -3,7 +3,7 @@
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-// Import from the package root: the subpath import (`@base-ui/react/combobox`) type-checks but
+// Import from the package root. The subpath import, `@base-ui/react/combobox`, type-checks but
 // crashes at runtime with a null React context. Root, Trigger and the popup's search Input come
 // from Base UI directly; the popup itself is Fuse's `ComboboxContent`.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";

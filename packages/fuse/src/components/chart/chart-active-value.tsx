@@ -26,9 +26,9 @@ import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types"
 import { formatValue } from "./format/value-format";
 import { barCellAt, barEndValue, barTip } from "./layout/bar-geometry";
 import type { BarCell } from "./layout/bar-geometry";
-import { centreOf, hairline, ruleAcross, slotShare, snapAcross, valueShare } from "./layout/plot-frame";
+import { centerOf, hairline, ruleAcross, slotShare, snapAcross, valueShare } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
-import { slotCentre, valueTop } from "./layout/plot-geometry";
+import { slotCenter, valueTop } from "./layout/plot-geometry";
 import { seriesOf } from "./layout/series-of";
 
 /**
@@ -160,8 +160,8 @@ type FollowerLook = { readonly frame: PlotFrame | null };
 function drawValue(span: HTMLSpanElement, look: FollowerLook, values: MarkValues): void {
   const { frame } = look;
   if (frame === null) return;
-  const [centre = 0, end = 0] = values;
-  writeStyle(span, "--chart-value-at", String(slotShare(frame, centre) / 100));
+  const [center = 0, end = 0] = values;
+  writeStyle(span, "--chart-value-at", String(slotShare(frame, center) / 100));
   // The tip tweens unsnapped, as the bar's does, and draws on the pixel the bar's edge takes.
   writeStyle(span, "--chart-value-top", `${String(valueShare(frame, snapAcross(frame, end)))}%`);
 }
@@ -223,18 +223,18 @@ function PlotValue({
   } = useAttachedMark(context, drawn, drawValue, look, pointAxes(context.orientation));
   useChartFollower("Chart.ActiveValue", (active, cause) => {
     const shown = active?.slot ?? slot;
-    const centre =
+    const center =
       drawn === null || window === null || shown === null
         ? 0
-        : centreOf(drawn.frame, shown - window.first, context.xScale);
+        : centerOf(drawn.frame, shown - window.first, context.xScale);
     // The value joins what draws its slot, so a step onto a bar mid-update draws at that bar's tip.
     const cell = cellAt(context, dataKey, shown);
     const tip = drawn === null || cell === null ? 0 : barTip(drawn.frame, cell);
     // The value crossfades with the path it sits on, its old text included.
     attach(
       cause,
-      joinValue(context, dataKey, shown, (point) => point, [centre, tip]),
-      drawn === null || window === null || shown === null || cell === null ? null : [centre, tip]
+      joinValue(context, dataKey, shown, (point) => point, [center, tip]),
+      drawn === null || window === null || shown === null || cell === null ? null : [center, tip]
     );
   });
   // Before the plot is measured, as on the server, the value sits at its datum's shares of the
@@ -242,7 +242,7 @@ function PlotValue({
   // once.
   const shares = () => {
     const resting = cellAt(context, dataKey, slot);
-    const at = window === null || slot === null ? 0 : slotCentre(window, slot, context.xScale);
+    const at = window === null || slot === null ? 0 : slotCenter(window, slot, context.xScale);
     const top = resting === null ? 0 : valueTop(y, barEndValue(resting));
     return { "--chart-value-at": at, "--chart-value-top": `${String(top)}%` };
   };

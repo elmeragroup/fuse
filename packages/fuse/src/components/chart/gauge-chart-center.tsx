@@ -6,7 +6,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 
-import { useCentreFit } from "./chart-centre-fit";
+import { useCenterFit } from "./chart-center-fit";
 import { ChartDigitRoll } from "./chart-digit-roll";
 import { useGaugeContext } from "./chart-gauge-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
@@ -53,7 +53,7 @@ export type GaugeChartCenterLabelProps = ChartLayerProps & {
  */
 export function GaugeChartCenter({ children, className, style }: GaugeChartCenterProps): ReactElement {
   const { box } = useGaugeContext("GaugeChart.Center").model.geometry;
-  const fitted = useCentreFit();
+  const fitted = useCenterFit();
   return (
     <div
       data-slot="gauge-chart-center"

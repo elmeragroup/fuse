@@ -11,7 +11,7 @@ import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useActiveIndex } from "./chart-active-point";
-import { useCentreFit } from "./chart-centre-fit";
+import { useCenterFit } from "./chart-center-fit";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import { ChartHeadlineContext } from "./chart-scope-contexts";
@@ -102,7 +102,7 @@ export function ClockChartActiveValue({
 }
 
 /** The Center's default content: the first series' value over the shown slot's label. */
-function DefaultCentre({ clock }: { readonly clock: ClockDrawing }): ReactElement | null {
+function DefaultCenter({ clock }: { readonly clock: ClockDrawing }): ReactElement | null {
   const key = clock.series[0]?.key;
   const slot = useShownSlot(clock, key ?? "", "now");
   if (key === undefined) return null;
@@ -127,7 +127,7 @@ function DefaultCentre({ clock }: { readonly clock: ClockDrawing }): ReactElemen
 export function ClockChartCenter({ children, className, style }: ClockChartCenterProps): ReactElement {
   const { model, box } = usePolarContext("ClockChart.Center", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.Center");
-  const fitted = useCentreFit();
+  const fitted = useCenterFit();
   const half = (Math.SQRT2 * clock.inner) / 2;
   const width = box.right - box.left;
   const height = box.bottom - box.top;
@@ -148,7 +148,7 @@ export function ClockChartCenter({ children, className, style }: ClockChartCente
           "--_width": percent(2 * half, width),
           "--_height": percent(2 * half, height),
         }}>
-        {children ?? <DefaultCentre clock={clock} />}
+        {children ?? <DefaultCenter clock={clock} />}
       </div>
     </div>
   );

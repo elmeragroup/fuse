@@ -560,15 +560,15 @@ export function introStep(
   count: number
 ): number {
   const last = count - 1;
-  const centre = last / 2;
+  const center = last / 2;
   switch (intro) {
     case "left":
       return position;
     case "right":
       return last - position;
     case "center":
-      return Math.abs(position - centre);
+      return Math.abs(position - center);
     case "edges":
-      return centre - Math.abs(position - centre);
+      return center - Math.abs(position - center);
   }
 }

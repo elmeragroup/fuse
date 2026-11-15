@@ -718,12 +718,12 @@ describe("live motion", () => {
     // While its fade holds, the leaving tick follows the domain to its rest beside the live dot.
     await expect.poll(() => dotAt(host)).toMatch(/^translate\([\d.]+ 110\)$/u);
     await nextFrames(2);
-    const centre = (element: Element | null | undefined) => {
+    const center = (element: Element | null | undefined) => {
       const box = element?.getBoundingClientRect();
       return (box?.top ?? Number.NaN) + (box?.height ?? Number.NaN) / 2;
     };
     const dot = host.querySelector('[data-slot="live-line-chart-live-dot"] [data-slot="chart-dot"]');
-    expect(centre(twenty)).toBeCloseTo(centre(dot), 1);
+    expect(center(twenty)).toBeCloseTo(center(dot), 1);
     // A finished fade removes its tick, and so does a canceled one, as reduced motion cancels it.
     for (const fade of fades) fade.finish();
     for (const fade of forty.getAnimations()) fade.cancel();

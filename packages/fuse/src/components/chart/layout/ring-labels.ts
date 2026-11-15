@@ -104,9 +104,9 @@ function roomAt(rings: readonly RingLabel[], clear: RingClearance, bucket: numbe
       : []
   );
   return rings.map((ring) => {
-    const centre = ring.radius * radius;
-    if (centre - LINE / 2 - GAP < clear.inner * radius) return false;
-    const y = clear.anchor === 180 ? centre : -centre;
+    const center = ring.radius * radius;
+    if (center - LINE / 2 - GAP < clear.inner * radius) return false;
+    const y = clear.anchor === 180 ? center : -center;
     const chip = {
       left: CHIP.offset,
       right: CHIP.offset + ring.width + 2 * CHIP.padding,
@@ -221,5 +221,5 @@ function spaced(rings: readonly RingLabel[], shows: readonly boolean[], radius: 
   const shown = rings
     .flatMap((ring, index) => (shows[index] === true ? [ring.radius * radius] : []))
     .toSorted((a, b) => a - b);
-  return shown.every((centre, index) => index === 0 || centre - (shown[index - 1] ?? 0) >= LINE + GAP);
+  return shown.every((center, index) => index === 0 || center - (shown[index - 1] ?? 0) >= LINE + GAP);
 }

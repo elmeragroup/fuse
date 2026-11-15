@@ -239,7 +239,7 @@ export function clockModel(input: ClockInput): PolarModel {
       return { slot, near: nearestHeld(gaps, pixels.near ?? null, pixels.nearFirm === true) };
     },
     ray: (index) =>
-      index < 0 || index >= count ? null : { angle: slotAngles(index, count).centre, radius: 1 },
+      index < 0 || index >= count ? null : { angle: slotAngles(index, count).center, radius: 1 },
     selectKey: (_index, focus) => model.series[focus]?.key ?? null,
     selectable: Object.keys(config),
     table: { kind: "series", context: { ...context, name: input.name, rows: input.rows }, keys },

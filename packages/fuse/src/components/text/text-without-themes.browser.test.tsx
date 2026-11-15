@@ -1,4 +1,4 @@
-/* oxlint-disable fuse/one-browser-test-per-module -- this page must load no themes.css */
+/* oxlint-disable fuse/one-browser-test-per-module -- these tests check token fallbacks without themes.css, and the main suite loads it for its whole page */
 import type { CSSProperties } from "react";
 
 import { describe, expect, it } from "vitest";

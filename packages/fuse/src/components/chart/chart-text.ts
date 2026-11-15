@@ -304,8 +304,8 @@ export function optionName(
     const words = readingWords(context, key, reading, slot >= projectedFrom);
     const entry = emphasis[key];
     const first = coarse === undefined ? slot : (coarse.first[slot] ?? slot);
-    const emphasised = reading?.kind === "reading" && entry?.slots.includes(first) === true;
-    const tail = emphasised ? `, ${entry.label ?? strings.emphasised}` : "";
+    const emphasized = reading?.kind === "reading" && entry?.slots.includes(first) === true;
+    const tail = emphasized ? `, ${entry.label ?? strings.emphasized}` : "";
     // A coarse series names its own slot after its name, such as `Forbruk kl. 02 til 03 0,35 kilowattimer`.
     const own = ownSlotLabel(context, key, slot);
     const name = seriesLabel(context, key).spoken;

@@ -64,7 +64,7 @@ function nestedFigure(host: HTMLElement): HTMLElement {
 }
 
 /** A box's center in client pixels. */
-function centreOf(rect: DOMRect): [number, number] {
+function centerOf(rect: DOMRect): [number, number] {
   return [rect.left + rect.width / 2, rect.top + rect.height / 2];
 }
 
@@ -168,7 +168,7 @@ describe("a Root nested in another chart's part", () => {
     );
     const [first] = bars(host);
     if (first === undefined) throw new Error("no bars");
-    const [x, y] = centreOf(first.getBoundingClientRect());
+    const [x, y] = centerOf(first.getBoundingClientRect());
     await pointerAt(x, y);
     await userEvent.click(...pointerTarget(x, y));
     await expect.poll(popupOpen).toBe(true);
@@ -198,14 +198,14 @@ describe("a Root nested in another chart's part", () => {
     );
     const [first] = bars(host);
     if (first === undefined) throw new Error("no bars");
-    const [x, y] = centreOf(first.getBoundingClientRect());
+    const [x, y] = centerOf(first.getBoundingClientRect());
     await pointerAt(x, y);
     await userEvent.click(...pointerTarget(x, y));
     await expect.poll(popupOpen).toBe(true);
     // The popup portals out of the host, and the nested Root is a figure inside it.
     const figure = popup()?.querySelector<HTMLElement>('[data-slot="chart"]');
     if (figure === null || figure === undefined) throw new Error("no nested Root in the popup");
-    await pointerAt(...centreOf(surfaceBox(figure)));
+    await pointerAt(...centerOf(surfaceBox(figure)));
     // Root states its active slot on data-active.
     await expect.poll(() => figure.hasAttribute("data-active")).toBe(true);
     // A SeriesLabel with no dataKey and no row prints the active point's key only in a live scope,
@@ -213,7 +213,7 @@ describe("a Root nested in another chart's part", () => {
     expect(figure.querySelector('[data-slot="chart-series-label"]')?.textContent).toBe("");
   });
 
-  it("prints its own fallback LegendValue inside an outer Tooltip that has closed (A1-01)", async () => {
+  it("prints its own fallback LegendValue inside an outer Tooltip that has closed", async () => {
     // The outer chart's first slot is active, then the pointer leaves, and the closed popup keeps
     // its content mounted. The nested Root's own slots are never active, so its LegendValue prints
     // its fallback, the last reading of v in ROWS: 3, never v at the outer active slot, 1.
@@ -233,7 +233,7 @@ describe("a Root nested in another chart's part", () => {
     );
     const [first] = bars(host);
     if (first === undefined) throw new Error("no bars");
-    await pointerAt(...centreOf(first.getBoundingClientRect()));
+    await pointerAt(...centerOf(first.getBoundingClientRect()));
     await expect.poll(popupOpen).toBe(true);
     const shell = host.getBoundingClientRect();
     await pointerAt(shell.left + 4, shell.top + 4);
@@ -309,7 +309,7 @@ describe("a Root nested in another chart's part", () => {
     expect(nestedFigure(host).querySelector('[data-slot="chart-value-label"]')?.textContent).toBe("");
   });
 
-  it("gives a clock ValueLabel no outer clock Marker's datum (Q2)", () => {
+  it("gives a clock ValueLabel no outer clock Marker's datum", () => {
     // An outer dial of 99s with a Marker on its first hour holds an inner dial of 2s whose ValueLabel
     // has no Marker of its own. In a chart of its own that ValueLabel throws part-outside-root, as
     // its JSDoc says, and nested it must do the same rather than print the outer 99.

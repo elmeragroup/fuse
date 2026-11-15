@@ -248,9 +248,9 @@ describe("Carousel custom parts", () => {
     renderThemed(
       <Fixture count={3}>
         <Carousel.Indicators>
-          {["Red", "Green", "Blue"].map((colour, index) => (
-            <Carousel.Indicator key={colour} index={index}>
-              {colour}
+          {["Red", "Green", "Blue"].map((color, index) => (
+            <Carousel.Indicator key={color} index={index}>
+              {color}
             </Carousel.Indicator>
           ))}
         </Carousel.Indicators>

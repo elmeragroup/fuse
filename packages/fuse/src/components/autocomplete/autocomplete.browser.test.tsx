@@ -189,7 +189,7 @@ describe("Autocomplete", () => {
       <>
         <form aria-label="Field name">
           <Field.Root name="fruit">
-            <Field.Label>Favourite</Field.Label>
+            <Field.Label>Favorite</Field.Label>
             <Autocomplete.Root items={[...FRUITS]}>
               <Autocomplete.Input />
             </Autocomplete.Root>
@@ -213,7 +213,7 @@ describe("Autocomplete", () => {
         </form>
       </>
     );
-    await userEvent.fill(autocompleteNamed("Favourite"), "Kiwi");
+    await userEvent.fill(autocompleteNamed("Favorite"), "Kiwi");
     await userEvent.fill(autocompleteNamed("Snack"), "Plum");
     await userEvent.fill(autocompleteNamed("Dessert"), "Fig");
     expect(formEntries("Field name")).toEqual([["fruit", "Kiwi"]]);

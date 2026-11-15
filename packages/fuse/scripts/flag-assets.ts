@@ -188,7 +188,7 @@ export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: str
 
 /**
  * Verify the checkout, then copy the flag SVGs, LICENSE, provenance and manifest across.
- * `pin` is the commit the checkout must be at and the one PROVENANCE.md names — the two
+ * `pin` is the commit the checkout must be at and the one PROVENANCE.md names. The two
  * are the same value by construction, which is the guarantee this step exists to keep.
  */
 export function copyFlagAssets(sourceRoot: string, packageRoot: string, pin: string): void {
@@ -212,9 +212,9 @@ export function copyFlagAssets(sourceRoot: string, packageRoot: string, pin: str
     join(destDir, "PROVENANCE.md"),
     `# Flag asset provenance
 
-- Source: ${FLAG_SOURCE_REPO} (MIT, copyright Yefferson)
-- Commit: \`${pin}\`
-- Selection: exactly the ${FLAG_SVG_COUNT} two-letter country SVGs. Subdivision/collection artwork is not copied.
+- Source: ${FLAG_SOURCE_REPO}, MIT licensed, copyright Yefferson.
+- Commit: \`${pin}\`.
+- Selection: the ${FLAG_SVG_COUNT} two-letter country SVGs. No subdivision or collection artwork is copied.
 - Aggregate ceiling: ${FLAG_RAW_CEILING_BYTES / 1024} KiB.
 
 ## SHA-256

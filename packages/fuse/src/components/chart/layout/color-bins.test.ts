@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { colorBins } from "./color-bins";
 import { escapeColorKey, seriesPaint } from "./color-key";
 
-describe("section 8.9 bins, written by hand", () => {
+describe("bins, written by hand", () => {
   it("bins a diverging series by sevenths of its largest magnitude", () => {
     // M = 7, so the edges sit at 1, 3 and 5 in magnitude.
     const bins = colorBins("chart-diverging", [-7, 0, 7]);
@@ -43,7 +43,7 @@ describe("section 8.9 bins, written by hand", () => {
   });
 });
 
-describe("section 11 colour-key escape", () => {
+describe("the color-key escape", () => {
   // Oracle: ten keys and their property fragments, escaped by hand from the rule's text.
   it.each([
     ["price", "price"],

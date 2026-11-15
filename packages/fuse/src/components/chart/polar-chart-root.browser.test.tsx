@@ -109,7 +109,7 @@ async function hover(x: number, y: number): Promise<void> {
   await pointerAt(x, y);
 }
 
-describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
+describe("the polar Root's structure", () => {
   it("renders the description, the instructions, the listbox, the parts and the status in order", () => {
     const { host } = renderThemed(
       <Pie>
@@ -159,7 +159,7 @@ describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
   });
 });
 
-describe("the pie and radial key maps (section 9.4)", () => {
+describe("the pie and radial key maps", () => {
   it("moves clockwise and wraps on a pie, with Home and End at the ends", async () => {
     renderThemed(<Pie />);
     await userEvent.tab();
@@ -206,7 +206,7 @@ describe("the pie and radial key maps (section 9.4)", () => {
   });
 });
 
-describe("the radar key map (section 9.4)", () => {
+describe("the radar key map", () => {
   it("moves between spokes with Left and Right, wrapping, and between series with Up and Down", async () => {
     renderThemed(
       <LocaleProvider locale="nb-NO">
@@ -226,7 +226,7 @@ describe("the radar key map (section 9.4)", () => {
   });
 });
 
-describe("Escape and pinning (sections 9.4 and 9.5)", () => {
+describe("Escape and pinning", () => {
   it("lets a hover open the slice that Escape closed once focus has left the chart", async () => {
     // Escape closes the focused Strøm, and the dismissal lasts only while the reader stays: a
     // blur ends it, so the pointer that then moves over Strøm, 0° to 223.2°, opens it.

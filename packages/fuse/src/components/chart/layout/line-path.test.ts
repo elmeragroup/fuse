@@ -23,7 +23,7 @@ function placed(curve: ChartCurve, half = 0.5): PathPlacement {
     orientation: "vertical",
     curve,
     along: (at) => at,
-    run: (centre) => [centre - half, centre + half],
+    run: (center) => [center - half, center + half],
     edge: (at) => at,
     across: (at) => at,
     digits: 3,
@@ -75,7 +75,7 @@ describe("linePaths against d3-shape's own curve tests", () => {
     expect(normalizePath(linePaths(values, topology, placed(curve)).line)).toBe(normalizePath(expected));
   });
 
-  it("draws one point as a dot where d3 draws a path of no length (L18)", () => {
+  it("draws one point as a dot where d3 draws a path of no length", () => {
     // d3 gives "M0,1Z" for one point, which paints nothing. The dot is two arcs of 2.5 px.
     expect(monotoneX.cases.find(({ points }) => points.length === 1)?.expected).toBe("M0,1Z");
     expect(linePaths([0, 1], topologyOf(["reading"]), placed("monotone")).line).toBe(
@@ -83,7 +83,7 @@ describe("linePaths against d3-shape's own curve tests", () => {
     );
   });
 
-  it("runs step-after from cell edge to cell edge, which adds d3's missing last run (L19)", () => {
+  it("runs step-after from cell edge to cell edge, which adds d3's missing last run", () => {
     // d3's stepAfter through the cell starts 0 and 2 ends at the last start, 2. Fuse's vertices
     // sit at the cell centers 1 and 3, half a cell of 1 from each edge, and keep the last run to 4.
     const d3 = stepAfter.cases.find(({ points }) => JSON.stringify(points) === "[[0,1],[2,3]]")?.expected;
@@ -192,7 +192,7 @@ describe("linePaths topology", () => {
 });
 
 describe("areaPaths", () => {
-  it("draws each lone reading as a dot for every non-step curve, and an estimated one hatched (B2-1)", () => {
+  it("draws each lone reading as a dot for every non-step curve, and an estimated one hatched", () => {
     // [10, null, 20]: two runs of one reading each, which no fill can paint. Each draws a dot of
     // two arcs of 2.5 px around its vertex, and the estimated first one hatches 4.5 px either side.
     const values = [0, 10, 50, 10, 15, 50, 20, 20, 50];
@@ -207,7 +207,7 @@ describe("areaPaths", () => {
     }
   });
 
-  it("places a plain step's riser through the placement, for a line and an area's top and base (B3-1)", () => {
+  it("places a plain step's riser through the placement, for a line and an area's top and base", () => {
     // Vertices at 1 and 3, values 10 and 30, bases 50: the riser lies halfway, at 2, which the
     // placement here moves to 2.25, as a stroke of odd width moves a riser off its cell edge.
     const placement = { ...placed("step"), edge: (at: number) => at + 0.25 };

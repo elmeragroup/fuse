@@ -501,7 +501,7 @@ describe("development hints", () => {
     expect(warn.mock.calls.map(([message]) => String(message))).toEqual([expect.stringContaining(named)]);
   });
 
-  it("warns each of two absent columns once over three renders of one Root (X43)", () => {
+  it("warns each of two absent columns once over three renders of one Root", () => {
     // The oracle: one warning per distinct problem, so the second column under the same rule warns
     // too, and the repeat renders add nothing.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

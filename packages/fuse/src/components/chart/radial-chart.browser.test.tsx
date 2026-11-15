@@ -13,7 +13,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
-  centreText,
+  centerText,
   clientPoint,
   dialPoint,
   hoverAt,
@@ -91,7 +91,7 @@ function extent(path: SVGPathElement): number {
   return start + length + cap;
 }
 
-describe("the rings (section 8.4, Q5, Q8)", () => {
+describe("the rings", () => {
   it("strokes each ring up to its value's angle, the third past its maximum all round, and picks the ring under the pointer", async () => {
     const { host } = renderThemed(<Budgets />);
     await nextFrames(1);
@@ -134,7 +134,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
   });
 });
 
-describe("the radial centre (section 8.13)", () => {
+describe("the radial center", () => {
   it("prints the sum of the values over the sum of the maxima, then the active ring's own", async () => {
     // 412 + 168 + 233 = 813 of 500 + 200 + 180 = 880, 92 %.
     const { host } = renderThemed(
@@ -146,13 +146,13 @@ describe("the radial centre (section 8.13)", () => {
         </RadialChart.Center>
       </Budgets>
     );
-    expect(centreText(host, "pie-chart-center-value")).toBe("813 kWh");
-    expect(centreText(host, "pie-chart-center-share")).toBe("92 %");
-    expect(centreText(host, "pie-chart-center-max")).toBe("880 kWh");
+    expect(centerText(host, "pie-chart-center-value")).toBe("813 kWh");
+    expect(centerText(host, "pie-chart-center-share")).toBe("92 %");
+    expect(centerText(host, "pie-chart-center-max")).toBe("880 kWh");
     await userEvent.tab();
     await userEvent.keyboard("{ArrowDown}");
-    expect(centreText(host, "pie-chart-center-value")).toBe("168 kWh");
-    expect(centreText(host, "pie-chart-center-share")).toBe("84 %");
-    expect(centreText(host, "pie-chart-center-max")).toBe("200 kWh");
+    expect(centerText(host, "pie-chart-center-value")).toBe("168 kWh");
+    expect(centerText(host, "pie-chart-center-share")).toBe("84 %");
+    expect(centerText(host, "pie-chart-center-max")).toBe("200 kWh");
   });
 });

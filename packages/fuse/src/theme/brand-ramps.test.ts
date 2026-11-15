@@ -160,7 +160,7 @@ describe("brand palettes", () => {
     }
   });
 
-  it("points a single-colour brand's palette 2 at its palette 1, step for step", () => {
+  it("points a single-color brand's palette 2 at its palette 1, step for step", () => {
     for (const theme of branded.filter((candidate) => seedsOf(candidate)["2"] === undefined)) {
       const tokens = composeTheme(theme);
       for (const step of RAMP_STEPS) {

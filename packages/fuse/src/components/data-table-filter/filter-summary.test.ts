@@ -21,7 +21,7 @@ const STATUS: OptionFilterField = {
     { value: "paid", label: "Paid" },
     { value: "pending", label: "Pending" },
     { value: "overdue", label: "Overdue" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: "canceled", label: "Canceled" },
   ],
 };
 
@@ -134,13 +134,13 @@ describe("snapshotOrder", () => {
     ["paid", 9],
     ["pending", 4],
     ["overdue", 4],
-    ["cancelled", 0],
+    ["canceled", 0],
   ]);
 
   it("puts picked values first in config order, then the rest in config order", () => {
     const order = snapshotOrder(STATUS, ["pending", "draft"], counts);
     expect(order.pinned.map((option) => option.value)).toEqual(["draft", "pending"]);
-    expect(order.rest.map((option) => option.value)).toEqual(["paid", "overdue", "cancelled"]);
+    expect(order.rest.map((option) => option.value)).toEqual(["paid", "overdue", "canceled"]);
   });
 
   it("orders the rest by count with config order between equal counts", () => {
@@ -150,7 +150,7 @@ describe("snapshotOrder", () => {
       "pending",
       "overdue",
       "draft",
-      "cancelled",
+      "canceled",
     ]);
   });
 });
@@ -167,8 +167,8 @@ describe("matchOptions", () => {
 
   it("says nothing more when the matches fill the cap exactly", () => {
     const exact = matchOptions(order, "e", contains, 3);
-    // Draft has no "e"; Pending, Overdue and Cancelled do.
-    expect(exact.rest.map((option) => option.value)).toEqual(["pending", "overdue", "cancelled"]);
+    // Draft has no "e"; Pending, Overdue and Canceled do.
+    expect(exact.rest.map((option) => option.value)).toEqual(["pending", "overdue", "canceled"]);
     expect(exact.more).toBe(false);
   });
 

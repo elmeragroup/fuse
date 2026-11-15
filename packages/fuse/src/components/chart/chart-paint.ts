@@ -50,7 +50,7 @@ export function nonFiniteThresholds(config: ChartConfig): readonly string[] {
  * @param keys - The config keys the layout covers.
  * @returns The error, or null for a layout of one color family.
  */
-export function colourFamilyError(
+export function colorFamilyError(
   part: string,
   config: ChartConfig,
   keys: readonly string[]
@@ -65,7 +65,7 @@ export function colourFamilyError(
     ? new ChartCompositionError(
         part,
         "mixed-sentiment-categorical",
-        "mixes a sentiment role with a categorical role in one layout. Colour every series of the layout by sentiment, or every series by category."
+        "mixes a sentiment role with a categorical role in one layout. Color every series of the layout by sentiment, or every series by category."
       )
     : null;
 }
@@ -91,11 +91,11 @@ export function stackedScaleError(
   const scale = scaleOf(color);
   if (scale === undefined && !isThresholdColor(color)) return null;
   if (!stacked && stackOffset !== "expand") return null;
-  const named = scale === undefined ? "a threshold colour" : `color "${scale}"`;
+  const named = scale === undefined ? "a threshold color" : `color "${scale}"`;
   const split = scale === undefined ? "the threshold doesn't follow" : "the scale's bins don't follow";
   return new ChartCompositionError(
     part,
-    "scale-colour-on-stack",
+    "scale-color-on-stack",
     `paints ${named} on ${stacked ? "a stacked series" : 'stackOffset="expand"'}, where the path draws at stacked values ${split}. Give the series a role, or draw it with Chart.Bar.`
   );
 }

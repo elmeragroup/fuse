@@ -10,7 +10,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { HOSTS, centreY, hostCss } from "../../../test/first-line";
+import { HOSTS, centerY, hostCss } from "../../../test/first-line";
 import { MUTED, PANEL, describePartPaint } from "../../../test/surface-paint";
 import type { PartCase } from "../../../test/surface-paint";
 import {
@@ -251,7 +251,7 @@ describe("Alert", () => {
     expect(root.getBoundingClientRect().height).toBe(closedHeight);
   });
 
-  it.each(HOSTS)("keeps the action button centred on the row beside a description, in a %s host", (host) => {
+  it.each(HOSTS)("keeps the action button centered on the row beside a description, in a %s host", (host) => {
     for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(
@@ -265,7 +265,7 @@ describe("Alert", () => {
           </Alert.Root>
         </div>
       );
-      const offset = centreY(roleNamed("button", "Retry")) - centreY(alertNamed("default"));
+      const offset = centerY(roleNamed("button", "Retry")) - centerY(alertNamed("default"));
       expect(Math.abs(offset), density).toBeLessThanOrEqual(0.5);
       unmount();
     }

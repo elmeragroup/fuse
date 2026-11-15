@@ -2,8 +2,8 @@
  * DateRangePicker and DateRangePickerField in the browser: the two Fields under `startName` and
  * `endName` with the label, description and merged error wired to both, a half-filled range held,
  * an end before its start, `Form` errors by name, the range calendar in the popup with cancel,
- * presets that drop a half range and several months, the cancelable details, typing across the
- * two ends, and the popup's time inputs.
+ * presets that discard a half-picked range, a calendar showing several months, the cancelable
+ * details, typing across the two ends, and the popup's time inputs.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -1579,8 +1579,7 @@ describe("DateRangePicker held ranges", () => {
     }
 
     // Held times are wall times: 09:30 and 17:00 on November 11 and 12 in the zone and kind at the pick.
-    // The popup times name the zone they form in, today's name for it, October 15's,, and plain
-    // date-times name none.
+    // The popup times use the zone's name on October 15. Plain date-times name no zone.
     it.each([
       {
         change: "zone to New York",

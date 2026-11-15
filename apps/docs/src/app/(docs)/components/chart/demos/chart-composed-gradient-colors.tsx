@@ -32,7 +32,7 @@ export function ChartComposedGradientColors() {
       data={data}
       config={config}
       xKey="month"
-      aria-label="Consumption and solar production per month, in colour lists">
+      aria-label="Consumption and solar production per month, in color lists">
       <Chart.Grid />
       <Chart.XAxis />
       <Chart.Bar dataKey="consumption" />

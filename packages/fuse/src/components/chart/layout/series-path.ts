@@ -9,7 +9,7 @@
  * does.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
-import { ownCentre, ownSpan, ownWindowFirsts } from "./coarse-slots";
+import { ownCenter, ownSpan, ownWindowFirsts } from "./coarse-slots";
 import { DECIMATE_ABOVE, m4Indexes } from "./decimate";
 import type { PathSlots } from "./path-motion";
 import type { ReadingQuality } from "./readings";
@@ -319,7 +319,7 @@ export function seriesPath(
     const reading = series.readings[slot];
     return {
       slot,
-      position: ownCentre(series, window, slot),
+      position: ownCenter(series, window, slot),
       top: tops[index] ?? 0,
       // A series with no reading at all fills nothing.
       base: bases[index] ?? 0,

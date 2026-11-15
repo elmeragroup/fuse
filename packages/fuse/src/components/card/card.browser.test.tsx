@@ -3,7 +3,7 @@ import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
+import { expectActivationCanceled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { RADIUS_LG } from "../../../test/inner-corner-specimens";
 import {
@@ -17,7 +17,7 @@ import {
 import { Card } from "./card";
 
 describe("Card", () => {
-  it("renders the title as a level-3 heading by default and honours level", () => {
+  it("renders the title as a level-3 heading by default and honors level", () => {
     renderThemed(
       <>
         <Card.Root>
@@ -191,7 +191,7 @@ describe("Card.Section", () => {
         </Card.Root>
       );
 
-      await expectActivationCancelled(roleNamed("link", "Read the terms"), clicks);
+      await expectActivationCanceled(roleNamed("link", "Read the terms"), clicks);
     });
 
     it("dims with the not-allowed cursor and stays unfilled on hover", async () => {

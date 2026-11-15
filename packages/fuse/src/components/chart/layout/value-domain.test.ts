@@ -23,7 +23,7 @@ describe("the pinned d3-array release", () => {
   });
 });
 
-describe("S04's golden price ranges", () => {
+describe("the golden price ranges", () => {
   // The golden price ranges: 0.96567 to 5.23563 SEK on the SE4 day and up to 4.10917 NOK on the NO3 day.
   // Each case is written by hand from the 1-2-5 rule for 5 ticks: a fifth of the span picks the
   // step 1, 2, 5 or 10 times a power of ten, by its leading digit against √2, √10 and √50, and the
@@ -59,7 +59,7 @@ describe("valueDomain against the tick oracle", () => {
   });
 });
 
-describe("section 8.2 degenerate input, written by hand", () => {
+describe("degenerate input, written by hand", () => {
   it("gives an all-zero series [0, 1] with the single tick 0", () => {
     expect(valueDomain({ values: [0, 0, 0], baseline: "zero" })).toEqual({ domain: [0, 1], ticks: [0] });
   });

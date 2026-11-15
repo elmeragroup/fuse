@@ -266,7 +266,7 @@ describe("a momentum move", () => {
   it.each([
     {
       // The slot pitch grows from 7 px to 9 px, which maps the target 59.5 to 76.5, and the commit
-      // puts the slot's centre on a whole pixel, 77. The mark still rises away from it.
+      // puts the slot's center on a whole pixel, 77. The mark still rises away from it.
       name: "still rises away from it",
       to: 59.5,
       frames: 0,

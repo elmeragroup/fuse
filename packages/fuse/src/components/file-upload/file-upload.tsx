@@ -121,9 +121,10 @@ export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "ch
      * Called with the files and folders that did not pass, with the reason for each: `"type"` for a
      * file that fails `accept`, `"count"` for each passing file when a Root without `multiple`
      * gets more than one, `"directory"` for a folder while `directory` is off, and `"unreadable"`
-     * for a file in a dropped folder that the browser could not read. For one pick, drop or paste,
-     * it runs right after `onSelect`, in the same task. Show the rejections in words, such as in
-     * an `Alert`, which announces itself.
+     * for a file in a dropped folder that the browser could not read. A pick, drop or paste in which
+     * every file fails calls it without `onSelect`. When both run for one pick, drop or paste,
+     * `onSelect` runs first and this runs right after, in the same task. Show the rejections in
+     * words, such as in an `Alert`, which announces itself.
      */
     onReject?: (rejections: FileRejection[]) => void;
   };

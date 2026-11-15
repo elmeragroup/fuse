@@ -351,11 +351,11 @@
   }
 }
 
-/* Fuse ships no preflight, and Tailwind v4 borders default to `currentcolor`, the text colour,
+/* Fuse ships no preflight, and Tailwind v4 borders default to `currentcolor`, the text color,
    so this gives every border the border role. It sits in the base layer, so every utility
    (`border-input`, `border-transparent`, …) wins. Without themes.css `--border` is undefined
    and borders keep `currentcolor`. Host native form widgets without a `data-slot` are skipped:
-   any author border colour turns off their native appearance and replaces the UA field border
+   any author border color turns off their native appearance and replaces the UA field border
    in a preflight-free host. Fuse's own native parts carry `data-slot`, so they keep the default. */
 @layer base {
   :where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot]))),
@@ -370,7 +370,7 @@
 /* Fuse ships no preflight, so its own elements, the ones that carry a `data-slot`, take
    Tailwind's preflight here: every element rule of `tailwindcss/preflight.css`, in its order, with
    its declarations, each selector scoped to `[data-slot]`. On the standalone sheet a Fuse element
-   would otherwise keep the browser's defaults: a button's grey face, outset border, padding and
+   would otherwise keep the browser's defaults: a button's gray face, outset border, padding and
    control font, a heading's size, weight and margins (an Accordion header is an `h3`), a
    paragraph's, list's or `pre`'s block margins, link blue and underline, list markers and indent,
    a table's separated borders, a fieldset's frame, a textarea's two-way resize, and a `hidden`
@@ -829,9 +829,9 @@
 }
 
 /* A highlight that sweeps across text in progress, such as an uploading Attachment.Title. The
-   text keeps its own colour and the sweep reads the muted foreground role, or the text colour
+   text keeps its own color and the sweep reads the muted foreground role, or the text color
    where no theme declares the role. The text paints through the background, so the gradient
-   needs both stops to be valid colours. The sweep runs from the inline start in either
+   needs both stops to be valid colors. The sweep runs from the inline start in either
    direction. Under reduced motion the central block below zeroes --animate-shimmer, and the
    utility drops the gradient so the text paints solid again. */
 @theme {

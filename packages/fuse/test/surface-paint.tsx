@@ -68,22 +68,22 @@ export async function shown(role: ShownRole, name: string): Promise<HTMLElement>
   return roleNamed(role, name);
 }
 
-/** A computed colour in sRGB. */
+/** A computed color in sRGB. */
 export function toSrgb(serialized: string): Srgb.Srgb {
   return CssColor.toSrgb(getOrThrow(CssColor.parse(serialized)));
 }
 
-/** A colour in sRGB, rounded so two serializations of one colour compare equal. */
+/** A color in sRGB, rounded so two serializations of one color compare equal. */
 function rounded({ r, g, b, alpha }: Srgb.Srgb): readonly number[] {
   return [r, g, b, alpha].map((component) => Math.round(component * 1000) / 1000);
 }
 
-/** A computed colour in sRGB, rounded so two serializations of one colour compare equal. */
+/** A computed color in sRGB, rounded so two serializations of one color compare equal. */
 export function srgb(serialized: string): readonly number[] {
   return rounded(toSrgb(serialized));
 }
 
-/** The colour a custom-property expression resolves to at an element, as a computed colour. */
+/** The color a custom-property expression resolves to at an element, as a computed color. */
 function colorAt(element: Element, value: string): string {
   const probe = document.createElement("span");
   probe.style.color = value;
@@ -106,7 +106,7 @@ function surfaceMutedForegroundAt(element: Element): string {
 /** No paint at all, the start of a composite. */
 const NOTHING = toSrgb("rgba(0, 0, 0, 0)");
 
-/** The colour the fills behind an element paint, composited from the element down to the first opaque one. */
+/** The color the fills behind an element paint, composited from the element down to the first opaque one. */
 function paintedFill(element: Element): Srgb.Srgb {
   let painted = NOTHING;
   for (let current: Element | null = element; current !== null; current = current.parentElement) {
@@ -119,7 +119,7 @@ function paintedFill(element: Element): Srgb.Srgb {
 /** One fill a state paints: a role, and its alpha for a translucent fill. */
 export type Layer = { readonly role: `--${string}`; readonly alpha?: number };
 
-/** The colour the expected fill roles paint, read at the element and composited top first. */
+/** The color the expected fill roles paint, read at the element and composited top first. */
 function roleFill(element: HTMLElement, layers: readonly Layer[]): Srgb.Srgb {
   return layers.reduceRight<Srgb.Srgb>((beneath, { role, alpha = 1 }) => {
     const { r, g, b, alpha: opacity } = toSrgb(cssVarColor(element, role));
@@ -127,7 +127,7 @@ function roleFill(element: HTMLElement, layers: readonly Layer[]): Srgb.Srgb {
   }, NOTHING);
 }
 
-/** Whether two colours match to within one 8-bit step per channel. */
+/** Whether two colors match to within one 8-bit step per channel. */
 function expectSameColor(actual: Srgb.Srgb, expected: Srgb.Srgb): void {
   const [painted, promised] = [rounded(actual), rounded(expected)];
   const message = `${painted.join(", ")} against ${promised.join(", ")}`;
@@ -136,7 +136,7 @@ function expectSameColor(actual: Srgb.Srgb, expected: Srgb.Srgb): void {
   }
 }
 
-/** The WCAG contrast ratio between two sRGB colours. */
+/** The WCAG contrast ratio between two sRGB colors. */
 function contrast(foreground: Srgb.Srgb, background: Srgb.Srgb): number {
   return getOrThrow(Wcag.contrastRatio(foreground, background));
 }
@@ -146,12 +146,12 @@ export const PANEL: readonly Layer[] = [{ role: "--panel" }];
 /** The opaque `muted` fill. */
 export const MUTED: readonly Layer[] = [{ role: "--muted" }];
 
-/** One part in one state: what it renders, the text it colours, and the fill and role it pairs. */
+/** One part in one state: what it renders, the text it colors, and the fill and role it pairs. */
 export type PartCase = {
   readonly label: string;
   /** The part under test, with `className` on it. */
   readonly node: (className?: string) => ReactNode;
-  /** The text whose colour the part sets. */
+  /** The text whose color the part sets. */
   readonly text: () => Element;
   /** The role its text pairs with, or `inherit` for the text around the part. */
   readonly role: `--${string}` | "inherit";
@@ -164,7 +164,7 @@ export type PartCase = {
 };
 
 /**
- * The wrapper paints the page and gives each text role its own colour, so a part that takes the
+ * The wrapper paints the page and gives each text role its own color, so a part that takes the
  * wrong role, or the text around it, reads apart.
  */
 const DISTINCT_TEXT: CSSProperties = {
@@ -208,8 +208,8 @@ async function inState(
   const hovered = hover?.();
   if (hovered !== undefined) await userEvent.hover(hovered);
   try {
-    // Rows and selection rows transition their colours. Finishing the transitions reads the
-    // colour each part settles on, not a first frame that still shows the colour before the state.
+    // Rows and selection rows transition their colors. Finishing the transitions reads the
+    // color each part settles on, not a first frame that still shows the color before the state.
     for (const animation of region.getAnimations({ subtree: true })) animation.finish();
     check(region);
   } finally {

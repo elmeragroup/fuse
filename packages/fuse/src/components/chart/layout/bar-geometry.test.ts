@@ -661,7 +661,7 @@ describe("decimated column identity", () => {
     }
   });
 
-  it("keeps the first of two tied maxima, as section 8.12's M4 rule keeps the first occurrence", () => {
+  it("keeps the first of two tied maxima", () => {
     // Each bucket of 5 holds 7 at its second and fourth slots.
     const rows = Array.from({ length: 2500 }, (_, index) => ({
       name: `c${String(index)}`,

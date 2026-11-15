@@ -265,7 +265,7 @@ export function sparklineLayout(input: SparklineInput): SparklineLayout {
     orientation: "vertical",
     curve: input.curve,
     along: (at) => at,
-    run: (centre) => [centre - SPARKLINE_CELL / 2, centre + SPARKLINE_CELL / 2],
+    run: (center) => [center - SPARKLINE_CELL / 2, center + SPARKLINE_CELL / 2],
     edge: (at) => at,
     across: (at) => at,
     lone: "cap",

@@ -251,7 +251,7 @@ function shiftPopup(positioner: HTMLElement | null, lane: LaneNow | null, shown:
     writeStyle(positioner, "translate", `${x} 0px`);
     return;
   }
-  const dial = { centre: { x: 0, y: 0 }, radius };
+  const dial = { center: { x: 0, y: 0 }, radius };
   const angle = !lane.turns ? 90 : lane.holds ? lane.angle : (shown ?? lane.angle);
   const middle = laneY(angle, dial, height, bounds);
   // CSS centers it on the ray's height by its own height, so a change of text keeps it centered in
@@ -326,12 +326,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const angle = ray?.angle ?? null;
   const surfaceOf = useCallback(() => document.getElementById(`${kernel.id}-surface`), [kernel.id]);
   /** The dial's center and CSS pixels per unit of the outer radius, in client pixels. */
-  const dialOf = useCallback((): { readonly centre: ClientPoint; readonly scale: number } | null => {
+  const dialOf = useCallback((): { readonly center: ClientPoint; readonly scale: number } | null => {
     const rect = surfaceOf()?.getBoundingClientRect();
     const width = box.right - box.left;
     if (rect === undefined || !(width > 0)) return null;
     const scale = rect.width / width;
-    return { centre: { x: rect.left - box.left * scale, y: rect.top - box.top * scale }, scale };
+    return { center: { x: rect.left - box.left * scale, y: rect.top - box.top * scale }, scale };
   }, [surfaceOf, box]);
   const [scene, setScene] = useState<Scene | null>(null);
   // The widest content the popup has shown on this model, so a shorter readout never sends it back
@@ -351,7 +351,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const figure = kernel.root();
       const node = positioner.current;
       if (dial === null || figure === null) return;
-      const { x, y } = dial.centre;
+      const { x, y } = dial.center;
       // A pie's active slice pops out past the rim, so its side lane keeps its gap from the slice.
       const pop =
         model.drawing.kind === "pie"
@@ -443,7 +443,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const origin: LaneDial | null =
     scene === null
       ? null
-      : { centre: { x: 0, y: 0 }, radius: scene.radius, bottom: box.bottom * scene.radius };
+      : { center: { x: 0, y: 0 }, radius: scene.radius, bottom: box.bottom * scene.radius };
   // A closing popup keeps the lane it showed in while it fades out, and an open one keeps its bottom
   // or top lane while that lane still fits, so a scroll or a resize moves it only when it must.
   const [shownSide, setShownSide] = useState<LaneSide>("right");
@@ -509,7 +509,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const dial = dialOf();
       if (dial === null) return { box: new DOMRect(), shift: 0, route: STRAIGHT };
       return {
-        box: new DOMRect(dial.centre.x + anchorX, dial.centre.y + anchorY, 0, 0),
+        box: new DOMRect(dial.center.x + anchorX, dial.center.y + anchorY, 0, 0),
         shift: 0,
         route: STRAIGHT,
       };
@@ -572,12 +572,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     const rect = node.getBoundingClientRect();
     const at =
       want.side === "right"
-        ? rect.left - (dial.centre.x + want.x)
+        ? rect.left - (dial.center.x + want.x)
         : want.side === "left"
-          ? rect.right - (dial.centre.x + want.x)
+          ? rect.right - (dial.center.x + want.x)
           : want.side === "bottom"
-            ? rect.top - (dial.centre.y + want.y)
-            : rect.bottom - (dial.centre.y + want.y);
+            ? rect.top - (dial.center.y + want.y)
+            : rect.bottom - (dial.center.y + want.y);
     return Math.abs(at) <= 1;
   }, [positioner, dialOf]);
   useLayoutEffect(() => {

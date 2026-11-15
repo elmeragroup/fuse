@@ -30,7 +30,7 @@ import {
 import type { DateDraft, EditableSegmentType, HourCycle } from "./date-draft";
 import type { FieldText } from "./date-field-text";
 import type { DateInputValueChangeReason } from "./date-input-change-details";
-import type { DateInputFocusDirection } from "./date-input-neighbours";
+import type { DateInputFocusDirection } from "./date-input-neighbors";
 import { pastedTime, pastedValue } from "./date-input-paste";
 import type { DateInputUnits } from "./date-input-scope";
 import type { DateInputEntry } from "./date-input-validation";

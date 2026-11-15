@@ -34,7 +34,7 @@ function model(
 }
 
 describe("seriesPath", () => {
-  it("keeps one vertex per window slot, and gives a missing reading the value between its neighbours", () => {
+  it("keeps one vertex per window slot, and gives a missing reading the value between its neighbors", () => {
     const chart = model([
       { name: "a", v: 10 },
       { name: "b", v: null },
@@ -128,13 +128,13 @@ const AS_IS: PathPlacement = {
   orientation: "vertical",
   curve: "linear",
   along: (at) => at,
-  run: (centre) => [centre - 0.5, centre + 0.5],
+  run: (center) => [center - 0.5, center + 0.5],
   edge: (at) => at,
   across: (at) => at,
   digits: null,
 };
 
-describe("seriesPath in a decimated stack (review round 1, B1-1 and Q1-1)", () => {
+describe("seriesPath in a decimated stack", () => {
   it("draws the upper series' top at the stack's sum over the lower series' peak", () => {
     // 2,400 rows on 300 px, a = 1 except a[4] = 10, b = 1. The stack peaks at 10 + 1 = 11.
     const rows = Array.from({ length: 2400 }, (_, index) => ({
@@ -187,7 +187,7 @@ function hourly(values: readonly (number | null)[], now: number): CartesianModel
   return buildCartesianModel(input);
 }
 
-describe("seriesPath keeps what a decimated vertex draws as (review round 1, B1-2)", () => {
+describe("seriesPath keeps what a decimated vertex draws as", () => {
   it("keeps a pending slot between readings, so the line breaks there under connect", () => {
     // 2,400 hourly slots on 300 px: slot 0 reads 1, slot 1 is missing, slot 2 holds now with no
     // reading, so it is pending, and every later slot reads 1.
@@ -217,7 +217,7 @@ describe("seriesPath keeps what a decimated vertex draws as (review round 1, B1-
     expect(line.match(/M/gu)).toHaveLength(2);
   });
 
-  it("keeps an estimated reading in a flat run and both its neighbours, so its segments dash", () => {
+  it("keeps an estimated reading in a flat run and both its neighbors, so its segments dash", () => {
     const rows = Array.from({ length: 2400 }, (_, index) => ({
       name: `s${String(index)}`,
       v: 1,
@@ -242,7 +242,7 @@ describe("seriesPath keeps what a decimated vertex draws as (review round 1, B1-
   });
 });
 
-describe("seriesPath breaks a stacked series where it changes sign (review round 1, B1-3)", () => {
+describe("seriesPath breaks a stacked series where it changes sign", () => {
   it("draws b's positive band and its negative band as two subpaths", () => {
     // a = [10, 10, 10, 10] and b = [2, 2, -2, -2], stacked, linear. b's positive band runs from 10
     // to 12 over slots 0 and 1, and its negative band from 0 down to -2 over slots 2 and 3.
@@ -289,7 +289,7 @@ function stackedEnds(draw: Draw) {
 }
 
 describe("seriesPath decimation guard", () => {
-  it("keeps a lower boundary's own peak where the stack's total peaks elsewhere (B2-10)", () => {
+  it("keeps a lower boundary's own peak where the stack's total peaks elsewhere", () => {
     // 2,400 rows on 300 px, 8 slots a column. In the first column a = [1, 1, 9, 1, 1, 1, 1, 1]
     // and b = [1, 19, 1, …]: the total peaks at slot 1, 1 + 19 = 20, and a's top and b's base
     // peak at slot 2, at 9. Both members draw slot 2, where b's base and a's top meet at 9.
@@ -397,7 +397,7 @@ describe("seriesPath decimation guard", () => {
   });
 });
 
-describe("seriesPathOf (review 2, Y5)", () => {
+describe("seriesPathOf", () => {
   /** A category model of `count` slots, one series. */
   const wide = (count: number) =>
     model(Array.from({ length: count }, (_, index) => ({ name: `c${String(index)}`, v: (index * 7) % 13 })));

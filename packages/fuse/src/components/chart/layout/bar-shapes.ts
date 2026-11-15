@@ -115,12 +115,12 @@ function barParts(
         BLOCK,
         Math.floor(length / (BLOCK + BLOCK_GAP)) * (BLOCK + BLOCK_GAP) - BLOCK_GAP
       );
-      const centre = start + (size - width) / 2;
+      const center = start + (size - width) / 2;
       const base = atStart ? from + length : from;
       return {
-        body: join([centre, width], atStart ? [base - blocks, blocks] : [base, blocks], orientation),
+        body: join([center, width], atStart ? [base - blocks, blocks] : [base, blocks], orientation),
         track: join(
-          [centre, width],
+          [center, width],
           atStart ? [0, base] : [base, Math.max(0, plotLength - base)],
           orientation
         ),

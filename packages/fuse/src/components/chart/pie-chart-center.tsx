@@ -12,9 +12,9 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { useActiveIndex } from "./chart-active-point";
-import { useCentreFit } from "./chart-centre-fit";
-import { centreOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
-import type { CentreModel } from "./chart-polar-context";
+import { useCenterFit } from "./chart-center-fit";
+import { centerOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
+import type { CenterModel } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 
 /**
@@ -58,7 +58,7 @@ export type PieChartCenterNameProps = ChartLayerProps & {
 };
 
 /** The center's numbers, null under a family with no center, and the active item. */
-type CentreItem = { readonly centre: CentreModel | null; readonly active: number | null };
+type CenterItem = { readonly center: CenterModel | null; readonly active: number | null };
 
 /**
  * The center's numbers and the active slice's or ring's index, or null while nothing is active. Inside
@@ -67,15 +67,15 @@ type CentreItem = { readonly centre: CentreModel | null; readonly active: number
  * @param part - The part, which a misplaced use names.
  * @returns The center and the active index.
  */
-export function useCentreItem(part: string): CentreItem {
+export function useCenterItem(part: string): CenterItem {
   const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
-  const centre = centreOf(model);
+  const center = centerOf(model);
   // The center follows the store wherever it sits, over every item, and a closing tooltip's held one.
   const active = useActiveIndex(
     { store: kernel.store, window: model.count > 0 ? { first: 0, last: model.count - 1 } : null },
     true
   );
-  return { centre, active };
+  return { center, active };
 }
 
 /**
@@ -89,7 +89,7 @@ export function useCentreItem(part: string): CentreItem {
  */
 export function PieChartCenter({ children, className, style }: PieChartCenterProps): ReactElement {
   const { model, box } = usePolarContext("PieChart.Center", ["pie", "radial"]);
-  const fitted = useCentreFit();
+  const fitted = useCenterFit();
   const hole = pieDrawingOf(model)?.innerRadius ?? radialDrawingOf(model)?.innerRadius;
   if (hole === undefined) return <></>;
   // A pie with no hole lays its center in the square inscribed in half the radius. The square
@@ -151,8 +151,8 @@ export function PieChartCenterLabel({ children, className, style }: PieChartCent
  * @beta
  */
 export function PieChartCenterName({ children, className, style }: PieChartCenterNameProps): ReactElement {
-  const { centre, active } = useCentreItem("PieChart.CenterName");
-  const name = centre === null || active === null ? null : centre.label(active);
+  const { center, active } = useCenterItem("PieChart.CenterName");
+  const name = center === null || active === null ? null : center.label(active);
   return (
     <span data-slot="pie-chart-center-name" className={className} style={style}>
       {name ?? children}

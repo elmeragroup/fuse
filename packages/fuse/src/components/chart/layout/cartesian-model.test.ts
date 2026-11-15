@@ -219,7 +219,7 @@ describe("buildCartesianModel", () => {
   });
 });
 
-describe("layout domains for Panels (section 8.3, P2 and P11)", () => {
+describe("layout domains for Panels", () => {
   const rows = [
     { x: day(1), a: 1, b: 200 },
     { x: day(2), a: 4, b: 120 },
@@ -301,7 +301,7 @@ describe("layout domains for Panels (section 8.3, P2 and P11)", () => {
   });
 });
 
-describe("coarse series (section 8.8)", () => {
+describe("coarse series", () => {
   /** Oslo midnight on 1 October 2025 is 22:00 UTC the day before. */
   const quarter = (index: number) => new Date(Date.UTC(2025, 8, 30, 22, index * 15));
   const input = (rows: readonly ChartRow[]): ModelInput => ({
@@ -359,7 +359,7 @@ describe("coarse series (section 8.8)", () => {
     expect([value(rows), value(more)]).toEqual([0.2, 0.2]);
   });
 
-  it("flags an hourly value on the first row of a domain that starts inside the hour (W3, Q1-3)", () => {
+  it("flags an hourly value on the first row of a domain that starts inside the hour", () => {
     // The domain starts at 00:15, so its first row is no hour's start. The 0,4 there is off the grid,
     // and in production it moves to the hour that holds it.
     const rows: ChartRow[] = [1, 2, 3].map((index) => ({ x: quarter(index), price: 1 }));
@@ -369,7 +369,7 @@ describe("coarse series (section 8.8)", () => {
     expect(model.series[1]?.readings[0]).toEqual({ kind: "reading", value: 0.4, quality: "measured" });
   });
 
-  it("keeps an unfinished hour pending until its own end, past the domain's last row (W3, B1-3)", () => {
+  it("keeps an unfinished hour pending until its own end, past the domain's last row", () => {
     // Quarters 00:00 and 00:15 with no consumption, now at 00:45. The hour ends at 01:00, after
     // now, so it is pending, though the domain's last row ends at 00:30.
     const rows: ChartRow[] = [0, 1].map((index) => ({ x: quarter(index), price: 1, kwh: null }));

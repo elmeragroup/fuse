@@ -79,8 +79,8 @@ function Dial({
   );
 }
 
-describe("the dial's geometry (D11, D13)", () => {
-  it("picks the slot under the pointer's angle, whatever its distance from the centre", async () => {
+describe("the dial's geometry", () => {
+  it("picks the slot under the pointer's angle, whatever its distance from the center", async () => {
     const { host } = renderThemed(
       <Dial>
         <ClockChart.Column dataKey="kwh" />
@@ -105,7 +105,7 @@ describe("the dial's geometry (D11, D13)", () => {
   });
 });
 
-describe("the seam (D16), Now and the keys", () => {
+describe("the seam, Now and the keys", () => {
   it("steps one slot with the arrows, wrapping, and six hours with PageDown and PageUp", async () => {
     const { host } = renderThemed(
       <Dial>
@@ -127,7 +127,7 @@ describe("the seam (D16), Now and the keys", () => {
 });
 
 describe("a datum on a coarse reading", () => {
-  it("marks and emphasises an hourly reading from any quarter of its hour", async () => {
+  it("marks and emphasizes an hourly reading from any quarter of its hour", async () => {
     // A quarter-hour dial with an hourly reading of 3 on each :00 row and Now at 00:15, the second
     // quarter, which the 00:00 reading covers. The Marker's dot sits at that reading's vertex, its
     // ValueLabel prints 3, and the Column's emphasis on "now" outlines its one wedge.
@@ -171,7 +171,7 @@ describe("a datum on a coarse reading", () => {
   });
 });
 
-describe("a ReferenceArea's label (B10)", () => {
+describe("a ReferenceArea's label", () => {
   it("prints a time sector's range in Root's locale and zone through the label's {value}", async () => {
     // The sector holds the hours from 17:00 to 19:00 in Oslo, so it runs from 17:00 to 20:00, which
     // nb-NO writes 24-hour, its ends joined by an en dash as the value annulus joins its values.
@@ -208,7 +208,7 @@ describe("a ReferenceArea's label (B10)", () => {
   });
 });
 
-describe("a reference's sentence (A1-02)", () => {
+describe("a reference's sentence", () => {
   // The cartesian references' contract: the drawing and the label are hidden from readers, and one
   // visually hidden sentence, outside any aria-hidden subtree, always carries the value or the range,
   // in the dictionary's pattern without a label and as "label: value" with one. nb-NO's patterns are
@@ -361,7 +361,7 @@ describe("a reference's default slot text on a coarse dial", () => {
   });
 });
 
-describe("the default tooltip over a stack (B11)", () => {
+describe("the default tooltip over a stack", () => {
   it("adds one total row for a stack of two series, as the table and the option do", async () => {
     // Household 2 and cabin 1 at 00:00 stack to 3, which the total row prints.
     const rows = hours(Array.from({ length: 24 }, () => 2)).map((row) => ({ ...row, cabin: 1 }));
@@ -384,7 +384,7 @@ describe("the default tooltip over a stack (B11)", () => {
   });
 });
 
-describe("a coarse series under the pointer (Q3, B5)", () => {
+describe("a coarse series under the pointer", () => {
   it("picks and selects the hourly series anywhere in its hour, not only at its first quarter", async () => {
     // A quarter-hour dial with prices at 1 every quarter and an hourly reading of 3 on each :00 row.
     // On [0, 4] under "radial" the hourly tip sits at √(0.09 + 0.91 · 3/4) ≈ 0.879 and the price's
@@ -440,7 +440,7 @@ describe("a coarse series under the pointer (Q3, B5)", () => {
 });
 
 describe("the readouts", () => {
-  it("prints the value at Now in the centre with nothing active, and the active slot's on hover", async () => {
+  it("prints the value at Now in the center with nothing active, and the active slot's on hover", async () => {
     const { host } = renderThemed(
       <Dial now={DAY + 2.5 * HOUR}>
         <ClockChart.Column dataKey="kwh" />

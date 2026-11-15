@@ -71,7 +71,7 @@ describe("slotStart in Europe/Oslo", () => {
 });
 
 describe("formatSlot with the time-seconds preset", () => {
-  it("prints the slot's start to the second in fi-FI's dotted Hms (F1)", () => {
+  it("prints the slot's start to the second in fi-FI's dotted Hms", () => {
     const label: FormattedText = formatSlot(
       "fi-FI",
       OSLO,

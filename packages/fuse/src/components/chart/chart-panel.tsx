@@ -7,7 +7,7 @@ import { assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-contex
 import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
-import { colourFamilyError } from "./chart-paint";
+import { colorFamilyError } from "./chart-paint";
 import { usePanelPlot } from "./chart-plot";
 import { ChartLayoutContext, ChartPlotContext, PlotReadsContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
@@ -104,8 +104,8 @@ export function ChartPanel({
     );
   }
   for (const key of series) assertKnownKey("Chart.Panel", context.config, key);
-  const colourRule = colourFamilyError("Chart.Panel", context.config, series);
-  if (colourRule !== null) throw colourRule;
+  const colorRule = colorFamilyError("Chart.Panel", context.config, series);
+  if (colorRule !== null) throw colorRule;
   const stackRule = splitStackError(context.config, series);
   if (stackRule !== null) throw stackRule;
   // An inline array that names the same items is no change, so a parent's re-render never moves the

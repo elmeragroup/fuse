@@ -60,7 +60,7 @@ const RUN = 8;
 const NOMINAL_CELL = 184;
 
 /** The color roles with an on-color role, which an inside label reads its text color from. */
-const ON_COLOUR = /^chart-(?:[1-8]|other)$/u;
+const ON_COLOR = /^chart-(?:[1-8]|other)$/u;
 
 /** Where one slice's label sits, in units of the outer radius from the center. */
 type Placed =
@@ -106,7 +106,7 @@ function placeLabels(
         padAngle: angles.pad,
       },
       unit(sizes[index]),
-      ON_COLOUR.test(slice.role)
+      ON_COLOR.test(slice.role)
     );
   });
   const outside = pie.slices.flatMap((_, index) => {

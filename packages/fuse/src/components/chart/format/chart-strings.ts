@@ -21,7 +21,7 @@ export type ChartStrings = {
   readonly pending: string;
   readonly incomplete: string;
   readonly projected: string;
-  readonly emphasised: string;
+  readonly emphasized: string;
   readonly now: string;
   readonly descriptionNow: (x: string) => string;
   readonly total: string;
@@ -112,7 +112,7 @@ const NB_NO: ChartStrings = {
   pending: "ingen data ennå",
   incomplete: "ufullstendig",
   projected: "prognose",
-  emphasised: "uthevet",
+  emphasized: "uthevet",
   now: "nå",
   descriptionNow: (x) => `Nå: ${x}.`,
   total: "Totalt",
@@ -187,7 +187,7 @@ const SV_SE: ChartStrings = {
   pending: "inga data ännu",
   incomplete: "ofullständig",
   projected: "prognos",
-  emphasised: "framhävd",
+  emphasized: "framhävd",
   now: "nu",
   descriptionNow: (x) => `Nu: ${x}.`,
   total: "Totalt",
@@ -263,7 +263,7 @@ const FI_FI: ChartStrings = {
   pending: "ei vielä tietoja",
   incomplete: "epätäydellinen",
   projected: "ennuste",
-  emphasised: "korostettu",
+  emphasized: "korostettu",
   now: "nyt",
   descriptionNow: (x) => `Nyt: ${x}.`,
   total: "Yhteensä",
@@ -339,7 +339,7 @@ const EN_US: ChartStrings = {
   pending: "no data yet",
   incomplete: "incomplete",
   projected: "projected",
-  emphasised: "highlighted",
+  emphasized: "highlighted",
   now: "now",
   descriptionNow: (x) => `Now: ${x}.`,
   total: "Total",

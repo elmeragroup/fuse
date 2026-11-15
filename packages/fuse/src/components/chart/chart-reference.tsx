@@ -37,7 +37,7 @@ import {
   valueShare,
 } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
-import { slotCentre, valueTop } from "./layout/plot-geometry";
+import { slotCenter, valueTop } from "./layout/plot-geometry";
 import type { LabelSize } from "./layout/reference-labels";
 import { stringOf } from "./layout/scalar";
 import { slotOf } from "./layout/x-domain";
@@ -404,10 +404,10 @@ function useReferenceMark(
  */
 function lineAttributes(frame: PlotFrame, axis: "value" | "slot", at: number, width: number) {
   if (axis === "value") return ruleAcross(frame.box, atX(frame, axis) ? "vertical" : "horizontal", at);
-  const centre = snapAlong(frame, at) + width / 2;
+  const center = snapAlong(frame, at) + width / 2;
   return frame.orientation === "vertical"
-    ? { x1: centre, y1: 0, x2: centre, y2: frame.box.height }
-    : { x1: 0, y1: centre, x2: frame.box.width, y2: centre };
+    ? { x1: center, y1: 0, x2: center, y2: frame.box.height }
+    : { x1: 0, y1: center, x2: frame.box.width, y2: center };
 }
 
 /**
@@ -562,7 +562,7 @@ export function ChartReferenceLine({
   if (props.y === undefined) {
     const window = context.model.window;
     const slot = childSlot(context, "Chart.ReferenceLine", props.x);
-    at = window === null || slot === -1 ? -1 : slotCentre(window, slot, context.xScale) * 100;
+    at = window === null || slot === -1 ? -1 : slotCenter(window, slot, context.xScale) * 100;
     position = window === null || slot === -1 ? null : slot - window.first;
     value = slot === -1 ? { text: "", spoken: "" } : slotLabel(context, slot, props.format);
     axis = "slot";

@@ -36,7 +36,7 @@ import type { Box, RevealPlan, SkeletonRevealMode } from "./skeleton-reveal-plan
 export type PaneKind = "skeleton" | "content";
 
 /** How an animated step ended: it ran to its end, or something stopped it first. */
-export type MotionOutcome = "completed" | "cancelled";
+export type MotionOutcome = "completed" | "canceled";
 
 /** Where a pane stood within its root before it left, in local pixels, which is what it is pinned to. */
 type PaneBox = {
@@ -60,7 +60,7 @@ export const BONE_FONT_SIZE_ATTRIBUTE = "data-font-size";
 /** The steps' combined outcome, `completed` only when every step completed. */
 function allCompleted(outcomes: readonly Promise<MotionOutcome>[]): Promise<MotionOutcome> {
   return Promise.all(outcomes).then((results) =>
-    results.every((result) => result === "completed") ? "completed" : "cancelled"
+    results.every((result) => result === "completed") ? "completed" : "canceled"
   );
 }
 
@@ -190,7 +190,7 @@ function opacityOf(element: Element): number | null {
   return Number.isNaN(opacity) ? null : opacity;
 }
 
-function containsCentre(outer: DOMRect, inner: DOMRect): boolean {
+function containsCenter(outer: DOMRect, inner: DOMRect): boolean {
   const x = inner.left + inner.width / 2;
   const y = inner.top + inner.height / 2;
   return x >= outer.left && x <= outer.right && y >= outer.top && y <= outer.bottom;
@@ -243,7 +243,7 @@ function sequenceTiming(
 
   const bone = (rect: DOMRect, fontSize: number): number | null => {
     if (order === "position") return positionDelayMs(toBox(rect), reveal);
-    const unit = unitBoxes.find((candidate) => containsCentre(candidate.rect, rect));
+    const unit = unitBoxes.find((candidate) => containsCenter(candidate.rect, rect));
     return rowDelayMs(
       {
         box: toBox(rect),
@@ -283,7 +283,7 @@ export type PaneSwap = {
   readonly history: SkeletonHistory;
 };
 
-/** The swap's two halves, each settling once its pane has, as `completed` or `cancelled`. */
+/** The swap's two halves, each settling once its pane has, as `completed` or `canceled`. */
 export type SwapProgress = {
   /** Settles once the incoming pane has arrived, or its arrival was stopped. */
   readonly entered: Promise<MotionOutcome>;
@@ -376,8 +376,7 @@ export class RevealMotion {
    */
   swap(swap: PaneSwap): SwapProgress {
     const { root, incoming, leaving, reducedMotion } = swap;
-    if (this.#disposed)
-      return { entered: Promise.resolve("cancelled"), exited: Promise.resolve("cancelled") };
+    if (this.#disposed) return { entered: Promise.resolve("canceled"), exited: Promise.resolve("canceled") };
     this.#kinds.set(incoming.element, incoming.kind);
     this.#kinds.set(leaving.element, leaving.kind);
 
@@ -501,13 +500,13 @@ export class RevealMotion {
     keyframes: Keyframe[],
     options: KeyframeAnimationOptions
   ): Promise<MotionOutcome> {
-    if (this.#disposed) return Promise.resolve("cancelled");
+    if (this.#disposed) return Promise.resolve("canceled");
     const animation = element.animate(keyframes, options);
     this.#animations.set(animation, element);
     return animation.finished
       .then(
         (): MotionOutcome => "completed",
-        (): MotionOutcome => "cancelled"
+        (): MotionOutcome => "canceled"
       )
       .finally(() => this.#animations.delete(animation));
   }

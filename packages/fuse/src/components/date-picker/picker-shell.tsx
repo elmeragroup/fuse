@@ -30,7 +30,7 @@ import {
   CalendarMonths,
   CalendarVisibleRangeHeading,
 } from "../calendar/calendar-parts";
-import type { DateInputNeighbour } from "../date-field/date-input-neighbours";
+import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import type { PopoverContentProps } from "../popover/popover";
 import { datePickerVariants } from "./date-picker-variants";
@@ -90,7 +90,7 @@ export type PickerShellContextValue = {
   /** Whether a node is inside one of this picker's inputs. */
   readonly containsInput: (node: Node) => boolean;
   /** The input beside one of this picker's inputs, which focus crosses to: a range's other end. */
-  readonly adjacentInput: DateInputNeighbour;
+  readonly adjacentInput: DateInputNeighbor;
   /** The segment focus was on when the popup opened, which takes focus back when it closes. */
   readonly openerRef: RefObject<HTMLElement | null>;
 };

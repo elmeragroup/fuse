@@ -160,7 +160,7 @@ describe("a day dial across the DST changes", () => {
   });
 });
 
-describe("a day's quarter-hours, a week and a year (Q4)", () => {
+describe("a day's quarter-hours, a week and a year", () => {
   const instants = (list: readonly string[]) => list.map((start) => Date.parse(start));
 
   it.each([

@@ -182,7 +182,7 @@ type FocusTarget = { readonly chip: string; readonly edge: "first" | "last" } | 
  * Where focus goes when a chip is removed: the next chip's first segment, else the previous chip's
  * last, else the Trigger.
  */
-function neighbourTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
+function neighborTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
   const next = list[index + 1];
   if (next !== undefined) {
     return { chip: next.id, edge: "first" };
@@ -418,8 +418,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       : focusEdge(segments.current.get(target.chip), target.edge, triggerElement());
 
   // Focuses the neighbor of a chip that goes, now rather than after a commit.
-  const neighbourOf = (list: readonly ChipFilter[], index: number): HTMLElement | null =>
-    focusTarget(neighbourTarget(list, index));
+  const neighborOf = (list: readonly ChipFilter[], index: number): HTMLElement | null =>
+    focusTarget(neighborTarget(list, index));
 
   // Focus after a remove or a clear. The chips it names exist once this commit lands.
   useLayoutEffect(() => {
@@ -533,7 +533,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
           // settles focus. Another field's open editor stays.
           return;
         }
-        pendingFocus.current = neighbourTarget(
+        pendingFocus.current = neighborTarget(
           chips,
           chips.findIndex((chip) => chip.id === fieldId)
         );
@@ -680,7 +680,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       chipElement,
       hasContent: () => contentRegistered.current,
       hasValueContent: () => valueContentRegistered.current,
-      neighbourOf,
+      neighborOf,
       focusChipEdge: (chip, edge) => focusTarget({ chip, edge }),
       focusLeft: (kind, popup) =>
         focusMovedElsewhere(popup, [

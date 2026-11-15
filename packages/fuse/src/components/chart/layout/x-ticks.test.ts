@@ -202,9 +202,9 @@ describe("label-aware thinning", () => {
         expect(visible.length).toBeGreaterThanOrEqual(previousCount);
         previousCount = visible.length;
         const boxes = visible.map(({ slot }) => {
-          const centre = geometry.position(slot) * bucket;
+          const center = geometry.position(slot) * bucket;
           const w = width();
-          return Math.min(Math.max(centre - w / 2, 0), bucket - w);
+          return Math.min(Math.max(center - w / 2, 0), bucket - w);
         });
         boxes.slice(1).forEach((start, index) => {
           expect(start).toBeGreaterThanOrEqual((boxes[index] ?? 0) + width() + LABEL_GAP - 1e-9);
@@ -213,7 +213,7 @@ describe("label-aware thinning", () => {
     }
   });
 
-  it("clamps an edge label inside the axis, which can crowd its neighbour", () => {
+  it("clamps an edge label inside the axis, which can crowd its neighbor", () => {
     // Hand-derived at 240 px: a 100 px label at the middle spans 70 to 170. A neighbor centered
     // at 228 px would end past the axis, so it clamps to 140 and overlaps. At 280 px the pair
     // spans 90 to 190 and 166 to 266 clamped, which still overlaps, and from 320 px it fits.
@@ -273,7 +273,7 @@ describe("chart.css's width buckets", () => {
 });
 
 describe("the always-shown first label", () => {
-  it("counts in each fit check, so it never crowds a windowed neighbour", () => {
+  it("counts in each fit check, so it never crowds a windowed neighbor", () => {
     // Categories in a window of indices 1 to 11, each label 100 px wide. Stride 2
     // anchors on the even slots, so the first candidate, slot 1, is not among its labels. The
     // oracle is a brute-force overlap check of the clamped boxes at every bucket.

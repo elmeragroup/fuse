@@ -621,7 +621,7 @@ describe("Carousel rotation across engines", () => {
     renderThemed(<Hero extra={createPortal(<input aria-label="Frame code" />, frameDocument.body)} />);
     const field = frameDocument.querySelector("input");
     if (field === null) {
-      throw new Error("expected the portalled field in the frame");
+      throw new Error("expected the portaled field in the frame");
     }
     expect(rotationControl("Stop")).not.toBeNull();
     // A frame's freshly rendered field can turn down its first focus, so focus is retried until

@@ -29,7 +29,7 @@ const SKIP_REASONS = [
   /^the case reads \w+, a local the extraction lost$/u,
   /^Fuse has no (unknown|interpolate|rangeRound|tickFormat)$/u,
   /^Fuse has no (domain|range) with [0-9] values$/u,
-  /^Fuse has no (domain|range) of (object|colour strings)$/u,
+  /^Fuse has no (domain|range) of (object|color strings)$/u,
 ];
 
 function judge(name: string, file: D3CaseFile, passing: number): void {
@@ -53,7 +53,7 @@ describe("d3-scale band.json", () => judge("band", band, 97));
 describe("d3-scale point.json", () => judge("point", point, 16));
 describe("d3-scale linear.json", () => judge("linear", linear, 142));
 
-describe("section 8.15 bands", () => {
+describe("bands", () => {
   it("leaves a 25 % gap around each 40 px band, so each bar is 30 px wide and starts 5 px in", () => {
     // Hand-derived: a 40 px step less 25 % is 30 px, centered 5 px in.
     const scale = bandScale({ count: 3, range: [0, 120], paddingInner: 0.25, paddingOuter: 0.125 });
@@ -86,14 +86,14 @@ describe("section 8.15 bands", () => {
 });
 
 describe("nearestIndex", () => {
-  const centre = (scale: BandScale, slot: number): number => (scale.starts[slot] ?? 0) + scale.bandwidth / 2;
+  const center = (scale: BandScale, slot: number): number => (scale.starts[slot] ?? 0) + scale.bandwidth / 2;
 
   /** The brute-force oracle's distance, from the position to the nearest center of any slot. */
   function nearestDistance(scale: BandScale, position: number): number {
-    return Math.min(...scale.starts.map((_, slot) => Math.abs(position - centre(scale, slot))));
+    return Math.min(...scale.starts.map((_, slot) => Math.abs(position - center(scale, slot))));
   }
 
-  it("picks a slot whose centre is as near as any, on band and point scales", () => {
+  it("picks a slot whose center is as near as any, on band and point scales", () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 400 }),
@@ -103,7 +103,7 @@ describe("nearestIndex", () => {
           const scale = isPoint
             ? pointScale({ count, range: [0, 1] })
             : bandScale({ count, range: [0, 1], paddingInner: 0.25, paddingOuter: 0.125 });
-          const picked = Math.abs(position - centre(scale, nearestIndex(scale, position)));
+          const picked = Math.abs(position - center(scale, nearestIndex(scale, position)));
           expect(picked).toBeCloseTo(nearestDistance(scale, position), 12);
         }
       ),
@@ -111,7 +111,7 @@ describe("nearestIndex", () => {
     );
   });
 
-  it("picks the later slot exactly between two centres, because cells are half-open", () => {
+  it("picks the later slot exactly between two centers, because cells are half-open", () => {
     const scale = bandScale({ count: 4, range: [0, 4] });
     expect(nearestIndex(scale, 1)).toBe(1);
     expect(nearestIndex(scale, 2)).toBe(2);
