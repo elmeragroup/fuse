@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
 import {
@@ -30,7 +30,10 @@ import { scatterOptionName } from "./scatter-chart-text";
  */
 const HIT_RADIUS = { fine: 24, coarse: 32 } as const;
 
-/** Each model's spatial index, built on the first pointer move after a data change. */
+/**
+ * Each model's spatial index, built right after the paint that first draws the model, or on the
+ * first pointer move when that comes sooner.
+ */
 const indexes = new WeakMap<ScatterModel, PointIndex>();
 
 /** A model's spatial index, built once per model over shares of its own domains. */
@@ -40,6 +43,29 @@ function indexOf(model: ScatterModel): PointIndex {
   const index = buildPointIndex(pointShares(model));
   indexes.set(model, index);
   return index;
+}
+
+/**
+ * Builds a model's index in the task after the next paint. A data update's frame then draws without
+ * the build, and the first pointer move only reads the index. At 100,000 points the build costs
+ * about 7 ms, and a move reads a few hundred points. A frame and then a zero-delay timeout land just
+ * after the paint in every engine. An idle callback is missing in WebKit, and it may wait out a
+ * running entrance or glide, whose frames leave little idle time.
+ *
+ * @param model - The model the surface now draws.
+ * @returns A cleanup that cancels a build not yet run.
+ */
+function buildIndexAfterPaint(model: ScatterModel): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const frame = requestAnimationFrame(() => {
+    timer = setTimeout(() => {
+      indexOf(model);
+    }, 0);
+  });
+  return () => {
+    cancelAnimationFrame(frame);
+    clearTimeout(timer);
+  };
 }
 
 /** A domain's span, or 1 for an empty one, as `pointShares` divides by. */
@@ -147,6 +173,7 @@ export function ScatterSurface({
   const pinned = useScatterStore(store, (snapshot) => snapshot.pinned);
   const { place, focus } = useWalkPlace(context);
   useGestureEnd(place !== null, lift, pressing, false);
+  useEffect(() => (model.empty ? undefined : buildIndexAfterPaint(model)), [model]);
 
   const current = handoff.current;
   if (place === null || current === undefined) return null;
