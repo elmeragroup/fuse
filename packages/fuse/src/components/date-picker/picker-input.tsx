@@ -1,18 +1,16 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
-import type { FocusEvent, ReactElement } from "react";
+import { useLayoutEffect } from "react";
+import type { ReactElement } from "react";
 
-import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
-import { isNode } from "../../internal/dom-node";
 import { DateInputRoot } from "../date-field/date-input";
 import type { DateInputRootProps, DateInputValue } from "../date-field/date-input";
+import { DateInputBoundaryContext } from "../date-field/date-input-boundary";
 import { DateInputNeighborContext } from "../date-field/date-input-neighbors";
 import type { KindFromValue } from "../date-field/date-kind-props";
 import { datePickerVariants } from "./date-picker-variants";
 import { stateClassName } from "./picker-class-name";
-import { markInternalFocusout } from "./picker-focus-boundary";
 import { usePickerShellContext } from "./picker-shell";
 
 /** Reports the input's shown validity to its picker, which marks the group. */
@@ -42,89 +40,39 @@ export type PickerDateInputProps = Omit<DateInputRootProps<DateInputValue>, "ren
  * naming to the segments, which keep names such as "month, Start date". Its `render` state tells
  * the picker whether the input shows as invalid.
  *
- * Its focus boundary is the input together with the popup: focus moving from the segments into the
- * popup is no blur of the input, so its Field validation waits. The picker delivers the deferred
- * blur, as a real `focusout` toward where focus went, once focus lands outside the input and the
- * popup; focus coming back from the popup is no new focus either.
+ * The picker gives it a focus boundary that covers the input and the popup; see
+ * `date-input-boundary.ts`.
  */
 export function PickerDateInput({
   className,
   onInvalidChange,
-  ref,
   ...props
 }: PickerDateInputProps): ReactElement {
   const shell = usePickerShellContext("DatePicker.Input");
-  const elementRef = useRef<HTMLDivElement>(null);
-  const mergedRef = useMergedRefs<HTMLDivElement>(elementRef, ref ?? null);
-  // Whether the input's blur into the popup is waiting, and whether a delivery is passing through.
-  const deferred = useRef(false);
-  const delivering = useRef(false);
-  const { registerInputBoundary, popupRef } = shell;
   const inputClass = datePickerVariants({ range: shell.range }).input();
-  useLayoutEffect(
-    () =>
-      registerInputBoundary({
-        element: () => elementRef.current,
-        flush(next) {
-          const element = elementRef.current;
-          if (!deferred.current || element === null) {
-            return;
-          }
-          deferred.current = false;
-          const view = element.ownerDocument.defaultView;
-          if (view === null) {
-            return;
-          }
-          delivering.current = true;
-          try {
-            element.dispatchEvent(
-              markInternalFocusout(new view.FocusEvent("focusout", { bubbles: true, relatedTarget: next }))
-            );
-          } finally {
-            delivering.current = false;
-          }
-        },
-      }),
-    [registerInputBoundary]
-  );
 
   return (
     // The picker's inputs are one run of segments for focus: a range's start moves on to its end.
     <DateInputNeighborContext value={shell.adjacentInput}>
-      <DateInputRoot<KindFromValue, DateInputValue>
-        {...definedProps(props)}
-        ref={mergedRef}
-        render={(inputProps, state) => (
-          <div
-            {...inputProps}
-            role="presentation"
-            aria-labelledby={undefined}
-            aria-label={undefined}
-            aria-describedby={undefined}
-            aria-disabled={undefined}
-            data-slot="date-picker-input"
-            className={stateClassName(className, state, inputClass)}
-            onBlur={(event: FocusEvent<HTMLDivElement>) => {
-              const next = event.relatedTarget;
-              if (!delivering.current && isNode(next) && popupRef.current?.contains(next) === true) {
-                deferred.current = true;
-                return;
-              }
-              inputProps.onBlur?.(event);
-            }}
-            onFocus={(event: FocusEvent<HTMLDivElement>) => {
-              if (deferred.current) {
-                // Focus came back from the popup: the input never left.
-                deferred.current = false;
-                return;
-              }
-              inputProps.onFocus?.(event);
-            }}>
-            {inputProps.children}
-            <InvalidReport invalid={state.invalid} report={onInvalidChange} />
-          </div>
-        )}
-      />
+      <DateInputBoundaryContext value={shell.inputBoundary}>
+        <DateInputRoot<KindFromValue, DateInputValue>
+          {...definedProps(props)}
+          render={(inputProps, state) => (
+            <div
+              {...inputProps}
+              role="presentation"
+              aria-labelledby={undefined}
+              aria-label={undefined}
+              aria-describedby={undefined}
+              aria-disabled={undefined}
+              data-slot="date-picker-input"
+              className={stateClassName(className, state, inputClass)}>
+              {inputProps.children}
+              <InvalidReport invalid={state.invalid} report={onInvalidChange} />
+            </div>
+          )}
+        />
+      </DateInputBoundaryContext>
     </DateInputNeighborContext>
   );
 }

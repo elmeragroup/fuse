@@ -30,6 +30,7 @@ import {
   CalendarMonths,
   CalendarVisibleRangeHeading,
 } from "../calendar/calendar-parts";
+import type { DateInputBoundary } from "../date-field/date-input-boundary";
 import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import type { PopoverContentProps } from "../popover/popover";
@@ -44,7 +45,6 @@ import type {
 } from "./picker-change-details";
 import { stateClassName } from "./picker-class-name";
 import type { DatePickerClassName } from "./picker-class-name";
-import type { PickerInputBoundary } from "./picker-focus-boundary";
 
 const styles = datePickerVariants();
 
@@ -81,12 +81,8 @@ export type PickerShellContextValue = {
   readonly readPreset: PickerPresetReader;
   /** Whether the picker is a range picker: its parts take the `range` layout. */
   readonly range: boolean;
-  /**
-   * Registers an input's focus boundary and returns its unregistration. Focus moving from the input
-   * into the popup is no blur of the input; `flush` hands the input its deferred blur once focus
-   * lands outside it and the popup.
-   */
-  readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
+  /** The inputs' focus boundary, which contains the popup; see `usePickerFocusBoundary`. */
+  readonly inputBoundary: DateInputBoundary;
   /** Whether a node is inside one of this picker's inputs. */
   readonly containsInput: (node: Node) => boolean;
   /** The input beside one of this picker's inputs, which focus crosses to: a range's other end. */
