@@ -16,13 +16,15 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    pending, disabled or a `render` swap. One instance of the page's component per stage, plus its own
    parts and plain HTML. Done when every recipe value has a stage.
 2. **Stage controls as Buttons.** A clickable control that the subject does not style itself is
-   a Fuse `Button`. Pass it to an unstyled part through `render`, as in
-   `<Dialog.Trigger render={<Button variant="outline" />}>`, and write it in place of a native
-   `<button>`. A trigger or a control that fires something defaults to `outline`, a destructive
-   trigger is `destructive`, a main action, such as a footer's confirm or an upload trigger, is
-   the default variant, and a `Toolbar.Button` is `ghost` `sm`. A link part the subject does not
-   style takes `buttonVariants({ variant: "link" })`. Keep a native `<button>` only when it is the
-   subject's own element, as in `Item.Root`'s `render`.
+   a Fuse `Button`, passed to an unstyled part through `render`, as in
+   `<Dialog.Trigger render={<Button variant="outline" />}>`. Pick the variant by role:
+   - a trigger or a control that fires something: `outline`
+   - a destructive trigger: `destructive`
+   - a main action, such as a footer's confirm or an upload trigger: the default variant
+   - a `Toolbar.Button`: `ghost` `sm`
+   - a link part the subject does not style: `buttonVariants({ variant: "link" })`
+
+   A native `<button>` belongs only to the subject itself, as in `Item.Root`'s `render`.
 3. **Decide on Composition.** Add `## Composition` only when the component cannot be used
    correctly without knowing how its parts or sibling components fit together, as with Form and
    the fields inside it. Keep it to a few sentences. A rule about one prop never goes there; it
@@ -45,26 +47,19 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    `apps/docs/test/fixtures/component-inventory.json` and run `pnpm --filter docs generate`.
 8. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
 
-## Page rules generation enforces
+## Generation
 
-- Every component page is held to the whole shape: the default stage before `## Usage`,
-  `## Usage` then `## Examples` as the only headings, exactly one code block under Usage, only
-  `level={3}` demos and all of them under Examples, and no `<Prose>`. Anything else fails
-  generation, naming the page and the rule.
-- The one exception is `## Composition` between Usage and Examples, on a slug listed in
-  `COMPOSITION_PAGES` in `scripts/lib/page-source.ts` with its reason. Its body is one `<Prose>`
-  block with at most one code block and no demo. The TOC, the ⌘K list and the `.md` endpoint show
-  it after Usage.
-- `<DefaultDemo>` comes once, untitled. It has no TOC entry and no markdown section. It gets the
-  same file checks as a `<Demo>`: the file exists and starts with `"use client"`.
-- A page with no `<DefaultDemo>` or a second one, or a `<Demo>` without `level={3}`, fails
-  generation.
-- Demo ids are unique, URL-safe, and differ from heading ids. Every file in `demos/` must be
-  rendered by a frame, and every frame's `file` must exist.
-- Put `{/* prettier-ignore */}` above the Usage fence. Without it oxfmt appends `;` to the JSX
+`scripts/lib/page-source.ts` reads `page.mdx` in order and builds the TOC, the ⌘K list and the
+`.md` endpoint from it. It fails generation on any break of the AGENTS.md shape and names the page
+and the rule. These limits sit outside AGENTS.md:
+
+- A Composition body is one `<Prose>` block with at most one code block and no demo.
+- `<DefaultDemo>` comes once, untitled, with no TOC entry or markdown section. Its file exists and
+  starts with `"use client"`, as a `<Demo>` file does.
+- Demo ids are unique, URL-safe and distinct from heading ids. A frame renders every file in
+  `demos/`, and every frame's `file` exists.
+- `{/* prettier-ignore */}` sits above the Usage fence. Without it oxfmt appends `;` to the JSX
   line.
-- The TOC and the markdown endpoint come from `scripts/lib/page-source.ts` reading `page.mdx` in
-  order.
 
 ## Demos and Live code
 
@@ -97,7 +92,7 @@ These follow from how it works:
 
 ## Checks
 
-Run from the ui root with Node 26.13 on the PATH, one heavy command at a time.
+Run one heavy command at a time.
 
 - `pnpm --filter docs exec vitest run --project unit test/live-code-transparency.test.ts test/generated-output.test.ts test/component-page.test.ts`.
   Transparency demands identical HTML with and without Live code. A diff usually means a shifted
