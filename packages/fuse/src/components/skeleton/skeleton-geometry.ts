@@ -1,11 +1,11 @@
 /**
- * Package-private. The one geometry reader the skeleton's measuring and its motion share: an
- * element's border box in local layout pixels, fractional; the transform scale it is drawn at;
- * and the conversion of a border-box height into the element's own box model, for writing it.
+ * The one geometry reader the skeleton's measuring and its motion share. It is package-private. It
+ * reads an element's border box in local layout pixels, fractional; the transform scale it is drawn
+ * at; and the conversion of a border-box height into the element's own box model, for writing it.
  *
  * Local sizes come from the element's used width and height in its computed style. A transform
  * does not change them, a running height animation shows in them, and they keep the fraction that
- * `offsetWidth` and `offsetHeight` round away: a 200.5px box read through its offset size reads
+ * `offsetWidth` and `offsetHeight` round away. A 200.5px box read through its offset size reads
  * 201px, so a scale or a height read that way is off by up to half a pixel, and more under a
  * scaled ancestor.
  */
@@ -14,7 +14,7 @@ import { windowOf } from "../../internal/dom-node";
 /** A border box in local layout pixels. */
 type LocalSize = { readonly width: number; readonly height: number };
 
-/** An element's transform scale: its client rect over its local border box. */
+/** An element's transform scale, its client rect over its local border box. */
 export type Scale = { readonly x: number; readonly y: number };
 
 /** A computed length in pixels, zero when it does not parse. */
@@ -33,8 +33,8 @@ function verticalFrame(style: CSSStyleDeclaration): number {
 }
 
 /**
- * An element's border box in local layout pixels, fractional: its used width and height, with its
- * padding and border added for a `content-box` element. An element with no used size, such as an
+ * An element's border box in local layout pixels, fractional. It is the used width and height,
+ * with the padding and border added for a `content-box` element. An element with no used size, such as an
  * inline one, falls back to its rounded offset size.
  *
  * @param element - The element to read.
@@ -69,8 +69,8 @@ export function localHeight(element: HTMLElement): number {
 }
 
 /**
- * The transform scale an element is drawn at: its client rect over its local border box, 1 on an
- * axis where the box is empty.
+ * The transform scale an element is drawn at, which is its client rect over its local border box,
+ * or 1 on an axis where the box is empty.
  *
  * @param element - The element to read.
  * @returns Its horizontal and vertical scale.
@@ -85,9 +85,10 @@ export function scaleOf(element: HTMLElement): Scale {
 }
 
 /**
- * A border-box height as the element's own `height` declares it: less its vertical padding and
- * border when it is `content-box`, and never below zero. Written that way, a height keeps the element's box model, so
- * its own `min-height` and `max-height` bound it as they bound its natural height.
+ * A border-box height as the element's own `height` declares it, less its vertical padding and
+ * border when it is `content-box`, and never below zero. Written that way, a height keeps the
+ * element's box model, so its own `min-height` and `max-height` bound it as they bound its natural
+ * height.
  *
  * @param element - The element the height is for.
  * @param borderBoxHeight - The height of its border box, in local pixels.

@@ -24,8 +24,8 @@ export type DataTableSortButtonProps = Omit<ButtonProps, "children" | "onClick" 
 const SORT_ICONS = { asc: CaretUp, desc: CaretDown, none: CaretUpDown } as const;
 
 /**
- * A column header's sort toggle: a ghost button with the label and a direction icon that calls
- * the column's sorting handler. A column that cannot sort renders the plain label. The `<th>` owns
+ * A column header's sort toggle. It is a ghost button with the label and a direction icon, and it
+ * calls the column's sorting handler. A column that cannot sort renders the plain label. The `<th>` owns
  * `aria-sort`, which `DataTable.Header` sets, so the button does not repeat it.
  */
 export function DataTableSortButton({

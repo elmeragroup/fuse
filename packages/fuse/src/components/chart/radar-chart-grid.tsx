@@ -50,7 +50,7 @@ function ringPath(radius: number, count: number, variant: "polygon" | "circle"):
   }).join("")}Z`;
 }
 
-/** The rings a radar draws: each tick's radius past the centre, the zero ring among them. */
+/** The rings a radar draws: each tick's radius past the center, the zero ring among them. */
 function ringsOf(radar: RadarDrawing): readonly { readonly radius: number; readonly zero: boolean }[] {
   const radius = radarRadius(radar.domain, 1);
   return radar.ticks.flatMap((tick) => {

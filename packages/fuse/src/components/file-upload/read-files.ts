@@ -1,9 +1,9 @@
 import type { SplitEntry } from "./split-files";
 
 /**
- * Reading a drop or a paste. {@link read}
- * copies the items while the event runs, because the browser empties the `DataTransfer`
- * afterwards. {@link expand} then walks dropped folders asynchronously.
+ * Reading a drop or a paste. {@link read} copies the items while the event runs, because the
+ * browser empties the `DataTransfer` afterwards. {@link expand} then walks dropped folders
+ * asynchronously.
  *
  * The types below are the members of the File and Directory Entries API this module calls.
  * The DOM's `FileSystemEntry` and `DataTransferItem` satisfy them, and unit tests can fake them.
@@ -43,9 +43,9 @@ function isFolder(entry: WalkEntry): entry is FolderEntry {
 }
 
 /**
- * Copy the file and folder items of a drop or paste, synchronously and in order. String items
- * are ignored, and so is an item with neither a folder entry nor a file, such as the phantom
- * item Firefox adds to a paste. An item with a `null` entry and a file is still a file, because
+ * Copies the file and folder items of a drop or paste, synchronously and in order. It skips string
+ * items, and an item with neither a folder entry nor a file, such as the phantom item Firefox adds
+ * to a paste. An item with a `null` entry and a file is still a file, because
  * Chromium hands out a pasted image that way.
  *
  * @param dataTransfer - The event's `dataTransfer` or `clipboardData`, read during the event.
@@ -77,7 +77,7 @@ export type ExpandOptions = {
 };
 
 /**
- * Replace each folder with the files inside it, at any depth. Each of those files gets an own
+ * Replaces each folder with the files inside it, at any depth. Each of those files gets its own
  * `webkitRelativePath` of `folder/sub/name.ext`, as a picked folder's files have. A file
  * dropped outside a folder keeps the browser's `""`.
  *
@@ -102,8 +102,8 @@ export async function expand(entries: readonly ReadEntry[], options: ExpandOptio
 const FAILED = Symbol("failed");
 
 /**
- * The files under `folder`, in reader order. Its reader hands out one batch at a time, and every
- * child of a batch is read at once, so a folder has at most one batch in flight.
+ * The files under `folder`, in reader order. Its reader hands out one batch at a time, and `walk`
+ * reads every child of a batch at once, so a folder has at most one batch in flight.
  */
 async function walk(folder: FolderEntry, path: string): Promise<SplitEntry[]> {
   const batches: SplitEntry[][] = [];

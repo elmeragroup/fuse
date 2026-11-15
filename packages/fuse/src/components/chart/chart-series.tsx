@@ -45,7 +45,7 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
  * The series' paint. A role list shows the list as a gradient, a scale shows its ramp, and a
  * threshold shows its two sides split in half. Inside a tooltip row a scale or a threshold series
  * shows the step of the active value, and inside a threshold series' legend entry it shows the
- * entry's side. The swatch is decoration, so it is hidden from screen readers.
+ * entry's side. The swatch is decoration, so screen readers skip it.
  *
  * @beta
  */

@@ -3,7 +3,7 @@
 /**
  * The radar's series marks. Area, Line and Dots each draw one series as a mark of its own on the
  * Root's loop, whose numbers are the series' radius on every spoke: the entrance grows them from
- * the centre over `--chart-intro`, series s starting at 600 + s·150 ms, and a data update moves
+ * the center over `--chart-intro`, series s starting at 600 + s·150 ms, and a data update moves
  * each spoke's radius over 480 ms. A change of spoke count has no pairing, so the old drawing
  * fades out over the new one in `CHART_CROSSFADE_MS`. An estimated spoke dashes the Line's
  * two edges beside it and hatches the Area's two quadrilaterals, and a missing one removes them and
@@ -68,7 +68,7 @@ export type RadarChartLineProps = ChartLayerProps & {
 export type RadarChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
-  /** The dot's look. "ring" draws each dot hollow, in a ring of the series' colour. */
+  /** The dot's look. "ring" draws each dot hollow, in a ring of the series' color. */
   variant?: "default" | "ring";
 };
 
@@ -115,7 +115,7 @@ type SeriesLook = {
   readonly paths: (spokes: SpokeStates, radii: MarkValues) => SeriesPaths;
 };
 
-/** Write a frame's paths onto the mark's group, each onto the path of its part. */
+/** Writes a frame's paths onto the mark's group, each onto the path of its part. */
 function writeSeries(group: SVGGElement, look: SeriesLook, radii: MarkValues): void {
   const paths = look.paths(look.spokes, radii);
   for (const path of group.children) {
@@ -222,7 +222,7 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
   );
 }
 
-/** A role list's fill: a radial gradient centred on the series' box, its base at the centre. */
+/** A role list's fill: a radial gradient centered on the series' box, its base at the center. */
 function areaGradient(id: string, stops: readonly string[]): ReactNode {
   const ordered = stops.toReversed();
   return (
@@ -258,7 +258,7 @@ function lineGradient(id: string, stops: readonly string[]): ReactNode {
 /**
  * Fills between the zero polygon and the series edge with `fill-rule: evenodd`, as one path of
  * per-edge quadrilaterals. The zero polygon joins the radius of 0 on every spoke with straight edges
- * under both Grid variants, and it is the centre when no value is negative. A filled radar is an
+ * under both Grid variants, and it is the center when no value is negative. A filled radar is an
  * Area plus a Line.
  *
  * @beta
@@ -316,7 +316,7 @@ export function RadarChartLine({
 }
 
 /**
- * A dot on every reading of one series. "ring" draws each hollow, in a ring of the series' colour.
+ * A dot on every reading of one series. "ring" draws each hollow, in a ring of the series' color.
  *
  * @beta
  */

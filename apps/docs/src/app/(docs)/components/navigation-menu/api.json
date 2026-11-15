@@ -74,7 +74,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders no popup. The open item's content shows in a `NavigationMenu.Viewport` that you place inside this Root, beside its `NavigationMenu.List`. Use it for a submenu in a `NavigationMenu.Content` that swaps the panel beside its list as the pointer moves down it. The arrow keys move focus between its triggers, and Enter or Space shows the focused trigger's content. Its triggers have no caret. Pass `defaultValue` to open the first item together with the outer panel. Stack the list above the viewport on narrow screens. A Root that renders its own popup is never inline.",
+          "description": "Whether the Root renders no popup. Place a `NavigationMenu.Viewport` inside this Root, beside its `NavigationMenu.List`, to show the open item's content. Use it for a submenu in a `NavigationMenu.Content` that swaps the panel beside its list as the pointer moves down it. The arrow keys move focus between its triggers, and Enter or Space shows the focused trigger's content. Its triggers have no caret. Pass `defaultValue` to open the first item together with the outer panel. Stack the list above the viewport on narrow screens. A Root that renders its own popup is never inline.",
           "required": false
         },
         {
@@ -390,7 +390,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The item's links, or a nested `NavigationMenu.Root` for a submenu. Lay several links out in a plain `<ul>`, such as a grid. In the popup, the links and the triggers of a nested Root round with the popup's corner. Give a block of your own `rounded-inner` to do the same.",
+          "description": "The item's links, or a nested `NavigationMenu.Root` for a submenu. Lay several links out in a plain `<ul>`, such as a grid. In the popup, the links and the triggers of a nested Root round with the popup's corner. Give a custom block `rounded-inner` to do the same.",
           "required": false
         },
         {
@@ -455,7 +455,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the link to the current page, which sets `aria-current=\"page\"`.",
+          "description": "Whether the link points to the current page, which sets `aria-current=\"page\"`.",
           "required": false
         },
         {
@@ -495,7 +495,7 @@
           "type": "ComponentRenderFn<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, NavigationMenuLinkState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Your router's link element, such as `<NextLink href=\"/pricing\" />`, for client-side routing. The link keeps its `active` state and `aria-current`.",
+          "description": "The router's link element, such as `<NextLink href=\"/pricing\" />`, for client-side routing. The link keeps its `active` state and `aria-current`.",
           "required": false
         },
         {
@@ -572,7 +572,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": "<span className={slots.indicatorArrow()} />",
-          "description": "The arrow. Unset, it is a small triangle. Place the indicator inside a `NavigationMenu.Trigger`, where it shows only while that item is open.",
+          "description": "The arrow. Defaults to a small triangle. Place the indicator inside a `NavigationMenu.Trigger`, where it shows only while that item is open.",
           "required": false
         },
         {

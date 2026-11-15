@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The clock's RadiusAxis: the ring values along the 12 o'clock spoke, or the 6 o'clock one when
- * the marks leave that more room, each shown only where it clears its neighbours. The first paint
+ * The clock's RadiusAxis, the ring values along the 12 o'clock spoke, or the 6 o'clock one when
+ * the marks leave that more room, each shown only where it clears its neighbors. The first paint
  * draws it at rest.
  */
 import { useMemo } from "react";
@@ -26,7 +26,7 @@ import type { MarkCover } from "./layout/ring-labels";
  */
 export type ClockChartRadiusAxisProps = ChartLayerProps & {
   /**
-   * The tick label format. The first series' `format` is the default. The values show beside the 12
+   * The tick label format. Defaults to the first series' `format`. The values show beside the 12
    * o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where they
    * clear the marks and the labels, so a crowded dial shows fewer values.
    */
@@ -37,8 +37,8 @@ export type ClockChartRadiusAxisProps = ChartLayerProps & {
  * Whether a clock's marks at rest cover a point: a slot's band between its base and its tip, at the
  * slot's angles, in any series, as its Column, Area or Line would draw it. A Line draws only its tip,
  * so the band is the most a series' mark can cover. The point's angle names its slot, as the pick
- * finds it, and only the records that can hold that angle are read: the slot's and its two
- * neighbours', which share its edges, each with every slot its coarse slot spans.
+ * finds it, and the cover reads only the records that can hold that angle: the slot's and its two
+ * neighbors', which share its edges, each with every slot its coarse slot spans.
  */
 function clockCover(clock: ClockDrawing): MarkCover {
   const { count } = clock;
@@ -65,7 +65,7 @@ function clockCover(clock: ClockDrawing): MarkCover {
 /**
  * The ring values beside the 12 o'clock spoke, each on its ring, or beside the 6 o'clock spoke
  * when the marks leave that more room. A value shows only at the widths where it clears its
- * neighbours, the marks, the cycle labels the AngleAxis shows and the centre's text, so a crowded
+ * neighbors, the marks, the cycle labels the AngleAxis shows and the center's text, so a crowded
  * dial shows fewer values, or none.
  *
  * @beta

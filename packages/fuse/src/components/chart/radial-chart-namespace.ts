@@ -6,7 +6,7 @@
  */
 
 /**
- * Radial bar charts, one ring per row filled against its maximum. The centre and track parts are
+ * Radial bar charts, one ring per row filled against its maximum. The center and track parts are
  * `PieChart`'s own components.
  *
  * Preview: names and props can change until Fuse's first stable release.

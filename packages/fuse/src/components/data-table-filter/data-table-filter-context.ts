@@ -26,7 +26,7 @@ export type { FacetReader } from "./filter-facets";
 /** The payload each chip's Value hands the shared value popover. */
 export type ValuePayload = { readonly fieldId: string };
 
-/** One chip: a filter, or a ghost whose editor emptied it and is still open. */
+/** One chip, which is a filter or a ghost whose editor emptied it and is still open. */
 export type ChipFilter = {
   /** The field's column id. */
   readonly id: string;
@@ -35,8 +35,8 @@ export type ChipFilter = {
   /** The applied value. A ghost keeps the value it had before its editor emptied it. */
   readonly value: FilterValue;
   /**
-   * The chip shows while its editor is open, but no filter is applied, because its editor emptied
-   * it. It leaves when the editor closes.
+   * Whether the chip shows while its editor is open with no filter applied, because its editor
+   * emptied it. The chip leaves when the editor closes.
    */
   readonly ghost: boolean;
 };
@@ -53,9 +53,9 @@ export type DataTableFilterContextValue = {
     readonly filters: DataTableFilterState;
     /** The chips to render: the filters, plus a ghost chip in its place. */
     readonly chips: readonly ChipFilter[];
-    /** The field whose editor is open in the value popover, or null after its close animation. */
+    /** The field whose editor is open in the value popover, or `null` after its close animation. */
     readonly editing: string | null;
-    /** The field whose editor shows in place in the add menu, or null after the menu closes. */
+    /** The field whose editor shows in place in the add menu, or `null` after the menu closes. */
     readonly drilled: string | null;
   };
   readonly actions: {
@@ -73,7 +73,7 @@ export type DataTableFilterContextValue = {
     ) => void;
     /** Sets a filter's operator and converts its values to the operator's shape. */
     readonly setOperator: (fieldId: string, operator: FilterOperator) => void;
-    /** Removes a filter and moves focus to a neighbouring chip, else the Trigger. */
+    /** Removes a filter and moves focus to a neighboring chip, else the Trigger. */
     readonly remove: (fieldId: string) => void;
     /** Removes every filter and moves focus to the Trigger. */
     readonly clear: () => void;
@@ -93,9 +93,9 @@ export type DataTableFilterContextValue = {
     readonly fields: FilterFieldMap;
     /** Counts and ranges per field. */
     readonly facets: FacetReader;
-    /** The zone dates compare in, or undefined for the runtime zone. */
+    /** The zone dates compare in, or `undefined` for the runtime zone. */
     readonly timeZone: string | undefined;
-    /** An operator's label on one field: the Root's `formatOperator`, else the dictionary's. */
+    /** An operator's label on one field, from the Root's `formatOperator`, else from the dictionary. */
     readonly formatOperator: (operator: FilterOperator, kind: FilterKind, fieldId: string) => string;
   };
 };
@@ -113,50 +113,62 @@ export type DataTableFilterInternals = {
     readonly openCount: number;
   };
   readonly actions: DataTableFilterContextValue["actions"] & {
-    /** A chip Value's press opens that field's editor. */
+    /** Opens a field's editor after a press on its chip's Value. */
     readonly beginEdit: (fieldId: string) => void;
-    /** A text, number or date row's press: its editor replaces the field list in the add menu. */
+    /**
+     * Replaces the field list in the add menu with a field's editor, after a press on a text,
+     * number or date row.
+     */
     readonly drill: (fieldId: string) => void;
-    /** The in-place editor's Back, Escape or Backspace: the field list again. */
+    /** Shows the field list again, after the in-place editor's Back, Escape or Backspace. */
     readonly back: () => void;
     /** The field list calls it once it has focused its search after a Back. */
     readonly clearReturnTo: () => void;
     /**
-     * A field's value submenu opened or closed, for `onActiveFieldChange`. A close clears the field
-     * only while it is still this submenu's: Base UI closes the previous sibling after the next one
-     * opened.
+     * Records that a field's value submenu opened or closed, for `onActiveFieldChange`. A close
+     * clears the field only while it is still this submenu's, because Base UI closes the previous
+     * sibling after the next one opened.
      */
     readonly setSubmenuOpen: (fieldId: string, open: boolean) => void;
     /**
-     * A value list's Select all: an option or multi-option field's values in one write, the
-     * operator following their count. Other kinds write nothing.
+     * Sets an option or multi-option field's values in one write, for a value list's Select all.
+     * The operator follows their count. Other kinds write nothing.
      */
     readonly setOptions: (fieldId: string, values: readonly string[]) => void;
     /**
-     * A value list's Clear all: removes the field's filter while its list stays open, so unlike
-     * `remove` it ends no editor, closes no overlay and moves no focus.
+     * Removes the field's filter while its list stays open, for a value list's Clear all. Unlike
+     * `remove`, it ends no editor, closes no overlay and moves no focus.
      */
     readonly clearValues: (fieldId: string) => void;
-    /** The add menu finished closing: the drill resets, and an editor waiting on the close opens. */
+    /**
+     * Runs once the add menu finishes closing. The drill resets, and an editor waiting on the close
+     * opens.
+     */
     readonly settleMenu: () => void;
-    /** An exit: every open editor settles its draft. */
+    /** Settles every open editor's draft, on an exit. */
     readonly applyDrafts: () => void;
     /**
-     * A press on Clear, or on `fieldId`'s Remove, began: it ends those editing sessions unwritten and
-     * closes the overlay that holds them.
+     * Runs as a press on Clear, or on `fieldId`'s Remove, begins. It ends those editing sessions
+     * unwritten and closes the overlay that holds them.
      */
     readonly discardEditors: (fieldId: string | null) => void;
     /**
-     * An overlay opened, so its editors start a fresh session. The add menu reopening during its
-     * exit drops an editor queued for after that exit, and the drill it still shows, if any, is
-     * active again, also after `close()` cleared it.
+     * Records that an overlay opened, so its editors start a fresh session. The add menu reopening
+     * during its exit drops an editor queued for after that exit, and the drill it still shows, if
+     * any, is active again, also after `close()` cleared it.
      */
     readonly noteOpen: (overlay: OverlayKind) => void;
-    /** A chip's focusable segment, so focus can return to it after a neighbour goes. Returns the cleanup. */
+    /**
+     * Registers a chip's focusable segment, so focus can return to it after a neighboring chip is
+     * removed. Returns the cleanup.
+     */
     readonly registerSegment: (fieldId: string, element: HTMLElement) => () => void;
-    /** An editor's draft owner, which exits settle and a Clear or a Remove discards. Returns the cleanup. */
+    /**
+     * Registers an editor's draft owner, which exits settle and a Clear or a Remove discards.
+     * Returns the cleanup.
+     */
     readonly registerDraft: (key: string, owner: DraftOwner) => () => void;
-    /** The value popover finished closing, so the editing field and the ghost chip go. */
+    /** Clears the editing field and the ghost chip once the value popover finishes closing. */
     readonly settleValue: () => void;
     /** `Content` calls it in a layout effect, and the cleanup unregisters. */
     readonly registerContent: () => () => void;
@@ -167,7 +179,7 @@ export type DataTableFilterInternals = {
     /** `Trigger` calls it from its ref. */
     readonly registerTrigger: (element: HTMLElement | null) => void;
     /**
-     * A popup that counts as part of the add menu or the value popover, its nested popups
+     * Registers a popup that counts as part of the add menu or the value popover, its nested popups
      * included, from the popup's ref. Returns the cleanup.
      */
     readonly registerOverlay: (kind: OverlayKind, element: HTMLElement) => () => void;
@@ -181,13 +193,13 @@ export type DataTableFilterInternals = {
     readonly triggerId: string;
     /** The id each chip's Value registers with the value popover's handle. */
     readonly valueId: (fieldId: string) => string;
-    /** A chip's element, or null. */
+    /** A chip's element, or `null`. */
     readonly chipElement: (fieldId: string) => HTMLElement | null;
     /** Whether a `Content` is registered, which the Trigger checks in development. */
     readonly hasContent: () => boolean;
     /** Whether a `ValueContent` is registered, which a Value checks in development. */
     readonly hasValueContent: () => boolean;
-    /** Focuses the neighbour of the chip at `index`, which goes away, and returns what took focus. */
+    /** Focuses the neighbor of the chip at `index`, which is going away, and returns what took focus. */
     readonly neighbourOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
     /** Focuses a chip's first or last segment, else the Trigger, and returns what took focus. */
     readonly focusChipEdge: (fieldId: string, edge: "first" | "last") => HTMLElement | null;
@@ -201,7 +213,7 @@ export type DraftOwner = {
   /** Commits the draft in at most one write and consumes it. */
   readonly settle: () => void;
   /**
-   * Ends the editing session without writing, for good: its controls' late blurs and commits write
+   * Ends the editing session for good, without writing. Its controls' late blurs and commits write
    * nothing. A Clear or a Remove of the edited filter ends it.
    */
   readonly discard: () => void;
@@ -212,7 +224,7 @@ export const DataTableFilterContext = createContext<DataTableFilterContextValue 
 /** The library parts' context the Root provides. */
 export const DataTableFilterInternalContext = createContext<DataTableFilterInternals | null>(null);
 
-/** The chip a part renders in, provided by `Chips` per chip. */
+/** The chip a part renders in, which `Chips` provides per chip. */
 export const ChipContext = createContext<ChipFilter | null>(null);
 
 /** Tells `Clear` it renders in the Bar, so it joins the toolbar's focus order. */
@@ -220,7 +232,7 @@ export const BarContext = createContext(false);
 
 /**
  * Throws the composition error for a part that opens an overlay nothing rendered. A press would
- * otherwise do nothing at all, the hardest composition mistake to find, so it throws in
+ * otherwise do nothing, a composition mistake that is hard to find, so it throws in
  * development.
  *
  * @param part - The part that was pressed.
@@ -248,7 +260,7 @@ export function useDataTableFilter(): DataTableFilterContextValue {
 }
 
 /**
- * The library parts' context: the public value plus the wiring.
+ * The library parts' context, the public value plus the wiring.
  *
  * @param part - The part's name, for the error.
  * @returns The internals.
@@ -331,7 +343,7 @@ export type EditorTarget =
   | { readonly place: "menu"; readonly fieldId: string | null; readonly back: () => void }
   | { readonly place: "popover"; readonly fieldId: string | null };
 
-/** Provided by `Content` and `ValueContent` for the `Editor` inside them. */
+/** The editor target that `Content` and `ValueContent` provide for the `Editor` inside them. */
 export const EditorTargetContext = createContext<EditorTarget | null>(null);
 
 /**
@@ -343,7 +355,7 @@ export const EditorTargetContext = createContext<EditorTarget | null>(null);
  * The focus waits for the render after mount, which React runs synchronously in the same task, so
  * it still lands before Base UI's focus manager looks for focus lost with the previous editor. A
  * Base UI composite, such as the date presets' toggle group, numbers its items in that render, and
- * an item focused in the mount commit would report no index: the group would highlight none, and
+ * an item focused in the mount commit would report no index. The group would highlight none, and
  * the first arrow key would only land on the first item.
  *
  * @template T - The element type the ref attaches to.
@@ -377,7 +389,7 @@ export type ValueList = {
   readonly fieldId: string;
   /** The listed field. */
   readonly field: ListField;
-  /** The list's order, taken as it opened. */
+  /** The list's order, fixed as it opened. */
   readonly order: OptionOrder;
   /** The list's search. */
   readonly query: string;
@@ -385,7 +397,7 @@ export type ValueList = {
   readonly contains: (text: string, query: string) => boolean;
 };
 
-/** Provided by each value list for the footer the consumer renders after it. */
+/** The value list that each value list provides for the footer the consumer renders after it. */
 export const ValueListContext = createContext<ValueList | null>(null);
 
 /**

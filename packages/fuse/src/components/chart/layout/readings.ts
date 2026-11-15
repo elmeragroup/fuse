@@ -36,9 +36,9 @@ export type SeriesReadings = { readonly readings: readonly Reading[]; readonly i
 
 /** A series' cells at each slot. */
 export type SeriesCells = {
-  /** The value cell at each slot, undefined for a slot with no row. */
+  /** The value cell at each slot, `undefined` for a slot with no row. */
   readonly values: readonly ChartScalar[];
-  /** The quality cell at each slot, undefined without a quality column or row. */
+  /** The quality cell at each slot, `undefined` without a quality column or row. */
   readonly qualities: readonly ChartScalar[];
 };
 
@@ -76,7 +76,7 @@ function readCell(cell: ChartScalar, quality: ChartScalar, slot: number, issues:
 }
 
 /**
- * Decide one series' state at every slot.
+ * Decides one series' state at every slot.
  *
  * A slot with a number reads it with its quality. A `missing` quality is missing, whatever the
  * value. A slot with no reading is pending when it starts at or after `now` or holds it. Inside the
@@ -85,7 +85,7 @@ function readCell(cell: ChartScalar, quality: ChartScalar, slot: number, issues:
  *
  * @param cells - The series' value and quality cells per slot.
  * @param slots - Each slot's start and end in epoch milliseconds, for a time axis with `now`.
- * @param now - The current instant, or undefined.
+ * @param now - The current instant, or `undefined`.
  * @returns The readings per slot and the cell issues in slot order.
  */
 export function readSeries(
@@ -127,12 +127,13 @@ export function readSeries(
 export type SlotTime = "past" | "current" | "future";
 
 /**
- * Classify a slot against `now`.
+ * Classifies a slot against `now`.
  *
  * @param start - The slot start.
  * @param end - The slot end.
  * @param now - The current instant.
- * @returns `past` when the slot ended at or before `now`, `current` when it holds `now`, else `future`.
+ * @returns `past` when the slot ended at or before `now`, `current` when it holds `now`, and `future`
+ *   otherwise.
  */
 export function slotTime(start: number, end: number, now: number): SlotTime {
   if (end <= now) return "past";

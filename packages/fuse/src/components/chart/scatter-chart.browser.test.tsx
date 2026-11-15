@@ -478,7 +478,7 @@ describe("interaction", () => {
       { t: 18, kwh: 160_000, s: "now" },
     ];
 
-    /** The active ring's centre, or null while no point is active. */
+    /** The active ring's center, or null while no point is active. */
     function ring(): readonly [string | null, string | null] | null {
       // The active dot is aria-hidden plot output.
       const dot = document.querySelector(

@@ -60,7 +60,7 @@ function scopedToSlot(selector: string): string {
 
 /**
  * Preflight's declaration as the mirror must write it. Preflight's `border: 0 solid` also resets
- * the border colour to `currentcolor`, which would undo fuse.css's border-role default in the same
+ * the border color to `currentcolor`, which would undo fuse.css's border-role default in the same
  * layer, so the mirror writes the border's width and style alone.
  */
 function mirroredDeclarations(name: string, value: string): string[] {

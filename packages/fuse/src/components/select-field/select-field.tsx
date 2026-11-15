@@ -10,7 +10,7 @@ import type { SelectTriggerProps } from "../select/select";
 
 type SelectRootProps<Value> = SelectRootType.Props<Value, false>;
 
-/** The props of {@link SelectField}. */
+/** Props for {@link SelectField}. */
 export type SelectFieldProps<Value = unknown> = {
   /**
    * The visible label, rendered as `Field.Label` above the trigger. For a label row with an info
@@ -21,19 +21,19 @@ export type SelectFieldProps<Value = unknown> = {
   description?: string;
   /**
    * The error message, rendered as `Field.Error` under the trigger, ahead of the description,
-   * while it is truthy. Pass `isInvalid` with it, so the trigger is marked invalid too. Without
+   * while it is truthy. Pass `isInvalid` with it, so the field marks the trigger invalid too. Without
    * it, the field shows its own error, such as one `Form` holds under its `name` or the required
    * message.
    */
   errorMessage?: ReactNode;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field is invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Makes a selection required, so an empty submit is blocked with the required message. */
+  /** Whether a selection is required, so the field blocks an empty submit with the required message. */
   isRequired?: boolean;
-  /** Disables the field and the trigger. */
+  /** Whether the field and the trigger are disabled. */
   isDisabled?: boolean;
   /**
-   * Makes the select read-only, with the muted read-only fill. The trigger stays focusable and
+   * Whether the select is read-only, with the muted read-only fill. The trigger stays focusable and
    * its popup still opens to show the options, but no choice changes the value. The value still
    * submits under `name`.
    */
@@ -49,7 +49,7 @@ export type SelectFieldProps<Value = unknown> = {
   /** The text the trigger shows while nothing is selected. */
   placeholder?: ReactNode;
   /**
-   * The selection, for a controlled field. `null` selects nothing. The field takes one value; for
+   * The selection, for a controlled field. `null` selects nothing. The field takes one value. For
    * multiple selection, compose `Field.Root` and the `Select` parts.
    */
   value?: SelectRootProps<Value>["value"];
@@ -82,13 +82,13 @@ export type SelectFieldProps<Value = unknown> = {
 >;
 
 /**
- * Labeled select composite over Field and the Base UI `Select` parts: the label, the trigger
- * showing the selection, the options popup, then the error and the description. The trigger
- * fills the field's width, and a `ref` and the remaining props go to it. Single selection;
- * use the `Select` namespace for multiple selection or a custom layout, such as a label row
- * with an info button or a horizontal field.
+ * A labeled select over Field and the Base UI `Select` parts: the label, the trigger showing the
+ * selection, the options popup, then the error and the description. The trigger fills the field's
+ * width, and a `ref` and the remaining props go to it. It takes a single selection. Use the `Select`
+ * namespace for multiple selection or a custom layout, such as a label row with an info button or a
+ * horizontal field.
  *
- * Server-renderable: it owns no state, and its parts are client modules.
+ * A server component can render it. It has no state of its own, and its parts are client modules.
  */
 export function SelectField<Value = unknown>({
   label,

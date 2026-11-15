@@ -5,10 +5,10 @@
  * ActiveDot and the tooltip's lane offset together. A pointer or key step retargets it, and it
  * keeps its angle and velocity across steps, so a step mid-glide never jumps or stalls. A frame turns
  * no faster than the pointer's speed carries a mark, the hand at the rim and each active dot along
- * the curve it rides, which a steep flank stretches, so a ring or spoke step glides with the
+ * the curve it moves along, which a steep flank stretches, so a ring or spoke step glides with the
  * pointer. It never turns so slowly that a step takes more than 12 frames at that pace, or 10 for a
- * step wider than 90°, so a step
- * across the dial lands within 300 ms at any dial size instead of crawling.
+ * step wider than 90°, so a step across the dial lands within 300 ms at any dial size instead of
+ * crawling.
  * Each frame it calls its subscribers with the angle it shows, and each one writes attributes and
  * styles. It renders nothing and commits nothing.
  */
@@ -65,15 +65,15 @@ export type FollowListener = (angle: number) => void;
 /** A Root's angle follower. */
 export type PolarFollow = {
   /**
-   * Move the target. A pointer or key step glides there, keeping the speed the follower has. A
+   * Moves the target. A pointer or key step glides there, keeping the speed the follower has. A
    * commit, reduced motion, an engine without `linear()` and the first angle after none snap there.
    * Null means nothing is active, so the next angle snaps.
    */
   readonly retarget: (angle: number | null, cause: FollowerCause) => void;
-  /** Call a subscriber on every frame the angle moves. The result unsubscribes it. */
+  /** Calls a subscriber on every frame the angle moves. The result unsubscribes it. */
   readonly subscribe: (listener: FollowListener) => () => void;
   /**
-   * Note how far a mark moves per radian of turn at an angle, so a frame carries it no faster than
+   * Notes how far a mark moves per radian of turn at an angle, so a frame carries it no faster than
    * the pointer's pace. The result forgets it.
    */
   readonly stretch: (stretch: FollowStretch) => () => void;
@@ -81,11 +81,11 @@ export type PolarFollow = {
   readonly shown: () => number | null;
   /**
    * Whether the glide under way leaps: its step reaches so far that the pointer's pace would take
-   * more than 12 frames, or 10 past 90°, so it turns the step's span over those frames instead. A popup that rides the
-   * follower fades in where the step lands instead of travelling that fast.
+   * more than 12 frames, or 10 past 90°, so it turns the step's span over those frames instead. A
+   * popup that tracks the follower fades in where the step lands instead of traveling that fast.
    */
   readonly leaps: () => boolean;
-  /** Note the dial's outer radius in CSS pixels, as the cell resizes. */
+  /** Notes the dial's outer radius in CSS pixels, as the cell resizes. */
   readonly measure: (radius: number) => void;
 };
 
@@ -111,7 +111,7 @@ export type FollowHost = {
 };
 
 /**
- * Create a Root's follower.
+ * Creates a Root's follower.
  *
  * @param host - The frames, the motion preference and the step's spring.
  * @returns The follower.

@@ -24,7 +24,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 /** One rendered option: the family's own state, its element id, and whether it carries the description. */
 export type HandoffOption<T extends object> = T & {
   readonly id: string;
-  /** True for the option that receives focus from outside, which carries the description. */
+  /** Whether this option receives focus from outside, which carries the description. */
   readonly entry: boolean;
 };
 
@@ -34,9 +34,9 @@ export type OptionHandoff<T extends object> = {
   readonly options: readonly HandoffOption<T>[];
   /** The option that holds the tab stop. */
   readonly current: HandoffOption<T> | undefined;
-  /** Render the next option beside the current one, and focus it once it commits. */
+  /** Renders the next option beside the current one, and focuses it once it commits. */
   readonly step: (state: T) => void;
-  /** Replace the current option's state in place, keeping its id, as a data update reconciles it. */
+  /** Replaces the current option's state in place, keeping its id, as a data update reconciles it. */
   readonly revise: (state: T) => void;
   /**
    * Whether a focus event moved focus between the listbox's own options. On focus that is a step
@@ -49,9 +49,9 @@ export type OptionHandoff<T extends object> = {
    * A surface keeps its option and state through such a blur, so the option it gives back exists.
    */
   readonly kept: (event: FocusEvent<HTMLElement>) => boolean;
-  /** Remove the option a step left, in the commit after the new one took focus. */
+  /** Removes the option a step left, in the commit after the new one took focus. */
   readonly prune: () => void;
-  /** Start over with one option that carries the description, for the next entry from outside. */
+  /** Starts over with one option that carries the description, for the next entry from outside. */
   readonly reset: (state: T) => void;
 };
 
@@ -113,7 +113,7 @@ export function useOptionHandoff<T extends object>(
 }
 
 /**
- * End a surface's press when its element goes away. An empty model takes the surface's element
+ * Ends a surface's press when its element goes away. An empty model takes the surface's element
  * away, mid-press too, so no later press inherits the gesture: the element's cleanup ends it.
  *
  * @template G - The surface's record of a press in progress.
@@ -172,8 +172,8 @@ export type SurfaceNaming = {
 
 /**
  * The listbox element's own attributes beside its `role`: its id, slot, pin state, orientation,
- * name and focus ring. With `aria-labelledby` on Root, the listbox reads the chart's name followed by its own
- * hidden name, which `SurfaceName` renders.
+ * name and focus ring. With `aria-labelledby` on Root, the listbox reads the chart's name followed
+ * by its own hidden name, which `SurfaceName` renders.
  *
  * @param naming - What names the surface.
  * @param pinned - Whether a tooltip is pinned.

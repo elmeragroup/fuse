@@ -35,7 +35,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs when the action button is clicked. The alert renders the button only when this and `actionLabel` are both set. `Alert.Root` is a server component, so pass the handler from a client component.",
+          "description": "Called when the user clicks the action button. The alert renders the button only when this and `actionLabel` are both set. `Alert.Root` is a server component, so pass the handler from a client component.",
           "required": false
         },
         {
@@ -53,7 +53,7 @@
           "type": "\"default\" | \"destructive\" | \"info\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The status. It sets the alert's colours and its icon.",
+          "description": "The status. It sets the alert's colors and its icon.",
           "required": false,
           "values": [
             "default",

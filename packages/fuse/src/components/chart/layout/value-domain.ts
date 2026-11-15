@@ -11,7 +11,7 @@ export type Baseline = "zero" | "none";
 
 /** The inputs of a value domain. */
 export type ValueDomainInput = {
-  /** Every drawn value of the layout's series, stack ends included. Non-finite values are skipped. */
+  /** Every drawn value of the layout's series, stack ends included. The domain skips non-finite values. */
   readonly values: Iterable<number>;
   /** `"zero"` keeps 0 in the domain. */
   readonly baseline: Baseline;
@@ -67,7 +67,7 @@ const TINY = 1e-15;
 /** The domain of a layout with no value, `[0, 1]` with d3's ticks. */
 export const EMPTY_DOMAIN: ValueDomain = { domain: [0, 1], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] };
 
-/** Turn −0 into 0 and leave every other number alone. */
+/** Turns −0 into 0 and leaves every other number alone. */
 function withoutNegativeZero(value: number): number {
   return value === 0 ? 0 : value;
 }
@@ -90,7 +90,7 @@ function flat(value: number, count: number): ValueDomain {
 }
 
 /**
- * Compute a layout's value domain.
+ * Computes a layout's value domain.
  *
  * - With no value and no include, the domain is `[0, 1]`.
  * - Under `"zero"` an all-zero series gives `[0, 1]` with the single tick 0, because zero is a

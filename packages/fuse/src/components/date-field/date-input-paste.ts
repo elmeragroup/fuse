@@ -18,7 +18,10 @@ import type { DateDraft } from "./date-draft";
 import type { FieldText } from "./date-field-text";
 import type { SessionSettings } from "./date-input-session";
 
-/** A value in a kind: a date-time's date for a PlainDate input, a zone's wall clock, a wall clock in a zone. */
+/**
+ * A value in a kind: a date-time's date for a PlainDate input, a zone's wall clock, or a wall clock
+ * in a zone.
+ */
 function convertToKind(value: TemporalValue, kind: ValueKind): TemporalValue | undefined {
   switch (kind.kind) {
     case "PlainDate":
@@ -37,8 +40,8 @@ function convertToKind(value: TemporalValue, kind: ValueKind): TemporalValue | u
 /**
  * The instant of a zoned wall time that the text's zone name names: the earlier or the later one of
  * a wall time the zone repeats, the one instant of any other; `undefined` when the name is neither.
- * Each candidate's name is the one the input writes for it (`settings.zoneInstant`), so a time on
- * the stand-in day carries today's name, as its segments show it.
+ * Each candidate's name is the one the input writes for it, through `settings.zoneInstant`, so a
+ * time on the stand-in day carries today's name, as its segments show it.
  */
 function namedInstant(
   value: Temporal.ZonedDateTime,
@@ -75,9 +78,10 @@ function formedValue({ draft, base, settings, read }: PastedDraft): TemporalValu
 }
 
 /**
- * Text in the field's own format, read by the field's format (`readFieldText`), as the value of the
- * units it names: over the committed value (or the placeholder), every number inside its unit's
- * limits and every shown unit named, since one the text left out would silently keep the base's.
+ * Text in the field's own format, read by the field's format through `readFieldText`, as the value
+ * of the units it names. It forms over the committed value, or over the placeholder, with every
+ * number inside its unit's limits and every shown unit named, since one the text left out would
+ * keep the base's.
  */
 function formattedValue(text: string, settings: SessionSettings): TemporalValue | undefined {
   const read = settings.readText(text);
@@ -137,9 +141,10 @@ export function pastedValue(text: string, settings: SessionSettings): TemporalVa
 
 /**
  * Pasted text in a time-only input: ISO text that names a wall-clock time takes that time alone,
- * its date, offset and zone dropped (see `parseWallTime`). ISO text of a date alone names no time
- * and reads as nothing, rather than its digits as one. A UTC time (`Z`) names an instant, not a
- * wall time: it is read as any other text, in the field's own format, which it never matches.
+ * its date, offset and zone dropped, as `parseWallTime` reads it. ISO text of a date alone names no
+ * time and reads as nothing, rather than its digits as one. A UTC time, ending in `Z`, names an
+ * instant, not a wall time. It reads as any other text, in the field's own format, which it never
+ * matches.
  *
  * @param text - The trimmed clipboard text.
  * @param settings - The input's settings.

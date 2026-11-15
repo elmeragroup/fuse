@@ -59,7 +59,10 @@ export type ChartReferenceLineProps = ChartLayerProps &
          * `y` or an `x`.
          */
         x?: never;
-        /** How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x` line. */
+        /**
+         * How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x`
+         * line.
+         */
         format?: ValueFormat;
       }
     | {
@@ -70,7 +73,10 @@ export type ChartReferenceLineProps = ChartLayerProps &
         x: ChartX;
         /** The value the line marks. A line takes a `y` or an `x`. */
         y?: never;
-        /** How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x` line. */
+        /**
+         * How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x`
+         * line.
+         */
         format?: XFormat;
       }
   ) & {
@@ -173,7 +179,7 @@ function valueText(
   );
 }
 
-/** Warn once per Root in development when a reference sits outside the value domain. */
+/** Warns once per Root in development when a reference sits outside the value domain. */
 function warnOutside(
   context: ChartRootContextValue,
   part: string,
@@ -193,9 +199,11 @@ function warnOutside(
 type StackedLabel = {
   /** The label's node. */
   readonly ref: RefObject<HTMLSpanElement | null>;
-  /** Hand the layout's label registry the guide a value reference draws now, or null while it hides. */
+  /**
+   * Hands the layout's label registry the guide a value reference draws now, or null while it hides.
+   */
   readonly move: (span: readonly [number, number] | null) => void;
-  /** Tell the layout's label registry whether a slot reference's guide shows in the plot now. */
+  /** Tells the layout's label registry whether a slot reference's guide shows in the plot now. */
   readonly show: (shown: boolean) => void;
 };
 
@@ -208,16 +216,15 @@ function labelSize(node: HTMLElement): LabelSize {
 }
 
 /**
- * Place a reference's label on a vertical chart through its layout's label registry, one per
+ * Places a reference's label on a vertical chart through its layout's label registry, one per
  * Panel, so labels stack against their own Panel's plot and a slot label reserves a row there
- * alone. It places them from what the
- * reference draws. A value reference's label registers with its own size, and every frame its
- * writer hands over the guide it draws, so the registry places every value label from the drawn
- * guides alone. A slot reference's label registers in the row of slot labels above the plot, and
- * every frame its writer reports whether its guide shows, which reserves the row. The reference
- * places its guide on every commit, so a label that registers or changes size draws from the
- * guide's current position at once. Before the first frame, as on the server, a value label sits
- * on its own edge. A horizontal chart stacks nothing.
+ * alone. It places them from what the reference draws. A value reference's label registers with its
+ * own size, and every frame its writer hands over the guide it draws, so the registry places every
+ * value label from the drawn guides alone. A slot reference's label registers in the row of slot
+ * labels above the plot, and every frame its writer reports whether its guide shows, which reserves
+ * the row. The reference places its guide on every commit, so a label that registers or changes
+ * size draws from the guide's current position at once. Before the first frame, as on the server, a
+ * value label sits on its own edge. A horizontal chart stacks nothing.
  */
 function useStackedLabel(
   context: ChartRootContextValue,
@@ -306,7 +313,7 @@ function plotCoordinate(frame: PlotFrame, axis: "value" | "slot", at: number): n
 }
 
 /**
- * Snap a reference's tweened coordinate where it draws, as a bar's edge or a slot's centre snaps,
+ * Snaps a reference's tweened coordinate where it draws, as a bar's edge or a slot's center snaps,
  * so a guide at a bar's value meets the bar's edge. The loop tweens the unsnapped coordinate, so
  * whether a guide lies inside the plot never rests on a snap.
  */
@@ -343,7 +350,7 @@ type ReferenceLook = {
 };
 
 /**
- * Move a reference with the bars. Its two numbers tween through Root's animation loop in the same
+ * Moves a reference with the bars. Its two numbers tween through Root's animation loop in the same
  * pixel space and on the same clock as the bars, so a resize during an update keeps a guide on its
  * bar. Its writer, at module scope, redraws the line or band, its label and its CSS shares from the
  * drawn numbers.
@@ -423,7 +430,7 @@ type ReferenceDrawn = {
 };
 
 /**
- * A line's drawn state at a tweened, unsnapped coordinate: a value, or a slot's centre, which lies
+ * A line's drawn state at a tweened, unsnapped coordinate: a value, or a slot's center, which lies
  * outside the plot for a slot outside the window. A slot line inside the plot draws inside its
  * slot's band, as `slotLineAt` draws it, and its span starts where the rule does.
  */
@@ -447,7 +454,7 @@ const referencePart = partsCache((node) =>
   node.querySelector('[data-slot="chart-reference-rule"], [data-slot="chart-reference-band"]')
 );
 
-/** Draw a line from the loop's numbers, its coordinate and its width. */
+/** Draws a line from the loop's numbers, its coordinate and its width. */
 function drawLine(node: HTMLDivElement, look: ReferenceLook, values: MarkValues): void {
   const { frame, axis, xScale, label } = look;
   if (frame === null) return;
@@ -466,13 +473,13 @@ function drawLine(node: HTMLDivElement, look: ReferenceLook, values: MarkValues)
   writeAttributes(referencePart(node), lineAttributes(frame, axis, state.span[0], width));
 }
 
-/** Draw a reference from the loop's numbers, as its kind draws it. */
+/** Draws a reference from the loop's numbers, as its kind draws it. */
 function drawReference(node: HTMLDivElement, look: ReferenceLook, values: MarkValues): void {
   if (look.kind === "line") drawLine(node, look, values);
   else drawArea(node, look, values);
 }
 
-/** Draw a band from the loop's numbers, its two edges. */
+/** Draws a band from the loop's numbers, its two edges. */
 function drawArea(node: HTMLDivElement, look: ReferenceLook, values: MarkValues): void {
   const { frame, axis, label } = look;
   if (frame === null) return;
@@ -523,7 +530,7 @@ function bandAttributes(frame: PlotFrame, axis: "value" | "slot", [start, stop]:
     : { x: 0, width: box.width, y: start, height: stop - start };
 }
 
-/** Set or remove a boolean data attribute. */
+/** Sets or removes a boolean data attribute. */
 function toggle(node: Element, name: string, on: boolean): void {
   writeAttribute(node, name, on ? "" : null);
 }

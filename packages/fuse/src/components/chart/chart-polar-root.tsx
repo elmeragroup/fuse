@@ -109,7 +109,7 @@ function activeOf(snapshot: ChartSnapshot, count: number): ActiveSlot {
   return { slot: active, near };
 }
 
-/** Write the active state onto the figure, where the dim rules read it. */
+/** Writes the active state onto the figure, where the dim rules read it. */
 function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: ActiveSlot): void {
   writeAttribute(figure, "data-active", active === null ? null : (snapshot.source ?? ""));
   writeAttribute(figure, "data-pinned", snapshot.pinned && active !== null ? "" : null);
@@ -200,7 +200,7 @@ function PolarStatus({ store }: { readonly store: ChartStore }): ReactElement {
 }
 
 /**
- * Provide the family's readout, which the shared parts read the Root through. It changes with the
+ * Provides the family's readout, which the shared parts read the Root through. It changes with the
  * model alone, so a pointer move renders no part that reads only the readout.
  */
 function PolarReadoutScope({ children }: { readonly children: ReactNode }): ReactElement {
@@ -228,7 +228,7 @@ type PolarRootState = {
 };
 
 /**
- * Wire a polar Root: its store, followers, loop, entrance, selection, highlight and warnings, and
+ * Wires a polar Root: its store, followers, loop, entrance, selection, highlight and warnings, and
  * the kernel its family's readout closes over.
  *
  * @param props - The Root's props.
@@ -498,9 +498,9 @@ const DEAD_BAND = 2;
 
 /**
  * The pick over a polar cell: a client point maps through the listbox's client box, which spans the
- * cell and so the sweep's box, into units of the outer radius from the centre. A pointer that holds
+ * cell and so the sweep's box, into units of the outer radius from the center. A pointer that holds
  * an option keeps it while a point 2 CSS px along its arc or its radius still picks it, so a hand's
- * tremor near a dense dial's hole changes nothing. Within 2 CSS px of the centre a point has no
+ * tremor near a dense dial's hole changes nothing. Within 2 CSS px of the center a point has no
  * angle to read, so it picks nothing new and keeps the option the pointer holds.
  *
  * @param id - The Root's id prefix.

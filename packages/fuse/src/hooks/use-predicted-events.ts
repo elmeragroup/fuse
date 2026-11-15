@@ -75,8 +75,8 @@ function unregisterIntent(registration: IntentRegistration): void {
 }
 
 /**
- * Shared intent registry: at most one document pointermove listener while any
- * enabled onIntent registration exists.
+ * Registers an element with the shared intent registry, which keeps at most one document
+ * `pointermove` listener while any enabled `onIntent` registration exists.
  */
 export function usePredictedEvents({
   predictionZoneSize,

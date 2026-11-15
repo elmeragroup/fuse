@@ -1,12 +1,12 @@
 /**
  * The theme catalog resolved for design tools: every legal theme in both color schemes, the
- * primitives, the density metrics and the density role of every part, with each custom
- * property's CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end
- * of its chain as a design-tool value. Exporters, such as the Figma sync and the docs DTCG export, read this tree instead of
- * parsing CSS values, so every CSS reader stays private to this module.
+ * primitives, the density metrics and the density role of every part. Each custom property comes
+ * with its CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end of
+ * its chain as a design-tool value. Exporters, such as the Figma sync and the docs DTCG export,
+ * read this tree instead of parsing CSS values, so every CSS reader stays private to this module.
  *
- * Token values are fuse source, not caller input, so a value the resolver cannot read is a
- * defect in a token module and throws.
+ * Token values are Fuse source, not caller input, so a value the resolver cannot read is a defect
+ * in a token module, and the resolver throws.
  */
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -80,7 +80,10 @@ export type Reference = PrimitiveReference | TokenReference;
 /** Where a color entry is painted. Only a color carries paints. */
 type PaintsOf<Kind extends TokenKind> = Kind extends "color"
   ? {
-      /** Where Fuse paints the color, which decides where exporters offer it. Empty for none. */
+      /**
+       * Where Fuse paints the color, which decides where exporters offer it. The list is empty when
+       * Fuse paints it nowhere.
+       */
       readonly paints: readonly TokenPaint[];
     }
   : unknown;
@@ -99,16 +102,16 @@ type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> =
   /** The CSS a developer pastes: `var(--name)`, or a radius rung's `calc()`. */
   readonly codeSyntax: string;
 
-  /** The property `css` names when it is a single `var()`, one hop only; otherwise `undefined`. */
+  /** The property `css` names when it is a single `var()`, one hop only, or `undefined` otherwise. */
   readonly reference: Ref | undefined;
 
   /** The literal at the end of the reference chain, in the same theme and scheme. */
   readonly value: LiteralByKind[Kind];
 
   /**
-   * What the property is for, in one or two sentences for a designer picking a variable. It
-   * never holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
-   * `packages/fuse-figma/src/variable-set.ts`).
+   * What the property is for, in one or two sentences for a designer picking a variable. It never
+   * contains `& < > " '`, which the Figma sync refuses. `descriptionProblem` in
+   * `packages/fuse-figma/src/variable-set.ts` has that check.
    */
   readonly description: string;
 };
@@ -134,10 +137,10 @@ export type PrimitiveEntry<N extends PrimitiveName = PrimitiveName> = {
 }[N];
 
 /**
- * A resolved radius rung. Its value is the px `fuse.css` computes from the theme's `radius`
- * and `radius-step`, clamped at 0 as CSS clamps a negative `border-radius`. A rung never
- * references anything, even `radius-lg`, whose `css` is `var(--radius)`, because design
- * tools hold its computed length.
+ * A resolved radius rung. Its value is the px `fuse.css` computes from the theme's `radius` and
+ * `radius-step`, clamped at 0 as CSS clamps a negative `border-radius`. A rung never references
+ * anything, even `radius-lg`, whose `css` is `var(--radius)`, because design tools store its
+ * computed length.
  *
  * @template N - The rung names to include, every rung by default.
  */
@@ -230,11 +233,12 @@ export type ResolvedThemeCatalog = {
 };
 
 /**
- * Every legal theme in both colour schemes, the primitives, the density metrics and the part
- * density roles, with each value resolved for design tools. Pure: every call resolves afresh (no memo, no freeze).
+ * Every legal theme in both color schemes, the primitives, the density metrics and the part
+ * density roles, with each value resolved for design tools. It is pure. Every call resolves
+ * afresh, with no memo and no freeze.
  *
  * @returns The resolved catalog, with every record and list in source order.
- * @throws Error on a fuse defect, never caller input:
+ * @throws An error on a Fuse defect, never on caller input:
  *   - an unreadable literal
  *   - a `var()` naming an unknown property
  *   - a primitive that references a token
@@ -421,7 +425,7 @@ function recordOf<N extends string, E extends { readonly name: N }>(
 }
 
 /**
- * Correlate an entry's name with its kind and value once the resolver has checked them.
+ * Correlates an entry's name with its kind and value once the resolver has checked them.
  *
  * @template E - The correlated entry union the entry belongs to.
  */
@@ -450,8 +454,8 @@ function referencedValue(
 }
 
 /**
- * One entry of a scope: a literal read by its kind's reader, or a single `var()` whose value is
- * copied from the target `targetOf` finds, after checking the target has the same kind.
+ * One entry of a scope: a literal that its kind's reader reads, or a single `var()` that copies its
+ * value from the target `targetOf` finds, after checking that the target has the same kind.
  *
  * @template E - The correlated entry union the entry belongs to.
  */

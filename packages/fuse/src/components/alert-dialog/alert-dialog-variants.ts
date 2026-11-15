@@ -9,7 +9,7 @@ import { overlayTitleLineClass } from "../overlay/overlay-classes";
  * - `header` turns Dialog's header into a row: the title, then the icon at the far end, 16px
  *   apart and aligned to the top.
  * - `title` balances the title's lines.
- * - `titleLine` holds the icon on the title's first line, as Alert centres its media on its title.
+ * - `titleLine` holds the icon on the title's first line, as Alert centers its media on its title.
  * - `icon` is the 20px fallback icon, in `error` for the destructive variant.
  */
 export const alertDialogVariants = tv({

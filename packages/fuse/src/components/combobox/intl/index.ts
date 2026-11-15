@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Combobox's own dictionary: it owns the `combobox.*` keys. */
+/** Combobox's own dictionary, with the `combobox.*` keys. */
 export const comboboxStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

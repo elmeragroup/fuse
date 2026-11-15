@@ -88,7 +88,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The error message, rendered as `Field.Error` under the input, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
+          "description": "The error message, rendered as `Field.Error` under the input, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the field marks the input invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
           "required": false
         },
         {
@@ -97,7 +97,7 @@
           "type": "((item: ItemValue, query: string, itemToString?: ((item: ItemValue) => string) | undefined) => boolean) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The function that matches items against the text. For a search that runs elsewhere, such as a register lookup on a server, pass `filter={null}` and the results as `items`, and the list shows them as given. Keep the request and its state in your component, pass the empty list's states as `Autocomplete.Empty`'s children and the rest as `status`.",
+          "description": "The function that matches items against the text. For a search that runs elsewhere, such as a register lookup on a server, pass `filter={null}` and the results as `items`, and the list shows them as given. Keep the request and its state in the app's component. Pass the empty list's states as `Autocomplete.Empty`'s children and the rest as `status`.",
           "required": false
         },
         {
@@ -179,7 +179,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field, the input and its buttons.",
+          "description": "Whether the field, the input and its buttons are disabled.",
           "required": false
         },
         {
@@ -188,7 +188,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look.",
+          "description": "Whether the field shows as invalid, with the invalid look.",
           "required": false
         },
         {
@@ -197,7 +197,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input read-only, with the muted read-only fill. The input stays focusable and its popup still opens to show the suggestions, but picking one, typing and the clear button change nothing. The text still submits under `name`.",
+          "description": "Whether the input is read-only, with the muted read-only fill. The input stays focusable and its popup still opens to show the suggestions, but picking one, typing and the clear button change nothing. The text still submits under `name`.",
           "required": false
         },
         {
@@ -206,7 +206,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input required, so an empty submit is blocked with the required message.",
+          "description": "Whether the input is required, so the field blocks an empty submit with the required message.",
           "required": false
         },
         {
@@ -394,7 +394,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders a button that empties the input while it holds text. Its name is the locale dictionary's `clear` string.",
+          "description": "Whether the field renders a button that empties the input while it holds text. Its name is the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -403,7 +403,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders the caret button, which opens the whole list for browsing. The list opens as the user types, so the field has no caret unless you pass this. The caret hides while the clear button shows. Its name is the locale dictionary's `toggle` string.",
+          "description": "Whether the field renders the caret button, which opens the whole list for browsing. The list opens as the user types, so the field has no caret unless this is set. The caret hides while the clear button shows. Its name is the locale dictionary's `toggle` string.",
           "required": false
         },
         {

@@ -14,7 +14,7 @@ import type { SweepBox } from "./layout/polar-angle";
 import { angleLabel, rayLabelOffset } from "./layout/polar-labels";
 import { pathNumber } from "./layout/rounding";
 
-/** A label's place past the rim at an angle, reading away from the centre: its point and its alignment. */
+/** A label's place past the rim at an angle, reading away from the center, as its point and its alignment. */
 export type LabelPlace = {
   readonly x: string;
   readonly y: string;
@@ -22,7 +22,7 @@ export type LabelPlace = {
   readonly alignY: string;
 };
 
-/** A label's place past the rim at an angle, reading away from the centre. */
+/** A label's place past the rim at an angle, reading away from the center. */
 export function labelPlace(box: SweepBox, angle: number, reach: number): LabelPlace {
   const { point, alignX, alignY } = angleLabel(angle, reach);
   const [x, y] = boxPercent(box, point.x, point.y);
@@ -30,14 +30,14 @@ export function labelPlace(box: SweepBox, angle: number, reach: number): LabelPl
 }
 
 /**
- * A label's place on its ray: its centre at the rim point plus the gap and its support along the
- * ray, past the rim or inside it, so it sits centred on its spoke at a constant gap.
+ * A label's place on its ray. Its center sits at the rim point plus the gap and its support along the
+ * ray, past the rim or inside it, so it sits centered on its spoke at a constant gap.
  *
  * @param box - The sweep's box.
  * @param angle - The ray's angle in degrees.
  * @param width - The label's estimated width in CSS pixels.
- * @param side - "outside" past the rim, "inside" toward the centre.
- * @returns The place, centred on its point.
+ * @param side - "outside" past the rim, "inside" toward the center.
+ * @returns The place, centered on its point.
  */
 export function rayPlace(
   box: SweepBox,

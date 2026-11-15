@@ -46,7 +46,7 @@ function fieldsOf(entry: ChartSeriesConfig): (readonly [string, ConfigField])[] 
 }
 
 /**
- * Whether two colours say the same thing. A threshold nests its two sides, which a config written
+ * Whether two colors say the same thing. A threshold nests its two sides, which a config written
  * inline in JSX writes anew on every render, so they compare field by field.
  */
 function sameColor(a: ChartColor, b: ChartColor): boolean {
@@ -60,7 +60,7 @@ function sameColor(a: ChartColor, b: ChartColor): boolean {
 
 /**
  * Whether two configs say the same thing: the same keys in the same order, each with the same
- * fields, compared by `sameShallow`, and a threshold colour by its value and both sides. A config
+ * fields, compared by `sameShallow`, and a threshold color by its value and both sides. A config
  * written inline in JSX is a new object on every render, and only a change of what it says counts
  * as an update.
  *

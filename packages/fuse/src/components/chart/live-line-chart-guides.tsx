@@ -60,11 +60,11 @@ export type LiveLineChartXAxisProps = ChartLayerProps & {
  * @beta
  */
 export type LiveLineChartYAxisProps = ChartLayerProps & {
-  /** The tick label format. Root's `valueFormat` by default. */
+  /** The tick label format. Defaults to Root's `valueFormat`. */
   format?: ValueFormat;
   /**
-   * "start" draws the axis at the left edge and "end" at the right. With a `Badge`, keep it at
-   * "start", since the badge takes the end column.
+   * `"start"` draws the axis at the left edge and `"end"` at the right. With a `Badge`, keep it at
+   * `"start"`, since the badge takes the end column.
    */
   side?: "start" | "end";
 };
@@ -87,7 +87,7 @@ function valueTicks(domain: readonly [number, number]): number[] {
 }
 
 /**
- * How opaque a value tick at a height draws: faded over `VALUE_FADE_PX` at either edge, as a time
+ * How opaque a value tick at a height draws. It fades over `VALUE_FADE_PX` at either edge, as a time
  * tick fades at the sides, so a tick the gliding domain carries past an edge leaves without a pop.
  */
 function valueTickOpacity(geometry: LiveGeometry, y: number): number {
@@ -109,8 +109,8 @@ type Labels<TFormat> = {
 };
 
 /**
- * An axis's labels under a parent for a locale, a zone and a format: the ones it holds while they
- * print the same, else a new list, the old one's labels dropped.
+ * An axis's labels under a parent for a locale, a zone and a format. It keeps the labels it has
+ * while they print the same, and otherwise makes a new list and drops the old one's labels.
  */
 function labelsFor<TFormat>(
   held: Labels<TFormat> | null,

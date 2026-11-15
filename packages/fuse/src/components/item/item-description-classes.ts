@@ -2,9 +2,9 @@
  * Item.Description class string without the two-line clamp. Item.Description adds
  * `line-clamp-2`; Alert.Description renders it unclamped on a `div` so an alert can
  * carry full instructions, lists and paragraphs, swaps its size for the density's
- * `--label-text`, and swaps its muted colour for the alert's own text colour.
+ * `--label-text`, and swaps its muted color for the alert's own text color.
  * Item.Description and SelectionItem.Description render a `p`, so the string resets block
- * margins: a host without Tailwind's preflight would keep the user agent's 1em above and below,
+ * margins. A host without Tailwind's preflight would keep the user agent's 1em above and below,
  * and the content column's gap would no longer be the only space around the description.
  * Package-private. It is not on the `@elmeragroup/fuse/item` facade.
  */

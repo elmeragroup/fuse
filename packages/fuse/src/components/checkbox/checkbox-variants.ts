@@ -5,9 +5,8 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Runtime-free recipe for Checkbox's box and its indicator. Not exported from
- * `@elmeragroup/fuse/checkbox`; the workspace-only recipe catalog re-exports it for the Figma
- * component sync.
+ * The runtime-free recipe for Checkbox's box and its indicator. `@elmeragroup/fuse/checkbox` does
+ * not export it, and the workspace-only recipe catalog re-exports it for the Figma component sync.
  *
  * - `root` is the box. It carries the `peer` marker for a sibling's `peer-*` styles, the native
  *   outline reset and a hit area of 12px beside and 8px above and below the 16px box, drawn by

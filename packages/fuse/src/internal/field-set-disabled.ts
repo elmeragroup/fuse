@@ -15,8 +15,8 @@ import { useFieldRootContext } from "@base-ui/react/internals/field-root-context
 export const FieldSetDisabledContext = createContext(false);
 
 /**
- * The one owner of a Root's disabled state: its own `disabled`, an enclosing `Field.Root`'s, or
- * the nearest enclosing `Field.Set`'s (or one around it).
+ * Whether a Root is disabled, from the one place that decides it: its own `disabled`, an enclosing
+ * `Field.Root`'s, or the nearest enclosing `Field.Set`'s or one around it.
  *
  * @param own - The Root's `disabled` prop.
  * @returns Whether the Root is disabled.

@@ -33,7 +33,7 @@ import {
 import type { LiveActive, LiveStore } from "./live-line-chart-context";
 import { liveOptionName } from "./live-line-chart-text";
 
-/** Make the reading nearest a place across the plot active, as the pointer picks it. */
+/** Makes the reading nearest a place across the plot active, as the pointer picks it. */
 function pickAt(frame: LiveFrame, store: LiveStore, share: number): void {
   const { start, end } = frame.window;
   const { points } = frame.feed;
@@ -42,8 +42,8 @@ function pickAt(frame: LiveFrame, store: LiveStore, share: number): void {
 }
 
 /**
- * The reading the option names: the keyboard's reading, or the latest one when no key has picked
- * one or the feed has dropped it.
+ * The reading the option names. It is the keyboard's reading, or the latest one when no key has
+ * picked one or the feed has dropped it.
  *
  * @param points - The readings in time order.
  * @param active - The active reading.
@@ -55,10 +55,10 @@ function namedIndex(points: readonly LivePoint[], active: LiveActive | null): nu
 }
 
 /**
- * Keep the active reading on what a frame shows: a resting pointer picks the reading nearest it as
+ * Keeps the active reading on what a frame shows. A resting pointer picks the reading nearest it as
  * the readings scroll under it, unless Escape dismissed the readout. A keyboard reading stays while
  * its instant is in the window or the walk, even once the feed drops it, so the option names the
- * latest reading; one that scrolls out at the left edge moves on to the oldest reading the walk
+ * latest reading. One that scrolls out at the left edge moves on to the oldest reading the walk
  * still reaches, and none is left when the feed holds no reading.
  *
  * @param frame - The frame.
@@ -156,7 +156,7 @@ export function readoutOf(frame: LiveFrame, geometry: LiveGeometry, store: LiveS
  * the pointer moves or a key steps. A reading that scrolls out at the left edge hands the option
  * to the oldest one the window still shows. The option's position and set size count the readings
  * the walk can reach, which each frame writes as the window scrolls. The surface is also the
- * plot's one pointer target: a pointer picks the nearest reading and never moves focus.
+ * plot's one pointer target. A pointer picks the nearest reading and never moves focus.
  */
 export function LiveSurface({
   labelledBy,
@@ -251,7 +251,7 @@ export function LiveSurface({
     handoff.reset({});
   };
 
-  /** Record where the pointer rests over the plot, and pick the reading nearest it. */
+  /** Records where the pointer rests over the plot, and picks the reading nearest it. */
   const track = (event: PointerEvent<HTMLDivElement>): void => {
     store.point({ clientX: event.clientX, box: event.currentTarget.getBoundingClientRect() });
     const share = store.pointer();

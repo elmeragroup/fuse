@@ -12,7 +12,7 @@ import { tv } from "../../styles/tv";
 
 /**
  * Module-private recipe for the group's root, the field box: {@link inputGroupRootClass} plus the
- * field size it writes (`field-size.ts`). `size` is `"default"`, the md control size, or `"sm"`,
+ * field size it writes, from `field-size.ts`. `size` is `"default"`, the md control size, or `"sm"`,
  * the sm control size; the group's input, addon text and `icon-sm` buttons read it.
  */
 export const inputGroupRootVariants = tv({
@@ -29,13 +29,12 @@ export const inputGroupRootVariants = tv({
 });
 
 /**
- * Module-private recipe for the group's addon rail. `align` places
- * the rail inline (leading/trailing) or as a full-width block row; the Root
- * switches to a column and re-pads the input from the emitted `data-align`.
- * An inline rail holding a button drops its block padding, so a 24px addon
- * button fits the dense field box at both sizes without overflowing it.
- * Each rail is an inner-corner shell: its inline padding and the corner it publishes for its
- * buttons and kbd come from its inner-corner shell in `styles/inner-corner/input-group.ts`.
+ * Module-private recipe for the group's addon rail. `align` places the rail inline, leading or
+ * trailing, or as a full-width block row. The Root switches to a column and pads the input again
+ * from the emitted `data-align`. An inline rail that holds a button drops its block padding, so a
+ * 24px addon button fits the dense field box at both sizes without overflowing it. Each rail is an
+ * inner-corner shell. Its inline padding and the corner it publishes for its buttons and kbd come
+ * from its inner-corner shell in `styles/inner-corner/input-group.ts`.
  */
 export const inputGroupAddonVariants = tv({
   // The addon's text is the field's own text, the type of the group's field size.
@@ -67,17 +66,16 @@ const xsButton = controlMetrics({ size: "xs" });
 
 /**
  * Module-private recipe for the compact addon-button axis. A button inside a field reads a
- * control size below the field's own box, so it fits inside it: `xs` and `icon-xs` take the xs
- * height (floored at the 24px target) or square, with the xs gap and icon inset, and `icon-sm`
- * the group's inner square, `--field-inner` (`field-size.ts`): the sm square in a default
- * group, and the xs square floored at 24px in an sm one. The axis reads only the existing sizes
- * and never adds a `--control-*` metric of its own. InputGroup.Button applies the values as
- * extra classes over Button's default size, the md label. `sm` keeps that label but takes the
- * group's field height, so it is the md height in a default group and the sm height in an sm one.
- * Every size swaps Button's own icon edge back to the
- * md control icon edge, and `sm` also swaps Button's inset
- * for the group's field inset, `--field-px`, so Button's wider comfortable inset
- * and icon edge never reach a field. An addon button sits inside the field box, so it pads like
+ * control size below the field's own box, so it fits inside it. `xs` and `icon-xs` take the xs
+ * height or square, floored at the 24px target, with the xs gap and icon inset. `icon-sm` takes the
+ * group's inner square, `--field-inner` from `field-size.ts`, which is the sm square in a default
+ * group and the xs square floored at 24px in an sm one. The axis reads only the existing sizes and
+ * never adds a `--control-*` metric of its own. `InputGroup.Button` applies the values as extra
+ * classes over Button's default size, the md label. `sm` keeps that label but takes the group's
+ * field height, so it is the md height in a default group and the sm height in an sm one. Every
+ * size swaps Button's own icon edge back to the md control icon edge, and `sm` also swaps Button's
+ * inset for the group's field inset, `--field-px`, so Button's wider comfortable inset and icon
+ * edge never reach a field. An addon button sits inside the field box, so it pads like
  * the field chrome and rounds with its addon's inner corner, never Button's `--radius-button`.
  */
 export const inputGroupButtonVariants = tv({

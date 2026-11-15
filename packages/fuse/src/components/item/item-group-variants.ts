@@ -17,18 +17,18 @@ import { tv } from "../../styles/tv";
  * `className` replaces `gap-(--item-group-gap)` and wins whatever rows the group holds; a `has-`
  * rule that wrote `gap` itself would outrank that class.
  *
- * The compact variant draws one connected list: no gap, small rows padded with the row
- * inset on every side (default and `xs` rows keep their own padding) and flush separators. Outline rows drop their corners and bottom edge, so each
- * shared edge is one line; the group then rounds the outer corners and closes the bottom edge
- * on its first and last visible child, skipping `hidden` ones through `:nth-child(1 of
- * :not([hidden]))` and its `nth-last-child` mirror. That child is the row itself, or the
- * `item-listitem` wrapper around a row with a `render` element (the wrapper copies the row's
- * `hidden`), so each corner rule has both forms. A boolean-`hidden` direct row also gets
+ * The compact variant draws one connected list: no gap, small rows padded with the row inset on
+ * every side and flush separators. Default and `xs` rows keep their own padding. Outline rows drop
+ * their corners and bottom edge, so each shared edge is one line. The group then rounds the outer
+ * corners and closes the bottom edge on its first and last visible child. It skips `hidden` ones
+ * through `:nth-child(1 of :not([hidden]))` and its `nth-last-child` mirror. That child is the row
+ * itself, or the `item-listitem` wrapper around a row with a `render` element, so each corner rule
+ * has both forms. The wrapper copies the row's `hidden`. A boolean-`hidden` direct row also gets
  * `display: none` from the group, because without preflight its own `flex` beats the
  * user-agent `[hidden]` rule and the row would still paint between the skipped endpoints.
  * The wrapper carries no display class, so the user-agent rule already hides it.
  *
- * Package-private: not exported from `package.json#exports` or the `Item` namespace.
+ * It is package-private and not exported from `package.json#exports` or the `Item` namespace.
  */
 export const itemGroupVariants = tv({
   slots: {

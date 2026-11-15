@@ -243,7 +243,7 @@ export function PolarSurface(): ReactElement | null {
     return found;
   };
 
-  /** Whether a client point lies on the dial, within its outer radius of its centre. */
+  /** Whether a client point lies on the dial, within its outer radius of its center. */
   const insideDial = (point: ClientPoint): boolean => {
     const rect = listbox.current?.getBoundingClientRect();
     const box = sweepBox(model.sweep);
@@ -257,9 +257,9 @@ export function PolarSurface(): ReactElement | null {
 
   /**
    * Whether a pointer at a point heads for the open popup from the active part: past the rim, inside
-   * the triangle from where it last stood on that part to the popup's near edge (CONTRACT section
-   * 9.5). Inside the dial the pick always wins, so the triangle never holds a part the pointer
-   * has left.
+   * the triangle from where it last stood on that part to the popup's near edge, per CONTRACT
+   * section 9.5. Inside the dial the pick always wins, so the triangle never keeps a part active
+   * after the pointer has left it.
    */
   const heading = (to: ClientPoint): boolean => {
     const from = apex.current;
@@ -269,7 +269,7 @@ export function PolarSurface(): ReactElement | null {
   };
 
   /**
-   * Follow a pointer that left the plot toward the popup across the gap between them, where no
+   * Follows a pointer that left the plot toward the popup across the gap between them, where no
    * plot event reaches it. It keeps the active part until the pointer reaches the popup or the plot
    * again, which take it from there, or leaves the corridor, which ends the hover.
    */

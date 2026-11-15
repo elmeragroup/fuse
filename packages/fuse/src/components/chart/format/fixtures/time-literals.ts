@@ -923,7 +923,7 @@ export type DatedSlotCase = {
   /** The domain's first and last slot starts, in UTC. */
   readonly first: string;
   readonly last: string;
-  /** The labelled slot, by index. */
+  /** The labeled slot, by index. */
   readonly slot: number;
   readonly text: string;
   readonly spoken: string;

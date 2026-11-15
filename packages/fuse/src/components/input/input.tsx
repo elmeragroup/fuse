@@ -12,23 +12,23 @@ import { isThemeDevelopment } from "../../theme/validate-theme";
 import { inputVariants } from "./input-class";
 
 /**
- * The props of {@link InputControl}: the native input attributes, the native numeric `size`
+ * Props for {@link InputControl}. They are the native input attributes, the native numeric `size`
  * included, and the digits-only filter.
  */
 export type InputControlProps = ComponentProps<"input"> & {
   /**
    * Keeps digits only. The input strips every other character, typed, pasted or autofilled,
-   * before `onChange` and Field validation read the value. It sets `inputMode="numeric"` unless
-   * you pass `inputMode`. Use it with a text-like type, since under `type="number"` it also
+   * before `onChange` and Field validation read the value. It sets `inputMode="numeric"` when
+   * `inputMode` is unset. Use it with a text-like type, since under `type="number"` it also
    * strips the sign and the decimal separator.
    *
    * `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a
-   * selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits
-   * `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input
-   * strips it: under a type without a selection API, such as `email`, and for autofill that sends
-   * no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An uncontrolled
-   * numeric input restores its
-   * `defaultValue` on a native form reset without calling `onChange`.
+   * selection API, which is `text`, `tel`, `search`, `url` or `password`. A pasted `912 34 567` then
+   * fits `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input
+   * strips it. That happens under a type without a selection API, such as `email`, and for autofill
+   * that sends no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An
+   * uncontrolled numeric input restores its `defaultValue` on a native form reset without calling
+   * `onChange`.
    */
   filter?: "numeric";
 };
@@ -39,16 +39,16 @@ function stripNonDigits(value: string): string {
 }
 
 /**
- * Under the numeric filter, an insertion that mixes digits with other characters, such as a
- * pasted `912 34 567`, is replaced by its digits before the browser applies `maxlength`, so the
- * limit counts digits rather than separators. The digits that fit land at the caret, and the
- * caret ends after them. An insertion of digits only, or of no digits at all, keeps the native
- * path: `maxlength` still blocks a full field, and the change handler strips the rest. So do a
- * read-only or disabled input, to which Chromium still sends `beforeinput` before it refuses the
- * edit, an input type without a selection API, such as `email`, where `setRangeText` throws, and
- * an insertion another listener has already cancelled. A host veto has to run before this
- * listener, in the capture phase or on the input before it mounts: once this listener has run,
- * the event is cancelled and the digits are in.
+ * Under the numeric filter, this listener replaces an insertion that mixes digits with other
+ * characters, such as a pasted `912 34 567`, with its digits before the browser applies
+ * `maxlength`, so the limit counts digits rather than separators. The digits that fit land at the
+ * caret, and the caret ends after them. An insertion of digits only, or of no digits at all, keeps
+ * the native path, where `maxlength` still blocks a full field and the change handler strips the
+ * rest. So do a read-only or disabled input, to which Chromium still sends `beforeinput` before it
+ * refuses the edit, an input type without a selection API, such as `email`, where `setRangeText` throws, and
+ * an insertion another listener has already canceled. A host veto has to run before this
+ * listener, in the capture phase or on the input before it mounts. Once this listener has run,
+ * it has canceled the event and inserted the digits.
  */
 function insertDigitsOnly(event: InputEvent): void {
   const input = event.currentTarget;
@@ -104,7 +104,7 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputControlPro
 }
 
 /**
- * Input's control: the numeric filter, with the classes its caller passes. Package-private.
+ * The package-private control of `Input`, with the numeric filter and the classes its caller passes.
  * `Input` passes `inputVariants`, a field box that writes its size, and `InputGroup.Input` passes
  * `inputClass` inside `InputGroup.Root`, whose size it reads, so the group's input never resets the
  * group's size to its own.
@@ -154,7 +154,7 @@ export function InputControl({
   );
 }
 
-/** The props of {@link Input}. */
+/** Props for {@link Input}. */
 export type InputProps = Omit<InputControlProps, "size" | "aria-label"> & {
   /**
    * The control size, also written as `data-size`. `default` is the md control size, and `sm`

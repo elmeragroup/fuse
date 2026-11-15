@@ -2,7 +2,7 @@
 
 /**
  * The radar's RadiusAxis: the ring values beside the first spoke, or the opposite one when the
- * series leave that more room, each shown only where it clears its neighbours, the series and the
+ * series leave that more room, each shown only where it clears its neighbors, the series and the
  * spoke labels. The first paint draws it at rest, and only a chart nothing painted before
  * fades its labels in as the entrance starts.
  */
@@ -64,7 +64,7 @@ function segmentDistance(x: number, y: number, ax: number, ay: number, bx: numbe
 /**
  * The ring values beside the first spoke, each on its ring, 0 among them when the domain spans it,
  * or beside the opposite spoke when the series leave that more room. A value shows only at the
- * widths where it clears its neighbours, the series' edges and dots, and the spoke labels the
+ * widths where it clears its neighbors, the series' edges and dots, and the spoke labels the
  * AngleAxis shows, so a crowded radar shows fewer values, or none.
  *
  * @beta

@@ -132,7 +132,7 @@ const LAYOUT_INSTANT = utcInstant({ year: 2001, month: 1, day: 1, hour: 13 });
  * A field's parts in display order, from `formatToParts` of the layout instant, with React Aria's
  * isolates around the time: U+2066 before the hour and U+2069 after the granularity's segment.
  * Engines write the literal between a date and a time from their own CLDR data, which differs
- * between versions, so the layout takes the join Fuse owns (`date-time-join.ts`), as the
+ * between versions, so the layout takes Fuse's own join from `date-time-join.ts`, as the
  * validation copy does.
  *
  * @param format - The field's format.
@@ -289,9 +289,9 @@ function timeZoneNameText(locale: string, timeZone: string, instant: number): st
 
 /**
  * A value written in the field's format with a long month, for the "Selected Date" description.
- * The zone's name is the one the field's segments write (see `useFieldZoneName`), so a time held on
- * the stand-in day is described in today's zone name, as it is shown. Spaces are canonical, since
- * the description is server-rendered and engines write different ones.
+ * The zone's name is the one the field's segments write, from `useFieldZoneName`, so the
+ * description names a time on the stand-in day with today's zone name, as the segments show it.
+ * Spaces are canonical, since the server renders the description and engines write different ones.
  *
  * @param format - The field's format.
  * @param value - The value.
@@ -335,7 +335,7 @@ export function formatBound(format: FieldFormat, bound: TemporalValue): string {
  *
  * @param format - The field's format.
  * @param draft - What the segments show.
- * @param zoneName - The zone's name a field that writes one shows (see `zoneNameAt`).
+ * @param zoneName - The zone's name a field that writes one shows, from `zoneNameAt`.
  * @returns The segments.
  */
 export function fieldSegments(

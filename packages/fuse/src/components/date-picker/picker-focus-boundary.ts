@@ -16,25 +16,25 @@ import type { PickerOpenRequest } from "./picker-change-details";
 export type PickerInputBoundary = {
   /** The input's element. */
   readonly element: () => HTMLElement | null;
-  /** Deliver the input's deferred blur, if one is pending, toward `next`. */
+  /** Delivers the input's deferred blur, if one is pending, toward `next`. */
   readonly flush: (next: Element | null) => void;
 };
 
 /**
  * Whether focus lands on one of Base UI's focus guards: the tabbable spans a non-modal popup
- * renders around itself, outside its own element, which pass focus straight on (to the trigger, a
- * segment, or past the picker). Focus on one is in transit, neither inside nor outside the picker.
+ * renders around itself, outside its own element, which pass focus straight on to the trigger, a
+ * segment or past the picker. Focus on one is in transit, neither inside nor outside the picker.
  */
 function isFocusGuard(node: Node | null): boolean {
   return isElement(node) && node.hasAttribute("data-base-ui-focus-guard");
 }
 
 /**
- * Whether a blur the picker Root saw leaves the picker: focus goes neither into the Root (the group)
- * nor into the popup, nor onto a focus guard on its way back to one of them. React bubbles the
+ * Whether a blur the picker Root saw leaves the picker: focus goes neither into the Root, which is
+ * the group, nor into the popup, nor onto a focus guard on its way back to one of them. React bubbles the
  * popup's blurs to the Root through its portal. A blur from inside the popup to nowhere is the popup
- * closing with focus in it, which focus restoration follows, so it does not leave either. Node
- * checks hold in any realm (`internal/dom-node.ts`).
+ * closing with focus in it, which focus restoration follows, so it does not leave either. The node
+ * checks in `internal/dom-node.ts` work in any realm.
  */
 function isFocusLeavingPicker(event: FocusEvent<HTMLElement>, popup: HTMLElement | null): boolean {
   const next = event.relatedTarget;
@@ -52,7 +52,7 @@ function isFocusLeavingPicker(event: FocusEvent<HTMLElement>, popup: HTMLElement
 const internalFocusouts = new WeakSet<Event>();
 
 /**
- * Mark a `focusout` as an input's deferred validation delivery.
+ * Marks a `focusout` as an input's deferred validation delivery.
  *
  * @param event - The event about to be dispatched.
  * @returns The event.
@@ -113,8 +113,9 @@ export function usePickerOpener(containsInput: (node: Node) => boolean, open: bo
 /** What `usePickerFocusBoundary` gives a Root. */
 export type PickerFocusBoundary = {
   /**
-   * An input announces its focus boundary: focus moving from it into the popup is no blur of the
-   * input; `flush` hands the input its deferred blur once focus lands outside it and the popup.
+   * Registers an input's focus boundary and returns its unregistration. Focus moving from the input
+   * into the popup is no blur of the input; `flush` hands the input its deferred blur once focus
+   * lands outside it and the popup.
    */
   readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
   /** Whether a node is inside one of the registered inputs. */
@@ -128,9 +129,9 @@ export type PickerFocusBoundary = {
 };
 
 /**
- * When focus leaves the picker. An input whose focus moves into the popup defers its blur (and so
- * its Field validation); the Root delivers it once focus lands anywhere outside that input and the
- * popup (the trigger, another input, or out of the picker), and calls `onFocusLeave` when focus
+ * When focus leaves the picker. An input whose focus moves into the popup defers its blur, and so
+ * its Field validation. The Root delivers it once focus lands anywhere outside that input and the
+ * popup, such as the trigger, another input or out of the picker, and calls `onFocusLeave` when focus
  * leaves the group and the popup together. Focus passing through one of Base UI's focus guards is
  * neither: where it lands next decides.
  *

@@ -5,13 +5,13 @@ import type { TokenPaint } from "./contract";
 export const WHITE = "oklch(1 0 0)";
 
 /**
- * The focus ring's default colour in every theme and both colour schemes: one neutral grey.
- * Status Toasts and the warning and info Alerts rebind `--ring` on their soft fills. Lightness 0.6 meets
- * the 3:1 floor on every gated light and dark surface (page, card, card-soft and the muted Tabs
- * list track), the lowest measuring about 3.15:1 on the elma branded dark muted track, so a
- * ring drawn flush against a control still separates from the surface around it.
- * `contrast-matrix.test.ts` holds that floor. `BRANDED_IDENTITY_LAYER` describes how a brand
- * tunes its ring.
+ * The focus ring's default color in every theme and both color schemes: one neutral gray. Status
+ * Toasts and the warning and info Alerts rebind `--ring` on their soft fills. Lightness 0.6 meets
+ * the 3:1 floor on every gated light and dark surface: the page, card, card-soft and the muted Tabs
+ * list track. The lowest measures about 3.15:1, on the elma branded dark muted track, so a ring
+ * drawn flush against a control still separates from the surface around it.
+ * `contrast-matrix.test.ts` holds that floor. `BRANDED_IDENTITY_LAYER` describes how a brand tunes
+ * its ring.
  */
 export const NEUTRAL_RING = "oklch(0.6 0 0)";
 
@@ -80,7 +80,7 @@ export const PRIMITIVES = {
 } as const satisfies PrimitiveTokens;
 
 /**
- * Where each primitive is painted. The neutral ramp paints nothing: it holds one value in every
+ * Where Fuse paints each primitive. The neutral ramp has no paints. It holds one value in every
  * theme and scheme, so a part painted with it breaks dark mode and brand switching, and
  * `elmera/no-primitive-colors` bans it in Fuse and the docs. It stays a public alias target. A
  * brand accent fills an area, and its foreground colors text and icons on that fill, as in

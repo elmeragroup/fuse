@@ -4,8 +4,8 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * The Carousel recipe, one slot per styled part. Package-private: the facade exports the parts,
- * not the recipe.
+ * The Carousel recipe, one slot per styled part. It is package-private. The facade exports the
+ * parts, not the recipe.
  *
  * The viewport is a native scroll-snap container, so the browser's own scroller runs every swipe,
  * wheel turn and keyboard scroll. `mandatory` snapping with `scroll-snap-stop: always` on each
@@ -13,7 +13,8 @@ import { selfFocusRingClass } from "../../styles/utils";
  * the last slide does not navigate the page back or scroll it sideways, and `touch-action` stays
  * at its default, so a vertical swipe over a horizontal carousel still scrolls the page.
  * `scroll-behavior: smooth` animates a control's page change, and the central reduced-motion rule
- * in `fuse.css` sets it to `auto`. The scrollbar is hidden: the controls and the swipe replace it.
+ * in `fuse.css` sets it to `auto`. The recipe hides the scrollbar, since the controls and the swipe
+ * replace it.
  *
  * A slide is the viewport's width or height by default. A consumer class such as `basis-1/2`
  * shows more at once, and each slide stays a snap position, so the pages follow the layout. A

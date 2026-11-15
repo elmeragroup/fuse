@@ -2,9 +2,9 @@ import { cn } from "./cn";
 import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocusRingClass } from "./utils";
 
 /**
- * The state face of a whole interactive control: the one disabled look (`opacity-50` plus
- * the `not-allowed` cursor) and the one invalid look (`border-error`, a 3px ring, and
- * `ring-error/20`). A keyboard-focused invalid control draws a solid 1px `--error` line
+ * The state face of a whole interactive control: the one disabled look, `opacity-50` plus
+ * the `not-allowed` cursor, and the one invalid look of `border-error`, a 3px ring and
+ * `ring-error/20`. A keyboard-focused invalid control draws a solid 1px `--error` line
  * between its border and that halo, from the invalid focus constants in `utils.ts`, so focus
  * stays visible on an invalid control. Hover and press stay still on a disabled control through the
  * `enabled-hover:` and `enabled-active:` variants in `fuse.css`, which skip `:disabled`,
@@ -27,22 +27,21 @@ import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocu
  * without the look.
  *
  * - `prop` is the disabled look alone, with no selector, for a recipe told the state through
- *   a prop (CheckboxCard's `isDisabled`). The recipe puts it on its own `isDisabled` arm.
- * - `within` keys off the group's own control: a direct child marked
- *   `data-focus-ring-control` (`:disabled`, `aria-disabled="true"`, `aria-invalid`), for a
- *   group whose box is the control (InputGroup, Combobox chips, NumberField). Each owner keeps
+ *   a prop, such as CheckboxCard's `isDisabled`. The recipe puts it on its own `isDisabled` arm.
+ * - `within` keys off `:disabled`, `aria-disabled="true"` and `aria-invalid` on the group's own
+ *   control, a direct child marked `data-focus-ring-control`. It is for a group whose box is the
+ *   control: InputGroup, Combobox chips and NumberField. Each owner keeps
  *   its control as a direct child, so a control nested deeper, such as a NumberField inside an
  *   InputGroup addon, belongs to its own owner and never paints the outer group. The control
  *   face goes on the owned control: it keeps the `not-allowed` cursor there, since the browser
  *   gives a disabled input its own cursor, and cancels the dim and ring an embedded control
- *   paints itself (InputGroup's Input), so the face paints once.
+ *   paints itself, such as InputGroup's Input, so the face paints once.
  *
  * A control composes every target its state can arrive through. Button, for example, is a
  * native button and a Base UI root at once, so it takes the `native` and `data` targets.
  *
- * The face covers whole controls only. Parts (calendar cells, date segments, labels that dim
- * beside their control) keep their own muted text colour
- * and are not state faces.
+ * The face covers whole controls only. Parts, such as calendar cells, date segments and labels that
+ * dim beside their control, keep their own muted text color and are not state faces.
  */
 
 const ariaDisabledFace = cn("aria-disabled:cursor-not-allowed aria-disabled:opacity-50");

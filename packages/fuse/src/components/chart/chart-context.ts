@@ -74,7 +74,7 @@ export type LayoutReports = {
 };
 
 /**
- * Decide, for a Panel as it commits, whether a data update moves its value domain. A moved
+ * Decides, for a Panel as it commits, whether a data update moves its value domain. A moved
  * domain marks its keys as gliding, and a moved or still gliding domain under which the update
  * mounts a bar relays the plot, as `relaysPlot` rules for Root's default layout.
  *
@@ -108,7 +108,7 @@ export type ChartRootContextValue = TextContext & {
   readonly id: string;
   /** Root's `aria-label`, or undefined when `aria-labelledby` names the chart. */
   readonly name: string | undefined;
-  /** Select a key, or clear the selection with null, and announce it. */
+  /** Selects a key, or clears the selection with `null`, and announces it. */
   readonly select: (key: string | null, reason: ChartSelectionChangeReason, event: Event | undefined) => void;
   /** A LegendToggleGroup registers while it is mounted, and the returned function unregisters it. */
   readonly registerToggleGroup: () => () => void;
@@ -116,10 +116,10 @@ export type ChartRootContextValue = TextContext & {
   readonly hasToggles: () => boolean;
   /** Root's figure once it has mounted, which bounds the tooltip. */
   readonly root: () => HTMLElement | null;
-  /** Highlight a series through Root's attributes with no React render, or clear it with null. */
+  /** Highlights a series through Root's attributes with no React render, or clears it with null. */
   readonly highlight: (key: string | null) => void;
   /**
-   * Warn once per Root for each rule and subject, such as a column, a stack or a pair of Bars: a
+   * Warns once per Root for each rule and subject, such as a column, a stack or a pair of Bars: a
    * data rule's production fallback, or a development hint.
    */
   readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
@@ -156,7 +156,7 @@ export type ChartRootContextValue = TextContext & {
   readonly registerBar: (key: string, grouped: boolean, layout: FrameOwner) => () => void;
   /** Whether a mounted Bar draws a config key, which a value follower marks before a line. */
   readonly drawsBar: (key: string) => boolean;
-  /** A Bar registers its emphasised slots after it mounts, so the option speaks the word. */
+  /** A Bar registers its emphasized slots after it mounts, so the option speaks the word. */
   readonly registerEmphasis: (key: string, entry: EmphasisEntry) => () => void;
   /** A Panel registers after it mounts, in Panel order. The result unregisters it. */
   readonly registerPanel: (panel: PanelEntry) => () => void;
@@ -166,7 +166,7 @@ export type ChartRootContextValue = TextContext & {
    */
   readonly registerRootPart: (part: string) => () => void;
   /**
-   * Place the span of the Panels' plots that Root's surface covers, from their current positions,
+   * Places the span of the Panels' plots that Root's surface covers, from their current positions,
    * unless Root's commit placed it in this task. A Panel calls it after each of its commits, which
    * can move the plots without rendering Root.
    */
@@ -179,8 +179,8 @@ export type ChartRootContextValue = TextContext & {
   /** The value domain each config key draws in, its Panel's or the default layout's. */
   readonly domains: ReadonlyMap<string, readonly [number, number]>;
   /**
-   * The default layout's colour rule over every config key, or null when it holds. A plot part
-   * that draws in the default layout throws it, so a config whose Panels each keep one colour
+   * The default layout's color rule over every config key, or null when it holds. A plot part
+   * that draws in the default layout throws it, so a config whose Panels each keep one color
    * family renders.
    */
   readonly colourRule: ChartCompositionError | null;
@@ -211,7 +211,7 @@ export type ChartLayoutContextValue = {
 };
 
 /**
- * Read the enclosing cartesian Root.
+ * Reads the enclosing cartesian Root.
  *
  * @param part - The calling part's display name, which the error names.
  * @returns The Root's context.
@@ -230,7 +230,7 @@ export function useChartRoot(part: string): ChartRootContextValue {
 }
 
 /**
- * Read the nearest layout, a Panel's or Root's default one.
+ * Reads the nearest layout, a Panel's or Root's default one.
  *
  * @param part - The calling part's display name.
  * @returns The layout.
@@ -259,13 +259,13 @@ export function partOutsidePanel(part: string): ChartCompositionError {
 }
 
 /**
- * Read the layout a plot part draws in. A part in the default layout registers with Root, whose
+ * Reads the layout a plot part draws in. A part in the default layout registers with Root, whose
  * check of the current tree throws `part-outside-panel` when Panels have registered beside it.
  *
  * @param part - The calling part's display name.
  * @returns The layout.
  * @throws {ChartCompositionError} `mixed-sentiment-categorical` when the default layout mixes
- *   colour families.
+ *   color families.
  */
 export function usePlotLayout(part: string): ChartLayoutContextValue {
   const { registerRootPart, colourRule } = useChartRoot(part);
@@ -283,14 +283,14 @@ export type SeriesPart = {
 };
 
 /**
- * Open a part that draws one series in the nearest layout: read Root, check the key against its
- * config, read the layout and check the key against it.
+ * Opens a part that draws one series in the nearest layout. It reads Root, checks the key against
+ * its config, reads the layout and checks the key against it.
  *
  * @param part - The calling part's display name.
  * @param dataKey - The config key the part draws.
  * @returns Root's context and the part's layout.
  * @throws {ChartCompositionError} `part-outside-root`, `unknown-key`, `series-not-in-panel`, or the
- *   default layout's colour rule.
+ *   default layout's color rule.
  */
 export function useSeriesPart(part: string, dataKey: string): SeriesPart {
   const context = useChartRoot(part);
@@ -301,7 +301,7 @@ export function useSeriesPart(part: string, dataKey: string): SeriesPart {
 }
 
 /**
- * Check that a mark inside a Panel draws one of the Panel's series.
+ * Checks that a mark inside a Panel draws one of the Panel's series.
  *
  * @param part - The calling part's display name.
  * @param layout - The mark's layout.

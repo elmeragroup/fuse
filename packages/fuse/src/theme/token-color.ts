@@ -12,21 +12,22 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 import * as Wcag from "@elmeragroup/color/wcag";
 
 /**
- * Read a color token literal in either form token modules write, for exporters that report a
- * refused value with the token's name. It accepts no other notation, because composition
- * would refuse a value the exporter synced.
+ * Reads a color token literal in either form token modules write, for exporters that report a
+ * refused value with the token's name. It accepts no other notation, because composition would
+ * refuse a value the exporter synced.
  *
  * @param literal - A color token's CSS value that is not a `var()` reference.
- * @returns The color, or the parser's `InvalidColor`. A value starting with `#` is read as hex
- *   and fails with the hex parser's message; anything else fails with the `oklch()` parser's.
+ * @returns The color, or the parser's `InvalidColor`. The reader parses a value starting with `#`
+ *   as hex, and that value fails with the hex parser's message. Anything else fails with the
+ *   `oklch()` parser's message.
  */
 export function readTokenColor(literal: string): Result<Oklch.Oklch | Srgb, InvalidColor> {
   return literal.startsWith("#") ? Hex.parse(literal) : Oklch.parse(literal);
 }
 
 /**
- * Read an `oklch()` token literal for the theme pipeline's color math. Token literals are
- * source, not input, so a literal the parser refuses is a defect in a token module.
+ * Reads an `oklch()` token literal for the theme pipeline's color math. Token literals are source,
+ * not input, so a literal the parser refuses is a defect in a token module.
  *
  * @param literal - A token value that a token module writes as an `oklch()` literal.
  * @returns The parsed color.
@@ -37,10 +38,10 @@ export function tokenOklch(literal: string): Oklch.Oklch {
 }
 
 /**
- * The WCAG contrast ratio between two `oklch()` token literals. A translucent foreground
- * composites over the background; the background must be opaque, which every surface the theme
- * contract measures is. A translucent surface would need an explicit backdrop to composite
- * against, so measuring one throws.
+ * The WCAG contrast ratio between two `oklch()` token literals. A translucent foreground composites
+ * over the background. The background must be opaque, and every surface the theme contract measures
+ * is opaque. A translucent surface would need an explicit backdrop to composite against, so
+ * measuring one throws.
  *
  * @param foreground - The foreground's `oklch()` literal.
  * @param background - The background's `oklch()` literal, opaque.

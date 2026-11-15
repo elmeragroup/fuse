@@ -3,7 +3,7 @@ import type { CountryCode } from "libphonenumber-js/core";
 type LocaleCountryNames = {
   displayNames: Intl.DisplayNames;
   names: Map<string, string>;
-  /** Built on the first sort, which runs only once a picker opens. */
+  /** The locale's collator. The first sort builds it, and that sort runs only once a picker opens. */
   collator?: Intl.Collator;
 };
 
@@ -31,8 +31,8 @@ function localeEntry(locale: string): LocaleCountryNames {
 }
 
 /**
- * Per-locale country display names, filled on first lookup and shared across
- * PhoneNumberField instances. Creating the resolver does not construct
+ * A resolver of country display names in `locale`. It fills a per-locale cache on first lookup,
+ * and every PhoneNumberField instance shares that cache. Creating the resolver does not construct
  * `Intl.DisplayNames` or call `.of`.
  */
 export function countryNameResolver(locale: string): (countryCode: CountryCode) => string {
@@ -58,7 +58,7 @@ function resolveCollator(locale: string): Intl.Collator {
 
 /**
  * A copy of `countries` in the alphabetical order of their display names in `locale`, by
- * that locale's collation, so "Åland" follows "Sydafrika" in Swedish. Resolves every name,
+ * that locale's collation, so "Åland" follows "Sydafrika" in Swedish. It resolves every name,
  * so the picker calls it only once it has opened.
  */
 export function sortByCountryName<Country extends { code: CountryCode }>(

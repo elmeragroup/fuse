@@ -6,7 +6,7 @@ import { tv } from "../../styles/tv";
  * - `destructive`, `outline-destructive` and `soft-destructive` keep the reference's
  *   `destructive` name for consumer compatibility, and their classes use the `error` tokens.
  * - Every status (destructive, success, warning, info) has a filled arm, an `outline-*` arm that
- *   draws the status colour as border and text, and a `soft-*` arm that uses the paired soft
+ *   draws the status color as border and text, and a `soft-*` arm that uses the paired soft
  *   status tokens on their tinted surface.
  * - Badge is not interactive. The recipe drops the reference's bare `:focus` ring and its
  *   `hover:` fills, so no state suggests an action a `<span>` does not have.

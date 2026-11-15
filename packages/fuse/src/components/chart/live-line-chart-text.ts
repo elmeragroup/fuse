@@ -40,8 +40,8 @@ export type LiveText = {
  *
  * @param text - The locale, the zone and the format.
  * @param time - The instant in epoch milliseconds.
- * @param role - "tick" for an axis label, "full" for a readout.
- * @param format - The format, Root's `timeFormat` by default.
+ * @param role - `"tick"` for an axis label, `"full"` for a readout.
+ * @param format - The format. Defaults to Root's `timeFormat`.
  * @returns The visual and spoken time.
  */
 export function liveTimeText(
@@ -59,7 +59,7 @@ export function liveTimeText(
  *
  * @param text - The locale and the format.
  * @param value - The value.
- * @param role - "tick" for an axis label, "full" for a readout.
+ * @param role - `"tick"` for an axis label, `"full"` for a readout.
  * @returns The visual and spoken value.
  */
 export function liveValueText(
@@ -81,8 +81,8 @@ export function liveName(text: Pick<LiveText, "locale" | "label">): string {
 }
 
 /**
- * The readings the table and the description cover: the window's length back from the latest
- * reading, which the chart's clock never moves, so the server and the browser agree.
+ * The readings the table and the description cover, the window's length back from the latest
+ * reading. The chart's clock never moves that span, so the server and the browser agree.
  *
  * @param points - The readings in time order.
  * @param duration - The window's length in milliseconds.

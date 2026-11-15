@@ -4,8 +4,7 @@
  * How the shared readout parts read their Root: the hooks over the Root's readout port, which give
  * every part the same active index and key the option names. The contexts that say where a part
  * sits live in `chart-scope-contexts`, which every Root's own scope resets. A template row supplies
- * its own key. The module reads
- * no family's model, so a family's route ships only its own.
+ * its own key. The module reads no family's model, so a family's route ships only its own.
  */
 import { use } from "react";
 
@@ -33,7 +32,7 @@ export function useLegendSide(key: string | null): ChartThresholdSide | null {
 }
 
 /**
- * Read the enclosing Root's readout.
+ * Reads the enclosing Root's readout.
  *
  * @param part - The calling part's display name, which the error names.
  * @returns The Root's readout.

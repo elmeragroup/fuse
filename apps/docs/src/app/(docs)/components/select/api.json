@@ -443,7 +443,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Places the popup over the trigger, with the selected item on the trigger's value, as macOS menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance animation. It does not apply to touch input, and it turns off when the popup does not fit. The popup then opens on `side`. Pass `false` to open beside the trigger on `side` and `align` every time. Item alignment places the popup in viewport coordinates (a Base UI 1.8 limitation). When the portal target, or one of its ancestors, is the containing block for fixed-position content, such as a transformed or `contain: paint` scope, pass `false` so the popup opens beside its trigger instead of off by the scope's offset.",
+          "description": "Whether the popup opens over the trigger, with the selected item on the trigger's value, as macOS menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance animation. It does not apply to touch input, and it turns off when the popup does not fit. The popup then opens on `side`. Pass `false` to open beside the trigger on `side` and `align` every time. Item alignment places the popup in viewport coordinates, a Base UI 1.8 limitation. When the portal target, or one of its ancestors, is the containing block for fixed-position content, such as a transformed or `contain: paint` scope, pass `false` so the popup opens beside its trigger instead of off by the scope's offset.",
           "required": false
         },
         {
@@ -472,7 +472,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {

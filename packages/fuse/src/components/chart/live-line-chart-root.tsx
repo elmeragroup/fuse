@@ -46,7 +46,7 @@ import type { LiveLineChartTimeFormat, LiveText } from "./live-line-chart-text";
  * @beta
  */
 export type LiveLineChartPoint = {
-  /** When the reading was taken: a `Date` or epoch milliseconds. */
+  /** When the reading was taken, as a `Date` or epoch milliseconds. */
   readonly time: ChartInstant;
   /** The reading's value. */
   readonly value: number;
@@ -66,19 +66,19 @@ export type LiveLineChartRootProps = ChartAccessibleName &
      * time. Of readings that share a time the last wins, so a feed corrects its latest reading by
      * sending it again. Readings stamped ahead of the browser's clock move the window's end ahead
      * with them. Under reduced motion the window does not scroll, and each new reading redraws it
-     * once, ending at the clock. Every cell is serialisable, so a server component can pass it.
+     * once, ending at the clock. Every cell is serializable, so a server component can pass it.
      */
     data: readonly LiveLineChartPoint[];
     /**
      * The latest value, which the line runs to at the window's right edge, the live dot marks and the
-     * badge prints. The latest reading's value by default. Pass it when the value ticks faster than
+     * badge prints. Defaults to the latest reading's value. Pass it when the value ticks faster than
      * readings arrive. It takes the readings' bound, a finite number within ±1e15. The badge rolls
      * its digits to each new value, and under reduced motion changes them at once.
      */
     value?: number;
     /**
      * The window's length in milliseconds, which scrolls with the clock so its right edge is always
-     * now. `30_000` by default.
+     * now. Defaults to `30_000`.
      */
     windowMs?: number;
     /** How values print on the axis, the badge, in the tooltip, the options, the table and the description. */
@@ -89,16 +89,16 @@ export type LiveLineChartRootProps = ChartAccessibleName &
      */
     timeFormat?: LiveLineChartTimeFormat;
     /**
-     * The value's name, such as "Spotpris", which the tooltip, the options and the table print. The
+     * The value's name, such as `"Spotpris"`, which the tooltip, the options and the table print. The
      * plot's option reads the active reading's time, then its value after this name.
      */
     label?: string;
-    /** The line's paint. The badge prints in its on-colour role. */
+    /** The line's paint. The badge prints in its on-color role. */
     color?: ChartCategoricalRole | "chart-other";
     /**
-     * The IANA zone of the market the readings describe, such as "Europe/Oslo", which every time
-     * prints in. The time axis puts its ticks on round times in this zone. LocaleProvider's
-     * `timeZone` by default.
+     * The IANA zone of the market the readings describe, such as `"Europe/Oslo"`, which every time
+     * prints in. The time axis puts its ticks on round times in this zone. Defaults to
+     * `LocaleProvider`'s `timeZone`.
      */
     timeZone?: string;
     /**
@@ -154,7 +154,7 @@ const LIVE_FRAMES: LiveClockHost = {
  * curve while the value axis eases to fit, inward more slowly than outward, so nothing jumps. The
  * loop stops while the chart is out of view or its tab is hidden, and on its return, as after a
  * pause or a new `windowMs`, draws the clock's window at once. The pointer moves the crosshair with
- * no glide, and a key step lands at once. Under reduced motion the chart moves nothing: each new
+ * no glide, and a key step lands at once. Under reduced motion the chart moves nothing. Each new
  * reading redraws the window once, ending at the clock.
  * The server renders the final HTML around the plot, and the marks draw once the browser measures
  * it.

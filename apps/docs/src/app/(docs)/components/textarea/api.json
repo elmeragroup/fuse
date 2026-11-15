@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The textarea's name when no visible label names it. For a visible label, put it in a `Field.Root` with a `Field.Label` and pass it to `Field.Control`'s `render`, as in `<Field.Control render={<Textarea />} />`. A bare `Textarea` in a root is not wired to it.",
+          "description": "The textarea's name when no visible label names it. For a visible label, put it in a `Field.Root` with a `Field.Label` and pass it to `Field.Control`'s `render`, as in `<Field.Control render={<Textarea />} />`. Field does not wire a bare `Textarea` in a root.",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The control size, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The size sets the inline inset and the text size. At both sizes the box is at least 64px tall and grows with its text.",
+          "description": "The control size, which the textarea also writes as `data-size`. `default` is the md control size, and `sm` the sm one. The size sets the inline inset and the text size. At both sizes the box is at least 64px tall and grows with its text.",
           "required": false,
           "values": [
             "default",

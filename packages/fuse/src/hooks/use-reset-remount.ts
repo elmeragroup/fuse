@@ -7,27 +7,30 @@ import { hasFocus } from "../internal/active-element";
 import { useFormReset } from "./use-form-reset";
 
 export type ResetRemount = {
-  /** Pass as `key` on the primitive root; it changes once per native reset. */
+  /** The `key` to pass on the primitive root. It changes once per native reset. */
   key: number;
-  /** `true` until the first reset remount; gates `autoFocus` so a remount cannot re-apply it. */
+  /**
+   * Whether the first reset remount has not happened yet. Gate `autoFocus` on it, so a remount
+   * cannot re-apply it.
+   */
   isInitialMount: boolean;
 };
 
 /**
- * Package-private reset-by-remount for composites over a primitive that holds its own
- * uncontrolled value and does not observe native form reset (base-ui). The wrapper remounts
- * the primitive on reset by changing its `key`: that is what discards the committed value and
- * any in-progress text together, and `defaultValue` is read again on the fresh mount, as
- * React's own uncontrolled inputs read it only on mount. `enabled` is the ownership decision:
- * `false` for a controlled value, which is the parent's to keep, so no subscription is made.
+ * The remount key and first-mount flag for a composite over a Base UI primitive that holds its own
+ * uncontrolled value and does not observe native form reset. The hook is package-private. The
+ * wrapper remounts the primitive on reset by changing its `key`. The remount discards the committed
+ * value and any in-progress text together, and the fresh mount reads `defaultValue` again, as React's own
+ * uncontrolled inputs read it only on mount. `enabled` is the ownership decision. It is `false` for
+ * a controlled value, which is the parent's to keep, so the hook makes no subscription.
  *
- * The remount replaces the focused node, so the hook remembers whether the control had focus
- * when reset fired and hands it back in a layout effect on the remount commit — before paint,
- * so the reset never drops focus. Focus is read from the control's own root, not the global
- * document: a document reports only the host for a control inside a shadow root, where the
- * shadow root itself holds the focused element. A reset remount is also a fresh mount from
- * React's point of view: re-applying `autoFocus` there would steal focus back, so callers
- * gate it on `isInitialMount`.
+ * The remount replaces the focused node, so the hook remembers whether the control had focus when
+ * reset fired. It hands focus back in a layout effect on the remount commit, before paint, so the
+ * reset never drops focus. The hook reads focus from the control's own root, not the global
+ * document. A document reports only the host for a control inside a shadow root, where the shadow
+ * root itself holds the focused element. A reset remount is also a fresh mount from React's point of
+ * view. Re-applying `autoFocus` there would steal focus back, so callers gate it on
+ * `isInitialMount`.
  */
 export function useResetRemount(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,

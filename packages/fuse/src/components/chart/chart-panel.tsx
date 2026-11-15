@@ -74,7 +74,7 @@ function splitStackError(config: ChartConfig, keys: readonly string[]): ChartCom
  * x axis goes in the last Panel. A Panel under `orientation="horizontal"` throws `horizontal-panels`.
  * The Panels align their plots through CSS subgrid, so each takes the widest value axis and every
  * slot lands on the same pixels in every Panel. Each Panel's plot is `--chart-plot-height` tall,
- * 12.5rem by default, which Root or the Panel can set. A Root stacks any number of Panels in
+ * which Root or the Panel can set, and defaults to 12.5rem. A Root stacks any number of Panels in
  * source order.
  *
  * @beta

@@ -17,14 +17,14 @@ import { selectContentVariants, selectTriggerVariants } from "./select-variants"
 
 const selectContentSlots = selectContentVariants();
 
-/** Holds the Select's value and open state. Its parts go inside it. */
+/** The root that holds the Select's value and open state. Its parts go inside it. */
 export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
 ): ReactElement {
   return <SelectPrimitive.Root {...props} />;
 }
 
-/** The props of {@link SelectTrigger}. */
+/** Props for {@link SelectTrigger}. */
 export type SelectTriggerProps = ComponentProps<typeof SelectPrimitive.Trigger> & {
   /**
    * The trigger's control size, emitted as `data-size`. `default` is the md control size, and
@@ -67,17 +67,17 @@ export function SelectValue({
   );
 }
 
-/** The props of {@link SelectContent}. */
+/** Props for {@link SelectContent}. */
 export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof SelectPrimitive.Positioner>> & {
     /**
-     * Places the popup over the trigger, with the selected item on the trigger's value, as macOS
-     * menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance
+     * Whether the popup opens over the trigger, with the selected item on the trigger's value, as
+     * macOS menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance
      * animation. It does not apply to touch input, and it turns off when the popup does not fit.
      * The popup then opens on `side`. Pass `false` to open beside the trigger on `side` and `align`
      * every time.
      *
-     * Item alignment places the popup in viewport coordinates (a Base UI 1.8 limitation). When
+     * Item alignment places the popup in viewport coordinates, a Base UI 1.8 limitation. When
      * the portal target, or one of its ancestors, is the containing block for fixed-position
      * content, such as a transformed or `contain: paint` scope, pass `false` so the popup opens
      * beside its trigger instead of off by the scope's offset.

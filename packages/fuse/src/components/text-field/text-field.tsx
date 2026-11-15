@@ -8,7 +8,7 @@ import { Input } from "../input/input";
 import type { InputProps } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
 
-/** The props of {@link TextField}. */
+/** Props for {@link TextField}. */
 export type TextFieldProps = {
   /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
@@ -30,32 +30,32 @@ export type TextFieldProps = {
   name?: string;
   /** The input's placeholder text. */
   placeholder?: string;
-  /** Hides the whole field and the input. */
+  /** Whether the whole field and the input are hidden. */
   hidden?: boolean;
-  /** Makes the input read-only, with the muted read-only fill. */
+  /** Whether the input is read-only, with the muted read-only fill. */
   isReadOnly?: boolean;
-  /** Disables the field and the input. */
+  /** Whether the field and the input are disabled. */
   isDisabled?: boolean;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field is marked invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Makes the input required, so the browser's constraint check blocks an empty submit. */
+  /** Whether the input is required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
-  /** Shows a spinner at the end of the label row. The row shows even without `label`. */
+  /** Whether a spinner shows at the end of the label row. The row shows even without `label`. */
   isPending?: boolean;
   /**
-   * Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows
-   * even without `label`.
+   * Whether a check shows at the end of the label row, in place of the `isPending` spinner. The row
+   * shows even without `label`.
    */
   isSuccess?: boolean;
   /** An icon at the input's end. Mark it `aria-hidden` when it only decorates. */
   icon?: ReactNode;
   /**
-   * Keeps digits only, forwarded to the inner `Input`. Only digits reach `onChange`. It sets
-   * `inputMode="numeric"` unless you pass `inputMode`. `maxLength` counts digits when the browser
-   * sends a cancelable `beforeinput` on a type with a selection API, so a pasted `912 34 567` fits
-   * `maxLength={8}` whole. Under `type="email"`, and for autofill that sends no cancelable
-   * `beforeinput`, the browser cuts the text to `maxLength` first. There a pasted `912 34 567`
-   * becomes `912345`. Input's `filter` lists the types and paths.
+   * The input filter, forwarded to the inner `Input`. `"numeric"` keeps digits only, so only digits
+   * reach `onChange`. It sets `inputMode="numeric"` unless `inputMode` is passed. `maxLength`
+   * counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API,
+   * so a pasted `912 34 567` fits `maxLength={8}` whole. Under `type="email"`, and for autofill that
+   * sends no cancelable `beforeinput`, the browser cuts the text to `maxLength` first. There a
+   * pasted `912 34 567` becomes `912345`. Input's `filter` lists the types and paths.
    */
   filter?: InputProps["filter"];
   /**

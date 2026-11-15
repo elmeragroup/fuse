@@ -3,50 +3,51 @@ import type { ColorSchemeBootstrapManifest, UseColorSchemeResult } from "./color
 import type { ColorSchemePlatform } from "./color-scheme-platform";
 import type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 
-/** The bootstrap manifest plus the two runtime-only knobs, under the manifest's field names. */
+/** The bootstrap manifest plus the two runtime-only options, under the manifest's field names. */
 export type ColorSchemeRuntimeConfig = ColorSchemeBootstrapManifest & {
-  /** Suppress CSS transitions for every root write the runtime makes. */
+  /** Whether the runtime suppresses CSS transitions for every root write it makes. */
   disableTransitionOnChange: boolean;
   /** The CSP nonce for the transition-suppression style. */
   nonce: string | undefined;
 };
 
-/** A ready-made `useColorScheme` value: stable identity between changes, stable setter. */
+/** A ready-made `useColorScheme` value. Its identity is stable between changes, and its setter is stable. */
 type ColorSchemeRuntimeSnapshot = UseColorSchemeResult;
 
 /**
- * The document's color-scheme state machine. It owns hydration, the platform subscriptions,
- * the force stack and every `data-theme` write; callers only configure, connect and force.
+ * The document's color-scheme state machine. It runs hydration, the platform subscriptions, the
+ * force stack and every `data-theme` write. Callers only configure, connect and force.
  */
 export type ColorSchemeRuntime = {
-  /** Registers a `useSyncExternalStore` listener; returns its unsubscribe. */
+  /** Registers a `useSyncExternalStore` listener and returns its unsubscribe. */
   subscribe: (listener: () => void) => () => void;
   /** The current snapshot. Makes no platform call and allocates nothing. */
   getSnapshot: () => ColorSchemeRuntimeSnapshot;
   /**
-   * The hydration snapshot: what the server rendered, which is the initial config's default
-   * with no resolution, whatever the platform holds or a later `configure` sets. A consumer can
-   * hydrate after `connect`, for example inside a boundary that streamed in later from the same
-   * server render, so this must not be the live snapshot. One identity; no platform call.
+   * The hydration snapshot, which is what the server rendered. It is the initial config's default
+   * with no resolution, whatever the platform stores or a later `configure` sets. A consumer can
+   * hydrate after `connect`, such as inside a boundary that streamed in later from the same server
+   * render, so this cannot be the live snapshot. It keeps one identity and makes no platform call.
    */
   getServerSnapshot: () => ColorSchemeRuntimeSnapshot;
   /**
-   * Commits a config. Call it in an insertion effect on every commit: a field-equal config
-   * changes nothing observable but still corrects an externally overwritten root. A changed
-   * config refreshes the snapshot at once, notifies after a microtask, and while connected
+   * Commits a config. Call it in an insertion effect on every commit. A field-equal config changes
+   * nothing observable but still corrects an externally overwritten root. A changed config
+   * refreshes the snapshot at once and notifies after a microtask. While connected, it also
    * re-reads the preference or the media query it depends on.
    */
   configure: (config: ColorSchemeRuntimeConfig) => void;
   /**
-   * Hydrates from the platform, subscribes to storage and (with system support) media, and
-   * corrects the root. Returns an idempotent disconnect that only unsubscribes; the hydrated
-   * state stays, so StrictMode's connect, disconnect, connect makes no extra write.
+   * Hydrates from the platform, subscribes to storage, subscribes to the media query when the
+   * config enables system, and corrects the root. Returns an idempotent disconnect that only
+   * unsubscribes. The hydrated state stays, so the StrictMode sequence of connect, disconnect and
+   * connect makes no extra write.
    */
   connect: () => () => void;
   /**
-   * Applies a force at a nesting depth: the deepest wins, and the latest at equal depth.
-   * Runtime forces beat `forcedColorScheme`, which beats the preference. Safe before the
-   * first `configure`. Returns an idempotent release.
+   * Applies a force at a nesting depth. The deepest force wins, and at equal depth the latest wins.
+   * Runtime forces beat `forcedColorScheme`, which beats the preference. It is safe to call before
+   * the first `configure`. Returns an idempotent release.
    */
   force: (value: ColorScheme, depth: number) => () => void;
 };
@@ -56,9 +57,9 @@ type ForceEntry = { readonly value: ColorScheme; readonly depth: number };
 type Subscriptions = { readonly storage: () => void; readonly media: () => void };
 
 /**
- * Before `connect` the preference is the configured default unless `setColorScheme` made it
- * explicit, and `prefersDark` is read lazily for a forced "system". Each `connect` starts a
- * fresh hydrated lifecycle whose `subscriptions` are `undefined` once disconnected; its
+ * Before `connect`, the preference is the configured default unless `setColorScheme` made it
+ * explicit, and the runtime reads `prefersDark` lazily for a forced `"system"`. Each `connect`
+ * starts a fresh hydrated lifecycle whose `subscriptions` are `undefined` once disconnected. Its
  * disconnect acts only while that object is still current.
  */
 type Lifecycle =
@@ -86,10 +87,10 @@ function configsEqual(left: ColorSchemeRuntimeConfig, right: ColorSchemeRuntimeC
 }
 
 /**
- * Creates the runtime. Construction makes no platform call, so it is safe during a server
- * render, a StrictMode double render and a discarded state initializer.
+ * Creates the runtime. Construction makes no platform call, so it is safe during a server render, a
+ * StrictMode double render and a discarded state initializer.
  *
- * @param initialConfig - Stands in until the first `configure`, so an early `force` already
+ * @param initialConfig - The config to use until the first `configure`, so an early `force` already
  *   writes with the right `forcedColorScheme` and nonce.
  * @param platform - The port the runtime reads and writes through.
  * @returns The runtime.

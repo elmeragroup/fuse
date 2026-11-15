@@ -75,7 +75,7 @@ export const selectTriggerVariants = tv({
  *   the trigger and at least 144px, scrolls within the available height, and skips its entrance
  *   animation while it aligns the selected item with the trigger.
  * - `item` is the shared menu row with room for the trailing check, highlighted on `focus:`, which
- *   recolours its descendants. Its last span child, the indicator, lays out its glyph.
+ *   recolors its descendants. Its last span child, the indicator, lays out its glyph.
  * - `itemText` fills the row on one line.
  * - `itemIndicator` is the shared trailing check slot at 16px.
  * - `group` is the Select group shell, which pads its rows, and keeps a 4px scroll margin.

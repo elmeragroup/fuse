@@ -1,7 +1,7 @@
 /**
  * A linear scale over two values, after d3-scale 4.0.2's `scaleLinear`. Its arithmetic follows
- * d3's own normalise and interpolate steps, and d3's test vectors judge every mapped double. Ticks come
- * from d3-array, the release whose test vectors judge this module.
+ * d3's own normalize and interpolate steps, and d3's test vectors judge every mapped double. Ticks
+ * come from d3-array, the release whose test vectors judge this module.
  */
 import { nice, ticks } from "d3-array";
 
@@ -16,7 +16,7 @@ export type LinearScale = {
 };
 
 /**
- * Build a linear scale.
+ * A linear scale from a domain to a range.
  *
  * @param domain - The two domain ends.
  * @param range - The two range ends.
@@ -31,7 +31,7 @@ export function linearScale(
   return { domain, range, clamp: options.clamp ?? false };
 }
 
-/** d3's normalise step. An empty domain maps every value to the middle of the range. */
+/** d3's normalize step. An empty domain maps every value to the middle of the range. */
 function normalize(a: number, b: number): (x: number) => number {
   const span = b - a;
   if (span !== 0 && !Number.isNaN(span)) return (x) => (x - a) / span;
@@ -59,7 +59,7 @@ function clamper(a: number, b: number): (x: number) => number {
 }
 
 /**
- * Map a value into the range.
+ * A value's position in the range.
  *
  * @param scale - The scale.
  * @param value - The value. NaN maps to NaN.
@@ -71,7 +71,7 @@ export function scaleValue(scale: LinearScale, value: number): number {
 }
 
 /**
- * Map a range position back to a value.
+ * The value at a range position.
  *
  * @param scale - The scale.
  * @param position - The range position.
@@ -83,11 +83,11 @@ export function invertValue(scale: LinearScale, position: number): number {
 }
 
 /**
- * Extend the domain to whole multiples of the tick step, through d3-array's `nice`, which repeats
- * the step search until the step stops changing.
+ * The scale with its domain extended to whole multiples of the tick step, through d3-array's `nice`,
+ * which repeats the step search until the step stops changing.
  *
  * @param scale - The scale.
- * @param count - The tick count the step aims for, 10 by default.
+ * @param count - The tick count the step aims for.
  * @returns A scale with the widened domain, in the domain's original order.
  */
 export function niceScale(scale: LinearScale, count = 10): LinearScale {
@@ -100,7 +100,7 @@ export function niceScale(scale: LinearScale, count = 10): LinearScale {
  * The tick values of the domain, as d3-scale's `ticks` returns them.
  *
  * @param scale - The scale.
- * @param count - The tick count to aim for, 10 by default.
+ * @param count - The tick count to aim for.
  * @returns The ticks in the domain's order.
  */
 export function scaleTicks(scale: LinearScale, count = 10): number[] {

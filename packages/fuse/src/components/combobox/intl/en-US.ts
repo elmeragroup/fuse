@@ -1,6 +1,9 @@
 import type { Variables } from "@internationalized/string";
 
-/** Default localized copy for combobox.empty / combobox.clear / combobox.removeItem / combobox.toggle. */
+/**
+ * Default localized copy for `combobox.empty`, `combobox.clear`, `combobox.removeItem` and
+ * `combobox.toggle`.
+ */
 export const enUS = {
   empty: "No results.",
   clear: "Clear selection",

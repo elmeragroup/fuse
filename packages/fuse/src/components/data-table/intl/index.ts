@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** DataTable's own dictionary: it owns the `dataTable.*` keys. */
+/** DataTable's own dictionary, with the `dataTable.*` keys. */
 export const dataTableStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

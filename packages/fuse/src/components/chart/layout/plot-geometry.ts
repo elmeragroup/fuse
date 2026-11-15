@@ -6,7 +6,7 @@ import { linearScale, scaleValue } from "./linear-scale";
 import type { SlotWindow } from "./slot-window";
 
 /**
- * A slot's centre along the x axis, as a fraction of the plot width. Band slots centre in equal
+ * A slot's center along the x axis, as a fraction of the plot width. Band slots center in equal
  * cells, and point slots run from the first edge to the last.
  *
  * @param window - The effective window.

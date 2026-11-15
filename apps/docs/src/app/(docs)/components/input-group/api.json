@@ -95,7 +95,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. Your own icon components must pass `data-icon` through to the element they render. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
+          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. A custom icon component must pass `data-icon` through to the element it renders. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
           "required": false
         },
         {
@@ -124,7 +124,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -133,7 +133,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -153,7 +153,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -162,7 +162,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -229,7 +229,7 @@
           "type": "\"button\" | \"reset\" | \"submit\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"button\"",
-          "description": "The native button type. It defaults to `button`, so an addon button submits the surrounding form only when you pass `submit`.",
+          "description": "The native button type. An addon button submits the surrounding form only when it is `submit`.",
           "required": false,
           "values": [
             "button",
@@ -243,7 +243,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -282,7 +282,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The input's name when no visible label names it. For a visible label, put the group in a `Field.Root` with a `Field.Label`. The root also marks the input invalid, and the group paints the invalid look from it.",
+          "description": "The input's name when no visible label names it. For a visible label, put the group in a `Field.Root` with a `Field.Label`. The `Field.Root` also marks the input invalid, and the group paints the invalid look from it.",
           "required": false
         },
         {
@@ -291,7 +291,7 @@
           "type": "\"numeric\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Keeps digits only. The input strips every other character, typed, pasted or autofilled, before `onChange` and Field validation read the value. It sets `inputMode=\"numeric\"` unless you pass `inputMode`. Use it with a text-like type, since under `type=\"number\"` it also strips the sign and the decimal separator. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input strips it: under a type without a selection API, such as `email`, and for autofill that sends no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An uncontrolled numeric input restores its `defaultValue` on a native form reset without calling `onChange`.",
+          "description": "Keeps digits only. The input strips every other character, typed, pasted or autofilled, before `onChange` and Field validation read the value. It sets `inputMode=\"numeric\"` when `inputMode` is unset. Use it with a text-like type, since under `type=\"number\"` it also strips the sign and the decimal separator. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API, which is `text`, `tel`, `search`, `url` or `password`. A pasted `912 34 567` then fits `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input strips it. That happens under a type without a selection API, such as `email`, and for autofill that sends no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An uncontrolled numeric input restores its `defaultValue` on a native form reset without calling `onChange`.",
           "required": false
         }
       ]

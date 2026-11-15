@@ -4,8 +4,8 @@
  * one per ring, each on its own chip that starts 4 px right of the spoke, so an area-true scale,
  * which draws outer rings closer together, leaves them less room. A stride of the ticks thins them,
  * and each wider dial keeps every value a narrower one showed. A value shows only clear of its
- * neighbours, of every angle label the dial shows at that width, of the marks at rest and of the
- * hole's centre text.
+ * neighbors, of every angle label the dial shows at that width, of the marks at rest and of the
+ * hole's center text.
  */
 import { LABEL_GAP } from "./polar-labels";
 import { TICK_BUCKETS } from "./tick-fit";
@@ -13,7 +13,7 @@ import { TICK_BUCKETS } from "./tick-fit";
 /** A ring value's line box in CSS pixels, 12 px text on a 16 px line. */
 const LINE = 16;
 
-/** The room every ring value keeps from its neighbour, an angle label and the hole, in CSS pixels. */
+/** The room every ring value keeps from its neighbor, an angle label and the hole, in CSS pixels. */
 const GAP = 2;
 
 /** Where a ring value's chip starts right of the spoke, and the chip's padding either side, in CSS pixels. */
@@ -36,7 +36,7 @@ export type AngleObstacle = {
 };
 
 /**
- * Whether a mark at rest covers a point, given in CSS pixels from the dial's centre, y down, on a
+ * Whether a mark at rest covers a point, given in CSS pixels from the dial's center, y down, on a
  * dial of a radius in CSS pixels.
  */
 export type MarkCover = (x: number, y: number, radius: number) => boolean;
@@ -46,7 +46,7 @@ export type RingAnchor = 0 | 180;
 
 /** What a dial's ring values keep clear of: its angle labels on their rays, the marks and the hole's text. */
 export type RingClearance = {
-  /** The radius, as a share of the dial's, below which a value would cover the hole's centre text. */
+  /** The radius, as a share of the dial's, below which a value would cover the hole's center text. */
   readonly inner: number;
   readonly angles: readonly AngleObstacle[];
   /** The marks at rest, which no value may cover. */
@@ -55,11 +55,11 @@ export type RingClearance = {
   readonly anchor?: RingAnchor;
 };
 
-/** A box in CSS pixels from the dial's centre, y down. */
+/** A box in CSS pixels from the dial's center, y down. */
 type Box = { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number };
 
 /**
- * The narrowest container width, from `TICK_BUCKETS`, at which each ring value shows, or "none".
+ * The narrowest container width, from `TICK_BUCKETS`, at which each ring value shows, or `"none"`.
  *
  * @param rings - Each tick's ring value, in tick order.
  * @param clear - The angle labels and the hole's edge.
@@ -146,7 +146,7 @@ export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): R
 /**
  * The narrowest container width, from `TICK_BUCKETS`, from which a label on a hand, its middle on
  * the hand's ray inside the rim as the hand's label sits, keeps the gap from the hole and
- * its centre text, or "none" where no width does. The label nears the rim as the dial grows, so a
+ * its center text, or `"none"` where no width does. The label nears the rim as the dial grows, so a
  * width it clears at, it clears at every wider one.
  *
  * @param label - Its angle and its box's width in CSS pixels.
@@ -178,12 +178,12 @@ function handBox(label: { readonly angle: number; readonly width: number }, radi
   return { left: x - label.width / 2, right: x + label.width / 2, top: y - LINE / 2, bottom: y + LINE / 2 };
 }
 
-/** How far a box's nearest point lies from the dial's centre, 0 when the box covers it. */
+/** How far a box's nearest point lies from the dial's center, 0 when the box covers it. */
 function nearestPoint(box: Box): number {
   return Math.hypot(Math.max(box.left, Math.min(0, box.right)), Math.max(box.top, Math.min(0, box.bottom)));
 }
 
-/** Whether a mark covers any of a chip's corners, edge middles or centre, the chip grown by the gap. */
+/** Whether a mark covers any of a chip's corners, edge middles or center, the chip grown by the gap. */
 function covered(chip: Box, marks: MarkCover | undefined, radius: number): boolean {
   if (marks === undefined) return false;
   const xs = [chip.left - GAP, (chip.left + chip.right) / 2, chip.right + GAP];

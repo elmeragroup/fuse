@@ -10,14 +10,14 @@ import { commandVariants } from "./command-variants";
 
 const styles = commandVariants();
 
-/** `Command.Footer` takes a native `div`'s props. */
+/** Props for `Command.Footer`, which takes a native `div`'s props. */
 export type CommandFooterProps = ComponentProps<"div">;
-/** `Command.Hint` takes a native `span`'s props. */
+/** Props for `Command.Hint`, which takes a native `span`'s props. */
 export type CommandHintProps = ComponentProps<"span"> & {
   /** The hint's `Kbd` caps, then its label, such as the cap for `↵` and "Open". */
   children?: ReactNode;
 };
-/** `Command.Shortcut` takes `KbdGroup`'s props. */
+/** Props for `Command.Shortcut`, which takes `KbdGroup`'s props. */
 export type CommandShortcutProps = Omit<KbdGroupProps, "children"> & {
   /**
    * The `Kbd` caps of one combination, pressed together. The shortcut is `aria-hidden`, so put
@@ -43,7 +43,10 @@ export function CommandHint({ className, ...props }: CommandHintProps): ReactEle
   return <span data-slot="command-hint" aria-hidden className={cn(styles.hint(), className)} {...props} />;
 }
 
-/** A row's keyboard shortcut at the row's end. It is decorative, so it is `aria-hidden`. It is a server component. */
+/**
+ * A row's keyboard shortcut at the row's end. It is decorative, so it is `aria-hidden`. It is a server
+ * component.
+ */
 export function CommandShortcut({ className, ...props }: CommandShortcutProps): ReactElement {
   return (
     <KbdGroup

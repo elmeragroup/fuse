@@ -17,7 +17,7 @@ export type ReadableCalendarStore<S> = {
   readonly get: () => S;
   /** The state the store was created with, which the server rendered and hydration reads. */
   readonly initial: S;
-  /** Calls `listener` after each change; returns the unsubscribe. */
+  /** Calls `listener` after each change, and returns a function that unsubscribes it. */
   readonly subscribe: (listener: () => void) => () => void;
 };
 
@@ -62,8 +62,8 @@ export function createCalendarStore<S>(initial: S): CalendarStore<S> {
  * One field of a store's state by reference, re-rendering the caller only when that field's
  * reference changes. Taking a key rather than a selector means the snapshot is always a stored
  * reference: a selector that built a new object would never settle, re-rendering until React
- * throws. For a field the store keeps by reference across unrelated changes, such as `visible`,
- * which every write either carries over or replaces when the months change. The server and
+ * throws. Use it for a field the store keeps by reference across unrelated changes, such as
+ * `visible`, which every write either carries over or replaces when the months change. The server and
  * hydration read the initial state, as `useCalendarSelector` does.
  *
  * @template S - The state.

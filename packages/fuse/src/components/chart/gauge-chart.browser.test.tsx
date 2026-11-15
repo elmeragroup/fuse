@@ -40,7 +40,7 @@ const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 1 } as co
 /** The frames a poll waits through the 1160 ms entrance, at 60 frames a second and some to spare. */
 const ENTRANCE_FRAMES = 240;
 
-/** Degrees per kWh on the default 270° sweep over 0–5 kWh. */
+/** Degrees per kWh on the default 270° sweep over 0 to 5 kWh. */
 const PER_KWH = 270 / 5;
 
 /** The needle's angle for a reading, from the sweep's start at −135°. */
@@ -435,7 +435,7 @@ const ALL_MARKS = (
 );
 
 /**
- * How far the needle's written angle and a dot's written centre, each rounded to 3 decimals, may
+ * How far the needle's written angle and a dot's written center, each rounded to 3 decimals, may
  * lie from the value the frame drew, in degrees.
  */
 const WRITTEN = 0.1;

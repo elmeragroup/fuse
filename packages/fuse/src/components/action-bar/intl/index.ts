@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** ActionBar's own dictionary: it owns the `actionBar.*` keys. */
+/** ActionBar's dictionary of the `actionBar.*` keys. */
 export const actionBarStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

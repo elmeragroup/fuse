@@ -42,13 +42,13 @@ type RootElementProps = Omit<
   "defaultValue" | "onChange" | "aria-label" | "aria-labelledby"
 >;
 
-/** `Calendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
+/** Props for `Calendar.Root`. It takes a `div`'s props, Base UI's `render` and the calendar's own. */
 export type CalendarRootProps = RootElementProps &
   CalendarViewProps & {
     /**
-     * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation.
+     * The selected day, when the parent controls it: a `Temporal.PlainDate` from any implementation.
      * A server component cannot pass one, since it reaches the client as ISO text, which the
-     * calendar refuses with a `TypeError`: build the value in a client component. `null` selects
+     * calendar refuses with a `TypeError`. Build the value in a client component. `null` selects
      * nothing.
      *
      * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
@@ -57,14 +57,14 @@ export type CalendarRootProps = RootElementProps &
      */
     value?: Temporal.PlainDate | null;
     /**
-     * The day selected first, when the calendar owns its value. Takes what `value` takes.
+     * The day selected first, when the calendar is uncontrolled. It takes what `value` takes.
      *
      * With neither `value` nor `defaultValue`, the calendar opens on today's month. Only the first
      * client effect reads the clock, so the server and the hydrating render write each month's
      * frame, the weekday row over six weeks of empty days, hidden from assistive technology, and
      * the calendar hydrates without a mismatch. It keeps that height for a six-week month and
-     * shrinks by a row or two for a shorter one. Today is marked from the same effect on, never in
-     * a server render, and the mark moves at midnight.
+     * shrinks by a row or two for a shorter one. The calendar marks today from the same effect on,
+     * never in a server render, and moves the mark at midnight.
      */
     defaultValue?: Temporal.PlainDate | null;
     /**

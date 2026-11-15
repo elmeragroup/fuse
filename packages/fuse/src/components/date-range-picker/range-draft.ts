@@ -56,7 +56,7 @@ export function wholeRange(draft: RangeDraft, kind: ValueKind): WholeRange | nul
 
 /**
  * Whether a picked end still waits for its time, so a range picked in an empty time picker that
- * stays open is held rather than committed.
+ * stays open waits in the draft rather than commits.
  *
  * @param draft - The draft.
  * @returns Whether either end is a picked day without a time.
@@ -87,8 +87,8 @@ function withEnd(draft: RangeDraft, endpoint: Endpoint, next: EndpointDraft): Ra
 }
 
 /**
- * An end's input formed a value, or was cleared: the end becomes that value, whatever it held,
- * a time typed in the popup included, so the end keeps one time.
+ * The draft after an end's input forms a value or clears. The end becomes that value, whatever it
+ * held, a time typed in the popup included, so the end keeps one time.
  *
  * @param draft - The draft.
  * @param endpoint - The end.
@@ -100,8 +100,8 @@ export function editInput(draft: RangeDraft, endpoint: Endpoint, value: Temporal
 }
 
 /**
- * A range picked in the calendar: each end becomes its picked day, keeping the time it had; see
- * `pickEndDay`.
+ * The draft after the calendar picks a range. Each end becomes its picked day and keeps the time
+ * it had; see `pickEndDay`.
  *
  * @param draft - The draft.
  * @param range - The picked days.
@@ -117,7 +117,7 @@ export function pickRange(
 }
 
 /**
- * A time typed in an end's popup time input; see `editEndTime`.
+ * The draft after a time is typed in an end's popup time input; see `editEndTime`.
  *
  * @param draft - The draft.
  * @param endpoint - The end.
@@ -135,7 +135,7 @@ export function editTime(
 }
 
 /**
- * Every segment of an end's popup time input was cleared; see `clearEndTime`.
+ * The draft after every segment of an end's popup time input clears; see `clearEndTime`.
  *
  * @param draft - The draft.
  * @param endpoint - The end.

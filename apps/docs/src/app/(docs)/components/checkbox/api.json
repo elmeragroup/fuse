@@ -288,7 +288,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables every option.",
+          "description": "Whether every option is disabled.",
           "required": false
         },
         {
@@ -297,7 +297,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks the field invalid, so the options show the invalid face.",
+          "description": "Whether the field is invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -306,7 +306,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
+          "description": "Whether the legend is visually hidden. It stays the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
           "required": false
         },
         {
@@ -385,7 +385,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the checkbox. The row paints the card fill (`bg-card`), and a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class. Set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill. The edges and the lines between rows come from the `--selection-*` theme roles, which the Tokens section lists. Set a role on the element that carries the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border: var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the rows keep the edges the theme element resolved.",
+          "description": "Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the checkbox. The row paints the card fill, `bg-card`, and a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the color a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class. Set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill. The edges and the lines between rows come from the `--selection-*` theme roles, which the Tokens section lists. Set a role on the element that carries the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border: var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the rows keep the edges the theme element resolved.",
           "required": false
         },
         {
@@ -425,7 +425,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables the checkbox, which dims to 50%, and shows the disabled row. The row fills with the theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep the card fill with no stripes. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text colour class on the row still wins. A disabled group shows its rows the same way.",
+          "description": "Whether the checkbox is disabled. It dims to 50%, and the row shows as disabled. The row fills with the theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep the card fill with no stripes. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text color class on the row still wins. A disabled group shows its rows the same way.",
           "required": false
         },
         {
@@ -434,7 +434,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the checkbox read-only: it shows its state but a click does not change it.",
+          "description": "Whether the checkbox is read-only. It shows its state, but a click does not change it.",
           "required": false
         },
         {
@@ -443,7 +443,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Lets a click on a SubSection's text, band or side padding toggle the checkbox, while links, buttons, fields and other focusable elements in it keep their own clicks. The checkbox's name stays the label row. Leave it off when the SubSection reveals fields under the checkbox, so a click between those fields does not clear the choice.",
+          "description": "Whether a click on a SubSection's text, band or side padding toggles the checkbox. Links, buttons, fields and other focusable elements in it keep their own clicks. The checkbox's name stays the label row. Leave it off when the SubSection reveals fields under the checkbox, so a click between those fields does not clear the choice.",
           "required": false
         },
         {
@@ -452,7 +452,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the row the group's parent checkbox, which checks and unchecks every member and is indeterminate while some are checked. A parent row sets no `value`.",
+          "description": "Whether the row is the group's parent checkbox, which checks and unchecks every member and is indeterminate while some are checked. A parent row sets no `value`.",
           "required": false
         },
         {
@@ -564,7 +564,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables every option.",
+          "description": "Whether every option is disabled.",
           "required": false
         },
         {
@@ -573,7 +573,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks the field invalid, so the options show the invalid face.",
+          "description": "Whether the field is invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -582,7 +582,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
+          "description": "Whether the legend is visually hidden. It stays the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
           "required": false
         },
         {

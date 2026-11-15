@@ -77,13 +77,14 @@ export type PickerShellContextValue = {
    * with what to call when the picker's value is committed by anything but a preset press.
    */
   readonly registerPresets: PresetRegistration;
-  /** Read a preset's `dateValue` for this picker and bind its commit, reason `"preset-press"`. */
+  /** Reads a preset's `dateValue` for this picker and binds its commit with the reason `"preset-press"`. */
   readonly readPreset: PickerPresetReader;
   /** Whether the picker is a range picker: its parts take the `range` layout. */
   readonly range: boolean;
   /**
-   * An input announces its focus boundary: focus moving from it into the popup is no blur of the
-   * input; `flush` hands the input its deferred blur once focus lands outside it and the popup.
+   * Registers an input's focus boundary and returns its unregistration. Focus moving from the input
+   * into the popup is no blur of the input; `flush` hands the input its deferred blur once focus
+   * lands outside it and the popup.
    */
   readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
   /** Whether a node is inside one of this picker's inputs. */
@@ -123,7 +124,7 @@ export type PresetRegistry = {
   readonly hasPresets: boolean;
   /** The callback a pane announces itself with; see `PickerShellContextValue.registerPresets`. */
   readonly registerPresets: PresetRegistration;
-  /** Tell every pane the picker's value was committed by something other than a preset press. */
+  /** Tells every pane that something other than a preset press committed the picker's value. */
   readonly valueCommitted: () => void;
 };
 
@@ -204,7 +205,7 @@ export const NO_STATE = {};
 // the private `PickerState`, and keeps each field's documentation.
 export type DatePickerGroupState = { readonly [K in keyof PickerState]: PickerState[K] };
 
-/** `DatePicker.Group` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `DatePicker.Group`: a `div`'s props plus Base UI's `render`. */
 export type DatePickerGroupProps = Omit<
   useRender.ComponentProps<"div", DatePickerGroupState>,
   "className"
@@ -216,7 +217,7 @@ export type DatePickerGroupProps = Omit<
 /**
  * The field box around the inputs and the trigger: a `group` named by the picker's label and
  * described by its description and error, written `data-slot="field-group"`. Alt+ArrowDown in it
- * opens the popup (`reason: "keyboard"`), before the segment under focus sees the key.
+ * opens the popup with `reason: "keyboard"`, before the segment under focus sees the key.
  */
 export function DatePickerGroup({ className, render, ...props }: DatePickerGroupProps): ReactElement {
   const shell = usePickerShellContext("DatePicker.Group");
@@ -264,15 +265,15 @@ export function DatePickerGroup({ className, render, ...props }: DatePickerGroup
 }
 
 /**
- * `DatePicker.Trigger` takes Button's props without its name and size: the trigger is an icon
+ * Props for `DatePicker.Trigger`: Button's props without its name and size. The trigger is an icon
  * button named "Calendar" and the picker's label, sized to the field box.
  */
 export type DatePickerTriggerProps = Omit<LabelButtonProps, "size" | "aria-label" | "aria-labelledby">;
 
 /**
- * The calendar button inside the group. It opens the popup (`reason: "trigger-press"`) and is
- * named "Calendar" plus the picker's label ("Calendar Start date"), as React Aria names its button,
- * with `aria-haspopup="dialog"`. Its own `disabled`, or a disabled or read-only picker, disables it.
+ * The calendar button inside the group. It opens the popup with `reason: "trigger-press"`. It is
+ * named "Calendar" plus the picker's label, such as "Calendar Start date", as React Aria names its
+ * button, with `aria-haspopup="dialog"`. Its own `disabled`, or a disabled or read-only picker, disables it.
  */
 export function DatePickerTrigger({
   className,
@@ -323,7 +324,7 @@ export function DatePickerTrigger({
   );
 }
 
-/** `DatePicker.Popup` takes Popover's content props. */
+/** Props for `DatePicker.Popup`: Popover's content props. */
 export type DatePickerPopupProps = PopoverContentProps;
 
 /** The tab-stop day inside the popup, which takes focus when it opens. */
@@ -332,8 +333,8 @@ function tabStopDay(popup: HTMLElement | null): HTMLElement | null {
 }
 
 /**
- * The popup the trigger opens: a Popover `dialog` named as the trigger is ("Calendar Start date",
- * as React Aria's dialog is). Opening moves focus to the calendar's focused day, the selected one
+ * The popup the trigger opens: a Popover `dialog` named as the trigger is, such as "Calendar Start
+ * date", as React Aria's dialog is. Opening moves focus to the calendar's focused day, the selected one
  * or today; closing returns it to the segment it opened from, or to the trigger. Focus inside it
  * does not leave the picker.
  */
@@ -382,7 +383,7 @@ type PresetsContextValue = {
 
 const PresetsContext = createContext<PresetsContextValue | undefined>(undefined);
 
-/** `DatePicker.Presets` takes a `div`'s props, Base UI's `render` and the pane's own. */
+/** Props for `DatePicker.Presets`: a `div`'s props, Base UI's `render` and the pane's own. */
 export type DatePickerPresetsProps = Omit<useRender.ComponentProps<"div">, "defaultValue" | "onChange"> & {
   /**
    * The `DatePicker.PresetItem`s. Each is a native radio inside its label, so the whole row is the
@@ -390,8 +391,8 @@ export type DatePickerPresetsProps = Omit<useRender.ComponentProps<"div">, "defa
    */
   children?: useRender.ComponentProps<"div">["children"];
   /**
-   * The checked preset's value, when the parent owns it. `null` checks none. Clear it yourself, in
-   * the picker's `onValueChange`, when the value changes any other way.
+   * The checked preset's value, when the parent owns it. `null` checks none. Clear it in the
+   * picker's `onValueChange` when the value changes any other way.
    */
   value?: string | null;
   /**
@@ -493,7 +494,7 @@ export type DatePickerPresetItemState = {
   readonly disabled: boolean;
 };
 
-/** `DatePicker.PresetItem` takes a `label`'s props, Base UI's `render` and the preset's own. */
+/** Props for `DatePicker.PresetItem`: a `label`'s props, Base UI's `render` and the preset's own. */
 export type DatePickerPresetItemProps = Omit<
   useRender.ComponentProps<"label", DatePickerPresetItemState>,
   "children" | "className"
@@ -508,11 +509,11 @@ export type DatePickerPresetItemProps = Omit<
    * activation commits it through the picker's `onValueChange` with the reason `"preset-press"`: a
    * press, Space or Enter, also on the preset already checked, so it applies again after a day
    * picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs
-   * first, and canceling it refuses the whole press (the value and the checked preset stay, and
-   * the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next,
+   * first, and canceling it refuses the whole press: the value and the checked preset stay, and
+   * the pane's `onValueChange` is not called. For a preset not yet checked, the pane's runs next,
    * and canceling it keeps the checked preset but not the value, already committed. Which preset is
    * checked is the pane's key alone, never a match of dates: a pane that owns its key clears it
-   * when the picker's value is committed any other way (a day, typing, a time, a form reset), and
+   * when the picker's value is committed any other way, by a day, typing, a time or a form reset, and
    * a key the parent controls is the parent's to clear. Without it the preset is
    * only a key, which the pane's `onValueChange` maps to a value. Build it in a client component.
    * A value of another kind than the picker's, a range in `DatePicker.Root` or one value in
@@ -522,8 +523,8 @@ export type DatePickerPresetItemProps = Omit<
   /** Whether it does not respond. */
   disabled?: boolean;
   /**
-   * Closes the popup on double-click (`reason: "preset-press"`), after the item's own
-   * `onDoubleClick`. A pointer shortcut: a click or Space selects without closing.
+   * Whether a double-click closes the popup, with `reason: "preset-press"`, after the item's own
+   * `onDoubleClick`. It is a pointer shortcut. A click or Space selects without closing.
    */
   closeOnDoubleClick?: boolean;
   /** The visible name, which names the radio. */

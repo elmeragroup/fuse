@@ -164,7 +164,7 @@
           "type": "\"default\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The list style. `default` sits the tabs on a muted track and fills the active one. `line` draws no track and marks the active tab with a line.",
+          "description": "The list style. `default` places the tabs on a muted track and fills the active one. `line` draws no track and marks the active tab with a line.",
           "required": false,
           "values": [
             "default",

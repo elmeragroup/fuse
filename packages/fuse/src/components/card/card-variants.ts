@@ -12,15 +12,15 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * PUBLIC slot recipe. `text-field`'s `card` variant and
+ * The public slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/fuse/card`.
  * The base draws its edge in `--card-border` and casts a `shadow-xs` in `--card-shadow`, both of
  * which branded themes make transparent. Both composers pin `border-border` and `shadow-xs` over
  * them, because a field box and a control keep a visible edge and elevation. The shadow is one
- * utility, so a consumer shadow size class replaces it whole, and a shadow colour class tints it.
+ * utility, so a consumer shadow size class replaces it whole, and a shadow color class tints it.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
- * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
+ * Fuse splits the external reference's surface and padding axes into `direction` and `size`.
  * `size` sets the card's surface tier on the base as `--card-pad`: the medium tier,
  * `--surface-pad-md`, by default and the large tier, `--surface-pad-lg`, at `lg`. Sections pad
  * with it, and a content or footer below another section drops its top padding, so the tier is

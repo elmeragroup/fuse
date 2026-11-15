@@ -26,7 +26,7 @@ const SPEED_WEIGHT = 0.5;
  * A pointer's next tracked position at an event's time stamp, with the speed of its recent moves.
  * A move of another pointer type, or at no later time, starts the speed over at 0.
  *
- * @param last - The pointer as last tracked, or null before its first move.
+ * @param last - The pointer as last tracked, or `null` before its first move.
  * @param x - The client x, in CSS pixels.
  * @param y - The client y, in CSS pixels.
  * @param type - The event's pointer type.

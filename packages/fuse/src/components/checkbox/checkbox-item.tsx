@@ -13,23 +13,23 @@ import { Checkbox } from "./checkbox";
 
 type CheckboxItemBaseProps = SelectionItemRootProps & {
   /**
-   * Disables the checkbox, which dims to 50%, and shows the disabled row. The row fills with the
-   * theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and
-   * shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep
+   * Whether the checkbox is disabled. It dims to 50%, and the row shows as disabled. The row fills
+   * with the theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes,
+   * and shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep
    * the card fill with no stripes. The row's text, its SubSection's included, takes
    * `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text
-   * colour class on the row still wins. A disabled group shows its rows the same way.
+   * color class on the row still wins. A disabled group shows its rows the same way.
    */
   isDisabled?: boolean;
-  /** Makes the checkbox read-only: it shows its state but a click does not change it. */
+  /** Whether the checkbox is read-only. It shows its state, but a click does not change it. */
   isReadOnly?: boolean;
   /** Where the checkbox sits in the row: before the content, or after it at `end`. */
   controlPosition?: "start" | "end";
   /**
    * Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that
-   * inset beside the label row toggles the checkbox. The row paints the card fill (`bg-card`),
+   * inset beside the label row toggles the checkbox. The row paints the card fill, `bg-card`,
    * and a background class such as `bg-background` replaces it.
-   * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
+   * The row states its fill as `--surface`, the color a chart's cut-outs paint, so a row that
    * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
    * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
@@ -44,7 +44,7 @@ type CheckboxItemBaseProps = SelectionItemRootProps & {
    */
   className?: string;
   /**
-   * Lets a click on a SubSection's text, band or side padding toggle the checkbox, while links,
+   * Whether a click on a SubSection's text, band or side padding toggles the checkbox. Links,
    * buttons, fields and other focusable elements in it keep their own clicks. The checkbox's
    * name stays the label row. Leave it off when the SubSection reveals fields under the
    * checkbox, so a click between those fields does not clear the choice.
@@ -71,14 +71,14 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
         /** The value the row adds to the group's selection. Every row but a `parent` needs one. */
         value: string;
         /**
-         * Makes the row the group's parent checkbox, which checks and unchecks every member
+         * Whether the row is the group's parent checkbox, which checks and unchecks every member
          * and is indeterminate while some are checked. A parent row sets no `value`.
          */
         parent?: false;
       }
     | {
         /**
-         * Makes the row the group's parent checkbox, which checks and unchecks every member
+         * Whether the row is the group's parent checkbox, which checks and unchecks every member
          * and is indeterminate while some are checked. A parent row sets no `value`.
          */
         parent: true;
@@ -90,7 +90,7 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
 /**
  * A labeled checkbox row built on `SelectionItem.Shell`. A server component can render it. The
  * parts `Title`, `Description`, `Content`, `Actions` and `SubSection` are the same objects as
- * `SelectionItem`'s, so the row recognises either spelling. Other attributes, such as `id`,
+ * `SelectionItem`'s, so the row recognizes either spelling. Other attributes, such as `id`,
  * `data-testid` or a `data-*` hook, land on the row's `Field.Item` root, the element that
  * carries the row's `data-slot`.
  */

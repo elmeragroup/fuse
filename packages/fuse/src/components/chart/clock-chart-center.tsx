@@ -29,8 +29,8 @@ import { assertKnownKey } from "./layout/errors";
  */
 export type ClockChartCenterProps = ChartLayerProps & {
   /**
-   * The hole's content, such as an `ActiveValue` over a label. The first series' value at the active
-   * slot, or at `now`, over the slot's label is the default.
+   * The hole's content, such as an `ActiveValue` over a label. Defaults to the first series' value at
+   * the active slot, or at `now`, over the slot's label.
    */
   children?: ReactNode;
 };
@@ -45,7 +45,7 @@ export type ClockChartActiveValueProps = ChartLayerProps & {
   dataKey: string;
   /** The datum to print when nothing is active. */
   fallback?: ChartFallback;
-  /** The value format. The series' config `format` is the default. */
+  /** The value format. Defaults to the series' config `format`. */
   format?: ValueFormat;
 };
 
@@ -117,9 +117,9 @@ function DefaultCentre({ clock }: { readonly clock: ClockDrawing }): ReactElemen
 }
 
 /**
- * The text in the dial's hole: its children sit in the square inscribed in the hole. The first
- * series' value at the active slot, or at `now`, over the slot's label is the default. Its text never
- * shrinks below 12 px: when the lines overflow the square it drops every line but the value, and
+ * The text in the dial's hole. Its children sit in the square inscribed in the hole. They default to
+ * the first series' value at the active slot, or at `now`, over the slot's label. Its text never
+ * shrinks below 12 px. When the lines overflow the square, it drops every line but the value, and
  * then the value.
  *
  * @beta

@@ -1,5 +1,5 @@
 /**
- * PUBLIC recipe. Extends `textVariants` and changes only the `leading` default, to `snug`
+ * The public recipe. It extends `textVariants` and changes only the `leading` default, to `snug`
  * for inline use. `size` is a type-scale axis, not a control size.
  *
  * Internal composition imports `textVariants` from the Text recipe module, not from a shared

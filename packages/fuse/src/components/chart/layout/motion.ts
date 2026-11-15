@@ -1,13 +1,14 @@
 /**
  * The chart motion tokens. The rAF tween of `chart-motion.ts` moves marks on them, and `chart.css`
- * mirrors the duration and the curve for the opacity fade of a mark that an update adds, so a
- * change here changes `--chart-update` and `--chart-ease` there too. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
+ * mirrors the duration and the curve for the opacity fade of a mark that an update adds. A change
+ * here changes `--chart-update` and `--chart-ease` there too. The values follow
+ * `.scratch/charts-v1/reviews/motion-decision.md`.
  */
 import { cubicBezier } from "./ease";
 import type { BezierCurve } from "./ease";
 import type { Spring } from "./spring";
 
-/** How long a data update moves a mark, in milliseconds. `--chart-update` in `chart.css`. */
+/** How long a data update moves a mark, in milliseconds. `chart.css` mirrors it as `--chart-update`. */
 export const CHART_UPDATE_MS = 480;
 
 /** The control values of every data update and of the entrance. */
@@ -15,14 +16,14 @@ export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
 
 const updateEase = cubicBezier(CHART_UPDATE_CURVE);
 
-/** A glide's value at a time: `from` before its start, `to` exactly from its end on. */
+/** A glide's value at a time. It is `from` before its start and exactly `to` from its end on. */
 function tween(ease: (progress: number) => number, from: number, to: number, progress: number): number {
   const share = ease(Math.max(0, Math.min(1, progress)));
   return share >= 1 ? to : from + (to - from) * share;
 }
 
 /**
- * A value on a data update's glide: from one value to another over `CHART_UPDATE_MS`, on
+ * A value on a data update's glide from one value to another over `CHART_UPDATE_MS`, on
  * `CHART_UPDATE_CURVE`, sampled at a time. Before the start it shows `from`, and from the end on
  * it shows `to` exactly.
  *
@@ -55,7 +56,7 @@ export const LIVE_CONTRACT_MS = 900;
 const liveEase = cubicBezier(LIVE_UPDATE_CURVE);
 
 /**
- * A value on a live line chart's glide: from one value to another over a duration, on
+ * A value on a live line chart's glide from one value to another over a duration, on
  * `LIVE_UPDATE_CURVE`, sampled at a time. Before the start it shows `from`, and from the end on it
  * shows `to` exactly.
  *
@@ -85,14 +86,14 @@ export const CHART_CROSSFADE_MS = 150;
 /**
  * The chart's springs, mass 1, which `springEasing` samples into CSS `linear()` easings for the
  * glides that follow the pointer. `follow` is the tooltip dot's spring, which the line crosshair
- * and the active dots share on each step: a slow pointer takes it as it is, a faster pointer
- * stiffens it, `FOLLOW_FASTEST` at most, and a keyboard step takes `FOLLOW_FASTEST`. `glide` moves the tooltip, whose duration is
- * `--chart-glide` in `chart.css`, and keeps its softer spring at every speed. `ticker` moves
- * Chart.SlotLabel's pill and its rolling parts and a pie's centre digits. `pop` moves the active
- * slice out along its bisector and scales the active ring. `grow` scales a ring's track or a
- * radar's ring out as the entrance starts, and `extend` grows a radar's spokes. A polar Root's hand
- * and dots turn on the follow springs too, through its angle follower. Each glide starts from what the mark shows, so a step
- * mid-glide retargets it.
+ * and the active dots share on each step. A slow pointer takes it as it is, a faster pointer
+ * stiffens it, `FOLLOW_FASTEST` at most, and a keyboard step takes `FOLLOW_FASTEST`. `glide` moves
+ * the tooltip, whose duration is `--chart-glide` in `chart.css`, and keeps its softer spring at
+ * every speed. `ticker` moves `Chart.SlotLabel`'s pill and its rolling parts and a pie's center
+ * digits. `pop` moves the active slice out along its bisector and scales the active ring. `grow`
+ * scales a ring's track or a radar's ring out as the entrance starts, and `extend` grows a radar's
+ * spokes. A polar Root's hand and dots turn on the follow springs too, through its angle follower.
+ * Each glide starts from what the mark shows, so a step mid-glide retargets it.
  */
 export const CHART_SPRINGS = {
   follow: { stiffness: 300, damping: 30 },
@@ -111,16 +112,16 @@ export const CHART_SPRINGS = {
 export const FOLLOW_FASTEST = 5300;
 
 /**
- * The pointer speeds, in CSS pixels per millisecond, between which the follow spring stiffens: at
+ * The pointer speeds, in CSS pixels per millisecond, between which the follow spring stiffens. At
  * the slower one or below it is `follow` itself, and at the faster one or above it is
  * `FOLLOW_FASTEST`. Between them its natural frequency, the square root of its stiffness, grows in
- * step with the speed, so its settling time shrinks smoothly. A slow scrub crosses a 600 px plot in
+ * step with the speed, so its settling time shrinks without a jump. A slow scrub crosses a 600 px plot in
  * about two seconds, and a flick in a fifth of one.
  */
 export const FOLLOW_SPEEDS = { slow: 0.3, fast: 3 } as const;
 
 /**
- * How many springs the speeds map onto, `follow` and `FOLLOW_FASTEST` included. Each one is sampled
- * into its easing once per page, and a step takes the one nearest its speed.
+ * How many springs the speeds map onto, `follow` and `FOLLOW_FASTEST` included. `springEasing`
+ * samples each one into its easing once per page, and a step takes the one nearest its speed.
  */
 export const FOLLOW_LEVELS = 6;

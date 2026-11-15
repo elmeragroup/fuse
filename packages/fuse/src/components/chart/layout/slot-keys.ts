@@ -51,7 +51,7 @@ function sameGrid(previous: XDomain, next: XDomain): boolean {
 }
 
 /**
- * Key every slot of a new domain against the keys of the previous one.
+ * Keys every slot of a new domain against the keys of the previous one.
  *
  * @param previous - The keys the marks rendered under last, or null on the first render.
  * @param domain - The new domain.

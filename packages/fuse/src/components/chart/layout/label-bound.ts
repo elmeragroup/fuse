@@ -1,17 +1,17 @@
 /**
- * A label's width bound: the widest it draws at the 12 px label size in any common sans. A polar
- * dial's ring values fit beside its angle labels by it, since the page, not Fuse, picks the font,
- * and a fit by Roboto's widths alone lets a wider face collide. Like `label-width.ts`, it measures
- * nothing in the browser, so the server and every engine show the same values.
+ * A label's width bound, the widest the label draws at the 12 px label size in any common sans. A
+ * polar dial fits its ring values beside its angle labels by this bound. The page, not Fuse, picks
+ * the font, so a fit by Roboto's widths alone lets a wider face collide. Like `label-width.ts`, it
+ * measures nothing in the browser, so the server and every engine show the same values.
  */
 import { CHARACTERS } from "./label-width";
 
 /**
- * The widest each character of {@link CHARACTERS} draws at 12 px, in whole pixels: its advance in
- * Roboto or Inter, the brands' faces, or in DejaVu Sans or Liberation Sans, the widest common
- * fallback and Arial's metrics, as its default glyph or its tabular figure, whichever is widest,
- * rounded up. An engine that snaps advances to whole pixels, as Chromium on Linux does for web
- * fonts, draws no glyph wider. A test compares them with each face's `hmtx` table.
+ * The widest each character of {@link CHARACTERS} draws at 12 px, in whole pixels. Each value is the
+ * character's widest advance, rounded up, across Roboto and Inter, the brands' faces, and DejaVu Sans
+ * and Liberation Sans, the widest common fallback and Arial's metrics. It counts both the default
+ * glyph and the tabular figure. An engine that snaps advances to whole pixels, as Chromium on Linux
+ * does for web fonts, draws no glyph wider. A test compares them with each face's `hmtx` table.
  */
 const BOUNDS = [
   4, 5, 6, 11, 8, 12, 10, 4, 5, 5, 8, 11, 4, 8, 4, 5, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 5, 5, 11, 11, 11, 7, 13,
@@ -32,7 +32,7 @@ for (const character of CHARACTERS) {
 }
 
 /**
- * Bound a label's width at 12 px: the widest it draws in Roboto, Inter, DejaVu Sans or Liberation
+ * A label's width bound at 12 px, the widest it draws in Roboto, Inter, DejaVu Sans or Liberation
  * Sans, with default or tabular figures, each glyph rounded up to a whole pixel. A character the
  * table lacks counts as the widest digit.
  *

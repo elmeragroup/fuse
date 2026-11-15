@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The Track: the unfilled sweep behind a gauge pie, with the Pie's corners, or behind each ring,
- * with the ring's caps. It has a module of its own, so a pie's centre ships no ring code.
+ * The Track, which is the unfilled sweep behind a gauge pie, with the Pie's corners, or behind each
+ * ring, with the ring's caps. It has a module of its own, so a pie's center ships no ring code.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -95,10 +95,10 @@ function RingTrack({
 }
 
 /**
- * The unfilled sweep: behind a gauge pie, the whole sweep from `startAngle` to `endAngle`, with
- * the Pie's `cornerRadius`, which the slices fill only to their total's share of `max`; behind each
- * ring, its whole sweep with the ring's caps. It draws at once, before the marks' entrance, and a
- * ring's track scales out from the centre as the chart comes into view.
+ * The unfilled sweep. Behind a gauge pie it is the whole sweep from `startAngle` to `endAngle`, with
+ * the Pie's `cornerRadius`, which the slices fill only to their total's share of `max`. Behind each
+ * ring it is the ring's whole sweep with the ring's caps. It draws at once, before the marks'
+ * entrance, and a ring's track scales out from the center as the chart comes into view.
  *
  * @beta
  */

@@ -44,17 +44,17 @@ export type RadialChartRootProps<
   ChartSelectionProps<keyof TConfig & string> & {
     /**
      * The rows, one per ring, the first outermost. Sort rings in one unit largest first, so the
-     * longest arc holds the largest value. A negative value throws `negative-polar-value`. Each ring fills its value's share of its
-     * maximum and never laps. A value past its maximum fills the whole sweep and sets
-     * `data-over-max` on its ring, and the centre, the tooltip and the table keep the true share. A
-     * data update morphs each ring to its new value, and every value above 0 keeps at least one
-     * device pixel of arc. With no reading the chart shows `Empty` and has no tab stop.
+     * longest arc holds the largest value. A negative value throws `negative-polar-value`. Each ring
+     * fills its value's share of its maximum and never laps. A value past its maximum fills the whole
+     * sweep and sets `data-over-max` on its ring, and the center, the tooltip and the table keep the
+     * true share. A data update morphs each ring to its new value, and every value above 0 keeps at
+     * least one device pixel of arc. With no reading the chart shows `Empty` and has no tab stop.
      */
     data: readonly TRow[];
     /**
      * One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with
      * `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`,
-     * `qualityKey`, `interval` or `missing`, and its colours are `ChartPolarColor` roles. Root's
+     * `qualityKey`, `interval` or `missing`, and its colors are `ChartPolarColor` roles. Root's
      * `qualityKey` names the quality column instead.
      */
     config: TConfig & ChartCategoryConfigCheck<TConfig, TRow[TNameKey]>;
@@ -66,16 +66,16 @@ export type RadialChartRootProps<
     qualityKey?: ChartQualityKey<TRow>;
     /** The value format. A category's config `format` overrides it. */
     valueFormat?: ValueFormat;
-    /** The fraction of the outer radius where the innermost ring starts, `0.3` by default. */
+    /** The fraction of the outer radius where the innermost ring starts. */
     innerRadius?: number;
     /**
-     * Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. An angle
-     * that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
+     * Degrees from 12 o'clock, clockwise, where each ring's sweep starts. An angle that is not a
+     * finite number, here or in `endAngle`, throws `invalid-sweep`.
      */
     startAngle?: number;
     /**
-     * Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default. A shorter
-     * sweep draws a gauge, and the chart keeps the aspect of the sweep's bounding box.
+     * Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. A shorter sweep draws a
+     * gauge, and the chart keeps the aspect of the sweep's bounding box.
      */
     endAngle?: number;
     /** The ring that is active before any pointer or key moves. */

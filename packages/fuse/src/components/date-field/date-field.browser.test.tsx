@@ -1,6 +1,6 @@
 /**
  * Unit under test: DateField and the DateInput parts in Chromium, through roles, names, the
- * keyboard and forms. Oracles: React Aria's DateField behaviour (segment names and order, typing 03152008,
+ * keyboard and forms. Oracles: React Aria's DateField behavior (segment names and order, typing 03152008,
  * Backspace, the group's name and slot, the bound copy, mixed-kind bounds, time segments), React
  * Aria's `useDateSegment`/`IncompleteDate` editing rules worked out by hand for the keys and
  * locales the harness does not cover, and Base UI's Form and Field contracts (errors by name, focus

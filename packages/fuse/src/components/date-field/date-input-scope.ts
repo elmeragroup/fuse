@@ -37,11 +37,11 @@ export function scopeShows(units: DateInputUnits, unit: EditableSegmentType): bo
 
 /**
  * What the control around a DateInput decides about it. A time-only input edits the time of a
- * value on `day`, the day the control holds (its value's day, or a day picked without a value
- * yet), so a time typed for that day forms on it, in the offset the zone has that day. `null`
- * while the control holds no day: the time then sits on the stand-in day (see `standInDay`). Its
- * values are of `kind`, which the control supplies every render in place of the input's own kind
- * resolution and memory.
+ * value on `day`, the day the control holds: its value's day, or a day picked without a value
+ * yet. A time typed for that day forms on it, in the offset the zone has that day. `day` is `null`
+ * while the control holds no day, and the time then sits on the stand-in day from `standInDay`.
+ * Its values are of `kind`, which the control supplies every render in place of the input's own
+ * kind resolution and memory.
  */
 export type DateInputScope =
   | { readonly units: "date-time" }

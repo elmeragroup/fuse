@@ -22,7 +22,7 @@ import type { TokenContract, TokenName } from "./tokens/contract";
 const GATE = {
   /** OKLCH lightness band per scheme for a slot that identifies a series. */
   band: { light: [0.43, 0.77], dark: [0.48, 0.67] },
-  /** OKLCH chroma below which a hue reads as grey. */
+  /** OKLCH chroma below which a hue reads as gray. */
   chromaFloor: 0.1,
   /** CVD ΔE, the smaller of protan and deutan, on a pair that must stay apart. */
   cvdTarget: 8,
@@ -73,10 +73,10 @@ function slotPairs(offset: number) {
   return CATEGORICAL.map((_, index) => [index, (index + offset) % CATEGORICAL.length] as const);
 }
 
-/** Neighbours on the cycle, so pies and every start offset stay legal. */
+/** Neighbors on the cycle, so pies and every start offset stay legal. */
 const CYCLIC_PAIRS = slotPairs(1);
 
-/** Slots two apart. With the neighbours they are every pair inside a 3-slot window. */
+/** Slots two apart. With the neighbors they are every pair inside a 3-slot window. */
 const SKIP_PAIRS = slotPairs(2);
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];

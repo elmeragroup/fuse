@@ -36,7 +36,10 @@ export type PieLook = {
   readonly track: Sweep;
 };
 
-/** What the frame measures from the pie's element: CSS pixels per unit, the pop, the seam and the dpr. */
+/**
+ * What the frame measures from the pie's element: CSS pixels per unit, the pop, the seam and the
+ * device pixel ratio.
+ */
 export type PieMeasure = {
   readonly scale: number;
   readonly pop: number;
@@ -58,7 +61,7 @@ type Entry = {
 /** One pie's frame. */
 export type PieFrame = {
   /**
-   * Record a slice's angles for this frame, and have the frame paint it.
+   * Records a slice's angles for this frame, and has the frame paint it.
    *
    * @param key - The slice's key, or its ghost's.
    * @param node - The slice's path, or its ghost's.
@@ -73,29 +76,29 @@ export type PieFrame = {
   ) => void;
   /** The angles a slice drew last, or null for one the frame does not hold. */
   readonly last: (key: string) => readonly [number, number] | null;
-  /** Take the pie's look and its measurement, and paint every slice again. */
+  /** Takes the pie's look and its measurement, and paints every slice again. */
   readonly update: (look: PieLook, measure: PieMeasure | null) => void;
   /**
-   * Paint the Track's path over the whole sweep, with the slices' corners.
+   * Paints the Track's path over the whole sweep, with the slices' corners.
    *
    * @returns The track's removal.
    */
   readonly track: (node: Element) => () => void;
   /**
-   * Paint a node with a slice's path and pop in every frame.
+   * Paints a node with a slice's path and pop in every frame.
    *
    * @returns The mirror's removal.
    */
   readonly mirror: (key: string, node: Element) => () => void;
   /**
-   * Hear the angles every slice draws, floored, keyed by the slice's key, after each frame paints. A
-   * slice that draws no arc this frame maps to null.
+   * Registers a listener for the angles every slice draws, floored, keyed by the slice's key, after
+   * each frame paints. A slice that draws no arc this frame maps to `null`.
    *
    * @returns The listener's removal.
    */
   readonly listen: (listener: PieListener) => () => void;
   /**
-   * Hear the loop's batches, so a frame's slices paint once together.
+   * Subscribes the frame to the loop's batches, so a frame's slices paint once together.
    *
    * @returns The frame's leave, as the pie unmounts.
    */

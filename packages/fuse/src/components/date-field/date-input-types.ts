@@ -71,7 +71,7 @@ export type DateInputRootState = {
   readonly required: boolean;
   /**
    * Whether the input shows as invalid: `invalid` is passed, its Field is invalid, or its own
-   * validation failed when it last committed (on blur). Written as `data-invalid="true"`.
+   * validation failed when it last committed, on blur. Written as `data-invalid="true"`.
    */
   readonly invalid: boolean;
   /** Whether every segment is empty. Written as `data-empty`. */
@@ -86,7 +86,10 @@ export type DateInputSegmentState = {
   readonly placeholder: boolean;
   /** Whether the Root is disabled. Written as `data-disabled`. */
   readonly disabled: boolean;
-  /** Whether it cannot be edited: the Root is read-only, or it is the zone's name. Written as `data-readonly`. */
+  /**
+   * Whether it cannot be edited: the Root is read-only, or it is the zone's name. Written as
+   * `data-readonly`.
+   */
   readonly readonly: boolean;
   /** Whether the Root shows as invalid. Written as `data-invalid="true"`. */
   readonly invalid: boolean;
@@ -95,7 +98,7 @@ export type DateInputSegmentState = {
 /**
  * `DateInput.Root` takes a `div`'s props, Base UI's `render` and the input's own.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The value's kind: `Temporal.PlainDate` by default, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the Root reads it from its `value` or `defaultValue`, and without
  *   either from `granularity` and `timeZone`, as its runtime does.
  */
@@ -104,8 +107,8 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
   "defaultValue" | "onChange" | "children" | "aria-label"
 > & {
   /**
-   * Names the segment group when no Field label does. Each segment's name is its unit and the
-   * group's name, such as "month, Start date".
+   * The segment group's accessible name when no Field label names it. Each segment's name is its
+   * unit and the group's name, such as "month, Start date".
    */
   "aria-label"?: string | undefined;
   /**
@@ -141,9 +144,12 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
    * commits; the input reports it invalid with "Value must be … or later."
    */
   minValue?: TemporalValue;
-  /** The latest valid value, taking what `minValue` takes. "Value must be … or earlier." */
+  /**
+   * The latest valid value, taking what `minValue` takes. The input reports a later value invalid
+   * with "Value must be … or earlier."
+   */
   maxValue?: TemporalValue;
-  /** Values the input reports invalid ("Selected date unavailable."), such as fully booked days. */
+  /** Values the input reports invalid with "Selected date unavailable.", such as fully booked days. */
   isDateUnavailable?: NoInfer<(value: T) => boolean>;
   /**
    * The smallest unit edited. A time granularity needs a value with a time. Defaults to `"day"`
@@ -154,7 +160,7 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
   granularity?: DateGranularity;
   /** The hour cycle shown: `12` with a day period, `24` without. Defaults to the locale's. */
   hourCycle?: 12 | 24;
-  /** Hides a zoned value's zone name. */
+  /** Whether to hide a zoned value's zone name. */
   hideTimeZone?: boolean;
   /**
    * The zone an empty input's ZonedDateTime takes. With a time `granularity` and no value or
@@ -162,22 +168,22 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
    * Pass it whenever `T` is `ZonedDateTime` and the input can start empty.
    */
   timeZone?: string;
-  /** Pads days, months and hours to two digits whatever the locale writes. */
+  /** Whether days, months and hours pad to two digits whatever the locale writes. */
   shouldForceLeadingZeros?: boolean;
   /** Whether nothing responds and the value is not submitted. */
   disabled?: boolean;
   /** Whether the value cannot change. The segments stay focusable. */
   readOnly?: boolean;
-  /** Whether an empty or incomplete input is invalid ("Please fill out this field."). */
+  /** Whether an empty or incomplete input is invalid, with "Please fill out this field." */
   required?: boolean;
   /** Whether the input shows as invalid whatever its value. */
   invalid?: boolean;
   /**
    * The name the ISO value submits under, through a visually hidden input. A surrounding Field's
-   * `name` wins. Inside a Base UI Field (`Field.Root`, Fuse's `Field` or a labeled composite) the
-   * first editable segment is the Field's control: a `Form` focuses it for an error, the value
-   * reaches `onFormSubmit` as ISO text, and its validity is the Field's, committed on blur and on
-   * submit.
+   * `name` wins. Inside a Base UI Field, such as `Field.Root`, Fuse's `Field` or a labeled
+   * composite, the first editable segment is the Field's control: a `Form` focuses it for an
+   * error, the value reaches `onFormSubmit` as ISO text, and its validity is the Field's,
+   * committed on blur and on submit.
    */
   name?: string;
   /** The id of the form the ISO value submits with, when it is not the enclosing one. */
@@ -185,12 +191,12 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
   /** The field box's size: `"default"` the md control size, `"sm"` the sm one. Written as `data-size`. */
   size?: "default" | "sm";
   /**
-   * Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is
-   * a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit
-   * such as `"month"` when true, and `segment.type` tells `"literal"` from `"timeZoneName"` when
-   * false. Without it each renders as a `DateInput.Segment`, which a server component can rely
-   * on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your
-   * own `Field.Label`, `Field.Description` and `Field.Error`.
+   * A function that renders each segment, usually as a `DateInput.Segment` keyed by
+   * `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable`
+   * narrows `segment.type` to a unit such as `"month"` when true, and `segment.type` tells
+   * `"literal"` from `"timeZoneName"` when false. Without it each renders as a `DateInput.Segment`,
+   * which a server component can rely on, since a function cannot cross to the client. Put the Root
+   * in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.
    */
   children?: (segment: DateInputSegmentData) => ReactNode;
 };

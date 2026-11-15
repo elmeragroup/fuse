@@ -14,7 +14,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { popoverInfoButtonStrings } from "./intl";
 
-/** Recipe for the unit test. Not re-exported from the public entry. */
+/** The recipe, exported for the unit test. The public entry does not re-export it. */
 export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",
@@ -74,7 +74,7 @@ type PopoverInfoButtonSizeProps =
   | {
       /**
        * The trigger's size. The default `icon-inline` square is as tall as the line it sits in, so
-       * beside a `Field.Label`'s text it centres on the label's line and keeps the label one line
+       * beside a `Field.Label`'s text it centers on the label's line and keeps the label one line
        * tall. Pass an `icon*` size for a standalone, control-sized trigger. `label` names the
        * trigger, so no size needs an `aria-label`.
        */
@@ -83,7 +83,7 @@ type PopoverInfoButtonSizeProps =
   | {
       /**
        * The trigger's size. The default `icon-inline` square is as tall as the line it sits in, so
-       * beside a `Field.Label`'s text it centres on the label's line and keeps the label one line
+       * beside a `Field.Label`'s text it centers on the label's line and keeps the label one line
        * tall. Pass an `icon*` size for a standalone, control-sized trigger. `label` names the
        * trigger, so no size needs an `aria-label`.
        */
@@ -100,14 +100,14 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
      */
     children: ReactNode;
     /**
-     * The accessible name of the trigger and of the popover it opens. Unset, it reads
+     * The accessible name of the trigger and of the popover it opens. Defaults to
      * `popoverInfoButton.moreInformation`, "More information", from the locale dictionary.
      * Prefer a label that names the topic, such as "About grid rent". A `Popover.Title` in
      * `children` names the popover instead.
      */
     label?: string;
     /**
-     * The element the popover renders into. Unset, it is the nearest enclosing `ThemeScope`
+     * The element the popover renders into. Defaults to the nearest enclosing `ThemeScope`
      * element.
      */
     container?: OverlayContainerProps["container"];

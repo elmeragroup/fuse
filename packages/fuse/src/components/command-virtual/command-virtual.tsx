@@ -21,8 +21,9 @@ import type { RowMetrics } from "./row-metrics";
 import { withHighlightedRow } from "./virtual-highlight";
 
 /**
- * `fuse.css` declares the metrics as unregistered custom properties, so the browser reports each
- * one as written, as a `rem` length such as ` 2rem`. The virtualizer needs pixels.
+ * The element's row metrics in pixels, read from its computed style. `fuse.css` declares the
+ * metrics as unregistered custom properties, so the browser reports each one as written, as a
+ * `rem` length such as ` 2rem`. The virtualizer needs pixels.
  */
 function readRowMetrics(element: HTMLElement): RowMetrics {
   const style = getComputedStyle(element);
@@ -48,7 +49,7 @@ type VirtualRowProps = {
 
 /**
  * One window row. The virtualizer re-renders the list on every scroll event, so a row renders
- * again only when its own inputs change: a row that stays in the window keeps its element, its
+ * again only when its own inputs change. A row that stays in the window keeps its element, its
  * context value and its `style`, and Base UI's memoized item skips it too.
  */
 const VirtualRow = memo(function VirtualRow({
@@ -78,8 +79,8 @@ const VirtualRow = memo(function VirtualRow({
 });
 
 /**
- * `CommandVirtual.List` takes a `div`'s props, which `Command.List` fills with Base UI's listbox
- * props and its row function, plus the virtualizer's two settings. Write it with no children,
+ * Props for `CommandVirtual.List`. They are a `div`'s props, which `Command.List` fills with Base
+ * UI's listbox props and its row function, plus the virtualizer's two settings. Write it with no children,
  * because `<Command.List render={<CommandVirtual.List />}>` passes its own row function as
  * `children`.
  */
@@ -90,7 +91,7 @@ export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & 
    */
   children?: CommandListRows;
   /**
-   * A row's height before the virtualizer measures it. It defaults to the document density's row
+   * A row's height before the virtualizer measures it. Defaults to the document density's row
    * height, which a single-line `Command.Item` takes, and follows a change of density.
    */
   estimateSize?: (index: number) => number;

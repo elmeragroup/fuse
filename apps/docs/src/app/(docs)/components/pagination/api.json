@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
+          "description": "The navigation landmark's name. Defaults to the locale dictionary. An `aria-label` wins over it.",
           "required": false
         }
       ]
@@ -67,7 +67,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks the current page. The link gets `aria-current=\"page\"` and the outline button style. Other links have no `aria-current`.",
+          "description": "Whether the link is the current page. The link then gets `aria-current=\"page\"` and the outline button style. Other links have no `aria-current`.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The link's accessible name, such as \"Go to previous page\". Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
+          "description": "The link's accessible name, such as \"Go to previous page\". Defaults to the locale dictionary. An `aria-label` wins over it.",
           "required": false
         },
         {
@@ -136,7 +136,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible text beside the caret. Unset, it comes from the locale dictionary.",
+          "description": "The visible text beside the caret. Defaults to the locale dictionary.",
           "required": false
         }
       ]
@@ -156,7 +156,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The link's accessible name, such as \"Go to next page\". Unset, it comes from the locale dictionary. An `aria-label` wins over it.",
+          "description": "The link's accessible name, such as \"Go to next page\". Defaults to the locale dictionary. An `aria-label` wins over it.",
           "required": false
         },
         {
@@ -185,7 +185,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible text beside the caret. Unset, it comes from the locale dictionary.",
+          "description": "The visible text beside the caret. Defaults to the locale dictionary.",
           "required": false
         }
       ]
@@ -205,7 +205,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The screen reader text for the pages the ellipsis stands for. Unset, it comes from the locale dictionary.",
+          "description": "The screen reader text for the pages the ellipsis stands for. Defaults to the locale dictionary.",
           "required": false
         }
       ]

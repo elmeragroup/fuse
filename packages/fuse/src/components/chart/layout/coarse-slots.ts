@@ -2,8 +2,8 @@
  * Per-series resolution, as CONTRACT section 8.8 defines it. Root's `interval` is the x grid, and
  * a series may take a coarser interval that nests in it. A coarse slot covers every Root slot whose
  * start lies inside it, counted by instants in the zone, so an hour covers 4 quarters on every day,
- * DST days included, and a day covers 23, 24 or 25 hours. Fuse never aggregates: a coarse series
- * reads one value per coarse slot, from the row at the slot's start.
+ * daylight saving days included, and a day covers 23, 24 or 25 hours. Fuse never aggregates. A
+ * coarse series reads one value per coarse slot, from the row at the slot's start.
  */
 import { nextSlotStart, slotStart } from "../format/time-format";
 import type { Interval } from "../format/time-format";
@@ -52,7 +52,7 @@ export type CoarseSlots = {
 };
 
 /**
- * Group Root's slots into a coarse interval's slots by the coarse slot each Root slot starts in.
+ * Groups Root's slots into a coarse interval's slots by the coarse slot each Root slot starts in.
  *
  * @param starts - Each Root slot's start instant, ascending.
  * @param interval - The series' coarse interval.
@@ -230,7 +230,7 @@ export function ownFirsts(series: SeriesModel, slots: readonly number[]): number
  * The coarsest series among some, whose own slot a layout's band crosshair spans.
  *
  * @param series - The layout's series.
- * @returns The series with the coarsest interval, the first of a tie, or undefined when none is coarse.
+ * @returns The series with the coarsest interval, the first of a tie, or `undefined` when none is coarse.
  */
 export function coarsestOf(series: readonly SeriesModel[]): SeriesModel | undefined {
   let best: SeriesModel | undefined;

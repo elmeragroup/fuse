@@ -109,7 +109,7 @@ async function openModal(name: string, role: "dialog" | "alertdialog" = "dialog"
   return roleNamed(role, name);
 }
 
-/** The colour a role resolves to on the theme scope, read through the browser's own cascade. */
+/** The color a role resolves to on the theme scope, read through the browser's own cascade. */
 function scopeColor(token: string): string {
   return cssVarColor(roleNamed("region", SCOPE_NAME), token);
 }

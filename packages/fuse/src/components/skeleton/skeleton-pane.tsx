@@ -14,9 +14,9 @@ import { PaneExclusion } from "./skeleton-reveal-exclusion";
 import { BONE_FONT_SIZE_ATTRIBUTE, EXITING_ATTRIBUTE } from "./skeleton-reveal-motion";
 
 /**
- * The bar radius: the theme's medium corner, capped at half the bar so a thin bar stays a pill. The
- * rung's own formula, not `var(--radius-md)`, which reads the corner the document root computed,
- * so a bar takes the corner of the theme scope it is drawn in.
+ * The bar radius, which is the theme's medium corner capped at half the bar so a thin bar stays a
+ * pill. It uses the rung's own formula, not `var(--radius-md)`, which reads the corner the document
+ * root computed, so a bar takes the corner of the theme scope it is drawn in.
  */
 function barRadius(height: number): string {
   return `min(${RADIUS_RUNGS["radius-md"].css}, ${String(height / 2)}px)`;
@@ -56,14 +56,15 @@ const MEASURED_ATTRIBUTE = "data-measured";
 const COVERED_ATTRIBUTE = "data-skeleton-covered";
 
 /**
- * Package-private. The skeleton pane: the content rendered unseen in the normal flow, so it takes
- * exactly the content's space, and a layer of bones measured from it. Neither is exposed to
- * assistive tech or reachable by keyboard, and the ghost is excluded from forms and overlays.
+ * The skeleton pane, which is package-private. It holds the content rendered unseen in the
+ * normal flow, so it takes exactly the content's space, and a layer of bones measured from it.
+ * Neither is exposed to assistive technology or reachable by keyboard, and the ghost is excluded
+ * from forms and overlays.
  * The bones follow the ghost through each commit, a resize, a change inside the ghost that leaves
  * its size alone, an image loading and the document's fonts changing.
  *
  * @param props - The stand-in content to draw, the ref the reveal tracks its panes with, and
- *   whether the pane is on its way out, which it is not measured again for.
+ *   whether the pane is on its way out, in which case it is not measured again.
  * @returns The skeleton pane, with `data-slot="skeleton-reveal-skeleton"`.
  */
 export function SkeletonPane({

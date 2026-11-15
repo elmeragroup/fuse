@@ -3,12 +3,12 @@
 /**
  * One label per slice. A label is HTML in the cell, placed in percentages of the
  * sweep's box, so the server's markup holds at any width. An inside label sits at d3's centroid
- * when its slice's role has an on-colour role and its box fits the slice, and every other label
+ * when its slice's role has an on-color role and its box fits the slice, and every other label
  * sits outside with a leader from the rim, its elbow 8 % past it and a run sideways. Outside labels
  * on one side move apart by their own heights. The server sizes each box from the label width
  * table, and the client places the labels again from their measured boxes whenever the pie or the
  * cell changes, with no React commit. As the slices tween, each label follows the angles its slice
- * draws in that frame, which the pie's frame reports, from the boxes measured last; a label keeps the
+ * draws in that frame, which the pie's frame reports, from the boxes measured last. A label keeps the
  * side, inside or outside, its slice takes at rest, and hides while its slice draws no arc. Outside
  * labels ask the frame for a gutter beside the dial.
  */
@@ -38,16 +38,19 @@ import type { LabelSize } from "./layout/polar-labels";
  */
 export type PieChartLabelsProps = ChartLayerProps & {
   /**
-   * Where each label sits. "outside" draws a leader from the rim and takes a gutter beside the dial.
-   * An inside label draws outside its slice when the slice's role has no on-colour role, such as a
+   * Where each label sits. `"outside"` draws a leader from the rim and takes a gutter beside the dial.
+   * An inside label draws outside its slice when the slice's role has no on-color role, such as a
    * sequential step, or when its box does not fit the slice.
    */
   position?: "inside" | "outside";
-  /** A template each label renders for its slice. Without children, `SeriesLabel` and `LegendShare`. */
+  /**
+   * A template each label renders for its slice. Without children, a label prints `SeriesLabel` and
+   * `LegendShare`.
+   */
   children?: ReactNode;
 };
 
-/** A label's line, 12 px on a 16 px line at both densities (CONTRACT section 10). */
+/** A label's line, 12 px on a 16 px line at both densities, as CONTRACT section 10 sets it. */
 const LINE = 16;
 
 /** The leader's run sideways from its elbow, in CSS pixels. */
@@ -56,10 +59,10 @@ const RUN = 8;
 /** The cell's nominal width before the client measures it: `--chart-polar-size` less the pop's room. */
 const NOMINAL_CELL = 184;
 
-/** The colour roles with an on-colour role, which an inside label reads its text colour from. */
+/** The color roles with an on-color role, which an inside label reads its text color from. */
 const ON_COLOUR = /^chart-(?:[1-8]|other)$/u;
 
-/** Where one slice's label sits, in units of the outer radius from the centre. */
+/** Where one slice's label sits, in units of the outer radius from the center. */
 type Placed =
   | { readonly placement: "inside"; readonly x: number; readonly y: number }
   | {
@@ -72,7 +75,7 @@ type Placed =
   | null;
 
 /**
- * Place every label: inside where it fits, outside with a leader otherwise.
+ * Places every label, inside where it fits and outside with a leader otherwise.
  *
  * @param pie - The drawing.
  * @param sizes - Each label's box in CSS pixels.
@@ -153,11 +156,11 @@ function nominalText(pie: PieDrawing, index: number): string {
 
 /**
  * One label per slice. Its children are a template each label renders for its slice's key, and
- * without children each label prints SeriesLabel and LegendShare. An inside label on a slice whose
- * role has no on-colour role, such as a sequential step, draws outside that slice instead, as does
+ * without children each label prints `SeriesLabel` and `LegendShare`. An inside label on a slice whose
+ * role has no on-color role, such as a sequential step, draws outside that slice instead, as does
  * one whose box does not fit its slice. Outside labels draw a leader from the rim and take a gutter
- * beside the dial. As the slices sweep in or tween to new data, each label and its leader ride their
- * slice, and an inside label's value and share read in the slice's on-colour.
+ * beside the dial. As the slices sweep in or tween to new data, each label and its leader follow their
+ * slice, and an inside label's value and share read in the slice's on-color.
  *
  * @beta
  */

@@ -121,7 +121,7 @@ export function leapSpring(): Spring {
 }
 
 /**
- * Glide an element onto the place it rests, from `by` away along x and y, plus whatever offset a
+ * Glides an element onto the place it rests, from `by` away along x and y, plus whatever offset a
  * running glide shows. An element glides in one unit, so the offset it shows adds to `by` as is.
  *
  * @param element - The element whose resting place was just written.
@@ -140,7 +140,7 @@ export function glideFrom(
 }
 
 /**
- * Glide an element along the slot axis onto the place it rests, from `ride.along` CSS pixels away,
+ * Glides an element along the slot axis onto the place it rests, from `ride.along` CSS pixels away,
  * with its offset across following the ride's keyframes. Along the slot axis it moves as
  * `glideFrom` would move it on the same spring, so it keeps pace with the crosshair.
  *
@@ -154,7 +154,7 @@ export function rideFrom(element: Element, spring: Spring, ride: Ride): void {
 }
 
 /**
- * Glide a length property onto the value it rests at, from `by` CSS pixels away plus whatever
+ * Glides a length property onto the value it rests at, from `by` CSS pixels away plus whatever
  * offset a running glide of it shows, on the spring and the clock `glideFrom` moves a mark on. The
  * element's own value is its rest, written first, and the glide plays over it.
  *
@@ -183,8 +183,8 @@ export function glideLength(
 }
 
 /**
- * The offset an element's glide shows now, along x and y in the unit it glides in, from the easing and the
- * keyframes its animation plays, on the glide's own clock, or null when none runs.
+ * The offset an element's glide shows now, along x and y in the unit it glides in, from the easing
+ * and the keyframes its animation plays, on the glide's own clock, or null when none runs.
  *
  * @param element - The element that may be gliding.
  * @returns The offset, or null.
@@ -207,7 +207,7 @@ export function glideShown(element: Element): readonly [number, number] | null {
 }
 
 /**
- * Replace an element's glide with one from an offset, on a spring, riding a course if given. A
+ * Replaces an element's glide with one from an offset, on a spring, riding a course if given. A
  * ride's keyframes are in CSS pixels.
  */
 function start(
@@ -243,7 +243,7 @@ function start(
   keep(element, { animation, from, spring, ride: { axis: ride.axis, frames } });
 }
 
-/** Hold an element's running glide until it finishes or another replaces it. */
+/** Keeps an element's running glide until it finishes or another replaces it. */
 function keep(element: Element, glide: Glide): void {
   glides.set(element, glide);
   glide.animation.onfinish = () => {
@@ -261,7 +261,7 @@ function rounded(x: number, y: number): string {
 }
 
 /**
- * End an element's glide at once, so it shows the place it rests. Every path that places a mark
+ * Ends an element's glide at once, so it shows the place it rests. Every path that places a mark
  * without a step's glide calls it: a mark that shows or hides, a commit or a resize, a change of
  * look, reduced motion and unmounting.
  *

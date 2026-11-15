@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** PopoverInfoButton's own dictionary: it owns `popoverInfoButton.moreInformation`. */
+/** PopoverInfoButton's own dictionary, with the `popoverInfoButton.moreInformation` key. */
 export const popoverInfoButtonStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

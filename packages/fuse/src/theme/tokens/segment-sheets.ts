@@ -3,7 +3,7 @@ import type { BrandDarkSheet } from "./brand-dark-sheet";
 import type { PaletteBrandCode } from "./brand-palettes";
 import type { TokenLayer } from "./contract";
 
-/** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
+/** Both schemes' sheets for one brand and segment pair that departs from its brand base. */
 export type SegmentSheets = {
   /** The light overrides applied on top of the brand's base palette. */
   readonly light: TokenLayer;
@@ -67,9 +67,9 @@ const SEGMENT_SHEETS: ReadonlyMap<PaletteBrandCode, ReadonlyMap<ThemeSegment, Se
 ]);
 
 /**
- * Both schemes' sheets for one brand/segment pair that departs from its brand base, or
- * `undefined` when it has none. Callers pass the palette brand (see `paletteBrand`), so
- * fkab-company takes fkas-company's sheets.
+ * Both schemes' sheets for one brand and segment pair that departs from its brand base, or
+ * `undefined` when it has none. Callers pass the palette brand from `paletteBrand`, so fkab-company
+ * takes fkas-company's sheets.
  */
 export function segmentSheet(brand: PaletteBrandCode, segment: ThemeSegment): SegmentSheets | undefined {
   return SEGMENT_SHEETS.get(brand)?.get(segment);

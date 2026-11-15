@@ -6,7 +6,7 @@ import { isFileDrag } from "./drag-verdict";
  * and the document keeps one pair of listeners while any Root holds a registration. A drag
  * that carries no files, such as selected text, passes untouched.
  *
- * The guard answers only a file drag no handler has cancelled, so it reaches drags outside every
+ * The guard answers only a file drag no handler has canceled, so it reaches drags outside every
  * enabled zone, or inside a disabled one, and leaves other drop targets on the page alone. A
  * Dropzone's `stopPropagation` cannot keep the drag from it: when React's root is the document,
  * as in the Next.js App Router, the zone's handler and the guard listen on the same node. React
@@ -32,7 +32,7 @@ function guardDrop(event: DragEvent): void {
 }
 
 /**
- * Register a Root with the guard of `ownerDocument`.
+ * Registers a Root with the guard of `ownerDocument`.
  *
  * @param ownerDocument - The Root's document.
  * @returns A function that releases this registration. Calling it again does nothing.

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's ReferenceArea: an annulus between two values, as `y1` and `y2`, or a sector from one
+ * The clock's ReferenceArea, an annulus between two values, as `y1` and `y2`, or a sector from one
  * instant's slot to another's, as `x1` and `x2`, with an optional label. The first paint draws it
  * at rest.
  */

@@ -18,7 +18,7 @@ export const TICK_BUCKETS = [
   120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 560, 640, 720, 800, 880, 960, 1040, 1120, 1200,
 ] as const;
 
-/** The space every label keeps from its neighbour, in CSS pixels. */
+/** The space every label keeps from its neighbor, in CSS pixels. */
 export const LABEL_GAP = 8;
 
 /** What the thinning reads about each label. */
@@ -41,11 +41,11 @@ function labelStart(slot: number, geometry: TickGeometry, axisWidth: number): nu
   return Math.min(Math.max(geometry.position(slot) * axisWidth - width / 2, 0), axisWidth - width);
 }
 
-/** The neighbouring pairs the crowding probe checks, spread evenly over a stride. */
+/** The neighboring pairs the crowding probe checks, spread evenly over a stride. */
 const PROBES = 8;
 
 /**
- * Whether a few evenly spread neighbouring pairs prove that a stride's labels crowd each other.
+ * Whether a few evenly spread neighboring pairs prove that a stride's labels crowd each other.
  * Labels a gap apart are the densest that fit, so at most `axisWidth / LABEL_GAP + 1` of them fit,
  * and a stride of more slots usually crowds everywhere: 100,000 minutes hold 1,667 hours, against
  * at most 151 labels at 1,200 px. A pair is proof when neither label gives way to the first label,
@@ -83,7 +83,7 @@ function crowded(
  * undefined when two of them crowd each other. A first label off the stride, as a November start
  * is on a calendar-aligned quarterly stride, shows besides the stride, and a slot whose label would
  * crowd it, as January's does, gives way to it, so the rest of the stride still shows. A first
- * label on the stride is one of the stride's own, so a neighbour that crowds it fails the stride as
+ * label on the stride is one of the stride's own, so a neighbor that crowds it fails the stride as
  * any crowding pair does, and every stride that shows keeps one rhythm. The check reads labels in
  * slot order and stops at the first crowding.
  */
@@ -167,7 +167,7 @@ export type TickVisibility = number | "always" | "none";
 export type ShownTick = { readonly slot: number; readonly visibility: number | "always" };
 
 /**
- * Pick each bucket's stride and report the narrowest bucket at which each shown candidate shows.
+ * Picks each bucket's stride and reports the narrowest bucket at which each shown candidate shows.
  *
  * Buckets run from narrow to wide. Each takes the smallest stride whose labels fit, among the
  * strides that hold every tick of the bucket before it, so every wider bucket shows a superset.

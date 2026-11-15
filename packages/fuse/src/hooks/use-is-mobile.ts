@@ -7,12 +7,11 @@ import { useMediaQuery } from "./use-media-query";
 const MOBILE_MEDIA_QUERY = "(width < 48rem)";
 
 /**
- * Package-private viewport probe for Sidebar:
- * a `(width < 48rem)` media query, the complement of Tailwind's `md:`. Snapshot is
- * `mql.matches`, so a non-hydrating client first render already reports the real
- * value. Server snapshot is `false`, so SSR and hydration report desktop until the
- * client MQL is read. Observable only through `useSidebar().isMobile` — never a
- * public export.
+ * Whether a `(width < 48rem)` media query matches, the complement of Tailwind's `md:`. It is
+ * Sidebar's package-private viewport probe. Its snapshot is `mql.matches`, so a non-hydrating client
+ * first render already reports the real value. Its server snapshot is `false`, so server rendering
+ * and hydration report desktop until the client reads the media query list. It is observable only
+ * through `useSidebar().isMobile`, never as a public export.
  */
 export function useIsMobile(): boolean {
   return useMediaQuery(MOBILE_MEDIA_QUERY);

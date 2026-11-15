@@ -35,7 +35,7 @@ export type PointerShares = {
 
 /**
  * Two squared pixel distances this close are a tie. Shares of the plot round in their last bits,
- * so two points the same distance away measure a few ulps apart.
+ * so two points the same distance away measure a few units in the last place apart.
  */
 const TIE = 1e-6;
 
@@ -48,7 +48,7 @@ function cellOf(share: number, size: number): number {
 }
 
 /**
- * Build the grid over a model's points.
+ * Builds the grid over a model's points.
  *
  * @param points - Every point as shares of the plot, with its walk rank.
  * @returns The index.

@@ -26,7 +26,7 @@ export const cardDefaultTierClass = cn("[--card-pad:var(--surface-pad-md)]");
 
 /**
  * A large Card's tier: the large surface tier, `--surface-pad-lg`, for a card that holds long
- * prose or acts as a page's main panel.
+ * prose or is a page's main panel.
  */
 export const cardLargeTierClass = cn("[--card-pad:var(--surface-pad-lg)]");
 
@@ -76,9 +76,10 @@ export const checkboxCardContentShellClass = cn(
 /**
  * A stacked `Card.Section` or `Card.SectionButton`: it pads every side with the card's tier,
  * `--card-pad`, and publishes the same inner corner as the other sections. A 1px
- * `--card-section-divider` line runs above every section but the first. The first and last sections round their outer corners with the corner the
- * card hands them, so a fill or a hover fill follows the card's corners. Both skip `hidden`
- * siblings, and middle sections stay square. Outside a card the section is square.
+ * `--card-section-divider` line runs above every section but the first. The first and last sections
+ * round their outer corners with the corner the card hands them, so a fill or a hover fill follows
+ * the card's corners. Both skip `hidden` siblings, and middle sections stay square. Outside a card
+ * the section is square.
  */
 export const cardStackedSectionShellClass = cn(
   "border-0 border-t border-card-section-divider p-[var(--card-pad,var(--surface-pad-md))] [--card-section-corner:initial] [&:nth-child(1_of_:not([hidden]))]:rounded-t-[var(--card-section-corner,0px)] [&:nth-child(1_of_:not([hidden]))]:border-t-0 [&:nth-last-child(1_of_:not([hidden]))]:rounded-b-[var(--card-section-corner,0px)]",

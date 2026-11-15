@@ -26,7 +26,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The clear button's name. It defaults to the `searchField.clear` row of the locale dictionary, \"Clear search\" in English. The button shows while the field holds text. It is out of the tab order, since Escape clears from the input, and a press keeps focus, and on touch the on-screen keyboard, on the input.",
+          "description": "The clear button's name. Defaults to the `searchField.clear` row of the locale dictionary, \"Clear search\" in English. The button shows while the field holds text. It is out of the tab order, since Escape clears from the input, and a press keeps focus, and on touch the on-screen keyboard, on the input.",
           "required": false
         },
         {
@@ -62,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field, the input and the clear button.",
+          "description": "Whether the field, the input and the clear button are disabled.",
           "required": false
         },
         {
@@ -71,7 +71,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look.",
+          "description": "Whether the field is invalid, with the invalid look.",
           "required": false
         },
         {
@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input read-only, with the muted read-only fill. It disables the clear button, Escape no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior, so Enter can submit a surrounding form and Escape can close an enclosing `Dialog`.",
+          "description": "Whether the input is read-only, with the muted read-only fill. It disables the clear button, Escape no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior, so Enter can submit a surrounding form and Escape can close an enclosing `Dialog`.",
           "required": false
         },
         {
@@ -89,7 +89,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input required, so the browser's constraint check blocks an empty submit.",
+          "description": "Whether the input is required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {

@@ -14,7 +14,7 @@ export type D3Case = {
   readonly actual: string;
   readonly expected: unknown;
   readonly literal: boolean;
-  /** The upstream assertion, such as `assertPathEqual`, which compares normalised path data. */
+  /** The upstream assertion, such as `assertPathEqual`, which compares normalized path data. */
   readonly assert?: string;
   readonly compare?: string;
   readonly call?: readonly CallStep[] | null;
@@ -156,12 +156,12 @@ function isEqual(actual: unknown, expected: unknown, tolerance: number): boolean
 }
 
 /**
- * d3-shape's own path normalisation, from test/asserts.js of the frozen d3-shape 3.2.0 tests: every
+ * d3-shape's own path normalization, from `test/asserts.js` of the frozen d3-shape 3.2.0 tests: every
  * number to 3 digits, or to an integer within 1e-6 of one. `assertPathEqual` compares both sides
  * after it.
  *
  * @param path - Path data.
- * @returns The normalised path data.
+ * @returns The normalized path data.
  */
 export function normalizePath(path: string): string {
   return path.replace(/[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/gu, (text) => {
@@ -171,7 +171,7 @@ export function normalizePath(path: string): string {
 }
 
 /**
- * Replay one case.
+ * Replays one case.
  *
  * @param testCase - The upstream assertion.
  * @param bindings - The names its expression reads, such as `scaleBand` or `ticks`.
@@ -221,7 +221,7 @@ export function runD3Case(
 }
 
 /**
- * Replay every case of a file.
+ * Replays every case of a file.
  *
  * @param file - The case file.
  * @param bindings - The names the expressions read.

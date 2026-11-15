@@ -8,9 +8,9 @@ import type { AnyFilterFacets, FilterFieldMap } from "./filter-fields";
 
 /** Counts and ranges per field, from the `facets` prop or TanStack faceting. */
 export type FacetReader = {
-  /** Option counts, or undefined when unknown, such as in server mode without facets. */
+  /** Option counts, or `undefined` when unknown, such as in server mode without facets. */
   readonly counts: (fieldId: string) => ReadonlyMap<string, number> | undefined;
-  /** A number field's range, or undefined when unknown. */
+  /** A number field's range, or `undefined` when unknown. */
   readonly range: (fieldId: string) => readonly [number, number] | undefined;
 };
 
@@ -38,8 +38,9 @@ function normalizedCounts(
 }
 
 /**
- * Reads each field's counts and range: the server's facets first, then TanStack faceting, which
- * server mode skips. A number field's configured `min` and `max` stand in for an unknown range.
+ * Creates a reader for each field's counts and range. It reads the server's facets first, then
+ * TanStack faceting, which server mode skips. A number field's configured `min` and `max` stand in
+ * for an unknown range.
  *
  * @param table - The table, for faceting and `options.manualFiltering`.
  * @param fields - The fields, for a number field's configured range.

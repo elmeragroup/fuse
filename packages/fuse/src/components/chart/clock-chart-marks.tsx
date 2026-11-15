@@ -7,7 +7,7 @@
  * from its base over 500 ms on an ease-out cubic as the wedge reaches it. An update moves every
  * number over 480 ms, and a switch between 24- and 25-hour days pairs the slots by their start
  * instants, so the slot angles tween and the dial turns rather than cut chords. A Line or an Area
- * painted by value paints through a radial gradient centred on the dial with a hard stop at each
+ * painted by value paints through a radial gradient centered on the dial with a hard stop at each
  * threshold's radius. Column, Dots, Marker, ValueLabel, ActiveDot and Glow live in their own
  * modules, so a route that names one part ships only its own.
  */
@@ -71,7 +71,7 @@ export type ClockChartAreaProps = ChartLayerProps & {
   /**
    * The fill's look. "gradient" fades from the value toward the zero ring, and "gradient-reverse"
    * fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted", "lines" and
-   * "hatched" fill with a texture of the series colour.
+   * "hatched" fill with a texture of the series color.
    */
   variant?: "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines" | "hatched";
   /** The curve along the area's edge. Pass the Line's curve, so the fill's edge meets the line. */
@@ -89,7 +89,7 @@ type SeriesLook = {
   readonly drawn: { current: MarkValues | null };
 };
 
-/** Draw a line's frame. */
+/** Draws a line's frame. */
 function drawLine(group: SVGGElement, look: SeriesLook, values: MarkValues): void {
   const frame = entranceFrame(values);
   const { solid, marked, lone } = clockLine(frame.values, look.series.slots, look.curve);
@@ -104,7 +104,7 @@ function drawLine(group: SVGGElement, look: SeriesLook, values: MarkValues): voi
   writeReveal(group, frame.reveal);
 }
 
-/** Draw an area's frame. */
+/** Draws an area's frame. */
 function drawArea(group: SVGGElement, look: SeriesLook, values: MarkValues): void {
   look.drawn.current = values;
   const frame = entranceFrame(values);

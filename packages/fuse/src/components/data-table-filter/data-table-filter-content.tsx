@@ -62,10 +62,10 @@ type OptionField = FilterFieldOfKind<"option" | "multiOption">;
 
 const switchSlots = switchVariants({ size: "sm" });
 
-/** The menu's query, which `Content` owns beside its filter provider and `FieldList` reads. */
+/** The menu's query. `Content` provides it beside its filter provider, and `FieldList` reads it. */
 const MenuQueryContext = createContext("");
 
-/** Quick search lists option values across fields from this many characters on. */
+/** The query length from which quick search lists option values across fields. */
 const QUICK_SEARCH_MIN = 2;
 
 /** The popup's two morphed dimensions. */
@@ -80,10 +80,10 @@ function pinned(popup: HTMLElement): boolean {
 
 /**
  * Morphs the popup's width and height when its step changes, from the field list to an editor and
- * back, and only then, so a keystroke that grows or shrinks the list snaps. Base UI measures a popup
- * only when its payload changes (`usePopupViewport.tsx`), and the menu has none, so this measures
- * the step change itself. A CSS transition, so a change mid-flight retargets. A dimension the
- * central reduced-motion rule leaves out of the transition list is never pinned.
+ * back, and only then, so a keystroke that grows or shrinks the list snaps. Base UI measures a
+ * popup only when its payload changes, in `usePopupViewport.tsx`, and the menu has none, so this
+ * measures the step change itself. It uses a CSS transition, so a change mid-flight retargets. A
+ * dimension the central reduced-motion rule leaves out of the transition list is never pinned.
  *
  * @param step - The current step.
  * @returns A ref for the popup and its `transitionend` handler.
@@ -162,8 +162,8 @@ function useStepMorph(step: string) {
 }
 
 /**
- * The props of `DataTableFilter.Content`: Base UI Menu Popup's, except `finalFocus`, since the Root
- * decides where focus goes as the menu closes.
+ * Props for `DataTableFilter.Content`, which takes Base UI Menu Popup's props except `finalFocus`,
+ * since the Root decides where focus goes as the menu closes.
  */
 export type DataTableFilterContentProps = Omit<
   ComponentProps<typeof MenuPrimitive.Popup>,
@@ -180,7 +180,7 @@ export type DataTableFilterContentProps = Omit<
    * field highlighted. From two typed characters on, the menu also lists matching option values
    * across every field. A list of values shows its first 50 matches and asks for more typing. A
    * tap opens the menu or a submenu without focusing its search, so the on-screen keyboard stays
-   * down until the person taps the search.
+   * down until the user taps the search.
    */
   children?: ReactNode;
 };
@@ -189,7 +189,7 @@ export type DataTableFilterContentProps = Omit<
  * The add menu the Trigger opens, named "Add filter". Its field list filters by the search and
  * caps every value list at 50 rows. An option or boolean field opens a submenu of its values,
  * ticked live, and a boolean toggle's row ticks it on and off. A text, number or date field drills
- * in place: its editor replaces the search and the list, values apply live, and Back, Escape or a
+ * in place. Its editor replaces the search and the list, values apply live, and Back, Escape or a
  * fresh Backspace in an empty text input return to the list with the search kept and the field
  * highlighted. The table stays scrollable while it is open.
  */
@@ -301,7 +301,7 @@ export function DataTableFilterContent({
   );
 }
 
-/** The search group: Fuse's InputGroup around Base UI's Menu.Input, as Command.Input does. */
+/** The search group, Fuse's InputGroup around Base UI's Menu.Input, as Command.Input does. */
 function MenuSearch({
   label,
   placeholder,
@@ -333,10 +333,10 @@ function MenuSearch({
   );
 }
 
-/** The props of `DataTableFilter.FieldList`. */
+/** Props for `DataTableFilter.FieldList`. */
 export type DataTableFilterFieldListProps = {
   /**
-   * Rendered at the foot of every value submenu, below its list, such as a
+   * Content at the foot of every value submenu, below its list, such as a
    * `DataTableFilter.ValuesFooter`. Its `fields` picks the fields whose submenus show it.
    */
   children?: ReactNode;
@@ -478,9 +478,9 @@ function FieldRowContent({
 }
 
 /**
- * A text, number or date field: an item that drills into the field's editor in place. It keeps
- * the menu open, since `closeOnClick` defaults to true on Menu.Item (`MenuItem.tsx`). It ends with
- * a caret like a submenu row, because it leads to a further step.
+ * The item for a text, number or date field, which drills into the field's editor in place. It
+ * keeps the menu open, since `closeOnClick` defaults to true on Menu.Item, in `MenuItem.tsx`. It
+ * ends with a caret like a submenu row, because it leads to a further step.
  */
 function FieldItem({
   fieldId,
@@ -512,11 +512,11 @@ function FieldItem({
 }
 
 /**
- * A boolean toggle: one checkbox row that ticks the filter on and off, and keeps the menu open, as
- * Menu.CheckboxItem does. A small switch in Switch's look ends the row, in the column where the
- * other rows end with their caret, and the count sits just before it. The switch is a picture of
- * the row's own checked state: two kept-mounted checkbox indicators, the track and the thumb,
- * which carry the item's `data-checked` or `data-unchecked` and are hidden from assistive
+ * The row for a boolean toggle, one checkbox row that ticks the filter on and off, and keeps the
+ * menu open, as Menu.CheckboxItem does. A small switch in Switch's look ends the row, in the column
+ * where the other rows end with their caret, and the count sits right before it. The switch is a
+ * picture of the row's own checked state: two kept-mounted checkbox indicators, the track and the
+ * thumb, which carry the item's `data-checked` or `data-unchecked` and are hidden from assistive
  * technology. The row stays the one `menuitemcheckbox`, so the switch has no role, focus or
  * handler. The count is the rows the toggle keeps, also hidden, so the row's name stays the
  * field's.
@@ -556,10 +556,10 @@ function ToggleItem({
 }
 
 /**
- * An option, multi-option or boolean field: a filterable submenu of its values with its own query
- * and the shared cap. On a narrow viewport neither inline side fits, so it falls back below its row
- * through `fallbackAxisSide: "end"`, level with the menu's edge and as wide, covering only the
- * rows after its own.
+ * The submenu for an option, multi-option or boolean field, which filters its values with its own
+ * query and the shared cap. On a narrow viewport neither inline side fits, so it falls back below
+ * its row through `fallbackAxisSide: "end"`, level with the menu's edge and as wide, covering only
+ * the rows after its own.
  */
 function FieldSubmenu({
   fieldId,
@@ -624,7 +624,7 @@ function FieldSubmenu({
 }
 
 /**
- * The submenu's body. Its order is taken as the submenu opens, so a tick never moves a row, and
+ * The submenu's body. It fixes its order as the submenu opens, so a tick never moves a row, and
  * picked values sit first under a separator. Each tick applies at once, and the chip appears in
  * the bar under the open menu. The FieldList's children follow the list, in its value list context.
  */

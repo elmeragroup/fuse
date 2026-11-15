@@ -1,7 +1,7 @@
 /**
- * The metrics each density sets, grouped by the density role that reads them: control metrics
- * (`--control-*`), row metrics (`--row-*`), surface metrics (`--surface-pad-*`,
- * `--surface-gap-*`) and label metrics (`--label-*`). `fuse.css` declares the same values by
+ * The metrics each density sets, grouped by the density role that reads them: the control metrics
+ * `--control-*`, the row metrics `--row-*`, the surface metrics `--surface-pad-*` and
+ * `--surface-gap-*`, and the label metrics `--label-*`. `fuse.css` declares the same values by
  * hand, dense on `:root` and comfortable on `:root[data-density="comfortable"]`, and
  * `density-css.test.ts` requires both rules to equal {@link DENSITY_METRICS}. Tooling that cannot
  * read CSS, such as the demo-stage artifact and the resolved theme catalog the Figma sync reads,
@@ -15,7 +15,7 @@ import type { DensityRole } from "./density-roles";
 /** The box or type property a metric sets, which decides how design tools offer it. */
 export type DensityMetricKind = "height" | "padding" | "gap" | "fontSize" | "lineHeight";
 
-/** The roles that read density metrics; `layout` and `fixed` parts read none. */
+/** The roles that read density metrics. `layout` and `fixed` parts read none. */
 export type DensityMetricRole = Exclude<DensityRole, "layout" | "fixed">;
 
 /** A family's name stem, the kind its metrics set and the role that reads them. */
@@ -35,14 +35,13 @@ type SingleFamilySpec = FamilySpec & { description: string };
 
 /**
  * The families with one metric per control size, such as `control-h-md`, in `fuse.css` order.
- * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable
- * takes the side padding of the customer-facing reference button,
- * except at xs, which keeps `control-px` until design picks one. `control-px-button-icon` is
- * the edge beside a leading or trailing icon on those labels. Dense matches `control-px-icon`,
- * and comfortable, from sm up, keeps it at three quarters of the label inset, so the icon and
- * its gap balance the label side; xs keeps `control-px-icon` until design picks one. Only
- * Button reads the two families, so fields, Select and Toggle keep `control-px` and
- * `control-px-icon`.
+ * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable takes
+ * the side padding of the customer-facing reference button, except at xs, which keeps `control-px`
+ * until design picks one. `control-px-button-icon` is the edge beside a leading or trailing icon on
+ * those labels. Dense matches `control-px-icon`, and comfortable, from sm up, keeps it at three
+ * quarters of the label inset, so the icon and its gap balance the label side. At xs, it keeps
+ * `control-px-icon` until design picks one. Only Button reads the two families, so fields, Select
+ * and Toggle keep `control-px` and `control-px-icon`.
  */
 const SIZED_FAMILIES = [
   {
@@ -92,13 +91,13 @@ const SIZED_FAMILIES = [
  * The families that are one metric each, in `fuse.css` order.
  *
  * - `control-text` and `control-leading` are a control's type.
- * - The row metrics size one line of a collection: a menu, listbox, navigation or sidebar row.
- *   A row keeps 14/20 text at both densities, so `2 × row-py + 20px` is `row-h`, and a wrapped
- *   row grows by its leading. `row-h-header` is a table head, `row-h` plus 8px.
+ * - The row metrics size one line of a collection: a menu, listbox, navigation or sidebar row. A
+ *   row keeps 14px text with 20px leading at both densities, so `2 × row-py + 20px` is `row-h`, and
+ *   a wrapped row grows by its leading. `row-h-header` is a table head, `row-h` plus 8px.
  * - `label-text` and `label-leading` are the words that describe a control, such as a selection
  *   row's title and description, and the text of a notice set beside the controls, such as an
- *   Alert's title and body. Dense matches `text-sm`, and comfortable takes the
- *   customer-facing reference radio card's 16px, a step below the 18px field and button text.
+ *   Alert's title and body. Dense matches `text-sm`, and comfortable takes the customer-facing
+ *   reference radio card's 16px, a step below the 18px field and button text.
  */
 const SINGLE_FAMILIES = [
   {
@@ -168,10 +167,10 @@ const SURFACE_PAD_DESCRIPTIONS = {
 } as const satisfies Record<(typeof SURFACE_PAD_TIERS)[number], string>;
 
 /**
- * The surface gap tiers, in `fuse.css` order: the space between the parts a stack groups, such
- * as options (`sm`), a control and the label beside it (`md`), option rows laid out in a line or
- * nested groups (`lg`), and the fields of a set (`xl`). Gaps of 6px or less between one part's
- * own pieces, such as a label and the control under it, are part spacing and stay fixed.
+ * The surface gap tiers, in `fuse.css` order: the space between the parts a stack groups. `sm`
+ * spaces options, `md` a control and the label beside it, `lg` option rows laid out in a line or
+ * nested groups, and `xl` the fields of a set. Gaps of 6px or less between one part's own pieces,
+ * such as a label and the control under it, are part spacing and stay fixed.
  */
 const SURFACE_GAP_TIERS = ["sm", "md", "lg", "xl"] as const;
 

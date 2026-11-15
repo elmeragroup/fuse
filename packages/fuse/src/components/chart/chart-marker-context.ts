@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The marker a clock ValueLabel sits beside, in a light leaf of its own, so every Root's own scope
+ * The marker a clock ValueLabel sits beside, in a small module of its own, so every Root's own scope
  * resets it without importing the clock's placement or geometry.
  */
 import { createContext } from "react";

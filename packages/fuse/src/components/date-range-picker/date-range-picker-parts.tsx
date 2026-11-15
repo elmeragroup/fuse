@@ -37,11 +37,11 @@ const fieldSlots = fieldVariants();
 
 type LabelElementProps = useRender.ComponentProps<"span">;
 
-/** `DateRangePicker.Label` takes a `span`'s props plus Base UI's `render`. */
+/** Props for `DateRangePicker.Label`: a `span`'s props plus Base UI's `render`. */
 export type DateRangePickerLabelProps = LabelElementProps & {
   /**
-   * The label text. It names the group, both inputs' segments ("month, Start Date, Period"), the
-   * trigger and the popup. Pressing the label focuses the first segment.
+   * The label text. It names the group, both inputs' segments, such as "month, Start Date, Period",
+   * the trigger and the popup. Pressing the label focuses the first segment.
    */
   children?: LabelElementProps["children"];
   /**
@@ -83,7 +83,7 @@ export function DateRangePickerLabel({
 
 type DescriptionElementProps = useRender.ComponentProps<"div">;
 
-/** `DateRangePicker.Description` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `DateRangePicker.Description`: a `div`'s props plus Base UI's `render`. */
 export type DateRangePickerDescriptionProps = DescriptionElementProps & {
   /** Supporting copy, which describes the group and both inputs. */
   children?: DescriptionElementProps["children"];
@@ -120,12 +120,12 @@ export function DateRangePickerDescription({
 
 type ErrorElementProps = useRender.ComponentProps<"div">;
 
-/** `DateRangePicker.Error` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `DateRangePicker.Error`: a `div`'s props plus Base UI's `render`. */
 export type DateRangePickerErrorProps = ErrorElementProps & {
   /**
-   * Replaces the merged messages: each end's own message (missing, incomplete, out of bounds,
-   * unavailable, an end before its start) and the errors a `Form` holds under `startName` and
-   * `endName`, once each. `null`, `false` and `""` keep them. The error renders nothing while the
+   * Replaces the merged messages, once each: each end's own message, for a missing, incomplete, out
+   * of bounds or unavailable end or an end before its start, and the errors a `Form` holds under
+   * `startName` and `endName`. `null`, `false` and `""` keep them. The error renders nothing while the
    * picker is valid, and while it renders its text describes the group and both inputs.
    */
   children?: ErrorElementProps["children"];
@@ -166,7 +166,7 @@ export function DateRangePickerError({
   return shown ? element : null;
 }
 
-/** An end's input: `DateInput.Root`'s presentation props. */
+/** Props for an end's input: `DateInput.Root`'s presentation props. */
 export type DateRangePickerInputProps = PickerInputPartProps;
 
 /** Reads its Field's messages and the Form's errors under its name, and reports them to the Root. */
@@ -178,7 +178,7 @@ function EndpointMessagesReport({
 }: {
   readonly endpoint: Endpoint;
   readonly report: DateRangePickerRootContextValue["reportMessages"];
-  /** The other end's value as ISO text: this end's validity depends on it (a reversed range). */
+  /** The other end's value as ISO text. This end's validity depends on it, since a range can reverse. */
   readonly otherEnd: string;
   /** Whether this end comes before its start. */
   readonly reversed: boolean;
@@ -277,7 +277,7 @@ export function DateRangePickerEndInput(props: DateRangePickerInputProps): React
   return <DateRangePickerEndpoint endpoint="end" {...props} />;
 }
 
-/** An end's time input: `DateInput.Root`'s presentation props. */
+/** Props for an end's time input: `DateInput.Root`'s presentation props. */
 export type DateRangePickerTimeInputProps = PickerInputPartProps;
 
 function DateRangePickerTimeInput({
@@ -302,8 +302,8 @@ function DateRangePickerTimeInput({
  * The start's time, edited in the popup under the calendar, as `DatePicker.TimeInput` edits the
  * single picker's: a time-only `DateInput.Root` named "Start time", rendered only while the range has
  * a time to show. A time typed for an end of a whole range changes that end's time. In an empty
- * picker it waits for the end's day, and a range picked in the calendar (with
- * `shouldCloseOnSelect={false}`) commits once both ends have a time, or when the popup closes, each
+ * picker it waits for the end's day, and a range picked in the calendar with
+ * `shouldCloseOnSelect={false}` commits once both ends have a time, or when the popup closes, each
  * end without a typed time at midnight. It is a Field of its own and submits nothing.
  */
 export function DateRangePickerStartTimeInput(props: DateRangePickerTimeInputProps): ReactElement | null {
@@ -315,12 +315,12 @@ export function DateRangePickerEndTimeInput(props: DateRangePickerTimeInputProps
   return <DateRangePickerTimeInput endpoint="end" {...props} />;
 }
 
-/** `DateRangePicker.Separator` takes a `span`'s props plus Base UI's `render`. */
+/** Props for `DateRangePicker.Separator`: a `span`'s props plus Base UI's `render`. */
 export type DateRangePickerSeparatorProps = useRender.ComponentProps<"span">;
 
 /**
- * The en dash between the inputs. Hidden from assistive technology: the segments already say
- * "Start Date" and "End Date".
+ * The en dash between the inputs, with `aria-hidden`, because the segments already say "Start Date"
+ * and "End Date".
  */
 export function DateRangePickerSeparator({
   className,
@@ -364,9 +364,9 @@ export type DateRangePickerCalendarProps = Omit<
 /**
  * The picker's calendar, a `RangeCalendar.Root` on the range's days. A completed range reports its
  * reason and, pressed or chosen by key, closes the popup. Escape on a half-picked range drops it and
- * keeps the popup open. With a preset pane, focus leaving the calendar drops a half-picked range
- * (`commitBehavior` `"reset"`); without one it completes it (`"select"`). Without children it renders
- * the month buttons, the heading and the months.
+ * keeps the popup open. With a preset pane, focus leaving the calendar drops a half-picked range, as
+ * `commitBehavior` `"reset"` does; without one it completes it, as `"select"` does. Without children
+ * it renders the month buttons, the heading and the months.
  */
 export function DateRangePickerCalendar({
   className,
@@ -390,7 +390,7 @@ export function DateRangePickerCalendar({
 }
 
 /**
- * DateRangePickerField's popup column: the calendar, and both ends' time inputs side by side under
+ * `DateRangePickerField`'s popup column: the calendar, and both ends' time inputs side by side under
  * it while the range has a time. A date-only range's popup holds the calendar alone, with no column
  * around it. Private to the composite: a composition places the time input parts itself.
  */

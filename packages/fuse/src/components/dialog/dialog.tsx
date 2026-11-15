@@ -41,7 +41,7 @@ export function DialogTrigger({
   );
 }
 
-/** Renders the scrim and popup in a portal. `Dialog.Content` renders one for you. */
+/** The portal that holds the scrim and popup. `Dialog.Content` already renders one. */
 export function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): ReactElement {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
@@ -60,7 +60,7 @@ export function DialogClose({
   );
 }
 
-/** The scrim behind the popup. `Dialog.Content` renders one for you. */
+/** The scrim behind the popup. `Dialog.Content` already renders one. */
 export function DialogOverlay({
   className,
   ...props
@@ -81,10 +81,10 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> & 
    * past 90% of the viewport's width.
    */
   size?: VariantProps<typeof dialogContentVariants>["size"];
-  /** Shows a close button, a ghost icon `Dialog.Close`, in the popup's top-right corner. */
+  /** Whether the popup shows a close button, a ghost icon `Dialog.Close`, in its top-right corner. */
   showCloseButton?: boolean;
 } & OverlayContainerProps & {
-    /** The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. */
+    /** The corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary. */
     closeLabel?: string;
   };
 
@@ -127,11 +127,11 @@ export function DialogHeader({ className, ...props }: ComponentProps<"div">): Re
 
 export type DialogFooterProps = ComponentProps<"div"> & {
   /**
-   * Adds a close button, an outline `Dialog.Close`, after the footer's children. It is separate
-   * from `Dialog.Content`'s corner close button.
+   * Whether the footer adds a close button, an outline `Dialog.Close`, after its children. It is
+   * separate from `Dialog.Content`'s corner close button.
    */
   showCloseButton?: boolean;
-  /** The footer close button's label. Unset, it reads `overlay.close` from the locale dictionary. */
+  /** The footer close button's label. Defaults to `overlay.close` from the locale dictionary. */
   closeLabel?: string;
 };
 
@@ -156,7 +156,7 @@ export function DialogFooter({
 
 export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
   /**
-   * Lets the title take focus from script. It sets `tabIndex={-1}` and shows a focus ring
+   * Whether the title can take focus from script. It sets `tabIndex={-1}` and shows a focus ring
    * while the title has focus. For long content, set it and pass the title's ref to
    * `Dialog.Content`'s `initialFocus`, so the dialog opens at the top of its content.
    */
@@ -181,7 +181,7 @@ export function DialogTitle({
   );
 }
 
-/** The dialog's description, which describes the popup. A link inside is underlined. */
+/** The dialog's description, which describes the popup. It underlines a link inside. */
 export function DialogDescription({
   className,
   ...props

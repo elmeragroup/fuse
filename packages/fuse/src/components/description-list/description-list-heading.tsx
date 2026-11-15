@@ -7,7 +7,7 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { cn } from "../../styles/cn";
 
-/** `DescriptionList.Heading` takes a native heading's props and `render`. */
+/** Props for `DescriptionList.Heading`, a native heading's props and `render`. */
 export type DescriptionListHeadingProps = ComponentProps<"h2"> & {
   /**
    * Replaces the host `<h2>`, such as `render={<h3 />}` for another outline level. The heading

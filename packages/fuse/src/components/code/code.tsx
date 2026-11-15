@@ -20,7 +20,7 @@ function highlight(source: string): string {
   return render(parse(source, { tokenize: (code) => tokenize(code, undefined) }));
 }
 
-/** `Code` takes a native `pre` element's props, without `children`, plus the source text. */
+/** Props for `Code`, which takes a native `pre` element's props, without `children`, plus the source text. */
 export type CodeProps = Omit<ComponentProps<"pre">, "children" | "aria-label"> & {
   /**
    * The source text, highlighted as JavaScript and JSX. Pass raw text, not HTML. The highlighter
@@ -28,7 +28,7 @@ export type CodeProps = Omit<ComponentProps<"pre">, "children" | "aria-label"> &
    */
   code: string;
   /**
-   * Names the block. A block named here or through `aria-labelledby` is a `region` landmark. An
+   * The block's accessible name. A block named here or through `aria-labelledby` is a `region` landmark. An
    * unnamed block has no role. The block is always a tab stop, so a keyboard user can scroll it.
    */
   "aria-label"?: ComponentProps<"pre">["aria-label"];

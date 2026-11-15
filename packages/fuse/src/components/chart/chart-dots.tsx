@@ -54,9 +54,8 @@ export type ChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
   /**
-   * The dot's look. "default" is a filled dot inside a ring of the surface the chart rests on,
-   * `--surface`. "ring" is a hollow ring and "halo" a dot inside a faint halo of
-   * its colour.
+   * The dot's look. `default` is a filled dot inside a ring of `--surface`, the color the chart
+   * rests on. `ring` is a hollow ring and `halo` a dot inside a faint halo of its color.
    */
   variant?: "default" | "ring" | "halo";
 };
@@ -99,7 +98,7 @@ export type ChartMarkerProps = ChartLayerProps & {
  * @beta
  */
 export type ChartValueLabelProps = ChartLayerProps & {
-  /** The value format. The series' config `format` is the default. */
+  /** The value format. Defaults to the series' config `format`. */
   format?: ValueFormat;
 };
 
@@ -110,7 +109,7 @@ const DOT_RADIUS = { default: 4, ring: 4, halo: 5, ping: 4 } as const;
 type PointLook = { readonly frame: PlotFrame | null; readonly xScale: "band" | "point" };
 
 /**
- * Write each dot's centre from the loop's numbers, a place and a value per point, in order. A point
+ * Writes each dot's center from the loop's numbers, a place and a value per point, in order. A point
  * may draw more than one circle, as a ping ring and its dot do, which share its numbers.
  */
 function writeCentres(
@@ -130,15 +129,15 @@ function writeCentres(
   }
 }
 
-/** Draw a series' dots from the loop's numbers. */
+/** Draws a series' dots from the loop's numbers. */
 function drawDots(group: SVGGElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame !== null) writeCentres(group.children, { frame, xScale }, values);
 }
 
 /**
- * One dot, which keeps the `data-intro` value and the centre its first render chose, so an added
- * dot fades in and React writes its centre once. The loop draws the centre after that, so the dot
+ * One dot, which keeps the `data-intro` value and the center its first render chose, so an added
+ * dot fades in and React writes its center once. The loop draws the center after that, so the dot
  * renders again only for the props it reads after its first render.
  */
 const Dot = memo(function Dot({
@@ -369,7 +368,7 @@ const ACTIVE_DOT_COPY: AttachedCopy = {
   },
 };
 
-/** Draw the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
+/** Draws the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
 function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
@@ -377,7 +376,7 @@ function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues):
   writeCentres(dots, { frame, xScale }, values, dots.length);
 }
 
-/** A dot's centre in its layer's pixels. */
+/** A dot's center in its layer's pixels. */
 type Centre = { readonly cx: number; readonly cy: number };
 
 /**
@@ -559,7 +558,7 @@ function rideOf(
 /**
  * The dot on one series at the active slot. Write one per series that needs one. A pointer, key or
  * touch step glides it to the next reading along its series' drawn line, in step with the crosshair
- * on a spring that quickens with the pointer, unless the reader prefers reduced motion. It rides its
+ * on a spring that quickens with the pointer, unless the user prefers reduced motion. It rides its
  * Line's or Area's drawn line, or on a Bar series a straight track through the bars' far ends: a
  * bar's top, a stack segment's outer edge, a negative bar's low end. It moves at once across a gap
  * or a missing reading. It shows and hides at once, and during a data update it rides what it sits
@@ -720,7 +719,7 @@ const markerParts = partsCache((box) => ({
   anchors: [...box.querySelectorAll<HTMLElement>(":scope > [data-part=anchor]")],
 }));
 
-/** Draw a Marker's dots and its pills' anchors from the loop's numbers, a place and a value per slot. */
+/** Draws a Marker's dots and its pills' anchors from the loop's numbers, a place and a value per slot. */
 function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
   if (frame === null) return;
@@ -737,9 +736,9 @@ function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): v
  * A resting dot on one series at the slots `at` selects, such as the current slot, the latest
  * reading or the minimum, as the Figma price chart's Now indicator draws. A `ValueLabel` child adds
  * the value as a pill above each dot, or beside it for `at="min"`, so it never covers the line
- * that rises on both sides of the lowest reading. It sits on a Line's or an Area's vertex, or at a Bar's tip,
- * and moves with what it sits on during a data update. It is plot output that readers skip, and
- * the option and description carry its meaning.
+ * that rises on both sides of the lowest reading. It sits on a Line's or an Area's vertex, or at a
+ * Bar's tip, and moves with what it sits on during a data update. It is plot output that readers
+ * skip, and the option and description carry its meaning.
  *
  * @beta
  */

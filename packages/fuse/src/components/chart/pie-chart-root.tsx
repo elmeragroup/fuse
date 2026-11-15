@@ -44,7 +44,7 @@ export type PieChartRootProps<
     /**
      * The rows, one per slice, drawn in data order from `startAngle`, clockwise. Sort the rows to put
      * the largest slice first. A negative value throws `negative-polar-value`. A data update tweens
-     * the slices to their new angles, and a slice that leaves collapses into its neighbour's seam.
+     * the slices to their new angles, and a slice that leaves collapses into its neighbor's seam.
      * Every value above 0 keeps at least one device pixel of rim, and the labels, the tooltip and
      * the table keep the true value. With no value above 0 the chart shows `Empty` and has no tab
      * stop. A server component can render the chart when every prop is plain data, and with
@@ -54,7 +54,7 @@ export type PieChartRootProps<
     /**
      * One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with
      * `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`,
-     * `qualityKey`, `interval` or `missing`, and its colours are `ChartPolarColor` roles. Root's
+     * `qualityKey`, `interval` or `missing`, and its colors are `ChartPolarColor` roles. Root's
      * `qualityKey` names the quality column instead.
      */
     config: TConfig & ChartCategoryConfigCheck<TConfig, TRow[TNameKey]>;
@@ -69,19 +69,18 @@ export type PieChartRootProps<
     qualityKey?: ChartQualityKey<TRow>;
     /** The value format. A category's config `format` overrides it. */
     valueFormat?: ValueFormat;
-    /** A fraction of the outer radius. 0, the default, draws a pie, and the Figma donut uses 0.62. */
+    /** A fraction of the outer radius. 0 draws a pie, and the Figma donut uses 0.62. */
     innerRadius?: number;
-    /** Degrees between slices. A negative value overlaps neighbours. */
+    /** Degrees between slices. A negative value overlaps neighbors. */
     padAngle?: number;
     /**
-     * Degrees from 12 o'clock, clockwise, where the first slice starts. 0 by default. An angle that
-     * is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
+     * Degrees from 12 o'clock, clockwise, where the first slice starts. An angle that is not a finite
+     * number, here or in `endAngle`, throws `invalid-sweep`.
      */
     startAngle?: number;
     /**
-     * Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default. The chart keeps
-     * the aspect of the sweep's bounding box, so a semicircle from -90 to 90 is twice as wide as it
-     * is tall.
+     * Degrees from 12 o'clock, clockwise, where the last slice ends. The chart keeps the aspect of
+     * the sweep's bounding box, so a semicircle from -90 to 90 is twice as wide as it is tall.
      */
     endAngle?: number;
     /**
@@ -91,16 +90,19 @@ export type PieChartRootProps<
      */
     max?: number;
     /**
-     * The most slices drawn, 6 by default. Past it the smallest rows fold into one Other slice, which
+     * The most slices drawn. Past it the smallest rows fold into one Other slice, which
      * comes last and prints `otherLabel` with the number of categories it holds. The table lists
      * every row unfolded.
      */
     maxSlices?: number;
-    /** The Other slice's label. The dictionary's "Annet" is the default. */
+    /** The Other slice's label. Defaults to the dictionary's "Annet". */
     otherLabel?: string;
     /** The slice that is active before any pointer or key moves. A folded category activates Other. */
     defaultActiveKey?: keyof TConfig & string;
-    /** "none" turns off the entrance, which sweeps the slices in the first time the chart comes into view. */
+    /**
+     * `"none"` turns off the entrance, which sweeps the slices in the first time the chart comes into
+     * view.
+     */
     "data-intro"?: "none";
     /** Replaces the generated description verbatim. */
     description?: string;

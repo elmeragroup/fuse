@@ -16,7 +16,7 @@ const styles = fileUploadVariants();
 
 type FileUploadDescriptionBaseProps = useRender.ComponentProps<"p">;
 
-/** `FileUpload.Description` takes a `p`'s props plus Base UI's `render`. */
+/** Props for `FileUpload.Description`, a `p` with Base UI's `render`. */
 export type FileUploadDescriptionProps = Omit<FileUploadDescriptionBaseProps, "children"> & {
   /**
    * What the Root takes, such as "Images or PDFs, up to 3 files of 5 MB each". While it is

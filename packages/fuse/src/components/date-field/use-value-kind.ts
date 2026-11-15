@@ -14,7 +14,7 @@ export type ValueKindOptions = {
   /**
    * Whether to warn, in development, when the value replaces a kind a value named with another
    * kind. Only the input that edits the value warns, so a Root handing its value to one leaves it
-   * off. Defaults to `false`.
+   * off.
    */
   readonly warnOnKindChange?: boolean;
   /**

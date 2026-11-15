@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The paint of a Line or an Area, after CONTRACT section 8.9. A role paints the series' own colour.
+ * The paint of a Line or an Area, after CONTRACT section 8.9. A role paints the series' own color.
  * A role list is decorative and runs along the slot axis. A scale or a threshold follows the value:
  * one `userSpaceOnUse` gradient along the value axis with hard stops at the bin edges or at the
  * threshold, so the stroke and the fill take the step of the value they pass, and a riser crosses
@@ -49,7 +49,7 @@ function scaleStops(paint: SeriesPaint, ramp: readonly string[], frame: PlotFram
 
 /**
  * The gradient a series path paints from, or nothing for a single role, which paints through the
- * series' own colour.
+ * series' own color.
  *
  * @param props - The gradient's id, the series paint and the frame it draws in.
  * @returns The gradient, or null.

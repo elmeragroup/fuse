@@ -24,7 +24,7 @@
 export * as Chart from "./chart-parts";
 
 /**
- * `Chart` under the name area-chart readers search for. Every part is the same component.
+ * `Chart` under the name area-chart consumers search for. Every part is the same component.
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
@@ -40,7 +40,7 @@ export * as Chart from "./chart-parts";
 export * as AreaChart from "./area-chart-parts";
 
 /**
- * `Chart` under the name bar-chart readers search for. Every part is the same component.
+ * `Chart` under the name bar-chart consumers search for. Every part is the same component.
  *
  * Preview: names and props can change until Fuse's first stable release.
  *
@@ -56,7 +56,7 @@ export * as AreaChart from "./area-chart-parts";
 export * as BarChart from "./bar-chart-parts";
 
 /**
- * `Chart` under the name line-chart readers search for. Every part is the same component.
+ * `Chart` under the name line-chart consumers search for. Every part is the same component.
  *
  * Preview: names and props can change until Fuse's first stable release.
  *

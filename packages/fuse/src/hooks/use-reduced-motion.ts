@@ -5,8 +5,8 @@ import { useMediaQuery } from "./use-media-query";
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 
 /**
- * Package-private motion preference probe: whether the reader asks for reduced motion. The
- * server, and hydration, report `false` until the client reads the query, as `useMediaQuery`
+ * Whether the user asks for reduced motion. The hook is a package-private motion preference probe.
+ * The server, and hydration, report `false` until the client reads the query, as `useMediaQuery`
  * explains.
  *
  * @returns Whether `(prefers-reduced-motion: reduce)` matches now.

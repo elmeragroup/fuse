@@ -141,7 +141,7 @@
           "type": "Grouped | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
+          "description": "Whether `items` are groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
           "required": false
         },
         {
@@ -284,7 +284,7 @@
           "type": "((open: boolean, eventDetails: DialogRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs when the dialog opens or closes, with Base UI Dialog's event details. Escape closes the dialog from any page. To make Escape go back a page first, control `pages` and `open`, and when `eventDetails.reason` is `\"escape-key\"` and the stack has a page to go back to, call `eventDetails.cancel()` and pop the stack. A controlled stack keeps its pages when the palette closes, so set it back to the first page here when the palette opens.",
+          "description": "Called when the dialog opens or closes, with Base UI Dialog's event details. Escape closes the dialog from any page. To make Escape go back a page first, control `pages` and `open`, and when `eventDetails.reason` is `\"escape-key\"` and the stack has a page to go back to, call `eventDetails.cancel()` and pop the stack. A controlled stack keeps its pages when the palette closes, so set it back to the first page here when the palette opens.",
           "required": false
         },
         {
@@ -304,7 +304,7 @@
           "type": "((pages: string[]) => void) | ((pages: string[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The Root calls it with the next stack after a push or a pop.",
+          "description": "Called after a push or a pop, with the next stack.",
           "required": false
         },
         {
@@ -395,7 +395,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
+          "description": "Whether the list renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }
       ]
@@ -483,7 +483,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The dialog's name. Unset, it reads `command.dialogLabel`, \"Command palette\", from the locale dictionary. A `Dialog.Title` inside the content names the dialog instead.",
+          "description": "The dialog's name. Defaults to `command.dialogLabel`, \"Command palette\", from the locale dictionary. A `Dialog.Title` inside the content names the dialog instead.",
           "required": false
         },
         {
@@ -512,7 +512,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -577,7 +577,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The field's name. Unset, it is the enclosing `Command.Page`'s `label`, or in a palette without pages `command.inputLabel`, \"Search commands\", from the locale dictionary.",
+          "description": "The field's name. Defaults to the enclosing `Command.Page`'s `label`, or in a palette without pages to `command.inputLabel`, \"Search commands\", from the locale dictionary.",
           "required": false
         },
         {
@@ -615,7 +615,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The field's placeholder. Unset, it reads `command.placeholder` from the locale dictionary.",
+          "description": "The field's placeholder. Defaults to `command.placeholder` from the locale dictionary.",
           "required": false
         },
         {
@@ -678,7 +678,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -687,7 +687,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -696,7 +696,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. An `aria-label` wins over it. Unset, both read `command.back` from the locale dictionary.",
+          "description": "The accessible name. An `aria-label` wins over it. Both default to `command.back` from the locale dictionary.",
           "required": false
         },
         {
@@ -716,7 +716,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -725,7 +725,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -765,7 +765,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -795,7 +795,7 @@
           "type": "((item: any, index: number) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The rows, as a row function over the filtered items or as elements. A row function takes its item type from your annotation, such as `(entry: Entry) =>`. In a `virtualized` search, a row function needs a `render` value, or the list throws.",
+          "description": "The rows, as a row function over the filtered items or as elements. A row function takes its item type from the consumer's annotation, such as `(entry: Entry) =>`. In a `virtualized` search, a row function needs a `render` value, or the list throws.",
           "required": false
         },
         {
@@ -815,7 +815,7 @@
           "type": "ComponentRenderFn<HTMLProps, ComboboxListState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The list element. Beside a row function, the rendered element receives the row function as `children`, with Base UI's listbox props and no rendered rows, and decides which rows mount. In a `virtualized` search, pass `<CommandVirtual.List />`, and keep `Command.List` out of a `ScrollArea`, because the virtual list is its own scroll element. Beside other children, `render` keeps Base UI's meaning, so a virtualizer of your own can pass `Command.Item` elements, each with its `index`.",
+          "description": "The list element. Beside a row function, the rendered element receives the row function as `children`, with Base UI's listbox props and no rendered rows, and decides which rows mount. In a `virtualized` search, pass `<CommandVirtual.List />`, and keep `Command.List` out of a `ScrollArea`, because the virtual list is its own scroll element. Beside other children, `render` keeps Base UI's meaning, so the consumer's own virtualizer can pass `Command.Item` elements, each with its `index`.",
           "required": false
         },
         {
@@ -847,7 +847,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The message shown while no item matches. Unset, it reads `command.empty` from the locale dictionary.",
+          "description": "The message shown while no item matches. Defaults to `command.empty` from the locale dictionary.",
           "required": false
         },
         {
@@ -1110,7 +1110,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs when the user clicks the row, and when they press Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
+          "description": "Called when the user clicks the row, and when the user presses Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
           "required": false
         },
         {
@@ -1265,7 +1265,7 @@
           "type": "Grouped | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
+          "description": "Whether `items` are groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
           "required": false
         },
         {
@@ -1468,7 +1468,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
+          "description": "Whether the list renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }
       ]
@@ -1533,7 +1533,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs when the user clicks the row, and when they press Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
+          "description": "Called when the user clicks the row, and when the user presses Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
           "required": false
         },
         {

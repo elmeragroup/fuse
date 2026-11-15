@@ -29,7 +29,7 @@ import type { TickStride } from "./layout/x-ticks";
  */
 export type ChartXAxisProps = ChartLayerProps & {
   /**
-   * The tick label format. The interval's tick preset is the default. A tick that starts a coarser
+   * The tick label format. Defaults to the interval's tick preset. A tick that starts a coarser
    * calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset
    * can't name a day, so those ticks keep their unit's default preset, such as `okt` under
    * `format="hour-range"`. A calendar preset or Intl options format them as given.
@@ -48,7 +48,7 @@ export type ChartXAxisProps = ChartLayerProps & {
  */
 export type ChartYAxisProps = ChartLayerProps & {
   /**
-   * The tick label format. The layout's first series' `format` is the default. Tick labels keep the
+   * The tick label format. Defaults to the layout's first series' `format`. Tick labels keep the
    * format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the
    * tooltip and the table print.
    */

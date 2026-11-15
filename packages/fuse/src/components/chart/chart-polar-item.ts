@@ -85,7 +85,7 @@ export function qualityOf(reading: Reading): "estimated" | "corrected" | "missin
 }
 
 /**
- * The quality of the readings Other holds (section 8.7). Folding is a drawing rule, so Other
+ * The quality of the readings Other holds, per section 8.7. Folding is a drawing rule, so Other
  * keeps their uncertainty: estimated when any is estimated, corrected when any is corrected and none
  * estimated, missing only when every one is missing, and measured otherwise.
  *
@@ -106,11 +106,11 @@ export function valueOf(reading: Reading): number | null {
 }
 
 /**
- * Read the rows: each row's category and reading, the first row of a category only. A cell that breaks a reading rule, such as a value
- * that is not a finite number, throws that rule in development, and production counts the reading
- * as missing and warns once. A negative reading throws `negative-polar-value` in development, and
- * production draws it as 0 and keeps its sign in the texts. A category config lacks throws
- * `unknown-category` in development.
+ * Reads the rows: each row's category and reading, the first row of a category only. A cell that
+ * breaks a reading rule, such as a value that is not a finite number, throws that rule in
+ * development, and production counts the reading as missing and warns once. A negative reading
+ * throws `negative-polar-value` in development, and production draws it as 0 and keeps its sign in
+ * the texts. A category config lacks throws `unknown-category` in development.
  */
 function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
   const { rows, config, nameKey, valueKey, qualityKey, part } = input;
@@ -659,8 +659,8 @@ export function radialModel(input: RadialInput): PolarModel {
 }
 
 /**
- * A radial chart's centre: the active ring, or with nothing active the sum of the values over the
- * sum of the maxima when every ring shares one format (CONTRACT section 8.13).
+ * A radial chart's center: the active ring, or with nothing active the sum of the values over the
+ * sum of the maxima when every ring shares one format, per CONTRACT section 8.13.
  */
 function radialCentre(
   items: readonly PolarItem[],

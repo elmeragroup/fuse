@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The radar's ActiveDot: the dot on one series at the Root's follower angle, on the polygon's edge,
+ * The radar's ActiveDot, which is the dot on one series at the Root's follower angle, on the polygon's edge,
  * which moves with its series' tween and turns with the hand.
  */
 import { useLayoutEffect, useMemo, useRef } from "react";
@@ -45,7 +45,7 @@ type ActiveDotLook = {
 };
 
 /**
- * Place the dot where the ray at the follower's angle meets the series' polygon in these radii, in
+ * Places the dot where the ray at the follower's angle meets the series' polygon in these radii, in
  * the dial's own units. A missing reading at the active spoke shows no dot, and on an edge beside a
  * missing reading, which the Line does not draw, the dot fades out where it left the drawn edge.
  */
@@ -73,7 +73,7 @@ function dotStretch(look: ActiveDotLook, radii: MarkValues, angle: number): numb
   return Math.hypot(after.x - before.x, after.y - before.y) / ((2 * STRETCH_SPAN * Math.PI) / 180);
 }
 
-/** Draw the active dot in this loop frame's radii, so it follows its series' tween. */
+/** Draws the active dot in this loop frame's radii, so it follows its series' tween. */
 function drawActiveDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValues): void {
   look.drawn.current = radii;
   placeDot(group, look, radii);

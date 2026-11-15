@@ -54,7 +54,7 @@ export type CheckboxGroupProps = {
   /** The group's visible name, rendered as `Field.Legend variant="label"`. Leave it out to drop the legend row. */
   label?: string;
   /**
-   * Hides the legend visually and keeps it as the group's accessible name. Use it for a group
+   * Whether the legend is visually hidden. It stays the group's accessible name. Use it for a group
    * under a heading that already names it. The first option moves up into the legend's place.
    */
   isLabelHidden?: boolean;
@@ -90,9 +90,9 @@ export type CheckboxGroupProps = {
    * selects them all.
    */
   allValues?: string[];
-  /** Disables every option. */
+  /** Whether every option is disabled. */
   isDisabled?: boolean;
-  /** Marks the field invalid, so the options show the invalid face. */
+  /** Whether the field is invalid, so the options show the invalid face. */
   isInvalid?: boolean;
   /** The form field name every checked option submits its `value` under. */
   name?: string;

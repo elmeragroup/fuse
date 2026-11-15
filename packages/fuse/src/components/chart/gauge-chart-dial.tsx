@@ -27,7 +27,7 @@ import { pathNumber } from "./layout/rounding";
 /** The solid band, from its inner radius to the rim. */
 const SOLID = rimBand(GAUGE_RADII.solidInner);
 
-/** The path every notch draws, centred on 12 o'clock, which each notch turns to its place. */
+/** The path every notch draws, centered on 12 o'clock, which each notch turns to its place. */
 function notchPath(layout: NotchLayout): string {
   return arcPath({
     innerRadius: GAUGE_RADII.notchInner,
@@ -54,7 +54,7 @@ function dialNodes(group: SVGGElement): DialNodes {
   };
 }
 
-/** Lay the notches out for a measured dial, every gap the same whole number of device pixels. */
+/** Lays the notches out for a measured dial, every gap the same whole number of device pixels. */
 function layNotches(notches: readonly Element[], sweep: Sweep, pixels: DialPixels): void {
   const layout = notchLayout(sweep, notches.length, pixels);
   const path = notchPath(layout);

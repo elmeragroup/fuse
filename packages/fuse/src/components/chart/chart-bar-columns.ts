@@ -7,7 +7,7 @@
  * grows out of the zero line. An entry holds its column's middle and tip first, where the marks
  * attached to the series sit, then its span, its base, its missing tick's span and its emphasis
  * box's span. Its paint step, quality, projection and emphasis are topology, which the topology holds.
- * Above `DECIMATE_ABOVE` slots each M4 bucket is one entry, and each missing or emphasised slot one
+ * Above `DECIMATE_ABOVE` slots each M4 bucket is one entry, and each missing or emphasized slot one
  * more, which draws its tick or its box and no column, so decimation never drops an annotation.
  */
 import { missingTickAt } from "./chart-bar-draw";
@@ -106,7 +106,7 @@ export type ColumnsLayout = {
   /** The paint of each fill step, "" for the series paint, in the order the topology names them. */
   readonly fills: readonly string[];
   /**
-   * Each emphasised entry's key and own paint, in entry order: its value's scale or threshold step,
+   * Each emphasized entry's key and own paint, in entry order: its value's scale or threshold step,
    * or undefined for the series paint.
    */
   readonly emphasis: readonly { readonly key: string; readonly paint: string | undefined }[];
@@ -114,7 +114,7 @@ export type ColumnsLayout = {
 
 /**
  * One entry as `layoutColumns` builds it: its key, its place in the window, numbers and topology,
- * and an emphasised slot's own paint.
+ * and an emphasized slot's own paint.
  */
 type Entry = {
   readonly key: string;
@@ -133,7 +133,7 @@ export type ColumnsDrawing = {
   /** One projected path's data per fill step. */
   readonly projected: readonly string[];
   readonly missing: string;
-  /** The emphasised entries' boxes, in entry order. */
+  /** The emphasized entries' boxes, in entry order. */
   readonly emphasis: readonly PlotRect[];
 };
 
@@ -141,7 +141,7 @@ export type ColumnsDrawing = {
 type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
 
 /**
- * Lay out a path-form series' entries.
+ * Lays out a path-form series' entries.
  *
  * @param context - Root's model, and the key each slot renders under.
  * @param series - The series.
@@ -149,7 +149,7 @@ type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
  * @param metrics - The bar spacing, which every column and its emphasis box read.
  * @param sub - The Bar's sub-band.
  * @param paint - The series' paint.
- * @param emphasised - The emphasised slots.
+ * @param emphasised - The emphasized slots.
  * @returns The entries.
  */
 export function layoutColumns(

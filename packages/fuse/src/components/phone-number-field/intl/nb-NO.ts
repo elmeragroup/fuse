@@ -1,6 +1,6 @@
 import type { Variables } from "@internationalized/string";
 
-/** Default localized copy for phoneNumberField.* keys. */
+/** Default localized copy for the `phoneNumberField.*` keys. */
 export const nbNO = {
   selectCountry: "Velg land",
   searchCountries: "Søk etter land",

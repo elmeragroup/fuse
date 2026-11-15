@@ -20,7 +20,7 @@ export type ChartBackgroundProps = ChartLayerProps & {
   variant?: ChartBackgroundPattern;
 };
 
-/** The ring centres of the overlapping circles: the tile's middle and its four corners. */
+/** The ring centers of the overlapping circles: the tile's middle and its four corners. */
 const RINGS = [
   [8, 8],
   [0, 0],
@@ -29,7 +29,7 @@ const RINGS = [
   [16, 16],
 ] as const;
 
-/** The bubbles' centres and radii, each wholly inside the 40 px tile. */
+/** The bubbles' centers and radii, each wholly inside the 40 px tile. */
 const BUBBLES = [
   [9, 10, 3.5],
   [28, 6, 1.5],

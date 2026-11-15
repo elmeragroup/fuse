@@ -7,12 +7,12 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
 /**
  * The field box chrome: elevation, the field corner, hairline border, fill and the transition that
- * animates them. The corner is `--radius-field` in branded themes and `--radius` in neutral ones
- * (`corner-radius.ts`), and the box publishes it less its border as the inner corner of the parts
- * inside (`inner-corner/field.ts`). {@link fieldBox} paints it for Input and Textarea. The date
+ * animates them. The corner is `--radius-field` in branded themes and `--radius` in neutral ones,
+ * from `corner-radius.ts`. The box publishes it less its border as the inner corner of the parts
+ * inside, in `inner-corner/field.ts`. {@link fieldBox} paints it for Input and Textarea. The date
  * fields' boxes, Select's trigger, NumberField's group and InputGroup's root paint it without being
  * `fieldBox` variants. Focus leaves the `--input` border alone on every one of them: the shared
- * focus ring marks focus, and only the invalid face recolours the border. Each read-only box swaps
+ * focus ring marks focus, and only the invalid face recolors the border. Each read-only box swaps
  * the fill for `bg-muted`.
  */
 export const fieldBoxChromeClass = cn(
@@ -33,7 +33,7 @@ export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
 /**
  * The read-only fill for a Base UI state root that is not a text control, such as Select's
  * trigger button. A `<button>` takes no `readonly` attribute, so Base UI marks the read-only
- * state as `data-readonly` (beside `aria-readonly`), and the fill keys off that. Like
+ * state as `data-readonly`, beside `aria-readonly`, and the fill keys off that. Like
  * {@link readOnlyFillClass} it leaves a disabled box its disabled face, whether Base UI marks it
  * `data-disabled` or a disabled `<fieldset>` disables it natively, which matches `:disabled`
  * without `data-disabled`.
@@ -42,19 +42,19 @@ export const dataReadOnlyFillClass = cn("[&[data-readonly]:not([data-disabled]):
 
 /**
  * Cancels {@link readOnlyFillClass} on a control that sits inside a box that paints the fill
- * itself (InputGroup's root, TextField's card). It shares the fill's variant, so
+ * itself, InputGroup's root or TextField's card. It shares the fill's variant, so
  * tailwind-merge replaces the fill instead of keeping both.
  */
 export const readOnlyFillCancelClass = cn("[&[readonly]:not(:disabled)]:bg-transparent");
 
 /**
- * NumberField group chrome — same elevation as Input, `within` focus. It reads its height from
- * the field size (`field-size.ts`), which NumberField writes from its `size`. The group box is the
- * control, so it takes the within-target state face: it dims once and shows the
- * `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child, is
- * disabled, and the input and steppers inside inherit that dim rather than painting their
- * own. The group also carries `aria-invalid` itself, so it takes the aria-target face for
- * the invalid look.
+ * The NumberField group chrome, with Input's elevation and the `within` focus ring. It reads
+ * its height from the field size in `field-size.ts`, which NumberField writes from its `size`.
+ * The group box is the control, so it takes the within-target state face: it dims once and
+ * shows the `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child,
+ * is disabled, and the input and steppers inside inherit that dim rather than painting their
+ * own. The group also carries `aria-invalid` itself, so it takes the aria-target face for the
+ * invalid look.
  */
 export const numberFieldGroupClass = cn(
   fieldBoxChromeClass,
@@ -66,9 +66,9 @@ export const numberFieldGroupClass = cn(
 );
 
 /**
- * InputGroup root chrome — the whole field box around a stripped `InputGroup.Input` or
+ * The InputGroup root chrome: the whole field box around a stripped `InputGroup.Input` or
  * `InputGroup.Textarea`, so it paints the shared chrome, fill included, once. It reads its
- * height from the field size (`field-size.ts`), which `InputGroup.Root` writes from its `size`,
+ * height from the field size in `field-size.ts`, which `InputGroup.Root` writes from its `size`,
  * and block addons and textareas grow it instead. Like NumberField's group it
  * takes the within-target state face from its own `data-focus-ring-control` control, a direct
  * child, plus that control's disabled and read-only fills.
@@ -86,12 +86,12 @@ export const inputGroupRootClass = cn(
 );
 
 /**
- * Package-private field-box chrome shared by Input and Textarea. Hosts add only
- * per-control deltas. It reads the field inset and text-entry type from the field size
- * (`field-size.ts`); Input and Textarea write the size from their `size` prop, and the
+ * Package-private field-box chrome shared by Input and Textarea. Each control adds only
+ * per-control deltas. It reads the field inset and text-entry type from the field size in
+ * `field-size.ts`. Input and Textarea write the size from their `size` prop, and the
  * controls inside InputGroup read their group's. The `box` axis picks the height model:
- * `control` reads the field height, `content` grows with its content — no host may cancel a
- * recipe class via twMerge. The disabled and invalid looks are the native-target state
+ * `control` reads the field height, and `content` grows with its content. No control may cancel a
+ * recipe class through twMerge. The disabled and invalid looks are the native-target state
  * face, whose `aria-disabled` arm dims an `aria-disabled` box as the gate stills it; the box
  * adds only its disabled fill and {@link readOnlyFillClass}.
  */

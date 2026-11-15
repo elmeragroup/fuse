@@ -8,7 +8,7 @@ export type DateInputValueChangeReason = "input-change" | "input-clear" | "input
 
 /**
  * What `DateInput.Root`'s `onValueChange` receives beside the new value: the gesture behind the
- * change, the DOM event (a key, input, blur or paste event) and the segment it came from,
+ * change, the DOM event, such as a key, input, blur or paste event, and the segment it came from,
  * `cancel()`, which stops the input applying it, and the new value's validation error. The shape
  * is Calendar's change event details, which follow Base UI's; Calendar's `createChangeEventDetails`
  * builds them.

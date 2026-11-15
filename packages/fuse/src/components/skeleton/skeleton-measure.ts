@@ -1,7 +1,7 @@
 /**
  * Measures a ghost, the real content rendered unseen with sample data, into bones: one rounded
- * bar per visual line of text and one block per block part. Ported from skullet's measuring
- * (https://github.com/lochie/skullet, MIT, Lochie Axon): text lines come from
+ * bar per visual line of text and one block per block part. It ports skullet's measuring, from
+ * https://github.com/lochie/skullet by Lochie Axon under the MIT license. Text lines come from
  * `Range.getClientRects`, each bar runs from the font's ascender to its descender as canvas
  * `measureText` reports them, and a box that clips its overflow clips the bones inside it and
  * lends its rounded corners to a block that sits in one. Blocks come from the skeleton roles in
@@ -21,7 +21,8 @@ export type Bone = {
   readonly width: number;
   readonly height: number;
   /**
-   * The computed font size of the text it stands for, in pixels: a bar's largest, a block's own.
+   * The computed font size of the text it stands for, in pixels. A bar takes the largest of its
+   * line, and a block takes its own.
    * The reveal times the bone by it as it times that text.
    */
   readonly fontSize: number;
@@ -41,14 +42,14 @@ type Rect = { readonly left: number; readonly right: number; readonly top: numbe
 /** Corner radii in pixels: top left, top right, bottom right, bottom left. */
 type Corners = readonly [number, number, number, number];
 
-/** The box that clips what is inside it, with the corners it rounds, or null while nothing clips. */
+/** The box that clips what is inside it, with the corners it rounds, or `null` while nothing clips. */
 type Clip = (Rect & { readonly corners: Corners }) | null;
 
 type Point = readonly [number, number];
 
 /** The font metrics a bar is drawn between, in pixels from the baseline. */
 type Metrics = {
-  /** The font's own box above and below the baseline, which the line box centres. */
+  /** The font's own box above and below the baseline, which the line box centers. */
   readonly ascent: number;
   readonly descent: number;
   /** The ink of b, d, h, l, and of g, p, y. */
@@ -91,7 +92,7 @@ function radiiOf(style: CSSStyleDeclaration, rect: Rect): Corners {
   ];
 }
 
-/** A clip within a clip: each corner rounds as whichever box's corner it is. */
+/** A clip within a clip. Each corner rounds as whichever box's corner it is. */
 function clipWithin(clip: Clip, rect: Rect, style: CSSStyleDeclaration): Clip {
   const box = intersect(clip, rect);
   const own = radiiOf(style, rect);
@@ -112,7 +113,10 @@ function clipWithin(clip: Clip, rect: Rect, style: CSSStyleDeclaration): Clip {
   };
 }
 
-/** A block in a rounded corner of what clips it is cut by that corner, so it takes that radius. */
+/**
+ * The radius of a block in a rounded corner of what clips it. That corner cuts the block, so the
+ * block takes that radius.
+ */
 function roundedBy(clip: Clip, box: Rect, own: string, style: CSSStyleDeclaration): string {
   if (clip === null) return own;
   const clipCorners = cornersOf(clip);
@@ -126,7 +130,10 @@ function roundedBy(clip: Clip, box: Rect, own: string, style: CSSStyleDeclaratio
     .join(" ");
 }
 
-/** The visible part of a rect, or null when a clip cuts it to a sliver, as for visually hidden text. */
+/**
+ * The visible part of a rect, or `null` when a clip cuts it to a sliver, as for visually hidden
+ * text.
+ */
 function visiblePart(rect: Rect, clip: Clip): Rect | null {
   const box = intersect(clip, rect);
   return box.right - box.left >= 2 && box.bottom - box.top >= 2 ? box : null;
@@ -136,7 +143,7 @@ function visiblePart(rect: Rect, clip: Clip): Rect | null {
 type FontMetricsReader = (style: CSSStyleDeclaration) => Metrics | null;
 
 /**
- * A metrics reader for one measuring pass. Its cache lives only as long as the pass: a web font
+ * A metrics reader for one measuring pass. Its cache lives only as long as the pass. A web font
  * that loads later keeps the same shorthand but changes the metrics, so a cache that outlived the
  * pass would keep drawing bars from the fallback face.
  */
@@ -165,8 +172,8 @@ function createFontMetricsReader(ownerDocument: Document): FontMetricsReader {
 }
 
 /**
- * Where the bar goes in a line box: ascender to descender about the baseline the line centres,
- * kept inside the line box. A face's ink can reach past its own ascent or descent, as a substitute
+ * Where the bar goes in a line box, from ascender to descender about the baseline the line
+ * centers, kept inside the line box. A face's ink can reach past its own ascent or descent, as a substitute
  * serif's descenders do on Linux, and a bar drawn to that ink would leave its line and reach into
  * the next one's; the bar stands in for its line, so the line box bounds it.
  */
@@ -199,7 +206,10 @@ function roleOf(element: Element): SkeletonRole | undefined {
   });
 }
 
-/** Media clipped by a rounded parent of its own size, like an avatar image, takes the parent's corners. */
+/**
+ * An element's bone radius. Media clipped by a rounded parent of its own size, such as an avatar
+ * image, takes the parent's corners.
+ */
 function radiusOf(element: Element, style: CSSStyleDeclaration): string {
   const parent = element.parentElement;
   if (Number.parseFloat(style.borderRadius) || parent === null) return style.borderRadius || "0px";
@@ -213,7 +223,7 @@ function radiusOf(element: Element, style: CSSStyleDeclaration): string {
 /**
  * Measures what `root` holds into bones relative to `layer`.
  *
- * @param root - The ghost: the content rendered unseen, laid out where it will appear.
+ * @param root - The ghost, which is the content rendered unseen, laid out where it will appear.
  * @param layer - The absolutely positioned layer the bones are drawn in.
  * @returns The bones, blocks first and then one bar per line, and the elements drawn as blocks.
  */

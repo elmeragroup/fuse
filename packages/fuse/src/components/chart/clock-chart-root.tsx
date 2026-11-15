@@ -68,8 +68,8 @@ export type ClockChartRootProps<
     /**
      * Keyed by series, as in `Chart.Root`, with its cartesian fields: `stack`, a series `interval`
      * that nests in the cycle, `projectedFrom`, `qualityKey`, `missing` and a threshold `color`.
-     * Its `barVariant` is "default" or "gradient". A threshold colour paints each wedge by its own
-     * value's side. Add a dashed `ReferenceLine` at the threshold to draw the ring the colours
+     * Its `barVariant` is "default" or "gradient". A threshold color paints each wedge by its own
+     * value's side. Add a dashed `ReferenceLine` at the threshold to draw the ring the colors
      * split at.
      */
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow> & ChartClockFieldCheck<TConfig, TCycle>;
@@ -84,7 +84,7 @@ export type ClockChartRootProps<
     /** The slot length, which nests in the cycle. */
     interval: ChartClockInterval<TCycle>;
     /**
-     * Exactly one cycle. The cycle that holds `now` is the default, else the first row's. A live
+     * Exactly one cycle. Defaults to the cycle that holds `now`, else the first row's. A live
      * feed filters its rows on the cycle, since a row outside it throws in development.
      */
     period?: ChartPeriod;
@@ -93,7 +93,7 @@ export type ClockChartRootProps<
      * `fallback="now"`. A live day draws up to `now`.
      */
     now?: ChartInstant;
-    /** The IANA zone of the data's market. The LocaleProvider's zone is the default. */
+    /** The IANA zone of the data's market. Defaults to the LocaleProvider's zone. */
     timeZone?: string;
     /** The slot label format of options, tooltips and the table. */
     xFormat?: XFormat;

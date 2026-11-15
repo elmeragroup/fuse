@@ -32,7 +32,7 @@ export type BandScale = {
 };
 
 /**
- * Lay out `count` bands across a range, as d3-scale's band scale does.
+ * Lays out `count` bands across a range, as d3-scale's band scale does.
  *
  * @param options - The slot count, the range and the padding.
  * @returns The step, the bandwidth and every band's start.
@@ -73,7 +73,7 @@ export type PointOptions = {
 };
 
 /**
- * Space `count` points across a range, as d3-scale's point scale does. A point scale is a band
+ * Spaces `count` points across a range, as d3-scale's point scale does. A point scale is a band
  * scale whose bands have no width, so a line's first and last vertices reach the range ends.
  *
  * @param options - The slot count, the range and the outer padding.
@@ -91,9 +91,9 @@ export function pointScale(options: PointOptions): BandScale {
 }
 
 /**
- * The slot whose centre lies nearest a position along the scale's range. Centres are evenly
+ * The slot whose center lies nearest a position along the scale's range. Centers are evenly
  * spaced, so the pick is arithmetic. Each cell is half-open, so a position exactly between two
- * centres picks the later slot.
+ * centers picks the later slot.
  *
  * @param scale - A band or point scale over at least one slot.
  * @param position - The position in the scale's range units.

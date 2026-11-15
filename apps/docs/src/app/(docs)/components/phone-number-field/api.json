@@ -42,7 +42,7 @@
           "type": "Booleanish | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks the number input required for screen readers only. It does not validate, so an empty field still submits. Use `isRequired` for the browser's constraint check, and this for a rule a schema can relax.",
+          "description": "Whether screen readers announce the number input as required. It does not validate, so an empty field still submits. Use `isRequired` for the browser's constraint check, and this for a rule a schema can relax.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Picks the country from a `+` or `00` prefix as the user types or pastes. Pass `false` to keep the selected country.",
+          "description": "Whether the field picks the country from a `+` or `00` prefix as the user types or pastes. Pass `false` to keep the selected country.",
           "required": false
         },
         {
@@ -69,7 +69,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Focuses the number input when the field mounts.",
+          "description": "Whether the number input takes focus when the field mounts.",
           "required": false
         },
         {
@@ -96,7 +96,7 @@
           "type": "readonly (\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\")[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The countries the picker offers, as ISO codes. Every country by default. The metadata still parses every number. Detection only selects a listed country, so a number from another one stays in international form beside the selected country, as with trimmed metadata. With one country, the field shows its flag and dial code as plain text instead of a picker. The field ignores codes outside the catalog, without a packaged flag or in the product exclusions, and a list that leaves no country throws. A change that drops the selected country keeps the shown number's international identity, except a controlled `raw` value, which names no country and is read again in the country that remains. The rows sort by name whatever the list's order.",
+          "description": "The countries the picker offers, as ISO codes. Defaults to every country. The metadata still parses every number. Detection only selects a listed country, so a number from another one stays in international form beside the selected country, as with trimmed metadata. With one country, the field shows its flag and dial code as plain text instead of a picker. The field ignores codes outside the catalog, without a packaged flag or in the product exclusions, and a list that leaves no country throws. A change that drops the selected country keeps the shown number's international identity, except a controlled `raw` value, which names no country and is read again in the country that remains. The rows sort by name whatever the list's order.",
           "required": false
         },
         {
@@ -663,7 +663,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Formats the display as the user types. A national entry keeps the trunk prefix it was typed with, so a Swedish \"0701234567\" shows \"070-123 45 67\", and one typed without it stays ungrouped. A number detected from a `+` or `00` prefix shows in the national format.",
+          "description": "Whether the field formats the display as the user types. A national entry keeps the trunk prefix it was typed with, so a Swedish \"0701234567\" shows \"070-123 45 67\", and one typed without it stays ungrouped. A number detected from a `+` or `00` prefix shows in the national format.",
           "required": false
         },
         {
@@ -700,7 +700,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Keeps the typed digits and international prefixes in the display. An accepted national draft stays national.",
+          "description": "Whether the display keeps the typed digits and international prefixes. An accepted national draft stays national.",
           "required": false
         },
         {
@@ -709,7 +709,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables editing, the country picker, and both the visible and the hidden input.",
+          "description": "Whether the field is disabled: editing, the country picker, and both the visible and the hidden input.",
           "required": false
         },
         {
@@ -718,7 +718,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look on the field box.",
+          "description": "Whether the field is invalid, with the invalid look on the field box.",
           "required": false
         },
         {
@@ -727,7 +727,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Blocks edits, paste and country changes. The field stays focusable and still submits, with the muted read-only fill.",
+          "description": "Whether the field blocks edits, paste and country changes. The field stays focusable and still submits, with the muted read-only fill.",
           "required": false
         },
         {
@@ -736,7 +736,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the number input required, so the browser's constraint check blocks an empty submit.",
+          "description": "Whether the number input is required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -754,7 +754,7 @@
           "type": "MetadataJson | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Your own or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps the international identity of the number shown. A shallow copy, such as `{ ...metadata }` written in a render, is the same metadata and replaces nothing. To limit the picker, pass `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller, since the field imports its full default metadata either way.",
+          "description": "Custom or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps the international identity of the number shown. A shallow copy, such as `{ ...metadata }` written in a render, is the same metadata and replaces nothing. To limit the picker, pass `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller, since the field imports its full default metadata either way.",
           "required": false
         },
         {
@@ -790,7 +790,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Proposes a number in `outputFormat`. A controlled field shows it once the parent accepts it. The field calls it only when the proposal differs from the number the parent holds: `value`, compared exactly, or the output an uncontrolled field already shows. So deleting a separator, which keeps the number, calls nothing, while a parent that stores another form of the number, such as national digits, hears every proposal. It is also called once as hydration commits, with a number typed or autofilled before the client scripts ran, under the same rule. A controlled parent accepts or rejects it like any other proposal.",
+          "description": "Called with a proposed number in `outputFormat`. A controlled field shows it once the parent accepts it. The field calls it only when the proposal differs from the number the parent holds: `value`, compared exactly, or the output an uncontrolled field already shows. So deleting a separator, which keeps the number, calls nothing, while a parent that stores another form of the number, such as national digits, hears every proposal. It is also called once as hydration commits, with a number typed or autofilled before the client scripts ran, under the same rule. A controlled parent accepts or rejects it like any other proposal.",
           "required": false
         },
         {
@@ -832,7 +832,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Keeps the digits when the country changes. Otherwise a country change clears them, and calls `onChange` with `\"\"` unless the parent already holds `\"\"`.",
+          "description": "Whether the digits stay when the country changes. Otherwise a country change clears them, and calls `onChange` with `\"\"` unless the parent already holds `\"\"`.",
           "required": false
         },
         {

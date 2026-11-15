@@ -113,7 +113,10 @@ const SPOKES = [
 
 const TONES = ["default", "muted"] as const;
 
-/** A clock with ring values, a labelled Now and a value pill, a radar with ring values, and a line with a reference label. */
+/**
+ * A clock with ring values, a labeled Now and a value pill, a radar with ring values, and a line with a
+ * reference label.
+ */
 function Chips({ tone }: { tone: (typeof TONES)[number] }): ReactElement {
   return (
     <div style={{ width: 320 }}>

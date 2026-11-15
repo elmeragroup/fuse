@@ -1,8 +1,8 @@
 /**
  * Server-visible namespace for `RangeCalendar`.
  * Every part is a client module; this file has no directive, so a server component can read
- * each part instead of dotting into a client reference. Every part but the Root is Calendar's own:
- * the parts read whichever calendar Root encloses them.
+ * each part instead of dotting into a client reference. Every part but the Root is Calendar's own.
+ * The parts read whichever calendar Root encloses them.
  */
 import {
   CalendarDayButton,

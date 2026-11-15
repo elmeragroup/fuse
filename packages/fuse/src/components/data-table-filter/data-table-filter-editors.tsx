@@ -53,15 +53,15 @@ import {
 import type { ListField } from "./option-list";
 import { useContains } from "./use-contains";
 
-/** The props every kind editor takes: its body's element. */
+/** Props for every kind editor, which are its body element's props. */
 export type DataTableFilterKindEditorProps = ComponentProps<"div">;
 
 // Option, multi-option and boolean: an inline Base UI Combobox with `multiple`, so the list is
 // aria-multiselectable and each row states its selection. Each toggle applies at once.
 
 /**
- * How many rows hold an option, beside its label in a list. Hidden from assistive technology, so
- * the option's name stays "Paid".
+ * The count of rows that hold an option, beside its label in a list. It is hidden from assistive
+ * technology, so the option's name stays "Paid".
  */
 export function OptionCount({ count }: { readonly count: number }): ReactElement {
   const { meta } = useFilterInternals("DataTableFilter.OptionCount");
@@ -73,8 +73,9 @@ export function OptionCount({ count }: { readonly count: number }): ReactElement
 }
 
 /**
- * Edits an option, multi-option or boolean filter. Renders nothing for other kinds. Its children
- * render below its list, outside the scrolling rows, such as a `DataTableFilter.ValuesFooter`.
+ * The editor for an option, multi-option or boolean filter. It renders nothing for other kinds. Its
+ * children render below its list, outside the scrolling rows, such as a
+ * `DataTableFilter.ValuesFooter`.
  */
 export function DataTableFilterOptionEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.OptionEditor", LIST_KINDS);
@@ -205,7 +206,7 @@ function OptionEditorBody({
 /** How long the text editor waits after the last keystroke before it applies. */
 const TEXT_PAUSE_MS = 300;
 
-/** Edits a text filter. Renders nothing for other kinds. */
+/** The editor for a text filter. It renders nothing for other kinds. */
 export function DataTableFilterTextEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.TextEditor", ["text"]);
   return editor === null ? null : <TextEditorBody editor={editor} {...props} />;
@@ -295,13 +296,13 @@ function TextEditorBody({
 // range as its draft and applies only once a value changes. Values settle when the user finishes,
 // through NumberField's and Slider's `onValueCommitted`, and Enter in a field also closes.
 
-/** Edits a number filter. Renders nothing for other kinds. */
+/** The editor for a number filter. It renders nothing for other kinds. */
 export function DataTableFilterNumberEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.NumberEditor", ["number"]);
   return editor === null ? null : <NumberEditorBody editor={editor} {...props} />;
 }
 
-/** One number per position the operator takes, with NaN for a position not yet set. */
+/** One number per position the operator takes, with `NaN` for a position not yet set. */
 function numberPositions(values: readonly (string | number)[], count: number): number[] {
   return Array.from({ length: count }, (_, index) => {
     const value = values[index];
@@ -338,12 +339,12 @@ function NumberEditorBody({
       next[index] = value;
       return { operator: current.operator, values: next };
     };
-  /** A person's change to one position. */
+  /** Applies a user's change to one position. */
   const setAt = (index: number, value: number) => {
     setLastEdited(index);
     editor.updateDraft(withAt(index, value));
   };
-  /** A control's commit of one position, which settles it within the current session. */
+  /** Commits one position from a control and settles it within the current session. */
   const commitAt = (index: number, value: number) => {
     editor.commitDraft(withAt(index, value));
   };
@@ -481,23 +482,23 @@ function presetWrite(
  */
 const PRESETS_BESIDE_QUERY = "(min-width: 40rem)";
 
-/** The props of `DataTableFilter.DateEditor`. */
+/** Props for `DataTableFilter.DateEditor`. */
 export type DataTableFilterDateEditorProps = Omit<DataTableFilterKindEditorProps, "children"> & {
   /**
-   * Replaces the date inputs, such as with a `Calendar`. The presets and the header stay. On a
-   * viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to
-   * fit. Keep the calendar in your app's own modules, so the bare entry never pulls the calendars
+   * The body that replaces the date inputs, such as a `Calendar`. The presets and the header stay.
+   * On a viewport 40rem wide or more the presets sit in a column beside it, and the popup widens to
+   * fit. Keep the calendar in the host's own modules, so the bare entry never pulls the calendars
    * in.
    */
   children?: (editor: DateEditorState) => ReactNode;
 };
 
 /**
- * Edits a date filter with presets and date inputs. Renders nothing for other kinds. The presets
- * are the field's `presets`, and each writes `isBetween` over its range. On a field whose operators
- * leave out `isBetween`, the one-day presets, Today and Yesterday, write `is` if the field allows
- * it, and the editor leaves the other presets out. Beside a function child they form a column,
- * from a 40rem viewport up.
+ * The editor for a date filter, with presets and date inputs. It renders nothing for other kinds.
+ * The presets are the field's `presets`, and each writes `isBetween` over its range. On a field
+ * whose operators leave out `isBetween`, the one-day presets, Today and Yesterday, write `is` if
+ * the field allows it, and the editor leaves the other presets out. Beside a function child they
+ * form a column, from a 40rem viewport up.
  */
 export function DataTableFilterDateEditor(props: DataTableFilterDateEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.DateEditor", ["date"]);

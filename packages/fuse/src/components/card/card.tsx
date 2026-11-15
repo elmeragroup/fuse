@@ -45,9 +45,9 @@ type CardRootProps = CardDivProps & {
    */
   children?: HTMLAttributes<HTMLDivElement>["children"];
   /**
-   * Extra classes, merged after the card's own. A border colour class replaces the card's edge
-   * colour, a shadow size class such as `shadow-md` replaces its shadow, and a shadow colour class
-   * tints the shadow. To recolour the edge or shadow of many cards, set `--card-border` or
+   * Extra classes, merged after the card's own. A border color class replaces the card's edge
+   * color, a shadow size class such as `shadow-md` replaces its shadow, and a shadow color class
+   * tints the shadow. To recolor the edge or shadow of many cards, set `--card-border` or
    * `--card-shadow` on the `ThemeScope` or another element around them. A `bg-*` class that
    * changes the fill should set `--surface` and `--surface-muted-foreground` to match, as in
    * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`,
@@ -61,8 +61,8 @@ type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 type CardTitleProps = HTMLAttributes<HTMLHeadingElement> &
   CardVariantProps & {
     /**
-     * The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. The default `3`
-     * suits a card in a page section. Set the level that fits the card's place in the outline.
+     * The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. `3` suits a card
+     * in a page section. Set the level that fits the card's place in the outline.
      */
     level?: CardTitleLevel;
     /** The title's type size. */
@@ -83,7 +83,7 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
 type CardSectionMediaProps = HTMLAttributes<HTMLSpanElement> & {
   /**
    * The section's icon, sized to `size-5`. Put the media first in a `Card.Section` or
-   * `Card.SectionButton`. The section becomes two columns, the icon centred on the section's
+   * `Card.SectionButton`. The section becomes two columns, the icon centered on the section's
    * height beside the content. In a `Card.Section`, put the content in a `Card.Content`. In a
    * `Card.SectionButton`, put it in a plain `span`, because a button holds phrasing content only.
    */
@@ -93,15 +93,15 @@ type CardSectionMediaProps = HTMLAttributes<HTMLSpanElement> & {
 /**
  * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
  * content and footer publish it less their padding too. The root and its parts write their
- * `direction` as `data-direction`: a vertical card pads its parts, a horizontal one pads itself.
+ * `direction` as `data-direction`. A vertical card pads its parts, a horizontal one pads itself.
  * The root writes its `size` as `data-size` and publishes its tier to the sections it holds.
  * Its 1px edge is the theme's `--card-border`, which is `--border` in neutral themes and a
- * zero-alpha colour in branded ones. It casts Tailwind's `shadow-xs` in the theme's
+ * zero-alpha color in branded ones. It casts Tailwind's `shadow-xs` in the theme's
  * `--card-shadow`, which is 5% black in neutral themes and zero alpha in branded ones. In a
  * branded theme only its fill sets a card apart from the page tint, so a card nested in another
  * card shows no edge.
  *
- * It states its `card` fill as `--surface`, the colour of the fill an element sits on, so a
+ * It states its `card` fill as `--surface`, the color of the fill an element sits on, so a
  * chart in it cuts its rings and seams out of the card, and its muted text as
  * `--surface-muted-foreground`, which a chart's chips read.
  */
@@ -230,7 +230,7 @@ function CardFooter({ className, direction = "vertical", ...props }: CardDivProp
 /**
  * One of a vertical card's stacked sections of equal weight. A section pads every side with the
  * card's tier. A 1px line in the theme's `--card-section-divider` runs above every section that
- * has a part above it, from edge to edge: `--border` in neutral themes and the page tint,
+ * has a part above it, from edge to edge. The token is `--border` in neutral themes and the page tint,
  * `--background`, in branded ones. The first and last sections round with the card's corners, so
  * a fill follows them. A footer after sections takes no line and no top padding.
  */

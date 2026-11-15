@@ -36,7 +36,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The parts: a `Carousel.Viewport` that holds the `Carousel.Slide`s, and a `Carousel.Controls` row with `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`, and `Carousel.Next`. Each feature is a part you mount, with no boolean prop for it. A server component can render the Root with server-rendered slides. The server renders no indicators and no page count, because the pages are measured after hydration.",
+          "description": "The parts: a `Carousel.Viewport` that holds the `Carousel.Slide`s, and a `Carousel.Controls` row with `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`, and `Carousel.Next`. Each feature is a part to mount, with no boolean prop for it. A server component can render the Root with server-rendered slides. The server renders no indicators and no page count, because the Root measures the pages after hydration.",
           "required": false
         },
         {
@@ -45,7 +45,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "0",
-          "description": "The page shown first when the Root owns the page. The pages are measured after hydration, and this page moves into place before the first client paint.",
+          "description": "The page shown first when the Root owns the page. The Root measures the pages after hydration, and moves this page into place before the first client paint.",
           "required": false
         },
         {
@@ -63,7 +63,7 @@
           "type": "((index: number, details: CarouselIndexChangeDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Receives every page change and its reason: `\"scroll\"`, `\"previous\"`, `\"next\"`, `\"indicator\"`, `\"autoplay\"` or `\"action\"`. A controlled Root that does not take the new `index` scrolls back to its own once the user's scroll ends.",
+          "description": "Called on every page change, with its reason: `\"scroll\"`, `\"previous\"`, `\"next\"`, `\"indicator\"`, `\"autoplay\"` or `\"action\"`. A controlled Root that does not take the new `index` scrolls back to its own once the user's scroll ends.",
           "required": false
         },
         {
@@ -72,7 +72,7 @@
           "type": "CarouselOrientation | undefined",
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
-          "description": "The axis the viewport scrolls on. With `vertical`, Previous and Next point up and down. Give a vertical carousel's `Carousel.Viewport` a height.",
+          "description": "The axis the viewport scrolls on. With `vertical`, `Carousel.Previous` and `Carousel.Next` point up and down. Give a vertical carousel's `Carousel.Viewport` a height.",
           "required": false,
           "values": [
             "horizontal",
@@ -167,7 +167,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The id of the slide's visible title. Without a name of its own, a slide is named by its place, such as \"3 of 6\".",
+          "description": "The id of the slide's visible title. A slide without a name of its own takes its place as its name, such as \"3 of 6\".",
           "required": false
         },
         {
@@ -185,7 +185,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Classes for the slide. A slide fills the viewport. Size it with a class such as `basis-1/2` to show more at once. Every slide stays a snap position, so the pages follow the layout: six slides three to a view make four pages. Space the slides with a margin on each one, such as `me-3 last:me-0`, and take it out of the slide's basis.",
+          "description": "Classes for the slide. A slide fills the viewport. Size it with a class such as `basis-1/2` to show more at once. Every slide stays a snap position, so the pages follow the layout. Six slides three to a view make four pages. Space the slides with a margin on each one, such as `me-3 last:me-0`, and take it out of the slide's basis.",
           "required": false
         },
         {
@@ -249,7 +249,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. Unset, it comes from the locale dictionary.",
+          "description": "The accessible name. Defaults to the locale dictionary.",
           "required": false
         },
         {
@@ -258,7 +258,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The icon. Unset, it is a caret that points along the carousel's axis.",
+          "description": "The icon. Defaults to a caret that points along the carousel's axis.",
           "required": false
         },
         {
@@ -287,7 +287,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -296,7 +296,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -316,7 +316,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so Previous is disabled on the first page and Next on the last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.",
+          "description": "Called before the control changes the page. `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so `Carousel.Previous` is disabled on the first page and `Carousel.Next` on the last. Both stay focusable there, so `Carousel.Next` keeps focus after a press moves to the last page.",
           "required": false
         },
         {
@@ -325,7 +325,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -334,7 +334,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -363,7 +363,7 @@
           "type": "IconButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"icon-sm\"",
-          "description": "Button's square size. `icon-sm` is 36px at comfortable density.",
+          "description": "The button's square size. `icon-sm` is 36px at comfortable density.",
           "required": false,
           "values": [
             "icon",
@@ -390,7 +390,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -420,7 +420,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. Unset, it comes from the locale dictionary.",
+          "description": "The accessible name. Defaults to the locale dictionary.",
           "required": false
         },
         {
@@ -429,7 +429,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The icon. Unset, it is a caret that points along the carousel's axis.",
+          "description": "The icon. Defaults to a caret that points along the carousel's axis.",
           "required": false
         },
         {
@@ -458,7 +458,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -467,7 +467,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -487,7 +487,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so Previous is disabled on the first page and Next on the last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.",
+          "description": "Called before the control changes the page. `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so `Carousel.Previous` is disabled on the first page and `Carousel.Next` on the last. Both stay focusable there, so `Carousel.Next` keeps focus after a press moves to the last page.",
           "required": false
         },
         {
@@ -496,7 +496,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -505,7 +505,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -534,7 +534,7 @@
           "type": "IconButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"icon-sm\"",
-          "description": "Button's square size. `icon-sm` is 36px at comfortable density.",
+          "description": "The button's square size. `icon-sm` is 36px at comfortable density.",
           "required": false,
           "values": [
             "icon",
@@ -561,7 +561,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -591,7 +591,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The indicators. Unset, the picker renders one `Carousel.Indicator` per page, so the dots follow the layout. Map your own `Carousel.Indicator`s here to pick slides by thumbnail.",
+          "description": "The indicators. Defaults to one `Carousel.Indicator` per page, so the dots follow the layout. Map custom `Carousel.Indicator`s here to pick slides by thumbnail.",
           "required": false
         },
         {
@@ -623,7 +623,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The indicator's content, such as a thumbnail. Unset, it is a dot that becomes a pill on the current page, named after the first slide on its page, such as \"Slide 3 of 6\". With children, it draws only the focus ring and keeps a 24px target however small they are. Style them for the current page with the `in-data-current:` variant, and name the indicator with `aria-label` when they have no text. The dot grows into the pill with a transition, which reduced motion turns off.",
+          "description": "The indicator's content, such as a thumbnail. Defaults to a dot that becomes a pill on the current page, named after the first slide on its page, such as \"Slide 3 of 6\". With children, it draws only the focus ring and keeps a 24px target however small they are. Style them for the current page with the `in-data-current:` variant, and name the indicator with `aria-label` when they have no text. The dot grows into the pill with a transition, which reduced motion turns off.",
           "required": false
         },
         {
@@ -641,7 +641,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the indicator scrolls to its page. `event.preventBaseUIHandler()` cancels that, as on Base UI's own parts.",
+          "description": "Called before the indicator scrolls to its page. `event.preventBaseUIHandler()` cancels that, as on Base UI's own parts.",
           "required": false
         },
         {
@@ -673,7 +673,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The text. Unset, it is the page count, such as \"3 of 12\" in the locale. Use the status in place of the indicators when there are many pages. It announces each page change politely, stays silent while the pages rotate, and is empty until the viewport is measured.",
+          "description": "The text. Defaults to the page count, such as \"3 of 12\" in the locale. Use the status in place of the indicators when there are many pages. It announces each page change politely, stays silent while the pages rotate, and is empty until the Root measures the viewport.",
           "required": false
         },
         {
@@ -714,7 +714,7 @@
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "How long each page shows, in ms, before rotation moves on. Mounting the part turns rotation on, and it starts on mount unless the user prefers reduced motion. From the last page it goes back to the first. While the pages rotate, the slides' live region is silent. A new `delay` keeps whether the user stopped it. Keyboard focus on any element in the carousel stops rotation, this button included, as the APG pattern asks. So does a swipe, a drag that snaps back, a wheel turn or a press of another control. Keyboard focus in a slide's portal, such as a popover's field, also in a same-origin frame, or inside a custom element's open shadow root counts as focus in the carousel. Focus that a mouse press moved in does not stop it. Rotation pauses while a mouse or pen is over the carousel and while the document is hidden. Mounted with the Root or later, it starts from what is already so. It is paused under a mouse or pen already over the carousel, even since before the page hydrated on a device whose main pointer can hover. It is stopped with keyboard focus already inside it, as with an `autoFocus` field in a slide.",
+          "description": "How long each page shows, in milliseconds, before rotation moves on. Mounting the part turns rotation on, and it starts on mount unless the user prefers reduced motion. From the last page it goes back to the first. While the pages rotate, the slides' live region is silent. A new `delay` keeps whether the user stopped it. Keyboard focus on any element in the carousel stops rotation, this button included, as the APG pattern asks. So does a swipe, a drag that snaps back, a wheel turn or a press of another control. Keyboard focus in a slide's portal, such as a popover's field, also in a same-origin frame, or inside a custom element's open shadow root counts as focus in the carousel. Focus that a mouse press moved in does not stop it. Rotation pauses while a mouse or pen is over the carousel and while the document is hidden. Mounted with the Root or later, it starts from the current pointer and focus. It is paused under a mouse or pen already over the carousel, even since before the page hydrated on a device whose main pointer can hover. It is stopped with keyboard focus already inside it, as with an `autoFocus` field in a slide.",
           "required": true
         },
         {
@@ -734,7 +734,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -743,7 +743,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -763,7 +763,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the button starts or stops rotation, and `event.preventBaseUIHandler()` there cancels it. Only this button starts rotation again after it stops. Once the user presses it to start, keyboard focus and hover no longer stop or pause rotation until they press it again.",
+          "description": "Called before the button starts or stops rotation. `event.preventBaseUIHandler()` there cancels it. Only this button starts rotation again after it stops. Once the user presses it to start, keyboard focus and hover no longer stop or pause rotation until they press it again.",
           "required": false
         },
         {
@@ -772,7 +772,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -781,7 +781,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -810,7 +810,7 @@
           "type": "IconButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"icon-sm\"",
-          "description": "Button's square size, as on Previous and Next.",
+          "description": "The button's square size, as on `Carousel.Previous` and `Carousel.Next`.",
           "required": false,
           "values": [
             "icon",
@@ -826,7 +826,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The button's name while the pages do not rotate. Unset, it comes from the locale dictionary, \"Start automatic slide show\" in English.",
+          "description": "The button's name while the pages do not rotate. Defaults to the locale dictionary, \"Start automatic slide show\" in English.",
           "required": false
         },
         {
@@ -835,7 +835,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The button's name while the pages rotate. Unset, it comes from the locale dictionary, \"Stop automatic slide show\" in English.",
+          "description": "The button's name while the pages rotate. Defaults to the locale dictionary, \"Stop automatic slide show\" in English.",
           "required": false
         },
         {
@@ -855,7 +855,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",

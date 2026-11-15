@@ -88,13 +88,13 @@ export type CartesianModel = {
   readonly stacks: readonly { readonly id: string; readonly keys: readonly string[] }[];
   /** The default layout's value domain, over the rows inside the effective window. */
   readonly y: ValueDomain;
-  /** True when no slot holds a reading for any config key. */
+  /** Whether no slot holds a reading for any config key. */
   readonly empty: boolean;
   readonly issues: readonly ModelIssue[];
 };
 
 /**
- * Build the model of a cartesian chart.
+ * Builds the model of a cartesian chart.
  *
  * @param input - Root's data, config, axis and layout props.
  * @param place - What places the rows on the x domain. Root passes a placer from
@@ -186,7 +186,7 @@ type CoarseReading = {
 };
 
 /**
- * Read a coarse series: one cell per coarse slot, the one on the row at the slot's own start. A
+ * Reads a coarse series: one cell per coarse slot, the one on the row at the slot's own start. A
  * value on any other row of the slot is off the series' grid, `off-grid-x`, as is the slot's first
  * row when the domain starts inside the slot, and in production it moves to the slot that contains
  * it when the start row holds none. Each coarse slot's state comes from its own start and end
@@ -244,7 +244,7 @@ export type LayoutInput = {
 /**
  * One layout's value domain over the rows inside the effective window, as CONTRACT section 8.3
  * gives it: Root's default layout over every config key, a Panel over its `series`. A stacked key
- * reaches its stack's ends and an unstacked key its value, so a "none" baseline can leave 0 out.
+ * reaches its stack's ends and an unstacked key its value, so a `none` baseline can leave 0 out.
  * It reads the model alone, so a Panel computes it during render and the server agrees.
  *
  * @param model - The model's window, series, emptiness and stack offset.

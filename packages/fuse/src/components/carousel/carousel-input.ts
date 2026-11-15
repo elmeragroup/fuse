@@ -1,6 +1,6 @@
 /**
- * The one owner of the user's input lifetimes over a carousel viewport: when input that can scroll
- * it begins, and when every such input has ended. The engine asks it whether input is held, so a
+ * The one owner of the user's input lifetimes over a carousel viewport. It tracks when input that
+ * can scroll it begins, and when every such input has ended. The engine asks it whether input is held, so a
  * scroll session goes live only on the user's own scroll and nothing settles under a held finger.
  *
  * Input begins on the viewport: a pointer down, a key down, or a wheel turn along its axis. Its end
@@ -9,9 +9,9 @@
  * a touch end or cancel, a key up, and a lost pointer capture. The window losing focus ends all of
  * it, since its releases go to another window. Pointers are held one by one, by `pointerId`, so one
  * of two fingers lifting leaves the other held. A touch the browser takes for panning cancels its
- * pointer before the pan begins, so that cancel does not end touch input: the finger is still down
+ * pointer before the pan begins, so that cancel does not end touch input. The finger is still down
  * with no pointer, until a touch event reports no touches left. Where touch events do not exist,
- * nothing would report that, so the cancel ends that touch. A wheel turn has no end event: its
+ * nothing would report that, so the cancel ends that touch. A wheel turn has no end event. Its
  * scroll, if any, begins within two frames, since the compositor can deliver the first scroll event
  * a frame after the turn, so it ends then. A turn that arrives while one is held moves that end to
  * two frames after it, so a trackpad gesture is held once, from its first turn to two frames after
@@ -21,9 +21,9 @@ import type { CarouselOrientation } from "./carousel-engine";
 
 /** What the owner reports. */
 export type CarouselInputListener = {
-  /** Input that can scroll the viewport began, while none was held or more of it. */
+  /** Called when input that can scroll the viewport begins, while none was held or more of it. */
   readonly onInput: () => void;
-  /** Every held input has ended. */
+  /** Called when every held input has ended. */
   readonly onRelease: () => void;
 };
 
@@ -31,12 +31,12 @@ export type CarouselInputListener = {
 export type CarouselInput = {
   /** Whether any input that can scroll the viewport is held. */
   readonly held: () => boolean;
-  /** Stop listening. */
+  /** Stops listening. */
   readonly destroy: () => void;
 };
 
 /**
- * Own the input lifetimes of a viewport.
+ * Creates the owner of a viewport's input lifetimes.
  *
  * @param viewport - The scroll container input begins on.
  * @param orientation - The axis it scrolls on, which says which wheel turns can scroll it.
@@ -65,7 +65,7 @@ export function createCarouselInput(
     return pointers.size > 0 || panning || keys.size > 0 || wheelFrame !== null;
   }
 
-  /** Run a change to what is held, and report the input beginning or all of it ending. */
+  /** Runs a change to what is held, and reports the input beginning or all of it ending. */
   function change(apply: () => void, began: boolean): void {
     const before = held();
     apply();

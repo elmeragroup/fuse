@@ -7,7 +7,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * A menu row in the collapsed icon rail: a fixed 32px square padded 8px, so its 16px icon sits
- * centred in the 48px rail at both densities. Every menu button size and the menu skeleton
+ * centered in the 48px rail at both densities. Every menu button size and the menu skeleton
  * collapse to the 32px square. The `lg` button overrides the padding with `p-0!`, so its content
  * fills the square.
  */
@@ -24,7 +24,7 @@ const sidebarRowCollapsedClass = cn(
 export const sidebarRowBoxClass = cn("box-border h-(--row-h) px-(--row-px)", sidebarRowCollapsedClass);
 
 /**
- * The top of a menu row's 20px badge: 10px above the middle of a default row, which centres it on
+ * The top of a menu row's 20px badge: 10px above the middle of a default row, which centers it on
  * `--row-h` at either density. The `sm` and `lg` rail rows are fixed, so they keep fixed offsets.
  */
 export const sidebarMenuBadgeOffsetClass = cn(
@@ -33,9 +33,9 @@ export const sidebarMenuBadgeOffsetClass = cn(
 
 /**
  * A menu row's action box: on a default row, the xs control square, floored at the 24px target,
- * centred on `--row-h` at either density. Its menu button reserves the same square plus 8px at its
- * end, so a truncated label stops before the action. The `sm` and `lg` rail rows are fixed, so their action
- * is a fixed 24px square, centred on the `sm` row and sharing the badge's middle on the `lg` row.
+ * centered on `--row-h` at either density. Its menu button reserves the same square plus 8px at its
+ * end, so a truncated label stops before the action. The `sm` and `lg` rail rows are fixed, so their
+ * action is a fixed 24px square, centered on the `sm` row and sharing the badge's middle on the `lg` row.
  */
 export const sidebarMenuActionBoxClass = cn(
   controlMetrics({ size: "xs" }).square(),
@@ -43,7 +43,7 @@ export const sidebarMenuActionBoxClass = cn(
 );
 
 /**
- * A group action's box: the xs control square, floored at the 24px target, centred on the 32px
+ * A group action's box: the xs control square, floored at the 24px target, centered on the 32px
  * group label, which sits at the group's row inset, or the small surface tier in a floating
  * Sidebar.
  */
@@ -60,8 +60,8 @@ export const sidebarGroupActionBoxClass = cn(
  * `ring-sidebar-ring` focus literals are the shared `focusRing`.
  *
  * The default row reads the row metrics, as menu rows do: `--row-h` tall, padded inline with
- * `--row-px`. The `h-7` / `h-12` sizes are shell-local navigation-rail geometry, `fixed`
- * at both densities. Collapse motion animates colour and shadow only. The
+ * `--row-px`. The `h-7` and `h-12` sizes are shell-local navigation-rail geometry, `fixed`
+ * at both densities. Collapse motion animates color and shadow only. The
  * shell width is the one sidebar layout transition.
  * The row is a native `<button>` or a `render`ed link, so the state face composes the
  * `native` target, whose `aria-disabled` arm covers a link row, and hover and press sit
@@ -121,12 +121,12 @@ export const sidebarMenuSubButtonVariants = tv({
 
 /**
  * `Sidebar.Provider`'s wrapper: the row that holds the panel and the inset, on the sidebar fill
- * behind an `inset` panel, so the inset reads as a card on it. Package-private, re-exported by the
- * workspace-only recipe catalog for the Figma component sync.
+ * behind an `inset` panel, so the inset reads as a card on it. It is package-private, and the
+ * workspace-only recipe catalog re-exports it for the Figma component sync.
  * - `page`: the full-height page row, at least the viewport's height.
  * - `container`: it fills its container's height instead of the viewport's and is the rail's
  *   containing block. It clips at its edges, so the collapsed offcanvas rail, which slides past the
- *   start edge, stays inside the container as it stays off a page's screen. `overflow-clip`, not
+ *   start edge, stays inside the container as it stays off a page's screen. It uses `overflow-clip`, not
  *   `overflow-hidden`, so it never becomes a scroll container.
  */
 export const sidebarWrapperVariants = tv({

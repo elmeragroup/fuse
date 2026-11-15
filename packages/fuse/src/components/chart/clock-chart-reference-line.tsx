@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's ReferenceLine: a ring at a value, as `y`, or a spoke at an instant's slot start, as
+ * The clock's ReferenceLine, a ring at a value, as `y`, or a spoke at an instant's slot start, as
  * `x`, with an optional label. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";

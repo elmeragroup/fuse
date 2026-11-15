@@ -17,7 +17,7 @@ export type LocaleContextValue = {
   timeZone?: string;
 };
 
-/** The locale, time zone and child tree supplied to `LocaleProvider`. */
+/** Props for `LocaleProvider`, the locale, time zone and child tree it supplies. */
 export type LocaleProviderProps = {
   locale: SupportedLocale;
   /**
@@ -33,7 +33,7 @@ export type LocaleProviderProps = {
 
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
-/** Supply a supported locale, and optionally a time zone, to the child component tree. */
+/** A provider that gives the child component tree a supported locale and an optional time zone. */
 export function LocaleProvider({ locale, timeZone, children }: LocaleProviderProps) {
   const value = useMemo((): LocaleContextValue => {
     // Intl throws a RangeError for a name that isn't an IANA zone, and accepts a missing one.
@@ -44,7 +44,7 @@ export function LocaleProvider({ locale, timeZone, children }: LocaleProviderPro
 }
 
 /**
- * Read the active locale and time zone. Throws when the required `LocaleProvider` is missing.
+ * The active locale and time zone. It throws when the required `LocaleProvider` is missing.
  */
 export function useLocale(): LocaleContextValue {
   const value = use(LocaleContext);

@@ -18,18 +18,18 @@ import type { Sweep } from "./layout/polar-angle";
 
 /** A part's drawing on the frame: its layout for a measured dial, its paint for an offset, or both. */
 export type GaugeDrawing = {
-  /** Lay the part out again for a new measurement, before it paints. */
+  /** Lays the part out again for a new measurement, before it paints. */
   readonly layout?: (pixels: DialPixels) => void;
-  /** Draw the reading at an offset in degrees from the sweep's start, as the loop shows it now. */
+  /** Draws the reading at an offset in degrees from the sweep's start, as the loop shows it now. */
   readonly paint?: (offset: number) => void;
 };
 
 /**
- * Register a part's drawing with its Root's frame for as long as the part shows the same layout.
+ * Registers a part's drawing with its Root's frame for as long as the part shows the same layout.
  *
  * @param gauge - The Root's context.
  * @param ref - The node the part draws into.
- * @param source - What the part lays out from, its sweep among it, memoised so a new reading keeps
+ * @param source - What the part lays out from, its sweep among it, memoized so a new reading keeps
  *   it.
  * @param draw - The part's drawing for its node and layout.
  * @returns The reading's offset at rest when the part first rendered, which its markup draws at.
@@ -70,7 +70,7 @@ export function useGaugePainter<T extends Element, L extends { readonly sweep: S
 export type ReachedMark = { readonly node: Element; readonly offset: number };
 
 /**
- * Mark every mark the reading has reached with an attribute, and clear it from the rest, as the
+ * Sets an attribute on every mark the reading has reached, and clears it from the rest, as the
  * ruler's ticks and the dots light.
  *
  * @param marks - The marks.

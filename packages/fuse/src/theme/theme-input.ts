@@ -1,8 +1,8 @@
 /**
- * The theme axes, identity × brand × segment, and the one registry every projection of a theme
- * reads: validation, the `data-theme-*` attributes, the slug and the legal theme list. Density
- * and color scheme are document axes, not theme axes, so they live in `density.ts` and the
- * color-scheme modules.
+ * The theme axes, identity, brand and segment, and the one registry every projection of a theme
+ * reads: validation, the `data-theme-*` attributes, the slug and the legal theme list. Density and
+ * color scheme are document axes, not theme axes, so `density.ts` and the color-scheme modules
+ * define them.
  */
 
 /** The identity axis: the neutral system look, or the brand's full look and feel. */
@@ -21,9 +21,9 @@ export type ThemeSegment = (typeof THEME_SEGMENTS)[number];
 
 /**
  * The theme axes by name, each with the attribute that stamps it and its legal values. Every
- * projection of a theme reads them: validation, the `data-theme-*` attributes, the slug, the
- * legal theme list and the generated selectors. `fuse.css` cannot import TypeScript, so
- * `theme-api.test.ts` holds its `:where([data-theme-…])` reset to these attributes.
+ * projection of a theme reads them: validation, the `data-theme-*` attributes, the slug, the legal
+ * theme list and the generated selectors. `fuse.css` cannot import TypeScript, so
+ * `theme-api.test.ts` checks its `:where([data-theme-…])` reset against these attributes.
  */
 const THEME_AXIS = {
   identity: { name: "identity", attribute: "data-theme-identity", values: THEME_IDENTITIES },
@@ -128,12 +128,12 @@ export type UntypedAxisValue = string | number | bigint | boolean | symbol | obj
 export type ThemeAxes = { readonly [N in ThemeAxisName]: ThemeAxisValue<N> };
 
 /**
- * Parse every theme axis in {@link THEME_AXES} order. Each axis checks its own value against
- * its registry entry; the brand/segment pin is the caller's, because strict parsing rejects a
+ * Parses every theme axis in {@link THEME_AXES} order. Each axis checks its own value against its
+ * registry entry. The caller applies the brand and segment pin, because strict parsing rejects a
  * pinned mismatch and coercion resolves it.
  *
  * @param read - Reads the untyped value of one axis.
- * @returns One legal value per axis, or null when any axis is unknown or missing.
+ * @returns One legal value per axis, or `null` when any axis is unknown or missing.
  */
 export function parseThemeAxes(read: (axis: ThemeAxis, index: number) => UntypedAxisValue): ThemeAxes | null {
   const parsed: Partial<Record<ThemeAxisName, string>> = {};
@@ -156,7 +156,7 @@ export type ThemeAttributes = {
 
 /**
  * The `data-theme-*` attributes of a theme, one per axis, in {@link THEME_AXES} order. It is the
- * pure projection, with no validation: callers pass a parsed theme.
+ * pure projection, with no validation, so callers pass a parsed theme.
  *
  * @param theme - One legal value per axis.
  * @returns Each axis's attribute name with its value.
@@ -179,11 +179,12 @@ export function themeAxisSelector<N extends ThemeAxisName>(name: N, value: Theme
 }
 
 /**
- * Parse a theme slug, such as `branded-fkas-private`. The slug spells the axes in
+ * Parses a theme slug, such as `branded-fkas-private`. The slug spells the axes in
  * {@link THEME_AXES} order, as {@link themeSlug} writes it.
  *
  * @param slug - The untrusted slug.
- * @returns The theme, or null for an unknown axis value or a segment a pinned brand does not span.
+ * @returns The theme, or `null` for an unknown axis value or a segment a pinned brand does not
+ *   span.
  */
 export function parseThemeSlug(slug: string): ThemeInput | null {
   const parts = slug.split("-");

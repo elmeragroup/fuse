@@ -7,7 +7,7 @@
  */
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-/** An Emoji face takes a native `svg` element's props plus its `label`. */
+/** Props for an `Emoji` face: a native `svg` element's props plus its `label`. */
 export type EmojiProps = Omit<ComponentProps<"svg">, "className"> & {
   /**
    * The face's accessible name. With it, the SVG is `role="img"` with this `aria-label`. Without

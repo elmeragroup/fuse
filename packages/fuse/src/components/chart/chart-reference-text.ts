@@ -7,7 +7,7 @@
 import type { FormattedText } from "./format/formatted-text";
 
 /**
- * Fill `{value}` in a label, or join the label and the value, or use the dictionary's pattern.
+ * Fills `{value}` in a label, joins the label and the value, or uses the dictionary's pattern.
  *
  * @param label - The reference's label, if it has one.
  * @param value - The reference's value or range.

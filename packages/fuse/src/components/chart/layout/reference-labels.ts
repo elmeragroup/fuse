@@ -38,7 +38,7 @@ export type LabelGuide = LabelSize & {
 export type LabelPlot = {
   /**
    * The highest a label's box may reach, in CSS pixels from the plot's top: the plot's top under a
-   * row of slot labels above it, and -Infinity without one, where a label may rise above the plot.
+   * row of slot labels above it, and `-Infinity` without one, where a label may rise above the plot.
    */
   readonly start: number;
   /** The plot's drawn bottom edge, in CSS pixels from its top. */
@@ -65,7 +65,7 @@ function ownEdge({ kind, span, inset }: LabelGuide, pixel: number): number {
 }
 
 /**
- * Place every label from its drawn guide.
+ * Places every label from its drawn guide.
  *
  * @param guides - Every value reference label of the plot, with its size and its drawn guide.
  * @param plot - The plot's drawn bottom edge and one device pixel.

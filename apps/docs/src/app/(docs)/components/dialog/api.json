@@ -429,7 +429,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary.",
+          "description": "The corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary.",
           "required": false
         },
         {
@@ -438,7 +438,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -480,7 +480,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Shows a close button, a ghost icon `Dialog.Close`, in the popup's top-right corner.",
+          "description": "Whether the popup shows a close button, a ghost icon `Dialog.Close`, in its top-right corner.",
           "required": false
         },
         {
@@ -545,7 +545,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The footer close button's label. Unset, it reads `overlay.close` from the locale dictionary.",
+          "description": "The footer close button's label. Defaults to `overlay.close` from the locale dictionary.",
           "required": false
         },
         {
@@ -554,7 +554,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Adds a close button, an outline `Dialog.Close`, after the footer's children. It is separate from `Dialog.Content`'s corner close button.",
+          "description": "Whether the footer adds a close button, an outline `Dialog.Close`, after its children. It is separate from `Dialog.Content`'s corner close button.",
           "required": false
         }
       ]
@@ -586,7 +586,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Lets the title take focus from script. It sets `tabIndex={-1}` and shows a focus ring while the title has focus. For long content, set it and pass the title's ref to `Dialog.Content`'s `initialFocus`, so the dialog opens at the top of its content.",
+          "description": "Whether the title can take focus from script. It sets `tabIndex={-1}` and shows a focus ring while the title has focus. For long content, set it and pass the title's ref to `Dialog.Content`'s `initialFocus`, so the dialog opens at the top of its content.",
           "required": false
         },
         {

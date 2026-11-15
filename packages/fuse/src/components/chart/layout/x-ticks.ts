@@ -143,7 +143,7 @@ export function tickStrides(domain: XDomain): TickStride[] {
   return [...stridesOf(domain.interval, ownSlots), ...coarser];
 }
 
-/** Add a candidate slot to each stride of its rule that divides its unit position. */
+/** Adds a candidate slot to each stride of its rule that divides its unit position. */
 function addToStrides(lists: readonly number[][], rule: Rule, wall: WallTime, slot: number): void {
   const unit = rule.unit(wall, slot);
   const { strides } = rule;

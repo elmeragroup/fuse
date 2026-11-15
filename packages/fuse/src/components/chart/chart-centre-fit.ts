@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The fit guard of a polar centre. The centre's text never shrinks below
+ * The fit guard of a polar center. The center's text never shrinks below
  * the 12 px floor: when its printed text reaches past the square inscribed in the hole, or comes
  * within 2 px of the hole's edge, as a two-line value filling the square does at its corners, the
- * centre drops every line but the value, and when the value alone still reaches past, it drops the
+ * center drops every line but the value, and when the value alone still reaches past, it drops the
  * value too, which the tooltip, the legend and the table still carry. It writes `data-fit` and
  * renders nothing.
  */
@@ -20,7 +20,7 @@ const SLACK = 0.5;
 const EDGE = 2;
 
 /**
- * The boxes of a centre's printed text: each text run's, and a rolling digit's window, since the
+ * The boxes of a center's printed text: each text run's, and a rolling digit's window, since the
  * rest of its reel sits clipped outside it. A value that wraps between its number and its unit
  * fills the square's width with its own box, but not with its text.
  */
@@ -46,7 +46,7 @@ function printed(hole: HTMLElement): DOMRect[] {
 
 /**
  * Whether the hole's text reaches past the hole: past its inscribed square, or within 2 px of the
- * circle round it.
+ * circle around it.
  */
 function overflows(hole: HTMLElement): boolean {
   const bounds = hole.getBoundingClientRect();
@@ -69,9 +69,9 @@ function overflows(hole: HTMLElement): boolean {
 }
 
 /**
- * Fit a centre's text to its hole: every line, else the value alone, else nothing.
+ * Fits a center's text to its hole: every line, else the value alone, else nothing.
  *
- * @param hole - The centre's hole, whose `data-fit` the stylesheet reads.
+ * @param hole - The center's hole, whose `data-fit` the stylesheet reads.
  */
 function fitCentre(hole: HTMLElement): void {
   writeAttribute(hole, "data-fit", null);
@@ -82,7 +82,7 @@ function fitCentre(hole: HTMLElement): void {
 }
 
 /**
- * Keep a centre's text fitted to its hole: before the first paint, and again whenever the hole or
+ * Keeps a center's text fitted to its hole: before the first paint, and again whenever the hole or
  * any of its lines changes size, as a new value does.
  *
  * @returns The ref for the hole.

@@ -20,7 +20,7 @@ type AlertActionHandler = ComponentProps<typeof Button>["onClick"];
 type AlertActionProps =
   | {
       /**
-       * Runs when the action button is clicked. The alert renders the button only when this and
+       * Called when the user clicks the action button. The alert renders the button only when this and
        * `actionLabel` are both set. `Alert.Root` is a server component, so pass the handler from a
        * client component.
        */
@@ -46,7 +46,7 @@ const ALERT_ICONS = {
 
 export type AlertRootProps = ComponentProps<"div"> &
   AlertActionProps & {
-    /** The status. It sets the alert's colours and its icon. */
+    /** The status. It sets the alert's colors and its icon. */
     variant?: VariantProps<typeof alertVariants>["variant"];
     /**
      * The live-region role. A screen reader announces an `alert` at once, interrupting the user,
@@ -160,7 +160,7 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 /**
  * The alert body, a `div` without Item.Description's two-line clamp, so it can hold
  * paragraphs and lists. Its text follows document density, 14px dense and 16px comfortable, at
- * regular weight. It takes the variant's text colour from `Alert.Root`, as the title does.
+ * regular weight. It takes the variant's text color from `Alert.Root`, as the title does.
  */
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();

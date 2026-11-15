@@ -33,7 +33,7 @@ export type ChartRevealProps = ChartLayerProps & {
 
 /**
  * Wraps marks and glows their drawn layer, so the glow follows the mark's curve, group slot and
- * shape. Each bar series casts a halo of its own colour at half alpha, and each line or area series
+ * shape. Each bar series casts a halo of its own color at half alpha, and each line or area series
  * one at full alpha.
  *
  * @beta
@@ -58,8 +58,8 @@ function masked(element: Element): SVGElement[] {
 
 /**
  * Wraps lines, areas and dots and shows them at full strength up to the active slot, as a hover
- * trace. Past the active slot they draw at `--chart-hover-dim`, in their own colour, so forced
- * colours and colour-vision deficiency keep each series apart. With no slot active they draw
+ * trace. Past the active slot they draw at `--chart-hover-dim`, in their own color, so forced
+ * colors and color-vision deficiency keep each series apart. With no slot active they draw
  * whole. Root writes the active slot's place on each series it masks, and a step glides the edge
  * there on the crosshair's spring, so it moves with the crosshair and the active dot. Showing, a
  * commit and reduced motion place it at once, and a pointer move renders nothing in React.

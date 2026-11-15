@@ -34,8 +34,8 @@ export type SelectColumnOptions<TData> = {
 };
 
 /**
- * Build the selection column: `DataTable.SelectAll` in the header and `DataTable.SelectRow` in each
- * cell, with sorting and hiding disabled. "Select all" is scoped to the current page.
+ * Builds the selection column, with `DataTable.SelectAll` in the header and `DataTable.SelectRow` in
+ * each cell, and sorting and hiding turned off. "Select all" covers only the current page.
  *
  * @template TData - The row data type, inferred from the column helper.
  * @template TColumn - The column definition type the helper returns.

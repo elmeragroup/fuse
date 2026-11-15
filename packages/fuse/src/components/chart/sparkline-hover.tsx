@@ -100,7 +100,7 @@ function marksOf(svg: SVGSVGElement): GlideMarks | null {
   return { glide, movers: { crosshair, dot, band } };
 }
 
-/** End every mover's glide, so each shows its rest. */
+/** Ends every mover's glide, so each shows its rest. */
 function snapMovers({ crosshair, dot, band }: Movers): void {
   snapGlide(crosshair);
   snapGlide(dot);
@@ -124,11 +124,11 @@ function ownedRegion(root: Element, target: EventTarget | null): SVGGElement | n
 
 /** What a wrapper does with its Sparklines' pointer events and markup. */
 type Glider = {
-  /** Track the pointer's speed, which picks the spring of the next step. */
+  /** Tracks the pointer's speed, which picks the spring of the next step. */
   readonly move: (event: PointerEvent) => void;
-  /** Place the marks at the value the pointer reached, gliding from where they show, or at once. */
+  /** Places the marks at the value the pointer reached, gliding from where they show, or at once. */
   readonly over: (event: PointerEvent, motion: "glide" | "snap") => void;
-  /** Forget where the marks rest once the pointer leaves a Sparkline's values. */
+  /** Forgets where the marks rest once the pointer leaves a Sparkline's values. */
   readonly out: (event: PointerEvent) => void;
   /**
    * The wrapper element's ref, stable for the glider's life. Attaching an element takes over the
@@ -136,17 +136,18 @@ type Glider = {
    * hovered now, which a pointer that rested there before hydration hovers, then marks its glide
    * group `data-glide`, which hands its hover from the CSS to the glide, and keeps the marks on the
    * hovered value through new data. A ref callback runs in the commit's layout phase, so the
-   * takeover lands before the commit paints, whichever component's state replaced the element. Its cleanup lets go a microtask later, unless the same element attaches
-   * again first, as it does when a consumer's inline ref changes the merged ref each render, so a
-   * running glide survives that; another element lets go of the old one at once.
+   * takeover lands before the commit paints, whichever component's state replaced the element. Its
+   * cleanup lets go a microtask later, unless the same element attaches again first, as it does when
+   * a consumer's inline ref changes the merged ref each render, so a running glide survives that.
+   * Another element lets go of the old one at once.
    */
   readonly ref: (root: Element | null) => (() => void) | undefined;
-  /** End every running glide at once, as reduced motion asks. */
+  /** Ends every running glide at once, as reduced motion asks. */
   readonly snapAll: () => void;
 };
 
 /**
- * Create a wrapper's glider. It keeps the pointer's speed, the Sparklines it has taken over, and
+ * Creates a wrapper's glider. It keeps the pointer's speed, the Sparklines it has taken over, and
  * where each one's marks rest while the pointer is over one of its values, and writes to the page,
  * never to React.
  *

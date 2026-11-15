@@ -11,7 +11,7 @@ import { aspectRatioVariants } from "./aspect-ratio-variants";
  */
 export type AspectRatioValue = NonNullable<VariantProps<typeof aspectRatioVariants>["ratio"]>;
 
-/** `AspectRatio` takes a native `div`'s props plus the required `ratio`. */
+/** Props for `AspectRatio`, a native `div`'s props plus the required `ratio`. */
 export type AspectRatioProps = Omit<ComponentProps<"div">, "className" | "children"> & {
   /**
    * The frame's width to height, written to `data-ratio`. It is required. For a ratio outside the

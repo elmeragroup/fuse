@@ -3,7 +3,7 @@
  * children were written.
  *
  * A SubSection written in a client component reaches the shell as an element of the part
- * itself. One written in a server component does not: the server already ran the
+ * itself. One written in a server component does not. The server already ran the
  * directive-free part, and the shell receives the root element it rendered, which carries
  * `SUB_SECTION_MARKER`. React Flight keeps an element's props, so the marker survives, while a
  * client reference's `type` reaches the client as an opaque lazy wrapper; the partition never
@@ -44,7 +44,7 @@ function isSubSection(child: ReactNode): boolean {
 }
 
 /**
- * Partition direct children into the label row and the SubSection band, keeping their order.
+ * Splits direct children into the label row and the SubSection band, keeping their order.
  *
  * @param children - The row's children, as the shell received them.
  * @returns `row` for the label content and `subSections` for the bands rendered outside it.

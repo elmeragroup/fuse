@@ -46,8 +46,8 @@ function cssRule(
 }
 
 /**
- * Light rules target one selector; dark rules carry the direct and the descendant
- * form in one selector list so a palette body is emitted once, not twice.
+ * A light rule targets one selector. A dark rule lists the direct and the descendant form in one
+ * selector list, so the emitter writes a palette body once, not twice.
  */
 function themeRule(
   selector: string,
@@ -71,11 +71,11 @@ function rootDeclarations(): (readonly [string, string])[] {
 }
 
 /**
- * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no
- * palette owns (`--popover`, `--chart-*`) inherits through the scope. Dark
- * layers materialize `DARK_RESET_KEYS`, every key any light or dark palette can change
- * except the light-only keys. The light rule of the same element declares those in both
- * schemes, so a host override of one at the light rule's weight holds in dark.
+ * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no palette sets, such
+ * as `--popover` or `--chart-*`, inherits through the scope. Dark layers declare all of
+ * `DARK_RESET_KEYS`, which is every key any light or dark palette can change except the light-only
+ * keys. The light rule of the same element declares those in both schemes, so a host override of
+ * one at the light rule's weight holds in dark.
  */
 function resetDeclarations(
   overrides: Partial<TokenContract>,
@@ -157,12 +157,11 @@ function rampDeclarations(tokens: TokenContract): (readonly [string, string])[] 
 }
 
 /**
- * The brand rules: the pointer, the roles that read it, and the brand's ramps. The ramps hold
- * one value per brand and segment in both schemes and identities, so they live here, at the
- * brand's weight, and no identity or scheme rule declares them. A segment whose ramps differ
- * from the brand's first segment, such as Fjordkraft company with its teal hue, gets its own
- * rule with the segment attribute beside the brand, which outweighs the brand rule in both
- * schemes.
+ * The brand rules: the pointer, the roles that read it, and the brand's ramps. The ramps have one
+ * value per brand and segment in both schemes and identities, so the brand rule declares them at
+ * the brand's weight, and no identity or scheme rule declares them. A segment whose ramps differ
+ * from the brand's first segment, such as Fjordkraft company with its teal hue, gets its own rule
+ * with the segment attribute beside the brand. That rule outweighs the brand rule in both schemes.
  */
 function emitBrandPointers(): string {
   const brandRules: string[] = [];
@@ -230,7 +229,7 @@ function emitNeutralDarkPalette(): string {
   return [palette, ...brandScoped].join("\n\n");
 }
 
-/** The corner rules `corners.ts` owns, formatted like every other rule. */
+/** The corner rules from `corners.ts`, formatted like every other rule. */
 function emitCorners(): string {
   return cornerRules()
     .map((rule) => cssRule([rule.selector], rule.declarations))
@@ -238,9 +237,9 @@ function emitCorners(): string {
 }
 
 /**
- * The keys the brand rules own: the pointer and the ramps, which `emitBrandPointers` declares
- * per brand and segment. A palette rule never declares them, so each has one CSS owner and one
- * override weight.
+ * The keys the brand rules declare: the pointer and the ramps, which `emitBrandPointers` declares
+ * per brand and segment. A palette rule never declares them, so only brand and segment rules set
+ * these keys, each with one override weight.
  */
 const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
   ...POINTER_KEYS,
@@ -248,10 +247,9 @@ const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
 ]);
 
 /**
- * The roles a segment changes against its brand base, leaving out the keys the brand rules own.
- * A derived role counts as changed wherever one of its sources does, because the rule must
- * declare its `color-mix()` again to mix the segment's sources instead of inheriting the base's
- * result.
+ * The roles a segment changes against its brand base, leaving out the keys the brand rules declare.
+ * A derived role counts as changed wherever one of its sources does, because the rule must declare
+ * its `color-mix()` again to mix the segment's sources instead of inheriting the base's result.
  */
 function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
   const differs = (key: TokenName): boolean => tokens[key] !== base[key];
@@ -262,22 +260,22 @@ function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
   );
 }
 
-/** True when the two compositions differ in any token. */
+/** Whether the two compositions differ in any token. */
 function differsFrom(base: TokenContract, tokens: TokenContract): boolean {
   return changedKeys(base, tokens).length > 0;
 }
 
 /**
- * Emit each brand's rule from its composed base theme, then a segment rule wherever the
- * segment departs from that base. Light segment rules carry only the changed keys; dark
- * segment rules materialize the full dark reset set like every other dark rule.
+ * Emits each brand's rule from its composed base theme, then a segment rule wherever the segment
+ * departs from that base. Light segment rules carry only the changed keys. Dark segment rules
+ * declare the full dark reset set, like every other dark rule.
  *
- * A segment that departs only in light still gets a dark rule: the light segment selector
- * (`[identity][brand][segment]`) ties the dark brand selector (`[dark][identity][brand]`),
- * so without the four-attribute dark segment rule a dark scope would resolve that tie by
- * emission order instead of by specificity. The tie only covers the keys both rules declare.
- * A light-only key is never in a dark rule, so a light segment rule's value for one wins in
- * dark by being the only declaration at that weight, and the composed dark theme keeps it.
+ * A segment that departs only in light still gets a dark rule. The light segment selector
+ * `[identity][brand][segment]` ties the dark brand selector `[dark][identity][brand]`. Without the
+ * four-attribute dark segment rule, a dark scope would resolve that tie by emission order instead
+ * of by specificity. The tie only covers the keys both rules declare. A light-only key is never in
+ * a dark rule, so a light segment rule's value for one wins in dark by being the only declaration
+ * at that weight, and the composed dark theme keeps it.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
   const rules: string[] = [];
@@ -285,8 +283,8 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
     const themes = LEGAL_THEMES.filter((theme) => theme.identity === "branded" && theme.brand === brand);
     // Resolve the base by the brand's first segment rather than `themes[0]`, so base
     // selection does not depend on `LEGAL_THEMES` ordering. Its rule carries no
-    // `data-theme-segment`, so it is the fallback an element without a segment — or
-    // with a segment that has no sheet — resolves.
+    // `data-theme-segment`, so it is the fallback that an element without a segment, or
+    // with a segment that has no sheet, resolves.
     const [baseSegment] = BRANDS[brand].segments;
     const baseTheme = themes.find((theme) => theme.segment === baseSegment);
     if (baseTheme === undefined) {
@@ -331,9 +329,8 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
 }
 
 /**
- * Composing every theme is a guard, not a computation: `composeTheme` throws when a
- * theme is missing its must-override tokens, so generation fails loudly on the same
- * contract the theme tests assert.
+ * Composes every theme as a guard, not a computation. `composeTheme` throws when a theme is missing
+ * its must-override tokens, so generation fails on the same contract the theme tests assert.
  */
 function assertAllThemesCompose(): void {
   for (const theme of LEGAL_THEMES) {

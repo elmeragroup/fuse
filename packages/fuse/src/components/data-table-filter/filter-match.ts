@@ -11,8 +11,8 @@ export type MatchOptions = {
 };
 
 /**
- * Lower case with accents removed, so "Café" matches "cafe". A letter of its own, such as `ø`,
- * stays.
+ * The text in lower case with accents removed, so "Café" matches "cafe". A letter of its own, such
+ * as `ø`, stays.
  *
  * @param text - The text to normalize.
  * @returns The normalized text.
@@ -27,7 +27,7 @@ const dayFormatters = new Map<string, Intl.DateTimeFormat>();
  * The calendar day an instant falls on in a time zone.
  *
  * @param date - The instant.
- * @param timeZone - The zone, or undefined for the runtime zone.
+ * @param timeZone - The zone, or `undefined` for the runtime zone.
  * @returns The day as `YYYY-MM-DD`.
  */
 export function calendarDateIn(date: Date, timeZone: string | undefined): IsoDate {
@@ -85,7 +85,7 @@ function pickedOf(
 
 /**
  * Whether a multi-option cell holds any of the picked values, or with `all`, every one of them.
- * One walk over the cell, and only the "every" check allocates.
+ * It walks the cell once, and only the "every" check allocates.
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- a cell is whatever the row holds
 function holdsPicked(cell: unknown, picked: ReadonlySet<string>, all: boolean): boolean {
@@ -105,8 +105,8 @@ function holdsPicked(cell: unknown, picked: ReadonlySet<string>, all: boolean): 
 type OrderedOperator = Extract<FilterValue, { readonly kind: "number" | "date" }>["operator"];
 
 /**
- * Number and date operators, over numbers or ISO dates, which order the same way as text. A
- * negated operator answers its positive twin, which the caller inverts.
+ * Evaluates number and date operators over numbers or ISO dates, which order the same way as text.
+ * A negated operator answers its positive twin, which the caller inverts.
  */
 function compareOrdered<T extends number | string>(
   operator: OrderedOperator,

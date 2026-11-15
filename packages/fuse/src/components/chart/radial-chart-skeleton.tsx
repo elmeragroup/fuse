@@ -19,7 +19,7 @@ export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "
 };
 
 /**
- * A loading placeholder that renders in place of `RadialChart.Root`, for example as a Suspense
+ * A loading placeholder that renders in place of `RadialChart.Root`, such as a Suspense
  * fallback. One Fuse Skeleton annulus from the Root's hole to the rim sketches the rings, and one
  * Fuse Loader names the wait.
  *

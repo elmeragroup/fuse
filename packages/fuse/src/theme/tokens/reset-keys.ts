@@ -24,8 +24,8 @@ function tokenSources(name: TokenName): readonly string[] {
 }
 
 /**
- * Every token name the given layers can change, in `TOKEN_NAMES` order. An `undefined`
- * layer — a theme with no segment sheet — is skipped rather than replaced with an empty
+ * Every token name the given layers can change, in `TOKEN_NAMES` order. The function skips an
+ * `undefined` layer, which is a theme with no segment sheet, rather than replacing it with an empty
  * object.
  */
 function resetKeysFor(layers: readonly (TokenLayer | undefined)[]): readonly TokenName[] {

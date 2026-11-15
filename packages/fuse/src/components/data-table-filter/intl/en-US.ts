@@ -12,13 +12,13 @@ export const enUS = {
   searchFields: "Search fields",
   searchFieldsPlaceholder: "Filter by…",
   noFields: "No matching fields.",
-  /** Said by a menu row whose field already has a filter. */
+  /** The announcement on a menu row whose field already has a filter. */
   filtered: "Has a filter",
   /** The quick-search group's label. */
   valuesGroup: "Values",
   searchValues: (vars: Variables) => `Search ${String(vars?.field)}`,
   noValues: "No matching values.",
-  /** Under a list that shows only its first matches. */
+  /** The status under a list that shows only its first matches. */
   narrowHint: "Type to narrow the list",
   /** The in-place editor's Back button in the add menu. */
   back: "Back to fields",
@@ -32,11 +32,11 @@ export const enUS = {
   operatorLabel: (vars: Variables) => `${String(vars?.field)} operator`,
   removeFilter: (vars: Variables) => `Remove ${String(vars?.field)} filter`,
   clearFilters: "Clear filters",
-  /** After the shown labels. The count arrives already formatted. */
+  /** The "+N" after the shown labels. The count arrives already formatted. */
   moreValues: (vars: Variables) => `+${String(vars?.count)}`,
   quoted: (vars: Variables) => `“${String(vars?.text)}”`,
   textPlaceholder: "Type to filter",
-  /** After the Enter key cap in the text editor. */
+  /** The hint after the Enter key cap in the text editor. */
   closeHint: "to close",
   minimum: "Minimum",
   maximum: "Maximum",

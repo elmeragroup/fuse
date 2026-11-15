@@ -7,7 +7,7 @@
  * pixel, so it is always a whole number of device pixels from the layer's origin and draws sharp,
  * and it lands on the pixel the browser gives the focused option's box. Sharing one snap is what
  * keeps a bar, its crosshair band and the focused option on one column. Each frame also holds one
- * slot grid, which places every slot band, slot centre and bar, so every gap between bars draws
+ * slot grid, which places every slot band, slot center and bar, so every gap between bars draws
  * the same whole device pixels.
  */
 import { DECIMATE_ABOVE } from "./decimate";
@@ -30,7 +30,10 @@ export type PlotBox = {
   readonly top: number;
 };
 
-/** The bar spacing a theme or a consumer sets through `--chart-band-gap`, `--chart-bar-gap` and `--chart-bar-seam`. */
+/**
+ * The bar spacing a theme or a consumer sets through `--chart-band-gap`, `--chart-bar-gap` and
+ * `--chart-bar-seam`.
+ */
 export type BarMetrics = {
   /** The share of each band left empty between categories, 0 to 1. */
   readonly bandGap: number;
@@ -49,8 +52,8 @@ export const WHOLE_BAND: SubBand = { index: 0, count: 1 };
 /**
  * Where a layout's slot bands lie along the slot axis, worked out once per frame so every lookup
  * is arithmetic. Under `"exact"` every band is the same whole number of device pixels, and the
- * bands start where the leftover pixels centre. Under `"spread"` each band edge snaps on its own,
- * so neighbouring bands share their edge and differ by at most a device pixel.
+ * bands start where the leftover pixels center. Under `"spread"` each band edge snaps on its own,
+ * so neighboring bands share their edge and differ by at most a device pixel.
  */
 export type SlotGrid = {
   /** How the bands divide the plot. */
@@ -58,7 +61,7 @@ export type SlotGrid = {
   /** The first band's start in CSS pixels from the plot's drawn origin, 0 under `"spread"`. */
   readonly start: number;
   /**
-   * One band's length in CSS pixels: whole device pixels under `"exact"`, and the plot's length over
+   * One band's length in CSS pixels, whole device pixels under `"exact"` and the plot's length over
    * the count under `"spread"`.
    */
   readonly step: number;
@@ -87,19 +90,19 @@ export type PlotRect = {
 };
 
 /**
- * Build the frame of one layout. Under `orientation="vertical"` slots run left to right and the
+ * Builds the frame of one layout. Under `orientation="vertical"` slots run left to right and the
  * domain's maximum sits at the top. Under `"horizontal"` slots run top to bottom and the maximum
  * sits at the right.
  *
  * Under a band x scale every slot takes the same whole device pixels, at least one, from a start
- * that splits the leftover between both ends: the `"exact"` grid. A point scale, a window too
+ * that splits the leftover between both ends. That is the `"exact"` grid. A point scale, a window too
  * dense for a device pixel per slot and a decimated window spread instead.
  *
  * @param box - The measured plot box.
  * @param orientation - Root's orientation.
  * @param count - The effective window's slot count.
  * @param domain - The layout's value domain, lower bound first.
- * @param xScale - Root's x scale, "band" by default.
+ * @param xScale - Root's x scale.
  * @returns The frame.
  */
 export function plotFrame(
@@ -129,7 +132,7 @@ export function plotFrame(
 const TIE = 1e-6;
 
 /**
- * Round a page coordinate to a device pixel. A coordinate exactly between two device pixels rounds
+ * Rounds a page coordinate to a device pixel. A coordinate exactly between two device pixels rounds
  * toward the top left, as the browser snaps a box's edge. A snapped coordinate on a plot whose
  * origin lies on such a tie lies on one too, give or take float error, so a coordinate within `TIE`
  * of a tie counts as the tie, and snapping a snapped coordinate returns it.
@@ -139,7 +142,7 @@ function pixel(dpr: number, at: number): number {
 }
 
 /**
- * The device pixel edge a page coordinate snaps to, counted in device pixels, by `pixel`'s rule: a
+ * The device pixel edge a page coordinate snaps to, counted in device pixels, by `pixel`'s rule. A
  * coordinate exactly between two device pixels, within `TIE`, rounds toward the top left.
  *
  * @param dpr - Device pixels per CSS pixel.
@@ -171,7 +174,7 @@ function samePhase(dpr: number, a: number, b: number): boolean {
  * @param a - One box.
  * @param b - The other.
  * @param within - How far two sizes may lie apart and count as one, as a size serialized to three
- *   decimals and the same size in full precision do. 0 by default.
+ *   decimals and the same size in full precision do.
  * @returns Whether every mark draws the same in both.
  */
 export function sameSnapping(a: PlotBox, b: PlotBox, within = 0): boolean {
@@ -184,13 +187,13 @@ export function sameSnapping(a: PlotBox, b: PlotBox, within = 0): boolean {
   );
 }
 
-/** Snap a coordinate measured from an origin at a page position. */
+/** Snaps a coordinate measured from an origin at a page position. */
 function snapFrom(origin: number, dpr: number, at: number): number {
   return pixel(dpr, origin + at) - pixel(dpr, origin);
 }
 
 /**
- * Snap a horizontal coordinate to the device pixel the browser gives a box edge there.
+ * Snaps a horizontal coordinate to the device pixel the browser gives a box edge there.
  *
  * @param box - The measured plot box.
  * @param x - CSS pixels from the plot's left edge.
@@ -201,7 +204,7 @@ export function snapX(box: PlotBox, x: number): number {
 }
 
 /**
- * Snap a vertical coordinate to the device pixel the browser gives a box edge there.
+ * Snaps a vertical coordinate to the device pixel the browser gives a box edge there.
  *
  * @param box - The measured plot box.
  * @param y - CSS pixels from the plot's top edge.
@@ -212,7 +215,7 @@ export function snapY(box: PlotBox, y: number): number {
 }
 
 /**
- * Snap a coordinate along the slot axis: an x under a vertical frame and a y under a horizontal one.
+ * Snaps a coordinate along the slot axis, an x under a vertical frame and a y under a horizontal one.
  *
  * @param frame - The layout's frame.
  * @param at - CSS pixels from the plot's left or top edge.
@@ -223,7 +226,7 @@ export function snapAlong(frame: PlotFrame, at: number): number {
 }
 
 /**
- * Snap a coordinate along the value axis: a y under a vertical frame and an x under a horizontal one.
+ * Snaps a coordinate along the value axis, a y under a vertical frame and an x under a horizontal one.
  *
  * @param frame - The layout's frame.
  * @param at - CSS pixels from the plot's top or left edge.
@@ -250,7 +253,8 @@ function acrossLength(frame: PlotFrame): number {
 
 /**
  * A coordinate along the value axis as the share of the plot from the axis maximum, as CSS places
- * a value's HTML: down from the top under a vertical frame, in from the right under a horizontal one.
+ * a value's HTML. It counts down from the top under a vertical frame and in from the right under a
+ * horizontal one.
  *
  * @param frame - The layout's frame.
  * @param at - CSS pixels from the plot's top or left edge.
@@ -275,7 +279,7 @@ export function slotShare(frame: PlotFrame, at: number): number {
 }
 
 /**
- * Where a value lands along the value axis, unsnapped: its y under a vertical frame and its x
+ * Where a value lands along the value axis, unsnapped, as its y under a vertical frame and its x
  * under a horizontal one.
  *
  * @param frame - The layout's frame.
@@ -287,7 +291,7 @@ export function valueAt(frame: PlotFrame, value: number): number {
 }
 
 /**
- * The band a slot takes along the slot axis, snapped, so neighbouring bands share their edge.
+ * The band a slot takes along the slot axis, snapped, so neighboring bands share their edge.
  * Under the `"exact"` grid every band takes the same whole device pixels.
  *
  * @param frame - The layout's frame.
@@ -300,7 +304,7 @@ export function slotBand(frame: PlotFrame, position: number): readonly [number, 
   return snapSpan(frame, position * grid.step, (position + 1) * grid.step);
 }
 
-/** A band edge of the `"exact"` grid: whole device pixels from the drawn origin. */
+/** A band edge of the `"exact"` grid, whole device pixels from the drawn origin. */
 function slotEdge(frame: PlotFrame, position: number): number {
   const { grid, box } = frame;
   return Math.round((grid.start + position * grid.step) * box.dpr) / box.dpr;
@@ -313,7 +317,7 @@ function slotEdge(frame: PlotFrame, position: number): number {
  * grid, whose leftover pixels lie at both ends.
  *
  * @param frame - The layout's frame.
- * @returns The run's start and end, each from 0 to 1.
+ * @returns The run's start and end, each 0 to 1.
  */
 export function slotRun(frame: PlotFrame): readonly [number, number] {
   // A spread grid's run is the whole plot.
@@ -361,14 +365,14 @@ export function slotAxisAt(frame: PlotFrame, share: number): number {
 }
 
 /**
- * The centre of a slot along the slot axis, unsnapped, the number a slot reference tweens. Band
- * slots centre in their band, and point slots run from the first edge to the last. A position
+ * The center of a slot along the slot axis, unsnapped, the number a slot reference tweens. Band
+ * slots center in their band, and point slots run from the first edge to the last. A position
  * outside the window lies outside the plot.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @param xScale - Root's x scale.
- * @returns The centre in CSS pixels.
+ * @returns The center in CSS pixels.
  */
 export function slotCentreAt(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
   if (xScale === "band") return frame.grid.start + (position + 0.5) * frame.grid.step;
@@ -377,20 +381,20 @@ export function slotCentreAt(frame: PlotFrame, position: number, xScale: "band" 
 }
 
 /**
- * The centre of a slot along the slot axis, snapped.
+ * The center of a slot along the slot axis, snapped.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @param xScale - Root's x scale.
- * @returns The centre in CSS pixels.
+ * @returns The center in CSS pixels.
  */
 export function centreOf(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
   return snapAlong(frame, slotCentreAt(frame, position, xScale));
 }
 
 /**
- * The pixel columns a slot owns for focus and the tooltip: its band under a band scale, and a
- * band-wide cell centred on the point under a point scale, clipped to the plot.
+ * The pixel columns a slot takes for focus and the tooltip. They are its band under a band scale,
+ * and a band-wide cell centered on the point under a point scale, clipped to the plot.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
@@ -412,7 +416,7 @@ export function optionBand(
 }
 
 /**
- * The width every rule draws at: 1 px rounded down to whole device pixels, at least one, as the
+ * The width every rule draws at, 1 px rounded down to whole device pixels, at least one, as the
  * browser draws a 1 px CSS border. Grid lines, reference lines, the active value line and the line
  * crosshair all take it, so both edges of every rule lie on the device pixel grid at any pixel
  * ratio, and each rule's stroke and its label's offset read it.
@@ -425,7 +429,7 @@ export function hairline(box: PlotBox): number {
 }
 
 /**
- * A missing tick's width: 2 px rounded down to whole device pixels, at least one, so the tick draws
+ * A missing tick's width, 2 px rounded down to whole device pixels, at least one, so the tick draws
  * crisp at any pixel ratio, as a rule does.
  *
  * @param box - The measured plot box.
@@ -436,7 +440,7 @@ export function tickWidth(box: PlotBox): number {
 }
 
 /**
- * A rule's width as a tween frame draws it: rounded down to whole device pixels, at least one, so
+ * A rule's width as a tween frame draws it, rounded down to whole device pixels, at least one, so
  * a width moving between two hairlines stays crisp in every frame.
  *
  * @param box - The measured plot box.
@@ -449,7 +453,7 @@ export function wholeWidth(box: PlotBox, width: number): number {
 
 /**
  * Where a point mark lands along the slot axis: a line's vertex, a dot, a marker or the active dot.
- * Inside the slot run it is the centre of the hairline `slotLineAt` draws for the slot the
+ * Inside the slot run it is the center of the hairline `slotLineAt` draws for the slot the
  * coordinate lies in, the column the line crosshair takes, so the active dot sits on the crosshair
  * and every dot on its line's vertex, at any pixel ratio and however dense the slots. A coordinate
  * outside the run, as a sliding vertex takes, snaps where it is, so vertices that slide in or out
@@ -471,14 +475,14 @@ export function pointAlong(frame: PlotFrame, at: number, xScale: "band" | "point
 }
 
 /**
- * Move a snapped coordinate of a straight stroke's centre line so the stroke covers whole device
- * pixels: a stroke an odd number of device pixels wide centres on the middle of a device pixel,
+ * Moves a snapped coordinate of a straight stroke's center line so the stroke covers whole device
+ * pixels. A stroke an odd number of device pixels wide centers on the middle of a device pixel,
  * half a device pixel past the snapped edge, and an even one, or a fill, on the edge itself.
  *
  * @param frame - The layout's frame.
  * @param snapped - The coordinate, on a device pixel edge.
  * @param width - The stroke's width in CSS pixels, 0 for a fill.
- * @returns The coordinate the stroke's centre line takes.
+ * @returns The coordinate the stroke's center line takes.
  */
 export function strokeCentre(frame: PlotFrame, snapped: number, width: number): number {
   const { dpr } = frame.box;
@@ -486,14 +490,14 @@ export function strokeCentre(frame: PlotFrame, snapped: number, width: number): 
 }
 
 /**
- * The span a step run takes along the slot axis around its own slot's centre: the bands of the
- * slot's cells, with the pixel floor, so neighbouring runs share their edges, and the run snapped
- * where its centre lies outside the slot run, as a sliding vertex's does. A coarse series' slot covers
- * several of Root's cells, such as an hour's 4 quarters.
+ * The span a step run takes along the slot axis around its own slot's center. It covers the bands
+ * of the slot's cells, with the pixel floor, so neighboring runs share their edges. The run snaps
+ * where its center lies outside the slot run, as a sliding vertex's does. A coarse series' slot
+ * covers several of Root's cells, such as an hour's 4 quarters.
  *
  * @param frame - The layout's frame.
- * @param centre - The own slot's unsnapped centre.
- * @param cells - How many of Root's cells the own slot covers, 1 by default.
+ * @param centre - The own slot's unsnapped center.
+ * @param cells - How many of Root's cells the own slot covers.
  * @returns The run's start and end in CSS pixels.
  */
 export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [number, number] {
@@ -518,15 +522,15 @@ export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [
 }
 
 /**
- * The hairline that marks a slot, as a line crosshair and a slot reference line draw it: the rules'
- * `hairline`, no wider than the slot's option band. It starts at the slot's snapped centre, moved
+ * The hairline that marks a slot, as a line crosshair and a slot reference line draw it. It is the
+ * rules' `hairline`, no wider than the slot's option band. It starts at the slot's snapped center, moved
  * inside the band's device pixels, so the line marks the band it stands for at either end of the
  * plot, however dense the slots and at any pixel ratio.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
  * @param xScale - Root's x scale.
- * @param line - The line's width in CSS pixels, whole device pixels, the hairline by default.
+ * @param line - The line's width in CSS pixels, whole device pixels.
  * @returns The line's start and end along the slot axis, snapped.
  */
 export function slotLine(
@@ -541,13 +545,13 @@ export function slotLine(
 }
 
 /**
- * The hairline a slot reference draws at a tweened, unsnapped centre inside the plot: from the
- * centre, snapped, moved inside the device pixels of the band of the slot the centre lies in, as
- * `slotLine` draws it at rest. Whether the line shows is decided before this, from the centre, so
- * the band only ever contains a line that lies in the plot.
+ * The hairline a slot reference draws at a tweened, unsnapped center inside the plot. It starts at
+ * the center, snapped, moved inside the device pixels of the band of the slot the center lies in, as
+ * `slotLine` draws it at rest. The caller decides whether the line shows before this, from the
+ * center, so the band only ever contains a line that lies in the plot.
  *
  * @param frame - The layout's frame.
- * @param centre - The tweened centre along the slot axis, inside the plot.
+ * @param centre - The tweened center along the slot axis, inside the plot.
  * @param xScale - Root's x scale.
  * @param width - The line's width, whole device pixels.
  * @returns The line's start and end along the slot axis, snapped.
@@ -563,8 +567,9 @@ export function slotLineAt(
 }
 
 /**
- * The band of the slot a coordinate along the slot axis lies in, as `optionBand` gives it: the
- * nearest point, or the band that holds it, the first or last band past either end of the grid.
+ * The band of the slot a coordinate along the slot axis lies in, as `optionBand` gives it. Under a
+ * point scale it is the nearest point's, and under a band scale the band that holds it, the first or
+ * last band past either end of the grid.
  *
  * @param frame - The layout's frame.
  * @param at - CSS pixels from the plot's left or top edge, unsnapped.
@@ -588,14 +593,14 @@ export function slotBandAt(
   return optionBand(frame, Math.min(Math.max(nearest, 0), count - 1), xScale);
 }
 
-/** Where a line `width` wide starts: at its snapped centre, moved inside the band's device pixels. */
+/** Where a line `width` wide starts, at its snapped center moved inside the band's device pixels. */
 function lineStart(frame: PlotFrame, centre: number, band: readonly [number, number], width: number): number {
   return Math.min(Math.max(snapAlong(frame, centre), band[0]), band[1] - width);
 }
 
 /**
- * The span a bar draws inside its slot's band: the band less one bar gap, every edge a whole
- * number of device pixels from the plot's drawn origin. On the `"exact"` grid every band is the
+ * The span a bar draws inside its slot's band. It is the band less one bar gap, with every edge a
+ * whole number of device pixels from the plot's drawn origin. On the `"exact"` grid every band is the
  * same, so every bar of a layout is the same width and every gap the same. The gap is `bandGap` of
  * a band's device pixels, rounded and at least one, split with the smaller half before the bar. A
  * band of one device pixel, or a `bandGap` of 0, has none. A BarGroup splits the rest into
@@ -657,9 +662,9 @@ export function barSpan(
 }
 
 /**
- * Snap a bar body's span along the slot axis, as a tween frame between two resting bars draws it.
+ * Snaps a bar body's span along the slot axis, as a tween frame between two resting bars draws it.
  * The width snaps once, rounded down to whole device pixels. Only the start snaps after that. It
- * starts the rounded width centred on the span's middle and moves to its device pixel, so the body
+ * starts the rounded width centered on the span's middle and moves to its device pixel, so the body
  * keeps its middle within half a device pixel and a frame never widens a bar past its unsnapped
  * width. A span already on the device pixel grid, as `barSpan` gives every resting bar, snaps to
  * itself, so a tween's first and last frames draw the resting edges. A span narrower than a device
@@ -688,10 +693,10 @@ export function snapBarSpan(
 }
 
 /**
- * Snap a span along the slot axis, each edge to its own device pixel, so neighbouring spans share
+ * Snaps a span along the slot axis, each edge to its own device pixel, so neighboring spans share
  * their edges, as slot bands, step runs and slot references do. A bar's body takes `snapBarSpan`,
  * which snaps its width once instead. This is the one owner of the pixel floor, which every mark
- * and every interaction band takes: a span wider than zero keeps at least one device pixel, and an
+ * and every interaction band takes. A span wider than zero keeps at least one device pixel, and an
  * empty span stays empty. A span narrower than a device pixel snaps both edges to one, and keeps the
  * device pixel on the side of that edge where its middle lies, so a bar and the band around it
  * take the same pixel. At the plot's ends the pixel stays inside the plot, and inside `within`
@@ -713,7 +718,7 @@ export function snapSpan(
 }
 
 /**
- * Snap a span across the value axis with the same pixel floor, as a value reference band takes it,
+ * Snaps a span across the value axis with the same pixel floor, as a value reference band takes it,
  * so a band inside the plot narrower than a device pixel keeps the pixel its middle lies in.
  *
  * @param frame - The layout's frame.
@@ -753,10 +758,11 @@ function floorSpan(
 }
 
 /**
- * Which way a body's value-axis pixel floor grows: toward the start of the value axis's coordinates
- * (up a vertical frame, left across a horizontal one), toward their end, or not at all. A body's
- * floor grows from its base toward its far end, so `"start"` is a positive vertical bar's and a
- * negative horizontal bar's, and `"end"` the others'. A stack's inner segment takes `"none"`.
+ * Which way a body's value-axis pixel floor grows. `"start"` grows toward the start of the value
+ * axis's coordinates, up a vertical frame and left across a horizontal one. `"end"` grows toward
+ * their end, and `"none"` does not grow. A body's floor grows from its base toward its far end, so
+ * `"start"` is a positive vertical bar's and a negative horizontal bar's, and `"end"` the others'. A
+ * stack's inner segment takes `"none"`.
  */
 export type ValueFloor = "start" | "end" | "none";
 
@@ -768,15 +774,15 @@ export type ValueFloor = "start" | "end" | "none";
 export type StackPlace = "outer" | "inner";
 
 /**
- * Snap a mark's drawn body. Its slot-axis edges go through `snapBarSpan`, so a body on the grid
+ * Snaps a mark's drawn body. Its slot-axis edges go through `snapBarSpan`, so a body on the grid
  * draws as it is and a narrower one keeps the pixel floor. Its value-axis edges each snap to their
  * device pixel, and a body of finite non-zero length there that snaps to nothing keeps one device
- * pixel: its base edge stays on the pixel edge it snapped to, where the zero rule or the segment
+ * pixel. Its base edge stays on the pixel edge it snapped to, where the zero rule or the segment
  * below it lies, and its far edge moves one device pixel on, the way `floor` names. So a reading
  * under a device pixel still draws, away from zero, while a zero reading, whose body has no length,
  * stays flat. A kept pixel that would cross the plot's edge, as a body past the domain's end
  * reaches, stays out, so the body stays flat inside the plot rather than leave its base. `"none"`
- * keeps the plain snap, as a stack's inner segment takes it: its far edge is the next segment's
+ * keeps the plain snap, as a stack's inner segment takes it. Its far edge is the next segment's
  * base, and a pixel there would cover that segment. Every rectangle a bar, its look's parts, the
  * active overlay, a path column or the tooltip row draws comes through here, after any shaping, so
  * nothing narrows a body after the floor.
@@ -906,14 +912,14 @@ export function frameRect(
 }
 
 /**
- * The centre of a stroke whose near edge sits at a coordinate, snapped, so both edges of a rule
+ * The center of a stroke whose near edge sits at a coordinate, snapped, so both edges of a rule
  * land on device pixels and it draws sharp at 1x, 2x and every zoom. A rule starts at its
  * coordinate, as a CSS border does, so the zero line runs just past the bars' base.
  *
  * @param snapped - The snap of the rule's axis, `snapX` or `snapY` bound to a box.
  * @param at - The rule's unsnapped near edge.
- * @param width - The stroke width in CSS pixels, 1 by default.
- * @returns The stroke's centre coordinate.
+ * @param width - The stroke width in CSS pixels.
+ * @returns The stroke's center coordinate.
  */
 function ruleAt(snapped: (at: number) => number, at: number, width = 1): number {
   return snapped(at) + width / 2;
@@ -928,13 +934,13 @@ export type PlotRule = {
 };
 
 /**
- * A `hairline` rule across the whole plot: a horizontal one at a y, a vertical one at an x. Every
+ * A `hairline` rule across the whole plot, a horizontal one at a y or a vertical one at an x. Every
  * placement sets all four endpoints, so a rule that changes direction keeps none of the old ones.
  *
  * @param box - The measured plot box.
  * @param direction - Which way the rule runs on screen.
  * @param at - The rule's unsnapped near edge.
- * @returns The rule's endpoints, its centre on the snapped coordinate plus half a hairline.
+ * @returns The rule's endpoints, its center on the snapped coordinate plus half a hairline.
  */
 export function ruleAcross(box: PlotBox, direction: "horizontal" | "vertical", at: number): PlotRule {
   const width = hairline(box);

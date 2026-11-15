@@ -12,9 +12,9 @@ import { DatePickerFieldCalendar, DatePickerInput, DatePickerRoot } from "./date
 import { DatePickerGroup, DatePickerPopup, DatePickerTrigger, PickerPopupPane } from "./picker-shell";
 
 /**
- * DatePickerField's props: React Aria's DatePicker prop names, over Temporal values.
+ * Props for `DatePickerField`, with React Aria's DatePicker prop names over Temporal values.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The value's kind: `Temporal.PlainDate`, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
  *   either from `granularity` and `timeZone`, so `onChange` receives the kind the picker emits.
  */
@@ -49,17 +49,17 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    */
   defaultValue?: T | null;
   /**
-   * Called with this runtime's value when a day is picked or the segments form one, `null` when
-   * cleared. Its kind is typed as DateField's `onChange` is, with no type argument. The segments
-   * take DateField's keys.
+   * Called when the user picks a day or the segments form a value, with this runtime's value, or
+   * with `null` when the user clears it. Its kind is typed as DateField's `onChange` is, with no
+   * type argument. The segments take DateField's keys.
    */
   onChange?: NoInfer<(value: T | null) => void>;
   /**
    * The earliest valid value, a Temporal value of any kind, compared as DateField compares it.
-   * Earlier days are disabled in the calendar.
+   * The calendar disables earlier days.
    */
   minValue?: TemporalValue;
-  /** The latest valid value, taking what `minValue` takes. Later days are disabled in the calendar. */
+  /** The latest valid value, taking what `minValue` takes. The calendar disables later days. */
   maxValue?: TemporalValue;
   /** Values the picker refuses: focusable but unselectable days, an invalid typed value. */
   isDateUnavailable?: NoInfer<(value: T) => boolean>;
@@ -72,7 +72,7 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
   granularity?: DateGranularity;
   /** The hour cycle the field and the popup's time input show. Defaults to the locale's. */
   hourCycle?: 12 | 24;
-  /** Hides a zoned value's zone name in the field and in the popup's time input. */
+  /** Whether the field and the popup's time input hide a zoned value's zone name. */
   hideTimeZone?: boolean;
   /** The zone an empty zoned picker takes, as DateField's `timeZone`. */
   timeZone?: string;
@@ -83,8 +83,8 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
   /** How the calendar pages a multi-month view, as Calendar's `pageBehavior`. */
   pageBehavior?: CalendarPageBehavior;
   /**
-   * The preset pane beside the calendar, normally `DatePicker.Presets`. A falsy node (`false` from
-   * a `&&` guard, `null`, `""`) keeps the calendar alone.
+   * The preset pane beside the calendar, normally `DatePicker.Presets`. A falsy node, such as
+   * `false` from a `&&` guard, `null` or `""`, keeps the calendar alone.
    */
   presetGroup?: ReactNode;
   /**
@@ -98,7 +98,7 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    * or at midnight when the popup closes first. A time typed before any day waits for one.
    */
   shouldCloseOnSelect?: boolean;
-  /** Pads days, months and hours with a leading zero, as DateField does. */
+  /** Whether days, months and hours take a leading zero, as DateField's do. */
   shouldForceLeadingZeros?: boolean;
   /** Whether the popup is open, when the parent owns it. */
   isOpen?: boolean;
@@ -122,32 +122,32 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    * form holds under this name shows below the picker until the value changes.
    */
   name?: string;
-  /** Disables the picker and leaves its value out of the form. */
+  /** Whether the picker is disabled, which also leaves its value out of the form. */
   isDisabled?: boolean;
   /**
-   * Keeps the value. The segments stay focusable and take the muted read-only fill, and the
-   * trigger is disabled.
+   * Whether the value is read-only. The segments stay focusable and take the muted read-only fill,
+   * and the trigger is disabled.
    */
   isReadOnly?: boolean;
-  /** Reports an empty picker missing, and a half-typed one incomplete. */
+  /** Whether the picker reports an empty value as missing and a half-typed one as incomplete. */
   isRequired?: boolean;
-  /** Shows the picker invalid, with `errorMessage` under the box. */
+  /** Whether the picker shows as invalid, with `errorMessage` under the box. */
   isInvalid?: boolean;
   /**
-   * The field box's control size: `"default"` the `md` one, `"sm"` the `sm` one.
+   * The field box's control size: `"default"` is the `md` size and `"sm"` the `sm` size.
    * @default "default"
    */
   size?: "default" | "sm";
-  /** Names the picker when there is no visible `label`. */
+  /** The picker's accessible name when there is no visible `label`. */
   "aria-label"?: string;
-  /** Portal target for the popup. Defaults to the nearest `ThemeScope`. */
+  /** The popup's portal target. Defaults to the nearest `ThemeScope`. */
   container?: OverlayContainerProps["container"];
   /** Extra classes, merged onto `Field.Root`. */
   className?: string;
 };
 
 /**
- * Labeled date picker composite over Field and `DatePicker`'s parts, with React Aria's
+ * A labeled date picker composite over Field and `DatePicker`'s parts, with React Aria's
  * DatePicker prop names: a label, the field box with the segments and the calendar trigger, the
  * error, the description, and the calendar popup with an optional preset pane.
  *

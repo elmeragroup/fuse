@@ -33,8 +33,8 @@ export type ScatterChartLegendItemProps = ChartDomProps<"li"> & {
 };
 
 /**
- * A static list of the series, "bottom" by default. Without children, one LegendItem per config
- * key. The list is visible text, so screen readers read it, and its swatches are decoration.
+ * A static list of the series. Without children, it renders one LegendItem per config key. The
+ * list is visible text, so screen readers read it, and its swatches are decoration.
  *
  * @beta
  */

@@ -14,12 +14,15 @@ import { popoverVariants } from "./popover-variants";
 
 const popoverSlots = popoverVariants();
 
-/** Holds the popover's open state and connects its trigger to its popup. */
+/** The popover's root, which holds its open state and connects its trigger to its popup. */
 export function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
   return <PopoverPrimitive.Root {...props} />;
 }
 
-/** Opens and closes the popover. It renders a plain `button`; pass `render` to render another element. */
+/**
+ * The button that opens and closes the popover. It renders a plain `button`; pass `render` to render
+ * another element.
+ */
 export function PopoverTrigger({
   className,
   ...props
@@ -35,15 +38,18 @@ export function PopoverTrigger({
 
 export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof PopoverPrimitive.Positioner>> & {
-    /** Shows an arrow on the popup's edge that points at the trigger, or at `anchor` when set. */
+    /**
+     * Whether the popup shows an arrow on its edge that points at the trigger, or at `anchor` when
+     * set.
+     */
     showArrow?: boolean;
     /**
      * The element, ref or virtual element the popup is placed against, in place of the trigger.
      * The trigger still opens and closes the popup, reports its state and takes focus back when
-     * the popup closes. A controlled popover with no trigger opens against the anchor, and the
-     * opener's `aria-expanded` and focus return are then yours to handle. The popup follows the
-     * anchor as it moves or resizes, except when a transform shrinks the anchor within its last
-     * box. Pass a new anchor then, such as a new virtual element, to place the popup again.
+     * the popup closes. A controlled popover with no trigger opens against the anchor. In that case,
+     * handle the opener's `aria-expanded` and focus return. The popup follows the anchor as it moves
+     * or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor
+     * then, such as a new virtual element, to place the popup again.
      */
     anchor?: ComponentProps<typeof PopoverPrimitive.Positioner>["anchor"];
   } & OverlayContainerProps;
@@ -87,7 +93,7 @@ export function PopoverContent({
   );
 }
 
-/** Stacks the title and description. */
+/** The stack of the title and description. */
 export function PopoverHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="popover-header" className={cn(popoverSlots.header(), className)} {...props} />;
 }

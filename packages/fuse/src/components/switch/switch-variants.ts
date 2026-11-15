@@ -4,16 +4,16 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Runtime-free recipe for the Switch's track and thumb, with a size axis; default `default`. Not
- * exported from `@elmeragroup/fuse/switch`; the workspace-only recipe catalog re-exports it for
- * the Figma component sync.
+ * The runtime-free recipe for the Switch's track and thumb, with a size axis that defaults to
+ * `default`. It is not exported from `@elmeragroup/fuse/switch`, and the workspace-only recipe
+ * catalog re-exports it for the Figma component sync.
  *
  * - `root` is the track, 32px by 18.4px at `default` and 24px by 14px at `sm`. Its `max-w-*`
  *   caps a wider `className` width at the size's, as Checkbox's `max-w-4` does.
  * - `thumb` is the 16px or 12px dot. It sits at the track's start while unchecked, drawn at 75%,
  *   and at its end while checked. The checked thumb's translate measures from the track's start,
  *   so `root` sets `justify-start` itself: a parent's zero-weight child rule, such as the docs
- *   stage's `[:where(&>*)]:justify-center`, cannot centre the thumb and push it past the end.
+ *   stage's `[:where(&>*)]:justify-center`, cannot center the thumb and push it past the end.
  * - `control` is what the Switch control adds to the track: the `peer` marker for a sibling's
  *   `peer-*` styles, the native outline reset, a 24px hit area around the track drawn by its
  *   `after:` pseudo-element, the focus ring and the state face.
@@ -21,7 +21,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * The checked face reads `data-checked` and `data-unchecked` on each part, so any element that
  * carries those attributes draws the same switch from `root` and `thumb`. The data table filter's
  * toggle row draws one this way, as a picture of its own checked state, and leaves out `control`.
- * Runtime-free, so that row borrows the look without Switch's client graph.
+ * The recipe is runtime-free, so that row borrows the look without Switch's client graph.
  */
 export const switchVariants = tv({
   slots: {

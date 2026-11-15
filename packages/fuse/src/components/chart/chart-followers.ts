@@ -16,8 +16,8 @@ import { useChartReadout } from "./chart-readout";
 export type ActiveSlot = { readonly slot: number; readonly near: number | null } | null;
 
 /**
- * Draws one follower at the active slot. A "step" is a pointer or key step, which draws at once, and
- * a "commit" asks the follower's own commit classifier.
+ * Draws one follower at the active slot. A `"step"` is a pointer or key step, which draws at once,
+ * and a `"commit"` asks the follower's own commit classifier.
  */
 export type FollowerPaint = (active: ActiveSlot, cause: FollowerCause) => void;
 
@@ -28,21 +28,21 @@ type Follower = { paint: FollowerPaint; stale: boolean };
 
 /** Root's followers. */
 export type ChartFollowers = {
-  /** Register a follower while it is mounted. The result unregisters it. */
+  /** Registers a follower while it is mounted. The result unregisters it. */
   readonly add: (follower: Follower) => () => void;
-  /** Repaint a follower whose own inputs changed, after the commit settles. */
+  /** Repaints a follower whose own inputs changed, after the commit settles. */
   readonly invalidate: (follower: Follower) => void;
   /**
-   * Repaint every follower after the commit settles, as when a mark that followers join leaves
+   * Repaints every follower after the commit settles, as when a mark that followers join leaves
    * mid-tween, so each joins what still draws its series.
    */
   readonly refresh: () => void;
-  /** Paint every follower at the active slot now, which later repaints reuse. */
+  /** Paints every follower at the active slot now, which later repaints reuse. */
   readonly paint: (active: ActiveSlot, cause: FollowerCause) => void;
 };
 
 /**
- * Create a Root's follower registry. Root paints it on every pointer or key step and after every
+ * Creates a Root's follower registry. Root paints it on every pointer or key step and after every
  * commit, so the slot it last painted is the current one.
  *
  * @returns The registry.
@@ -88,7 +88,7 @@ export function createChartFollowers(): ChartFollowers {
 }
 
 /**
- * Follow the active slot. The paint function may change on every render, and the latest one paints.
+ * Follows the active slot. The paint function may change on every render, and the latest one paints.
  *
  * @param part - The calling part's display name.
  * @param paint - Draws the follower.

@@ -18,21 +18,22 @@ const legendDescriptionSlots = fieldFrameVariants({ legendDescription: true });
 const fieldFrameRootClass = fieldFrameSlots.root();
 
 /**
- * The heading row's own layout. Composites append their own classes (TextareaField the
- * counter gap) through {@link FieldFrameClassNames.labelRow}.
+ * The heading row's own layout. Composites append their own classes, such as TextareaField's
+ * counter gap, through {@link FieldFrameClassNames.labelRow}.
  */
 const fieldFrameLabelRowClass = fieldFrameSlots.labelRow();
 
 /**
- * Default `Field.Description` class. `text-pretty` lives here, not on TextField's public
- * slot: Field.Description already paints it, and PhoneNumberField must not import
- * TextField's recipe to re-state it.
+ * Default `Field.Description` class. `text-pretty` lives here, not on TextField's public slot,
+ * because `Field.Description` already paints it and PhoneNumberField must not import TextField's
+ * recipe to restate it.
  */
 const fieldFrameDescriptionClass = fieldFrameSlots.description();
 
 /**
  * One class argument per part the frame paints. `content` opts into the
- * control/error/description wrapper and is the wrapper's class as given — no default merge.
+ * control, error and description wrapper and is the wrapper's class as given, with no default
+ * merge.
  */
 export type FieldFrameClassNames = {
   /** The heading row. */
@@ -40,9 +41,10 @@ export type FieldFrameClassNames = {
   /** `Field.Label` or `Field.Legend`. */
   label?: string;
   /**
-   * The content wrapper around the control, its error and its description. Rendered when this
-   * class is given, as this string exactly; omitted, they are direct children of `Field.Root` /
-   * `Field.Set`. With {@link FieldFrameProps.isDescriptionBeside}, the error follows the wrapper.
+   * The content wrapper around the control, its error and its description. The frame renders it
+   * when this class is given, with this string as its exact class. Without it, they are direct
+   * children of `Field.Root` or `Field.Set`. With {@link FieldFrameProps.isDescriptionBeside}, the
+   * error follows the wrapper.
    */
   content?: string;
   /** `Field.Description`. */
@@ -53,41 +55,48 @@ type FieldFrameHeading = "label" | "legend";
 
 export type FieldFrameProps = {
   /**
-   * How the heading is labelled. `"label"` (default) renders `Field.Label`; `"legend"`
+   * How the heading is labeled. `"label"` renders `Field.Label`; `"legend"`
    * wraps the body in `Field.Set` and renders `Field.Legend variant="label"`.
    */
   heading?: FieldFrameHeading;
-  /** Visible heading. Falsy renders no label/legend element. */
+  /** The visible heading. A falsy value renders no label or legend element. */
   label?: string;
   /**
-   * Hides the label/legend visually and keeps it as the accessible name. Without a status
-   * face the whole heading row is `sr-only` too, so the body starts at the top; with one,
+   * Whether the label or legend is visually hidden and kept as the accessible name. Without a
+   * status face the whole heading row is `sr-only` too, so the body starts at the top. With one,
    * the row stays for the status.
    */
   isLabelHidden?: boolean;
   /**
-   * Component-owned status face at the end of the heading row — TextareaField's
-   * character counter, RadioGroup's pending spinner. Its presence forces the row to
-   * exist, the same way `isPending` and `isSuccess` do.
+   * A component-owned status face at the end of the heading row, such as TextareaField's
+   * character counter or RadioGroup's pending spinner. Its presence forces the row to exist, as
+   * `isPending` and `isSuccess` do.
    */
   status?: ReactNode;
-  /** Shows the spinner face of the label-row crossfade. */
+  /** Whether the label-row crossfade shows its spinner face. */
   isPending?: boolean;
-  /** Shows the check face, which wins the crossfade over {@link FieldFrameProps.isPending}. */
+  /**
+   * Whether the label-row crossfade shows its check face, which wins over
+   * {@link FieldFrameProps.isPending}.
+   */
   isSuccess?: boolean;
-  /** Supporting copy, rendered as `Field.Description` when truthy. */
+  /** Supporting copy, which the frame renders as `Field.Description` when it is truthy. */
   description?: ReactNode;
-  /** Error copy, rendered as `Field.Error`; falsy, the field shows its own validation error. */
+  /**
+   * Error copy, which the frame renders as `Field.Error`. When it is falsy, the field shows its own
+   * validation error.
+   */
   errorMessage?: ReactNode;
   /**
-   * Whether `errorMessage` shows whenever it is given (the default), or only while the field fails
-   * its own validation or holds a `Form` error, so a composite that is not forced invalid keeps its
-   * message for a failed check. Forwarded to `Field.Error`'s `match` when `errorMessage` is given.
+   * Whether `errorMessage` shows whenever it is given, or only while the field fails its own
+   * validation or holds a `Form` error, so a composite that is not forced invalid keeps its message
+   * for a failed check. The frame forwards it to `Field.Error`'s `match` when `errorMessage` is
+   * given.
    * @default true
    */
   isErrorMessageAlwaysShown?: boolean;
   /**
-   * The content wrapper lays the description out beside the control, as TextField's card row
+   * Whether the content wrapper lays the description out beside the control, as TextField's card row
    * does, so the error goes under the wrapper instead of joining the row. The control keeps its
    * place in the tree either way, so toggling this does not remount it.
    */
@@ -98,28 +107,28 @@ export type FieldFrameProps = {
    */
   variant?: "card" | "inline";
   /**
-   * Marks the root `data-empty` while the composite's value is empty, as SearchField does to hide
-   * its clear button.
+   * Whether the composite's value is empty, which writes `data-empty` on the root, as SearchField
+   * does to hide its clear button.
    */
   isEmpty?: boolean;
-  /** Forwarded to `Field.Root`. */
+  /** Whether the field is invalid, forwarded to `Field.Root`. */
   invalid?: boolean;
-  /** Forwarded to `Field.Root`. */
+  /** Whether the field is disabled, forwarded to `Field.Root`. */
   disabled?: boolean;
-  /** Forwarded to `Field.Root`. CheckboxGroup threads its `name` here. */
+  /** The field's name, forwarded to `Field.Root`. CheckboxGroup passes its `name` here. */
   name?: string;
   /** Extra classes, merged onto `Field.Root`. */
   className?: string;
-  /** Per-part classes; see {@link FieldFrameClassNames}. */
+  /** Per-part classes, as {@link FieldFrameClassNames} lists them. */
   classNames?: FieldFrameClassNames;
   /** The control this frame labels. */
   children: ReactNode;
 };
 
 /**
- * Package-private heading/description/error frame for every labeled composite.
- * `heading="legend"` is the fieldset skeleton CheckboxGroup and
- * RadioGroup used to rebuild beside this module.
+ * The package-private heading, description and error frame for every labeled composite.
+ * `heading="legend"` is the fieldset skeleton CheckboxGroup and RadioGroup used to rebuild beside
+ * this module.
  *
  * It is not exported through `package.json#exports` and has no client directive. It owns
  * no state. Most consumers are client modules, but SelectField, AutocompleteField and

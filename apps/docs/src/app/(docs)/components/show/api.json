@@ -24,7 +24,7 @@
           "type": "boolean",
           "shortType": null,
           "defaultValue": null,
-          "description": "The render condition, a strict boolean. Coerce it yourself, as in `items.length > 0`.",
+          "description": "The render condition, a strict boolean. Coerce other values to a boolean first, as in `items.length > 0`.",
           "required": true
         }
       ]

@@ -24,7 +24,7 @@ import {
 import { searchFieldStrings } from "./intl";
 
 /**
- * The props of {@link SearchField}: the labeled-composite face TextField takes, the search
+ * Props for {@link SearchField}: the labeled-composite face TextField takes, the search
  * callbacks, and the remaining native input attributes, which reach the `<input>`.
  */
 export type SearchFieldProps = {
@@ -67,23 +67,23 @@ export type SearchFieldProps = {
   /** The input's placeholder text. */
   placeholder?: string;
   /**
-   * The clear button's name. It defaults to the `searchField.clear` row of the locale dictionary,
+   * The clear button's name. Defaults to the `searchField.clear` row of the locale dictionary,
    * "Clear search" in English. The button shows while the field holds text. It is out of the tab
    * order, since Escape clears from the input, and a press keeps focus, and on touch the
    * on-screen keyboard, on the input.
    */
   clearLabel?: string;
   /**
-   * Makes the input read-only, with the muted read-only fill. It disables the clear button, Escape
-   * no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior,
+   * Whether the input is read-only, with the muted read-only fill. It disables the clear button,
+   * Escape no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior,
    * so Enter can submit a surrounding form and Escape can close an enclosing `Dialog`.
    */
   isReadOnly?: boolean;
-  /** Disables the field, the input and the clear button. */
+  /** Whether the field, the input and the clear button are disabled. */
   isDisabled?: boolean;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field is invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Makes the input required, so the browser's constraint check blocks an empty submit. */
+  /** Whether the input is required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
    * The control size of the field box, also written as `data-size`. `default` is the md control

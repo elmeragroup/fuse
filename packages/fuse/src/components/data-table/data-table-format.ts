@@ -46,7 +46,7 @@ export function cellValueText(cell: CellValue): string {
 }
 
 /**
- * Format a number for the locale.
+ * Formats a number for the locale.
  *
  * @param locale - The active supported locale.
  * @param value - The number.
@@ -62,7 +62,7 @@ export function formatNumberCell(
 }
 
 /**
- * Format an amount in a currency for the locale.
+ * Formats an amount in a currency for the locale.
  *
  * @param locale - The active supported locale.
  * @param value - The amount.
@@ -81,7 +81,7 @@ export function formatCurrencyCell(
 }
 
 /**
- * Format a date, or a date and time, for the locale.
+ * Formats a date, or a date and time, for the locale.
  *
  * @param locale - The active supported locale.
  * @param value - The date. An invalid date renders as `"Invalid Date"`, which `Intl` would throw on.

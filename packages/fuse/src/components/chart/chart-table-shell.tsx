@@ -45,7 +45,7 @@ export type TablePages = {
   readonly count: number;
   /** The status between the back and forward buttons, such as `Side 1 av 2 · Rad 1 til 500`. */
   readonly status: string;
-  /** Show a page by its index. A page outside the pages or the shown one does nothing. */
+  /** Shows a page by its index. A page outside the pages or the shown one does nothing. */
   readonly go: (index: number) => void;
 };
 

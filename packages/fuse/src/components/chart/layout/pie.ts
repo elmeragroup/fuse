@@ -10,14 +10,14 @@ import { angleInSweep, toDegrees, toRadians } from "./polar-angle";
 import type { Sweep } from "./polar-angle";
 
 /**
- * The key of the Other item the fold makes. It is reserved: config cannot hold it and selection
+ * The key of the Other item the fold makes. It is reserved. Config cannot hold it and selection
  * cannot name it, because a config key is a consumer's category and U+0000 starts none.
  */
 export const OTHER_KEY = "\u0000other";
 
 /**
- * Which rows fold into Other. "own" folds only when it falls past the cap. "other" folds whenever
- * the fold runs, as a category whose config colour is `chart-other` does. "unknown" always folds,
+ * Which rows fold into Other. `own` folds only when it falls past the cap. `other` folds whenever
+ * the fold runs, as a category whose config color is `chart-other` does. `unknown` always folds,
  * as a row whose category has no config entry does.
  */
 export type PieRole = "own" | "other" | "unknown";
@@ -35,10 +35,13 @@ export type PieRow = {
 export type PieItem = {
   /** The category, or `OTHER_KEY`. */
   readonly key: string;
-  /** The reading, the sum of the folded readings on Other, or null when every row it holds is missing. */
+  /**
+   * The reading, the sum of the folded readings on Other, or null when every row it holds is
+   * missing.
+   */
   readonly value: number | null;
   /**
-   * What it draws: the sum of its rows' readings above 0, so a credit folded into Other draws as 0
+   * The weight it draws, the sum of its rows' readings above 0. A credit folded into Other draws as 0
    * and never cancels a charge beside it, as a negative reading draws as 0 on its own.
    */
   readonly weight: number;
@@ -46,7 +49,7 @@ export type PieItem = {
   readonly rows: readonly number[];
 };
 
-/** A row's weight in the fold: its drawn value, so a negative or missing reading weighs nothing. */
+/** A row's weight in the fold, its drawn value, so a negative or missing reading weighs nothing. */
 function weightOf(value: number | null): number {
   return value !== null && Number.isFinite(value) && value > 0 ? value : 0;
 }
@@ -63,9 +66,9 @@ function sumOf(rows: readonly PieRow[], indexes: readonly number[]): number | nu
 }
 
 /**
- * Fold the rows that pass the slice cap into one Other item. The fold runs only when the rows
- * outnumber `maxSlices`. Then every "other" row folds, the `maxSlices − 1` largest of the rest stay,
- * a tie at the cut going to the earlier row, and the rest fold. An "unknown" row folds whether or
+ * Folds the rows that pass the slice cap into one Other item. The fold runs only when the rows
+ * outnumber `maxSlices`. Then every `other` row folds, the `maxSlices − 1` largest of the rest stay,
+ * a tie at the cut going to the earlier row, and the rest fold. An `unknown` row folds whether or
  * not the fold runs. Kept items keep data order, and Other comes last.
  *
  * @param rows - The rows in data order.
@@ -110,7 +113,7 @@ export type SliceAngles = {
  * Each item's slice in a sweep, through d3's pie with `sort(null)`. Only a finite reading above 0
  * draws, so a zero, missing or negative item takes no arc and no pad, as section 8.2 says. A pie
  * whose drawn readings sum to 0 draws nothing, and a single slice sweeps the whole sweep with no
- * pad. A negative pad overlaps neighbours: each slice but the last runs that far under the next,
+ * pad. A negative pad overlaps neighbors. Each slice but the last runs that far under the next,
  * and the last stops at the sweep's end.
  *
  * @param values - Each item's reading, in sweep order.
@@ -162,7 +165,7 @@ export type RimFloor = {
 };
 
 /**
- * Keep one device pixel of rim between every drawn slice's seams. A slice narrower than that
+ * Keeps one device pixel of rim between every drawn slice's seams. A slice narrower than that
  * widens to it, and the angle it takes comes from the widest slice, a tie going to the earlier
  * slice, then from the next widest when the widest reaches its own floor. The slices then lie end to
  * end from the first drawn slice's start, so they fill what they filled. Slices all at or above
@@ -240,7 +243,7 @@ export function floorSlices(
 }
 
 /**
- * The slice under a pointer's angle, by arithmetic: any point of the cell whose angle lies inside
+ * The slice under a pointer's angle, by arithmetic. Any point of the cell whose angle lies inside
  * the sweep picks, the hole and the space past the rim included, as CONTRACT section 9.5 makes the
  * cell one target. A slice's range runs from its start to the next drawn slice's start, so a pad
  * picks the slice it belongs to and an overlap picks the slice painted over it.
@@ -274,7 +277,7 @@ export function sliceAt(angle: number, slices: readonly (SliceAngles | null)[], 
 export type GaugeFill = { readonly sweep: Sweep; readonly over: boolean };
 
 /**
- * The part of a sweep a gauge's slices fill: the total's share of `max`, never past the full sweep,
+ * The part of a sweep a gauge's slices fill, the total's share of `max`, never past the full sweep,
  * so a total above its maximum fills the sweep and is over, and nothing laps.
  *
  * @param sweep - The gauge's sweep.

@@ -26,8 +26,8 @@ const styles = listDetailVariants();
 type ListDetailLayout = "split" | "overlay";
 
 /**
- * The root width from which the detail sits beside the list: Tailwind's `@3xl` (48rem), `@4xl`
- * (56rem) or `@5xl` (64rem) container size, or `never` for a list that keeps every width, such
+ * The root width from which the detail sits beside the list. It is Tailwind's `@3xl` container size
+ * of 48rem, `@4xl` of 56rem or `@5xl` of 64rem, or `never` for a list that keeps every width, such
  * as a wide table, and opens its detail in a Sheet at any size.
  */
 export type ListDetailSplit = "3xl" | "4xl" | "5xl" | "never";
@@ -40,13 +40,13 @@ type RootContextValue = {
   readonly detail: RefObject<HTMLElement | null>;
   /** The pane's classes, which show it from the root's `split` width. */
   readonly pane: string;
-  /** Records where focus entered the detail, its portalled popups included. */
+  /** Records where focus entered the detail, its portaled popups included. */
   readonly focusTracking: FocusTracking;
   /** Records the list's last focused element, and the list itself, as a Sheet's return target. */
   readonly listTracking: ListTracking;
   /**
-   * Where a Sheet the root opened on narrowing returns focus, since the pane that held it is gone;
-   * unset for a Sheet the user opened, which returns focus as a Sheet does.
+   * Where a Sheet the root opened on narrowing returns focus, since the pane that held it is gone.
+   * It is unset for a Sheet the user opened, which returns focus as a Sheet does.
    */
   readonly returnToList: (() => HTMLElement | boolean) | undefined;
 };
@@ -333,11 +333,11 @@ export type ListDetailDetailProps = Omit<useRender.ComponentProps<"aside">, "chi
   "aria-label"?: useRender.ComponentProps<"aside">["aria-label"];
   /** The Sheet's maximum width, as on `Sheet.Content`. It applies below the breakpoint only. */
   size?: SheetContentProps["size"];
-  /** Shows the Sheet's corner close button. It applies below the breakpoint only. */
+  /** Whether the Sheet shows its corner close button. It applies below the breakpoint only. */
   showCloseButton?: boolean;
   /**
-   * The Sheet's corner close button's accessible name. Unset, it reads `overlay.close` from the
-   * locale dictionary. It applies below the breakpoint only.
+   * The Sheet's corner close button's accessible name. Defaults to `overlay.close` from the locale
+   * dictionary. It applies below the breakpoint only.
    */
   closeLabel?: string;
 };
@@ -446,7 +446,7 @@ export function ListDetailTitle({ className, render, id, ...props }: ListDetailT
 
 type SheetCloseProps = ComponentProps<typeof SheetClose>;
 
-/** The props of `ListDetail.Close`, which are `Sheet.Close`'s. */
+/** Props for `ListDetail.Close`, which are `Sheet.Close`'s. */
 export type ListDetailCloseProps = Omit<SheetCloseProps, "render"> & {
   /**
    * The button that closes the Sheet, such as `<button type="button" aria-label="Close details" />`,
@@ -456,7 +456,7 @@ export type ListDetailCloseProps = Omit<SheetCloseProps, "render"> & {
   render?: SheetCloseProps["render"];
 };
 
-/** Closes the detail Sheet. */
+/** The control that closes the detail Sheet. */
 export function ListDetailClose(props: ListDetailCloseProps): ReactElement | null {
   const { layout } = useDetailContext("Close");
   return layout === "overlay" ? <SheetClose {...props} /> : null;

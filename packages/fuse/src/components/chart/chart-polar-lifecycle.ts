@@ -65,15 +65,15 @@ export type PolarLifecycle = {
   /** What the figure's marks read to reach each commit. */
   readonly commit: PolarCommitSource;
   /**
-   * Mark the entrance again with its tracks and grids growing, as nothing painted them before, for a
+   * Marks the entrance again with its tracks and grids growing, as nothing painted them before, for a
    * chart that leaves its empty state once its entrance has started.
    */
   readonly grow: () => void;
 };
 
 /**
- * Run a polar figure's lifecycle. The figure carries `data-drawn` once its entrance starts, which
- * shows the marks, and `data-entering` for the entrance's span, so the centre's digits count up
+ * Runs a polar figure's lifecycle. The figure carries `data-drawn` once its entrance starts, which
+ * shows the marks, and `data-entering` for the entrance's span, so the center's digits count up
  * with the sweep. A figure the browser mounted with no server HTML also carries `data-grow`, which
  * scales its tracks and grids out: what the first paint showed never scales out again.
  *

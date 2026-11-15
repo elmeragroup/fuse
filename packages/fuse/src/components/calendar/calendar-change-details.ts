@@ -14,8 +14,8 @@ export type CalendarChangeEventDetails<TReason extends string> = {
   /** The element the gesture happened on. */
   readonly trigger: Element | undefined;
   /**
-   * Stops the component applying the change. Call it inside the callback; what it prevents is on
-   * each callback.
+   * Stops the component applying the change. Call it inside the callback. Each callback's block says
+   * what it prevents.
    */
   readonly cancel: () => void;
   /** Whether `cancel()` was called. */

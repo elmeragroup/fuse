@@ -5,16 +5,16 @@ import { isThemeDevelopment } from "../../theme/validate-theme";
 import { Heading } from "../heading/heading";
 import { timelineListVariants } from "./timeline-list-variants";
 
-/** Resolved once at module scope, because the recipe has no axes. */
+/** The recipe's slot classes, resolved once at module scope because the recipe has no axes. */
 const { root, item, dot, title, time, description } = timelineListVariants();
 
-/** `TimelineList.Root` takes a native `ol`'s props. */
+/** Props for `TimelineList.Root`, a native `ol`'s props. */
 export type TimelineListRootProps = ComponentProps<"ol">;
-/** `TimelineList.Item` takes a native `li`'s props. */
+/** Props for `TimelineList.Item`, a native `li`'s props. */
 export type TimelineListItemProps = ComponentProps<"li">;
 type HeadingProps = ComponentPropsWithoutRef<typeof Heading>;
 
-/** `TimelineList.Title` takes Heading's props, except `noMargin`. */
+/** Props for `TimelineList.Title`, Heading's props except `noMargin`. */
 export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level" | "size" | "font"> & {
   /** The type size. It replaces the size the `level` sets. */
   size?: HeadingProps["size"];
@@ -27,21 +27,21 @@ export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level" | "
    */
   level?: HeadingProps["level"];
 };
-/** `TimelineList.Time` takes a native `time`'s props, with `date` in place of `dateTime`. */
+/** Props for `TimelineList.Time`, a native `time`'s props with `date` in place of `dateTime`. */
 export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
   /**
    * The event's date or instant. An HTML date or date-time string passes through unchanged onto
-   * the host `dateTime`, so a server and a browser in different time zones render the same value:
-   * a date (`2026-10-20`) or a date-time with an offset (`2026-10-20T10:00Z`,
-   * `2026-10-20T10:00+02:00`). A date-time without an offset names a different instant in each
-   * time zone, so development builds warn about one. A `Date`, or another string the JavaScript
-   * date parser reads (`June 15, 2024`, or `2024-02-30`, which it rolls over to March 1), is
-   * normalized with `toISOString()`. An invalid value throws
-   * `RangeError("TimelineList.Time received an invalid date")`.
+   * the host `dateTime`, so a server and a browser in different time zones render the same value.
+   * Such a string is a date, such as `2026-10-20`, or a date-time with an offset, such as
+   * `2026-10-20T10:00Z` or `2026-10-20T10:00+02:00`. A date-time without an offset names a
+   * different instant in each time zone, so development builds warn about one. The part normalizes
+   * a `Date` with `toISOString()`, and also any other string the JavaScript date parser reads, such
+   * as `June 15, 2024`, or `2024-02-30`, which the parser rolls over to March 1. An invalid value
+   * throws `RangeError("TimelineList.Time received an invalid date")`.
    */
   date: string | Date;
 };
-/** `TimelineList.Description` takes a native `div`'s props. */
+/** Props for `TimelineList.Description`, a native `div`'s props. */
 export type TimelineListDescriptionProps = ComponentProps<"div">;
 
 /** The ordered list of events. */
@@ -77,8 +77,8 @@ function levelSize(level: NonNullable<HeadingProps["level"]>): NonNullable<Headi
 /**
  * An item's title, a level 3 Heading by default. It is not a document section heading, so it
  * keeps Heading's scale from before the theme roles at 500 in every theme instead of reading the
- * level's roles. A `size` or `font` prop still replaces either. The resolved size and font are
- * passed after the rest props, so a forwarded `undefined` cannot erase them.
+ * level's roles. A `size` or `font` prop still replaces either. The title passes the resolved size
+ * and font after the rest props, so a forwarded `undefined` cannot erase them.
  */
 function TimelineListTitle({
   className,
@@ -101,9 +101,10 @@ function TimelineListTitle({
 }
 
 /**
- * An HTML valid date (`2026-10-20`) or date-time (`2026-10-20T10:00`, with optional seconds and
- * fraction) in the `time` group, with its optional time-zone offset (`Z`, `+02:00` or `+0200`)
- * in the `offset` group. The JavaScript parser also reads a lowercase `z`; HTML does not.
+ * An HTML valid date, such as `2026-10-20`, or date-time, such as `2026-10-20T10:00` with optional
+ * seconds and fraction. The `time` group holds a date-time's time, and the `offset` group its
+ * optional time-zone offset: `Z`, `+02:00` or `+0200`. The JavaScript parser also reads a
+ * lowercase `z`; HTML does not.
  */
 const HTML_DATE_TIME =
   /^(?<year>\d{4,})-(?<month>\d{2})-(?<day>\d{2})(?<time>[T ](?<hour>\d{2}):\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?<offset>Z|[+-]\d{2}:?\d{2})?)?$/u;

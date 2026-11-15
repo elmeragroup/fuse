@@ -4,7 +4,7 @@ import { typographyFragments } from "../../styles/typography-fragments";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Text's colours minus the two arms Link leaves out, with Text's `destructive` class under
+ * Text's colors minus the two arms Link leaves out, with Text's `destructive` class under
  * Link's own `error` key. `secondary` is Text's deprecated alias of `foreground` and `inherit`
  * repeats `default`, so neither would draw a distinct link. `extend: typographyFragments` would
  * merge every arm and widen `LinkProps["variant"]` with them.
@@ -23,17 +23,17 @@ const {
  * stays `inline`, takes the surrounding text's type and wraps with it. `weight` leaves the
  * sentence's weight unless it is set. The underline offset and thickness are in `em`, so they
  * scale with whatever size the sentence is set in, with a 1px floor that keeps a small line
- * visible. The base layer's `a[data-slot]` reset in `fuse.css` clears the browser's link colour
+ * visible. The base layer's `a[data-slot]` reset in `fuse.css` clears the browser's link color
  * and underline first, and weighs nothing, so these classes and a consumer's own win.
  *
  * `underline` sets the cue that tells a link from its sentence.
- * - `always`, the default, underlines at rest in a dimmed line, the link's colour at 35% in a
- *   light scheme and 65% in a dark one, and draws it in the full colour under the pointer. The
- *   default colour is the sentence's own, and `primary` is the text colour in several themes,
- *   so the underline is the cue a reader without the colour difference still sees.
+ * - `always`, the default, underlines at rest in a dimmed line, the link's color at 35% in a
+ *   light scheme and 65% in a dark one, and draws it in the full color under the pointer. The
+ *   default color is the sentence's own, and `primary` is the text color in several themes,
+ *   so the underline is the cue a user who misses the color difference still sees.
  *   `light-dark()` picks the share from the `color-scheme` each theme sets, so no theme carries
  *   a link token. A browser without `light-dark()` drops the declaration and draws the line in
- *   the full colour.
+ *   the full color.
  * - `hover` underlines only under the pointer, for a link whose place already reads as a link,
  *   such as a row of footer links.
  * - `none` never underlines and fades the text under the pointer, for a link a container
@@ -42,7 +42,7 @@ const {
  * The keyboard ring paints the shared self focus ring. `box-decoration-clone` gives each line
  * of a wrapped link its own whole ring, where the default slicing leaves the line ends open.
  * An inline SVG child, such as an external-link icon, is drawn `1em` square on the text's
- * baseline in the link's colour. Mark it `data-icon="inline-end"` or `data-icon="inline-start"`,
+ * baseline in the link's color. Mark it `data-icon="inline-end"` or `data-icon="inline-start"`,
  * as on Button, and it keeps `0.25em` from the text, and the link keeps to one line. Chromium
  * breaks a line between a word and an inline SVG even with no space between them, which would
  * leave the icon alone at the start of the next line.

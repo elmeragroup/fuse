@@ -11,7 +11,7 @@ import { seriesReadoutOf } from "./chart-series-readout";
 import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 
 /**
- * Build a cartesian Root's readout. Root memoises it on its context, so it changes with data,
+ * Builds a cartesian Root's readout. Root memoizes it on its context, so it changes with data,
  * config and the effective window, and never with the pointer.
  *
  * @param context - The Root.

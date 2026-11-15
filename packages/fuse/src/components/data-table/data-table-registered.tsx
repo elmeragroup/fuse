@@ -65,14 +65,14 @@ function useAppContextTable(): AppContextTable {
   return fuseTableContexts.useTableContext() as AppContextTable;
 }
 
-/** Props of the registered `table.Row`. */
+/** Props for the registered `table.Row`. */
 export type RegisteredRowProps<TRow> = Omit<DataTableRowProps<never>, "table" | "row"> & {
   /** The row to render, from `table.Content`'s row takeover. */
   row: TRow;
 };
 
 /**
- * `table.Row`: `DataTable.Row` with every cell rendered through `table.AppCell`, so a column
+ * The registered `table.Row`, a `DataTable.Row` with every cell rendered through `table.AppCell`, so a column
  * definition can use the registered cells. It renders inside `table.Content`'s row takeover, whose
  * store subscription re-renders every row, so it subscribes to nothing itself.
  */
@@ -87,17 +87,18 @@ export function RegisteredRow({ row, ...props }: RegisteredRowProps<ContextRow>)
   );
 }
 
-/** Props of the registered `table.Content`. */
+/** Props for the registered `table.Content`. */
 export type RegisteredContentProps<TRow> = Omit<DataTableContentProps<never, never>, "table" | "children"> & {
   /** Takes over row rendering, for example to render `table.Row` with `onPress`. */
   children?: (row: TRow) => ReactNode;
 };
 
 /**
- * `table.Content`: `DataTable.Content` with every header rendered through `table.AppHeader` and
- * every cell through `table.AppCell`, so a column definition can use `header.SortButton` and the
- * registered cells. The row model depends on every state slice, so it subscribes to all of them
- * and stays current when the app's `useFuseTable` selector narrows `table.state`.
+ * The registered `table.Content`, a `DataTable.Content` with every header rendered through
+ * `table.AppHeader` and every cell through `table.AppCell`, so a column definition can use
+ * `header.SortButton` and the registered cells. The row model depends on every state slice, so it
+ * subscribes to all of them and stays current when the app's `useFuseTable` selector narrows
+ * `table.state`.
  */
 export function RegisteredContent({ children, ...props }: RegisteredContentProps<ContextRow>): ReactElement {
   const table = useAppContextTable();
@@ -117,12 +118,13 @@ export function RegisteredContent({ children, ...props }: RegisteredContentProps
   );
 }
 
-/** Props of the registered `table.Pagination`. */
+/** Props for the registered `table.Pagination`. */
 export type RegisteredPaginationProps = Omit<DataTablePaginationProps, "table">;
 
 /**
- * `table.Pagination`: `DataTable.Pagination`, subscribed to the pagination state and the page
- * count. Filtering changes the count without a pagination update when the page index is already 0.
+ * The registered `table.Pagination`, a `DataTable.Pagination` subscribed to the pagination state
+ * and the page count. Filtering changes the count without a pagination update when the page index is
+ * already 0.
  */
 export function RegisteredPagination(props: RegisteredPaginationProps): ReactElement {
   const table = fuseTableContexts.useTableContext();
@@ -135,7 +137,7 @@ export function RegisteredPagination(props: RegisteredPaginationProps): ReactEle
   );
 }
 
-/** Props of the registered `table.ColumnToggle`. */
+/** Props for the registered `table.ColumnToggle`. */
 export type RegisteredColumnToggleProps<TColumn> = Omit<
   DataTableColumnToggleProps<never>,
   "table" | "getLabel"
@@ -144,7 +146,7 @@ export type RegisteredColumnToggleProps<TColumn> = Omit<
   getLabel?: (column: TColumn) => ReactNode;
 };
 
-/** `table.ColumnToggle`: `DataTable.ColumnToggle`, subscribed to the visibility state. */
+/** The registered `table.ColumnToggle`, a `DataTable.ColumnToggle` subscribed to the visibility state. */
 export function RegisteredColumnToggle(props: RegisteredColumnToggleProps<ContextColumn>): ReactElement {
   const table = fuseTableContexts.useTableContext();
   return (
@@ -154,10 +156,13 @@ export function RegisteredColumnToggle(props: RegisteredColumnToggleProps<Contex
   );
 }
 
-/** Props of the registered `header.SortButton`. */
+/** Props for the registered `header.SortButton`. */
 export type RegisteredSortButtonProps = Omit<DataTableSortButtonProps, "column">;
 
-/** `header.SortButton`: `DataTable.SortButton` for the header in context, subscribed to sorting. */
+/**
+ * The registered `header.SortButton`, a `DataTable.SortButton` for the header in context, subscribed to
+ * sorting.
+ */
 export function RegisteredSortButton(props: RegisteredSortButtonProps): ReactElement {
   const table = fuseTableContexts.useTableContext();
   const header = fuseTableContexts.useHeaderContext();
@@ -168,19 +173,19 @@ export function RegisteredSortButton(props: RegisteredSortButtonProps): ReactEle
   );
 }
 
-/** Props of the registered `cell.TextCell`. */
+/** Props for the registered `cell.TextCell`. */
 export type TextCellProps = Omit<DataTableTextProps, "value">;
-/** Props of the registered `cell.NumberCell`. */
+/** Props for the registered `cell.NumberCell`. */
 export type NumberCellProps = Omit<DataTableNumberProps, "value">;
-/** Props of the registered `cell.CurrencyCell`. */
+/** Props for the registered `cell.CurrencyCell`. */
 export type CurrencyCellProps = Omit<DataTableCurrencyProps, "value">;
-/** Props of the registered `cell.DateCell`. */
+/** Props for the registered `cell.DateCell`. */
 export type DateCellProps = Omit<DataTableDateProps, "value">;
-/** Props of the registered `cell.DateTimeCell`. */
+/** Props for the registered `cell.DateTimeCell`. */
 export type DateTimeCellProps = Omit<DataTableDateTimeProps, "value">;
 
 /**
- * Parse the cell in context. `getValue()` is TanStack's untyped boundary: a registered cell is
+ * Parses the cell in context. `getValue()` is TanStack's untyped boundary. A registered cell is
  * typed on every column whatever its value type, so the value is only known here, at runtime.
  */
 function useCellValue(): CellValue {
@@ -208,13 +213,14 @@ function RawText({ cell, className }: { cell: CellValue; className?: string }): 
   return <DataTableText value={cellValueText(cell)} className={className} />;
 }
 
-/** `cell.TextCell`: the cell value as text. */
+/** The registered `cell.TextCell`, the cell value as text. */
 export function TextCell(props: TextCellProps): ReactElement {
   return <DataTableText value={cellValueText(useCellValue())} {...props} />;
 }
 
 /**
- * `cell.NumberCell`: `DataTable.Number` over the cell value; any other value renders as raw text.
+ * The registered `cell.NumberCell`, a `DataTable.Number` over the cell value. Any other value renders
+ * as raw text.
  * The registered cells are exported so an app can tweak one with a pure wrapper,
  * `(props) => <NumberCell maximumFractionDigits={0} {...props} />`, and register it under the same
  * key. Render them only inside `table.AppCell`, as the registry does.
@@ -228,7 +234,10 @@ export function NumberCell(props: NumberCellProps): ReactElement {
   );
 }
 
-/** `cell.CurrencyCell`: `DataTable.Currency` over the cell value; any other value renders as raw text. */
+/**
+ * The registered `cell.CurrencyCell`, a `DataTable.Currency` over the cell value. Any other value
+ * renders as raw text.
+ */
 export function CurrencyCell(props: CurrencyCellProps): ReactElement {
   const cell = useCellValue();
   return cell.kind === "number" ? (
@@ -238,7 +247,10 @@ export function CurrencyCell(props: CurrencyCellProps): ReactElement {
   );
 }
 
-/** `cell.DateCell`: `DataTable.Date` over the cell value; any other value renders as raw text. */
+/**
+ * The registered `cell.DateCell`, a `DataTable.Date` over the cell value. Any other value renders as
+ * raw text.
+ */
 export function DateCell(props: DateCellProps): ReactElement {
   const cell = useCellValue();
   return cell.kind === "date" ? (
@@ -248,7 +260,10 @@ export function DateCell(props: DateCellProps): ReactElement {
   );
 }
 
-/** `cell.DateTimeCell`: `DataTable.DateTime` over the cell value; any other value renders as raw text. */
+/**
+ * The registered `cell.DateTimeCell`, a `DataTable.DateTime` over the cell value. Any other value
+ * renders as raw text.
+ */
 export function DateTimeCell(props: DateTimeCellProps): ReactElement {
   const cell = useCellValue();
   return cell.kind === "date" ? (

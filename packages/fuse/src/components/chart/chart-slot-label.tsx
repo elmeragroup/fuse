@@ -24,7 +24,7 @@ import type { PlotFrame } from "./layout/plot-frame";
  */
 export type ChartSlotLabelProps = ChartLayerProps & {
   /**
-   * The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints
+   * The label format. Defaults to the `format` of the chart's `Chart.XAxis`, so the pill prints
    * what the ticks print, and without one the interval's tick preset or the category itself. Write
    * the part inside a `Chart.Crosshair`. The tick labels under the pill fade out, and each part of
    * the label, such as the day, rolls to its new value while a part that keeps its value, such as
@@ -65,8 +65,9 @@ function rollingOf(labels: readonly string[]): Rolling {
 
 /**
  * What a paint reads once per layout and font load: the width of each stack value and of the
- * widest label, the pill's padding and its box across the axis, and the tick labels it can cover, each with its box. Boxes
- * are in CSS pixels from the part's top left corner, which is the plot's left edge.
+ * widest label, the pill's padding and its box across the axis, and the tick labels it can cover,
+ * each with its box. Boxes are in CSS pixels from the part's top left corner, which is the plot's
+ * left edge.
  */
 type Measured = {
   readonly widths: readonly (readonly number[])[];
@@ -78,13 +79,13 @@ type Measured = {
 };
 
 /**
- * The active slot's label as a pill on the x axis. Write it inside a `Chart.Crosshair`. It rides
+ * The active slot's label as a pill on the x axis. Write it inside a `Chart.Crosshair`. It moves
  * along the axis to the active slot and prints the slot in the axis's format, and the tick labels
  * under it fade out until it moves on. Each part of the label, such as a day or a month, rolls to
  * its new value on a stack of its values, so a part that keeps its value stays still, and the pill
  * glides and resizes on a spring. Above 60 labels it prints one label, written at once. Root moves
- * it by writing styles, so a pointer move renders nothing in React. It is plot output, hidden from
- * screen readers, which hear the slot from the focused option. The server renders none of it, and
+ * it by writing styles, so a pointer move renders nothing in React. It is plot output that screen
+ * readers skip, and they hear the slot from the focused option. The server renders none of it, and
  * neither does a horizontal chart, whose axis prints every category.
  *
  * @beta
@@ -286,7 +287,7 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
 }
 
 /**
- * Write each part's place and its stack's offset for a label, and the pill's width, and return the
+ * Writes each part's place and its stack's offset for a label, and the pill's width, and returns the
  * label's width.
  */
 function writeParts(node: HTMLElement, rolling: Rolling | null, known: Measured, position: number): number {
@@ -309,7 +310,7 @@ function writeParts(node: HTMLElement, rolling: Rolling | null, known: Measured,
 }
 
 /**
- * Read the widths, the pill's padding and box and the tick boxes once, for every paint until the
+ * Reads the widths, the pill's padding and box and the tick boxes once, for every paint until the
  * next layout, all in the layout pixels of the label's own box, whose left edge is the plot's.
  */
 function measureLabel(node: HTMLElement, rolling: Rolling | null): Measured | null {

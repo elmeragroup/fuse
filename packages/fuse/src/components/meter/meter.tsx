@@ -20,7 +20,7 @@ export type MeterProps = {
   /** The visible label. */
   label?: string;
   /**
-   * What the bar's colour and icon say about the value. The bar is low up to 80% of the range,
+   * What the bar's color and icon say about the value. The bar is low up to 80% of the range,
    * high above 80%, full at 100% and exceeded above `maxValue`.
    *
    * - `default`: more is worse. Low is success, high is a warning, and full or exceeded is an
@@ -29,7 +29,7 @@ export type MeterProps = {
    *   exceeded is an error, with no icon.
    * - `success-only-when-full`: only full is success, with the success icon. Every other level
    *   is an error with the warning icon.
-   * - `neutral`: the primary colour at every level, with no icon.
+   * - `neutral`: the primary color at every level, with no icon.
    */
   mode?: MeterMode;
   /** The current value. */
@@ -40,19 +40,18 @@ export type MeterProps = {
   maxValue?: number;
   /** Text that replaces the formatted value at the end of the label row, such as `"82 of 120 GB"`. */
   valueLabel?: ReactNode;
-  /** The accessible name of the warning icon. Unset, it comes from the locale dictionary. */
+  /** The accessible name of the warning icon. Defaults to the locale dictionary. */
   warningLabel?: string;
-  /** The accessible name of the success icon. Unset, it comes from the locale dictionary. */
+  /** The accessible name of the success icon. Defaults to the locale dictionary. */
   successLabel?: string;
   /** Extra classes for the root. */
   className?: string;
 } & Omit<ComponentProps<typeof MeterPrimitive.Root>, "value" | "min" | "max" | "className" | "locale">;
 
 /**
- * Status icon in the value span. The glyph comes from the same `METER_TONE_TABLE`
- * cell as the fill color, never from the raw percentage, so the icon and the fill
- * always cross the 80% boundary together: exactly 80% is `LOW` and shows no icon in
- * `default` mode.
+ * The status icon in the value span. The glyph comes from the same `METER_TONE_TABLE` cell as the
+ * fill color, never from the raw percentage, so the icon and the fill always cross the 80% boundary
+ * together. Exactly 80% is `LOW` and shows no icon in `default` mode.
  */
 function MeterIcon({
   icon,

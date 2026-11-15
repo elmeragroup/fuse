@@ -48,7 +48,7 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `span`.",
+          "description": "The element that replaces the host `span`.",
           "required": false
         },
         {

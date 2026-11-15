@@ -197,8 +197,8 @@ export type RangePress =
 
 /**
  * What selecting a day does: without an anchor it anchors a range; with one it completes the
- * range from the anchor to the day, earlier day first. A keyboard anchor moves focus on by a day
- * (`keyboardAnchorFocus`); a pointer anchor leaves it on the day. The day is one the user may
+ * range from the anchor to the day, earlier day first. A keyboard anchor moves focus on by a day,
+ * through `keyboardAnchorFocus`; a pointer anchor leaves it on the day. The day is one the user may
  * select, inside the bounds in force and available, as the parts hand the Root only such a day.
  *
  * @param anchor - The current anchor, or `null`.
@@ -226,7 +226,7 @@ export type RangeCommitBehavior = "select" | "reset";
 
 /**
  * What a commit does with an open range: `"select"` completes it at the focused or hovered day,
- * pulled into the anchored bounds and walked back past unavailable days (`selectableDay`);
+ * pulled into the anchored bounds and walked back past unavailable days by `selectableDay`;
  * `"reset"` drops the anchor and keeps the previous value. A select whose day walks back to
  * nothing drops the anchor too.
  *
@@ -252,9 +252,9 @@ export function commitRange(
 }
 
 /**
- * Why a selected range fails the Root's rules: its start before the minimum (`"rangeUnderflow"`),
- * its end after the maximum (`"rangeOverflow"`), or an end `isDateUnavailable` refuses with no
- * anchor (`"unavailable"`), in Calendar's `ValidityState` words. React Aria checks only the ends,
+ * Why a selected range fails the Root's rules, in Calendar's `ValidityState` words:
+ * `"rangeUnderflow"` for a start before the minimum, `"rangeOverflow"` for an end after the
+ * maximum, or `"unavailable"` for an end `isDateUnavailable` refuses with no anchor. React Aria checks only the ends,
  * so a value spanning an unavailable day passes.
  *
  * @param range - The range.
@@ -278,9 +278,9 @@ export function rangeValidationError(range: DayRange, rules: RangeRules): Calend
 export type RangeView = {
   /** The range shown: the one being chosen, or the value; `null` for neither. */
   readonly range: DayRange | null;
-  /** Whether a range is being chosen: an anchor stands. */
+  /** Whether a range is being chosen, that is, whether an anchor stands. */
   readonly choosing: boolean;
-  /** Whether the value, shown with no anchor, fails the Root's rules (`rangeValidationError`). */
+  /** Whether the value, shown with no anchor, fails the Root's rules, as `rangeValidationError` reads them. */
   readonly invalid: boolean;
 };
 

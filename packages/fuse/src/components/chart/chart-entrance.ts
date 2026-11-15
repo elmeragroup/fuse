@@ -86,7 +86,7 @@ function decide(entries: readonly IntersectionObserverEntry[]): void {
 }
 
 /**
- * Report on every near plot again, as a scroll, a resize of the window, of a plot or of an
+ * Reports on every near plot again, as a scroll, a resize of the window, of a plot or of an
  * ancestor that clips one, or a layout change can show more of one without crossing an observer
  * threshold. Observing a plot anew reports where it stands.
  */
@@ -98,13 +98,14 @@ export function reassess(): void {
 }
 
 /**
- * Watch a plot until it shows enough of itself, then call its reveal. The observer reports each
+ * Watches a plot until it shows enough of itself, then calls its reveal. The observer reports each
  * quarter of a plot it crosses, and while any plot waits a capturing scroll listener, which
- * delays no scroll, as a scroll cannot be cancelled, a resize listener and a ResizeObserver on
+ * delays no scroll, as a scroll cannot be canceled, a resize listener and a ResizeObserver on
  * the ancestors that clip a waiting plot report again, since a clipper that grows, its padding
- * alone included, shows more of its plot and moves neither the plot nor the window. Each clipper is observed while any plot it
- * clips waits. The last watch to end disconnects both observers and removes the listeners, so a
- * page with no waiting plot spends nothing on the reveal. The result stops watching the plot.
+ * alone included, shows more of its plot and moves neither the plot nor the window. Each clipper
+ * is observed while any plot it clips waits. The last watch to end disconnects both observers and
+ * removes the listeners, so a page with no waiting plot spends nothing on the reveal. The result
+ * stops watching the plot.
  */
 function watch(plot: Element, reveal: () => void): () => void {
   if (shared === null || clippers === null) {
@@ -151,13 +152,13 @@ function isWipe(name: string): boolean {
 }
 
 /**
- * Run Root's entrance. Root's first commit decides it, before any mark places: with the entrance
+ * Runs Root's entrance. Root's first commit decides it, before any mark places: with the entrance
  * on, the loop holds, Root writes `data-entrance="waiting"`, and the plot is watched until it
  * shows. The reveal waits for the next frame, which a hidden tab never paints, then writes
  * `"played"`, so the CSS wipe and the loop both start in a painted frame, and the plot is no
  * longer watched. A reveal whose effect ends before that frame cancels the frame, so the entrance
  * is never spent unseen, and a Root that comes back still waiting watches again. The first wipe to
- * end or be cancelled, as hiding the chart mid-wipe does, drops the attribute, as every layer's
+ * end or be canceled, as hiding the chart mid-wipe does, drops the attribute, as every layer's
  * wipe ends in the same frame, and a chart with no layer to wipe, such as one of bars alone, drops
  * it as it writes it. The effect's cleanup drops a `"played"` attribute too, since React Activity
  * runs it before hiding the chart, so the cancel that hiding fires reaches no listener, and the
@@ -174,7 +175,7 @@ function isWipe(name: string): boolean {
  * @param motion - The Root's loop.
  * @param root - Root's figure.
  * @param plot - Root's plot, which the observer watches.
- * @param entrance - Whether Root has an entrance: `data-intro` is not "none" and the reader allows
+ * @param entrance - Whether Root has an entrance: `data-intro` is not `"none"` and the user allows
  *   motion.
  */
 export function useEntrance(
@@ -190,7 +191,7 @@ export function useEntrance(
     if (figure === null || box === null) return undefined;
     let stop = (): void => undefined;
     /**
-     * Play the entrance once, as `"played"` says, or with null draw every mark at rest, which also
+     * Plays the entrance once, as `"played"` says, or with null draw every mark at rest, which also
      * ends an entrance that runs, and drops the wipe with the attribute.
      */
     const start = (entered: "played" | null): void => {

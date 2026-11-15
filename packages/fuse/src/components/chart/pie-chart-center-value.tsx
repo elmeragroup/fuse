@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The numbers in a pie's or radial chart's hole (CONTRACT section 8.13): each prints the active
- * slice's or ring's number, or with nothing active the chart's own, the total, a gauge's share of
- * its maximum, or the maximum. A part with nothing to print renders an empty element, so the text
- * around it still lays out. The numbers roll their digits.
+ * The numbers in a pie's or radial chart's hole, as CONTRACT section 8.13 defines them. Each prints
+ * the active slice's or ring's number, or with nothing active the chart's own, the total, a gauge's
+ * share of its maximum, or the maximum. A part with nothing to print renders an empty element, so
+ * the text around it still lays out. The numbers roll their digits.
  */
 import type { ReactElement } from "react";
 
@@ -25,7 +25,7 @@ import { useCentreItem } from "./pie-chart-center";
  */
 export type PieChartCenterValueProps = ChartLayerProps & {
   /**
-   * The value format. The category's config `format`, then Root's `valueFormat`, is the default. The
+   * The value format. Defaults to the category's config `format`, then Root's `valueFormat`. The
    * part prints the active slice's or ring's value, and with nothing active the total, or nothing
    * when the categories' formats differ.
    */
@@ -53,7 +53,7 @@ export type PieChartCenterShareProps = ChartLayerProps & {
  */
 export type PieChartCenterMaxProps = ChartLayerProps & {
   /**
-   * The maximum's format. The value's format is the default. The part prints a gauge pie's `max`,
+   * The maximum's format. Defaults to the value's format. The part prints a gauge pie's `max`,
    * or the active ring's `max` or `maxKey` value, and with nothing active a radial chart's sum of
    * maxima when every ring shares one format.
    */
@@ -93,11 +93,11 @@ export function PieChartCenterValue({ format, className, style }: PieChartCenter
 }
 
 /**
- * The active slice's or ring's share as a percentage: a slice over the absolute total of the
- * slices, the number its label, legend and tooltip print, since the slices' shares round together
- * and sum to 100 %, and a ring over its own maximum. With nothing active, a gauge pie prints its
- * total over `max`, and a radial chart the sum of its values over the sum of its maxima when every
- * ring shares one format. Otherwise it renders an empty element.
+ * The active slice's or ring's share as a percentage. A slice's share is over the absolute total of
+ * the slices, the number its label, legend and tooltip print, since the slices' shares round
+ * together and sum to 100 %. A ring's share is over its own maximum. With nothing active, a gauge
+ * pie prints its total over `max`, and a radial chart the sum of its values over the sum of its
+ * maxima when every ring shares one format. Otherwise it renders an empty element.
  *
  * @beta
  */

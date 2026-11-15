@@ -28,7 +28,7 @@ function lengthOf(style: CSSStyleDeclaration, name: string): number {
 }
 
 /**
- * Read the bar spacing an element inherits, from `--chart-band-gap`, `--chart-bar-gap` and
+ * Reads the bar spacing an element inherits, from `--chart-band-gap`, `--chart-bar-gap` and
  * `--chart-bar-seam` as Root, a BarGroup or the Bar itself sets them.
  *
  * @param element - The element whose computed style holds the spacing.
@@ -64,7 +64,7 @@ type LayoutSize = { readonly width: number; readonly height: number };
 const SERIALIZED = 0.001;
 
 /**
- * Read the plot box and the bar spacing from the plot element. Its size is the layout's, which a
+ * Reads the plot box and the bar spacing from the plot element. Its size is the layout's, which a
  * transformed ancestor leaves alone, so SVG user units stay CSS pixels inside a scaled wrapper.
  * The ResizeObserver's content box holds the layout size in full precision, so a fractional plot,
  * such as one beside a value axis, keeps the size its HTML shares resolve against. Before the
@@ -104,7 +104,10 @@ function samePlot(a: ChartPlot | null, b: ChartPlot): boolean {
   return a !== null && sameSnapping(a.box, b.box, SERIALIZED) && sameMetrics(a.metrics, b.metrics);
 }
 
-/** One measured plot element: the layout size the observer last reported, its last measurement and its setter. */
+/**
+ * One measured plot element: the layout size the observer last reported, its last measurement and
+ * its setter.
+ */
 type PlotWatch = {
   readonly element: HTMLElement;
   observed: LayoutSize | null;
@@ -119,7 +122,7 @@ const watches = new Map<Element, PlotWatch>();
 let shared: ResizeObserver | null = null;
 
 /**
- * Measure every plot first, then draw the changed ones in one commit, so no chart's commit makes
+ * Measures every plot first, then draws the changed ones in one commit, so no chart's commit makes
  * the next chart's read lay out.
  */
 function drawAll(due: Iterable<PlotWatch>): void {
@@ -137,7 +140,7 @@ function drawAll(due: Iterable<PlotWatch>): void {
 }
 
 /**
- * Measure every plot an observer delivery names, then draw them all in one commit. The observer
+ * Measures every plot an observer delivery names, then draws them all in one commit. The observer
  * delivers after layout and before paint, so every read is free and the charts draw in the frame
  * that resized or moved them. A page resize names every plot. Each delivery reports on the plots
  * whose entrance waits again.
@@ -179,7 +182,7 @@ export type PlotReads = {
 };
 
 /**
- * Read a computed style in the probe phase of the nearest plot: once on mount, then in every commit
+ * Reads a computed style in the probe phase of the nearest plot: once on mount, then in every commit
  * of the plot's owner, before any mark writes, so a change Root's class or style passes down reaches
  * the part. The probe has laid the commit out already, so the read lays out nothing more. The part
  * reads again in its own layout effect when its own inputs change, which can happen in a commit its
@@ -229,7 +232,7 @@ function PlotProbe({ probe }: { readonly probe: () => void }): null {
 }
 
 /**
- * Measure Root's plot element. It measures in every commit of its owner, because new axis labels
+ * Measures Root's plot element. It measures in every commit of its owner, because new axis labels
  * can move the box without resizing it, through the probe the owner renders first in the plot. A
  * resize of the box or the page, as browser zoom does when it changes the device pixel ratio, and
  * the page's fonts loading go through the shared observer, which reads every plot of the page

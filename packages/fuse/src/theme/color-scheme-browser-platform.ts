@@ -4,15 +4,15 @@ import type { TransitionHost } from "./disable-transition";
 
 const SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
-/** The `MediaQueryList` members the adapter touches; Safari < 14 has only the legacy pair. */
+/** The `MediaQueryList` members the adapter uses. Safari before 14 has only the legacy pair. */
 type ColorSchemeMediaQuery = {
   /** Whether the query matches. */
   readonly matches: boolean;
-  /** The modern change listener. */
+  /** Adds a modern change listener. */
   addEventListener?(type: "change", listener: () => void): void;
   /** Removes a modern change listener. */
   removeEventListener?(type: "change", listener: () => void): void;
-  /** The legacy change listener. */
+  /** Adds a legacy change listener. */
   addListener?(listener: () => void): void;
   /** Removes a legacy change listener. */
   removeListener?(listener: () => void): void;
@@ -28,18 +28,18 @@ type ColorSchemeStorageEvent = {
   readonly storageArea: unknown;
 };
 
-/** The root the adapter reads and writes; the transition members come from `TransitionHost`. */
+/** The document members the adapter reads and writes. The transition members come from `TransitionHost`. */
 type ColorSchemeHostDocument = {
   /** The root whose `data-theme` the adapter reads and writes. */
   readonly documentElement: Pick<Element, "getAttribute" | "setAttribute">;
 };
 
 /**
- * The window subset the browser adapter touches: the transition host plus the storage and
- * media members. `globalThis` satisfies it structurally; the in-memory test host implements
- * it to model modern, legacy, missing and throwing platforms. The storage and media members
- * are optional because a server, a webview or a sandbox may lack them, and the
- * `localStorage` getter itself may throw.
+ * The window members the browser adapter uses: the transition host plus the storage and media
+ * members. `globalThis` satisfies it structurally. The in-memory test host implements it to model
+ * modern, legacy, missing and throwing platforms. The storage and media members are optional
+ * because a server, a webview or a sandbox may lack them, and the `localStorage` getter itself may
+ * throw.
  */
 export type ColorSchemeHost = TransitionHost & {
   /** The document whose root carries `data-theme`. */
@@ -76,13 +76,13 @@ function once(release: () => void): () => void {
 }
 
 /**
- * Creates the port over a browser-shaped host. It is the only owner of `window`, `document`,
- * `localStorage` and `matchMedia` for the color-scheme runtime, and it absorbs every platform
- * fault: a blocked or full storage area, a missing or throwing `matchMedia`, a legacy
- * `MediaQueryList`, and `storage` events from another area. Globals are read at call time,
- * so constructing it during a server render is inert.
+ * Creates the port over a browser-shaped host. It is the only code in the color-scheme runtime that
+ * reads `window`, `document`, `localStorage` and `matchMedia`, and it handles every platform fault:
+ * a blocked or full storage area, a missing or throwing `matchMedia`, a legacy `MediaQueryList`,
+ * and `storage` events from another area. It reads globals at call time, so constructing it during
+ * a server render does nothing.
  *
- * @param host - The window to adapt; defaults to `globalThis`.
+ * @param host - The window to adapt.
  * @returns A total {@link ColorSchemePlatform}.
  */
 export function createBrowserColorSchemePlatform(host: ColorSchemeHost = globalThis): ColorSchemePlatform {

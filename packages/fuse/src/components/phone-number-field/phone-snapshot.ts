@@ -23,11 +23,11 @@ import type {
 
 /**
  * Reading text into snapshots: a number, the country it is read in and the values it shows and
- * submits, under one configuration of the field. It owns how props become a configuration (the
- * catalog by structural metadata and listed codes, the four flags), how a controlled value or
- * entry is read with or without detection, how a number keeps its international identity
- * through a catalog change, and how one parse of a `+` number serves its reads in any country.
- * It holds no state of its own; the editor keeps the snapshots.
+ * submits, under one configuration of the field. It decides how props become a configuration, from the
+ * catalog by structural metadata and listed codes and from the four flags, how a controlled value or
+ * entry is read with or without detection, how a number keeps its international identity through a
+ * catalog change, and how one parse of a `+` number serves its reads in any country. It holds no state
+ * of its own; the editor keeps the snapshots.
  */
 
 /** The props a configuration reads, as `PhoneNumberField` takes them. */
@@ -129,8 +129,8 @@ export function configure(props: ConfigurationProps, previous?: Configuration): 
  * The picker row for `code` in a configuration's catalog.
  *
  * @param configuration - The configuration whose catalog to search.
- * @param code - A country code, or undefined.
- * @returns The offered row, or undefined when the catalog does not offer `code`.
+ * @param code - A country code, or `undefined`.
+ * @returns The offered row, or `undefined` when the catalog does not offer `code`.
  */
 export function offeredCountry(
   configuration: Pick<Configuration, "countries">,
@@ -186,8 +186,8 @@ export function receiveValue(
 
 /**
  * A controlled value read in `country` as it stands, with no detection: for a value that names
- * no offered country, so detection could select none. At most one parse, none when `reading`
- * already parsed its `+` form.
+ * no offered country, so detection could select none. It parses at most once, and not at all
+ * when `reading` already parsed its `+` form.
  */
 export function readValueIn(
   value: string,
@@ -311,7 +311,7 @@ export function moveInto(
  * Whether a value written as a field value carries its own `+` or `00` prefix.
  *
  * @param value - The value, as `value` or `defaultValue` holds it.
- * @returns True when the cleaned value starts with an international prefix.
+ * @returns `true` when the cleaned value starts with an international prefix.
  */
 export function hasOwnPrefix(value: string): boolean {
   return hasInternationalPrefix(cleanPhoneInput(decodeFieldValue(value)));
@@ -397,7 +397,7 @@ export function readNamedIn(
  * @param country - The country to read it in.
  * @param number - The snapshot whose number to compare with.
  * @param configuration - The field's configuration.
- * @returns The read when both are the same complete or partial number, else null.
+ * @returns The read when both are the same complete or partial number, else `null`.
  */
 export function readAsNumber(
   value: string,
@@ -421,11 +421,12 @@ export function readAsNumber(
  * again under a new catalog: digits that keep their own prefix as typed, spacing and dashes
  * included, so the entry shows and submits as written; detected digits, already a national
  * number, behind their calling code; a national draft as the number its parse made, under the
- * metadata it was entered with, so its own trunk prefix and local-dialling rules apply. A draft
- * that makes no number yet, such as a lone trunk 0, reads as empty, as it submits. No parse.
+ * metadata it was entered with, so its own trunk prefix and local-dialing rules apply. A draft
+ * that makes no number yet, such as a lone trunk 0, reads as empty, as it submits. It parses
+ * nothing.
  *
  * @param number - The snapshot.
- * @returns Its international entry, or empty.
+ * @returns Its international entry, or `""`.
  */
 function entryForm({ digits, country, parsedNational, values }: Snapshot): string {
   if (!digits) return "";
@@ -436,10 +437,10 @@ function entryForm({ digits, country, parsedNational, values }: Snapshot): strin
 
 /**
  * A snapshot's number identity: its {@link entryForm} as `+` and digits alone, for comparing
- * numbers whatever spacing they were written with. No parse.
+ * numbers whatever spacing they were written with. It parses nothing.
  *
  * @param number - The snapshot.
- * @returns Its international form, or empty.
+ * @returns Its international form, or `""`.
  */
 function internationalForm(number: Snapshot): string {
   return toE164Digits(entryForm(number));

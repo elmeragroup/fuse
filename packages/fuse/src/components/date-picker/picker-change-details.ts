@@ -11,8 +11,8 @@ import type {
 } from "../calendar/calendar-change-details";
 
 /**
- * Why a picker's popup opens or closes: Base UI Popover's reasons (`"trigger-press"`,
- * `"outside-press"`, `"escape-key"`, `"focus-out"`, …), `"keyboard"` for Alt+ArrowDown in the
+ * Why a picker's popup opens or closes: Base UI Popover's reasons, such as `"trigger-press"`,
+ * `"outside-press"`, `"escape-key"` and `"focus-out"`, `"keyboard"` for Alt+ArrowDown in the
  * group or Enter on a day that closes it, `"day-press"` for a pressed day that closes it, and
  * `"preset-press"` for a double-clicked preset that closes it.
  */
@@ -23,7 +23,7 @@ export type DatePickerOpenChangeReason =
   | "preset-press";
 
 /**
- * Ask a picker Root to open or close the popup, through its `onOpenChange`.
+ * Asks a picker Root to open or close the popup, through its `onOpenChange`.
  *
  * @returns Whether the popup changed: `false` when it already was so, or a commit or `onOpenChange` canceled.
  */
@@ -67,7 +67,7 @@ export type DatePickerPresetRange = {
 };
 
 /**
- * Commit a pressed preset's value through the picker Root's cancelable `onValueChange`, with the
+ * Commits a pressed preset's value through the picker Root's cancelable `onValueChange`, with the
  * reason `"preset-press"`.
  *
  * @returns Whether the value applied: `false` when `onValueChange` canceled it.
@@ -75,7 +75,7 @@ export type DatePickerPresetRange = {
 export type PickerPresetCommit = (event: Event, trigger: Element) => boolean;
 
 /**
- * Read a preset's `dateValue` as the picker Root reads it, while the preset renders, and bind the
+ * Reads a preset's `dateValue` as the picker Root reads it, while the preset renders, and binds the
  * commit of what it read. A new reader comes with every new kind, so a preset re-reads then.
  *
  * @throws TypeError for a value the Root does not take: text, the other picker's shape, or another

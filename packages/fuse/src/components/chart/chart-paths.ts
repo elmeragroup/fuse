@@ -45,21 +45,21 @@ export type PathOwner = { readonly current: unknown };
 /** Root's record of series path routes. */
 export type ChartPaths = {
   /**
-   * Hold a series as the one path of a kind that a mounted part draws, so its route and the anchor
+   * Holds a series as the one path of a kind that a mounted part draws, so its route and the anchor
    * its followers join have one owner. The result lets it go.
    *
    * @throws {ChartCompositionError} `series-drawn-twice` when another mounted part holds it.
    */
   readonly claim: (part: string, kind: PathKind, dataKey: string) => () => void;
-  /** Record the route a mark placed for a series path, under the mark's own owner token. */
+  /** Records the route a mark placed for a series path, under the mark's own owner token. */
   readonly set: (series: number, kind: PathKind, owner: PathOwner, route: PathRoute) => void;
-  /** Forget the route of a mark that unmounted, unless another mark has placed one since. */
+  /** Forgets the route of a mark that unmounted, unless another mark has placed one since. */
   readonly delete: (series: number, kind: PathKind, owner: PathOwner) => void;
   /** The route of a series path, or undefined when nothing of that kind draws the series. */
   readonly get: (series: number, kind: PathKind) => PathRoute | undefined;
   /**
-   * Register the reader of the line a series path rests on, as path data, for as long as the part
-   * stays: a Line's own path, or an Area's top edge, which an active dot rides.
+   * Registers the reader of the line a series path rests on, as path data, for as long as the part
+   * stays: a Line's own path, or an Area's top edge, which an active dot follows.
    *
    * @returns A function that forgets the reader.
    */
@@ -69,7 +69,7 @@ export type ChartPaths = {
 };
 
 /**
- * Create a Root's path routes.
+ * Creates a Root's path routes.
  *
  * @returns The record.
  */

@@ -130,7 +130,7 @@
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The resting look. `default` has no fill or border, and `outline` adds a border and a small shadow. Pressed, either fills with the theme's `toggle-pressed` colours.",
+          "description": "The resting look. `default` has no fill or border, and `outline` adds a border and a small shadow. Pressed, either fills with the theme's `toggle-pressed` colors.",
           "required": false,
           "values": [
             "default",

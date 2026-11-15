@@ -61,7 +61,7 @@ export type ScatterChartRootProps<
     /**
      * Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values
      * and repeated points are valid, and every one draws. A row whose x or y is null or undefined
-     * has no point. Every cell is serialisable, so a server component passes it. On a data update
+     * has no point. Every cell is serializable, so a server component passes it. On a data update
      * the axes glide to fit the new points over the chart's update time. They move at once under
      * reduced motion and when the chart holds more than 5,000 points.
      */
@@ -69,7 +69,7 @@ export type ScatterChartRootProps<
     /**
      * One entry per series, keyed by the values of the `seriesKey` column. Each entry is a
      * `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no
-     * `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its colour
+     * `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its color
      * is a role, never a scale, a role list or a threshold. Write it
      * `as const satisfies ChartConfig`. The legend lists the keys in config order, and JavaScript
      * orders keys that read as integers, such as "2026", first and ascending, so name a year's
@@ -124,7 +124,7 @@ export type ScatterChartRootProps<
   };
 
 /**
- * Above this many points a data update snaps the domains: each glide frame redraws every path, and
+ * Above this many points a data update snaps the domains. Each glide frame redraws every path, and
  * past a few thousand points that costs more than the glide is worth.
  */
 const GLIDE_LIMIT = 5_000;
@@ -135,7 +135,7 @@ const NO_SLOT_ROWS: readonly number[] = [];
 /** The model Root draws and whether the data update that brought it glides the domains to fit. */
 type TakenModel = { readonly model: ScatterModel; readonly glides: boolean };
 
-/** Write the active state onto Root, where the CSS reads it. A move restyles no mark. */
+/** Writes the active state onto Root, where the CSS reads it. A move restyles no mark. */
 function markActive(root: HTMLElement, store: ScatterStore): void {
   const { active, source, pinned } = store.get();
   writeAttribute(root, "data-active", active === null ? null : (source ?? ""));

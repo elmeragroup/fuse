@@ -44,7 +44,7 @@
           "type": "TConfig & (string extends keyof TConfig | TRow[TNameKey] ? unknown : { readonly [K in TRow[TNameKey] & string]: ChartSeriesConfig; } & { readonly [K in Exclude<keyof TConfig, TRow[TNameKey]>]: { readonly \"PieChart config keys must name categories of data\": never; }; }) & ChartPolarFieldCheck<TConfig>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `qualityKey`, `interval` or `missing`, and its colours are `ChartPolarColor` roles. Root's `qualityKey` names the quality column instead.",
+          "description": "One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `qualityKey`, `interval` or `missing`, and its colors are `ChartPolarColor` roles. Root's `qualityKey` names the quality column instead.",
           "required": true
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per ring, the first outermost. Sort rings in one unit largest first, so the longest arc holds the largest value. A negative value throws `negative-polar-value`. Each ring fills its value's share of its maximum and never laps. A value past its maximum fills the whole sweep and sets `data-over-max` on its ring, and the centre, the tooltip and the table keep the true share. A data update morphs each ring to its new value, and every value above 0 keeps at least one device pixel of arc. With no reading the chart shows `Empty` and has no tab stop.",
+          "description": "The rows, one per ring, the first outermost. Sort rings in one unit largest first, so the longest arc holds the largest value. A negative value throws `negative-polar-value`. Each ring fills its value's share of its maximum and never laps. A value past its maximum fills the whole sweep and sets `data-over-max` on its ring, and the center, the tooltip and the table keep the true share. A data update morphs each ring to its new value, and every value above 0 keeps at least one device pixel of arc. With no reading the chart shows `Empty` and has no tab stop.",
           "required": true
         },
         {
@@ -98,7 +98,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default. A shorter sweep draws a gauge, and the chart keeps the aspect of the sweep's bounding box.",
+          "description": "Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. A shorter sweep draws a gauge, and the chart keeps the aspect of the sweep's bounding box.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The fraction of the outer radius where the innermost ring starts, `0.3` by default.",
+          "description": "The fraction of the outer radius where the innermost ring starts.",
           "required": false
         },
         {
@@ -170,7 +170,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. An angle that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.",
+          "description": "Degrees from 12 o'clock, clockwise, where each ring's sweep starts. An angle that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.",
           "required": false
         },
         {
@@ -179,7 +179,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no color for the cut-outs to match.",
           "required": false
         },
         {
@@ -282,7 +282,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The centre's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the hole. Its text never shrinks below 12 px. When the lines overflow the square it drops every line but the value, and then the value.",
+          "description": "The center's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the hole. Its text never shrinks below 12 px. When the lines overflow the square it drops every line but the value, and then the value.",
           "required": false
         },
         {
@@ -327,7 +327,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The category's config `format`, then Root's `valueFormat`, is the default. The part prints the active slice's or ring's value, and with nothing active the total, or nothing when the categories' formats differ.",
+          "description": "The value format. Defaults to the category's config `format`, then Root's `valueFormat`. The part prints the active slice's or ring's value, and with nothing active the total, or nothing when the categories' formats differ.",
           "required": false
         },
         {
@@ -399,7 +399,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The maximum's format. The value's format is the default. The part prints a gauge pie's `max`, or the active ring's `max` or `maxKey` value, and with nothing active a radial chart's sum of maxima when every ring shares one format.",
+          "description": "The maximum's format. Defaults to the value's format. The part prints a gauge pie's `max`, or the active ring's `max` or `maxKey` value, and with nothing active a radial chart's sum of maxima when every ring shares one format.",
           "required": false
         },
         {
@@ -426,7 +426,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label text, such as \"av\" between the value and the maximum. It stays the same whatever is active, and it may hold the centre's numbers, as in \"av\" before a `CenterMax`.",
+          "description": "The label text, such as \"av\" between the value and the maximum. It stays the same whatever is active, and it may hold the center's numbers, as in \"av\" before a `CenterMax`.",
           "required": false
         },
         {
@@ -645,7 +645,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centers it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbor lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -658,7 +658,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Without children, TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
+          "description": "The popup's content. Without children, the popup shows TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
           "required": false
         },
         {
@@ -710,7 +710,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
+          "description": "The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {
@@ -792,7 +792,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -1034,7 +1034,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a `\"start\"` or `\"end\"` legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -1136,7 +1136,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -1224,7 +1224,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The group's name. The dictionary's \"Serier\" is the default.",
+          "description": "The group's name. Defaults to the dictionary's `Serier`.",
           "required": false
         },
         {
@@ -1284,7 +1284,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The toggle's content. The series' swatch and label by default.",
+          "description": "The toggle's content. Defaults to the series' swatch and label.",
           "required": false
         },
         {
@@ -1329,7 +1329,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the generated caption, the chart name and the period.",
+          "description": "The table's caption, in place of the generated one, which names the chart and the period.",
           "required": false
         },
         {
@@ -1356,7 +1356,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "description": "The hide button's text, in place of the dictionary's \"Skjul tabell\".",
           "required": false
         },
         {
@@ -1365,7 +1365,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
+          "description": "The show button's text, in place of the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -1383,7 +1383,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the first column's header, which the interval picks.",
+          "description": "The first column's header, in place of the one the interval picks.",
           "required": false
         }
       ]

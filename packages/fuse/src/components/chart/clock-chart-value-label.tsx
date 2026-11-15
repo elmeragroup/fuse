@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's ValueLabel: the value of each slot its Marker marks, as a pill past the dot.
+ * The clock's ValueLabel, the value of each slot its Marker marks, as a pill past the dot.
  */
 import { use } from "react";
 import type { ReactElement } from "react";
@@ -22,13 +22,13 @@ import { angleLabel } from "./layout/polar-labels";
  * @beta
  */
 export type ClockChartValueLabelProps = ChartLayerProps & {
-  /** The value format. The series' config `format` is the default. */
+  /** The value format. Defaults to the series' config `format`. */
   format?: ValueFormat;
 };
 
 /**
  * The value of each slot its Marker marks, as a pill past the dot at rest, reading away from the
- * centre. The pills hide while their Marker's dots enter or tween to new data, and show once the
+ * center. The pills hide while their Marker's dots enter or tween to new data, and show once the
  * dots rest. Outside a Marker it throws `part-outside-root`.
  *
  * @beta

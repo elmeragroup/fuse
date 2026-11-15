@@ -5,22 +5,22 @@ import { kbdVariants } from "./kbd-variants";
 
 const styles = kbdVariants();
 
-/** `Kbd` takes a native `kbd` element's props. */
+/** Props for `Kbd`, which takes a native `kbd` element's props. */
 export type KbdProps = Omit<ComponentProps<"kbd">, "children" | "aria-hidden"> & {
   /**
    * The key: a word such as `Esc`, a glyph such as `⌘`, or an icon. Kbd never detects the
-   * platform, so the server and the browser render the same cap. Pass `⌘` or `Ctrl` yourself
-   * where your app knows the platform.
+   * platform, so the server and the browser render the same cap. Pass `⌘` or `Ctrl` where the
+   * app knows the platform.
    */
   children?: ReactNode;
   /**
-   * Hides the cap from screen readers, which read it otherwise. Set it when the cap only repeats
-   * a shortcut that its control declares in `aria-keyshortcuts`.
+   * Whether the cap is hidden from screen readers, which read it otherwise. Set it when the cap
+   * only repeats a shortcut that its control declares in `aria-keyshortcuts`.
    */
   "aria-hidden"?: ComponentProps<"kbd">["aria-hidden"];
 };
 
-/** `KbdGroup` takes a native `kbd` element's props. */
+/** Props for `KbdGroup`, which takes a native `kbd` element's props. */
 export type KbdGroupProps = Omit<ComponentProps<"kbd">, "children"> & {
   /**
    * The `Kbd` caps of one combination, pressed together. In an `InputGroup` addon, make the group,

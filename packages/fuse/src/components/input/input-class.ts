@@ -14,7 +14,7 @@ export const inputClass = cn(
 );
 
 /**
- * Input's own field box: {@link inputClass} plus the field size it writes (`field-size.ts`).
+ * Input's own field box, which is {@link inputClass} plus the field size it writes from `field-size.ts`.
  * `size` is `"default"`, the md control size, or `"sm"`, the sm control size.
  */
 export const inputVariants = tv({

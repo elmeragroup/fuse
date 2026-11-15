@@ -2,8 +2,8 @@
  * The module-private recipe. The public entry does not export it, since no consumer borrows it
  * yet. The status fill and text use the `error` tokens.
  *
- * One `tone` axis, four arms. The `mode` × `level` resolution lives in
- * `METER_TONE_TABLE`, so this recipe holds colors only.
+ * It has one `tone` axis with four arms. `METER_TONE_TABLE` resolves the `mode` and the `level`, so
+ * this recipe holds colors only.
  */
 import { tv } from "../../styles/tv";
 

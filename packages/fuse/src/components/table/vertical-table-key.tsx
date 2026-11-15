@@ -11,7 +11,7 @@ import { TableCell } from "./table-cell";
 import { TABLE_CELL_CLASSES } from "./table-cell-classes";
 import { verticalTableCellText } from "./vertical-table-cell-text";
 
-/** `VerticalTable.Key` takes a native `td`'s props, its text wrapping, a loading state and `render`. */
+/** Props for `VerticalTable.Key`, a native `td`'s props, its text wrapping, a loading state and `render`. */
 export type VerticalTableKeyProps = ComponentProps<"td"> & {
   /** `"truncate"` clips text that overflows the cell; `"default"` wraps it. */
   text?: "default" | "truncate";

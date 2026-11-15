@@ -2,32 +2,32 @@ import { cn } from "./cn";
 import { tv } from "./tv";
 
 /**
- * Field size: the `size` axis of every text-entry field box, `"default"` (the md control size)
- * or `"sm"` (the sm control size), carried to the parts inside the box through CSS variables.
+ * Field size: the `size` axis of every text-entry field box, carried to the parts inside the box
+ * through CSS variables. `"default"` is the md control size and `"sm"` the sm control size.
  *
- * The `box` slot WRITES the size on the field box: `--field-h` (box height), `--field-px` (inline
- * inset), `--field-gap`, `--field-inner` (the square of a button inside the box), and the type
- * pair `--field-text` / `--field-leading`. Every other slot READS them, on the box itself and on
- * the parts inside it (the inner input, segment rows, addons, inner buttons, chips), so a part
- * follows the box it sits in without taking a `size` of its own.
+ * The `box` slot writes the size on the field box: `--field-h` for the box height, `--field-px`
+ * for the inline inset, `--field-gap`, `--field-inner` for the square of a button inside the box,
+ * and the type pair `--field-text` and `--field-leading`. Every other slot reads them, on the box
+ * itself and on the parts inside it: the inner input, segment rows, addons, inner buttons and
+ * chips. A part follows the box it sits in without taking a `size` of its own.
  *
  * Every box writes at every size. A `"default"` box resets each variable to `initial`, the
- * guaranteed-invalid value, so a default box nested in an sm box (an editor or a picker search
- * inside an sm field's popup, a field in an addon) never inherits the outer size. Each read
+ * guaranteed-invalid value, so a default box nested in an sm box never inherits the outer size.
+ * Such a box is an editor or a picker search inside an sm field's popup, or a field in an addon. Each read
  * falls back to the md metric, so a reset variable, or a part rendered outside any box, reads
  * md. The md metrics are spelled once, in those fallbacks, rather than once more as default
  * writes, and the sm metrics once, in the sm writes.
  *
- * The sm type is the fixed 14px / 20px of Tailwind's `text-sm`, as Select's sm trigger and the
- * sm control size (`control-size.ts`) have it; it does not follow density. The md type is the
- * density pair `--control-text` / `--control-leading`. Both leadings are lengths: Tailwind's
+ * The sm type is the fixed 14px and 20px of Tailwind's `text-sm`, as Select's sm trigger and the
+ * sm control size in `control-size.ts` have it; it does not follow density. The md type is the
+ * density pair `--control-text` and `--control-leading`. Both leadings are lengths: Tailwind's
  * `--text-sm--line-height` is a ratio, so the sm leading multiplies it by the sm text into 20px,
  * which a floored 16px font keeps, as the md leading does.
  *
  * Each read is a typed arbitrary-value height, inline-padding, font-size or line-height utility,
  * so tailwind-merge groups it with the consumer's `h-12`, `px-3`, `text-lg` or
- * `leading-5` and `cn` keeps only the consumer's class (see `control-size-md.ts` for why the
- * removal, not the cascade, is what lets the consumer win).
+ * `leading-5` and `cn` keeps only the consumer's class. `control-size-md.ts` explains why the
+ * removal, not the cascade, lets the consumer win.
  *
  * `entryType` is the text-entry type: the field text with a 16px font-size floor under the
  * `entry-floor` variant, at both sizes. `fuse.css` declares that variant as a coarse pointer or
@@ -46,7 +46,6 @@ import { tv } from "./tv";
  * variant-prefixed floor class would instead survive the merge and shrink a larger consumer size,
  * such as the 18px TextField card input, to 16px. `ComboboxChipsInput` declares its own floor over
  * the chips box's inherited size.
-
  */
 export const fieldSize = tv({
   slots: {

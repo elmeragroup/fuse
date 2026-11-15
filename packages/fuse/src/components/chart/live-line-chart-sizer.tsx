@@ -18,8 +18,8 @@ function widestOf(texts: readonly string[]): string | null {
 }
 
 /**
- * The widest label shown so far under one locale and format, by its width estimate: the widest of
- * the labels shown now, or a wider one shown before. Another locale or format starts over, since
+ * The widest label shown so far under one locale and format, by its width estimate. It is the widest
+ * of the labels shown now, or a wider one shown before. Another locale or format starts over, since
  * its labels print differently.
  */
 function useWidest(texts: readonly string[], locale: SupportedLocale, format: ValueFormat): string | null {

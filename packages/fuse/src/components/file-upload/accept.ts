@@ -2,11 +2,10 @@
  * The `accept` attribute as a reusable rule. {@link parse} reads the string once, and the
  * match functions answer every later question without parsing again.
  *
- * The rules follow the HTML `accept` attribute, read leniently. `parse`
- * splits the string on commas, then trims and lowercases each token. A `.ext` token matches
- * the end of a file name, a `type/*` token matches a top-level MIME type, and any other token
- * with a `/` matches one MIME type exactly. Other tokens are ignored, and a rule with no
- * usable token accepts every file.
+ * The rules follow the HTML `accept` attribute, read leniently. `parse` splits the string on
+ * commas, then trims and lowercases each token. A `.ext` token matches the end of a file name, a
+ * `type/*` token matches a top-level MIME type, and any other token with a `/` matches one MIME
+ * type exactly. `parse` ignores other tokens, and a rule with no usable token accepts every file.
  */
 
 /** A parsed `accept` string. Build one with {@link parse}. */
@@ -25,7 +24,7 @@ export type AcceptRule =
 const ANY: AcceptRule = { _tag: "any" };
 
 /**
- * Parse an `accept` attribute value.
+ * Parses an `accept` attribute value.
  *
  * @param accept - The attribute's value, or `undefined` when the attribute is absent.
  * @returns The rule, which accepts every file when `accept` holds no usable token.
@@ -75,7 +74,7 @@ export function matchesMimeType(rule: AcceptRule, mimeType: string): boolean {
  * file out, because only the name it reveals on drop can match.
  *
  * @param rule - The parsed rule.
- * @returns `true` when at least one `.ext` token was parsed.
+ * @returns `true` when the rule holds at least one `.ext` token.
  */
 export function hasExtension(rule: AcceptRule): boolean {
   return rule._tag === "listed" && rule.extensions.length > 0;

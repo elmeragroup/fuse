@@ -1,10 +1,10 @@
 /**
  * The clock dial's labels. The tier is the cycle's sub-unit: hours round a day, weekdays round a
- * week, months round a year. An hour sits on its slot's start, and a weekday or a month centres on
+ * week, months round a year. An hour sits on its slot's start, and a weekday or a month centers on
  * its span, so on a 25-hour day "06" sits at 100.8°. Labels thin by stride, as the cartesian axis
- * thins them, over `tick-fit.ts`'s width buckets, but the fit is the dial's own: two neighbours fit
- * when the arc between them at the label radius holds half of each and the gap, and the pair that
- * meets across 12 o'clock is checked too. The cycle's first label always shows.
+ * thins them, over `tick-fit.ts`'s width buckets, but the fit is the dial's own. Two neighbors fit
+ * when the arc between them at the label radius holds half of each and the gap, and the fit checks
+ * the pair that meets across 12 o'clock too. The cycle's first label always shows.
  */
 import { wallTimes } from "../format/time-format";
 import type { ClockCycle } from "./clock";
@@ -72,8 +72,8 @@ function unitIndex(wall: number, unit: ClockTier["unit"]): number {
 /**
  * Where a cycle's labels sit. A label's unit starts at the first slot whose wall clock falls in it,
  * so a repeated fall-back hour labels once and an hour that starts at :30 after a half-hour change
- * still labels. An hour sits on its slot's start, and a weekday or a
- * month in the middle of the slots it spans.
+ * still labels. An hour sits on its slot's start, and a weekday or a month sits in the middle of
+ * the slots it spans.
  *
  * @param starts - The cycle's slot starts, ascending.
  * @param timeZone - The IANA zone.
@@ -130,7 +130,10 @@ export function fitClockLabels(
   return fitStridedLabels(labels, widths, TIERS[cycle].strides, reach);
 }
 
-/** A label round a dial as the stride fit reads it: its angle, and its unit's count, which a stride divides. */
+/**
+ * A label round a dial as the stride fit reads it: its angle, and its unit's count, which a stride
+ * divides.
+ */
 export type StridedLabel = {
   /** Its angle in degrees from 12 o'clock. */
   readonly angle: number;

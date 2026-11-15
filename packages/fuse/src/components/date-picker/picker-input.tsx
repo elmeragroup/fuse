@@ -39,7 +39,7 @@ export type PickerDateInputProps = Omit<DateInputRootProps<DateInputValue>, "ren
 /**
  * A `DateInput.Root` inside a picker's group, through its public props alone. The group is the
  * named field box, so the input renders as a presentational row that paints no box and leaves its
- * naming to the segments, which keep their names ("month, Start date"). Its `render` state tells
+ * naming to the segments, which keep names such as "month, Start date". Its `render` state tells
  * the picker whether the input shows as invalid.
  *
  * Its focus boundary is the input together with the popup: focus moving from the segments into the

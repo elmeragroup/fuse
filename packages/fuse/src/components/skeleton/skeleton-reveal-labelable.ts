@@ -9,12 +9,15 @@ import type { useLabelableContext } from "@base-ui/react/internals/labelable-pro
 import { isThemeDevelopment } from "../../theme/validate-theme";
 
 /**
- * Package-private. What Base UI's labelable context holds: the control, label and message ids of
- * one Field.
+ * What Base UI's labelable context holds: the control, label and message ids of one Field. It is
+ * package-private.
  */
 export type LabelableValue = ReturnType<typeof useLabelableContext>;
 
-/** Package-private. A labelable scope: Base UI's context, and a scope of the pane's own to give it. */
+/**
+ * A labelable scope, which is Base UI's context and a scope of the pane's own to give it. It is
+ * package-private.
+ */
 export type LabelableScope = { readonly Provider: Context<LabelableValue>; readonly own: LabelableValue };
 
 /** The Base UI release whose labelable provider the probe below reads. */
@@ -36,21 +39,21 @@ function contextOf(element: ReactElement): Context<LabelableValue> | null {
 let reportedMissing = false;
 
 /**
- * Package-private. A labelable scope of a SkeletonReveal pane's own, from Base UI itself.
+ * A labelable scope of a SkeletonReveal pane's own, from Base UI itself. It is package-private.
  *
- * Why a probe: Base UI 1.9.0 exports its labelable provider but not the context the provider
- * fills (`@base-ui/react/internals/labelable-provider` exports only the provider and hooks, and
- * the package's exports map reaches nothing deeper), and a patch to Base UI would not reach
+ * The hook probes because Base UI 1.9.0 exports its labelable provider but not the context the
+ * provider fills. `@base-ui/react/internals/labelable-provider` exports only the provider and
+ * hooks, and the package's exports map reaches nothing deeper. A patch to Base UI would not reach
  * Fuse's consumers. A pane can only change scope without a remount by providing that context
  * itself, so this runs the provider as a hook, every render, so its state is the pane's own scope,
  * and takes the context from the element it renders. Issue #504 tracks asking Base UI to export
  * the context, which would let a pane mount the provider normally.
  *
- * It never throws. If a Base UI release renders its provider differently, it returns null and the
+ * It never throws. If a Base UI release renders its provider differently, it returns `null` and the
  * pane shares the Field's scope, as before panes had scopes of their own; development logs one
  * error naming the release it assumes.
  *
- * @returns Base UI's labelable context and a scope of the pane's own, or null when the installed
+ * @returns Base UI's labelable context and a scope of the pane's own, or `null` when the installed
  *   Base UI no longer renders its provider as assumed.
  */
 export function useOwnLabelableScope(): LabelableScope | null {

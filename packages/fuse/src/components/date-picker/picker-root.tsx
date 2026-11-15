@@ -95,7 +95,7 @@ export type PickerInputSettings = Pick<
 /**
  * What a picker's time inputs hand their time-only `DateInput.Root` from the Root: the time
  * options and state, never the bounds, the requirement or a name, which belong to the picker's own
- * input, nor a zone or a default value: each time input's kind comes from its binding (`endKind`).
+ * input, nor a zone or a default value. Each time input's kind comes from its binding, `endKind`.
  */
 export type PickerTimeSettings = Pick<
   PickerInputSettings,
@@ -231,7 +231,7 @@ export type PickerRoot = {
 };
 
 /**
- * The scaffolding both picker Roots share: the disabled state, the focus boundary and open
+ * The state both picker Roots share: the disabled state, the focus boundary and open
  * request, the Input and Calendar settings and the shell context, each memoized on what it reads,
  * so a Root render that changes none of them re-renders no part.
  *
@@ -445,8 +445,8 @@ export function usePickerRootElement(options: PickerRootElementOptions): ReactEl
 
 /**
  * The calendar's view key. Calendar keeps its view when its controlled value changes, so a value
- * that came from anywhere but the calendar itself (typing, a preset the parent maps to a value)
- * changes the key and the calendar remounts on it, so the calendar shows the new value's month. A
+ * that came from anywhere but the calendar itself, such as typing or a preset the parent maps to a
+ * value, changes the key and the calendar remounts on it, so the calendar shows the new value's month. A
  * value the calendar made is marked as picked first and keeps the key, so the calendar under focus
  * stays.
  *

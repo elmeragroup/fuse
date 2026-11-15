@@ -22,7 +22,7 @@ import type {
   TableFeatures,
 } from "@tanstack/react-table";
 
-/** An empty component registry: the default when an app registers no components of a kind. */
+/** An empty component registry, the default when an app registers no components of a kind. */
 export type NoComponents = Record<never, never>;
 
 /**
@@ -39,7 +39,7 @@ export type SortColumnSource = Pick<
   "getCanSort" | "getIsSorted" | "getToggleSortingHandler"
 >;
 
-/** The header members `DataTable.Header` reads. Sorting is optional: it drives `aria-sort`. */
+/** The header members `DataTable.Header` reads. Sorting is optional, and it drives `aria-sort`. */
 export type HeaderSource = {
   readonly id: string;
   readonly colSpan: number;
@@ -53,7 +53,7 @@ export type CellSource = {
 };
 
 /**
- * The row members `DataTable.Row` reads. Visibility and selection are optional: without
+ * The row members `DataTable.Row` reads. Visibility and selection are optional. Without
  * `columnVisibilityFeature` every cell renders, and without `rowSelectionFeature` no row is
  * selected.
  */
@@ -77,7 +77,7 @@ export type CellRenderSource<TCell> = {
   readonly FlexRender: (props: { readonly cell: NoInfer<TCell> }) => ReactNode;
 };
 
-/** A header group as `DataTable.Header` reads it: one `<thead>` row of headers. */
+/** A header group as `DataTable.Header` reads it, one `<thead>` row of headers. */
 export type HeaderGroupSource = {
   readonly id: string;
   readonly headers: ReadonlyArray<HeaderSource>;
@@ -85,7 +85,7 @@ export type HeaderGroupSource = {
 
 /**
  * The table members `DataTable.Header` reads. It is generic over the header group, not the
- * header: TypeScript 7.1 infers no header type from a TanStack table when the header sits inside
+ * header, because TypeScript 7.1 infers no header type from a TanStack table when the header sits inside
  * the group inside the `getHeaderGroups` return type.
  */
 export type HeaderGroupsSource<TGroup extends HeaderGroupSource> = {
@@ -96,9 +96,9 @@ export type HeaderGroupsSource<TGroup extends HeaderGroupSource> = {
 export type HeaderOf<TGroup extends HeaderGroupSource> = TGroup["headers"][number];
 
 /**
- * The table members `DataTable.Body` reads. The visible leaf columns size the empty row; without
- * `columnVisibilityFeature` every leaf column is visible. The page size sizes the loading state;
- * without `rowPaginationFeature` it shows a fixed number of skeleton rows.
+ * The table members `DataTable.Body` reads. The visible leaf columns size the empty row. Without
+ * `columnVisibilityFeature` every leaf column is visible. The page size sizes the loading state.
+ * Without `rowPaginationFeature` it shows a fixed number of skeleton rows.
  */
 export type RowsSource<TRow> = {
   readonly getRowModel: () => { readonly rows: ReadonlyArray<TRow> };
@@ -126,7 +126,7 @@ export type ColumnToggleSource<TColumn extends VisibilityColumnSource> = {
   readonly getAllLeafColumns: () => ReadonlyArray<TColumn>;
 };
 
-/** The table members `DataTable.SelectAll` reads: the current page, never unloaded rows. */
+/** The table members `DataTable.SelectAll` reads, the current page and never unloaded rows. */
 export type SelectAllSource = Pick<
   Table_RowSelection<TableFeatures, RowData>,
   "getIsAllPageRowsSelected" | "getIsSomePageRowsSelected" | "toggleAllPageRowsSelected"

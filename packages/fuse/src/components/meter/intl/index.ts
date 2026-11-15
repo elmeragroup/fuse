@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Meter's own dictionary: it owns the `meter.warning` / `meter.success` keys. */
+/** Meter's own dictionary, which holds the `meter.warning` and `meter.success` keys. */
 export const meterStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

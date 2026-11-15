@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's grid: rings at the value ticks, spokes at the label ticks and a solid zero ring when
+ * The clock's grid, with rings at the value ticks, spokes at the label ticks and a solid zero ring when
  * the domain spans 0. The first paint draws it at rest, and it never scales out.
  */
 import type { ReactElement } from "react";

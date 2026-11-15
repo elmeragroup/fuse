@@ -34,7 +34,10 @@ type FileUploadPostingRule = { files: readonly File[] } | { name?: undefined };
 
 type FileUploadRootBaseProps = useRender.ComponentProps<"div">;
 
-/** `FileUpload.Root` takes a `div`'s props, Base UI's `render`, and the picker, posting and callback props. */
+/**
+ * Props for `FileUpload.Root`, a `div` with Base UI's `render`, plus the picker, posting and callback
+ * props.
+ */
 export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "children"> &
   FileUploadPostingRule & {
     /**
@@ -59,8 +62,8 @@ export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "ch
     name?: string;
     /**
      * The files a native form posts, which the parent owns. The Root never changes the list. Add
-     * each pick from `onSelect`, and remove files from your own UI, which removes them from the
-     * post. A rejected pick, or one the parent does not add, never changes what is posted. The
+     * each pick from `onSelect`, and remove files from the app's own UI, which removes them from
+     * the post. A rejected pick, or one the parent does not add, never changes what is posted. The
      * picker stays empty between picks, so picking a file that is already posted still reaches
      * `onSelect`. A native form reset, including the one React runs after a form action, leaves
      * the list and the post as they are. Without a `name`, the files post only under an
@@ -68,16 +71,15 @@ export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "ch
      */
     files?: readonly File[];
     /**
-     * Requires at least one file in `files` before a form submits. An empty or undefined `files`
-     * counts as no file, as a native file input with no selection does, and a native form's
-     * submit stops and moves focus to the first enabled `FileUpload.Trigger`. Inside a
-     * `Field.Root`, the Trigger is the Field's control and `files` its value. The Field validates
-     * the files as its `validationMode` says, on the Trigger's blur in `onBlur` mode, and on a
-     * Base UI `Form` submit. With none, it turns invalid with `valueMissing`, so
+     * Whether the Root requires at least one file in `files` before a form submits. An empty or
+     * undefined `files` counts as no file, as a native file input with no selection does, and a
+     * native form's submit stops and moves focus to the first enabled `FileUpload.Trigger`. Inside
+     * a `Field.Root`, the Trigger is the Field's control and `files` its value. The Field validates
+     * the files as its `validationMode` says, on the Trigger's blur in `onBlur` mode, and on a Base
+     * UI `Form` submit. With none, it turns invalid with `valueMissing`, so
      * `Field.Error match="valueMissing"` describes the Trigger and marks it `aria-invalid`, and a
      * `Form` focuses it. Adding a file clears the error, and opening the picker validates nothing.
-     * `onFormSubmit` receives the files under the Field's `name`. A disabled Root is never
-     * required.
+     * `onFormSubmit` receives the files under the Field's `name`. A disabled Root is never required.
      */
     required?: boolean;
     /**
@@ -87,33 +89,36 @@ export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "ch
      */
     accept?: string;
     /**
-     * Takes more than one file. Without it, a pick, drop or paste in which more than one file
-     * passes `accept` rejects each of those with `"count"`. `accept` is checked first, so a file
-     * that fails it is rejected with `"type"` and never counts.
+     * Whether the Root takes more than one file. Without it, a pick, drop or paste in which more
+     * than one file passes `accept` rejects each of those with `"count"`. The Root checks `accept`
+     * first, so it rejects a file that fails it with `"type"`, and that file never counts.
      */
     multiple?: boolean;
     /**
-     * The picker selects folders, and a dropped folder expands into the files inside it, at any
-     * depth. Each file's `webkitRelativePath` holds its path inside the folder, such as
+     * Whether the picker selects folders and a dropped folder expands into the files inside it, at
+     * any depth. Each file's `webkitRelativePath` holds its path inside the folder, such as
      * `photos/2024/meter.jpg`, for a dropped folder as for a picked one. While it is off, a
      * dropped folder reaches `onReject` with `"directory"`.
      */
     directory?: boolean;
-    /** Asks a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
+    /**
+     * The phone camera the browser asks to capture new media with: `"user"` for the front one,
+     * `"environment"` for the back.
+     */
     capture?: "user" | "environment";
     /**
-     * Ignores every source, and disables each `FileUpload.Trigger`. An enclosing disabled
-     * `Field.Root` or `Field.Set` disables the Root as well.
+     * Whether the Root ignores every source and disables each `FileUpload.Trigger`. An enclosing
+     * disabled `Field.Root` or `Field.Set` disables the Root as well.
      */
     disabled?: boolean;
     /**
-     * Receives the files that passed `accept` and the count rule, in a fresh array for each call,
-     * which is yours to keep. The Root checks only `accept` and `multiple`. Check limits of your
-     * own, such as a file count or a size, here before you keep a file.
+     * Called with the files that passed `accept` and the count rule, in a fresh array for each
+     * call, which the consumer may keep. The Root checks only `accept` and `multiple`. Check other
+     * limits here, such as a file count or a size, before keeping a file.
      */
     onSelect?: (files: File[]) => void;
     /**
-     * Receives the files and folders that did not pass, with the reason for each: `"type"` for a
+     * Called with the files and folders that did not pass, with the reason for each: `"type"` for a
      * file that fails `accept`, `"count"` for each passing file when a Root without `multiple`
      * gets more than one, `"directory"` for a folder while `directory` is off, and `"unreadable"`
      * for a file in a dropped folder that the browser could not read. For one pick, drop or paste,

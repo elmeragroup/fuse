@@ -33,7 +33,7 @@ export type ClockSlots = {
   readonly states: readonly ClockSlotState[];
   /** Whether each slot dashes or hatches: an estimated or projected reading. */
   readonly marked: readonly boolean[];
-  /** How a missing reading draws: "gap" breaks the curve and "connect" bridges it, dashed. */
+  /** How a missing reading draws: `"gap"` breaks the curve and `"connect"` bridges it, dashed. */
   readonly missing: "gap" | "connect";
 };
 
@@ -179,7 +179,7 @@ class Sampler {
 }
 
 /**
- * Sample a curve through points in unrolled space.
+ * Samples a curve through points in unrolled space.
  *
  * @param points - The points, θ ascending.
  * @param curve - The curve.
@@ -200,7 +200,7 @@ type Run = { readonly slots: readonly number[]; readonly closed: boolean };
 
 /**
  * The runs a series' curve draws. A pending slot always breaks a run, a missing one breaks it under
- * "gap", and a run that holds both end slots, either one through the coarse reading that covers it,
+ * `"gap"`, and a run that holds both end slots, either one through the coarse reading that covers it,
  * crosses 12 o'clock, closing when it is the only run and holds two readings or more.
  */
 function runsOf(slots: ClockSlots): readonly Run[] {
@@ -378,7 +378,7 @@ export type CurveIndex = readonly (
 )[];
 
 /**
- * Index a series' drawn curve in one frame's numbers, for `radiusInCurve`.
+ * Indexes a series' drawn curve in one frame's numbers, for `radiusInCurve`.
  *
  * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
  * @param slots - Each slot's state and mark, and the missing rule.
@@ -397,12 +397,12 @@ export function curveIndex(values: readonly number[], slots: ClockSlots, curve: 
 }
 
 /**
- * The radius an indexed curve reaches at an angle, or null where it draws nothing there, read
+ * The radius an indexed curve reaches at an angle, or `null` where it draws nothing there, read
  * between its samples as the drawn polyline joins them.
  *
  * @param index - The curve, from `curveIndex`.
  * @param angle - The angle in degrees from 12 o'clock, in any turn.
- * @returns The radius, or null.
+ * @returns The radius, or `null`.
  */
 export function radiusInCurve(index: CurveIndex, angle: number): number | null {
   for (const run of index) {
@@ -447,17 +447,18 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
  * The angle ranges a run dashes or hatches: each segment that touches a marked slot, and each
  * bridge, folded into the angles its curve samples and merged. A curve that steps draws each reading
  * across its own slot, so its marked range is that slot, from its start to its end, and its bridge
- * runs from one reading's end to the next one's start (section 8.7). Any other curve draws
- * a reading as a vertex, so its range runs between the vertices beside it. A closed run's first and last readings
- * meet across midnight, so a range that reaches past one end of the sampled turn continues at the
- * other, and overlapping ranges, as two adjacent marked readings give, merge into one, so no piece is
- * drawn twice, extrapolated past the samples or cancelled by an even-odd fill.
+ * runs from one reading's end to the next one's start, as section 8.7 defines it. Any other curve
+ * draws a reading as a vertex, so its range runs between the vertices beside it. A closed run's
+ * first and last readings meet across midnight, so a range that reaches past one end of the sampled
+ * turn continues at the other, and overlapping ranges, as two adjacent marked readings give, merge
+ * into one, so no piece is drawn twice, extrapolated past the samples or canceled by an even-odd
+ * fill.
  *
  * @param run - The run.
  * @param angles - Each of its slots' vertex angle, in the curve's unrolled turn.
  * @param slots - The slots' states and marks.
  * @param bounds - The first and last angle the run's curve samples.
- * @param edges - Each slot's start and end, in the same turn, for a curve that steps, or null.
+ * @param edges - Each slot's start and end, in the same turn, for a curve that steps, or `null`.
  * @returns The merged ranges, ascending, each inside the bounds.
  */
 function markedRanges(
@@ -515,8 +516,8 @@ function bridges(states: readonly ClockSlotState[], from: number, to: number): b
 }
 
 /**
- * Split a sampled curve into its plain pieces and the pieces inside the marked ranges, in one pass:
- * the samples, the cuts and the ranges each advance a cursor, so an 8,760-hour year splits in about
+ * Splits a sampled curve into its plain pieces and the pieces inside the marked ranges, in one
+ * pass. The samples, the cuts and the ranges each advance a cursor, so an 8,760-hour year splits in about
  * the time it samples.
  *
  * @param line - The sampled curve, its angles ascending.
@@ -662,7 +663,7 @@ function region(top: readonly ClockPoint[], base: readonly ClockPoint[]): string
  * @param slots - Each slot's state and mark, and the missing rule.
  * @param curve - The curve.
  * @param columns - The device pixels round the rim, below which slots hatch by pixel column, or
- *   undefined before the dial is measured.
+ *   `undefined` before the dial is measured.
  * @returns The paths.
  */
 export function clockArea(

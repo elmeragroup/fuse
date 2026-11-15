@@ -48,7 +48,7 @@ export function effectiveWindow(
 export type SlotStep = "next" | "previous" | "page-next" | "page-previous" | "first" | "last";
 
 /**
- * Move the active slot inside the window. A page is `max(1, round(count / 10))` slots, where count
+ * Moves the active slot inside the window. A page is `max(1, round(count / 10))` slots, where count
  * is the window's slot count, so 2 of 24 and 37 of 365. Moves stop at the window's ends.
  *
  * @param window - The effective window.

@@ -17,12 +17,12 @@ import { selfFocusRingClass } from "../../styles/utils";
  * set on Root, and each part calls the recipe with them for its own slot.
  *
  * The height on `content` is the approved layout exception. The shared `panelHeightTransition`
- * constant (`styles/panel-height.ts`) owns it against Base UI's `--accordion-panel-height`. It is
- * not a control size.
+ * constant in `styles/panel-height.ts` animates it against Base UI's `--accordion-panel-height`.
+ * It is not a control size.
  *
  * The trigger is a native button that Base UI also marks `data-disabled`, and a consumer may
- * announce it `aria-disabled`, so it composes the `native` and `data` state faces (both
- * carry the `aria-disabled` arm) and gates its hover underline behind `enabled-hover:`.
+ * announce it `aria-disabled`. It composes the `native` and `data` state faces, which both carry
+ * the `aria-disabled` arm, and gates its hover underline behind `enabled-hover:`.
  *
  * `hasIndicator` packs the trigger's children at the start when `Accordion.Trigger` renders
  * no trailing indicator, so a leading icon sits beside the label instead of across the row.

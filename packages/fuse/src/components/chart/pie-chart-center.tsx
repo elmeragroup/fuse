@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The text in a pie's or radial chart's hole (CONTRACT section 8.13). The Center lays its parts in
- * the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
+ * The text in a pie's or radial chart's hole, as CONTRACT section 8.13 defines it. The Center lays
+ * its parts in the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
  * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll.
  * The Center is plot output, hidden from readers, who read the same numbers from the options.
  * Every part that follows the active item reads it here, through `useActiveIndex`, so it renders
@@ -24,7 +24,7 @@ import type { ChartLayerProps } from "./chart-types";
  */
 export type PieChartCenterProps = ChartLayerProps & {
   /**
-   * The centre's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the
+   * The center's content, such as `CenterValue` over a `CenterLabel`, in the square inscribed in the
    * hole. Its text never shrinks below 12 px. When the lines overflow the square it drops every line
    * but the value, and then the value.
    */
@@ -39,7 +39,7 @@ export type PieChartCenterProps = ChartLayerProps & {
 export type PieChartCenterLabelProps = ChartLayerProps & {
   /**
    * The label text, such as "av" between the value and the maximum. It stays the same whatever is
-   * active, and it may hold the centre's numbers, as in "av" before a `CenterMax`.
+   * active, and it may hold the center's numbers, as in "av" before a `CenterMax`.
    */
   children?: ReactNode;
 };
@@ -57,15 +57,15 @@ export type PieChartCenterNameProps = ChartLayerProps & {
   children?: ReactNode;
 };
 
-/** The centre's numbers, null under a family with no centre, and the active item. */
+/** The center's numbers, null under a family with no center, and the active item. */
 type CentreItem = { readonly centre: CentreModel | null; readonly active: number | null };
 
 /**
- * The centre's numbers and the active slice's or ring's index, or null while nothing is active. Inside
+ * The center's numbers and the active slice's or ring's index, or null while nothing is active. Inside
  * a closing tooltip the index is the one the popup held.
  *
  * @param part - The part, which a misplaced use names.
- * @returns The centre and the active index.
+ * @returns The center and the active index.
  */
 export function useCentreItem(part: string): CentreItem {
   const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
@@ -79,10 +79,10 @@ export function useCentreItem(part: string): CentreItem {
 }
 
 /**
- * The text in the hole of a donut or a gauge: its parts sit in the square inscribed in the hole,
- * centred on the dial and kept to the sweep's box, so a semicircle's sits above its flat edge.
+ * The text in the hole of a donut or a gauge. Its parts sit in the square inscribed in the hole,
+ * centered on the dial and kept to the sweep's box, so a semicircle's sits above its flat edge.
  * Every part prints the active slice, or with nothing active the pie's own number. Its text never
- * shrinks below 12 px: when the lines overflow the square it drops every line but the value, and
+ * shrinks below 12 px. When the lines overflow the square it drops every line but the value, and
  * then the value.
  *
  * @beta
@@ -125,8 +125,8 @@ export function PieChartCenter({ children, className, style }: PieChartCenterPro
 }
 
 /**
- * A text line in the centre, such as the word between the value and the maximum. Its text stays
- * the same whatever is active, and it may hold the centre's numbers, as in "av" before a
+ * A text line in the center, such as the word between the value and the maximum. Its text stays
+ * the same whatever is active, and it may hold the center's numbers, as in "av" before a
  * `CenterMax`. A line that names the active item is a `CenterName`.
  *
  * @beta
@@ -141,12 +141,12 @@ export function PieChartCenterLabel({ children, className, style }: PieChartCent
 }
 
 /**
- * A text line in the centre that names the active slice or ring by its config label, and prints its
+ * A text line in the center that names the active slice or ring by its config label, and prints its
  * children with nothing active, as `CenterValue` prints the active item's value and, with nothing
  * active, the total. So "Total" under the total reads "Grid rent" under that slice's value. It
- * renders when the active item changes, never on a pointer move within one, and it is a text line
- * as a `CenterLabel` is: the same size and colour, and left out of a hole narrower than 4rem or one
- * whose fit keeps only the value.
+ * renders when the active item changes, never on a pointer move within one. Like a `CenterLabel`, it
+ * has the same size and color, and it is left out of a hole narrower than 4rem or one whose fit keeps
+ * only the value.
  *
  * @beta
  */

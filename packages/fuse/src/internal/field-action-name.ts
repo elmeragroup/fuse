@@ -19,15 +19,15 @@ export type FieldActionName = {
 };
 
 /**
- * Names an action button after the field it acts on ("Calendar Start date", "Increase Quantity"),
- * as React Aria names a date picker's button and a number field's steppers: a screen reader
- * reaching the button alone, by swiping, still hears which field it changes.
+ * Names an action button after the field it acts on, such as "Calendar Start date" or "Increase
+ * Quantity", as React Aria names a date picker's button and a number field's steppers. A screen
+ * reader reaching the button alone, by swiping, still hears which field it changes.
  *
  * With a visible label, the button keeps its own word as `aria-label` and lists its own id, then
  * the label's, in `aria-labelledby`; the self-reference reads that `aria-label`, so the label's
  * text follows the word and tracks the label as it changes. Without one, the field's `aria-label`
  * follows the word in the button's own `aria-label`. A field with neither leaves the word alone.
- * Referencing the field's input instead would read its value (accname's embedded-control step).
+ * Referencing the field's input instead would read its value, by accname's embedded-control step.
  *
  * @param input - The button's id and word, and what names its field.
  * @returns The `aria-label` and, with a visible label, the `aria-labelledby` to spread on the button.

@@ -97,10 +97,10 @@ export type DateRangePickerValue<T extends DateInputValue = Temporal.PlainDate> 
 };
 
 /**
- * The gestures that change a range picker's value: a range completed in the calendar (a second
- * day pressed or chosen with Enter or Space, a press outside the days, focus leaving the calendar
- * with an open range), an input's typing, clearing and pasting, or a preset with a `dateValue`
- * pressed.
+ * The gestures that change a range picker's value: a range completed in the calendar, an input's
+ * typing, clearing and pasting, or a press on a preset with a `dateValue`. The calendar completes a
+ * range on a second day pressed or chosen with Enter or Space, a press outside the days, or focus
+ * leaving the calendar with an open range.
  */
 export type DateRangePickerValueChangeReason =
   | "day-press"
@@ -127,17 +127,18 @@ export type DateRangePickerValueChangeEventDetails =
 
 /**
  * The state `DateRangePicker.Root` shares with its `render` callback and writes as data
- * attributes: `open` (`data-open`), `disabled` (`data-disabled`), `readonly` (`data-readonly`) and
- * `invalid` (`data-invalid="true"`), which holds while either end, or the range, shows as invalid.
+ * attributes: `open` as `data-open`, `disabled` as `data-disabled`, `readonly` as `data-readonly`
+ * and `invalid` as `data-invalid="true"`, which holds while either end, or the range, shows as
+ * invalid.
  */
 // A mapped copy, so the public name is a type of its own, which prints as itself rather than as
 // the private `PickerState`, and keeps each field's documentation.
 export type DateRangePickerRootState = { readonly [K in keyof PickerState]: PickerState[K] };
 
 /**
- * `DateRangePicker.Root` takes a `div`'s props, Base UI's `render` and the picker's own.
+ * Props for `DateRangePicker.Root`: a `div`'s props, Base UI's `render` and the picker's own.
  *
- * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The ends' kind: `Temporal.PlainDate`, which is the default, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the Root reads it from its `value` or `defaultValue`, and without
  *   either from `granularity` and `timeZone`, as `DateInput.Root` does.
  */
@@ -164,13 +165,14 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * Called with this runtime's range once both ends hold a value and one of them changes, or `null`
    * when a whole range loses an end, as React Aria reports it; the other end stays in its input. A
    * range filled one end at a time reports nothing until both hold a value. `details.reason` is
-   * `"day-press"`, `"keyboard"`, `"outside-press"`, `"focus-out"` (a range completed in the
-   * calendar), `"input-change"`, `"input-clear"`, `"input-paste"` or `"preset-press"` (a
-   * `PresetItem` with a `dateValue` range), and the other details are `DatePicker.Root`'s.
+   * `"day-press"`, `"keyboard"`, `"outside-press"` or `"focus-out"` for a range completed in the
+   * calendar, `"input-change"`, `"input-clear"` or `"input-paste"` for an input, or
+   * `"preset-press"` for a `PresetItem` with a `dateValue` range. The other details are
+   * `DatePicker.Root`'s.
    * Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the
    * anchor, so the user can pick another end, a canceled edit shows the range again in the
-   * segments, and a canceled preset stays unchecked. An end before its start commits and is
-   * invalid on the end ("Start date must be before end date."), as React Aria reports it.
+   * segments, and a canceled preset stays unchecked. An end before its start commits and shows
+   * invalid on the end with "Start date must be before end date.", as React Aria reports it.
    */
   onValueChange?: NoInfer<
     (value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void
@@ -186,12 +188,12 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
   onOpenChange?: (open: boolean, details: DatePickerOpenChangeEventDetails) => void;
   /**
    * Whether completing a range in the calendar closes the popup. With a time `granularity` and no
-   * range yet, a completed range is held while the popup stays open, as `DatePicker.Root`'s day: it
-   * commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise at midnight
-   * (an end with a typed time at that time) when the popup closes; that commit runs first, and
-   * canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it
-   * was typed over: a new range from the parent drops it for good. A native form reset drops both,
-   * the half-typed segments and the shown errors.
+   * range yet, the picker holds a completed range while the popup stays open, as `DatePicker.Root`
+   * holds its day. The range commits once both `StartTimeInput` and `EndTimeInput` hold a time, and
+   * otherwise when the popup closes, with midnight for an end without a typed time. That commit
+   * runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs
+   * to the range the user typed it over, and a new range from the parent drops it for good. A
+   * native form reset drops both, the half-typed segments and the shown errors.
    * @default true
    */
   shouldCloseOnSelect?: boolean;
@@ -203,9 +205,9 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
   isDateUnavailable?: NoInfer<(value: T) => boolean>;
   /** The smallest unit the inputs edit. Without a value it names the kind, as DateInput's does. */
   granularity?: DateGranularity;
-  /** The hour cycle shown. Defaults to the locale's. */
+  /** The hour cycle the picker shows. Defaults to the locale's. */
   hourCycle?: 12 | 24;
-  /** Hides zoned values' zone names. */
+  /** Whether the picker hides zoned values' zone names. */
   hideTimeZone?: boolean;
   /** The zone an empty zoned picker takes. */
   timeZone?: string;
@@ -215,7 +217,7 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
   visibleMonths?: number;
   /** How the calendar pages a multi-month view. @default "visible" */
   pageBehavior?: CalendarPageBehavior;
-  /** Whether nothing responds and the values are not submitted. */
+  /** Whether the picker is disabled, so nothing responds and the form leaves out its values. */
   disabled?: boolean;
   /** Whether the range cannot change. */
   readOnly?: boolean;
@@ -268,9 +270,9 @@ type RangePartScan = {
 /**
  * Which parts a Root's children render, read during render from the element tree the Root is given,
  * so the server writes the same names and descriptions as the client. The scan looks only through
- * host elements and fragments, which render their children as given: a component decides what it
- * renders (a `Show` with `when={false}` renders nothing), so the scan stops at every component,
- * nested Roots included, and a part inside one registers after mount instead.
+ * host elements and fragments, which render their children as given. A component decides what it
+ * renders, and a `Show` with `when={false}` renders nothing, so the scan stops at every component,
+ * nested Roots included. A part inside one registers after mount instead.
  */
 function scanRangeParts(children: ReactNode): RangePartScan {
   const found = { label: false, description: false, error: false, errorText: false };
@@ -370,7 +372,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   // The preset panes, told when the range is committed by anything but a preset press.
   const presetPanes = usePresetRegistry();
 
-  /** Report a whole range, or `null` for one that lost an end, and apply it unless canceled. */
+  /** Reports a whole range, or `null` for one that lost an end, and applies it unless canceled. */
   function commitRange(
     range: { readonly start: TemporalValue; readonly end: TemporalValue } | null,
     reason: DateRangePickerValueChangeReason,
@@ -537,12 +539,12 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     latest.current = published;
   });
 
-  /** Publish a draft a gesture made to the gestures that follow, before the Root renders it. */
+  /** Publishes a draft a gesture made to the gestures that follow, before the Root renders it. */
   function publish(next: RangeDraft, origin: PickerHeldOrigin<RangeHeldReason> | null): void {
     latest.current = { ...latest.current, draft: next, origin };
   }
 
-  /** Hold a draft, and publish it. */
+  /** Holds a draft and publishes it. */
   function holdDraft(
     next: RangeDraft,
     origin: PickerHeldOrigin<RangeHeldReason> | null,
@@ -553,13 +555,13 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   }
 
   /**
-   * Apply a draft a gesture made: a whole range commits, and so does a whole range that just lost
-   * an end, as `null`, which React Aria reports too; a range filled one end at a time reports
-   * nothing until it is whole, and the draft is held over the empty range meanwhile. The committed
-   * range is whole or empty.
+   * Applies a draft a gesture made: a whole range commits, and so does a whole range that just lost
+   * an end, as `null`, which React Aria reports too. A range filled one end at a time reports
+   * nothing until it is whole, and the Root holds the draft over the empty range meanwhile. The
+   * committed range is whole or empty.
    *
    * @returns The whole range it committed, `null` for a draft that is not whole, or `"canceled"`
-   *   when the commit was canceled.
+   *   when `onValueChange` canceled the commit.
    */
   function apply(
     next: RangeDraft,

@@ -1,14 +1,14 @@
 /**
  * Package-private typography fragments shared by Heading, Text and Link. Nothing here is
- * exported through `package.json#exports`; the recipes stay public from their own entries
- * (`headingVariants`, `textVariants`, `linkVariants`).
+ * exported through `package.json#exports`. The recipes stay public from their own entries as
+ * `headingVariants`, `textVariants` and `linkVariants`.
  *
- * Size, font, weight, leading, prose, truncate, and descendant size selectors
- * stay on the recipes — those axes differ on purpose.
+ * Size, font, weight, leading, prose, truncate and descendant size selectors
+ * stay on the recipes, because those axes differ on purpose.
  *
  * Heading and Text compose this recipe with `tv({ extend: typographyFragments, … })`
  * so they inherit `variant` and `align` without restating the class strings. Text
- * then adds `success` and `justify`. Link does **not** extend: `extend` would merge
+ * then adds `success` and `justify`. Link does not extend, because `extend` would merge
  * every arm into `LinkProps["variant"]`. Instead it reads
  * `typographyFragments.variants.variant`, leaves out `secondary` and `inherit`, and
  * re-keys the `destructive` class as `error`.
@@ -27,8 +27,8 @@ export const typographyFragments = tv({
       foreground: "text-foreground",
       primary: "text-primary",
       /**
-       * @deprecated Identity alias of `foreground` — `--secondary` is a surface token, not
-       * a text role (a `muted-foreground` remap fails 4.5:1 at `xs` in several themes).
+       * @deprecated Identity alias of `foreground`. `--secondary` is a surface token, not
+       * a text role, and a `muted-foreground` remap fails 4.5:1 at `xs` in several themes.
        * Use `foreground`, or `muted` where a softer tone is wanted; the arm is kept for
        * consumer compatibility and can only be removed in a major.
        */

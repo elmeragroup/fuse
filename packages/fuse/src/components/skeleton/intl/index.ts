@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** SkeletonReveal's own dictionary: it owns the `skeleton-reveal.*` keys. */
+/** SkeletonReveal's own dictionary, which defines the `skeleton-reveal.*` keys. */
 export const skeletonRevealStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

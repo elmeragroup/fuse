@@ -157,8 +157,8 @@ function cubic(
  * as a natural spline can between readings that share a column, leaves its backward stretch out:
  * the run climbs straight from where it turned to where the curve crosses that place again, and
  * goes on from there. A mark that rides it, whose place along the crosshair fixes, stays on the
- * drawn curve at every place it reaches. A run that runs against the slot axis, as in a
- * right-to-left plot, is read backwards.
+ * drawn curve at every place it reaches. It reads a run that runs against the slot axis, as in a
+ * right-to-left plot, backwards.
  */
 function runOf(
   points: readonly (readonly [number, number])[],
@@ -212,14 +212,14 @@ function runOf(
 /** A bend the run is still leaving out: how far back it reaches and the offsets across it spans. */
 type OpenBend = { from: number; low: number; high: number };
 
-/** Widen an open bend across to take in an offset across. */
+/** Widens an open bend across to take in an offset across. */
 function widen(bend: OpenBend, across: number): OpenBend {
   bend.low = Math.min(bend.low, across);
   bend.high = Math.max(bend.high, across);
   return bend;
 }
 
-/** Close an open bend where the run climbs past it, at `to`. */
+/** Closes an open bend where the run climbs past it, at `to`. */
 function closeBend(bend: OpenBend, to: number): Omit<Bend, "back"> {
   return { from: bend.from, to, low: bend.low, high: bend.high };
 }
@@ -262,19 +262,19 @@ function firstAtOrPast(length: number, valueAt: (index: number) => number, at: n
 /**
  * The run a mark rides from one place to another: the run each place lies on, nearest across where
  * several runs reach it, so two runs that only touch at one place across a gap stay apart. It is
- * null when the two places lie on different runs, or either lies past every run.
+ * `null` when the two places lie on different runs, or either lies past every run.
  *
  * @param track - The line's runs.
  * @param from - Where the mark starts.
  * @param to - Where it rests.
- * @returns The run, or null.
+ * @returns The run, or `null`.
  */
 export function runBetween(track: Track, from: RidePlace, to: RidePlace): Run | null {
   const start = runAt(track, from);
   return start !== null && start === runAt(track, to) ? start : null;
 }
 
-/** The run that reaches a place along the slot axis and lies nearest it across, or null. */
+/** The run that reaches a place along the slot axis and lies nearest it across, or `null`. */
 function runAt(track: Track, place: RidePlace): Run | null {
   let nearest: Run | null = null;
   let least = Number.POSITIVE_INFINITY;

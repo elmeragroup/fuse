@@ -23,18 +23,18 @@ import { CHART_STRINGS } from "./format/chart-strings";
  * @beta
  */
 export type ChartTableProps = ChartLayerProps & {
-  /** Replaces the generated caption, the chart name and the period. */
+  /** The table's caption, in place of the generated one, which names the chart and the period. */
   caption?: string;
-  /** Replaces the first column's header, which the interval picks. */
+  /** The first column's header, in place of the one the interval picks. */
   xHeader?: string;
   /**
-   * Replaces the dictionary's "Vis som tabell". The button shows the table and moves focus to it.
-   * While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past
-   * 500 rows it pages, by calendar period on a time axis, so a year of hours reads
-   * as 53 ISO weeks, and by 500 rows otherwise.
+   * The show button's text, in place of the dictionary's "Vis som tabell". The button shows the
+   * table and moves focus to it. While collapsed the table stays out of the Tab order and stays in
+   * the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of
+   * hours reads as 53 ISO weeks, and by 500 rows otherwise.
    */
   showLabel?: string;
-  /** Replaces the dictionary's "Skjul tabell". */
+  /** The hide button's text, in place of the dictionary's "Skjul tabell". */
   hideLabel?: string;
   /** Extra columns as `TableColumn` parts, after the series and total columns. */
   children?: ReactNode;

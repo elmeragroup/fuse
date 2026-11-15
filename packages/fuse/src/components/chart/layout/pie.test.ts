@@ -313,7 +313,7 @@ describe("the fast-check properties", () => {
   });
 });
 
-/** One slice's pick region as a polygon from the centre past the rim, sampled every degree or less. */
+/** One slice's pick region as a polygon from the center past the rim, sampled every degree or less. */
 type Wedge = {
   readonly index: number;
   readonly points: readonly (readonly [number, number])[];
@@ -323,7 +323,7 @@ type Wedge = {
 
 /**
  * Each drawn slice's pick region: from its start to the next drawn slice's start, the last to its
- * own end, as polygons through the centre that reach well past the raster.
+ * own end, as polygons through the center that reach well past the raster.
  */
 function rasterWedges(slices: readonly (SliceAngles | null)[]): Wedge[] {
   const drawn = slices.flatMap((slice, index) => (slice === null ? [] : [{ slice, index }]));

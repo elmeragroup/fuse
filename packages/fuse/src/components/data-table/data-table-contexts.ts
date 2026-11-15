@@ -6,7 +6,7 @@ import type { StockFeatures } from "@tanstack/react-table";
 /**
  * Fuse's own table, header and cell contexts, passed to every `createTableHook` call Fuse makes.
  * They isolate the registered parts from an app that also calls `createTableHook` with TanStack's
- * shared default contexts. One module-level set is enough: a nested Fuse table's provider shadows
+ * shared default contexts. One module-level set is enough. A nested Fuse table's provider shadows
  * the outer one, which is right for the parts rendered inside it.
  *
  * The hooks are typed with every stock feature. A registered part reads a feature's members only

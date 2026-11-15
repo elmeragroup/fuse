@@ -26,7 +26,7 @@ import { viewBoxOf } from "./layout/polar-angle";
  */
 export type GaugeChartProgressRingProps = ChartLayerProps & {
   /**
-   * The ring's colour role. The ring draws the reading as a thin ring outside the track, its
+   * The ring's color role. The ring draws the reading as a thin ring outside the track, its
    * remainder dimmed. With `startAngle={0}` and `endAngle={360}` on Root the ring closes.
    */
   color?: ChartGaugeRole;
@@ -52,10 +52,11 @@ function ringDrawing(group: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawing
 }
 
 /**
- * A thin ring at the rim: the reading's share of the sweep in full colour over the whole sweep
- * dimmed, its ends rounded inside the reading's angle, and at least one device pixel of arc for any value above `min`. It sits
- * outside the track and inside a `Zone` band, and the dial makes room for it at the rim, so a gauge
- * may also draw it alone, without a Track or a Fill. It sweeps with the fill in every frame.
+ * A thin ring at the rim: the reading's share of the sweep in full color over the whole sweep
+ * dimmed, its ends rounded inside the reading's angle, and at least one device pixel of arc for any
+ * value above `min`. It sits outside the track and inside a `Zone` band, and the dial makes room for
+ * it at the rim, so a gauge may also draw it alone, without a Track or a Fill. It sweeps with the
+ * fill in every frame.
  *
  * @beta
  */

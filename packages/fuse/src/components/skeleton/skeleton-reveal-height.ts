@@ -1,39 +1,42 @@
 /**
- * Package-private. The height of a `SkeletonReveal`'s root through a pane swap: it eases from the
- * height the root showed to the incoming pane's, or snaps, and follows the incoming pane while it
- * eases. It owns the one running ease, the declarations it writes on the root and puts back, and
- * the reader of the root's natural height every ease targets; the pane fades are `RevealMotion`'s.
+ * The height of a `SkeletonReveal`'s root through a pane swap. It is package-private. It eases from
+ * the height the root showed to the incoming pane's, or snaps, and follows the incoming pane while
+ * it eases. It owns the one running ease, the declarations it writes on the root and puts back, and
+ * the reader of the root's natural height every ease targets. `RevealMotion` runs the pane fades.
  */
 import { windowOf } from "../../internal/dom-node";
 import { localHeight, ownHeight } from "./skeleton-geometry";
 import { RESIZE_EASING, RESIZE_MS } from "./skeleton-reveal-plan";
 
 /**
- * How far apart two readings of the root's natural height may be and still be the same target:
- * well under any real resize, well over the float noise between two fractional readings.
+ * How far apart two readings of the root's natural height may be and still be the same target. It
+ * is well under any real resize, and well over the float noise between two fractional readings.
  */
 const RESIZE_EPSILON = 0.05;
 
 /**
- * How near the root's natural height must be to the height it shows for no ease to run: under
+ * How near the root's natural height must be to the height it shows for no ease to run. Under
  * half a pixel, the two lay out alike.
  */
 const SETTLE_EPSILON = 0.5;
 
-/** One inline declaration as the root had it: its value and priority, empty when undeclared. */
+/** One inline declaration as the root had it, with its value and priority, empty when undeclared. */
 type InlineDeclaration = { readonly name: string; readonly value: string; readonly priority: string };
 
 /** A declaration a height ease writes on the root, by longhand, with its value. */
 type Override = { readonly name: string; readonly value: string };
 
-/** A flex container's main axis runs vertically: a column across horizontal text, a row down vertical text. */
+/**
+ * Whether a flex container's main axis runs vertically, as a column across horizontal text or a row
+ * down vertical text.
+ */
 function verticalMainAxis(style: CSSStyleDeclaration): boolean {
   const column = style.flexDirection.startsWith("column");
   const verticalText = !style.writingMode.startsWith("horizontal");
   return column !== verticalText;
 }
 
-/** The style of the box that lays the root out: its nearest ancestor that generates one. */
+/** The style of the box that lays the root out, which is its nearest ancestor that generates one. */
 function layoutParentStyle(root: HTMLElement): CSSStyleDeclaration | null {
   const view = windowOf(root);
   for (let parent = root.parentElement; parent !== null; parent = parent.parentElement) {
@@ -45,19 +48,19 @@ function layoutParentStyle(root: HTMLElement): CSSStyleDeclaration | null {
 
 /**
  * What a height ease writes on the root so that its keyframes are its used height and nothing
- * else of its layout changes, each by longhand: the `overflow` shorthand reads empty when only
+ * else of its layout changes, each by longhand. The `overflow` shorthand reads empty when only
  * one longhand is declared, so saving and restoring it would erase that one.
  *
  * - A clip, so the incoming content does not spill while the root is shorter than it, only on a
  *   root whose overflow is `visible` or `clip`. A clip makes no formatting context and no
  *   scrollbar, so it lays such a root out as before. A root that already scrolls or hides its
- *   overflow keeps it: its content cannot spill, and a clip in its place would let margins
+ *   overflow keeps it. Its content cannot spill, and a clip in its place would let margins
  *   collapse through it and take its scrollbar gutter away, rewrapping its content.
  * - In a flex container whose main axis is vertical, no growing or shrinking from an `auto`
- *   basis: the container would otherwise share its space out again around each keyframe, and a
+ *   basis. The container would otherwise share its space out again around each keyframe, and a
  *   used height written as `height` would be shrunk or grown a second time.
  *
- * The root keeps its own `box-sizing`: the ease writes its heights in that box model instead, so
+ * The root keeps its own `box-sizing`. The ease writes its heights in that box model instead, so
  * the root's `min-height` and `max-height` bound the ease as they bound the height it ends at.
  */
 function easeOverrides(root: HTMLElement): readonly Override[] {
@@ -93,7 +96,7 @@ function saveDeclarations(root: HTMLElement, overrides: readonly Override[]): re
 
 /**
  * Writes an ease's declarations, important so they hold even over an important declaration of the
- * root's own; the saved declarations come back exactly once the ease ends.
+ * root's own. The saved declarations come back exactly once the ease ends.
  */
 function applyOverrides(root: HTMLElement, overrides: readonly Override[]): void {
   for (const { name, value } of overrides) root.style.setProperty(name, value, "important");
@@ -109,7 +112,7 @@ function restoreDeclarations(root: HTMLElement, declarations: readonly InlineDec
 
 /** A root's running height ease, with the styles it found and the pane whose resizes retarget it. */
 type Resize = {
-  /** The element the ease runs on, whose declarations it saved: every read and restore is its. */
+  /** The element the ease runs on, whose declarations it saved. Every read and restore is on it. */
   readonly root: HTMLElement;
   readonly animation: Animation;
   readonly effect: KeyframeEffect;
@@ -122,10 +125,10 @@ type Resize = {
   /** The root's own inline declarations of the properties the ease writes. */
   readonly declarations: readonly InlineDeclaration[];
   /**
-   * Watches the incoming pane while the ease runs. It is only a trigger: what it reports is the
+   * Watches the incoming pane while the ease runs. It is only a trigger. What it reports is the
    * pane's size, which the eased root may stretch and a writing mode may turn, so each report
    * measures the root's natural height afresh rather than reading it from the pane. It never
-   * measures in its own callback: lifting the ease there changes the layout it observes, which the
+   * measures in its own callback. Lifting the ease there changes the layout it observes, which the
    * browser reports as a "ResizeObserver loop" error event, so it schedules the retarget for the
    * next animation frame, before that frame lays out, once however many reports arrive.
    */
@@ -149,10 +152,10 @@ function heightFrames(root: HTMLElement, from: number, to: number): Keyframe[] {
 }
 
 /**
- * The natural height of a root an ease runs on, which a retarget or a swap under the ease targets:
- * with the ease lifted for the read, its keyframes and the declarations it wrote, its root lays out
- * under its own styles alone, and the ease is put back as it was, at the same time, before
- * anything paints. A root with no ease running is at its natural height already.
+ * The natural height of a root an ease runs on, which a retarget or a swap under the ease targets.
+ * With the ease lifted for the read, its keyframes and the declarations it wrote, its root lays out
+ * under its own styles alone. The function then puts the ease back as it was, at the same time,
+ * before anything paints. A root with no ease running is at its natural height already.
  */
 function naturalHeight(resize: Resize): number {
   resize.effect.setKeyframes([]);
@@ -164,7 +167,7 @@ function naturalHeight(resize: Resize): number {
 }
 
 /**
- * The root's height through pane swaps: at most one ease at a time, each ended exactly once.
+ * The root's height through pane swaps, with at most one ease at a time, each ended exactly once.
  */
 export class RootHeight {
   #resize: Resize | null = null;
@@ -185,17 +188,20 @@ export class RootHeight {
     return this.#resize !== null;
   }
 
-  /** Stops any running ease and puts the root's declarations back, telling no one. Idempotent. */
+  /**
+   * Stops any running ease and puts the root's declarations back, telling no one. Calling it again
+   * does nothing.
+   */
   dispose(): void {
     this.#disposed = true;
     if (this.#resize !== null) this.#endResize(this.#resize, "disposed");
   }
 
   /**
-   * Ends a height ease, the one way any ease ends: stops it, stops following its pane and puts back
-   * the root's styles. An ease that `settled` (ran to its end, or stopped where the root already
-   * stands, or snapped) tells the reveal its height is final, once; one a new ease `replaced`, or
-   * that ends because the owner is `disposed`, does not.
+   * Ends a height ease, the one way any ease ends. It stops the ease, stops following its pane and
+   * puts back the root's styles. An ease that `settled`, by running to its end, stopping where the
+   * root already stands or snapping, tells the reveal its height is final, once. One that a new ease
+   * `replaced`, or that ends because the owner is `disposed`, does not.
    */
   #endResize(resize: Resize, how: "settled" | "replaced" | "disposed"): void {
     if (this.#resize !== resize) return;
@@ -209,9 +215,9 @@ export class RootHeight {
 
   /**
    * Moves the root to the incoming pane's height, the one way every swap does. The change carries
-   * the swap's facts rather than a start and an end: where an ease starts depends on the ease
+   * the swap's facts rather than a start and an end. Where an ease starts depends on the ease
    * already running, which this owner alone holds. It always ends the ease before it, so no
-   * earlier target, clip or observed pane outlives a swap; then it snaps, or eases from the height
+   * earlier target, clip or observed pane outlives a swap. Then it snaps, or eases from the height
    * the root shows now.
    *
    * A reveal whose `render` element changed has a new root: an ease still running on the old one
@@ -274,9 +280,9 @@ export class RootHeight {
   }
 
   /**
-   * Answers a resize under a running ease, measured in the root's own terms: the same target
-   * resumes the same ease where it was; a target the root already shows settles it; any other one
-   * runs a new ease from the height shown.
+   * Answers a resize under a running ease, measured in the root's own terms. The same target
+   * resumes the same ease where it was, a target the root already shows settles it, and any other
+   * one runs a new ease from the height shown.
    */
   #retarget(resize: Resize): void {
     const shown = localHeight(resize.root);

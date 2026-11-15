@@ -34,7 +34,7 @@ export function useSvgIdPrefix(name: string): string {
 }
 
 /**
- * Set an attribute that changed, or remove it for null.
+ * Sets an attribute that changed, or removes it for `null`.
  *
  * @param node - The element.
  * @param name - The attribute.
@@ -50,7 +50,7 @@ export function writeAttribute(node: AttributeNode, name: string, value: Attribu
 }
 
 /**
- * Set an inline style property that changed, or remove it for null.
+ * Sets an inline style property that changed, or removes it for `null`.
  *
  * @param node - The element.
  * @param name - The property, a custom property included.
@@ -65,7 +65,7 @@ export function writeStyle(node: StyleNode, name: string, value: string | null):
 }
 
 /**
- * Write a record of attributes through `writeAttribute`.
+ * Writes a record of attributes through `writeAttribute`.
  *
  * @param node - The element, or null to write nothing.
  * @param attributes - The values by attribute name.
@@ -85,7 +85,7 @@ const commits = new WeakMap<Element, object>();
 const UNCOMMITTED = {};
 
 /**
- * Mark a commit of the mark that draws into `node`, so its writers find their parts again. React
+ * Marks a commit of the mark that draws into `node`, so its writers find their parts again. React
  * changes a mark's children only in a commit of the mark, as a variant that mounts a ring does.
  * `useMotionMark` calls it before the mark places, in every commit that may change those children.
  *
@@ -96,7 +96,7 @@ export function refreshParts(node: Element | null): void {
 }
 
 /**
- * Find a writer's parts under a node once per commit of its mark. Every frame of a tween and every
+ * Finds a writer's parts under a node once per commit of its mark. Every frame of a tween and every
  * pointer step between two commits reads the parts found in the latest commit, with no query.
  *
  * @param find - Finds the parts under a node.
@@ -138,18 +138,18 @@ export type TickNode = HTMLElement | SVGElement;
 /** The children a frame keeps under one parent, one per key. */
 export type TickList = {
   /**
-   * Keep one child per key: make the missing ones, let the ones no key names leave, and return
-   * every child still mounted by its key, the leaving ones included, so a frame places each of
+   * Keeps one child per key. It makes the missing ones, lets the ones no key names leave, and
+   * returns every child still mounted by its key, the leaving ones included, so a frame places each of
    * them until it is gone. A key that comes back while its child leaves takes the child back.
    */
   readonly sync: (keys: readonly number[]) => ReadonlyMap<number, TickNode>;
-  /** Drop every child at once, so the next `sync` makes each one again, as a new label format needs. */
+  /** Drops every child at once, so the next `sync` makes each one again, as a new label format needs. */
   readonly clear: () => void;
 };
 
 /**
- * Let a child leave: mark it `data-leaving`, which its stylesheet may fade it out on, and call
- * `gone` once every animation it then runs has ended, finished or cancelled, as reduced motion
+ * Lets a child leave. It marks the child `data-leaving`, which its stylesheet may fade it out on,
+ * and calls `gone` once every animation it then runs has ended, finished or canceled, as reduced motion
  * cancels it, or at once when it runs none.
  */
 function leave(child: TickNode, gone: () => void): void {
@@ -163,7 +163,7 @@ function leave(child: TickNode, gone: () => void): void {
 }
 
 /**
- * Create the keyed children of one parent, which a frame writes only where its keys change.
+ * Creates the keyed children of one parent, which a frame writes only where its keys change.
  *
  * @param parent - The element that holds the children.
  * @param make - Makes the child of a key.

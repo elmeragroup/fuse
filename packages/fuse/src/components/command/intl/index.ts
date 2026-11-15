@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Command's own dictionary: it owns the `command.*` keys. */
+/** Command's own dictionary, with the `command.*` keys. */
 export const commandStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

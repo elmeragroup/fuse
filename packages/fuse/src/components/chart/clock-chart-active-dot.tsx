@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The clock's ActiveDot: the dot on one series at the Root's follower angle, on the curve its Line or
- * Area draws, which moves with its series' tween and turns with the hand.
+ * The clock's ActiveDot, the dot on one series at the Root's follower angle, on the curve its Line or
+ * Area draws. It moves with its series' tween and turns with the hand.
  */
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
@@ -103,7 +103,7 @@ function radiusAt(look: DotLook, raw: MarkValues, angle: number): number | null 
 }
 
 /**
- * Place the dot on its series at the follower's angle in this frame's numbers, in the dial's own
+ * Places the dot on its series at the follower's angle in this frame's numbers, in the dial's own
  * units, so it lies on what its series draws and follows its tween. It shows only while a slot is
  * active and the series draws something at that angle.
  */
@@ -138,7 +138,7 @@ function dotStretch(look: DotLook, angle: number): number | null {
   return Math.hypot(at, (after - before) / ((2 * STRETCH_SPAN * Math.PI) / 180));
 }
 
-/** Draw the active dot in this loop frame's numbers, so it follows its series' tween. */
+/** Draws the active dot in this loop frame's numbers, so it follows its series' tween. */
 function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
   if (look === null) return;
   look.drawn.current = values;

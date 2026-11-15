@@ -31,7 +31,7 @@ export type ChartAreaProps = ChartLayerProps & {
   /**
    * The fill's look. "gradient" fades from the value toward the baseline, and "gradient-reverse"
    * fades the other way. "solid" fills at `--chart-area-opacity`, and "dotted",
-   * "lines" and "hatched" fill with a texture of the series colour.
+   * "lines" and "hatched" fill with a texture of the series color.
    */
   variant?: "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines" | "hatched";
   /**
@@ -45,7 +45,7 @@ export type ChartAreaProps = ChartLayerProps & {
   curve?: ChartCurve;
 };
 
-/** Draw an area's frame from the loop's numbers: its fill, and the hatched twin over its spans. */
+/** Draws an area's frame from the loop's numbers: its fill, and the hatched twin over its spans. */
 function drawArea(group: SVGGElement, look: PathLook | null, values: MarkValues): void {
   if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / AREA_STRIDE);

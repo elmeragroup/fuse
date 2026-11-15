@@ -22,7 +22,7 @@ import { useCarouselContext, useCarouselSnapshot } from "./carousel-context";
 import { carouselVariants } from "./carousel-variants";
 import { carouselStrings } from "./intl";
 
-/** `Carousel.Controls` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Carousel.Controls`. It takes a `div`'s props plus Base UI's `render`. */
 export type CarouselControlsProps = Omit<useRender.ComponentProps<"div">, "children"> & {
   /**
    * The controls, in this order: `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`,
@@ -34,38 +34,39 @@ export type CarouselControlsProps = Omit<useRender.ComponentProps<"div">, "child
   children?: useRender.ComponentProps<"div">["children"];
 };
 
-/** The props of an icon Button a Carousel control renders, which names itself. */
+/** Props for the icon `Button` that a carousel control renders and names. */
 type CarouselIconButtonProps = Omit<IconButtonProps, "aria-label" | "size" | "children" | "onClick"> & {
-  /** The accessible name. Unset, it comes from the locale dictionary. */
+  /** The accessible name. Defaults to the locale dictionary. */
   "aria-label"?: string;
-  /** Button's square size. `icon-sm` is 36px at comfortable density. */
+  /** The button's square size. `icon-sm` is 36px at comfortable density. */
   size?: IconButtonSize;
-  /** The icon. Unset, it is a caret that points along the carousel's axis. */
+  /** The icon. Defaults to a caret that points along the carousel's axis. */
   children?: ReactNode;
   /**
-   * Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels
-   * the change. The pages do not loop, so Previous is disabled on the first page and Next on the
-   * last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.
+   * Called before the control changes the page. `event.preventBaseUIHandler()` there cancels the
+   * change. The pages do not loop, so `Carousel.Previous` is disabled on the first page and
+   * `Carousel.Next` on the last. Both stay focusable there, so `Carousel.Next` keeps focus after a
+   * press moves to the last page.
    */
   onClick?: IconButtonProps["onClick"];
 };
 
-/** `Carousel.Previous` takes Button's props, named and sized for an icon. */
+/** Props for `Carousel.Previous`. It takes `Button`'s props, named and sized for an icon. */
 export type CarouselPreviousProps = CarouselIconButtonProps;
 
-/** `Carousel.Next` takes Button's props, named and sized for an icon. */
+/** Props for `Carousel.Next`. It takes `Button`'s props, named and sized for an icon. */
 export type CarouselNextProps = CarouselIconButtonProps;
 
-/** `Carousel.Indicators` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Carousel.Indicators`. It takes a `div`'s props plus Base UI's `render`. */
 export type CarouselIndicatorsProps = Omit<useRender.ComponentProps<"div">, "children"> & {
   /**
-   * The indicators. Unset, the picker renders one `Carousel.Indicator` per page, so the dots
-   * follow the layout. Map your own `Carousel.Indicator`s here to pick slides by thumbnail.
+   * The indicators. Defaults to one `Carousel.Indicator` per page, so the dots follow the layout.
+   * Map custom `Carousel.Indicator`s here to pick slides by thumbnail.
    */
   children?: useRender.ComponentProps<"div">["children"];
 };
 
-/** `Carousel.Indicator` takes a `button`'s props, Base UI's `render` and the page it shows. */
+/** Props for `Carousel.Indicator`. It takes a `button`'s props, Base UI's `render` and the page it shows. */
 export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "onClick" | "children"> & {
   /**
    * The page, from 0, the indicator shows and scrolls to. The current page's indicator is
@@ -74,7 +75,7 @@ export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "o
    */
   index: number;
   /**
-   * The indicator's content, such as a thumbnail. Unset, it is a dot that becomes a pill on the
+   * The indicator's content, such as a thumbnail. Defaults to a dot that becomes a pill on the
    * current page, named after the first slide on its page, such as "Slide 3 of 6". With
    * children, it draws only the focus ring and keeps a 24px target however small they are. Style
    * them for the current page with the `in-data-current:` variant, and name the indicator with
@@ -83,26 +84,26 @@ export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "o
    */
   children?: useRender.ComponentProps<"button">["children"];
   /**
-   * Runs before the indicator scrolls to its page. `event.preventBaseUIHandler()` cancels that,
+   * Called before the indicator scrolls to its page. `event.preventBaseUIHandler()` cancels that,
    * as on Base UI's own parts.
    */
   onClick?: (event: BaseUIEvent<MouseEvent<HTMLButtonElement>>) => void;
 };
 
-/** `Carousel.Status` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Carousel.Status`. It takes a `div`'s props plus Base UI's `render`. */
 export type CarouselStatusProps = Omit<useRender.ComponentProps<"div">, "children"> & {
   /**
-   * The text. Unset, it is the page count, such as "3 of 12" in the locale. Use the status in
+   * The text. Defaults to the page count, such as "3 of 12" in the locale. Use the status in
    * place of the indicators when there are many pages. It announces each page change politely,
-   * stays silent while the pages rotate, and is empty until the viewport is measured.
+   * stays silent while the pages rotate, and is empty until the Root measures the viewport.
    */
   children?: useRender.ComponentProps<"div">["children"];
 };
 
-/** `Carousel.Autoplay` takes Button's props, sized for an icon, and the rotation's delay. */
+/** Props for `Carousel.Autoplay`. It takes `Button`'s props, sized for an icon, and the rotation's delay. */
 export type CarouselAutoplayProps = Omit<IconButtonProps, "aria-label" | "size" | "children" | "onClick"> & {
   /**
-   * How long each page shows, in ms, before rotation moves on. Mounting the part turns rotation
+   * How long each page shows, in milliseconds, before rotation moves on. Mounting the part turns rotation
    * on, and it starts on mount unless the user prefers reduced motion. From the last page it goes
    * back to the first. While the pages rotate, the slides' live region is silent. A new `delay`
    * keeps whether the user stopped it.
@@ -114,26 +115,26 @@ export type CarouselAutoplayProps = Omit<IconButtonProps, "aria-label" | "size" 
    * that a mouse press moved in does not stop it. Rotation pauses while a mouse or pen is over the
    * carousel and while the document is hidden.
    *
-   * Mounted with the Root or later, it starts from what is already so. It is paused under a mouse
+   * Mounted with the Root or later, it starts from the current pointer and focus. It is paused under a mouse
    * or pen already over the carousel, even since before the page hydrated on a device whose main
    * pointer can hover. It is stopped with keyboard focus already inside it, as with an `autoFocus`
    * field in a slide.
    */
   delay: number;
   /**
-   * The button's name while the pages do not rotate. Unset, it comes from the locale dictionary,
-   * "Start automatic slide show" in English.
+   * The button's name while the pages do not rotate. Defaults to the locale dictionary, "Start
+   * automatic slide show" in English.
    */
   startLabel?: string;
   /**
-   * The button's name while the pages rotate. Unset, it comes from the locale dictionary, "Stop
-   * automatic slide show" in English.
+   * The button's name while the pages rotate. Defaults to the locale dictionary, "Stop automatic
+   * slide show" in English.
    */
   stopLabel?: string;
-  /** Button's square size, as on Previous and Next. */
+  /** The button's square size, as on `Carousel.Previous` and `Carousel.Next`. */
   size?: IconButtonSize;
   /**
-   * Runs before the button starts or stops rotation, and `event.preventBaseUIHandler()` there
+   * Called before the button starts or stops rotation. `event.preventBaseUIHandler()` there
    * cancels it. Only this button starts rotation again after it stops. Once the user presses it to
    * start, keyboard focus and hover no longer stop or pause rotation until they press it again.
    */
@@ -150,7 +151,7 @@ type MergedButton = (props: Omit<IconButtonProps, "size" | "aria-label" | "child
 
 /**
  * The two edges differ by their icons, their name and their step, so `Carousel.Previous` and
- * `Carousel.Next` are one component parameterised by direction.
+ * `Carousel.Next` are one component parameterized by direction.
  */
 const EDGES = {
   previous: {
@@ -163,7 +164,7 @@ const EDGES = {
   next: { slot: "carousel-next", step: 1, labelKey: "next", horizontal: CaretRight, vertical: CaretDown },
 } as const;
 
-/** The row the controls sit in, centred with the surface gap between them. It is layout only. */
+/** The row the controls sit in, centered with the surface gap between them. It is layout only. */
 export function CarouselControls({ className, render, ...props }: CarouselControlsProps): ReactElement {
   return useRender({
     defaultTagName: "div",
@@ -218,17 +219,17 @@ function CarouselEdge({
   );
 }
 
-/** Scrolls to the previous page. It is disabled, and stays focusable, on the first page. */
+/** The button that scrolls to the previous page. It is disabled, and stays focusable, on the first page. */
 export function CarouselPrevious({ size = "icon-sm", ...props }: CarouselPreviousProps): ReactElement {
   return <CarouselEdge direction="previous" size={size} {...props} />;
 }
 
-/** Scrolls to the next page. It is disabled, and stays focusable, on the last page. */
+/** The button that scrolls to the next page. It is disabled, and stays focusable, on the last page. */
 export function CarouselNext({ size = "icon-sm", ...props }: CarouselNextProps): ReactElement {
   return <CarouselEdge direction="next" size={size} {...props} />;
 }
 
-/** The slide picker: a `group` named "Choose slide to display" in the locale. */
+/** The slide picker, a `group` named "Choose slide to display" in the locale. */
 export function CarouselIndicators({
   className,
   render,

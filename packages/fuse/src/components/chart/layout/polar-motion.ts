@@ -32,7 +32,7 @@ export const TRACK_GROW_DURATION = `${String(TRACK_GROW.duration)}ms`;
 
 /**
  * Where a gauge's sweep starts, after its track scales out, as a ring's value does. `chart.css`
- * delays the centre's count-up by the same time.
+ * delays the center's count-up by the same time.
  */
 export const GAUGE_INTRO_START_MS = 160;
 
@@ -62,7 +62,7 @@ export const DEFAULT_PACE: IntroPace = { intro: CHART_INTRO_MS, stagger: CHART_I
  * A CSS time as milliseconds: `480ms`, `1s` or `0.5s`.
  *
  * @param value - The computed custom property's value.
- * @returns The milliseconds, or null for no time.
+ * @returns The milliseconds, or `null` for no time.
  */
 export function cssTime(value: string): number | null {
   const match = /^\s*(-?[\d.]+)(ms|s)\s*$/u.exec(value);

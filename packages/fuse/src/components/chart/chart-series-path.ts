@@ -42,13 +42,13 @@ export type PathMark = {
 };
 
 /**
- * Register a series path with Root's loop and place it on every commit: a data update tweens its
+ * Registers a series path with Root's loop and places it on every commit: a data update tweens its
  * route or crossfades it, and every other commit places its rest as the commit classifier asks.
  * The path's route record leaves with the mark.
  *
  * @param draw - The part's writer, bound at module scope in the part's module.
  * @param input - Root's context, the plot the path draws in, the series and what draws it, the
- *   writer's look, and what the commit places, or null before the plot is measured.
+ *   writer's look, and what the commit places, or null before the browser measures the plot.
  * @returns The path's handles.
  */
 export function usePathMark<
@@ -106,7 +106,7 @@ export function usePathMark<
 }
 
 /**
- * Register the line a series path rests on with Root's paths, so an active dot rides it without
+ * Registers the line a series path rests on with Root's paths, so an active dot rides it without
  * reading the page: the part's own resting numbers drawn by `draw`, a Line's path or an Area's top
  * edge. The reader draws it when a dot first asks, once for each resting state.
  *
@@ -139,7 +139,7 @@ export function useRestingLine<T>(
 }
 
 /**
- * Hold the series a part draws as the one path of its kind in the chart, for as long as the part
+ * Holds the series a part draws as the one path of its kind in the chart, for as long as the part
  * is mounted. Each layout effect claims after the commit's unmounted parts let go, so a part that
  * replaces another of its kind takes the series over.
  *
@@ -159,9 +159,12 @@ export function useSeriesOwner(paths: ChartPaths, part: string, kind: RouteKind,
  * can change it, and the reader of its node's computed style.
  */
 export type PathStroke = {
-  /** The width before the first read, CSS pixels. */
+  /** The width before the first read, in CSS pixels. */
   readonly guess: number;
-  /** The Line's own props that set the width, such as the variant, the class and the style, compared by identity. */
+  /**
+   * The Line's own props that set the width, such as the variant, the class and the style, compared
+   * by identity.
+   */
   readonly inputs: readonly unknown[];
   /** Reads the width off the mark's node. */
   readonly read: (node: SVGGElement) => number;
@@ -193,7 +196,7 @@ export type SeriesPathState = PathMark & {
 };
 
 /**
- * Lay out one series path over the measured plot, and place it on Root's loop through
+ * Lays out one series path over the measured plot, and places it on Root's loop through
  * `usePathMark`.
  *
  * @param part - The calling part's display name.
@@ -202,7 +205,7 @@ export type SeriesPathState = PathMark & {
  *   the numbers per vertex, `LINE_STRIDE` or `AREA_STRIDE`, and how a stroked path reads its width.
  * @returns The state the part draws from.
  * @throws {ChartCompositionError} `step-curve-needs-cells` for a step curve under a point scale, and
- *   `scale-colour-on-stack` for a scale colour on a stacked series.
+ *   `scale-colour-on-stack` for a scale color on a stacked series.
  */
 export function useSeriesPath(
   part: string,

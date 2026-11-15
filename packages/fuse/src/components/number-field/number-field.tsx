@@ -17,7 +17,7 @@ import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
 import { numberFieldVariants } from "./number-field-variants";
 
-/** The props of {@link NumberField}. */
+/** Props for {@link NumberField}. */
 export type NumberFieldProps = {
   /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
@@ -29,20 +29,20 @@ export type NumberFieldProps = {
    * browser's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Shows a spinner at the end of the label row. The row shows even without `label`. */
+  /** Whether a spinner shows at the end of the label row. The row shows even without `label`. */
   isPending?: boolean;
   /**
-   * Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows
-   * even without `label`.
+   * Whether a check shows at the end of the label row, in place of the `isPending` spinner. The row
+   * shows even without `label`.
    */
   isSuccess?: boolean;
-  /** Marks the field invalid, with the invalid look on the field box. */
+  /** Whether the field is invalid, with the invalid look on the field box. */
   isInvalid?: boolean;
-  /** Disables the field, with the muted fill. */
+  /** Whether the field is disabled, with the muted fill. */
   isDisabled?: boolean;
-  /** Makes the field read-only, with the muted fill. */
+  /** Whether the field is read-only, with the muted fill. */
   isReadOnly?: boolean;
-  /** Makes the field required, so the browser's constraint check blocks an empty submit. */
+  /** Whether the field is required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
    * The control size of the field box around the input and the steppers, also written as
@@ -103,15 +103,15 @@ export type NumberFieldProps = {
   "aria-label"?: string;
   /**
    * The increase stepper's own word, which its name follows with the field's name, as in
-   * "Increase Quantity". It defaults to the locale's word.
+   * "Increase Quantity". Defaults to the locale's word.
    */
   increaseLabel?: string;
   /**
    * The decrease stepper's own word, which its name follows with the field's name, as in
-   * "Decrease Quantity". It defaults to the locale's word.
+   * "Decrease Quantity". Defaults to the locale's word.
    */
   decreaseLabel?: string;
-  /** Focuses the input when the field mounts, but not when a form reset remounts it. */
+  /** Whether the input takes focus when the field mounts, but not when a form reset remounts it. */
   autoFocus?: boolean;
   /** The id of Base UI's `NumberField.Root`. */
   id?: string;
@@ -240,8 +240,8 @@ type NumberFieldSteppersProps = {
 };
 
 /**
- * The steppers, each named by its own word and then the field's ("Increase Quantity"), as React
- * Aria's useNumberField names them: Base UI keeps them out of the tab order, but a touch screen
+ * The steppers, each named by its own word and then the field's, as in "Increase Quantity", as
+ * React Aria's useNumberField names them: Base UI keeps them out of the tab order, but a touch screen
  * reader still swipes to them, and "Increase" alone does not say which field it changes. The field
  * has no group role to carry that context. They take DatePicker.Trigger's naming, through
  * `fieldActionName`, from what names the input: `Field.Label`, whose id Field's labelable context

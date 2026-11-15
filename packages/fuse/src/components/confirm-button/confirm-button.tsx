@@ -10,14 +10,14 @@ import { confirmButtonVariants } from "./confirm-button-variants";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-/** ConfirmButton's props: Button's props, with `onConfirm` in place of `onClick`. */
+/** Props for `ConfirmButton`: Button's props, with `onConfirm` in place of `onClick`. */
 export type ConfirmButtonProps = DistributiveOmit<
   ButtonProps,
   "onClick" | "children" | "isVisuallyDisabled"
 > & {
   /**
-   * Shows Button's disabled look and stamps `aria-disabled` while the button keeps Tab focus, its
-   * focus ring and any Tooltip. A pointer press does not move focus to it. Presses never arm or
+   * Whether the button shows Button's disabled look and sets `aria-disabled` while it keeps Tab
+   * focus, its focus ring and any Tooltip. A pointer press does not move focus to it. Presses never arm or
    * confirm, and turning it on disarms the button. The look follows `aria-disabled`, so an
    * explicit `aria-disabled={false}` hides it while presses stay ignored.
    */
@@ -34,7 +34,7 @@ export type ConfirmButtonProps = DistributiveOmit<
   /**
    * The label while armed. Without it, the label at rest stays. Text in `children` and
    * `armedChildren`, fragments included, renders in a `<span>`, so the swap still works after page
-   * translation replaces the text. Text that your own component renders stays bare, so put it in
+   * translation replaces the text. Text that a consumer component renders stays bare, so put it in
    * an element. When both labels use the same element, give each a different `key`, so the swap
    * replaces the element instead of updating the text inside it.
    */
@@ -66,8 +66,8 @@ function flattenLabel(node: ReactNode, keyPrefix = ""): ReactNode[] {
 /**
  * Puts each run of adjacent text in one `<span>`, across fragment boundaries, so arming swaps
  * elements React owns. Chrome's built-in page translation replaces a bare text node with its own
- * `<font>` nodes. React then threw `NotFoundError` removing the old text node, or updated the
- * detached node and left the old label showing. A run joins into one string, so the
+ * `<font>` nodes. Without the span, React then throws `NotFoundError` removing the old text node,
+ * or updates the detached node and leaves the old label showing. A run joins into one string, so the
  * span keeps one text node that React updates through `textContent`, and `Delete {count} items`
  * stays one flex item without Button's gap between its parts. A run of only whitespace stays bare:
  * as a span it would be a flex item of its own and add a gap, and translation leaves it alone.

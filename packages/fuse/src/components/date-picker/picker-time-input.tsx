@@ -29,11 +29,11 @@ const styles = datePickerVariants();
  * keeps its settings while they hold.
  */
 export type PickerTimeBinding = {
-  /** The value whose time the input shows: the end's value, or a time held for it (`endTime`). */
+  /** The value whose time the input shows: the end's value, or a time held for it, from `endTime`. */
   readonly value: TemporalValue | null;
-  /** The day the end holds, which a typed time forms on; `null` for the stand-in day (`endDay`). */
+  /** The day the end holds, which a typed time forms on; `null` for the stand-in day, from `endDay`. */
   readonly day: Temporal.PlainDate | null;
-  /** The kind the input's values take (`endKind`), the one source of its kind. */
+  /** The kind the input's values take, from `endKind`, the one source of its kind. */
   readonly kind: ValueKind;
   /** The Root's time change for this input. */
   readonly onValueChange: (value: TemporalValue | null, details: DateInputValueChangeEventDetails) => void;
@@ -82,8 +82,8 @@ export type PickerTimeInputProps = PickerInputPartProps & {
  * A time input in a picker's popup: a `DateInput.Root` that shows only the time segments of the
  * value the picker holds, as React Spectrum's picker shows a time field under its calendar. It
  * renders nothing while the picker's values have no time to show. It sits in a Base UI Field of
- * its own, so it is no second control of the picker's Field: it submits nothing, and its own
- * validity (a half-typed time on blur) never marks the picker. Its value carries the picker's day,
+ * its own, so it is no second control of the picker's Field. It submits nothing, and its own
+ * validity, such as a half-typed time on blur, never marks the picker. Its value carries the picker's day,
  * and the picker takes only its time.
  */
 export function PickerTimeInput({

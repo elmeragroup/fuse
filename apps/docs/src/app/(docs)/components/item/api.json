@@ -17,7 +17,7 @@
           "type": "Booleanish | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an unavailable row. A link row takes no `disabled`, so mark it `aria-disabled=\"true\"`. Any row marked so dims with the `not-allowed` cursor. A `render` row also drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click neither opens a new tab nor runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.",
+          "description": "Whether the row is unavailable. A link row takes no `disabled`, so mark it `aria-disabled=\"true\"`. Any row marked so dims with the `not-allowed` cursor. A `render` row also drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click neither opens a new tab nor runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.",
           "required": false
         },
         {
@@ -26,7 +26,7 @@
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `div`, such as `render={<a href=\"/orders\" />}` for a link row or `render={<button type=\"button\" />}` for a button row. Inside `Item.Group` the rendered element keeps its own role inside a list item wrapper. An explicit `role` on the row replaces that and skips the wrapper.",
+          "description": "The element that replaces the host `div`, such as `render={<a href=\"/orders\" />}` for a link row or `render={<button type=\"button\" />}` for a button row. Inside `Item.Group` the rendered element keeps its own role inside a list item wrapper. An explicit `role` on the row replaces that and skips the wrapper.",
           "required": false
         },
         {
@@ -83,7 +83,7 @@
           "type": "\"default\" | \"icon\" | \"image\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The media's frame. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a rounded square sized by the row's `size`. Beside a description, `default` and `image` media top-align with the content, and `icon` media centres its glyph on the title's first line.",
+          "description": "The media's frame. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a rounded square sized by the row's `size`. Beside a description, `default` and `image` media top-align with the content, and `icon` media centers its glyph on the title's first line.",
           "required": false,
           "values": [
             "default",
@@ -171,7 +171,7 @@
           "type": "Booleanish | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides the rule from assistive technology. Inside `Item.Group` it defaults to `true`, because a list may own only list items. Pass `false` to expose the rule there. Outside a group it is a `separator`.",
+          "description": "Whether the rule is hidden from assistive technology. Inside `Item.Group` it defaults to `true`, because a list may own only list items. Pass `false` to expose the rule there. Outside a group it is a `separator`.",
           "required": false
         },
         {
@@ -180,7 +180,7 @@
           "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Extra classes, merged after the line's own. A vertical line stretches to the height of its flex row. For a shorter one, add `data-vertical:h-4 data-vertical:self-auto` and centre the row with `items-center`. The line's own `data-vertical:self-stretch` wins over `self-center`, so `h-4 self-center` leaves the line at the top of the row.",
+          "description": "Extra classes, merged after the line's own. A vertical line stretches to the height of its flex row. For a shorter one, add `data-vertical:h-4 data-vertical:self-auto` and center the row with `items-center`. The line's own `data-vertical:self-stretch` wins over `self-center`, so `h-4 self-center` leaves the line at the top of the row.",
           "required": false
         },
         {
@@ -276,7 +276,7 @@
           "type": "\"default\" | \"hidden\" | \"visible\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Whether the footer shows. `hidden` collapses its row to zero height, clips it and makes it inert. Switching between `hidden` and `visible` animates the height with a fade and a short slide, so content below moves instead of jumping. Switching to `default` snaps.",
+          "description": "The footer's display mode. `hidden` collapses its row to zero height, clips it and makes it inert. Switching between `hidden` and `visible` animates the height with a fade and a short slide, so content below moves instead of jumping. Switching to `default` snaps.",
           "required": false,
           "values": [
             "default",

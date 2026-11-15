@@ -26,27 +26,27 @@ import {
 } from "./date-range-picker-parts";
 
 /**
- * DateRangePickerField's props: React Aria's DateRangePicker prop names, over Temporal values.
+ * Props for `DateRangePickerField`, with React Aria's DateRangePicker prop names over Temporal values.
  *
- * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The ends' kind: `Temporal.PlainDate`, which is the default, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
  *   either from `granularity` and `timeZone`, so `onChange` receives the kind the picker emits.
  */
 export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   /**
-   * The visible label, for the whole picker. It names the field box's `group`, both inputs'
-   * segments, by unit, end and label ("month, Start Date, Stay"), and the trigger and the popup, a
-   * `dialog` ("Calendar Stay").
+   * The visible label, for the whole picker. It names the field box's `group`, and both inputs'
+   * segments by unit, end and label, such as "month, Start Date, Stay". It also names the trigger
+   * and the popup, a `dialog`, such as "Calendar Stay".
    */
   label?: string;
   /** Supporting copy below the field box, which describes both ends. */
   description?: string;
   /**
-   * Error copy shown while the range is invalid, in place of its own messages (an end out of
-   * bounds, an end before its start, the `Form` errors under `startName` and `endName`). Those
-   * merge into one error, which describes the group and both ends. Without `isInvalid` it shows
-   * only once the range's own validation fails. A node that renders nothing (`null`, `false`, `""`)
-   * keeps the range's own messages.
+   * Error copy shown while the range is invalid, in place of the range's own messages: an end out
+   * of bounds, an end before its start, and the `Form` errors under `startName` and `endName`.
+   * Those merge into one error, which describes the group and both ends. Without `isInvalid` it
+   * shows only once the range's own validation fails. A node that renders nothing, such as `null`,
+   * `false` or `""`, keeps the range's own messages.
    */
   errorMessage?: ReactNode;
   /**
@@ -91,7 +91,7 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   granularity?: DateGranularity;
   /** The hour cycle the inputs and the popup's time inputs show. Defaults to the locale's. */
   hourCycle?: 12 | 24;
-  /** Hides zoned values' zone names in the inputs and in the popup's time inputs. */
+  /** Whether the inputs and the popup's time inputs hide zoned values' zone names. */
   hideTimeZone?: boolean;
   /** The zone an empty zoned picker takes, as DateField's `timeZone`. */
   timeZone?: string;
@@ -105,7 +105,7 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   /** How the calendar pages a multi-month view, as RangeCalendar's `pageBehavior`. */
   pageBehavior?: CalendarPageBehavior;
   /**
-   * The preset pane beside the calendar, normally `DateRangePicker.Presets`, a radio group of your
+   * The preset pane beside the calendar, such as `DateRangePicker.Presets`, a radio group of preset
    * keys. Map the chosen key to a range in its `onValueChange` and set the picker's value, or give
    * each preset its range as `dateValue`, `{ start, end }`. With a pane, focus leaving the calendar
    * drops a half-picked range instead of completing it. A falsy node keeps the calendar alone.
@@ -117,7 +117,7 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
    * under the calendar, or when the popup closes, with midnight for an end without one.
    */
   shouldCloseOnSelect?: boolean;
-  /** Pads days, months and hours with a leading zero in both inputs. */
+  /** Whether both inputs pad days, months and hours with a leading zero. */
   shouldForceLeadingZeros?: boolean;
   /** Whether the popup is open, when the parent owns it. */
   isOpen?: boolean;
@@ -142,16 +142,16 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   startName?: string;
   /** The name the end's ISO value submits and `Form` errors arrive under, as `startName`'s. */
   endName?: string;
-  /** Disables the picker and leaves its values out of the form. */
+  /** Whether the picker is disabled, which also leaves its values out of the form. */
   isDisabled?: boolean;
   /**
-   * Keeps the range. The segments stay focusable and take the muted read-only fill, and the
-   * trigger is disabled.
+   * Whether the range is read-only. The segments stay focusable and take the muted read-only fill,
+   * and the trigger is disabled.
    */
   isReadOnly?: boolean;
-  /** Reports an empty or incomplete end invalid, and an empty end blocks a `Form` submit. */
+  /** Whether an empty or incomplete end reports invalid. An empty end also blocks a `Form` submit. */
   isRequired?: boolean;
-  /** Shows the picker invalid, with `errorMessage` under the box. */
+  /** Whether the picker shows as invalid, with `errorMessage` under the box. */
   isInvalid?: boolean;
   /**
    * The field box's control size: `"default"` the `md` one, `"sm"` the `sm` one.
@@ -160,7 +160,7 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   size?: "default" | "sm";
   /** Names the picker when there is no visible `label`. */
   "aria-label"?: string;
-  /** Portal target for the popup. Defaults to the nearest `ThemeScope`. */
+  /** The popup's portal target. Defaults to the nearest `ThemeScope`. */
   container?: OverlayContainerProps["container"];
   /** Extra classes, merged onto the picker's root. */
   className?: string;

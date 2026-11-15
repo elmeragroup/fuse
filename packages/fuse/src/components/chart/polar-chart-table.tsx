@@ -18,8 +18,8 @@ import { itemTable } from "./polar-item-table";
  * The item table of a pie's or a radial chart's model, built once per model, as the cartesian Table
  * builds its own.
  *
- * @throws When the model holds series, a defect: `usePolarContext` admits the part under an item
- *   family only.
+ * @throws When the model holds series, which is a defect, since `usePolarContext` admits the part
+ *   under an item family only.
  */
 function useItemTable(part: string, family: "pie" | "radial"): ChartTableModel {
   const { table } = usePolarContext(part, [family]).model;

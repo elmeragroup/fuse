@@ -42,14 +42,14 @@ export type CalendarViewProps = {
    */
   "aria-label"?: string | undefined;
   /**
-   * The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then
-   * named by those elements and its month heading.
+   * The ids of the elements that name the calendar, in place of `aria-label`. Each grid then
+   * takes its name from those elements and its month heading.
    */
   "aria-labelledby"?: string | undefined;
   /**
    * How many months show side by side, wrapping onto new rows when the host is narrow. Pick it
    * from the viewport in the host, such as one month on a phone and two on a desktop; the server
-   * renders the count the host passes there. A whole number from 1: a fraction truncates, and
+   * renders the count the host passes there. Pass a whole number from 1. A fraction truncates, and
    * anything below 1 or not a finite number shows one month, with a warning in development.
    * Arrow keys move focus from one month's grid into the next without paging.
    * @default 1
@@ -77,7 +77,10 @@ export type CalendarViewProps = {
   disabled?: boolean;
   /** Whether the user may move around the months but not change the value. */
   readOnly?: boolean;
-  /** The weekday each row starts on. Defaults to the locale's: Sunday in en-US, Monday in the Nordic locales. */
+  /**
+   * The weekday each row starts on. Defaults to the locale's: Sunday in en-US, Monday in the Nordic
+   * locales.
+   */
   firstDayOfWeek?: CalendarFirstDayOfWeek;
   /**
    * Called when the visible months change by a month button or the keyboard, with the new first
@@ -111,7 +114,7 @@ function textPropError(owner: string, prop: string, text: string): TypeError {
  * The text a date prop prints, the key its parse is memoized by, so a parent passing a new object
  * for the same value re-renders nothing below. It is the one guard against text: it refuses a
  * string here, during render and before any memo, so a string throws whatever rendered before it,
- * the equal Temporal value included, and whether or not the prop is controlled.
+ * including the equal Temporal value, and whether or not the prop is controlled.
  *
  * @param input - The prop.
  * @param owner - The Root, named in the error.
@@ -133,14 +136,14 @@ export function printedProp(
 }
 
 /**
- * The text a date prop printed, read as this runtime's Temporal value of the same kind, so a value
- * from another implementation is accepted. `printedProp` has refused a string before this runs.
+ * The text a date prop printed, read as this runtime's Temporal value of the same kind, so it
+ * accepts a value from another implementation. `printedProp` has refused a string before this runs.
  *
  * @param text - The prop's text, from `printedProp`.
  * @param owner - The Root, named in the error.
  * @param prop - The prop, named in the error.
  * @returns The value.
- * @throws TypeError naming the Root, the prop and the text when no kind reads it: a host defect.
+ * @throws TypeError naming the Root, the prop and the text when no kind reads it, a host defect.
  */
 export function parseTemporalProp(text: string, owner: string, prop: string): TemporalValue {
   const parsed = parseTemporal(text);
@@ -195,8 +198,8 @@ export type RangePropEnds = {
 };
 
 /**
- * A range prop's ends, parsed once per printed value: one object while they hold, so a parent
- * passing new objects for the same range changes nothing.
+ * A range prop's ends, parsed once per printed value: the same object while they keep their
+ * values, so a parent passing new objects for the same range changes nothing.
  *
  * @param input - The prop.
  * @param owner - The Root, named in the error.

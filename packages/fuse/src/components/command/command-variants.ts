@@ -9,7 +9,7 @@ import { menuItemClass } from "../overlay/menu-row-classes";
  * above the box's bottom edge and pads them inline, so their text lines up with the rows' text.
  *
  * - `input` is the InputGroup field box, inset from the palette's edges.
- * - `list` scrolls; in a palette box it takes the room the input and footer leave.
+ * - `list` scrolls. In a palette box it takes the room the input and footer leave.
  * - `item` is the shared menu row, highlighted by Base UI's `data-highlighted`.
  * - `empty` is a row-inset message that collapses while the list has matches.
  * - `status` is a line under the input, inset to the rows' text, that collapses while it is empty.

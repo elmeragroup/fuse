@@ -4,7 +4,7 @@ import { tv } from "../../styles/tv";
  * The module-private recipe for the key cap and the key combination. It has one size at both
  * densities. A cap annotates a control and never sets its height, so it reads no density metric.
  *
- * - `cap` is one key. It rounds with its own `sm` rung and takes its colours from the muted role
+ * - `cap` is one key. It rounds with its own `sm` rung and takes its colors from the muted role
  *   pair. An icon inside it takes the cap's text size. `box-border` keeps the 20px cap
  *   border-box sized without preflight.
  * - `group` lays out the caps of one combination. It rounds with the cap's rung, and its caps

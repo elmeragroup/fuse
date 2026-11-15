@@ -10,7 +10,7 @@ import type { AutocompleteRootHighlightEventReason } from "@base-ui/react";
  * Returns where to scroll a newly highlighted row, by Base UI's rule for virtual lists. The list
  * scrolls on a programmatic highlight, such as the first match after typing, and on a keyboard
  * highlight that lands on the first or last row, where the arrows wrap. Other keyboard moves step
- * to a mounted neighbour, which Base UI scrolls into view itself.
+ * to a mounted neighbor, which Base UI scrolls into view itself.
  *
  * @param reason - Why the highlight moved.
  * @param index - The highlighted row's index in the filtered items.

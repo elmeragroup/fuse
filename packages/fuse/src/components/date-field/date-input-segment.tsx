@@ -30,9 +30,9 @@ const SEGMENT_STATE_ATTRIBUTES = {
 };
 
 /**
- * One segment of a `DateInput.Root`. An editable one is a `spinbutton` (a `textbox` on iOS, whose
- * VoiceOver cannot focus a spinbutton) named by its unit and the field's label, with its number as
- * its value and the month's name or the hour as said in its value text. It edits through the
+ * One segment of a `DateInput.Root`. An editable one is a `spinbutton`, or a `textbox` on iOS,
+ * whose VoiceOver cannot focus a spinbutton. Its unit and the field's label name it, its number is
+ * its value, and its value text says the month's name or the hour. It edits through the
  * keyboard: digits fill it and move on, the arrows step it, Page Up and Page Down by a page, Home
  * and End to its ends, Backspace and Delete clear a digit. A literal is hidden from assistive
  * technology.

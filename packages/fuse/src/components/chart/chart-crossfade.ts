@@ -2,13 +2,13 @@
 
 /**
  * The crossfade a mark plays when its drawing cannot tween, such as a path whose vertices lose their
- * pairing: the old drawing fades out over the new one in `CHART_CROSSFADE_MS`. A light leaf, so a
- * polar route crossfades without the cartesian path code.
+ * pairing. The old drawing fades out over the new one in `CHART_CROSSFADE_MS`. The module imports
+ * only that constant, so a polar route crossfades without loading the cartesian path code.
  */
 import { CHART_CROSSFADE_MS } from "./layout/motion";
 
 /**
- * Fade a mark's old drawing out over its new one. The old drawing is a copy of the live node, or of
+ * Fades a mark's old drawing out over its new one. The old drawing is a copy of the live node, or of
  * a copy the mark kept of how it last showed, which `redraw` puts back where it was, inside a
  * group React renders empty, and it leaves when its fade ends or a range step finishes it. The live
  * node fades in on the same clock.

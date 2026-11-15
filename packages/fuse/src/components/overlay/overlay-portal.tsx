@@ -6,7 +6,7 @@ import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 import type { OverlayContainerProps } from "./overlay-props";
 
 /**
- * Package-private portal owner. It resolves the target, renders nothing while a scope is
+ * The package-private portal. It resolves the target, renders nothing while a scope is
  * unattached, and never falls back to `document.body`.
  */
 export function OverlayPortal({
@@ -18,8 +18,8 @@ export function OverlayPortal({
   portal: ComponentType<{ container?: HTMLElement; keepMounted?: boolean; children?: ReactNode }>;
   container?: OverlayContainerProps["container"];
   /**
-   * Keep the portal's node mounted while the popup is closed, so a close moves no node after the
-   * scope's last child and restyles nothing beside the popup.
+   * Whether the portal's node stays mounted while the popup is closed, so a close moves no node
+   * after the scope's last child and restyles nothing beside the popup.
    */
   keepMounted?: boolean;
   children: ReactNode;

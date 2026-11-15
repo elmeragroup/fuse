@@ -65,9 +65,9 @@ import type { DataTableFilterStringKey } from "./intl";
 import { isListField } from "./option-list";
 
 /**
- * The field the person works with and the overlay that holds it, or will: the add menu for a drill
+ * The field the user works with and the overlay that holds it, or will: the add menu for a drill
  * or a value submenu, the value popover for a chip's editor. An editor asked for while the add menu
- * is open is `queued`: it opens once the menu has closed and returned focus, since opened earlier,
+ * is open is `queued`. It opens once the menu has closed and returned focus, since opened earlier,
  * focus-out would close it again. Every request replaces the record, so a newer one wins and
  * `close()` cancels a queued one. An overlay that finishes its exit clears the record only while it
  * still holds it, so a field opened during that exit stays active.
@@ -75,7 +75,7 @@ import { isListField } from "./option-list";
 type Intent = { readonly field: string; readonly owner: "menu" | "value"; readonly queued: boolean } | null;
 
 /**
- * The intent once the add menu opens, whatever came before: the menu shows a field, so that field
+ * The intent once the add menu opens, whatever came before. The menu shows a field, so that field
  * is active. A menu record that is not queued is a drill asked for with this open, so it stays.
  * Otherwise a drill the menu still shows from before, such as one its interrupted exit kept,
  * becomes active, and with no drill the field list shows and no field is active. A queued editor,
@@ -96,8 +96,8 @@ function intentOnMenuOpen(current: Intent, drilled: string | null): Intent {
  * The focus request once the add menu opens. A drill's request that is already there stays, a
  * fresh drill's included. A drill the menu still shows from before asks for focus again, since a
  * chip's editor opened during the menu's exit replaced its request. With no drill, the field list
- * shows, and Base UI focuses its search. A drill's other state needs no restoring: `drillOrigin`
- * changes only with `drilled`, and `returnTo` is null whenever `drilled` is set.
+ * shows, and Base UI focuses its search. A drill's other state needs no restoring, because
+ * `drillOrigin` changes only with `drilled`, and `returnTo` is `null` whenever `drilled` is set.
  *
  * @param current - The focus request before the menu opened.
  * @param drilled - The drill the menu shows, if any.
@@ -111,7 +111,7 @@ function focusOnMenuOpen(current: string | null, drilled: string | null): string
 }
 
 /**
- * The props of `DataTableFilter.Root`.
+ * Props for `DataTableFilter.Root`.
  *
  * @template TFields - The fields map, from `defineFilterFields`.
  */
@@ -132,7 +132,7 @@ export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFiel
    * A text field matches `contains` by default; list `startsWith` in its `operators` for a prefix
    * match, such as an ID typed from its start. A boolean field filters a column of `true` and
    * `false` through a Yes and No list with counts, named by `trueLabel` and `falseLabel`. Give it
-   * `toggle: true` for a scope such as "My orders" that is on or off: its add-menu row ticks the
+   * `toggle: true` for a scope such as "My orders" that is on or off. Its add-menu row ticks the
    * filter on and off, and its chip is its name and Remove. With `manualFiltering` a toggle's id
    * need not be a column, since the server decides what it means. A date field lists its presets
    * by key, such as `presets: ["today", "yesterday", "thisWeek", "lastMonth"]`. A period preset
@@ -147,19 +147,19 @@ export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFiel
   facets?: FilterFacets<TFields> | undefined;
   /**
    * The zone for date presets and the date editor's today. Defaults to the runtime zone. Pass the
-   * zone you give `createDataTableFilterFn`, so the presets and the date matches agree on the
+   * zone given to `createDataTableFilterFn`, so the presets and the date matches agree on the
    * calendar day.
    */
   timeZone?: string | undefined;
   /**
-   * An operator's label for one field. Return undefined to keep the dictionary's. The field id
+   * An operator's label for one field. Return `undefined` to keep the dictionary's. The field id
    * lets one field relabel an operator without changing every field of its kind.
    */
   formatOperator?:
     | ((operator: FilterOperator, kind: FilterKind, fieldId: string) => string | undefined)
     | undefined;
   /**
-   * Called with the field whose submenu or editor opens, and null when it closes, so a server can
+   * Called with the field whose submenu or editor opens, and `null` when it closes, so a server can
    * fetch that field's facets first.
    */
   onActiveFieldChange?: ((fieldId: string | null) => void) | undefined;
@@ -167,8 +167,9 @@ export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFiel
    * The `DataTableFilter.Bar`, `DataTableFilter.Content` and `DataTableFilter.ValueContent`, as
    * siblings, never one inside another, and anything else that reads the filter. A part outside
    * its Root or chip throws a `DataTableFilterCompositionError` that names the fix. Inside the
-   * Root, `useDataTableFilter().actions.edit(fieldId)` opens a field's editor: the value popover
-   * of a field with a chip, and otherwise the add menu on a text, number or date field's editor.
+   * Root, `useDataTableFilter().actions.edit(fieldId)` opens a field's editor. It opens the value
+   * popover of a field with a chip, and otherwise the add menu on a text, number or date field's
+   * editor.
    */
   children?: ReactNode;
 };
@@ -178,8 +179,8 @@ type Ghost = { readonly id: string; readonly value: FilterValue; readonly index:
 type FocusTarget = { readonly chip: string; readonly edge: "first" | "last" } | { readonly trigger: true };
 
 /**
- * Where focus goes when a chip goes: the next chip's first segment, else the previous chip's last,
- * else the Trigger.
+ * Where focus goes when a chip is removed: the next chip's first segment, else the previous chip's
+ * last, else the Trigger.
  */
 function neighbourTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
   const next = list[index + 1];
@@ -378,8 +379,9 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   }
 
   /**
-   * One user decision, one `setColumnFilters` call. The updater reads TanStack's latest state, so
-   * two quick toggles never lose one. Entries for columns that are not fields stay as they are.
+   * Commits one user decision in one `setColumnFilters` call. The updater reads TanStack's latest
+   * state, so two quick toggles never lose one. Entries for columns that are not fields stay as
+   * they are.
    */
   const commit = (reducer: (state: DataTableFilterState) => DataTableFilterEntry[]) => {
     // An edit that empties the chip being edited keeps it as a ghost until the popover closes, and
@@ -430,14 +432,14 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   });
 
   /**
-   * The one way into a chip's editor, for a press on its Value and for `edit()` alike. The editor it
-   * leaves settles its draft, the field becomes the intent, a ghost of another field goes, and the
-   * new editor takes focus: through the popover's `initialFocus` on an opening, and through a focus
-   * request when the open popover moves to another chip, since Base UI does not run initial focus
-   * again for a new trigger. A press opens or moves the popover through Base UI. From code, the
-   * chip scrolls into view first, because the popover anchors to it and the bar's strip may hide
-   * it, and then the handle opens on it. `handle.open(id)` throws for a trigger id nothing
-   * registered (`popupHandle.ts`), so code enters only a chip whose Value is mounted.
+   * The one way into a chip's editor, for a press on its Value and for `edit()` alike. The editor
+   * it leaves settles its draft, the field becomes the intent, a ghost of another field goes, and
+   * the new editor takes focus, through the popover's `initialFocus` on an opening, and through a
+   * focus request when the open popover moves to another chip, since Base UI does not run initial
+   * focus again for a new trigger. A press opens or moves the popover through Base UI. From code,
+   * the chip scrolls into view first, because the popover anchors to it and the bar's strip may
+   * hide it, and then the handle opens on it. `handle.open(id)` throws for a trigger id nothing
+   * registered, in `popupHandle.ts`, so code enters only a chip whose Value is mounted.
    */
   const enterEditor = (fieldId: string, via: "press" | "code") => {
     if (via === "code" && valueElement(fieldId) === null) {
@@ -470,7 +472,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   }, [activeField]);
 
   /**
-   * The add menu's field list gives way to a field's editor, which takes focus as it mounts. An
+   * Replaces the add menu's field list with a field's editor, which takes focus as it mounts. An
    * open value submenu unmounts with the field list without reporting a close.
    */
   const drill = (fieldId: string, origin: "list" | "edit") => {

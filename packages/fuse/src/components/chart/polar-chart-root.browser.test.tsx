@@ -90,7 +90,7 @@ function figureOf(host: HTMLElement): HTMLElement {
   return figure;
 }
 
-/** The client point at an angle and a share of the outer radius from the cell's centre. */
+/** The client point at an angle and a share of the outer radius from the cell's center. */
 function pointAt(host: HTMLElement, angle: number, share: number): readonly [number, number] {
   const surface = page.getByRole("listbox").element().getBoundingClientRect();
   const radians = (angle * Math.PI) / 180;

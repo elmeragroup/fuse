@@ -39,7 +39,7 @@ type ToastPriority = "low" | "high";
 
 export type ToastManagerAddOptions<Data extends object = object> = Omit<PrimitiveAddOptions<Data>, "type"> & {
   /**
-   * The toast's status, which sets its colours and icon. Unset, the toast is neutral. It also
+   * The toast's status, which sets its colors and icon. Unset, the toast is neutral. It also
    * sets the default `priority`: `error` is `high`, and every other status is `low`.
    */
   type?: ToastStatus;
@@ -275,7 +275,7 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
  * throws shows the error toast. If the user or `close` closes the loading toast before the
  * promise settles, no settled toast appears.
  *
- * `promise` returns a new promise, not the one you passed. It resolves with that promise's
+ * `promise` returns a new promise, not the one passed in. It resolves with that promise's
  * value, or rejects with its error or with the error a `success` or `error` function threw.
  * The error toast does not handle the rejection, so handle the returned promise.
  */
@@ -314,7 +314,7 @@ function storeConnection(manager: CreateToastManagerReturnValue): ConnectToastSt
 }
 
 /**
- * Counts ids minted across every manager. One provider keeps its store when its
+ * The count of ids minted across every manager. One provider keeps its store when its
  * `toastManager` changes, so ids from two managers must not collide.
  */
 let mintedToastIds = 0;
@@ -432,7 +432,7 @@ export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provi
   children?: ReactNode;
 };
 
-/** Holds the toast stack for its subtree. */
+/** The provider that holds the toast stack for its subtree. */
 export function ToastProvider({ toastManager, children, ...props }: ToastProviderProps): ReactElement {
   const connect = toastManager === undefined ? undefined : storeConnection(toastManager);
   return (
@@ -452,7 +452,7 @@ const SM_UP_MEDIA_QUERY = "(width >= 40rem)";
 
 /**
  * Swipe-to-dismiss directions per anchored edge: toward the horizontal side the stack sits
- * on (right for center), and toward the vertical edge. Module constants keep the array
+ * on, or right for a centered stack, and toward the vertical edge. Module constants keep the array
  * identity stable across renders.
  */
 const SWIPE_DIRECTIONS = {
@@ -464,7 +464,7 @@ const SWIPE_DIRECTIONS = {
 
 /**
  * Placement only moves the stack from `sm` up. Below `sm` every placement renders the
- * default bottom stack, so it keeps the default down/right swipe too.
+ * default bottom stack, so it keeps the default down or right swipe too.
  */
 function swipeDirectionFor(placement: ToastPlacement, isSmUp: boolean): ToastSwipeDirection {
   if (!isSmUp) {
@@ -480,7 +480,7 @@ type ToastPlacementContextValue = {
   readonly swipeDirection: ToastSwipeDirection;
 };
 
-/** Read by `Toast.Root`; a root outside a Fuse viewport keeps the bottom-right defaults. */
+/** The placement `Toast.Root` reads; a root outside a Fuse viewport keeps the bottom-right defaults. */
 const ToastPlacementContext = createContext<ToastPlacementContextValue>({
   placement: "bottom-right",
   swipeDirection: SWIPE_DIRECTIONS["bottom-right"],
@@ -500,7 +500,7 @@ export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> 
   };
 
 /**
- * The portalled landmark region the toasts stack in, named by the locale dictionary's
+ * The portaled landmark region the toasts stack in, named by the locale dictionary's
  * "Notifications" unless an `aria-label` replaces it. It renders `Toast.List` when given no
  * children.
  */
@@ -580,7 +580,7 @@ export function ToastContent({
   );
 }
 
-/** The toast's title. Unless you pass children, it shows the toast's `title`. */
+/** The toast's title. Without children, it shows the toast's `title`. */
 export function ToastTitle({
   className,
   ...props
@@ -590,7 +590,7 @@ export function ToastTitle({
   );
 }
 
-/** The toast's description. Unless you pass children, it shows the toast's `description`. */
+/** The toast's description. Without children, it shows the toast's `description`. */
 export function ToastDescription({
   className,
   ...props
@@ -632,7 +632,10 @@ function hasVisibleChildren(children: ReactNode): boolean {
   return children != null && children !== false && children !== true && children !== "";
 }
 
-/** Closes the toast from its top-right corner. Without children, it is a ghost icon Button. */
+/**
+ * The button that closes the toast from its top-right corner. Without children, it is a ghost icon
+ * Button.
+ */
 export function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
   const closeClassName = mergeClassName(className, "absolute top-2 right-2 text-muted-foreground");

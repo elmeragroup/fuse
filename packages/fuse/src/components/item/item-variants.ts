@@ -10,7 +10,7 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * PUBLIC row recipe, shipped from `@elmeragroup/fuse/item`. A link row takes the hover fill
+ * The public row recipe, shipped from `@elmeragroup/fuse/item`. A link row takes the hover fill
  * behind the `enabled-hover` gate. The state face takes the `native` target with its `aria`
  * arms: a button row reads `:disabled`, and a link row, which takes no `disabled`, reads
  * `aria-disabled="true"`.

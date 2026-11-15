@@ -30,20 +30,20 @@ type Entry = {
 
 /** Root's label registry. */
 export type ChartLabels = {
-  /** Register a label while it shows, with its size. The result unregisters it. */
+  /** Registers a label while it shows, with its size. The result unregisters it. */
   readonly add: (key: string, node: LabelNode, kind: "line" | "area", size: LabelSize) => () => void;
-  /** Keep a label's size as the latest commit measured it. */
+  /** Keeps a label's size as the latest commit measured it. */
   readonly resize: (key: string, size: LabelSize) => void;
-  /** Keep the plot's drawn bottom edge and pixel size as the latest commit measured them. */
+  /** Keeps the plot's drawn bottom edge and pixel size as the latest commit measured them. */
   readonly measure: (bounds: LabelBounds) => void;
   /**
-   * Hand over the guide a label's reference draws now, and place every label from it, or null while
+   * Hands over the guide a label's reference draws now, and places every label from it, or `null` while
    * the reference hides, which takes its label out of the stack.
    */
   readonly move: (key: string, span: readonly [number, number] | null) => void;
-  /** Register a slot reference's label while it has one. The result unregisters it. */
+  /** Registers a slot reference's label while it has one. The result unregisters it. */
   readonly addSlot: (key: string) => () => void;
-  /** Report whether a slot label's guide shows in the plot now, which reserves the row of slots. */
+  /** Reports whether a slot label's guide shows in the plot now, which reserves the row of slots. */
   readonly showSlot: (key: string, shown: boolean) => void;
 };
 
@@ -52,14 +52,14 @@ function sameSize(a: LabelSize, b: LabelSize): boolean {
   return a.height === b.height && a.inset === b.inset;
 }
 
-/** Take a label out of the stack. */
+/** Takes a label out of the stack. */
 function unstack(node: LabelNode): void {
   writeAttribute(node, "data-stack", null);
   writeStyle(node, "--chart-label-bottom", null);
 }
 
 /**
- * Create a Root's label registry.
+ * Creates a Root's label registry.
  *
  * @returns The registry.
  */

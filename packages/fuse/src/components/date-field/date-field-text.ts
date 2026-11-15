@@ -22,8 +22,8 @@ export type FieldText = {
   /** Every shown unit's number, in display order. */
   readonly entries: readonly FieldTextEntry[];
   /**
-   * Whether the zone's name the text wrote is the field's zone's name at an instant: how a wall
-   * time a zone repeats (02:30 on the night the clocks go back) tells its two instants apart.
+   * Whether the zone's name the text wrote is the field's zone's name at an instant. It tells apart
+   * the two instants of a wall time a zone repeats, such as 02:30 on the night the clocks go back.
    * Always true for text that wrote no zone name, and for a field without a zone.
    */
   readonly namesZoneAt: (instant: number) => boolean;
@@ -110,8 +110,8 @@ function readNumber(rest: string, type: EditableSegmentType): PartRead | undefin
 
 /**
  * The zone's name reads the text up to the next literal the field writes with text of its own, or
- * to the end when nothing follows it, kept apart from the units so its offset digits ("GMT+2") are
- * never a unit's.
+ * to the end when nothing follows it. It stays apart from the units, so its offset digits, such as
+ * those of "GMT+2", are never a unit's.
  */
 function readZoneName(rest: string, later: readonly FieldPart[]): PartRead | undefined {
   const [next] = later.flatMap((part) =>
@@ -145,7 +145,7 @@ function readPart(
  * - each number unit takes the next run of digits;
  * - the day period, the next word, which must be the locale's morning or afternoon word;
  * - a literal with a word of its own, such as fi-FI's `klo`, that word, in any case but with its
- *   own accents (see `afterWord`);
+ *   own accents, as `afterWord` matches it;
  * - the zone's name, the text up to the next literal or the end; `namesZoneAt` compares it with the
  *   name the field writes at an instant, so a caller can pick the instant the text meant.
  *

@@ -29,8 +29,8 @@ export function slotAngles(index: number, count: number): SlotAngles {
 }
 
 /**
- * The angle of an instant inside a slot, where Now's hand points: the slot's start plus the share of
- * the slot that has passed.
+ * The angle of an instant inside a slot, where Now's hand points, which is the slot's start plus the
+ * share of the slot that has passed.
  *
  * @param index - The slot's index.
  * @param passed - The share of the slot that has passed, 0 to 1.
@@ -41,7 +41,7 @@ export function instantAngle(index: number, passed: number, count: number): numb
   return (360 * (index + Math.min(1, Math.max(0, passed)))) / count;
 }
 
-/** How a value's radius grows: "radial" keeps area true, "linear" keeps radius true. */
+/** How a value's radius grows: `"radial"` keeps area true, `"linear"` keeps radius true. */
 export type RadiusScale = "radial" | "linear";
 
 /** The dial's radii and value domain. */
@@ -55,8 +55,8 @@ export type ClockRadii = {
 };
 
 /**
- * The radius of a value. Under "radial", r = √(lerp(inner², outer², t)), so the ring a value fills
- * from the hole grows in area as the value does. Under "linear", r = lerp(inner, outer, t). A value
+ * The radius of a value. Under `"radial"`, r = √(lerp(inner², outer², t)), so the ring a value fills
+ * from the hole grows in area as the value does. Under `"linear"`, r = lerp(inner, outer, t). A value
  * outside the domain extrapolates, as a cartesian scale does.
  *
  * @param radii - The dial's radii, domain and scale.
@@ -80,10 +80,10 @@ export type WedgePad = { readonly padAngle: number; readonly padRadius: number }
 /**
  * The pad that cuts a constant-width gap between two wedges. d3's arc keeps its pad's width
  * `2·padRadius·sin(padAngle / 2)` at every radius, so the gap reads one width from hole to rim and
- * every wedge keeps an identical angle. The cut-off is measured at the rim, where a wedge is widest:
- * the gap stays while the rim arc leaves at least one device pixel of wedge after it, and vanishes
+ * every wedge keeps an identical angle. It measures the cut-off at the rim, where a wedge is widest.
+ * The gap stays while the rim arc leaves at least one device pixel of wedge after it, and vanishes
  * below that, where a gap would leave nothing to see. A wedge whose inner arc is narrower than the
- * gap tapers to a point at the hole, as a week of hours does. This is the dial's pad: `clockWedges`
+ * gap tapers to a point at the hole, as a week of hours does. This is the dial's pad. `clockWedges`
  * narrows it for a short wedge whose outer arc the gap would erase, so the wedge keeps one device
  * pixel of arc at its tip.
  *

@@ -20,7 +20,7 @@ type EmptyMediaProps = ComponentProps<"div"> & {
 const styles = emptyVariants();
 
 /**
- * A centred empty state. It is a server component with no state, handlers or browser APIs.
+ * A centered empty state. It is a server component with no state, handlers or browser APIs.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
@@ -29,7 +29,7 @@ function EmptyRoot({ className, variant = "default", ...props }: EmptyRootProps)
   return <div data-slot="empty" className={cn(emptyVariants({ variant }).root(), className)} {...props} />;
 }
 
-/** The media, title and description, centred above the content. */
+/** The media, title and description, centered above the content. */
 function EmptyHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="empty-header" className={cn(styles.header(), className)} {...props} />;
 }

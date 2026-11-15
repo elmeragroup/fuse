@@ -25,7 +25,7 @@ export type ActionsColumnHelper<TData, TColumn> = DisplayColumnHelper<ActionsCol
 export type ActionsColumnOptions<TData> = {
   /**
    * The row's own name, such as `(product) => product.name`. Fuse builds the trigger's localized
-   * accessible name from it ("Actions for 4K Ultra HD Monitor"), so no two triggers share a name.
+   * accessible name from it, such as "Actions for 4K Ultra HD Monitor", so no two triggers share a name.
    */
   getRowName: (row: TData) => string;
   /**
@@ -36,9 +36,9 @@ export type ActionsColumnOptions<TData> = {
 };
 
 /**
- * Build the row-actions column: `DataTable.RowActions` in each cell, right-aligned, with a
+ * Builds the row-actions column, with `DataTable.RowActions` in each cell, right-aligned, and a
  * per-row accessible name. The header names the column "Actions" for assistive technology without
- * visible text, the column shrinks to the trigger, and sorting and hiding are disabled. Clicks in
+ * visible text, the column shrinks to the trigger, and the column turns off sorting and hiding. Clicks in
  * the open menu do not press a pressable row.
  *
  * @template TData - The row data type, inferred from the column helper.

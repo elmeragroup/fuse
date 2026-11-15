@@ -1,8 +1,8 @@
 import type { RefObject } from "react";
 
 /**
- * The portal-target prop every overlay carries, declared once so its default, the nearest
- * enclosing `ThemeScope` element, is documented in one place.
+ * Props for the portal target every overlay carries. The type declares the prop once, so its
+ * default, the nearest enclosing `ThemeScope` element, is documented in one place.
  *
  * The prop's sentence names no kind of overlay. A consumer may portal a popup, a modal, a side
  * panel or a toast viewport, and the docs generator publishes this text into every public prop
@@ -10,8 +10,8 @@ import type { RefObject } from "react";
  */
 export type OverlayContainerProps = {
   /**
-   * The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope`
-   * element, so the overlay keeps the theme of the place that opened it.
+   * The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element,
+   * so the overlay keeps the theme of the place that opened it.
    */
   container?: HTMLElement | RefObject<HTMLElement | null>;
 };

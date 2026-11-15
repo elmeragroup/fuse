@@ -41,14 +41,14 @@ export function dotOf(mark: ScatterMark | undefined): number {
  * swatch the part's mark asks for.
  */
 export type ScatterMarks = {
-  /** Register a part's mark. The result unregisters it. */
+  /** Registers a part's mark. The result unregisters it. */
   readonly register: (key: string, mark: ScatterMark) => () => void;
   /** The mark a key draws, its points when a part draws them, else its line, or undefined. */
   readonly of: (key: string) => ScatterMark | undefined;
   readonly subscribe: (listener: () => void) => () => void;
 };
 
-/** Create a Root's mark registry. */
+/** Creates a Root's mark registry. */
 export function createScatterMarks(): ScatterMarks {
   const entries = new Map<object, { readonly key: string; readonly mark: ScatterMark }>();
   const listeners = new Set<() => void>();
@@ -120,7 +120,7 @@ export type ScatterRootContextValue = {
 };
 
 /**
- * Read the enclosing scatter Root.
+ * Reads the enclosing scatter Root.
  *
  * @param part - The calling part's display name, which the error names.
  * @returns The Root's context.
@@ -169,7 +169,7 @@ export function useScatterFrame(context: ScatterRootContextValue): ScatterFrame 
  *
  * @param config - The Root's config.
  * @param key - A config key.
- * @returns A CSS colour.
+ * @returns A CSS color.
  */
 export function scatterPaint(config: ChartConfig, key: string): string {
   return seriesPaint(key, singleRole(config[key]?.color));

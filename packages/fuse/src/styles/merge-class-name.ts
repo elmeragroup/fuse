@@ -2,7 +2,7 @@ import type { ClassValue } from "clsx";
 
 import { cn } from "./cn";
 
-/** Preserve Base UI's state callback while merging its result with library classes. */
+/** Preserves Base UI's state callback while merging its result with library classes. */
 export function mergeClassName<State>(
   className: string | ((state: State) => string | undefined) | undefined,
   ...classes: ClassValue[]

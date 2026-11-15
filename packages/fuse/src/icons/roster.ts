@@ -1,4 +1,4 @@
-/** Exhaustive curated Phosphor roster. Adding or removing a name is a public API change. */
+/** The full curated Phosphor roster. Adding or removing a name is a public API change. */
 export const PHOSPHOR_ICON_NAMES = [
   "ArrowLeft",
   "ArrowRight",
@@ -136,7 +136,7 @@ export const PHOSPHOR_ICON_NAMES = [
 
 export type PhosphorIconName = (typeof PHOSPHOR_ICON_NAMES)[number];
 
-/** Bespoke icon and logo names published from `/icons`. Extended only by the assets ticket. */
+/** The bespoke icon and logo names published from `/icons`. Only the assets ticket extends it. */
 export const BESPOKE_ICON_NAMES = [
   "AlertMark",
   "BankIdDna",

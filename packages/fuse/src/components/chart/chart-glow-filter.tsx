@@ -2,9 +2,9 @@
 
 /**
  * The glow of a series that a scale or a threshold paints by value. `Chart.Glow`'s CSS drop-shadow
- * casts one colour per series, so a series of several colours glows through this filter instead:
- * it blurs the marks' own pixels, so each halo takes the colour of the mark it surrounds. For a
- * mark of one colour it draws what `drop-shadow(0 0 <deviation> <colour at alpha>)` draws, the
+ * casts one color per series, so a series of several colors glows through this filter instead.
+ * It blurs the marks' own pixels, so each halo takes the color of the mark it surrounds. For a
+ * mark of one color it draws what `drop-shadow(0 0 <deviation> <color at alpha>)` draws, the
  * function's length being the Gaussian's standard deviation.
  */
 import type { ReactElement } from "react";

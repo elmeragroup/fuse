@@ -2,10 +2,10 @@
 
 /**
  * One radial chart's frame: every ring, track and halo its loop paints, with the measured scale,
- * device pixel ratio and `--chart-ring-fill` they all share. A ring is a stroked centre line over
+ * device pixel ratio and `--chart-ring-fill` they all share. A ring is a stroked center line over
  * the whole sweep whose `pathLength` is the sweep's width in degrees, and its value is the dash:
  * round caps sit inside the value's angle, an arc shorter than its stroke draws butt caps at
- * its true length, and every value above 0 keeps one device pixel of arc along its centre line.
+ * its true length, and every value above 0 keeps one device pixel of arc along its center line.
  * A dotted ring fills whole dots, `round(40 · share)` of them and at least one above 0,
  * through a mask whose dash carries that count. Each ring records its angle in a frame, and
  * the frame paints it in the next microtask outside a batch, or once the batch ends, as the pie's
@@ -25,7 +25,7 @@ export type RingMeasure = { readonly scale: number; readonly dpr: number; readon
 /** How one ring or track paints: a dash along its sweep, or a count of whole dots. */
 export type RingMode = "dash" | "dots";
 
-/** A ring's place: its centre line's radius and its band, the space its stroke and gap share. */
+/** A ring's place: its center line's radius and its band, the space its stroke and gap share. */
 export type RingPlace = { readonly radius: number; readonly band: number; readonly mode: RingMode };
 
 /** The dash attributes that draw an angle along a ring. */
@@ -77,7 +77,7 @@ function short(value: number): string {
   return String(Math.round(value * 1e4) / 1e4);
 }
 
-/** Write a dash onto a ring's path. */
+/** Writes a dash onto a ring's path. */
 function writeDash(node: Element, dash: RingDash): void {
   writeAttribute(node, "stroke-dasharray", dash.dasharray);
   writeAttribute(node, "stroke-dashoffset", dash.dashoffset);
@@ -87,7 +87,7 @@ function writeDash(node: Element, dash: RingDash): void {
 /** One radial chart's frame. */
 export type RingFrame = {
   /**
-   * Record a ring's angle for this frame, and have the frame paint it.
+   * Records a ring's angle for this frame, and has the frame paint it.
    *
    * @param key - The ring's key.
    * @param node - The path its dash draws on: the ring, or the mask that reveals its paint.
@@ -96,21 +96,21 @@ export type RingFrame = {
    */
   readonly record: (key: string, node: Element, values: MarkValues, place: RingPlace) => void;
   /**
-   * Paint a track: a ring's whole sweep, with the ring's caps.
+   * Paints a track, a ring's whole sweep, with the ring's caps.
    *
    * @returns The track's removal.
    */
   readonly track: (node: Element, place: RingPlace) => () => void;
   /**
-   * Paint a node with a ring's dash in every frame, as Glow's halo does.
+   * Paints a node with a ring's dash in every frame, as Glow's halo does.
    *
    * @returns The mirror's removal.
    */
   readonly mirror: (key: string, node: Element) => () => void;
-  /** Take the sweep and the measurement, and paint every ring again. */
+  /** Takes the sweep and the measurement, and paints every ring again. */
   readonly update: (sweep: Sweep, measure: RingMeasure | null) => void;
   /**
-   * Hear the loop's batches, so a frame's rings paint once together.
+   * Listens to the loop's batches, so a frame's rings paint once together.
    *
    * @returns The frame's leave.
    */

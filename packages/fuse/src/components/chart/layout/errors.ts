@@ -4,7 +4,7 @@
  * warn once per Root for each rule and subject, such as a column, and render the fallback the rule
  * names. Both classes stay private, as `CommandCompositionError` does, and each carries its rule.
  *
- * `slot-limit` is the one composition rule the data can trigger: without a `period`, the rows'
+ * `slot-limit` is the one composition rule the data can trigger. Without a `period`, the rows'
  * range sets the time axis's span. It still throws in every build, because no fallback can draw
  * an axis of more slots than the limit, and building them freezes the tab.
  */
@@ -145,7 +145,7 @@ export const DATA_MESSAGES = {
 } as const satisfies { readonly [R in ChartDataRule]: string };
 
 /**
- * Check that a part names a config key.
+ * Checks that a part names a config key.
  *
  * @param part - The calling part's display name.
  * @param config - The Root's config.
@@ -218,7 +218,7 @@ export type IssueGroup<TIssue extends DataIssue = ModelIssue> = {
 };
 
 /**
- * Group data issues by rule and subject, in the order the groups first appear, so production warns
+ * Groups data issues by rule and subject, in the order the groups first appear, so production warns
  * once for each group with its count.
  *
  * @param issues - The model's issues, in data order.

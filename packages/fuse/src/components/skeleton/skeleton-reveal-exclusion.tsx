@@ -15,9 +15,9 @@ import { useOwnLabelableScope } from "./skeleton-reveal-labelable";
 import type { LabelableValue } from "./skeleton-reveal-labelable";
 
 /**
- * A Field write that does nothing, for a control detached from the Field around it. Not Base UI's
- * `NOOP`: Base UI reads `setValidityData === NOOP` as "no Field here"
- * (`internals/field-root-context`), and its Label, Description and Error then throw, so the
+ * A Field write that does nothing, for a control detached from the Field around it. It is not Base
+ * UI's `NOOP`. Base UI reads `setValidityData === NOOP` as "no Field here", in
+ * `internals/field-root-context`, and its Label, Description and Error then throw, so the
  * detached context must keep a write of its own to stay a Field's context.
  */
 function ignoreWrite(): void {
@@ -45,7 +45,7 @@ function withoutOnce(list: readonly string[], ids: readonly string[]): string[] 
 }
 
 /**
- * The Field's labelable scope as a live pane sees it: every registration goes through to the
+ * The Field's labelable scope as a live pane sees it. Every registration goes through to the
  * Field's scope, and the pane remembers what it registered. Base UI's controls, labels and
  * messages unregister through callbacks that read the context current when they run, so once a
  * pane switches to a scope of its own, their cleanup reaches that scope, not the Field's. The
@@ -121,24 +121,24 @@ type PaneExclusionKind = false | "ghost" | "leaving";
 const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textarea";
 
 /**
- * Package-private. Keeps a pane that is not the content on screen, a SkeletonReveal's ghost or
- * content on its way out, out of the page's forms and overlays, while it still looks the same.
+ * Keeps a pane that is not the content on screen, a SkeletonReveal's ghost or content on its way
+ * out, out of the page's forms and overlays, while it still looks the same. It is package-private.
  *
  * - Forms: the ghost sits in a disabled fieldset, which removes every native control under it
  *   from submission and constraint validation in server HTML too, before any script runs; it is
  *   unseen behind its bones, so the disabled look its controls take never shows. Content on its
  *   way out is still seen, and a disabled control takes Fuse's disabled look, so its fieldset is
  *   `inert` instead, which has no look, and a layout effect sets `form=""` on every listed control
- *   under it as it starts leaving: a control whose `form` names no form has no form owner, so it
+ *   under it as it starts leaving. A control whose `form` names no form has no form owner, so it
  *   is neither submitted nor validated, nor any form's default button. A leaving pane never comes
  *   back, so nothing restores the attribute. Either fieldset is `display: contents`, with no box,
- *   and `role="none"` keeps it out of the accessibility tree. Fuse's `Form` (Base UI's) serializes
- *   and validates its own registry of Fields instead, which every Field joins through the form
- *   context, disabled or not, so an excluded pane hands its Fields a registry of their own that no
- *   form reads. The form's displayed errors pass through read-only, so an excluded field shows the
+ *   and `role="none"` keeps it out of the accessibility tree. Fuse's `Form`, which is Base UI's,
+ *   serializes and validates its own registry of Fields instead, which every Field joins through
+ *   the form context, disabled or not, so an excluded pane hands its Fields a registry of their own
+ *   that no form reads. The form's displayed errors pass through read-only, so an excluded field shows the
  *   error the field it stands for shows, and takes its height; clearing one is a no-op. A Field
  *   around the reveal reaches an excluded control through the Field context instead, so that is
- *   detached too: the control keeps the Field's name, invalid state and validity for its look,
+ *   detached too. The control keeps the Field's name, invalid state and validity for its look,
  *   while registering, validating and reporting touched, dirty, filled or focused state do
  *   nothing.
  * - Labels: a live pane registers its controls, label and messages in the Field's labelable scope
@@ -147,11 +147,11 @@ const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textar
  *   the Field's label, and one on its way out never leaves its control id registered or removes a
  *   description id the content on screen also uses.
  * - Overlays: the overlay exclusion renders no Fuse overlay portal, and keeps a dialog-family root
- *   that mounts here closed (`internal/overlay-exclusion.ts`). An exclusion nests: content inside
- *   an excluded pane stays excluded.
+ *   that mounts here closed, in `internal/overlay-exclusion.ts`. Exclusions nest, so content
+ *   inside an excluded pane stays excluded.
  *
  * The providers are always rendered, so a content pane that starts leaving keeps its DOM and
- * state: its Fields move from the form's registry to the excluded one.
+ * state. Its Fields move from the form's registry to the excluded one.
  *
  * @param props - Whether the pane is excluded, as the skeleton's ghost or as content on its way
  *   out, and its content.

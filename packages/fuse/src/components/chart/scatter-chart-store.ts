@@ -72,7 +72,7 @@ export type ScatterStore = {
   /** The entrance's transition, which `chart-entrance.ts` runs. It owns `phase`. */
   readonly set: (patch: { readonly phase: ScatterSnapshot["phase"] }) => void;
   /**
-   * Carry the walk into a new model, which Root runs after a data update. When the active point
+   * Carries the walk into a new model, which Root runs after a data update. When the active point
    * has no counterpart there, nothing shows, so the pin and the source go with it.
    */
   readonly carry: (model: ScatterModel) => void;
@@ -82,13 +82,16 @@ export type ScatterStore = {
    * clears.
    */
   readonly hover: (model: ScatterModel, point: number) => void;
-  /** The pointer left the plot: its own unpinned point clears, and so does a dismissal. */
+  /**
+   * The transition for a pointer that leaves the plot. Its own unpinned point clears, and so does a
+   * dismissal.
+   */
   readonly leave: () => void;
   /** A keyboard step to a place and a series focus, which the point there takes. */
   readonly step: (model: ScatterModel, place: number, focus: number) => void;
-  /** Focus entered the plot: the place's point shows. */
+  /** The transition for focus that enters the plot. The place's point shows. */
   readonly enter: (model: ScatterModel) => void;
-  /** Enter or Space: the place's point shows, pinned, or unpinned when it was. */
+  /** The transition for Enter or Space. The place's point shows, pinned, or unpinned when it was. */
   readonly togglePin: (model: ScatterModel) => void;
   /**
    * A tap or a click on a point pins it. On the pinned point, or on none for -1, it takes the one
@@ -101,17 +104,17 @@ export type ScatterStore = {
    * pointer.
    */
   readonly dismiss: (model: ScatterModel) => void;
-  /** Focus left the plot: a keyboard or pinned point clears. */
+  /** The transition for focus that leaves the plot. A keyboard or pinned point clears. */
   readonly release: () => void;
   /** A new touch ends a dismissal, so a third tap on a point opens it again. */
   readonly reopen: () => void;
-  /** Record the pointer's position and type. It owns `input`, which it writes when the type changes. */
+  /** Records the pointer's position and type. It owns `input`, which it writes when the type changes. */
   readonly track: (x: number, y: number, type: string) => void;
   readonly announce: (text: string) => void;
 };
 
 /**
- * Create a scatter Root's store.
+ * Creates a scatter Root's store.
  *
  * @param model - The model Root first renders, whose first walk point the option names.
  * @returns The store.
@@ -235,7 +238,7 @@ export function createScatterStore(model: ScatterModel): ScatterStore {
 }
 
 /**
- * Read one value of the store. The server and hydration snapshot reads the initial state.
+ * Reads one value of the store. The server and hydration snapshot reads the initial state.
  *
  * @param store - The Root's store.
  * @param select - Picks the value. Return a primitive, so equal values skip the render.

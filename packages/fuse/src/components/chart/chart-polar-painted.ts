@@ -14,7 +14,7 @@ export type PaintedAngles = (key: string) => SliceAngles | null | undefined;
 const painted = new WeakMap<ChartMotion, PaintedAngles>();
 
 /**
- * Share a frame's painted angles on its loop.
+ * Shares a frame's painted angles on its loop.
  *
  * @param motion - The Root's loop.
  * @param angles - The painted angles by key.

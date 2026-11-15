@@ -8,7 +8,7 @@ import { segmentSheet } from "./segment-sheets";
 
 /**
  * Gudbrandsdal Energi's orange, #FF9100: its branded dark `secondary`, and the seed of its brand
- * palette 2 (`brand-ramp-layer.ts`).
+ * palette 2 in `brand-ramp-layer.ts`.
  */
 export const GUEN_ORANGE = "oklch(0.758638 0.1768149 60.637)";
 
@@ -139,8 +139,8 @@ const BRAND_DARK_PALETTES = {
 } as const satisfies Record<PaletteBrandCode, BrandDarkSheet>;
 
 /**
- * The share of foreground in a dark hover tint, matching neutral dark's step from card and
- * popover (0.205) to muted and accent (0.269).
+ * The share of foreground in a dark hover tint, matching neutral dark's step from card and popover
+ * at 0.205 to muted and accent at 0.269.
  */
 const HOVER_LIFT_PERCENT = 8;
 
@@ -150,10 +150,9 @@ function darkSheet(brand: PaletteBrandCode, segment: ThemeSegment): BrandDarkShe
 }
 
 /**
- * The dark palette layer for one branded brand and segment. A segment sheet replaces its
- * brand's dark sheet; the roles the selected sheet does not name derive from it, and a
- * role a sheet does name is never clobbered. Neutral themes compose
- * `NEUTRAL_DARK_PALETTE` instead.
+ * The dark palette layer for one branded brand and segment. A segment sheet replaces its brand's
+ * dark sheet. The roles the selected sheet does not name derive from it, and a derivation never
+ * overwrites a role the sheet names. Neutral themes compose `NEUTRAL_DARK_PALETTE` instead.
  */
 export function brandDarkPalette(brand: PaletteBrandCode, segment: ThemeSegment): DarkTokenLayer {
   const palette = darkSheet(brand, segment);

@@ -25,8 +25,8 @@ type FilterFnMembers = {
 };
 
 /**
- * A TanStack `FilterFn` that reads Fuse's `{ kind, operator, values }` values. An intersection,
- * so the API reference keeps `autoRemove` beside the call.
+ * A TanStack `FilterFn` that reads Fuse's `{ kind, operator, values }` values. It is an
+ * intersection, so the API reference keeps `autoRemove` beside the call.
  */
 export type DataTableFilterFn = FilterRowPredicate & FilterFnMembers;
 

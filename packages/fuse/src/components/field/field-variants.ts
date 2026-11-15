@@ -1,5 +1,5 @@
 /**
- * Runtime-free Field recipes. Not exported from the public entry, since there is no proven
+ * Runtime-free Field recipes. The public entry does not export them, since there is no proven
  * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
  * sync. `fieldVariants` holds a slot per part but Legend, and `orientation` is the Root axis. The
  * Title and the Label share their heading classes: `title` puts its centering before them, and

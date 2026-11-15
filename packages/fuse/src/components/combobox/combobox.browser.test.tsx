@@ -93,7 +93,7 @@ function buttonNamed(name: string): HTMLElement {
 
 /**
  * Chips are focusable `div`s with no role of their own (base-ui), so a focused chip is
- * identified by the remove button it owns — an accessible name, not a slot.
+ * identified by the remove button it owns, an accessible name, not a slot.
  */
 async function expectChipFocused(removeButtonName: string): Promise<void> {
   // Identity, not `contains`: any ancestor up to <body> contains the button, so a

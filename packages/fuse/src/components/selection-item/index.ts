@@ -10,7 +10,7 @@ import { SelectionItemSubSection } from "./selection-item-sub-section";
 
 /**
  * The selectable card row. `CheckboxItem` and `RadioItem` reuse these part objects, so the row
- * recognises a SubSection by `child.type` under either spelling.
+ * recognizes a SubSection by `child.type` under either spelling.
  */
 export const SelectionItem = {
   Shell: SelectionItemShell,

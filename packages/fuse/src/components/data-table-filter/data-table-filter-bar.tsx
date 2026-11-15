@@ -50,8 +50,8 @@ import { OperatorOptions, useOperatorItems } from "./operator-options";
 import { scrollStripOnWheel } from "./strip-wheel";
 
 /**
- * Runs the consumer's handler, then the part's bookkeeping whatever the consumer did with the
- * event, since a prevented or stopped press still blurs the editor and may still click.
+ * Runs the consumer's handler, then the part's bookkeeping, whatever the consumer did with the
+ * event. A prevented or stopped press still blurs the editor and may still click.
  */
 function always<E>(own: (event: E) => void, theirs: ((event: E) => void) | undefined): (event: E) => void {
   return (event) => {
@@ -61,12 +61,12 @@ function always<E>(own: (event: E) => void, theirs: ((event: E) => void) | undef
 }
 
 /**
- * Whether Base UI resolved the pressed control as disabled, its own `disabled` or one inherited from
- * the Bar or the Chip. Toolbar.Button resolves that value from the Toolbar root and group contexts
- * (`toolbar/button/ToolbarButton.tsx:35` in Base UI 1.9), which a part cannot read, and renders it
- * as the `data-disabled` state attribute. Base UI Button, Clear's element outside the bar, renders
- * its own resolved `disabled` the same way. Base UI drops a disabled control's click only in its
- * bubbling handlers, so a capture handler asks this first.
+ * Whether Base UI resolved the pressed control as disabled, through its own `disabled` or one
+ * inherited from the Bar or the Chip. Toolbar.Button resolves that value from the Toolbar root and
+ * group contexts, which a part cannot read, and renders it as the `data-disabled` state attribute.
+ * Base UI 1.9 does this in `toolbar/button/ToolbarButton.tsx:35`. Base UI Button, Clear's element
+ * outside the bar, renders its own resolved `disabled` the same way. Base UI drops a disabled
+ * control's click only in its bubbling handlers, so a capture handler asks this first.
  *
  * @param event - The press event, whose `currentTarget` is the control.
  * @returns `true` when the control is disabled.
@@ -77,7 +77,7 @@ function pressIsDisabled(event: SyntheticEvent<HTMLElement>): boolean {
 
 /**
  * A ref for one of a chip's segments that also registers it with the Root, so focus can move to
- * it when a neighbour chip goes. The consumer's ref keeps working.
+ * it when a neighboring chip is removed. The consumer's ref keeps working.
  */
 function useSegmentRef(fieldId: string, ref: Ref<HTMLElement> | undefined): RefCallback<HTMLElement> | null {
   const { actions } = useFilterInternals("DataTableFilter.Chip");
@@ -89,19 +89,19 @@ function useSegmentRef(fieldId: string, ref: Ref<HTMLElement> | undefined): RefC
   return useMergedRefs(ref, register);
 }
 
-/** The props of `DataTableFilter.Bar`: Base UI Toolbar Root's. */
+/** Base UI Toolbar Root's props. */
 type ToolbarRootProps = ComponentProps<typeof ToolbarPrimitive.Root>;
 
-/** `DataTableFilter.Bar` takes Base UI Toolbar Root's props. */
+/** Props for `DataTableFilter.Bar`, which takes Base UI Toolbar Root's props. */
 export type DataTableFilterBarProps = ToolbarRootProps & {
   /**
    * The `DataTableFilter.Trigger`, the `DataTableFilter.Chips` and `DataTableFilter.Clear`.
-   * Defaults to those three. The bar stays one line high however many filters it holds, so a
-   * search field or table beside it never moves. The chips sit in one strip that scrolls sideways,
-   * by touch, trackpad, keyboard focus or a vertical mouse wheel, and an end of the strip fades
-   * only while chips hide past it. Clear follows the last chip, or sits at the bar's end once the
-   * chips overflow. The Trigger is a square icon button named "Filter" at every width. Below a
-   * 36rem bar width Clear hides its label behind its icon, and its name stays "Clear filters".
+   * Defaults to those three. The bar stays one line high however many filters it holds, so a search
+   * field or table beside it never moves. The chips sit in one strip that scrolls sideways, by
+   * touch, trackpad, keyboard focus or a vertical mouse wheel, and an end of the strip fades only
+   * while chips hide past it. Clear follows the last chip, or sits at the bar's end once the chips
+   * overflow. The Trigger is a square icon button named "Filter" at every width. Below a 36rem bar
+   * width, Clear hides its label and shows only its icon, and its name stays "Clear filters".
    */
   children?: ToolbarRootProps["children"];
 };
@@ -134,7 +134,7 @@ export function DataTableFilterBar({ className, children, ...props }: DataTableF
   );
 }
 
-/** The props of `DataTableFilter.Trigger`. The id belongs to the add menu's handle. */
+/** Props for `DataTableFilter.Trigger`. It omits `id`, which the add menu's handle sets. */
 export type DataTableFilterTriggerProps = Omit<
   ComponentProps<typeof ToolbarPrimitive.Button>,
   "render" | "id"
@@ -144,10 +144,10 @@ export type DataTableFilterTriggerProps = Omit<
 };
 
 /**
- * Opens the add menu, `DataTableFilter.Content`. It sits first in the bar, so a chip added under
- * the open menu never moves it. Without children it draws the icon, named "Filter" unless
- * `aria-label` says otherwise, as a square icon button at every width or in the `render`
- * element. Children replace the icon and render it as a labelled button.
+ * The button that opens the add menu, `DataTableFilter.Content`. It sits first in the bar, so a
+ * chip added under the open menu never moves it. Without children it draws the icon, named "Filter"
+ * unless `aria-label` says otherwise, as a square icon button at every width or in the `render`
+ * element. Children replace the icon and render it as a labeled button.
  */
 export function DataTableFilterTrigger({
   className,
@@ -194,7 +194,7 @@ export function DataTableFilterTrigger({
   );
 }
 
-/** The props of `DataTableFilter.Chips`. */
+/** Props for `DataTableFilter.Chips`. */
 export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> & {
   /**
    * The template each chip renders, inside its chip context. Plain children are a static
@@ -242,7 +242,7 @@ export function DataTableFilterChips({
   );
 }
 
-/** The props of `DataTableFilter.Chip`: Base UI Toolbar Group's. */
+/** Props for `DataTableFilter.Chip`, which takes Base UI Toolbar Group's props. */
 export type DataTableFilterChipProps = ComponentProps<typeof ToolbarPrimitive.Group>;
 
 /**
@@ -304,10 +304,10 @@ export function DataTableFilterChip({
   );
 }
 
-/** The props of `DataTableFilter.Subject`. */
+/** Props for `DataTableFilter.Subject`. */
 export type DataTableFilterSubjectProps = ComponentProps<"span">;
 
-/** The field's icon and name. Static text, never a Tab or arrow-key stop. */
+/** The field's icon and name. It is static text, never a Tab or arrow-key stop. */
 export function DataTableFilterSubject({
   className,
   children,
@@ -330,7 +330,7 @@ export function DataTableFilterSubject({
   );
 }
 
-/** The props of `DataTableFilter.Operator`. */
+/** Props for `DataTableFilter.Operator`. */
 export type DataTableFilterOperatorProps = Omit<ComponentProps<typeof ToolbarPrimitive.Button>, "render"> & {
   /** The trigger's presentation, which replaces the ghost Fuse Button. */
   render?: ReactElement;
@@ -352,8 +352,8 @@ export function DataTableFilterOperator(props: DataTableFilterOperatorProps): Re
 }
 
 /**
- * Whether a chip shows its name and Remove only: a toggle that is on, unless its value popover is
- * open, where it keeps its whole sentence until the popover closes.
+ * Whether a chip shows only its name and Remove. A toggle that is on does, unless its value popover
+ * is open, where it keeps its whole sentence until the popover closes.
  */
 function showsNameOnly(chip: ChipFilter, editing: string | null): boolean {
   return isToggleOn(chip.field, chip.value) && editing !== chip.id;
@@ -397,7 +397,7 @@ function OperatorSelect({
   );
 }
 
-/** The props of `DataTableFilter.Value`. The id belongs to the value popover's handle. */
+/** Props for `DataTableFilter.Value`. It omits `id`, which the value popover's handle sets. */
 export type DataTableFilterValueProps = Omit<
   ComponentProps<typeof ToolbarPrimitive.Button>,
   "render" | "id"
@@ -482,18 +482,18 @@ export function DataTableFilterValue({
   );
 }
 
-/** The props of `DataTableFilter.Remove`. */
+/** Props for `DataTableFilter.Remove`. */
 export type DataTableFilterRemoveProps = Omit<ComponentProps<typeof ToolbarPrimitive.Button>, "render"> & {
   /** The presentation, which replaces the icon Fuse Button. */
   render?: ReactElement;
 };
 
 /**
- * Removes the chip, named "Remove Status filter". Focus moves to the next chip, else the previous
- * one, else the Trigger. A press on it closes the chip's open editor and drops any change the
- * editor has not applied, so the removal is the one write. A press that slides off before its click,
- * or whose click a consumer cancels, still closes the editor and drops the change, and the applied
- * filter stays as it was.
+ * The button that removes the chip, named "Remove Status filter". Focus moves to the next chip,
+ * else the previous one, else the Trigger. A press on it closes the chip's open editor and drops
+ * any change the editor has not applied, so the removal is the one write. A press that slides off
+ * before its click, or whose click a consumer cancels, still closes the editor and drops the
+ * change, and the applied filter stays as it was.
  */
 export function DataTableFilterRemove({
   className,
@@ -535,16 +535,16 @@ export function DataTableFilterRemove({
   );
 }
 
-/** The props of `DataTableFilter.Clear`. */
+/** Props for `DataTableFilter.Clear`. */
 export type DataTableFilterClearProps = Omit<ComponentProps<"button">, "ref">;
 
 /**
- * Removes every filter and moves focus to the Trigger, and renders nothing when there are none. A
- * press on it closes any open editor and drops a change the editor has not applied, so the clear is
- * the one write. A press that slides off before its click, or whose click a consumer cancels, still
- * closes the editor and drops the change, and the applied filters stay as they were.
- * In the Bar it joins the toolbar's focus order. Anywhere else under the Root, such as a table's
- * empty state, it is a plain outline button.
+ * The button that removes every filter and moves focus to the Trigger. It renders nothing when
+ * there are none. A press on it closes any open editor and drops a change the editor has not
+ * applied, so the clear is the one write. A press that slides off before its click, or whose click
+ * a consumer cancels, still closes the editor and drops the change, and the applied filters stay as
+ * they were. In the Bar it joins the toolbar's focus order. Anywhere else under the Root, such as a
+ * table's empty state, it is a plain outline button.
  */
 export function DataTableFilterClear({
   className,

@@ -19,7 +19,7 @@ export type FormattedText = {
 export type LabelRole = "tick" | "full";
 
 /**
- * Build a {@link FormattedText} with canonical spaces in both forms.
+ * Builds a {@link FormattedText} with canonical spaces in both forms.
  *
  * @param text - The visual label.
  * @param spoken - The spoken label.

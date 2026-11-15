@@ -30,10 +30,10 @@ function getCachedFormatter<K extends string, T extends LocalizedString>(
 }
 
 /**
- * Package-private string resolution. Locale comes only from LocaleProvider.
- * Explicit component string props override the dictionary at the call site:
- * `override ?? strings.format(key)`. Formatters are cached per dictionary identity
- * and locale so chips, toasts, and pagination edges share one instance.
+ * The string formatter for a dictionary in the current locale. The hook is package-private. The
+ * locale comes only from LocaleProvider. An explicit component string prop overrides the dictionary
+ * at the call site: `override ?? strings.format(key)`. The hook caches formatters per dictionary
+ * identity and locale, so chips, toasts and pagination edges share one instance.
  */
 export function useLocalizedStrings<K extends string, T extends LocalizedString>(
   dictionary: LocalizedStringDictionary<K, T>

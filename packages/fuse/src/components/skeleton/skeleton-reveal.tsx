@@ -29,7 +29,8 @@ export type SkeletonRevealSharedProps = Omit<useRender.ComponentProps<"div">, "c
    */
   reveal?: SkeletonRevealMode;
   /**
-   * Read to screen readers while loading, in place of the skeleton, such as "Loading invoices".
+   * The text a screen reader reads while loading, in place of the skeleton, such as "Loading
+   * invoices".
    * The root is `aria-busy` meanwhile. Defaults to the locale dictionary's "Loading".
    */
   label?: string;
@@ -42,9 +43,9 @@ export type SkeletonRevealSharedProps = Omit<useRender.ComponentProps<"div">, "c
   onReveal?: () => void;
 };
 
-/** `SkeletonReveal` around plain children, which draw their own skeleton while `loading`. */
+/** Props for `SkeletonReveal` around plain children, which draw their own skeleton while `loading`. */
 export type SkeletonRevealChildrenProps = SkeletonRevealSharedProps & {
-  /** Shows the skeleton drawn from `children` instead of `children` themselves. */
+  /** Whether the reveal shows the skeleton drawn from `children` instead of `children` themselves. */
   loading: boolean;
   /** The content, which the skeleton is drawn from while `loading`. */
   children: ReactNode;
@@ -53,17 +54,17 @@ export type SkeletonRevealChildrenProps = SkeletonRevealSharedProps & {
 };
 
 /**
- * `SkeletonReveal` around data: `children` renders it, and the skeleton is drawn from that render
- * of the data on screen, the last data shown or `sample`.
+ * Props for `SkeletonReveal` around data. `children` renders it, and the skeleton is drawn from
+ * that render of the data on screen, the last data shown or `sample`.
  *
  * @template T - The data the children render.
  */
 export type SkeletonRevealDataProps<T> = SkeletonRevealSharedProps & {
   /** The data to show. The skeleton shows while it is `null` or `undefined`. */
   data: T | null | undefined;
-  /** Stands in for `data` to draw the skeleton before any data has loaded. */
+  /** The stand-in for `data` that draws the skeleton before any data has loaded. */
   sample?: T;
-  /** Shows the skeleton over `data` too, as for a refetch. It is drawn from the data on screen. */
+  /** Whether the skeleton also shows over `data`, as for a refetch. It is drawn from the data on screen. */
   loading?: boolean;
   /**
    * Renders the data, or the stand-in the skeleton is drawn from: the data on screen, the last data
@@ -75,10 +76,10 @@ export type SkeletonRevealDataProps<T> = SkeletonRevealSharedProps & {
    *
    * The skeleton is hidden from screen readers and inert, and the content can take focus once it
    * replaces the skeleton. Form controls in the skeleton are neither submitted nor validated with
-   * their form, and Fuse overlays in it, such as a Dialog left open, do not open. Keep any portal of
-   * your own in the content closed while it loads. Before the page hydrates, the skeleton strikes a
-   * thick bar through each line of text. Mark your own markup with `data-skeleton="block"` to draw
-   * it as one block, or with `data-skeleton="ignore"` to leave it and everything inside it out.
+   * their form, and Fuse overlays in it, such as a Dialog left open, do not open. Keep any custom
+   * portal in the content closed while it loads. Before the page hydrates, the skeleton strikes a
+   * thick bar through each line of text. Mark custom markup with `data-skeleton="block"` to draw it
+   * as one block, or with `data-skeleton="ignore"` to leave it and everything inside it out.
    */
   children: (data: T) => ReactNode;
 };
@@ -100,7 +101,7 @@ type PaneView<T> = {
   readonly shown: { readonly value: T } | null;
 };
 
-/** A pane that has stopped being current: it keeps the node it last rendered while it leaves. */
+/** A pane that has stopped being current. It keeps the node it last rendered while it leaves. */
 type LeavingPane = {
   readonly id: number;
   readonly kind: PaneKind;
@@ -113,7 +114,7 @@ type RevealState<T> = {
     readonly id: number;
     readonly kind: PaneKind;
     /**
-     * Whether this content pane replaced a skeleton, decided when the pane is created: the reveal
+     * Whether this content pane replaced a skeleton, decided when the pane is created. The reveal
      * owes `onReveal` once for it, whatever the effects saw of the panes in between.
      */
     readonly overSkeleton: boolean;
@@ -137,14 +138,17 @@ const FALLBACK_LINES = (
   </div>
 );
 
-/** The dictionary's "Loading", read only without a `label`, so a labelled reveal needs no LocaleProvider. */
+/**
+ * The dictionary's "Loading", read only without a `label`, so a labeled reveal needs no
+ * LocaleProvider.
+ */
 function DefaultLabel(): ReactNode {
   return useLocalizedStrings(skeletonRevealStrings).format("loading");
 }
 
 const subscribeNothing = (): (() => void) => () => undefined;
 
-/** True while rendering on the server and hydrating its markup; false for a client render. */
+/** Whether this render is on the server or hydrates its markup. It is `false` for a client render. */
 function useServerRendered(): boolean {
   return useSyncExternalStore(
     subscribeNothing,
@@ -183,11 +187,11 @@ function viewOf<T>(props: SkeletonRevealProps<T>, last: RevealState<T>["last"]):
 }
 
 /**
- * Draws a loading skeleton from the real content and reveals the content over it: a layer of bones
- * measured from the content rendered unseen. Form controls in content on its way out are not
- * submitted or validated either, though they show the form's errors, and Fuse overlays there open
- * no popup, focus trap or scroll lock. Without JavaScript the skeleton also covers media until its
- * bones are measured.
+ * A loading skeleton drawn from the real content, which reveals the content over it. The skeleton
+ * is a layer of bones measured from the content rendered unseen. Form controls in content on its
+ * way out are not submitted or validated either, though they show the form's errors, and Fuse
+ * overlays there open no popup, focus trap or scroll lock. Without JavaScript the skeleton also
+ * covers media until its bones are measured.
  *
  * @template T - The data the children render, in the data form.
  * @param props - `loading` and plain children, or `data`, `sample` and a render function, with the
@@ -252,7 +256,8 @@ export function SkeletonReveal<T>(props: SkeletonRevealProps<T>): ReactElement {
   /**
    * Reports the due reveal once its pane is still the one on screen, the last commit left no
    * pane on its way out and no height ease is running, a retargeted one included, so `onReveal`
-   * reads the page as it stays: the content alone, with the root at its final height. A reveal a later swap replaced is dropped; one already reported is not reported again.
+   * reads the page as it stays: the content alone, with the root at its final height. A reveal a
+   * later swap replaced is dropped; one already reported is not reported again.
    */
   const reportWhenSettled = (): void => {
     const due = dueReport.current;

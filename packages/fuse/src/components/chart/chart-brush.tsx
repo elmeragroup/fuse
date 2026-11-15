@@ -10,18 +10,18 @@ import type { ChartLayerProps, XFormat } from "./chart-types";
  * @beta
  */
 export type ChartBrushProps = ChartLayerProps & {
-  /** The group's name. The dictionary's "Periode" is the default. */
+  /** The group's name. Defaults to the dictionary's "Periode". */
   "aria-label"?: string;
-  /** Joined to the group name for the start thumb. The dictionary's "fra" is the default. */
+  /** The start thumb's name, joined to the group name. Defaults to the dictionary's "fra". */
   startLabel?: string;
-  /** Joined to the group name for the end thumb. The dictionary's "til" is the default. */
+  /** The end thumb's name, joined to the group name. Defaults to the dictionary's "til". */
   endLabel?: string;
-  /** The pan window's name. The dictionary's "Flytt periode" is the default. */
+  /** The pan window's name. Defaults to the dictionary's "Flytt periode". */
   windowLabel?: string;
-  /** The smallest window, in slots. `2` by default. */
+  /** The smallest window, in slots. Defaults to `2`. */
   minSpan?: number;
   /**
-   * The thumbs' value text format. Root's label preset is the default. For intervals finer than a
+   * The thumbs' value text format. Defaults to Root's label preset. For intervals finer than a
    * day, the `date` preset's spoken form leads the slot's spoken label. The year appears when the
    * domain spans more than one calendar year in Root's zone.
    */

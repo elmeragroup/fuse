@@ -26,11 +26,11 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartSectorProps = ChartLayerProps & {
-  /** The sector's colour role. */
+  /** The sector's color role. */
   color?: ChartGaugeRole;
   /**
-   * The wedge's look. "conic" brightens toward the reading's edge, "radial" brightens toward the
-   * rim, and "flat" paints one tint.
+   * The wedge's look. `conic` brightens toward the reading's edge, `radial` brightens toward the
+   * rim, and `flat` paints one tint.
    */
   variant?: "conic" | "radial" | "flat";
 };
@@ -57,9 +57,10 @@ function sectorDrawing(layer: HTMLDivElement, { sweep }: GaugeGeometry): GaugeDr
 }
 
 /**
- * The wedge from the sweep's start to the reading, from outside the centre's text out to just
- * inside the notches, in a tint of its colour role. "conic" brightens along the sweep toward the reading, "radial" toward the rim, and
- * "flat" is one tint. It sweeps with the fill in every frame, so a gauge may draw it alone.
+ * The wedge from the sweep's start to the reading, from outside the center's text out to just
+ * inside the notches, in a tint of its color role. `conic` brightens along the sweep toward the
+ * reading, `radial` toward the rim, and `flat` is one tint. It sweeps with the fill in every frame,
+ * so a gauge may draw it alone.
  *
  * @beta
  */

@@ -98,9 +98,9 @@ export type DatePickerValueChangeEventDetails = DatePickerChangeEventDetails<Dat
 export type DatePickerRootState = { readonly [K in keyof PickerState]: PickerState[K] };
 
 /**
- * `DatePicker.Root` takes a `div`'s props, Base UI's `render` and the picker's own.
+ * Props for `DatePicker.Root`: a `div`'s props, Base UI's `render` and the picker's own.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The value's kind: `Temporal.PlainDate`, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the Root reads it as `DateInput.Root` does.
  */
 export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
@@ -123,13 +123,13 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   /** The first value, when the picker owns its value. Takes what `value` takes. */
   defaultValue?: T | null;
   /**
-   * Called with this runtime's value when a day is picked in the calendar or the input forms a new
-   * value, `null` when the input is cleared. `details.reason` is `"day-press"`, `"keyboard"`,
-   * `"input-change"`, `"input-clear"`, `"input-paste"` or `"preset-press"` (a `PresetItem` with a
-   * `dateValue`), and `details.event`, `details.trigger` and `details.getValidationError()` are
-   * the input's. Canceling with `details.cancel()` keeps the value: a canceled day keeps the popup
-   * open with focus on the day, a canceled edit shows the value again in the segments, and a
-   * canceled preset stays unchecked.
+   * Called when the user picks a day in the calendar or the input forms a new value, with this
+   * runtime's value, or with `null` when the user clears the input. `details.reason` is
+   * `"day-press"`, `"keyboard"`, `"input-change"`, `"input-clear"`, `"input-paste"` or
+   * `"preset-press"`, for a `PresetItem` with a `dateValue`. `details.event`, `details.trigger` and
+   * `details.getValidationError()` are the input's. Canceling with `details.cancel()` keeps the
+   * value: a canceled day keeps the popup open with focus on the day, a canceled edit shows the
+   * value again in the segments, and a canceled preset stays unchecked.
    */
   onValueChange?: NoInfer<(value: T | null, details: DatePickerValueChangeEventDetails) => void>;
   /** Whether the popup is open, when the parent owns it. */
@@ -139,7 +139,7 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   /**
    * Called when the popup opens or closes. `details.reason` is Base UI Popover's, such as
    * `"trigger-press"`, `"outside-press"`, `"escape-key"` or `"focus-out"`, or the picker's own:
-   * `"keyboard"` (Alt+ArrowDown in the group, or Enter on a day that closes it), `"day-press"` or
+   * `"keyboard"` for Alt+ArrowDown in the group or Enter on a day that closes it, `"day-press"` or
    * `"preset-press"`. Canceling with `details.cancel()` keeps the popup as it is. Opening moves
    * focus to the calendar's focused day, the selected one or today. Closing, by Escape among
    * others, returns focus to the segment it opened from, or to the trigger. Typing in the input
@@ -149,19 +149,22 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   /**
    * Whether picking a day closes the popup. With a time `granularity` and no value yet, a picked
    * day is held while the popup stays open: a time typed in `DatePicker.TimeInput` commits it at that
-   * time, and otherwise it commits at midnight when the popup closes, however it closes (a parent
-   * setting `open` to `false` included). A time typed before any day waits for one. That commit
+   * time, and otherwise it commits at midnight when the popup closes, however it closes, including
+   * a parent setting `open` to `false`. A time typed before any day waits for one. That commit
    * runs first and reports the pick's reason; canceling it keeps the popup open with the day still
    * held. A native form reset drops a held day and any half-typed segments, and the shown error,
    * also when the value is unchanged.
    * @default true
    */
   shouldCloseOnSelect?: boolean;
-  /** The earliest valid value, a Temporal value of any kind. Earlier days are disabled in the calendar. */
+  /** The earliest valid value, a Temporal value of any kind. The calendar disables earlier days. */
   minValue?: TemporalValue;
   /** The latest valid value, a Temporal value of any kind. */
   maxValue?: TemporalValue;
-  /** Values the picker refuses: the calendar's days stay focusable but unselectable, a typed one is invalid. */
+  /**
+   * Values the picker refuses: the calendar's days stay focusable but unselectable, and a typed one
+   * is invalid.
+   */
   isDateUnavailable?: NoInfer<(value: T) => boolean>;
   /**
    * The smallest unit the input edits. A time granularity needs a value with a time. Without a
@@ -196,9 +199,9 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   invalid?: boolean;
   /**
    * The name the ISO value submits under. A surrounding Field's `name` wins. Inside a Base UI
-   * Field (`Field.Root`, or `DatePickerField`) the input is the Field's control: `Field.Label`
-   * names the group, the segments, the trigger ("Calendar Start date") and the popup, and a `Form`
-   * focuses the first segment for an error.
+   * Field, such as `Field.Root` or `DatePickerField`, the input is the Field's control.
+   * `Field.Label` then names the group, the segments, the trigger and the popup, so the trigger
+   * reads "Calendar Start date", and a `Form` focuses the first segment for an error.
    */
   name?: string;
   /** The id of the form the value submits with. */
@@ -212,14 +215,17 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
    * Base UI's focus guards, that guard.
    */
   onFocusLeave?: (event: FocusEvent<Element>) => void;
-  /** Names the picker when no Field label does: the group, the segments, the trigger and the popup. */
+  /**
+   * The picker's accessible name when no Field label names it. It names the group, the segments, the
+   * trigger and the popup.
+   */
   "aria-label"?: string;
   /**
    * The parts: a `DatePicker.Group` with `DatePicker.Input` and `DatePicker.Trigger`, and a
    * `DatePicker.Popup` with `DatePicker.Calendar`. For a value with a time, put
    * `DatePicker.TimeInput` in the popup after the calendar. It renders only while the picker's
-   * values have a time (a `PlainDateTime` or `ZonedDateTime` and a `granularity` finer than
-   * `"day"`), is named "Time" and reports through `onValueChange` with the input's reasons. It is
+   * values have a time, that is a `PlainDateTime` or `ZonedDateTime` and a `granularity` finer
+   * than `"day"`. It is named "Time" and reports through `onValueChange` with the input's reasons. It is
    * a Field of its own: it submits nothing, and a half-typed time marks only itself. A preset pane,
    * `DatePicker.Presets`, goes in the popup beside the calendar.
    */
@@ -229,7 +235,7 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
 /** What the Input and Calendar parts read from their Root. */
 type DatePickerRootContextValue = {
   readonly value: TemporalValue | null;
-  /** The day the picker holds: a day picked in an empty picker, else the value's (`endDay`). */
+  /** The day the picker holds: a day picked in an empty picker, else the value's, from `endDay`. */
   readonly calendarDay: Temporal.PlainDate | null;
   readonly calendarKey: string;
   readonly inputKey: number;
@@ -334,7 +340,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
   // The preset panes, told when the value is committed by anything but a preset press.
   const presetPanes = usePresetRegistry();
 
-  /** Report a new value and apply it unless canceled; returns whether it applied. */
+  /** Reports a new value and applies it unless canceled; returns whether it applied. */
   function commit(
     next: TemporalValue | null,
     reason: DatePickerValueChangeEventDetails["reason"],
@@ -549,8 +555,8 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
 }
 
 /**
- * `DatePicker.Input` takes `DateInput.Root`'s presentation props; the value, bounds, time options
- * and state come from `DatePicker.Root`.
+ * Props for `DatePicker.Input`: `DateInput.Root`'s presentation props. The value, bounds, time
+ * options and state come from `DatePicker.Root`.
  */
 export type DatePickerInputProps = PickerInputPartProps;
 
@@ -577,8 +583,8 @@ export function DatePickerInput(props: DatePickerInputProps): ReactElement {
 }
 
 /**
- * `DatePicker.Calendar` takes `Calendar.Root`'s presentation props; the value, bounds and calendar
- * options come from `DatePicker.Root`.
+ * Props for `DatePicker.Calendar`: `Calendar.Root`'s presentation props. The value, bounds and
+ * calendar options come from `DatePicker.Root`.
  */
 export type DatePickerCalendarProps = Omit<CalendarRootProps, PickerOwnedCalendarProp | "children"> & {
   /** Extra classes, merged after the picker's own. */
@@ -615,7 +621,7 @@ export function DatePickerCalendar({ className, children, ...props }: DatePicker
 /**
  * DatePickerField's popup column: the calendar, and the time input under it while the picker's
  * values have a time. A date-only picker's popup holds the calendar alone, with no column around it.
- * Private to the composite: a composition places `DatePicker.TimeInput` itself.
+ * It is private to the composite. A composition places `DatePicker.TimeInput` itself.
  */
 export function DatePickerFieldCalendar({
   shouldForceLeadingZeros,
@@ -635,15 +641,15 @@ export function DatePickerFieldCalendar({
 }
 
 /**
- * `DatePicker.TimeInput` takes `DateInput.Root`'s presentation props; the value, the time options
- * and the state come from `DatePicker.Root`.
+ * Props for `DatePicker.TimeInput`: `DateInput.Root`'s presentation props. The value, the time
+ * options and the state come from `DatePicker.Root`.
  */
 export type DatePickerTimeInputProps = PickerInputPartProps;
 
 /**
  * The time of the picker's value, edited in the popup under the calendar, as React Spectrum's
  * picker edits it: a `DateInput.Root` showing only the hour onwards, named "Time". It renders
- * nothing while the picker's values have no time (a PlainDate, or `granularity="day"`). A time
+ * nothing while the picker's values have no time, that is a PlainDate or `granularity="day"`. A time
  * typed in a picker with a value changes that value's time; in an empty picker it waits for a day,
  * and a day picked then (with `shouldCloseOnSelect={false}`, or before it) commits at that time
  * rather than at midnight. A time waiting for a day is a wall-clock time: it takes the picker's

@@ -60,7 +60,7 @@ const styles = calendarVariants();
 
 type HeaderElementProps = useRender.ComponentProps<"div">;
 
-/** `Calendar.Header` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Calendar.Header`. It takes a `div`'s props plus Base UI's `render`. */
 export type CalendarHeaderProps = HeaderElementProps & {
   /**
    * The month buttons and the `Calendar.VisibleRangeHeading`. The header only lays them out, so
@@ -81,7 +81,7 @@ export function CalendarHeader({ className, render, ...props }: CalendarHeaderPr
   });
 }
 
-/** The props of a month button: Button's, named and sized for an icon. */
+/** Props for a month button. It takes Button's props, named and sized for an icon. */
 type CalendarMonthButtonProps = Omit<IconButtonProps, "aria-label" | "size" | "children" | "onClick"> & {
   /** The accessible name. Defaults to the locale dictionary: "Previous" or "Next" in en-US. */
   "aria-label"?: string;
@@ -90,16 +90,16 @@ type CalendarMonthButtonProps = Omit<IconButtonProps, "aria-label" | "size" | "c
   /** The icon. Defaults to a caret that points along the writing direction. */
   children?: ReactNode;
   /**
-   * Runs before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change.
+   * Called before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change.
    * The button is disabled, and stays focusable, when no page lies that way within the bounds.
    */
   onClick?: IconButtonProps["onClick"];
 };
 
-/** `Calendar.DecrementMonth` takes Button's props, named and sized for an icon. */
+/** Props for `Calendar.DecrementMonth`. It takes Button's props, named and sized for an icon. */
 export type CalendarDecrementMonthProps = CalendarMonthButtonProps;
 
-/** `Calendar.IncrementMonth` takes Button's props, named and sized for an icon. */
+/** Props for `Calendar.IncrementMonth`. It takes Button's props, named and sized for an icon. */
 export type CalendarIncrementMonthProps = CalendarMonthButtonProps;
 
 /** The Button props a month button merges with the consumer's. */
@@ -153,7 +153,7 @@ function CalendarMonthButton({
   );
 }
 
-/** Pages back: the visible months move back one page, and focus moves with them. */
+/** The button that pages back. The visible months move back one page, and focus moves with them. */
 export function CalendarDecrementMonth({
   size = "icon",
   variant = "ghost",
@@ -162,7 +162,7 @@ export function CalendarDecrementMonth({
   return <CalendarMonthButton direction="decrement" size={size} variant={variant} {...props} />;
 }
 
-/** Pages forward: the visible months move on one page, and focus moves with them. */
+/** The button that pages forward. The visible months move forward one page, and focus moves with them. */
 export function CalendarIncrementMonth({
   size = "icon",
   variant = "ghost",
@@ -173,7 +173,7 @@ export function CalendarIncrementMonth({
 
 type VisibleRangeHeadingElementProps = useRender.ComponentProps<"h2">;
 
-/** `Calendar.VisibleRangeHeading` takes an `h2`'s props plus Base UI's `render`. */
+/** Props for `Calendar.VisibleRangeHeading`. It takes an `h2`'s props plus Base UI's `render`. */
 export type CalendarVisibleRangeHeadingProps = VisibleRangeHeadingElementProps & {
   /**
    * Replaces the visible months' name, such as "October 2026". Render one per calendar, even when
@@ -217,14 +217,14 @@ export function CalendarVisibleRangeHeading({
   });
 }
 
-/** `Calendar.Months` takes a `div`'s props, Base UI's `render` and a function of each month. */
+/** Props for `Calendar.Months`. It takes a `div`'s props, Base UI's `render` and a function of each month. */
 export type CalendarMonthsProps = Omit<useRender.ComponentProps<"div">, "children"> & {
   /**
    * Renders one visible month, normally a `Calendar.Month` keyed by `month.toString()`. Called
-   * for each month from the first, `visibleMonths` times. Defaults to a `Calendar.Month` with
-   * its `MonthHeading`, visually hidden in a one-month view, and a `DayGrid` with the weekday row
-   * and the weeks, which is also how a server component renders the months, since a function
-   * cannot cross to the client.
+   * for each month from the first, `visibleMonths` times. Defaults to a `Calendar.Month` with its
+   * `Calendar.MonthHeading`, visually hidden in a one-month view, and a `Calendar.DayGrid` with the
+   * weekday row and the weeks, which is also how a server component renders the months, since a
+   * function cannot cross to the client.
    */
   children?: (month: Temporal.PlainYearMonth, index: number) => ReactNode;
 };
@@ -252,7 +252,7 @@ const PLACEHOLDER_WEEKS = 6;
  * weeks of empty days, hidden from assistive technology. Six weeks are the most a month spans, so
  * the popup or page never grows when today's months replace it, and shrinks by a row or two for a
  * month of four or five weeks; hydration matches either way. Its weekday row is the real
- * `DayGridHeader` over the reference day's month: any month names the same weekdays.
+ * `Calendar.DayGridHeader` over the reference day's month, since any month names the same weekdays.
  */
 function PlaceholderMonth({ single }: { readonly single: boolean }): ReactElement {
   const month = useMemo(() => referenceDay().toPlainYearMonth(), []);
@@ -325,7 +325,7 @@ export function CalendarMonths({ className, render, children, ...props }: Calend
   });
 }
 
-/** `Calendar.Month` takes a `div`'s props, Base UI's `render` and the month it shows. */
+/** Props for `Calendar.Month`. It takes a `div`'s props, Base UI's `render` and the month it shows. */
 export type CalendarMonthProps = useRender.ComponentProps<"div"> & {
   /** The month, as `Calendar.Months` passes it. */
   value: Temporal.PlainYearMonth;
@@ -359,7 +359,7 @@ export function CalendarMonth({
 
 type MonthHeadingElementProps = useRender.ComponentProps<"div">;
 
-/** `Calendar.MonthHeading` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Calendar.MonthHeading`. It takes a `div`'s props plus Base UI's `render`. */
 export type CalendarMonthHeadingProps = MonthHeadingElementProps & {
   /**
    * Replaces the month's name, such as "October 2026", which names the month's grid. In a
@@ -375,8 +375,8 @@ export type CalendarMonthHeadingProps = MonthHeadingElementProps & {
 };
 
 /**
- * The month's name, which names its grid. The name sits in a span whose id the `Month` owns and
- * the grid points at, so the heading's own `id` cannot move it.
+ * The month's name, which names its grid. The name sits in a span whose id `Calendar.Month`
+ * creates and the grid points at, so the heading's own `id` cannot move it.
  */
 export function CalendarMonthHeading({
   className,
@@ -404,7 +404,7 @@ export function CalendarMonthHeading({
 
 type DayGridElementProps = useRender.ComponentProps<"table">;
 
-/** `Calendar.DayGrid` takes a `table`'s props plus Base UI's `render`. */
+/** Props for `Calendar.DayGrid`. It takes a `table`'s props plus Base UI's `render`. */
 export type CalendarDayGridProps = DayGridElementProps & {
   /** The `Calendar.DayGridHeader` with the weekday row and the `Calendar.DayGridBody` with the weeks. */
   children?: DayGridElementProps["children"];
@@ -413,7 +413,7 @@ export type CalendarDayGridProps = DayGridElementProps & {
 /**
  * One month's days, a `grid`. Its name is the calendar's own name and the month, as React Aria
  * names its grids; a Root named by `aria-labelledby` names the grid by that element and the
- * `MonthHeading`.
+ * `Calendar.MonthHeading`.
  */
 export function CalendarDayGrid({ className, render, ...props }: CalendarDayGridProps): ReactElement {
   const { settings, actions, selection } = useCalendarRootContext("Calendar.DayGrid");
@@ -449,15 +449,15 @@ export function CalendarDayGrid({ className, render, ...props }: CalendarDayGrid
 
 type DayGridHeaderElementProps = useRender.ComponentProps<"thead">;
 
-/** `Calendar.DayGridHeader` takes a `thead`'s props plus Base UI's `render`. */
+/** Props for `Calendar.DayGridHeader`. It takes a `thead`'s props plus Base UI's `render`. */
 export type CalendarDayGridHeaderProps = DayGridHeaderElementProps & {
   /** The weekday row. Defaults to a `Calendar.DayGridHeaderRow` with its default cells. */
   children?: DayGridHeaderElementProps["children"];
 };
 
 /**
- * The weekday names above the days. Hidden from assistive technology, since every day's name
- * already says its weekday.
+ * The weekday names above the days. It is hidden from assistive technology, since every day's
+ * name already says its weekday.
  */
 export function CalendarDayGridHeader({
   className,
@@ -482,7 +482,10 @@ export function CalendarDayGridHeader({
   });
 }
 
-/** `Calendar.DayGridHeaderRow` takes a `tr`'s props, Base UI's `render` and a function of each weekday. */
+/**
+ * Props for `Calendar.DayGridHeaderRow`. It takes a `tr`'s props, Base UI's `render` and a function of each
+ * weekday.
+ */
 export type CalendarDayGridHeaderRowProps = Omit<useRender.ComponentProps<"tr">, "children"> & {
   /**
    * Renders one weekday's header cell from a day on it. Defaults to `Calendar.DayGridHeaderCell`.
@@ -518,13 +521,16 @@ export function CalendarDayGridHeaderRow({
   });
 }
 
-/** `Calendar.DayGridHeaderCell` takes a `th`'s props, Base UI's `render` and a day on its weekday. */
+/**
+ * Props for `Calendar.DayGridHeaderCell`. It takes a `th`'s props, Base UI's `render` and a day on its
+ * weekday.
+ */
 export type CalendarDayGridHeaderCellProps = useRender.ComponentProps<"th"> & {
   /** A day on the weekday the cell names. */
   value: Temporal.PlainDate;
   /**
-   * Replaces the weekday's label: the locale's short name where it fits a column ("Mon"), its
-   * narrow form otherwise.
+   * Replaces the weekday's label: the locale's short name where it fits a column, such as "Mon",
+   * and its narrow form otherwise.
    */
   children?: useRender.ComponentProps<"th">["children"];
 };
@@ -556,7 +562,10 @@ export function CalendarDayGridHeaderCell({
   });
 }
 
-/** `Calendar.DayGridBody` takes a `tbody`'s props, Base UI's `render` and a function of each week. */
+/**
+ * Props for `Calendar.DayGridBody`. It takes a `tbody`'s props, Base UI's `render` and a function of each
+ * week.
+ */
 export type CalendarDayGridBodyProps = Omit<useRender.ComponentProps<"tbody">, "children"> & {
   /**
    * Renders one week from its first day, normally a `Calendar.DayGridRow` keyed by
@@ -596,7 +605,10 @@ export function CalendarDayGridBody({
   });
 }
 
-/** `Calendar.DayGridRow` takes a `tr`'s props, Base UI's `render`, its week and a function of each day. */
+/**
+ * Props for `Calendar.DayGridRow`. It takes a `tr`'s props, Base UI's `render`, its week and a function of
+ * each day.
+ */
 export type CalendarDayGridRowProps = Omit<useRender.ComponentProps<"tr">, "children"> & {
   /** The week's first day, as `Calendar.DayGridBody` passes it. */
   value: Temporal.PlainDate;
@@ -641,7 +653,10 @@ export function CalendarDayGridRow({
 
 type DayGridCellElementProps = useRender.ComponentProps<"td", CalendarDayFlagState>;
 
-/** `Calendar.DayGridCell` takes a `td`'s props, Base UI's `render`, which receives the day's flags, and its day. */
+/**
+ * Props for `Calendar.DayGridCell`. It takes a `td`'s props, its day, and Base UI's `render`, which
+ * receives the day's flags.
+ */
 export type CalendarDayGridCellProps = Omit<DayGridCellElementProps, "className"> & {
   /** The day, as `Calendar.DayGridRow` passes it. */
   value: Temporal.PlainDate;
@@ -657,7 +672,7 @@ export type CalendarDayGridCellProps = Omit<DayGridCellElementProps, "className"
 /**
  * One day's `gridcell`. It carries `aria-selected` when the selection owner's flags for the day hold
  * `selected`, and `aria-disabled` for a day the user cannot select. It works out the day's standing
- * and flags once and shares them with its `DayButton`.
+ * and flags once and shares them with its `Calendar.DayButton`.
  */
 export function CalendarDayGridCell({
   value,
@@ -707,19 +722,25 @@ export function CalendarDayGridCell({
  * `data-outside-month`. A disabled day holds no flags.
  */
 export type CalendarDayButtonState = CalendarDayFlagState & {
-  /** Whether the day cannot take focus: out of bounds, in a neighbouring month, or the calendar is disabled. */
+  /**
+   * Whether the day cannot take focus: out of bounds, in a neighboring month, or the calendar is
+   * disabled.
+   */
   readonly disabled: boolean;
-  /** Whether `isDateUnavailable` refuses the day: focusable, never selectable. */
+  /** Whether `isDateUnavailable` refuses the day, which the user may focus but never select. */
   readonly unavailable: boolean;
   /** Whether the day is today. Always `false` in a server render. */
   readonly current: boolean;
-  /** Whether the day belongs to a neighbouring month. Such a day is invisible and inert. */
+  /** Whether the day belongs to a neighboring month. Such a day is invisible and inert. */
   readonly outsideMonth: boolean;
 };
 
 type DayButtonElementProps = useRender.ComponentProps<"button", CalendarDayButtonState>;
 
-/** `Calendar.DayButton` takes a `button`'s props plus Base UI's `render`, which receives the day's state. */
+/**
+ * Props for `Calendar.DayButton`. It takes a `button`'s props plus Base UI's `render`, which receives
+ * the day's state.
+ */
 export type CalendarDayButtonProps = DayButtonElementProps & {
   /**
    * Replaces the day number. The button keeps its name, the full date as React Aria writes it,

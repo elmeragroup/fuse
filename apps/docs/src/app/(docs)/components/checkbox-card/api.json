@@ -102,7 +102,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables the checkbox and dims the whole card to 50% with the `not-allowed` cursor.",
+          "description": "Whether the checkbox is disabled. A disabled card dims to 50% with the `not-allowed` cursor.",
           "required": false
         },
         {

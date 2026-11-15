@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The clock's dots: Dots on every reading, and Marker on the slots a datum names, each in its
- * value's step at the vertices the series draws in each frame.
+ * The clock's dots, with Dots on every reading and Marker on the slots a datum names. Each dot takes
+ * its value's step at the vertices the series draws in each frame.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
@@ -48,7 +48,7 @@ export type ClockChartMarkerProps = ChartLayerProps & {
    * the dot once a second.
    */
   variant?: "default" | "ring" | "halo" | "ping";
-  /** A `ValueLabel` adds the value as a pill beside the dot. */
+  /** The content beside the dot, such as a `ValueLabel` that adds the value as a pill. */
   children?: ReactNode;
 };
 
@@ -92,7 +92,7 @@ function markerMoving(look: DotsLook, frame: EntranceFrame): boolean {
   return false;
 }
 
-/** Draw a series' dots, in their step groups, at the vertices this frame draws. */
+/** Draws a series' dots, in their step groups, at the vertices this frame draws. */
 function drawDots(group: SVGGElement, look: DotsLook | null, values: MarkValues): void {
   if (look === null) return;
   const frame = entranceFrame(values);

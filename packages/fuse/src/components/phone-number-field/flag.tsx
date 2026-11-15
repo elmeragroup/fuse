@@ -6,8 +6,8 @@ export type FlagProps = {
 };
 
 /**
- * Decorative packaged-flag slot. Accepts only codes that exist in both
- * libphonenumber and `flagAssets`.
+ * A decorative packaged flag image. It accepts only codes that exist in both libphonenumber and
+ * `flagAssets`.
  */
 export function Flag({ country }: FlagProps) {
   return (

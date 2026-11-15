@@ -5,13 +5,13 @@ import type { PhoneCountryCode, PhoneNumberCountry } from "./phone-engine";
  * country it shows, the country a proposal waiting for the parent would show, and the
  * controlled `countryCode`, each observation ordered by a version.
  *
- * The notice contract under a controlled `countryCode`: a disagreement is the field's current
- * country, the country of a proposal that waits for the parent, else the shown one, differing
- * from `countryCode`, and is identified by that pair. It is announced once, as it starts. It
- * continues while the pair holds, as when the parent's props show the waiting proposal or a new
- * proposal keeps its country. It ends when the current country is `countryCode` again or another
- * country, or when `countryCode` changes. A pair that starts again after an end is announced
- * again. Without a controlled country, a commit that shows another country announces it.
+ * The notice contract under a controlled `countryCode` follows. The field's current country is the
+ * country of a proposal that waits for the parent, else the shown one. A disagreement is a current
+ * country that differs from `countryCode`, and that pair identifies it. The notices announce it once,
+ * as it starts. It continues while the pair holds, such as when the parent's props show the waiting
+ * proposal or a new proposal keeps its country. It ends when the current country is `countryCode`
+ * again or another country, or when `countryCode` changes. A pair that starts again after an end is
+ * announced again. Without a controlled country, a commit that shows another country announces it.
  */
 
 /** The field at one moment, as the notices read it. */
@@ -21,11 +21,11 @@ export type CountryObservation = {
    * than one the notices took in is out of date and changes nothing.
    */
   readonly version: number;
-  /** The controlled country, as the parent wrote it, or undefined. */
+  /** The controlled country, as the parent wrote it, or `undefined`. */
   readonly countryCode: PhoneCountryCode | undefined;
   /** The country the field shows. */
   readonly shown: Readonly<PhoneNumberCountry>;
-  /** The country of a proposal that waits for the parent, or null. */
+  /** The country of a proposal that waits for the parent, or `null`. */
   readonly proposed: Readonly<PhoneNumberCountry> | null;
 };
 
@@ -33,7 +33,7 @@ export type CountryObservation = {
 type CountryNotices = {
   /** The country the last commit showed. */
   readonly shown: PhoneCountryCode;
-  /** The ongoing disagreement, `countryCode` and the current country, or null. */
+  /** The ongoing disagreement as `countryCode` and the current country, or `null`. */
   readonly disagreement: string | null;
   /** The version of the newest observation the notices took in. */
   readonly version: number;
@@ -43,7 +43,7 @@ type CountryNotices = {
 type CountryStep = {
   /** The notices after the observation. */
   readonly notices: CountryNotices;
-  /** The country to announce, or null. */
+  /** The country to announce, or `null`. */
   readonly country: Readonly<PhoneNumberCountry> | null;
 };
 
@@ -78,7 +78,10 @@ export type CountryAnnouncer = {
    * disagreement.
    */
   readonly publish: (observation: CountryObservation) => Readonly<PhoneNumberCountry> | null;
-  /** The country a commit announces. A code the parent just set, which the field then shows, never announces. */
+  /**
+   * The country a commit announces. A code the parent just set, which the field then shows, never
+   * announces.
+   */
   readonly commit: (observation: CountryObservation) => Readonly<PhoneNumberCountry> | null;
 };
 

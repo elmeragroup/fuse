@@ -4,7 +4,7 @@ import type { LocalizedString } from "@internationalized/string";
 /**
  * Builds a component's four-locale dictionary.
  *
- * Every component owns its own rows, but the assembly was byte-identical in thirteen
+ * Every component has its own rows, but the assembly was byte-identical in thirteen
  * `intl/index.ts` modules; this factory is that assembly. Naming the four locales as
  * named arguments rather than a `Record<SupportedLocale, …>` keeps a missing locale a
  * type error at the call site instead of a runtime lookup miss, and the shared `K`/`T`

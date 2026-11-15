@@ -16,8 +16,8 @@ export type DensityAttributes = {
 };
 
 /**
- * Validates a density and returns its `data-density` attribute. A document gets it together
- * with its theme through `documentAttributes`; this stamps density alone, such as on a docs
+ * Validates a density and returns its `data-density` attribute. A document gets it together with
+ * its theme through `documentAttributes`. This function stamps density alone, such as on a docs
  * demo stage that previews the density metrics.
  *
  * @param density - The density to stamp.

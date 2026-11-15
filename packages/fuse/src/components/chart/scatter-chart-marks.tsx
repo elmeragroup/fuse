@@ -62,7 +62,7 @@ export type ScatterChartLineProps = ChartLayerProps & {
  */
 export type ScatterChartActiveDotProps = ChartLayerProps & {
   /**
-   * The mark on the active point. "ring" draws a ring around the point in its series' colour.
+   * The mark on the active point. "ring" draws a ring around the point in its series' color.
    * "dot" draws a filled dot inside a ring of the surface the chart rests on, `--surface`,
    * for a series a Line draws alone.
    */
@@ -158,7 +158,7 @@ export function ScatterChartPoints({
 
 /**
  * One series' points joined in x order, ties by y, so a scatter chart also draws curves over a
- * numeric x, such as a fitted normal line or a charging curve. Fuse fits nothing: pass the fitted
+ * numeric x, such as a fitted normal line or a charging curve. Fuse fits nothing, so pass the fitted
  * points as their own series.
  *
  * @beta

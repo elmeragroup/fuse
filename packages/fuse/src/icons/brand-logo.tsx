@@ -15,9 +15,9 @@ import { TrondelagkraftLogo } from "./bespoke/trondelagkraft-logo";
 export type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> & {
   /** The brand whose logo to draw. */
   brand: BrandCode;
-  /** `"full"`, the default, draws the whole logo; `"mark"` draws the symbol alone. */
+  /** The logo's form: `"full"` draws the whole logo, and `"mark"` draws the symbol alone. */
   variant?: "full" | "mark";
-  /** Accessible name. Defaults to the brand display name; an explicit `aria-label` wins. */
+  /** The accessible name. Defaults to the brand display name; an explicit `aria-label` wins. */
   title?: string;
 };
 
@@ -48,7 +48,7 @@ const MARK_FALLBACK_SIZES = {
  *
  * A `size-*` class in `className` sizes a mark. An unsized mark takes the icon size of the menu
  * row or button it sits in, and its artwork size elsewhere. A full logo keeps an inline span that
- * a size class can't reach, so size it through a class that targets its svg.
+ * a size class cannot reach, so size it through a class that targets its svg.
  *
  * @param props - The brand, the variant, the accessible name, and props for the span.
  * @returns The logo, named by `aria-label`, then `title`, then the brand display name.

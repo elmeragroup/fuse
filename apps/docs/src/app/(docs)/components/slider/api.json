@@ -69,7 +69,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the slider, so the thumb shows the disabled face.",
+          "description": "Whether the slider is disabled, so the thumb shows the disabled face.",
           "required": false
         },
         {
@@ -78,7 +78,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, so the thumb shows the invalid face.",
+          "description": "Whether the field is invalid, so the thumb shows the invalid face.",
           "required": false
         },
         {
@@ -163,7 +163,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows the formatted value at the end of the label row. A range joins its values with an en dash.",
+          "description": "Whether the label row shows the formatted value at its end. A range joins its values with an en dash.",
           "required": false
         },
         {

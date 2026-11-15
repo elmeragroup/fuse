@@ -7,7 +7,7 @@ import { Button } from "../button/button";
 import type { IconButtonProps, IconButtonSize } from "../button/button";
 import { useAttachmentOrientation } from "./attachment";
 
-/** `Attachment.Action` takes an icon `Button`'s props, with `size` optional. */
+/** Props for `Attachment.Action`, an icon `Button`'s props with `size` optional. */
 export type AttachmentActionProps = Omit<IconButtonProps, "size" | "aria-label"> & {
   /** One of Button's icon sizes. `icon-xs` is a 24px target when dense. */
   size?: IconButtonSize;
@@ -21,7 +21,7 @@ export type AttachmentActionProps = Omit<IconButtonProps, "size" | "aria-label">
 /**
  * An icon button for one action on the attachment, such as remove, retry or download. It
  * defaults to the `secondary` variant on a vertical tile, so its icon stays visible on any photo,
- * or `ghost` in a row. A `variant` you pass wins. Every other prop goes to `Button`.
+ * or `ghost` in a row. A passed `variant` wins. Every other prop goes to `Button`.
  */
 export function AttachmentAction({
   variant,

@@ -1,9 +1,9 @@
 /**
  * Where polar labels sit. A slice's label sits inside at d3's centroid when its slice's role has an
- * on-colour role and its box fits the slice, and outside otherwise, with a leader from the rim to an
+ * on-color role and its box fits the slice, and outside otherwise, with a leader from the rim to an
  * elbow 8 % past it and then a short run sideways. Outside labels on one side relax apart by their
  * own heights, so no two boxes overlap. A radar's or a dial's angle label sits past the rim and
- * aligns away from the centre. Every label is HTML placed in the cell, so these are plain boxes.
+ * aligns away from the center. Every label is HTML placed in the cell, so these are plain boxes.
  */
 import { arcCentroid } from "./arc-path";
 import type { ArcSpec } from "./arc-path";
@@ -13,7 +13,7 @@ import type { PolarPoint } from "./polar-angle";
 /** A label's box size, in the layout's unit. */
 export type LabelSize = { readonly width: number; readonly height: number };
 
-/** A box from its top left, in the layout's unit, from the centre. */
+/** A box from its top left, in the layout's unit, from the center. */
 export type LabelBox = {
   readonly left: number;
   readonly top: number;
@@ -27,12 +27,12 @@ export type InsidePlacement =
   | { readonly placement: "outside" };
 
 /**
- * Whether a slice's label sits inside it: only when the slice's role has an on-colour role, and
- * only when its box, centred on d3's centroid, lies wholly inside the slice.
+ * Whether a slice's label sits inside it: only when the slice's role has an on-color role, and
+ * only when its box, centered on d3's centroid, lies wholly inside the slice.
  *
  * @param arc - The slice's arc.
  * @param size - The label's box size.
- * @param onColour - Whether the slice's role has an on-colour role.
+ * @param onColour - Whether the slice's role has an on-color role.
  * @returns The placement, with the box when inside.
  */
 export function insideLabel(arc: ArcSpec, size: LabelSize, onColour: boolean): InsidePlacement {
@@ -64,7 +64,7 @@ export type OutsideLabel = {
   readonly elbow: PolarPoint;
   /** Where the leader ends, at the box's near edge. */
   readonly end: PolarPoint;
-  /** "end" for a label on the right half, which reads away to the right, "start" for the left. */
+  /** `"end"` for a label on the right half, which reads away to the right, `"start"` for the left. */
   readonly side: "start" | "end";
   readonly box: LabelBox;
 };
@@ -133,7 +133,7 @@ export function outsideLabels(
 /** The gap between the rim and an angle label's nearest edge along its ray, in CSS pixels. */
 export const LABEL_GAP = 6;
 
-/** A label centre's offset from its rim point, as CSS length expressions along x and y. */
+/** A label center's offset from its rim point, as CSS length expressions along x and y. */
 export type RayLabelOffset = { readonly x: string; readonly y: string };
 
 /** A number as a short CSS literal. */
@@ -142,15 +142,15 @@ function cssNumber(value: number): string {
 }
 
 /**
- * How far a label's centre sits from its rim point along the ray, as CSS lengths along x and y: the
+ * How far a label's center sits from its rim point along the ray, as CSS lengths along x and y: the
  * gap, then the box's half-extent along the ray, its support, `|sin θ| · w/2 + |cos θ| · h/2`, so its
- * nearest edge keeps the gap at any angle and its centre stays on the ray.
+ * nearest edge keeps the gap at any angle and its center stays on the ray.
  * The width and the height read `--_w` and `--_h`, the ink's size, which the client measures, and
  * fall back to the server's width estimate and one cap height.
  *
  * @param angle - The ray's angle in degrees from 12 o'clock.
  * @param width - The label's estimated width in CSS pixels, from the label-width table.
- * @param side - "outside" past the rim, or "inside" toward the centre.
+ * @param side - `"outside"` past the rim, or `"inside"` toward the center.
  * @returns The offsets along x and y, each a CSS length expression for `calc()`.
  */
 export function rayLabelOffset(angle: number, width: number, side: "outside" | "inside"): RayLabelOffset {
@@ -165,15 +165,15 @@ export function rayLabelOffset(angle: number, width: number, side: "outside" | "
 /** Where an angle label sits and how it aligns: the share of its box that lies before its point on each axis. */
 export type AngleLabel = {
   readonly point: PolarPoint;
-  /** 0 aligns the box's left edge on the point, 0.5 its centre and 1 its right edge. */
+  /** 0 aligns the box's left edge on the point, 0.5 its center and 1 its right edge. */
   readonly alignX: 0 | 0.5 | 1;
-  /** 0 aligns the box's top edge on the point, 0.5 its centre and 1 its bottom edge. */
+  /** 0 aligns the box's top edge on the point, 0.5 its center and 1 its bottom edge. */
   readonly alignY: 0 | 0.5 | 1;
 };
 
 /**
  * An angle label past the rim, such as a radar spoke's category or a dial's hour. It aligns away
- * from the centre, so it never covers the rim: centred near 12 and 6 o'clock along x, and near 3
+ * from the center, so it never covers the rim: centered near 12 and 6 o'clock along x, and near 3
  * and 9 o'clock along y.
  *
  * @param angle - The label's angle in degrees.

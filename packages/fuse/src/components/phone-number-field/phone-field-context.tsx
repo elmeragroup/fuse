@@ -11,9 +11,9 @@ import { LabelableProvider } from "@base-ui/react/internals/labelable-provider";
 import { NOOP } from "@base-ui/react/internals/noop";
 
 /**
- * Hands the number input's Field registration the number the field submits in place of the
- * display text the input holds, so a `Form` reads it for `onFormSubmit` while still focusing
- * the input on an error and checking its constraints. The input keeps its own
+ * A Field context that hands the number input's Field registration the number the field submits, in
+ * place of the display text the input holds, so a `Form` reads it for `onFormSubmit` while still
+ * focusing the input on an error and checking its constraints. The input keeps its own
  * `${name}-display-value` DOM name, which the Field's `name` would otherwise replace.
  */
 export function SubmittedValueControl({
@@ -39,8 +39,8 @@ export function SubmittedValueControl({
 
 /**
  * The Field context Base UI gives a control outside any Field: no name, registration,
- * validation or state to report to. Typed against Base UI's own context, so a change to it
- * fails the build here.
+ * validation or state to report to. It is typed against Base UI's own context, so a change to
+ * that context fails the build here.
  */
 const DETACHED_FIELD_CONTEXT: FieldRootContext = {
   invalid: undefined,
@@ -69,8 +69,8 @@ const DETACHED_FIELD_CONTEXT: FieldRootContext = {
 };
 
 /**
- * Renders the country picker outside the phone field's Field, and outside any Field around
- * it: the detached context keeps the combobox from registering as a field's control or taking
+ * A scope that renders the country picker outside the phone field's Field, and outside any Field
+ * around it: the detached context keeps the combobox from registering as a field's control or taking
  * its name, and its own labelable scope keeps the field's label and control id off it. It
  * keeps the field's disabled state, which a disabled `Field.Set` can set.
  */

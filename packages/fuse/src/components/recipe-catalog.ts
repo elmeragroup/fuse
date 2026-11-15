@@ -10,7 +10,7 @@
  * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
  * and icon from the table the component reads. Item's title face comes along with its part
  * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
- * which Alert's description renders with Alert's own type and colour. Sidebar's desktop parts
+ * which Alert's description renders with Alert's own type and color. Sidebar's desktop parts
  * come along, with the rail widths the Provider sets as `--sidebar-width` and
  * `--sidebar-width-icon`; its mobile Sheet's classes stay in `sidebar.tsx`. The menu families'
  * recipes come along with the shared group label, indicator and separator classes the menu kits

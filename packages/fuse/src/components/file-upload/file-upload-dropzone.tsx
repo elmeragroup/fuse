@@ -18,16 +18,16 @@ const styles = fileUploadVariants();
 
 type FileUploadDropzoneBaseProps = useRender.ComponentProps<"div">;
 
-/** `FileUpload.Dropzone` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `FileUpload.Dropzone`, a `div` with Base UI's `render`. */
 export type FileUploadDropzoneProps = Omit<FileUploadDropzoneBaseProps, "children"> & {
   /**
    * The zone's content. Keep a `FileUpload.Trigger` inside for the keyboard: a drop and a click
    * on the zone's empty surface, which opens the picker too, work by pointer only. While a file
    * drag that could pass is over the zone, it sets `data-drop-target`, which turns its dashed
-   * border solid on the soft primary fill. When the drop is certain to fail, because a single-file Root gets several files whose
-   * types pass `accept` or every file's type misses `accept`, the drag shows the not-allowed
-   * cursor and the zone stays as it is. Safari hides the files until the drop, so there the check
-   * waits for the drop.
+   * border solid on the soft primary fill. When the drop is certain to fail, because a single-file
+   * Root gets several files whose types pass `accept` or every file's type misses `accept`, the drag
+   * shows the not-allowed cursor and the zone stays as it is. Safari hides the files until the drop,
+   * so there the check waits for the drop.
    */
   children?: FileUploadDropzoneBaseProps["children"];
 };

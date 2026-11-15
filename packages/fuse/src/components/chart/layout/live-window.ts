@@ -5,7 +5,7 @@
  * `live-clock.ts` and the server read the same answers for the same inputs.
  *
  * x runs from the window's start at the plot's left edge to its end, the chart's clock, at the right
- * edge, and y runs bottom to top. Positions are unsnapped: the window moves a fraction of a pixel
+ * edge, and y runs bottom to top. Positions stay unsnapped. The window moves a fraction of a pixel
  * each frame, and snapping would make it judder.
  */
 import { bisector, tickIncrement } from "d3-array";
@@ -32,7 +32,7 @@ export type LiveSeries = {
 
 /** The latest value, with the issue Root's `value` raised, if any. */
 export type LiveLatest = {
-  /** Root's `value` when it parses, else the latest reading's, or null with no reading. */
+  /** Root's `value` when it parses, otherwise the latest reading's, or null with no reading. */
   readonly latest: number | null;
   readonly issues: readonly PropIssue[];
 };
@@ -44,10 +44,10 @@ export type LiveWindow = { readonly start: number; readonly end: number };
 export type LiveSpan = { readonly first: number; readonly end: number };
 
 /**
- * Parse the consumer's readings: a `Date` or epoch-millisecond time and a finite value within
- * ±1e15. A row that breaks either rule is skipped and reported. The rest sort by time, and a feed
- * already in order, as a live feed is, skips the sort. One instant holds one reading: of rows that
- * share a time, the last in row order wins, as a feed that corrects its latest reading sends it
+ * Parses the consumer's readings, each a `Date` or epoch-millisecond time and a finite value within
+ * ±1e15. The parser skips and reports a row that breaks either rule. The rest sort by time, and a
+ * feed already in order, as a live feed is, skips the sort. One instant holds one reading. Of rows
+ * that share a time, the last in row order wins, as a feed that corrects its latest reading sends it
  * again, so a reading's time is its identity everywhere downstream.
  *
  * @param rows - The consumer's readings.
@@ -82,9 +82,9 @@ export function parseLiveSeries(rows: readonly LiveRow[]): LiveSeries {
 }
 
 /**
- * Parse Root's `value` against the parsed readings. It keeps the readings' bound, and one that
- * breaks it is reported and gives way to the latest reading's value, so the domain stays finite. A
- * value with no reading has no instant to sit at, so the latest value waits for the first reading.
+ * Parses Root's `value` against the parsed readings. It keeps the readings' bound. The parser
+ * reports a value that breaks it and uses the latest reading's value instead, so the domain stays
+ * finite. A value with no reading has no instant to sit at, so the latest value waits for the first reading.
  *
  * @param points - The parsed readings in time order.
  * @param value - Root's `value`, or undefined.
@@ -122,7 +122,7 @@ export function timeShare(window: LiveWindow, time: number): number {
 }
 
 /**
- * The readings' places by time: `left` finds the first index whose reading is at or after an
+ * The readings' places by time. `left` finds the first index whose reading is at or after an
  * instant, and `right` the first after it, each the length past the last.
  */
 const byTime = bisector((point: LivePoint) => point.time);
@@ -176,7 +176,7 @@ export function nearestIndex(points: readonly LivePoint[], span: LiveSpan, time:
 }
 
 /**
- * The readings a key walk reaches: from the window's oldest reading to the latest, or every reading
+ * The readings a key walk reaches, from the window's oldest reading to the latest, or every reading
  * when the window shows none.
  *
  * @param points - The readings in time order.
@@ -249,11 +249,11 @@ export function valueRange(
 
 /**
  * The lowest and highest of the values the line draws through in a window: the span's readings,
- * the reading before the span, whose segment enters at the left edge, and the line's live tip. The entering segment counts by its outer reading's value, not by where it
- * crosses the edge: the curves a live line draws, monotone, linear, the steps, bump and basis,
- * never leave the range of the readings around them, so the outer reading bounds the segment
- * under every one of them without sampling the curve, at the cost of some headroom while the
- * segment leaves the window.
+ * the reading before the span, whose segment enters at the left edge, and the line's live tip. The
+ * entering segment counts by its outer reading's value, not by where it crosses the edge. The curves
+ * a live line draws, monotone, linear, the steps, bump and basis, never leave the range of the
+ * readings around them. So the outer reading bounds the segment under every one of them without
+ * sampling the curve, at the cost of some headroom while the segment leaves the window.
  *
  * @param points - The readings in time order.
  * @param span - The readings the window shows.
@@ -277,10 +277,11 @@ export function liveExtent(
 const LIVE_DOMAIN_PAD = 0.12;
 
 /**
- * The value domain that fits an extent: the extent widened by `LIVE_DOMAIN_PAD` of its span at each
- * end, or for a flat extent, or one too narrow to widen in floating point, by a tenth of its
- * larger magnitude either way, or by 1 at 0, as a Sparkline's flat line, so a flat line sits mid-plot. A live domain is never niced: nice ends
- * would jump a whole tick step as a reading crosses one, where this domain eases with the data.
+ * The value domain that fits an extent, the extent widened by `LIVE_DOMAIN_PAD` of its span at each
+ * end. A flat extent, or one too narrow to widen in floating point, widens by a tenth of its larger
+ * magnitude either way, or by 1 at 0, as a Sparkline's flat line does, so a flat line sits mid-plot.
+ * A live domain is never niced. Nice ends would jump a whole tick step as a reading crosses one,
+ * where this domain eases with the data.
  *
  * @param extent - The lowest and highest value.
  * @returns The domain.
@@ -297,8 +298,8 @@ export function liveDomain(extent: readonly [number, number]): readonly [number,
 }
 
 /**
- * The value ticks a frame draws: every multiple of the step d3 picks for the resting domain, the
- * one its glide comes to rest at, that the shown domain holds. A domain's step changes as it
+ * The value ticks a frame draws. They are the multiples, inside the shown domain, of the step d3
+ * picks for the resting domain, the one its glide comes to rest at. A domain's step changes as it
  * glides across one of d3's thresholds, which would swap every tick mid-glide, while the resting
  * domain's changes only when the glide retargets. Where the resting step would crowd the shown
  * domain with more than twice the ticks it aims for, as while a spike's domain eases back in, the
@@ -376,10 +377,10 @@ export function tickStep(duration: number, room: number): number {
 }
 
 /**
- * The tick instants inside a window, both ends included: every instant whose wall clock, the
- * instant plus the zone's offset there, is a whole multiple of the step. One offset holds across
- * the window, read where it ends, so a window that spans a daylight-saving change aligns its ticks
- * to the zone's new offset.
+ * The tick instants inside a window, both ends included. They are the instants whose wall clock,
+ * the instant plus the zone's offset there, is a whole multiple of the step. The function reads one
+ * offset, where the window ends, and uses it across the window, so a window that spans a
+ * daylight-saving change aligns its ticks to the zone's new offset.
  *
  * @param window - The window.
  * @param step - The step in milliseconds.
@@ -399,13 +400,13 @@ export function timeTicks(window: LiveWindow, step: number, offset: number): num
 }
 
 /**
- * How opaque a tick is at its place: fully inside, fading over the last `fade` share of the axis at
- * either edge, and gone at the edge itself, so a tick enters at the right as the window reaches it
+ * How opaque a tick is at its place. It is opaque inside, fades over the last `fade` share of the
+ * axis at either edge, and is gone at the edge itself, so a tick enters at the right as the window reaches it
  * and leaves at the left without a pop, after Liveline's time axis.
  *
  * @param share - The tick's place across the axis.
  * @param fade - The share of the axis each fade spans, above 0.
- * @returns The opacity, from 0 to 1.
+ * @returns The opacity, 0 to 1.
  */
 export function edgeFade(share: number, fade: number): number {
   return Math.max(0, Math.min(1, share / fade, (1 - share) / fade));
@@ -416,7 +417,7 @@ export function edgeFade(share: number, fade: number): number {
  * the two readings around every segment, so the readings the window draws bound the line, and the
  * domain that holds them holds the whole curve. A natural spline overshoots its readings, as
  * through 0, 100, 100 and 0, where it peaks near 115, so it would leave a domain fitted to the
- * readings, and it is not among them. A curve joins only once it is known to stay bounded.
+ * readings, and it is not among them. A curve joins this list only once it is shown to stay bounded.
  *
  * @beta
  */
@@ -456,8 +457,8 @@ export function liveValueAt(
 }
 
 /**
- * The vertices a frame's line runs through: the window's readings, led by the last reading before
- * the window so the line enters at the left edge, then the tip at the clock, so the line runs on to
+ * The vertices a frame's line runs through. They are the window's readings, led by the last reading
+ * before the window so the line enters at the left edge, then the tip at the clock, so the line runs on to
  * the right edge at the latest value. Each reading draws at `liveValueAt`'s value, so a new
  * reading grows out of the last one, a reading that a newer one overtook mid-glide settles from
  * where it showed, and the line always ends on the live dot. A latest reading on the clock's
@@ -538,7 +539,7 @@ export function liveY(geometry: LiveGeometry, value: number): number {
   return heightY(geometry.domain, geometry.height, value);
 }
 
-/** The digits a live path keeps: a hundredth of a pixel, so a slow scroll still moves the path. */
+/** The digits a live path keeps, a hundredth of a pixel, so a slow scroll still moves the path. */
 const LIVE_DIGITS = 2;
 
 /**
@@ -551,7 +552,7 @@ export function livePixel(value: number): string {
   return pathNumber(value, LIVE_DIGITS);
 }
 
-/** A live mark's path generator: the line itself, or the area under it to the plot's bottom edge. */
+/** A live mark's path generator, for the line itself or the area under it to the plot's bottom edge. */
 function livePath(
   geometry: LiveGeometry,
   vertices: readonly LivePoint[],

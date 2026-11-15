@@ -10,9 +10,9 @@ import type { Configuration, Snapshot } from "./phone-snapshot";
 
 /** The props a waiting proposal is judged against. */
 export type ProposalProps = {
-  /** The controlled value, or undefined for an uncontrolled number. */
+  /** The controlled value, or `undefined` for an uncontrolled number. */
   readonly value: string | undefined;
-  /** The controlled country code, or undefined. */
+  /** The controlled country code, or `undefined`. */
   readonly countryCode: PhoneCountryCode | undefined;
   /** The configuration numbers are read in. */
   readonly configuration: Configuration;
@@ -20,17 +20,17 @@ export type ProposalProps = {
 
 /** The props a proposal was made under, with the proposal and the value that holds its number. */
 export type ProposalRecord = ProposalProps & {
-  /** The proposal waiting for the parent, or null. */
+  /** The proposal waiting for the parent, or `null`. */
   readonly proposal: Snapshot | null;
-  /** The value that holds the waiting proposal's number without a parse, or null. */
+  /** The value that holds the waiting proposal's number without a parse, or `null`. */
   readonly numberAnswer: string | null;
 };
 
 /** New props, with the countries the editor derives from them without a parse. */
 export type JudgedProps = ProposalProps & {
-  /** The country `countryCode` resolves to in the new catalog, or null. */
+  /** The country `countryCode` resolves to in the new catalog, or `null`. */
   readonly controlled: PhoneNumberCountry | null;
-  /** The offered country the value names, from its cached detection only, or null. */
+  /** The offered country the value names, from its cached detection only, or `null`. */
   readonly named: PhoneNumberCountry | null;
 };
 
@@ -58,7 +58,7 @@ export type PendingProposal = {
 export type WaitingProposal = {
   /** The proposal, read in the new configuration. */
   readonly proposal: Snapshot;
-  /** The value that holds its number without a parse, or null. */
+  /** The value that holds its number without a parse, or `null`. */
   readonly numberAnswer: string | null;
 };
 
@@ -71,7 +71,7 @@ type NumberReply =
   /**
    * A new value answers the number alone, in a countryless form of the parent's own, such as the
    * national digits it stores: `read` is that value read in the proposal's country, the
-   * proposal's number under the new configuration, or null for an echo of an output the parent
+   * proposal's number under the new configuration, or `null` for an echo of an output the parent
    * heard, which holds the number without a parse.
    */
   | { readonly kind: "answered"; readonly read: Snapshot | null }
@@ -96,13 +96,13 @@ function countryAnswer(stored: ProposalProps, next: ProposalProps, proposal: Sna
 
 /**
  * The stored proposal, while the new configuration still offers its country, with what the new
- * `countryCode` says to it; else null. An answer to either half keeps a proposal waiting across
+ * `countryCode` says to it; else `null`. An answer to either half keeps a proposal waiting across
  * formatting, flag, detection, metadata and catalog changes in the same render only while the
  * catalog offers its country.
  *
  * @param stored - The props the proposal was made under, with the proposal.
  * @param next - The new props.
- * @returns The pending proposal, or null when there is none or the catalog no longer offers it.
+ * @returns The pending proposal, or `null` when there is none or the catalog no longer offers it.
  */
 export function pendingProposal(stored: ProposalRecord, next: ProposalProps): PendingProposal | null {
   const { proposal } = stored;
@@ -187,8 +187,8 @@ function carryProposal(
  * keeps a value that does not hold its number yet, or answers its number in a countryless form of
  * its own beside the `countryCode` it had. Answered in both halves, it ends, and the field shows
  * what the precedence gives. Props that change neither half keep it waiting: equal props, a change
- * to defaults only, and, under a controlled country, a configuration change that answers nothing
- * (a format, flag, detection, metadata or catalog change), which carries it into the new
+ * to defaults only, and, under a controlled country, a configuration change that answers nothing,
+ * such as a format, flag, detection, metadata or catalog change, which carries it into the new
  * configuration as an answer would: it is no steer of its own. Without a controlled country such a
  * change drops it, as fields always have. Any other props reject it.
  *
@@ -200,7 +200,7 @@ function carryProposal(
  * @param stored - The props the proposal was made under, with the proposal.
  * @param next - The new props, which do not show the proposal.
  * @param pending - The stored proposal, as {@link pendingProposal} found it under `next`.
- * @returns The proposal waiting on in the new configuration, or null when it ends.
+ * @returns The proposal waiting on in the new configuration, or `null` when it ends.
  */
 export function proposalFate(
   stored: ProposalRecord,

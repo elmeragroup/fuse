@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's Scrubber: the active slot's hand, or its sector, which turns with the Root's angle
+ * The clock's Scrubber, the active slot's hand or its sector. It turns with the Root's angle
  * follower, so the active dots and the tooltip turn with it. The first paint draws it at rest.
  */
 import { useLayoutEffect, useRef } from "react";

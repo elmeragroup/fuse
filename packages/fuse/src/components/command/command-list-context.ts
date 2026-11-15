@@ -32,8 +32,9 @@ export type CommandListRows = Extract<
 >;
 
 /**
- * `true` inside the element `Command.List` renders from its `render` value, which receives the
- * row function as `children`. `CommandVirtual.List` checks it to throw a named error anywhere else.
+ * Whether the part sits inside the element `Command.List` renders from its `render` value, which
+ * receives the row function as `children`. `CommandVirtual.List` checks it to throw a named error
+ * anywhere else.
  */
 export const CommandListTargetContext = createContext(false);
 

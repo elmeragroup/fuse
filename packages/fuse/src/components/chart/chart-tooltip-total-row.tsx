@@ -24,11 +24,11 @@ export type TooltipTotalRowProps = ChartDomProps<"div"> & {
   readonly context: TextContext;
   /** The active slot, or null while nothing is active. */
   readonly at: number | null;
-  /** A config stack id. The first stack id in config order is the default. */
+  /** A config stack id. Defaults to the first stack id in config order. */
   readonly stack?: string | undefined;
-  /** The row's label. The dictionary's "Totalt" is the default. */
+  /** The row's label. Defaults to the dictionary's "Totalt". */
   readonly label?: string | undefined;
-  /** The total's format. The stack's first series' format is the default. */
+  /** The total's format. Defaults to the stack's first series' format. */
   readonly format?: ValueFormat | undefined;
 };
 

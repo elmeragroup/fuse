@@ -1,22 +1,21 @@
 /**
  * Every part a `SkeletonReveal` draws differently from plain content declares a skeleton role,
- * keyed by its `data-slot` like `PART_DENSITY` beside it. The skeleton is drawn from the real
+ * keyed by its `data-slot` like `PART_DENSITY` beside it. The skeleton draws from the real
  * component rendered with sample data, so it needs to know which parts are one shape and which
- * hold text it should draw line by line:
+ * contain text it should draw line by line:
  *
  * - `block`: one bone at the part's border box, with the part's own corner radius. Controls,
- *   avatars, badges, switches and media read as one shape, whatever text or icons they hold.
+ *   avatars, badges, switches and media read as one shape, whatever text or icons they contain.
  * - `ignore`: neither drawn nor walked, as for a spinner that only stands in for progress.
  *
- * A part without a role is a container: it keeps its own surface (a card's fill, border and
- * shadow), and the skeleton walks into it, drawing a bar per line of its text and a bone per
- * block inside it.
+ * A part without a role is a container. It keeps its own surface, such as a card's fill, border and
+ * shadow, and the skeleton walks into it, drawing a bar per line of its text and a bone per block
+ * inside it.
  *
- * Fuse declares its parts here instead of guessing what is painted, as a heuristic over
- * computed styles would: a Fuse part's shape is known when it is written, and the guess costs a
+ * Fuse declares its parts here instead of guessing what is painted, as a heuristic over computed
+ * styles would. A Fuse part's shape is known when it is written, and the guess costs a
  * label-counting walk per painted element. Consumer markup takes the same roles through the
- * `data-skeleton` attribute, which wins over this table; media and form elements are blocks by
- * tag.
+ * `data-skeleton` attribute, which wins over this table. Media and form elements are blocks by tag.
  */
 
 /** How the skeleton draws one part: one block, or not at all. */
@@ -56,7 +55,7 @@ export const PART_SKELETON = {
   "toolbar-button": "block",
 } as const satisfies Record<string, SkeletonRole>;
 
-/** Elements drawn as one block by tag: they hold no text to measure, or paint their own. */
+/** The tags the skeleton draws as one block, because they contain no text to measure or paint their own. */
 const SKELETON_BLOCK_TAGS: ReadonlySet<string> = new Set([
   "audio",
   "canvas",
@@ -74,9 +73,9 @@ const SKELETON_BLOCK_TAGS: ReadonlySet<string> = new Set([
 
 /** What the skeleton reads off one element to decide its role. */
 export type SkeletonRoleSource = {
-  /** The element's `data-skeleton` attribute, or null when it has none. */
+  /** The element's `data-skeleton` attribute, or `null` when it has none. */
   readonly hint: string | null;
-  /** The element's `data-slot`, or null when it has none. */
+  /** The element's `data-slot`, or `null` when it has none. */
   readonly slot: string | null;
   /** The element's local name, such as `img` or `div`. */
   readonly tagName: string;

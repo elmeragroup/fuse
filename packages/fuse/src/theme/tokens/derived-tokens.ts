@@ -14,9 +14,9 @@ import { readableSidebarBrand } from "./sidebar-brand";
 type MixRole = Extract<(typeof DERIVED_ROLES)[DerivedTokenName], { readonly _tag: "OklchMix" }>;
 
 /**
- * Mix two `oklch()` token literals in OKLCH, as CSS `color-mix(in oklch, from, toward percent%)`
- * does. Percents are source, so one outside 0..100 is a defect and throws, as `tokenOklch` does
- * for a literal that is not `oklch()` notation.
+ * Mixes two `oklch()` token literals in OKLCH, as CSS `color-mix(in oklch, from, toward percent%)`
+ * does. Percents are source, so one outside 0 to 100 is a defect, and the function throws, as
+ * `tokenOklch` does for a literal that is not `oklch()` notation.
  *
  * @param from - The literal the mix starts from.
  * @param toward - The literal the mix moves toward.
@@ -37,9 +37,9 @@ function mixLiteral(tokens: LayerTokens, role: MixRole): string {
 }
 
 /**
- * Complete a composed theme with its derived roles. Composition calls it last, so every
- * derived literal follows the roles the theme resolved. Each value reads only the roles its
- * `DERIVED_ROLES` entry names.
+ * Completes a composed theme with its derived roles. Composition calls it last, so every derived
+ * literal follows the roles the theme resolved. Each value reads only the roles its `DERIVED_ROLES`
+ * entry names.
  *
  * @param tokens - Every layer-assigned role of one composed theme.
  * @returns The full token contract for that theme.
@@ -54,10 +54,10 @@ export function withDerivedTokens(tokens: LayerTokens): TokenContract {
 }
 
 /**
- * The value a theme rule declares for a derived role. A mix declares its live `color-mix()`,
- * which the browser evaluates wherever the declaration applies, so it follows a host
- * override of either source there; `withDerivedTokens` computes the same mix as a literal.
- * A composed role declares the value composition computed.
+ * The value a theme rule declares for a derived role. A mix declares its live `color-mix()`, which
+ * the browser evaluates wherever the declaration applies, so it follows a host override of either
+ * source there. `withDerivedTokens` computes the same mix as a literal. A composed role declares
+ * the value composition computed.
  *
  * @param name - A derived role.
  * @param composed - The value `withDerivedTokens` computed for the role.

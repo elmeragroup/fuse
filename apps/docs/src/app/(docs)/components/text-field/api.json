@@ -53,7 +53,7 @@
           "type": "\"numeric\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Keeps digits only, forwarded to the inner `Input`. Only digits reach `onChange`. It sets `inputMode=\"numeric\"` unless you pass `inputMode`. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API, so a pasted `912 34 567` fits `maxLength={8}` whole. Under `type=\"email\"`, and for autofill that sends no cancelable `beforeinput`, the browser cuts the text to `maxLength` first. There a pasted `912 34 567` becomes `912345`. Input's `filter` lists the types and paths.",
+          "description": "The input filter, forwarded to the inner `Input`. `\"numeric\"` keeps digits only, so only digits reach `onChange`. It sets `inputMode=\"numeric\"` unless `inputMode` is passed. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API, so a pasted `912 34 567` fits `maxLength={8}` whole. Under `type=\"email\"`, and for autofill that sends no cancelable `beforeinput`, the browser cuts the text to `maxLength` first. There a pasted `912 34 567` becomes `912345`. Input's `filter` lists the types and paths.",
           "required": false
         },
         {
@@ -62,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the whole field and the input.",
+          "description": "Whether the whole field and the input are hidden.",
           "required": false
         },
         {
@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field and the input.",
+          "description": "Whether the field and the input are disabled.",
           "required": false
         },
         {
@@ -89,7 +89,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look.",
+          "description": "Whether the field is marked invalid, with the invalid look.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a spinner at the end of the label row. The row shows even without `label`.",
+          "description": "Whether a spinner shows at the end of the label row. The row shows even without `label`.",
           "required": false
         },
         {
@@ -107,7 +107,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input read-only, with the muted read-only fill.",
+          "description": "Whether the input is read-only, with the muted read-only fill.",
           "required": false
         },
         {
@@ -116,7 +116,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the input required, so the browser's constraint check blocks an empty submit.",
+          "description": "Whether the input is required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -125,7 +125,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
+          "description": "Whether a check shows at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
           "required": false
         },
         {

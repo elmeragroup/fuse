@@ -12,7 +12,7 @@ import type { PlotFrame, PlotRect } from "./plot-frame";
  * its own along the radius, so the policy reads no plot geometry.
  */
 export type FloorAxis = {
-  /** "vertical" when values grow up the page, "horizontal" when they grow to the right or outward. */
+  /** `"vertical"` when values grow up the page, `"horizontal"` when they grow to the right or outward. */
   readonly orientation: "vertical" | "horizontal";
   /**
    * The value-axis span a body covers with the floor, from the span its plain snap covers.
@@ -41,13 +41,19 @@ export type StackSegment = {
   readonly plainTo: number;
 };
 
-/** One span a stack's mark draws: the device pixel columns it covers along the slot axis, and its segment. */
+/**
+ * One span a stack's mark draws: the device pixel columns it covers along the slot axis, and its
+ * segment.
+ */
 export type FloorSpan = {
   /** Its first device pixel column along the slot axis, from the plot's drawn origin. */
   readonly from: number;
   /** The device pixel column past its last. */
   readonly to: number;
-  /** The series it draws, by config key, which names it in ties and keeps a series' own spans from competing. */
+  /**
+   * The series it draws, by config key, which names it in ties and keeps a series' own spans from
+   * competing.
+   */
   readonly series: string;
   readonly segment: StackSegment;
 };
@@ -60,7 +66,7 @@ export type FloorSpan = {
  * @param axis - The axis the body draws along, a frame's or a dial's.
  * @param base - The body's base along the value axis, unsnapped.
  * @param tip - Its tip, likewise.
- * @returns The side, or null.
+ * @returns The side, or `null`.
  */
 export function zeroSide(
   axis: Pick<FloorAxis, "orientation">,
@@ -120,13 +126,13 @@ const OVERLAP = 1e-6;
  *   two series' floors never share a pixel.
  *
  * A span keeps its floor only where its proposal stands in every run it covers, as a bar or a
- * column paints one floor for its whole span. A stack at rest with any length keeps a pixel: the
+ * column paints one floor for its whole span. A stack at rest with any length keeps a pixel. The
  * span reaching farthest out on a side, the first series' on a tie, wins every run it covers, and
  * its floor lies past every other segment's pixels.
  *
  * @param spans - The stack's spans in the frame.
  * @param axis - The axis the stack draws along, a frame's or a dial's.
- * @returns For each span, 1 where it keeps its floor and 0 where it does not.
+ * @returns For each span, `1` where it keeps its floor and `0` where it does not.
  */
 export function settleFloors(spans: readonly FloorSpan[], axis: FloorAxis): Uint8Array {
   const count = spans.length;
@@ -188,7 +194,7 @@ export function settleFloors(spans: readonly FloorSpan[], axis: FloorAxis): Uint
   // The floors that stand in the current run: their series' ranks and their pixels.
   const standing: { readonly rank: number; readonly from: number; readonly to: number }[] = [];
   let size = 0;
-  /** Settle one side of the current run. */
+  /** Settles one side of the current run. */
   const settleSide = (side: 1 | -1): void => {
     let best = -1;
     let reach = Number.NEGATIVE_INFINITY;

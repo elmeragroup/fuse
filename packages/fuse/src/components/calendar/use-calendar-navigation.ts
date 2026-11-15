@@ -26,7 +26,7 @@ export type CalendarVisibleRangeChangeEventDetails =
   CalendarChangeEventDetails<CalendarVisibleRangeChangeReason>;
 
 /**
- * Reports a change of the visible months. Canceling it keeps the months shown: a month button
+ * Called when the visible months change. Canceling the change keeps the months shown: a month button
  * press does nothing, and a key that would page leaves focus on the day it was on.
  */
 export type CalendarVisibleRangeChangeHandler = (
@@ -36,7 +36,7 @@ export type CalendarVisibleRangeChangeHandler = (
 
 /**
  * The shared state a Root starts from, before the clock is read: focus on the clamped day it is
- * given and the view centred on it, or nothing to show yet when it has no day.
+ * given and the view centered on it, or nothing to show yet when it has no day.
  *
  * @param focused - The value or default value's day, or `null` when the Root starts empty.
  * @param settings - The Root's bounds and month count.
@@ -76,12 +76,12 @@ function untilDayEnds(day: Temporal.PlainDate, timeZone: string): number {
 
 /**
  * Shows a day under the given bounds and moves the tab stop and DOM focus to it, paging the view
- * when the day is outside the visible months. A page is reported through `onVisibleRangeChange`
+ * when the day is outside the visible months. It reports a page through `onVisibleRangeChange`
  * with the reason `"keyboard"`; canceling it leaves the state as it was.
  *
  * @param date - The day, inside `bounds`.
  * @param bounds - The bounds the page keeps the view inside, which may be narrower than the
- *   Root's, such as a range's while it is being chosen.
+ *   Root's, such as a range's while the user is choosing it.
  * @param event - The DOM event behind the move.
  * @param trigger - The element the gesture happened on.
  * @returns `false` when the page was canceled or the calendar shows no months yet.
@@ -97,15 +97,18 @@ export type CalendarShowDay = (
 export type CalendarNavigation = {
   /** The actions the shared parts call, which the Root puts on their context. */
   readonly actions: CalendarActions;
-  /** Show a day, paging if needed: the transition behind every keyboard move, for the Root's own use. */
+  /**
+   * Shows a day, paging if needed. It is the transition behind every keyboard move, for the Root's
+   * own use.
+   */
   readonly showDay: CalendarShowDay;
 };
 
 /**
  * The navigation every calendar Root shares.
  *
- * Today is read in a layout effect, never while rendering, so a server render shows no today and
- * stays the same as the first client render; a calendar with neither a value nor a default value
+ * The hook reads today in a layout effect, never while rendering, so a server render shows no today
+ * and matches the first client render; a calendar with neither a value nor a default value
  * shows its months from that effect on. It re-reads at the next midnight in `timeZone` and when
  * the page becomes visible again, so a calendar left open overnight moves its today marking.
  *

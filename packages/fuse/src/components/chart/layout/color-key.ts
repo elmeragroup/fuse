@@ -1,25 +1,25 @@
 /**
- * The per-key colour property of CONTRACT section 11, and the role helpers every chart family reads
- * a config colour through. Fuse never writes `--chart-color-<key>`. Each mark reads it with the
+ * The per-key color property of CONTRACT section 11, and the role helpers every chart family reads
+ * a config color through. Fuse never writes `--chart-color-<key>`. Each mark reads it with the
  * config role as the fallback, so a consumer's property on Root wins.
  */
 import type { ChartColor, ChartThresholdColor } from "../chart-types";
 
 /**
- * Whether a colour is a decorative role list.
+ * Whether a color is a decorative role list.
  *
- * @param color - A config colour.
- * @returns True for a role list.
+ * @param color - A config color.
+ * @returns `true` for a role list.
  */
 export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
   return Array.isArray(color);
 }
 
 /**
- * Whether a colour is a threshold, which splits the series at one value.
+ * Whether a color is a threshold, which splits the series at one value.
  *
- * @param color - A config colour.
- * @returns True for a threshold.
+ * @param color - A config color.
+ * @returns `true` for a threshold.
  */
 export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
@@ -30,8 +30,8 @@ export function isThresholdColor(color: ChartColor): color is ChartThresholdColo
  * The one role a series paints with where a family draws a single role per series. A list takes its
  * first role, a threshold its `below` side, and a scale its middle step.
  *
- * @param color - The config colour, or undefined for a key the config lacks.
- * @returns The role, `chart-1` without a colour.
+ * @param color - The config color, or `undefined` for a key the config lacks.
+ * @returns The role, `chart-1` without a color.
  */
 export function singleRole(color: ChartColor | undefined): string {
   if (color === undefined) return "chart-1";
@@ -49,7 +49,7 @@ function isKept(code: number): boolean {
 }
 
 /**
- * Turn a config key into a custom-property name fragment. ASCII letters, digits and `-` stay as
+ * Turns a config key into a custom-property name fragment. ASCII letters, digits and `-` stay as
  * they are, and every other code point, `_` and non-ASCII letters included, becomes `_`, its code
  * point in lower case hexadecimal, and `_`. Escaping `_` keeps the map one-to-one, so two keys never
  * share a property, and server and client compute the same name.

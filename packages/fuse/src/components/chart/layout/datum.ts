@@ -12,19 +12,19 @@ export type DatumKeyword = "first" | "last" | "min" | "max" | "now";
 
 /** What a selector reads. */
 export type DatumInput = {
-  /** The drawn value per domain slot, null where the part draws nothing. */
+  /** The drawn value per domain slot, `null` where the part draws nothing. */
   readonly values: readonly (number | null)[];
   readonly window: SlotWindow;
-  /** The slot that contains Root's `now`, or -1. */
+  /** The slot that contains Root's `now`, or `-1`. */
   readonly nowSlot: number;
 };
 
 /**
- * The slot that holds Root's `now`, which the "now" keyword picks.
+ * The slot that holds Root's `now`, which the `"now"` keyword picks.
  *
  * @param domain - The model's domain.
- * @param now - Root's `now`, or undefined.
- * @returns The slot, or -1 off a time axis, without a `now` or past the domain.
+ * @param now - Root's `now`, or `undefined`.
+ * @returns The slot, or `-1` off a time axis, without a `now` or past the domain.
  */
 export function nowSlotOf(domain: XDomain, now: Date | number | undefined): number {
   return now === undefined || domain.kind !== "time" ? -1 : slotOf(domain, now);
@@ -63,7 +63,7 @@ export function keywordSlots(keyword: DatumKeyword, input: DatumInput): number[]
 /**
  * The slots a list of x values picks, inside the window.
  *
- * @param slots - The slot each x value names, -1 for one outside the domain.
+ * @param slots - The slot each x value names, `-1` for one outside the domain.
  * @param window - The effective window.
  * @returns The distinct picked slots in x order.
  */

@@ -1,7 +1,7 @@
 /**
  * The class strings of Sidebar's parts without an axis. The desktop panel's parts are slots of
- * `sidebarPanelVariants`, and the mobile Sheet's stay in `sidebar.tsx`. Package-private: not on
- * the `@elmeragroup/fuse/sidebar` facade. The workspace-only recipe catalog re-exports them for
+ * `sidebarPanelVariants`, and the mobile Sheet's stay in `sidebar.tsx`. They are package-private
+ * and not on the `@elmeragroup/fuse/sidebar` facade. The workspace-only recipe catalog re-exports them for
  * the Figma component sync.
  */
 import { cn } from "../../styles/cn";
@@ -48,7 +48,7 @@ export const sidebarInputClass = cn("h-(--row-h) w-full bg-background shadow-non
 export const sidebarSectionClass = cn(sidebarSectionShellClass, "flex flex-col gap-2");
 
 /**
- * `Sidebar.Separator`: the hairline in the sidebar border colour, inset 8px from each side. The
+ * `Sidebar.Separator`: the hairline in the sidebar border color, inset 8px from each side. The
  * width carries `separatorClass`'s `data-horizontal:` modifier, so tailwind-merge drops that
  * `w-full`, which would otherwise outrank a bare `w-auto` and push the hairline 8px past the end.
  */
@@ -104,7 +104,7 @@ export const sidebarMenuSubClass = cn(
 export const sidebarMenuSubItemClass = cn("group/menu-sub-item relative");
 
 /**
- * `Sidebar.Icon`: centres a 20px brand mark, full width in the collapsed icon rail.
+ * `Sidebar.Icon`: centers a 20px brand mark, full width in the collapsed icon rail.
  */
 export const sidebarIconClass = cn(
   "flex items-center justify-center group-data-[collapsible=icon]:w-full [&_svg]:size-5 [&_svg]:shrink-0"
@@ -121,7 +121,7 @@ export const sidebarGroupLabelClass = cn(
 );
 
 /**
- * `Sidebar.MenuBadge`: a 20px count at the end of its menu item, centred on the menu button's
+ * `Sidebar.MenuBadge`: a 20px count at the end of its menu item, centered on the menu button's
  * row. It takes the accent text while the menu button beside it is hovered or active, and hides in
  * the collapsed icon rail.
  */

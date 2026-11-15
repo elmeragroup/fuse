@@ -1,8 +1,8 @@
 /**
- * PUBLIC recipe. Other package modules import this file relatively;
- * consumers borrow it from `@elmeragroup/fuse/heading`.
+ * PUBLIC recipe. Other package modules import this file relatively.
+ * Consumers import it from `@elmeragroup/fuse/heading`.
  *
- * Colour (`variant`) and alignment (`align`) come from the package-private
+ * Color, `variant`, and alignment, `align`, come from the package-private
  * `typographyFragments` recipe through `extend`. Size, font, noMargin and uppercase
  * stay here.
  *

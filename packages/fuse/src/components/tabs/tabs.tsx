@@ -50,7 +50,7 @@ export function TabsList({
    */
   activateOnFocus?: TabsListPrimitiveProps["activateOnFocus"];
   /**
-   * The list style. `default` sits the tabs on a muted track and fills the active one. `line`
+   * The list style. `default` places the tabs on a muted track and fills the active one. `line`
    * draws no track and marks the active tab with a line.
    */
   variant?: VariantProps<typeof tabsListVariants>["variant"];

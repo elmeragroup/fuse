@@ -1,20 +1,19 @@
 /**
- * The corner sets: the radius roles each theme identity rounds with. Corners are not a host
- * axis and not part of a palette. Each identity picks its set: neutral themes take
+ * The corner sets: the radius roles each theme identity rounds with. Corners are not a host axis
+ * and not part of a palette. Each identity picks its set: neutral themes take
  * {@link NEUTRAL_CORNERS}, and branded themes take their brand's entry in {@link BRAND_CORNERS}.
  *
- * Corners do not depend on the color scheme. `themes.css` emits them in their own light-only
- * rules, one per identity and brand, which no dark rule restates, so a dark scope keeps the
- * corners of its theme and a host `--radius` override on the theme element holds in both
- * schemes. Each rule restates `--radius-field: var(--radius)`, so a field resolves against the
- * `--radius` of its own theme element rather than inheriting the root's resolved corner.
+ * Corners do not depend on the color scheme. `themes.css` emits them in their own light-only rules,
+ * one per identity and brand, which no dark rule restates. A dark scope therefore keeps the corners
+ * of its theme, and a host `--radius` override on the theme element holds in both schemes. Each
+ * rule restates `--radius-field: var(--radius)`, so a field resolves against the `--radius` of its
+ * own theme element rather than inheriting the root's resolved corner.
  *
  * The step switches the corner formulas in `styles/corner-radius.ts` between the two corner
- * families, which support no other value. `0px` collapses the `rounded-*` scale onto
- * `--radius`, so every neutral rung equals it; `2px` spreads the branded scale in 2px steps
- * around the brand radius, so `rounded-md` sits 2px inside `--radius` and `rounded-xl` 4px
- * outside it. Design keeps this derived scale rather than the Central design system's radius
- * variables.
+ * families, which support no other value. `0px` collapses the `rounded-*` scale onto `--radius`, so
+ * every neutral rung equals it. `2px` spreads the branded scale in 2px steps around the brand
+ * radius, so `rounded-md` sits 2px inside `--radius` and `rounded-xl` 4px outside it. Design keeps
+ * this derived scale rather than the Central design system's radius variables.
  */
 
 import { BRAND_CODES, themeAxisSelector } from "../theme-input";
@@ -25,7 +24,7 @@ import type { PaletteBrandCode } from "../tokens/brand-palettes";
 /** The radius roles a corner set assigns, in `TOKEN_NAMES` order. */
 const CORNER_TOKEN_NAMES = ["radius", "radius-button", "radius-field", "radius-step"] as const;
 
-/** The `--radius-step` values the corner formulas support: neutral `0px`, branded `2px`. */
+/** The `--radius-step` values the corner formulas support: `0px` for neutral and `2px` for branded. */
 export const CORNER_STEPS = ["0px", "2px"] as const;
 
 /** A legal `--radius-step`. */
@@ -48,10 +47,10 @@ export type Corners = {
 
 /**
  * The neutral corners. Every outer element but the Checkbox rounds with the one radius, and inner
- * corners follow outer − inset. Buttons and fields alias the radius, and each theme rule
- * resolves the aliases against its own element's `--radius`. Neutral fields read `--radius`
- * itself rather than the field alias, so they also follow a `--radius` override on a plain
- * wrapper (`styles/corner-radius.ts`).
+ * corners follow the outer radius minus the inset. Buttons and fields alias the radius, and each
+ * theme rule resolves the aliases against its own element's `--radius`. Neutral fields read
+ * `--radius` itself rather than the field alias, so they also follow a `--radius` override on a
+ * plain wrapper. `styles/corner-radius.ts` has the formulas.
  */
 export const NEUTRAL_CORNERS = {
   radius: "0.5rem",
@@ -150,10 +149,10 @@ function cornerRule(selector: string, corners: Corners, identity: ThemeIdentity)
 
 /**
  * The corner rules `themes.css` emits: one rule on every neutral theme element, whose corners no
- * brand changes, then one per brand on its branded theme elements. Each states the full corner
- * set and the identity's Button label floor, so a nested scope of either identity resets both.
- * They are light-only: no dark rule restates them, so a dark scope keeps its theme's corners and a
- * host `--radius` override on the theme element wins in both schemes.
+ * brand changes, then one per brand on its branded theme elements. Each states the full corner set
+ * and the identity's Button label floor, so a nested scope of either identity resets both. They are
+ * light-only. No dark rule restates them, so a dark scope keeps its theme's corners and a host
+ * `--radius` override on the theme element wins in both schemes.
  *
  * @returns The rules in emission order.
  */

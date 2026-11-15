@@ -17,9 +17,9 @@ import { GaugeDialLayer } from "./gauge-chart-dial";
  */
 export type GaugeChartTrackProps = ChartLayerProps & {
   /**
-   * The track's look, which `Fill` and `Glow` follow. "notches" draws 40 notches over the sweep,
-   * every notch and every gap alike, and the fill lights each notch it passes. "solid" draws one
-   * band with softly rounded ends.
+   * The track's look, which `Fill` and `Glow` follow. `notches` draws 40 notches over the sweep,
+   * every notch and every gap alike, and the fill lights each notch it passes. `solid` draws one
+   * band with rounded ends.
    */
   variant?: "notches" | "solid";
 };
@@ -30,12 +30,12 @@ export type GaugeChartTrackProps = ChartLayerProps & {
  * @beta
  */
 export type GaugeChartFillProps = ChartLayerProps & {
-  /** The colour role of the fill, or of the glow that casts it. */
+  /** The color role of the fill, or of the glow that casts it. */
   color?: ChartGaugeRole;
 };
 
 /**
- * Props for `GaugeChart.Glow`, a closed part: the Fill's own, its colour role the one the fill
+ * Props for `GaugeChart.Glow`, a closed part: the Fill's own, its color role the one the fill
  * takes.
  *
  * @beta
@@ -44,12 +44,12 @@ export type GaugeChartGlowProps = GaugeChartFillProps;
 
 /**
  * The unfilled sweep, in the muted role: 40 notches, every notch and every gap alike, each gap a
- * whole number of device pixels, or with `variant="solid"` one band with softly rounded ends. It draws at
- * once, before the entrance, and scales out from the centre as the chart comes into view. It sits
+ * whole number of device pixels, or with `variant="solid"` one band with rounded ends. It draws at
+ * once, before the entrance, and scales out from the center as the chart comes into view. It sits
  * inside a `ProgressRing`, a `Zone` band and an outside `Ruler`, which the dial makes room for at
- * the rim. A gauge may leave it out and let a `Sector`, a `ProgressRing` or `Dots` carry the
- * reading. Render it
- * as a direct child of Root, as every part is, so `Fill` and `Glow` follow its variant.
+ * the rim. A gauge may leave it out and draw the reading with a `Sector`, a `ProgressRing` or
+ * `Dots`. Render it as a direct child of Root, as every part is, so `Fill` and `Glow` follow its
+ * variant.
  *
  * @beta
  */

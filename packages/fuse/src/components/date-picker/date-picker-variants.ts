@@ -32,7 +32,7 @@ import { buttonVariants } from "../button/button-variants";
  *   the popup pads nothing, so a range calendar pads itself with the small surface tier, as
  *   Calendar's own shell does in the single picker.
  * - `pane` holds the presets beside the calendar: stacked on a phone, side by side from `sm`. The
- *   divider names the border role, the colour fuse.css's base-layer default gives every border, so
+ *   divider names the border role, the color fuse.css's base-layer default gives every border, so
  *   the role stays beside the divider. The pane takes no padding or gap, so the divider runs edge to
  *   edge across the popover; the preset group and the calendar each carry their own inset.
  * - `presets` / `preset` are the radio group and each preset, a ghost `sm` button around a native
@@ -84,7 +84,7 @@ export const datePickerVariants = tv({
     /**
      * Two segment rows and a separator: one row from 24rem, stacked beside the trigger below it.
      * The range Root is the size container those rows lay out by. It holds its label, error and
-     * description itself, so it takes a field root's gap and error-coloured label.
+     * description itself, so it takes a field root's gap and error-colored label.
      */
     range: {
       true: {

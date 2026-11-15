@@ -22,12 +22,12 @@ import type { ValueDomain } from "./layout/value-domain";
 /** How Root keeps the span of its Panels' plots on its frame. */
 export type PanelSpan = {
   /**
-   * Place the span from the plots' current positions for Root's commit. Root's probe calls it
+   * Places the span from the plots' current positions for Root's commit. Root's probe calls it
    * before it measures.
    */
   readonly place: () => void;
   /**
-   * Place the span unless the Root commit in progress placed it, for a commit of a Panel or a
+   * Places the span unless the Root commit in progress placed it, for a commit of a Panel or a
    * pointer that enters the surface. A Panel commits in Root's commit after Root's probe placed the
    * span, and any later commit places it again.
    */
@@ -35,7 +35,7 @@ export type PanelSpan = {
 };
 
 /**
- * Keep the span of the Panels' plots on Root's frame, from the highest plot's top to the lowest
+ * Keeps the span of the Panels' plots on Root's frame, from the highest plot's top to the lowest
  * plot's bottom, as `--chart-panels-top` and `--chart-panels-height` in the frame's layout pixels
  * from its padding edge. Root's plot, its surface and the empty state lie over that span, out of
  * the grid's rows, so any number of Panels stack in the frame's rows. CSS grid cannot name that
@@ -123,7 +123,7 @@ export function usePanelSpan(frame: RefObject<HTMLElement | null>, panels: reado
 }
 
 /**
- * Measure a Panel's plot element and draw it in Root's x frame. Every Panel's plot lies in Root's
+ * Measures a Panel's plot element and draws it in Root's x frame. Every Panel's plot lies in Root's
  * plot column, so each takes Root's left edge, width and pixel ratio, and every Panel snaps a
  * slot's edges, the crosshair and the active column to the same device pixels. The Panel's own
  * top and height give its value axis. Its parts' reads run in Root's probe phase as well as in its

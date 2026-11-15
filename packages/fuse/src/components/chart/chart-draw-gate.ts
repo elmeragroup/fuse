@@ -17,7 +17,7 @@ import { flushSync } from "react-dom";
 export type DrawGate = {
   readonly open: () => boolean;
   readonly subscribe: (listener: () => void) => () => void;
-  /** Open the gate, which renders every subscribed part. */
+  /** Opens the gate, which renders every subscribed part. */
   readonly openNow: () => void;
 };
 
@@ -62,7 +62,7 @@ export function useDrawGateOpen(gate: DrawGate): boolean {
 const opening = new Set<DrawGate>();
 
 /**
- * Open a hydrating Root's draw gate in a microtask after its hydration commit, before the task
+ * Opens a hydrating Root's draw gate in a microtask after its hydration commit, before the task
  * ends. When the page is still hydrating other Suspense boundaries, as a page whose demos mount
  * Tabs above them does, React renders the sync work of the hydration commits again for every
  * boundary it hydrates on the way, and a gate opened in the commit would draw every mark in each

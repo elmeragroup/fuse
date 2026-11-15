@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** RangeCalendar's own dictionary: it owns the `rangeCalendar.*` keys. */
+/** RangeCalendar's own dictionary, which defines the `rangeCalendar.*` keys. */
 export const rangeCalendarStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

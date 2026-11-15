@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * The clock's Column: a series as wedges, one per slot, each painting its value's step, floored one
- * device pixel along its radius, stacked through the stack floors, and past 2,000 slots
- * decimated by M4 to the dial's circumference.
+ * The clock's Column, a series as wedges, one per slot. Each wedge paints its value's step, keeps a
+ * floor of one device pixel along its radius and stacks through the stack floors. Past 2,000 slots,
+ * M4 decimates the wedges to the dial's circumference.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, RefObject } from "react";
@@ -46,11 +46,11 @@ export type ClockChartColumnProps = ChartLayerProps & {
    */
   dataKey: string;
   /**
-   * The slots to emphasise. `"now"` selects the slot that holds Root's `now`, and `"max"` and
+   * The slots to emphasize. `"now"` selects the slot that holds Root's `now`, and `"max"` and
    * `"min"` select every tied slot. An x string throws `x-type-mismatch`.
    */
   emphasis?: ChartDatum;
-  /** The word the option appends to an emphasised slot. The dictionary's "uthevet" is the default. */
+  /** The word the option appends to an emphasized slot. Defaults to the dictionary's "uthevet". */
   emphasisLabel?: string;
 };
 
@@ -136,7 +136,7 @@ function wedgeGroups(
   return all;
 }
 
-/** Draw a column's frame: every wedge with its pad and its floor, and its stack's floors settled. */
+/** Draws a column's frame: every wedge with its pad and its floor, and its stack's floors settled. */
 function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkValues): void {
   if (look === null) return;
   look.drawn.current = values;

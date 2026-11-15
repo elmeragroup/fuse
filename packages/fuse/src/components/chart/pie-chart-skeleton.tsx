@@ -14,7 +14,7 @@ import type { ChartDomProps } from "./chart-types";
 export type PieChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
   /** The hole as a fraction of the outer radius. Pass Root's `innerRadius`. */
   innerRadius?: number;
-  /** The loader's name. The dictionary's "Laster diagram" is the default. */
+  /** The loader's name. Defaults to the dictionary's "Laster diagram". */
   label?: string;
 };
 

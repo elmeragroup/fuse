@@ -47,7 +47,7 @@ export function introFor(
 /** Who moved the active slot. */
 export type ActiveSource = "pointer" | "keyboard" | "default";
 
-/** The slots one Bar emphasises, with the word its option appends. */
+/** The slots one Bar emphasizes, with the word its option appends. */
 export type EmphasisEntry = { readonly slots: readonly number[]; readonly label: string | undefined };
 
 /** The pointer and key rate state. */
@@ -70,13 +70,13 @@ export type ChartSnapshot = {
   /** The latest status message, with a counter so a repeat announces again. */
   readonly announcement: { readonly text: string; readonly count: number };
   /**
-   * The emphasised slots each Bar registered after it mounted, by config key. The server and a
+   * The emphasized slots each Bar registered after it mounted, by config key. The server and a
    * hydrating option hold none, and the word arrives in the update that registration triggers.
    */
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
 };
 
-/** The store one Root owns. */
+/** The store of one Root. */
 export type ChartStore = {
   /** The state the store started with, which the server and a hydrating part read. */
   readonly initial: ChartSnapshot;
@@ -95,7 +95,7 @@ export type ChartStore = {
    */
   readonly pointer: () => TrackedPointer | null;
   /**
-   * Record the pointer's position over the plot at an event's time stamp, which `pointer` returns
+   * Records the pointer's position over the plot at an event's time stamp, which `pointer` returns
    * with the speed of its recent moves.
    */
   readonly track: (x: number, y: number, type: string, time: number) => void;
@@ -116,7 +116,7 @@ const INITIAL: ChartSnapshot = {
 };
 
 /**
- * Create a Root's store.
+ * Creates a Root's store.
  *
  * @param defaultActive - The slot active before any pointer or key moves, from `defaultActiveX`.
  * @returns The store.
@@ -175,7 +175,7 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
 }
 
 /**
- * Read one value of the store. The server and hydration snapshot reads the initial state.
+ * Reads one value of the store. The server and hydration snapshot reads the initial state.
  *
  * @param store - The Root's store.
  * @param select - Picks the value. Return a primitive, so equal values skip the render.

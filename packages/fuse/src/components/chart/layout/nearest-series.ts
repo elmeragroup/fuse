@@ -4,9 +4,9 @@
  */
 
 /**
- * Pick the series whose drawn value lies nearest a value-axis position. A stacked key's drawn
- * value is its stack end away from zero. Keys with no reading at the slot are skipped, and a tie
- * goes to the earlier key in config order. A layout with one key picks nothing, because there is
+ * The series whose drawn value lies nearest a value-axis position. A stacked key's drawn value is
+ * its stack end away from zero. The pick skips keys with no reading at the slot, and a tie goes to
+ * the earlier key in config order. A layout with one key picks nothing, because there is
  * nothing to choose between.
  *
  * @param drawn - Each key's drawn value at the slot in config order, null without a reading.

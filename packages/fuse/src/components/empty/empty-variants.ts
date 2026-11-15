@@ -1,10 +1,10 @@
 /**
- * Module-private recipes. Not exported from the public entry, since there is no proven
- * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
+ * Module-private recipes. The public entry does not export them, since there is no proven
+ * recipe-borrowing use. The workspace-only recipe catalog re-exports them for the Figma component
  * sync.
  *
- * `emptyVariants` holds a slot per part but Media: `variant` on Root is the frame, and `empty.tsx`
- * resolves the other slots once at module scope. `emptyMediaVariants` is Media's own recipe, whose
+ * `emptyVariants` has a slot for every part except Media. Its `variant` is Root's frame, and
+ * `empty.tsx` resolves the other slots once at module scope. `emptyMediaVariants` is Media's own recipe, whose
  * `variant` is the icon or illustration box. Neither axis is a control size.
  */
 import { emptyBorderedShellClass, emptyShellClass } from "../../styles/inner-corner/empty";

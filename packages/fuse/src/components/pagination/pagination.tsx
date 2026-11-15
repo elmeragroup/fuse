@@ -16,8 +16,8 @@ import { paginationVariants } from "./pagination-variants";
 const { base, content, link, linkIcon, ellipsis, ellipsisIcon } = paginationVariants();
 
 /**
- * The two edges differ by four values only, so `Pagination.Previous` and
- * `Pagination.Next` are one component parameterised by direction.
+ * The two edges differ by four values only, so `Pagination.Previous` and `Pagination.Next` are one
+ * component parameterized by direction.
  */
 const EDGES = {
   previous: {
@@ -40,8 +40,8 @@ type PaginationDirection = keyof typeof EDGES;
 
 export type PaginationRootProps = ComponentProps<"nav"> & {
   /**
-   * The navigation landmark's name. Unset, it comes from the locale dictionary. An `aria-label`
-   * wins over it.
+   * The navigation landmark's name. Defaults to the locale dictionary. An `aria-label` wins over
+   * it.
    */
   label?: string;
 };
@@ -58,7 +58,8 @@ export type PaginationItemProps = ComponentProps<"li">;
 
 export type PaginationLinkProps = {
   /**
-   * Marks the current page. The link gets `aria-current="page"` and the outline button style.
+   * Whether the link is the current page. The link then gets `aria-current="page"` and the outline
+   * button style.
    * Other links have no `aria-current`.
    */
   isActive?: boolean;
@@ -69,10 +70,10 @@ export type PaginationLinkProps = {
 export type PaginationPreviousProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
   /** The link's size, one of Button's sizes. */
   size?: ButtonProps["size"];
-  /** The visible text beside the caret. Unset, it comes from the locale dictionary. */
+  /** The visible text beside the caret. Defaults to the locale dictionary. */
   text?: string;
   /**
-   * The link's accessible name, such as "Go to previous page". Unset, it comes from the locale
+   * The link's accessible name, such as "Go to previous page". Defaults to the locale
    * dictionary. An `aria-label` wins over it.
    */
   label?: string;
@@ -81,10 +82,10 @@ export type PaginationPreviousProps = Omit<PaginationLinkProps, "size" | "isActi
 export type PaginationNextProps = Omit<PaginationLinkProps, "size" | "isActive" | "children"> & {
   /** The link's size, one of Button's sizes. */
   size?: ButtonProps["size"];
-  /** The visible text beside the caret. Unset, it comes from the locale dictionary. */
+  /** The visible text beside the caret. Defaults to the locale dictionary. */
   text?: string;
   /**
-   * The link's accessible name, such as "Go to next page". Unset, it comes from the locale
+   * The link's accessible name, such as "Go to next page". Defaults to the locale
    * dictionary. An `aria-label` wins over it.
    */
   label?: string;
@@ -92,7 +93,7 @@ export type PaginationNextProps = Omit<PaginationLinkProps, "size" | "isActive" 
 
 export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> & {
   /**
-   * The screen reader text for the pages the ellipsis stands for. Unset, it comes from the locale
+   * The screen reader text for the pages the ellipsis stands for. Defaults to the locale
    * dictionary.
    */
   label?: string;
