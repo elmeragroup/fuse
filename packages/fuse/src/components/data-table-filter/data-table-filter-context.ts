@@ -203,8 +203,13 @@ export type DataTableFilterInternals = {
     readonly neighborOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
     /** Focuses a chip's first or last segment, else the Trigger, and returns what took focus. */
     readonly focusChipEdge: (fieldId: string, edge: "first" | "last") => HTMLElement | null;
-    /** Whether focus left this Root's closing overlay of `kind` for somewhere else. */
-    readonly focusLeft: (kind: OverlayKind, popup: HTMLElement | null) => boolean;
+    /**
+     * Checks whether `active` still belongs to this Root's closing overlay of `kind`. The overlay is
+     * its popup, its own nested popups and any ghost chip, whose segments unmount. A press on a
+     * chip's Value with the menu open, or on the Trigger with the popover open, moves focus into the
+     * other overlay, and the closing one must not pull it back.
+     */
+    readonly ownsFocus: (kind: OverlayKind, active: Element) => boolean;
   };
 };
 
@@ -414,5 +419,5 @@ export function useValueList(part: string): ValueList {
   return list;
 }
 
-/** The overlays whose focus return asks `focusMovedElsewhere`: the add menu and the value popover. */
+/** The overlays whose focus return asks `ownsFocus`: the add menu and the value popover. */
 export type OverlayKind = "menu" | "value";

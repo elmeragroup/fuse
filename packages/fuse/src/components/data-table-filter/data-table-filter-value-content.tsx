@@ -16,6 +16,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { definedProps } from "../../internal/defined-props";
+import { finalFocusUnlessMoved } from "../../internal/final-focus";
 import { cn } from "../../styles/cn";
 import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -132,21 +133,24 @@ export function DataTableFilterValueContent({
               const current = popup.querySelector<HTMLElement>("[data-current]") ?? popup;
               return resolveFocusTarget(current) ?? true;
             }}
-            finalFocus={() => {
-              if (meta.focusLeft("value", popupRef.current)) {
-                return false;
-              }
-              // A ghost chip unmounts once this closes, so its focus goes to a neighbor.
-              const index = state.chips.findIndex((chip) => chip.ghost);
-              if (index !== -1) {
-                return meta.neighborOf(state.chips, index) ?? true;
-              }
-              // A toggle a pick turned on loses its Value once this closes, so focus goes to Remove.
-              const edited = state.chips.find((chip) => chip.id === state.editing);
-              return edited !== undefined && isToggleOn(edited.field, edited.value)
-                ? (meta.focusChipEdge(edited.id, "last") ?? true)
-                : true;
-            }}
+            finalFocus={() =>
+              finalFocusUnlessMoved(
+                popupRef.current,
+                (active) => meta.ownsFocus("value", active),
+                () => {
+                  // A ghost chip unmounts once this closes, so its focus goes to a neighbor.
+                  const index = state.chips.findIndex((chip) => chip.ghost);
+                  if (index !== -1) {
+                    return meta.neighborOf(state.chips, index) ?? true;
+                  }
+                  // A toggle a pick turned on loses its Value once this closes, so focus goes to Remove.
+                  const edited = state.chips.find((chip) => chip.id === state.editing);
+                  return edited !== undefined && isToggleOn(edited.field, edited.value)
+                    ? (meta.focusChipEdge(edited.id, "last") ?? true)
+                    : true;
+                }
+              )
+            }
             className={mergeClassName(
               className,
               selfFocusRingClass,
