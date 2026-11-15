@@ -10,6 +10,7 @@ import type { ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { sentence, unitLabel } from "./format/description-words";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
+import { POINT_WORDS } from "./format/point-words";
 import { formatInstant } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { visibleSpan, windowEndingAt } from "./layout/live-window";
@@ -146,7 +147,7 @@ export function liveDescription(
     liveName(text),
     (amount) => liveValueText(text, amount, "full").spoken
   );
-  const count = countOf(text.locale, end - first, strings.points);
+  const count = countOf(text.locale, end - first, POINT_WORDS[text.locale]);
   return [
     sentence(
       strings.descriptionSpan(time(oldest), oldest === newest ? undefined : time(newest), count),

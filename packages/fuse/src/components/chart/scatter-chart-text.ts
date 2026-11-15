@@ -10,6 +10,8 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartConfig, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
+import { POINT_WORDS } from "./format/point-words";
+import { SCATTER_STRINGS } from "./format/scatter-strings";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import { pointOf } from "./layout/scatter-model";
@@ -84,7 +86,7 @@ export type AxisNames = { readonly x: string; readonly y: string };
  * @returns Both names.
  */
 export function axisNames(text: Pick<ScatterText, "locale" | "xLabel" | "yLabel">): AxisNames {
-  const strings = CHART_STRINGS[text.locale];
+  const strings = SCATTER_STRINGS[text.locale];
   return { x: text.xLabel ?? strings.xValue, y: text.yLabel ?? strings.yValue };
 }
 
@@ -134,9 +136,9 @@ export function scatterDescription(text: ScatterText): string {
         yValueText(text, series.key, low, "full"),
         yValueText(text, series.key, high, "full")
       )}`;
-      return strings.scatterSeries(
+      return SCATTER_STRINGS[text.locale].scatterSeries(
         seriesLabel(text, series.key).spoken,
-        countOf(text.locale, series.xs.length, strings.points),
+        countOf(text.locale, series.xs.length, POINT_WORDS[text.locale]),
         x,
         y
       );

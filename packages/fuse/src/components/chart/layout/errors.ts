@@ -10,6 +10,7 @@
  */
 import type { ChartConfig } from "../chart-types";
 import type { ModelIssue } from "./cartesian-model";
+import type { ScatterDataRule, ScatterIssue } from "./scatter-model";
 
 /** The composition rules this layer reaches. */
 export type ChartCompositionRule =
@@ -51,13 +52,17 @@ export type ChartDataRule =
   | "invalid-quality"
   | "mixed-sign-expand"
   | "table-column-format"
-  | "non-finite-x"
-  | "non-finite-y"
-  | "unknown-series"
+  | ScatterDataRule
   | "negative-polar-value"
   | "radar-series-cap"
   | "unknown-category"
   | "non-finite-live-value";
+
+/**
+ * The data rules whose messages `DATA_MESSAGES` holds: every rule but the scatter model's, which
+ * `SCATTER_DATA_MESSAGES` holds beside them.
+ */
+type DataMessageRule = Exclude<ChartDataRule, ScatterDataRule>;
 
 /** The development hints, which warn in development only. */
 export type ChartHintRule =
@@ -128,12 +133,6 @@ export const DATA_MESSAGES = {
     'received a stacked slot with both signs under stackOffset="expand". Production divides the slot by the sum of its magnitudes and keeps the signs apart.',
   "table-column-format":
     "received a format that does not fit its cells, a time preset on numbers or a value format on Date cells. Production prints each cell through its type's default format.",
-  "non-finite-x":
-    "received an x cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
-  "non-finite-y":
-    "received a y cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
-  "unknown-series":
-    "received a series cell that names no config key. Add the value to config, or pass one of its keys. Production skips the row.",
   "negative-polar-value":
     "received a value below 0. A slice is a share of a whole and a ring fills a share of its maximum, so neither has a negative reading. Show a credit as a text row beside the chart, or draw it in a Chart.Bar stack. Production draws the value as 0, and the Table and the texts keep its sign.",
   "radar-series-cap":
@@ -142,7 +141,7 @@ export const DATA_MESSAGES = {
     "received a row whose category has no config entry. Add the category to config. Production folds the row into the Other slice.",
   "non-finite-live-value":
     "received a value that is not a finite number within ±1e15. Pass a number, or leave it out to show the latest reading's. Production shows the latest reading's value.",
-} as const satisfies { readonly [R in ChartDataRule]: string };
+} as const satisfies { readonly [R in DataMessageRule]: string };
 
 /**
  * Checks that a part names a config key.
@@ -164,9 +163,9 @@ export function assertKnownKey(part: string, config: ChartConfig, key: string): 
   );
 }
 
-/** A data issue that names its own row and subject, as the scatter model reports a skipped row. */
+/** A data issue that names its own row and subject, as a live line chart's window reports a skipped row. */
 export type RowSubjectIssue = {
-  readonly rule: ChartDataRule;
+  readonly rule: DataMessageRule;
   readonly row: number;
   /** The column the rule is about. */
   readonly subject: string;
@@ -175,13 +174,16 @@ export type RowSubjectIssue = {
 /** A data issue about a prop rather than a row, such as a live chart's `value`. */
 export type PropIssue = {
   readonly kind: "prop";
-  readonly rule: ChartDataRule;
+  readonly rule: DataMessageRule;
   /** The prop the rule is about. */
   readonly subject: string;
 };
 
+/** A data issue whose message `DATA_MESSAGES` holds. */
+type DataMessageIssue = ModelIssue | RowSubjectIssue | PropIssue;
+
 /** Every data issue a Root reports: a cartesian model's, one that names its row, or a prop's. */
-export type DataIssue = ModelIssue | RowSubjectIssue | PropIssue;
+export type DataIssue = DataMessageIssue | ScatterIssue;
 
 /**
  * What a data issue is about, so production warns once per rule and subject however many rows break
@@ -240,20 +242,42 @@ export function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[])
  * What a data issue says after the part: the rule's message, then where it first broke, and how
  * many times when more than once.
  *
+ * @param message - The rule's message, from `DATA_MESSAGES` or a family's own table.
  * @param issue - The first issue of its rule and subject.
  * @param rowAt - The row each slot reads, which names a cell issue's row.
  * @param count - How many issues share the rule and subject.
  * @returns The text.
  */
-export function dataMessage(issue: DataIssue, rowAt: readonly (number | undefined)[], count = 1): string {
+export function issueMessage(
+  message: string,
+  issue: DataIssue,
+  rowAt: readonly (number | undefined)[],
+  count = 1
+): string {
   const more = count > 1 ? `, the first of ${String(count)}` : "";
-  if ("kind" in issue) return `${DATA_MESSAGES[issue.rule]} Prop ${JSON.stringify(issue.subject)}${more}.`;
+  if ("kind" in issue) return `${message} Prop ${JSON.stringify(issue.subject)}${more}.`;
   const row = "row" in issue ? issue.row : "key" in issue ? rowAt[issue.slot] : undefined;
   const where =
     row !== undefined ? `Row ${String(row)}` : "slot" in issue ? `Slot ${String(issue.slot)}` : "";
   const named = "subject" in issue ? issue.subject : "key" in issue ? issue.key : undefined;
   const key = named === undefined ? "" : ` of ${JSON.stringify(named)}`;
-  return `${DATA_MESSAGES[issue.rule]} ${where}${key}${more}.`;
+  return `${message} ${where}${key}${more}.`;
+}
+
+/**
+ * What a data issue says after the part, through its rule's message in `DATA_MESSAGES`.
+ *
+ * @param issue - The first issue of its rule and subject.
+ * @param rowAt - The row each slot reads, which names a cell issue's row.
+ * @param count - How many issues share the rule and subject.
+ * @returns The text.
+ */
+export function dataMessage(
+  issue: DataMessageIssue,
+  rowAt: readonly (number | undefined)[],
+  count = 1
+): string {
+  return issueMessage(DATA_MESSAGES[issue.rule], issue, rowAt, count);
 }
 
 /**

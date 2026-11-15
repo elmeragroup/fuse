@@ -571,6 +571,11 @@ export type ChartStyleVars = {
   /** The opacity of marks outside the active item. Defaults to `0.45`, and `1` turns dimming off. */
   "--chart-hover-dim"?: number | string;
   /**
+   * The opacity of a scatter chart's quiet points and of every quiet series' legend swatch. Defaults
+   * to `0.45`.
+   */
+  "--chart-quiet-opacity"?: number | string;
+  /**
    * A ring's stroke as a fraction of its band, which also sets the gap to the next ring. Defaults to
    * `0.7`.
    */

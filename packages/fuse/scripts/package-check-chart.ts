@@ -170,6 +170,24 @@ const SCATTER_ROUTE_FORBIDDEN: readonly Forbidden[] = [
 ];
 
 /**
+ * The scatter family's code no cartesian route ships, the reverse of the scatter rule: its parts,
+ * its model, its frame, its point index, its words and the point word it shares with a live line
+ * chart. A live line chart draws through the scatter frame, so the frame is scatter's, not shared
+ * cartesian code. The rule also matches the words and data messages by their text, so one that
+ * moves back into the cartesian dictionary or `DATA_MESSAGES` trips it too.
+ */
+const CARTESIAN_ROUTE_FORBIDDEN: readonly Forbidden[] = [
+  { label: "scatter parts", module: /^scatter-chart-/u },
+  { label: "scatter model", module: /^scatter-model\./u },
+  { label: "scatter frame", module: /^scatter-frame\./u },
+  { label: "point index", module: /^point-index\./u },
+  { label: "scatter words", module: /^scatter-strings\./u },
+  { label: "point words", module: /^point-words\./u },
+  { label: "scatter axis words", text: /x-verdi/u },
+  { label: "scatter data messages", text: /received an x cell/u },
+];
+
+/**
  * The cartesian geometry no polar route ships: the cartesian Root's modules, its plot frame,
  * the bar geometry, the cartesian readout and tooltip anchor with its roof, and the cartesian
  * Tooltip and Table, whose shared parts a polar namespace reads from their neutral modules. A polar
@@ -318,7 +336,9 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
 
 /**
  * Bundles the chart routes against the packed `chart.js`. An alias route and a `Chart` route emit
- * the same bytes, no cartesian route reaches a polar module, the pie route reaches no bar module,
+ * the same bytes, no cartesian route reaches a polar module, the widest cartesian routes, the bar
+ * and clock controls, ship no scatter module, word or data message, all of which the scatter route
+ * ships as their control, the pie route reaches no bar module,
  * a bar route of Root, Grid, both axes and Bar ships no Tooltip, Table, LegendToggleGroup or
  * floating-ui code, and neither `ScatterChart.Root` nor `LiveLineChart.Root` ships a cartesian store, readout or model. Each polar
  * Root, and each polar namespace with its Tooltip, Legend and Table, ships no cartesian geometry,
@@ -434,6 +454,22 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         throw new Error(`the ${name} route includes polar modules: ${reached.join(", ")}`);
       }
     }
+    // The bar and clock controls reach every module a narrower cartesian route does.
+    for (const [name, route] of [
+      ["bar control", control],
+      ["clock control", clockControl],
+    ] as const) {
+      const scatterLeaks = shipped(route, CARTESIAN_ROUTE_FORBIDDEN);
+      if (scatterLeaks.length > 0) {
+        throw new Error(`the ${name} route ships ${scatterLeaks.join("; ")}`);
+      }
+    }
+    // The ScatterChart.Root route ships every scatter module and text the cartesian rule names, so
+    // a detector that stops seeing them fails here.
+    const cartesianBlind = blindRules(scatter, CARTESIAN_ROUTE_FORBIDDEN);
+    if (cartesianBlind.length > 0) {
+      throw new Error(`the ScatterChart.Root route trips no cartesian rule for ${cartesianBlind.join(", ")}`);
+    }
     const barLeaks = shipped(bars, BAR_ROUTE_FORBIDDEN);
     if (barLeaks.length > 0) {
       throw new Error(`the bar route of ${BAR_PARTS} ships ${barLeaks.join("; ")}`);
@@ -493,7 +529,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (seriesBlind.length > 0) {
       throw new Error(`the radar namespace route trips no item rule for ${seriesBlind.join(", ")}`);
     }
-    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and LiveLineChart.Root ${String(live.modules.length)}, both with no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ${String(PART_ROUTES.length)} single-part routes (${PART_ROUTES.map(({ part }) => part).join(", ")}) ship no other part, each rule tripped by its control`;
+    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and LiveLineChart.Root ${String(live.modules.length)}, both with no cartesian code, no cartesian route ships scatter code, ${String(polar.length)} polar routes ship no cartesian geometry, and ${String(PART_ROUTES.length)} single-part routes (${PART_ROUTES.map(({ part }) => part).join(", ")}) ship no other part, each rule tripped by its control`;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

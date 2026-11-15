@@ -9,6 +9,8 @@ import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-ta
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
+import { POINT_WORDS } from "./format/point-words";
+import { SCATTER_STRINGS } from "./format/scatter-strings";
 import { seriesLabel } from "./format/series-label";
 import { pointOf } from "./layout/scatter-model";
 import { useScatterRoot } from "./scatter-chart-context";
@@ -108,11 +110,12 @@ export function ScatterChartTable({
       className={className}
       style={style}
       caption={
-        caption ?? [context.name, countOf(locale, model.count, strings.points)].filter(Boolean).join(", ")
+        caption ??
+        [context.name, countOf(locale, model.count, POINT_WORDS[locale])].filter(Boolean).join(", ")
       }
       head={
         <>
-          <Table.Head scope="col">{strings.seriesHeader}</Table.Head>
+          <Table.Head scope="col">{SCATTER_STRINGS[locale].seriesHeader}</Table.Head>
           <Table.Head scope="col">{names.x}</Table.Head>
           <Table.Head scope="col">{names.y}</Table.Head>
         </>
