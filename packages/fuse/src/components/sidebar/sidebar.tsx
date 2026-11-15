@@ -511,7 +511,7 @@ export function SidebarRoot({
         {...props}>
         <div
           data-slot="sidebar-inner"
-          // `invisible`, not `inert`: Rail opts back in with `visible` (see SidebarRail).
+          // `invisible`, not `inert`, because Rail opts back in with `visible`; see `SidebarRail`.
           className={panel.inner()}>
           {children}
         </div>
@@ -542,7 +542,7 @@ export function SidebarTrigger({
     <Button
       data-slot="sidebar-trigger"
       aria-label={ariaLabel ?? labels.toggle}
-      // Both modifiers: the server render cannot know the platform. The Provider honours ⌘B on
+      // Both modifiers: the server render cannot know the platform. The Provider honors ⌘B on
       // Apple platforms and Ctrl+B elsewhere.
       aria-keyshortcuts="Meta+B Control+B"
       {...definedProps(props)}

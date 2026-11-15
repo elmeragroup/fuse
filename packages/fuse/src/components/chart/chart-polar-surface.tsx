@@ -3,9 +3,9 @@
 /**
  * The polar plot surface: the listbox of `chart-listbox.tsx` over a polar Root's cell, whose option
  * names the active slice, ring or spoke, and the cell's one pointer target, which picks by angle,
- * by radius band or by nearest spoke through the family's model. CONTRACT section 9.4 gives the
- * maps: a pie's arrows wrap, a radial chart's rings do not, and a radar's Left and Right move
- * between spokes while Up and Down move the series focus. Home and End go to the first and last
+ * by radius band or by nearest spoke through the family's model. A pie's arrows wrap, a radial
+ * chart's rings do not, and a radar's Left and Right move between spokes while Up and Down move the
+ * series focus. Home and End go to the first and last
  * option. PageUp and PageDown propagate, except on a clock, where they move one label unit.
  */
 import { use, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -98,7 +98,7 @@ export function PolarSurface(): ReactElement | null {
   const gesture = useRef<Gesture | null>(null);
   const lift = useTapLift();
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
-  // The slots a clock's Columns emphasise, whose options append the emphasis word.
+  // The slots a clock's Columns emphasize, whose options append the emphasis word.
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   const pick = kernel.usePick();
   // A mouse that leaves the dial gives up its option a moment later, unless it comes back first, so a
@@ -231,8 +231,8 @@ export function PolarSurface(): ReactElement | null {
 
   /**
    * The option and series under a pointer, or null where nothing picks. A pointer that holds an
-   * option keeps it across the pick's 2 px dead band, and keeps its series unless another is clearly
-   * nearer.
+   * option keeps it across the pick's 2 px dead band, and keeps its series unless another lies
+   * nearer by more than 0.06 of the outer radius.
    */
   const pickAt = (event: MouseEvent<HTMLDivElement>): PointerSlot | null => {
     const { active, near, source } = store.get();
@@ -257,9 +257,8 @@ export function PolarSurface(): ReactElement | null {
 
   /**
    * Whether a pointer at a point heads for the open popup from the active part: past the rim, inside
-   * the triangle from where it last stood on that part to the popup's near edge, per CONTRACT
-   * section 9.5. Inside the dial the pick always wins, so the triangle never keeps a part active
-   * after the pointer has left it.
+   * the triangle from where it last stood on that part to the popup's near edge. Inside the dial the
+   * pick always wins, so the triangle never keeps a part active after the pointer has left it.
    */
   const heading = (to: ClientPoint): boolean => {
     const from = apex.current;

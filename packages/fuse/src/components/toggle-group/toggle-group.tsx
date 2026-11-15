@@ -20,8 +20,9 @@ type ToggleGroupContextValue = ToggleVariantProps & {
   orientation?: "horizontal" | "vertical";
 };
 
-// All-undefined default: standalone items fall through to toggleVariants defaults.
-// Do not copy the ref's non-undefined createContext values.
+// The default context leaves every value undefined, so an item outside a group takes the
+// `toggleVariants` defaults. Do not copy the defined createContext values of the reference
+// implementation.
 const ToggleGroupContext = createContext<ToggleGroupContextValue>({});
 
 export type ToggleGroupRootProps = Omit<

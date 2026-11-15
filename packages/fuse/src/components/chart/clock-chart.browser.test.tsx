@@ -1,13 +1,13 @@
 // ClockChart's dial, marks and readouts in Chromium. Units under test: ClockChart.Root with its
 // Grid, AngleAxis, Line, Area, Column, Dots, Now, Center and the shared readouts. Oracles, written
-// by hand: D11's equal slots, slot i of 24 centred at 15i + 7.5°; D13's radii on a [0, 4] domain
+// by hand: equal slots, slot i of 24 centered at 15i + 7.5°; the radii on a [0, 4] domain
 // with a 0.3 hole, √(0.09 + 0.91 · v/4) under "radial" and 0.3 + 0.7 · v/4 under "linear"; the pick
-// by the pointer's angle alone, found by brute force; D23's threshold, whose wedges above it paint
+// by the pointer's angle alone, found by brute force; the threshold, whose wedges above it paint
 // the theme's `above` role and the rest `below`, both resolved through a probe and compared through
-// `@elmeragroup/color`, and whose line gradient turns hard at the threshold's own radius; D24's
+// `@elmeragroup/color`, and whose line gradient turns hard at the threshold's own radius; the
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
-// the 25-hour 26 October 2025, where "06" sits at 100.8°; D16's seam; Now at 11:30, 172.5°; and the
-// clock key map, where PageDown moves six hours.
+// the 25-hour 26 October 2025, where "06" sits at 100.8°; the seam where the arrows wrap; Now at
+// 11:30, 172.5°; and the clock key map, where PageDown moves six hours.
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -388,7 +388,7 @@ describe("a coarse series under the pointer (Q3, B5)", () => {
   it("picks and selects the hourly series anywhere in its hour, not only at its first quarter", async () => {
     // A quarter-hour dial with prices at 1 every quarter and an hourly reading of 3 on each :00 row.
     // On [0, 4] under "radial" the hourly tip sits at √(0.09 + 0.91 · 3/4) ≈ 0.879 and the price's
-    // at √(0.09 + 0.91 · 1/4) ≈ 0.563. The second quarter, slot 1 of 96, centres at 5.625°.
+    // at √(0.09 + 0.91 · 1/4) ≈ 0.563. The second quarter, slot 1 of 96, centers at 5.625°.
     const quarters = slots["quarter-hour"]["Europe/Oslo"]["2025-10-25"].utc_start.map((start) =>
       Date.parse(start)
     );
@@ -448,7 +448,7 @@ describe("the readouts", () => {
       </Dial>
     );
     await nextFrames(1);
-    // The centre is aria-hidden plot text, read by its slot.
+    // The center is aria-hidden plot text, read by its slot.
     const value = () => host.querySelector('[data-slot="clock-chart-active-value"]')?.textContent;
     expect(value()).toBe("2");
     const column = clockLayer(host, "clock-chart-column");

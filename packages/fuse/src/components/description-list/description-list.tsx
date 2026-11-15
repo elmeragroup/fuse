@@ -81,11 +81,11 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;
 }
 
-// The inline layout publishes the term and details colours as the private `--description-list-term`
+// The inline layout publishes the term and details colors as the private `--description-list-term`
 // and `--description-list-details`, and the responsive one resets them, so its cells fall back to
 // `--muted-foreground` and `--foreground` read in their own theme scope. A nested list resets them
-// too, and a consumer colour class on a cell still wins in both layouts. Inline cells take the
-// surrounding text colour, such as a card's. An Item styles its inline layout from its own list's
+// too, and a consumer color class on a cell still wins in both layouts. Inline cells take the
+// surrounding text color, such as a card's. An Item styles its inline layout from its own list's
 // `data-layout`, as its direct child, and a term or details from its Item's list, so a responsive
 // list nested in an inline one keeps its own layout. Plain `cn` constants rather than a `tv` recipe
 // keep tailwind-variants out of this entry's bundle.

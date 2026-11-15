@@ -1,7 +1,7 @@
 // A screen reader's key sequence through each polar family, in Chromium. Units under test:
-// PieChart.Root, RadialChart.Root, RadarChart.Root and ClockChart.Root. Oracle: CONTRACT section
-// 9.4's option grammar in Norwegian Bokmål, written by hand in vsr's phrase grammar: role, name,
-// state, position and set size joined by ", ".
+// PieChart.Root, RadialChart.Root, RadarChart.Root and ClockChart.Root. Oracle: the option grammar
+// in Norwegian Bokmål, written by hand in vsr's phrase grammar: role, name, state, position and set
+// size joined by ", ".
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
 

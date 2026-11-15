@@ -10,8 +10,8 @@
 // - A ZonedDateTime's hour moves through real instants: in a DST overlap it visits the repeated hour
 //   twice, in a gap it skips the missing one, and the held offset tells the repeated hours apart.
 //
-// Pure: no clock, no Intl. The placeholder value (today at midnight) comes from the caller, which
-// reads the clock when the user acts, never while rendering.
+// It is pure and reads neither the clock nor Intl. The placeholder value (today at midnight) comes
+// from the caller, which reads the clock when the user acts, never while rendering.
 
 import { temporal } from "../../temporal/temporal";
 import type { DateGranularity, TemporalValue, ValueKind } from "../../temporal/temporal-value";
@@ -312,7 +312,7 @@ function cycleHour(
   placeholder: TemporalValue,
   hourCycle: HourCycle
 ): DateDraft {
-  // A zoned field whose date is whole steps through real instants, so DST is honoured.
+  // A zoned field whose date is whole steps through real instants, so DST is honored.
   if ("timeZoneId" in placeholder && draft.year !== null && draft.month !== null && draft.day !== null) {
     const zoned = draftToValue(draft, placeholder, hourCycle);
     if ("timeZoneId" in zoned) {

@@ -56,7 +56,7 @@ import { useContains } from "./use-contains";
 /** Props for every kind editor, which are its body element's props. */
 export type DataTableFilterKindEditorProps = ComponentProps<"div">;
 
-// Option, multi-option and boolean: an inline Base UI Combobox with `multiple`, so the list is
+// The option, multi-option and boolean editor is an inline Base UI Combobox with `multiple`, so the list is
 // aria-multiselectable and each row states its selection. Each toggle applies at once.
 
 /**
@@ -199,8 +199,8 @@ function OptionEditorBody({
   );
 }
 
-// Text: settles after a typing pause, the editor's one timer, on Enter, which also closes, and on
-// every other exit of the editor. A Clear or a Remove discards the draft instead. An emptied
+// The text editor settles after a typing pause, which is its one timer, on Enter, which also
+// closes, and on every other exit of the editor. A Clear or a Remove discards the draft instead. An emptied
 // draft removes the filter.
 
 /** How long the text editor waits after the last keystroke before it applies. */
@@ -292,7 +292,7 @@ function TextEditorBody({
   );
 }
 
-// Number: the operator decides the shape, one field or a range. A new range opens with the facet
+// In the number editor the operator decides the shape, one field or a range. A new range opens with the facet
 // range as its draft and applies only once a value changes. Values settle when the user finishes,
 // through NumberField's and Slider's `onValueCommitted`, and Enter in a field also closes.
 

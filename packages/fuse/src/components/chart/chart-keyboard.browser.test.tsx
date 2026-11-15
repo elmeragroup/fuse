@@ -1,4 +1,4 @@
-// CONTRACT section 9.4's key maps, the Escape rule and the modifier rule, in Chromium.
+// The chart's key maps, the Escape rule and the modifier rule, in Chromium.
 // Every expected option name, position and set size is written by hand from the committed
 // Elhub rows and the hand-written month-switch fixture, never read from Fuse.
 import { virtual } from "@guidepup/virtual-screen-reader";

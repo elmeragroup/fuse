@@ -165,7 +165,7 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();
 
-  // The `item-description` slot centres Item.Media's icon on the title's first line instead of the
+  // The `item-description` slot centers Item.Media's icon on the title's first line instead of the
   // middle of multi-line content.
   return (
     <div

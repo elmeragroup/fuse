@@ -250,8 +250,8 @@ function SeriesLayer({
       observer.disconnect();
     };
   }, [polar.box, glowing, halo]);
-  // The device pixels round the rim, which an Area's hatch decimates to on a dial of slots
-  // narrower than a pixel; a new count redraws the last numbers.
+  // The count is the rim's length in device pixels. On a dial of slots narrower than a pixel, an
+  // Area's hatch thins its slots to that count. A new count redraws the last drawn numbers.
   useLayoutEffect(() => {
     const node = svg.current;
     if (node === null || look === null) return undefined;
@@ -306,7 +306,7 @@ function SeriesLayer({
         {series === undefined ? null : <StepGradient id={`${prefix}-steps`} series={series} />}
         {series?.stops === undefined ? null : <RoleGradient id={`${prefix}-role`} stops={series.stops} />}
         {/* The quality texture is a mask over the mark's own value paint, so a threshold or a scale
-            keeps its colours where readings are estimated or projected. Its stripes take the
+            keeps its colors where readings are estimated or projected. Its stripes take the
             stylesheet's mask ink. */}
         <PolarHatch id={`${prefix}-quality-stripes`} paint="var(--_quality-ink)" />
         <mask id={`${prefix}-quality`} maskUnits="userSpaceOnUse" x="-1.5" y="-1.5" width="3" height="3">

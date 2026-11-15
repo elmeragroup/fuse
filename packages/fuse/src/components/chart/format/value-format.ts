@@ -436,8 +436,8 @@ function unitlessOptions(format: ValueFormat): Intl.NumberFormatOptions {
 
 /**
  * A value as a table cell prints it, the number without its unit, because the column header
- * carries the unit once. Private to the chart Table, after CONTRACT section 9.6, and to the
- * description, which states the unit once per series, after section 9.3.
+ * carries the unit once. Private to the chart Table and to the description, which states the
+ * unit once per series.
  *
  * @param locale - The active supported locale.
  * @param value - The value.

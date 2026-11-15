@@ -3,11 +3,11 @@
 /**
  * The pie's slices. Each slice is a mark of its own on the Root's loop, so it sweeps in on its own
  * stagger, tweens to new data and pops on its own, and the pie's frame paints every slice of a
- * frame together through the rim floor. An estimated slice paints a hatch of its own color,
- * and a missing one draws no arc, as section 8.7 defines. A slice that leaves collapses as a ghost.
- * It collapses to Other's seam when it folds into Other, which grows as it takes the slice in, and to
- * its own seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
- * until the chart comes into view.
+ * frame together through the rim floor. An estimated slice paints a hatch of its own color, and a
+ * missing one draws no arc. A slice that leaves collapses as a ghost. It collapses to Other's seam
+ * when it folds into Other, which grows as it takes the slice in, and to its own seam otherwise.
+ * The server writes every slice at rest, and the first paint keeps the slices hidden until the
+ * chart comes into view.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -152,7 +152,8 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
   const prefix = useSvgIdPrefix("pie-chart-pie");
   const targets = useMemo(() => targetsOf(pie), [pie]);
   useLayoutEffect(() => frame.attach(), [frame]);
-  // The frame measures the pie's CSS pixels per unit, its pop, its seam and the dpr, as the cell resizes.
+  // The frame measures the pie's CSS pixels per unit, its pop, its seam and the device pixel ratio
+  // as the cell resizes.
   useLayoutEffect(() => {
     const node = svg.current;
     if (node === null) return undefined;

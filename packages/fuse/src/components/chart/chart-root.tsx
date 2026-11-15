@@ -430,7 +430,7 @@ export function ChartRoot<
   const modelPeriod = useSteady(period, sameRange);
   const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   // The placer keeps the last placement while every x reads the same, so a value update keeps the
-  // domain object and the axis ticks and slot keys, which read the domain alone, stay done.
+  // domain object, and the axis ticks and slot keys, which read the domain alone, are not recomputed.
   const [placeRows] = useState(createRowPlacer);
   const model = useMemo(
     () =>

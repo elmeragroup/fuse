@@ -40,8 +40,8 @@ const parses = parseCounter();
  * in `test/phone-base`.
  *
  * Contract checks over generated traces. Nothing here restates how the editor reaches a state:
- * each check is a property of what a parent can observe after every step (the shown country,
- * digits and output, and the calls it received), written from the decided semantics in issue
+ * each check is a property of what a parent can observe after every step, the shown country,
+ * digits and output and the calls it received, written from the decided semantics in issue
  * #246 and the `countryCode` JSDoc. A small decoder of the generated numbers, with its own
  * calling-code table, names what each value and proposal means.
  *
@@ -61,29 +61,28 @@ const parses = parseCounter();
  *   that sends it leaves it, and a controlled one is never told the value it holds;
  * - (vii) the parse budget, counted over every render the hook makes until the props settle:
  *   equal props and a change to defaults only parse nothing; a step whose only change is
- *   `countryCode` (a new code, starting control or releasing it), or a catalog change alone that
+ *   `countryCode`, a new code or starting or releasing control, or a catalog change alone that
  *   moves the country the controlled code resolves to, parses at most once, or twice for a value
  *   that writes a trunk prefix after its calling code when control starts, with detection on and
  *   international off; a new value alone, such as an echo of a proposal's output, parses at most
- *   twice. Any other step costs at most what the base editor
- *   (#586, frozen in `test/phone-base`) charges for it without `countryCode`, plus
- *   `CONTROLLED_ALLOWANCE` (3, until #616) once country control is in the trace (`countryCode`
- *   set before or after the step, or earlier). A trace never under control costs
- *   no more than the base, step by step. The base editor runs the same trace, every props step
- *   and user action, with country control removed;
+ *   twice. Any other step costs at most what the base editor, #586 frozen in `test/phone-base`,
+ *   charges for it without `countryCode`, plus `CONTROLLED_ALLOWANCE`, 3 until #616, once country
+ *   control is in the trace, with `countryCode` set before or after the step, or earlier. A trace
+ *   never under control costs no more than the base, step by step. The base editor runs the
+ *   same trace, every props step and user action, with country control removed;
  * - (viii) props that keep the controlled country never clear the number;
  * - (ix) a user proposal reaches `onChange` at most once per output, whatever order the parent
- *   answers in: together, country first (synchronously, inside `onCountryChange`, when the
- *   answer is immediate) or value first. A change the parent makes of its own in the same render
+ *   answers in: together, country first or value first. An immediate answer gives the country
+ *   synchronously, inside `onCountryChange`. A change the parent makes of its own in the same render
  *   starts the count afresh only when it steers the field anew: it changes the value, moves
  *   the country the controlled code resolves to, or sets another `countryCode`;
- * - (x) a step that changes only defaults or reset-only settings (`defaultValue`,
- *   `defaultCountryCode`, `preserveOnCountryChange`) leaves the field as it was: display,
+ * - (x) a step that changes only defaults or reset-only settings, such as `defaultValue`,
+ *   `defaultCountryCode` and `preserveOnCountryChange`, leaves the field as it was: display,
  *   output, country, a waiting proposal, and `onChange` silent;
  * - (xi) a step that only releases `value` keeps the number the field submits and tells
  *   `onChange` nothing; its shown country follows (i);
- * - with (v), a proposal the parent answered in full, value and country held (the country also
- *   when the value names its own), no longer waits.
+ * - with (v), a proposal the parent answered in full, value and country held, no longer waits.
+ *   The country counts as held also when the value names its own.
  */
 describe("PhoneEditor controlled country contracts over generated traces", () => {
   type Code = TraceCode;
@@ -96,7 +95,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
    * What a step under country control may cost beyond the base editor's price, where no tighter
    * class above bounds it. A compound render reads the shown number and a waiting proposal again,
    * each in its own country: a metadata replacement costs up to 3 more, a value and `countryCode`
-   * together or a catalog change up to 2. Sharing those parses is #616; this tightens with it.
+   * together or a catalog change up to 2. Sharing those parses is #616, which lowers this allowance.
    */
   const CONTROLLED_ALLOWANCE = 3;
 
@@ -275,7 +274,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
      * country is `current`, the field's country at that moment, and so never `countryCode` while
      * they agree; a disagreement is announced at most once while it holds, and one that holds was
      * announced when it began, so notices that never announce, or never end a disagreement and so
-     * never announce it again, go red. Without one, only a commit that shows another country than
+     * never announce it again, fail. Without one, only a commit that shows another country than
      * the last commit announces, and only that country.
      * `current` is the decoder's proposed country at a publish, and the editor's observation, a
      * proposal waiting for the parent or else the shown country, at a commit.
@@ -551,9 +550,9 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         return full;
       };
       /**
-       * A proposal the parent answered in full, its value held (echoed, or held already) and its
-       * country held (echoed, never moved, or blocked by the country the value names), no longer
-       * waits: the field reports no proposal in another country than the one it shows.
+       * A proposal the parent answered in full no longer waits: the field reports no proposal in
+       * another country than the one it shows. Its value is held when echoed or held already, and
+       * its country when echoed, never moved, or blocked by the country the value names.
        */
       const checkAnswered = () => {
         if (answered === null || steered) return;
@@ -732,7 +731,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
   });
 
   // Counterexamples generated traces once shrank to, kept by what they pin, each with the parses
-  // its steps' renders take, with no slack: one parse more or fewer turns the case red, so the
+  // its steps' renders take, with no slack: one parse more or fewer fails the case, so the
   // change that lowers them (#616) updates these rows with CONTROLLED_ALLOWANCE.
   it.each<[string, Props, readonly Step[], readonly number[]]>([
     [

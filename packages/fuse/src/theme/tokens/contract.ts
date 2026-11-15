@@ -9,7 +9,7 @@ import {
 export const TOKEN_NAMES = [
   "background",
   "foreground",
-  // The container roles: card, popover, dialog and panel. `--surface` is the colour of the fill an
+  // The container roles: card, popover, dialog and panel. `--surface` is the color of the fill an
   // element sits on; chart cut-outs read it, falling back to `background`. Beside it the container
   // states `--surface-muted-foreground`, the muted text paired with that fill, which the text on a
   // chart's chips reads. The `fuse/container-surface` lint rule holds every container that paints

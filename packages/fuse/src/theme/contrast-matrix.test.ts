@@ -89,8 +89,8 @@ type ContrastPolicy = {
 /**
  * The text-grade pairs hold 4.5:1 in both schemes, `muted-foreground` among them on every
  * surface muted copy lands on: `background`, `muted`, `card`, `card-soft` and the modal fill,
- * `dialog`. Muted copy carries
- * field and selection row descriptions, which can hold required information.
+ * `dialog`. Muted copy carries field and selection row descriptions, which can hold required
+ * information.
  */
 const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   {
@@ -114,8 +114,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   {
     // Muted copy, such as a field description, in a default Accordion item, which fills with
     // `primary-soft`. Dark only: light measures 4.43:1 on the neutral default, 3.84:1 on fkas
-    // and 4.22:1 on fkse, an accepted deviation the accessibility page lists until design picks
-    // the light tones.
+    // and 4.22:1 on fkse, an accepted deviation the accessibility page lists.
     schemes: ["dark"],
     matches: () => true,
     pairs: ACCORDION_MUTED_PAIRS,
@@ -143,7 +142,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // the same 1.1:1 floor as the menu row. The active default Tabs trigger fills with `card` on
     // its `muted` list, so in dark this floor is also all that separates the selected tab from the
     // list. Dark only: light muted is the shadcn 0.97 on a white card, 1.09:1, a design value this
-    // floor does not yet override.
+    // floor does not override.
     schemes: ["dark"],
     matches: () => true,
     pairs: [
@@ -171,7 +170,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 1.19,
   },
   {
-    // Chart marks are graphical objects (WCAG 1.4.11), so each separates from every surface a
+    // Chart marks are graphical objects under WCAG 1.4.11, so each separates from every surface a
     // chart sits on at 3:1.
     schemes: ["light", "dark"],
     matches: () => true,
@@ -180,7 +179,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   },
   {
     // The diverging midpoint paints every value near zero, such as a quarter-hour price just
-    // below or above it, so it is a graphical object (WCAG 1.4.11) at 3:1 on every surface.
+    // below or above it, so it is a WCAG 1.4.11 graphical object at 3:1 on every surface.
     schemes: ["light", "dark"],
     matches: () => true,
     pairs: roleOnSurfaces(["chart-diverging-4"]),
@@ -199,7 +198,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input"]), floor: 3 },
   {
-    // The focus ring (WCAG 1.4.11). It is drawn flush against the control, so it must separate
+    // The focus ring, under WCAG 1.4.11. It is drawn flush against the control, so it must separate
     // from the page or card around the control and from the muted Tabs list track it sits on
     // inside the list padding. Light `input` stays out of this gate: it is the field border and
     // an accepted deviation.
@@ -209,8 +208,8 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 3,
   },
   {
-    // The unchecked Checkbox and Radio edge and the unchecked Switch edge and thumb (WCAG 1.4.11).
-    // Light `input` is the field border and stays under 3:1 (an accepted deviation), so the
+    // The unchecked Checkbox and Radio edge and the unchecked Switch edge and thumb, under WCAG 1.4.11.
+    // Light `input` is the field border and stays under 3:1 as an accepted deviation, so the
     // selection controls draw this role instead.
     schemes: ["light", "dark"],
     matches: () => true,
@@ -246,7 +245,7 @@ describe("contrast matrix", () => {
     }
     const body = darkMatrix[themeSlug(firstTheme)];
     for (const theme of themes) {
-      // Neutral themes share one dark palette; a body drifting per brand is a contract break.
+      // Neutral themes share one dark palette; a body that differs per brand fails.
       expect(darkMatrix[themeSlug(theme)], themeSlug(theme)).toEqual(body);
     }
     await expect({ themes: themes.map(themeSlug), body }).toMatchFileSnapshot(

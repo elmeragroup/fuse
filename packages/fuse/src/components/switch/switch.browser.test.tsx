@@ -120,7 +120,7 @@ describe("Switch", () => {
   it.each(["light", "dark"] as const)(
     "outlines the unchecked switch at 3:1 on the page and cards, and keeps the checked thumb at 3:1 on its fill, in %s themes",
     (scheme) => {
-      // Stamp before mounting: a scheme flip under a mounted switch runs its colour transition.
+      // Stamp before mounting: a scheme flip under a mounted switch runs its color transition.
       document.documentElement.setAttribute("data-theme", scheme);
       renderThemed(
         <>

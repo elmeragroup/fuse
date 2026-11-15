@@ -1,7 +1,6 @@
-// Unit under test: slotCentre and valueTop, the plot's own fractions. Oracle: CONTRACT section 8.15,
-// where a bar and a line draw at the band centre of equal cells, section 9.5's point scale, whose
-// slots run from the first edge to the last, and section 8.11's linear value axis, with every
-// expected fraction worked by hand below.
+// Unit under test: slotCentre and valueTop, the plot's own fractions. Oracle: a bar and a line draw
+// at the band center of equal cells, a point scale's slots run from the first edge to the last, and
+// the value axis is linear, with every expected fraction worked by hand below.
 import { describe, expect, it } from "vitest";
 
 import { slotCentre, valueTop } from "./plot-geometry";
@@ -11,7 +10,7 @@ const WINDOW = { first: 2, last: 5 } as const;
 
 describe("slotCentre", () => {
   it("centres a band slot in its own quarter of the width", () => {
-    // Slot 3 is the second of four cells, so its centre is 1.5 / 4.
+    // Slot 3 is the second of four cells, so its center is 1.5 / 4.
     expect(slotCentre(WINDOW, 3, "band")).toBe(0.375);
     expect(slotCentre(WINDOW, 2, "band")).toBe(0.125);
     expect(slotCentre(WINDOW, 5, "band")).toBe(0.875);

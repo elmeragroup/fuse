@@ -178,7 +178,7 @@ export function ChartBar({
     );
   }
   const color = config?.color ?? "chart-1";
-  // The paint follows the series' readings and its colour, which the model and config carry.
+  // The paint follows the series' readings and its color, which the model and config carry.
   const paint = useMemo(() => seriesPaintOf(dataKey, color, series), [dataKey, color, series]);
   const { base, stops } = paint;
   const subIndex = group?.index.get(dataKey) ?? 0;

@@ -35,7 +35,7 @@ test("ConfirmButtonProps takes Button props except onClick, and onConfirm is req
 
   // @ts-expect-error onConfirm is required
   const _missing = <ConfirmButton>Delete</ConfirmButton>;
-  // @ts-expect-error onClick is owned by ConfirmButton
+  // @ts-expect-error ConfirmButton takes no onClick
   const _noOnClick = <ConfirmButton onConfirm={() => undefined} onClick={() => undefined} />;
   // @ts-expect-error icon size requires aria-label
   const _iconMissing = <ConfirmButton size="icon" onConfirm={() => undefined} />; // oxlint-disable-line elmera/require-icon-button-label -- type-level icon-name contract under test

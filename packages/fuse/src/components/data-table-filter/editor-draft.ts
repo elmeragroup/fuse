@@ -1,4 +1,4 @@
-// An editor's draft and the one write it settles into. Pure, so every exit path of every kind
+// An editor's draft and the one write it settles into. It is pure, so every exit path of every kind
 // editor commits through the same rules: a draft is a position per value, an incomplete draft
 // writes nothing, and a draft that already says what the applied filter says writes nothing.
 

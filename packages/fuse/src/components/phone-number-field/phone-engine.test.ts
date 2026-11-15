@@ -168,7 +168,7 @@ describe("national drafts with a trunk prefix", () => {
   });
 
   it("reads digits detected from a partial international entry behind the calling code", () => {
-    // As a national entry, Anguilla's seven digits would take its local-dialling rule, which
+    // As a national entry, Anguilla's seven digits would take its local-dialing rule, which
     // adds the 264 area code again: "+1 264 264 2351".
     const countries = getCountries();
     const detected = processInputWithDetection({

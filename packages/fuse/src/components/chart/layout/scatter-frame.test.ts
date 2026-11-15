@@ -41,7 +41,7 @@ describe("the scatter projection", () => {
 
 describe("the dot snapping", () => {
   // Unit under test: dotDiameter and dotCentre. Oracle: device pixels counted by hand. A dot whose
-  // diameter is an even count of device pixels centres on a pixel edge, an odd one on a pixel's
+  // diameter is an even count of device pixels centers on a pixel edge, an odd one on a pixel's
   // middle, so its edges fall on whole pixels.
   const plot = frame(200, 140, [-2, 18], [20_000, 160_000]);
 
@@ -94,7 +94,7 @@ describe("the scatter paths", () => {
   });
 
   it("steps after each point along x", () => {
-    // step-after holds each y until the next x: (0,140) → (40,140) → (40,70) → (200,70) → (200,0).
+    // step-after holds each y until the next x: (0,140), (40,140), (40,70), (200,70), then (200,0).
     const xs = Float64Array.of(-2, 2, 18);
     const ys = Float64Array.of(20_000, 90_000, 160_000);
     expect(linePath(plot, xs, ys, "step-after")).toBe("M0,140L40,140L40,70L200,70L200,0");

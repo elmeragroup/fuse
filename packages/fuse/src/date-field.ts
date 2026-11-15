@@ -1,7 +1,7 @@
-// Source entry facade for `@elmeragroup/fuse/date-field` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. No public recipe. The part classes stay module-private.
+// Source entry facade for `@elmeragroup/fuse/date-field`. It is a pure re-export file with explicit named
+// re-exports only, and has no `export *`, local declarations or directives. The exports and barrel generators
+// discover this file, so never hand-edit `package.json#exports` or `src/index.ts`.
+// There is no public recipe. The part classes stay module-private.
 export { DateField, DateInput } from "./components/date-field";
 export type { DateFieldProps } from "./components/date-field/date-field";
 export type {

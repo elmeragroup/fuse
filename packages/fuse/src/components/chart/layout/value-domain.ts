@@ -1,8 +1,7 @@
 /**
- * The value axis of one layout, as CONTRACT section 8.2 and section 8.3 define it. The domain
- * holds the data's extent, 0 under the zero baseline and every `yInclude` value, niced with
- * d3-array's rule for 5 ticks. Flat and near-flat extents widen first, because d3 cannot nice a
- * range of zero width. No bound or tick is ever −0.
+ * The value axis of one layout. The domain holds the data's extent, 0 under the zero baseline and
+ * every `yInclude` value, niced with d3-array's rule for 5 ticks. Flat and near-flat extents widen
+ * first, because d3 cannot nice a range of zero width. No bound or tick is ever −0.
  */
 import { linearScale, niceScale, scaleTicks } from "./linear-scale";
 

@@ -21,7 +21,7 @@ import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
 import type { FormattedText } from "./format/formatted-text";
 
-/** Above this many rows a chart's table pages, after CONTRACT section 9.6. */
+/** Above this many rows a chart's table pages. */
 export const PAGE_ROWS = 500;
 
 /**

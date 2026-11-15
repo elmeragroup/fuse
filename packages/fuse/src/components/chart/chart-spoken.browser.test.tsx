@@ -1,9 +1,9 @@
-// The ticket's screen reader judge, in Chromium: hand-written spoken arrays in Norwegian Bokmål for
-// section 8.7's S07 days, section 9.4's S14 emphasis, the table, S09's change column and the status
-// messages. The other locales' words are format unit tests. The cartesian key maps are in
-// chart-keyboard.browser.test.tsx. Every date comes from layer 03's literal fixtures, every
-// word from CONTRACT section 12's drafted dictionary, every value from the committed Elhub days,
-// and the phrase grammar is vsr's own: role, name, state, position and set size, joined by ", ".
+// The screen reader judge, in Chromium. It checks hand-written spoken arrays in Norwegian Bokmål for
+// the `S07` days, the `S14` emphasis, the table, the `S09` change column and the status messages.
+// The other locales' words are format unit tests. The cartesian key maps are in
+// chart-keyboard.browser.test.tsx. Every date comes from the literals in `time-literals.ts`, every
+// word from the drafted dictionary, every value from the committed Elhub days, and the phrase
+// grammar is vsr's own: role, name, state, position and set size, joined by ", ".
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -24,14 +24,14 @@ const LOCALES = ["nb-NO"] as const;
 /** The locale the spoken arrays are written in. */
 type Locale = (typeof LOCALES)[number];
 
-/** A date literal of layer 03's fixtures, by case name and locale. */
+/** A date literal of `TIME_CASES`, by case name and locale. */
 function date(name: string, locale: SupportedLocale): string {
   const found = TIME_CASES.find((entry) => entry.name === name)?.spoken[locale];
   if (found === undefined) throw new Error(`no time literal ${name}`);
   return found;
 }
 
-/** CONTRACT section 12's drafted words, and the unit words of layer 03's value literals. */
+/** The drafted dictionary's words, and the unit words of the value literals. */
 const WORDS = {
   "nb-NO": {
     day: "Dag",
@@ -69,8 +69,8 @@ function number(key: keyof typeof NUMBERS): string {
 }
 
 /**
- * S09's change on 9 October, (33.58 − 31.29) / 31.29 = +7.3 %, and on 16 October,
- * (35.48 − 40.22) / 40.22 = −11.8 %, in layer 03's spoken signed percent forms.
+ * The `S09` change on 9 October, (33.58 − 31.29) / 31.29 = +7.3 %, and on 16 October,
+ * (35.48 − 40.22) / 40.22 = −11.8 %, in the spoken signed percent forms.
  */
 const CHANGES = {
   "nb-NO": ["pluss 7,3 prosent", "minus 11,8 prosent"],
@@ -90,7 +90,7 @@ afterEach(async () => {
   await virtual.stop();
 });
 
-/** Read on with vsr's virtual cursor until the table ends, and return the row phrases. */
+/** Reads on with vsr's virtual cursor until the table ends, and returns the row phrases. */
 async function tableRows(): Promise<string[]> {
   for (let step = 0; step < 400; step += 1) {
     await virtual.next();
@@ -100,7 +100,7 @@ async function tableRows(): Promise<string[]> {
 }
 
 function S07({ locale }: { readonly locale: Locale }) {
-  // S07's fixed rule: day 5 missing, day 9 corrected, day 16 estimated, days 17 to 31 pending.
+  // The fixed quality rule: day 5 missing, day 9 corrected, day 16 estimated, days 17 to 31 pending.
   const quality = (day: number): ChartQuality =>
     day === 5 ? "missing" : day === 9 ? "corrected" : day === 16 ? "estimated" : "measured";
   return (
@@ -154,8 +154,8 @@ describe.each(LOCALES)("S07's quality states in %s", (locale) => {
     const { host } = renderThemed(<S07 locale={locale} />);
     await start(host);
     const [header, ...rows] = await tableRows();
-    // CONTRACT section 9.6: the interval's header word and each series' label with its unit, which
-    // section 9.7 speaks as the unit's word, then 16 rows, one per day with a reading or a missing
+    // The header holds the interval's word and each series' label with its unit, which it speaks as
+    // the unit's word, then come 16 rows, one per day with a reading or a missing
     // reading.
     expect(header).toBe(`row, ${words.day} ${words.consumption} (${words.kwh})`);
     expect(rows).toHaveLength(16);
@@ -211,7 +211,6 @@ describe.each(LOCALES)("S09 in %s", (locale) => {
   const words = WORDS[locale];
 
   it("reads the change column with the locale's sign words", async () => {
-    // SCENARIOS.md S09's judge: the virtual screen reader announces the change in all four locales.
     const { host } = renderThemed(<S09 locale={locale} />);
     await start(host);
     const [header, ...rows] = await tableRows();
@@ -227,7 +226,7 @@ describe.each(LOCALES)("S09 in %s", (locale) => {
   });
 
   it("announces a selection and its clearing in the status region", async () => {
-    // CONTRACT section 9.10: the status region announces selection. vsr speaks a polite region
+    // The status region announces selection. vsr speaks a polite region
     // as "polite: " and its text.
     const { host } = renderThemed(<S09 locale={locale} />);
     await start(host);
@@ -241,7 +240,7 @@ describe.each(LOCALES)("S09 in %s", (locale) => {
 });
 
 function S14({ locale, label }: { readonly locale: Locale; readonly label?: string }) {
-  // The three highest daily peaks, 31, 30 and 19 October, which scenario_goldens.py prints.
+  // The three highest daily peaks, 31, 30 and 19 October.
   const top = ["2025-10-31", "2025-10-30", "2025-10-19"].map(osloMidnight);
   return (
     <LocaleProvider locale={locale}>

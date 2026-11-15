@@ -1,10 +1,10 @@
 // The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius, wedgePad,
-// columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: D11's equal slots, where
-// slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t);
-// D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, kept while the
-// rim arc leaves at least one device pixel of wedge, (2π·R/n − gap)·dpr ≥ 1; and D24's floor, one device pixel along the radius away
-// from the zero ring, settled for a stack by floor-settle.ts's rule that the span reaching farthest
-// out wins.
+// columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: equal slots, where slot i
+// of n spans [360·i/n, 360·(i+1)/n); the radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t); a
+// constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, kept while the rim
+// arc leaves at least one device pixel of wedge, (2π·R/n − gap)·dpr ≥ 1; and the floor, one device
+// pixel along the radius away from the zero ring, settled for a stack by floor-settle.ts's rule
+// that the span reaching farthest out wins.
 import { describe, expect, it } from "vitest";
 
 import {
@@ -62,7 +62,7 @@ describe("the wedge pad (D14)", () => {
   });
 
   // The week dial: 168 hours, a 98 px rim. Its rim arc is 2π·98/168 = 3.665 px, so a 2 px gap leaves
-  // 1.665 px of wedge there, while its 30 px hole's arc is only 1.122 px: each wedge tapers to the hole.
+  // 1.665 px of wedge there, while its 30 px hole's arc is only 1.122 px. Each wedge tapers to the hole.
   it("keeps the week dial's gap at 1×, where the rim leaves 1.665 device pixels of wedge", () => {
     const { padAngle, padRadius } = wedgePad(168, 98, 2, 1);
     expect(padRadius).toBe(98);

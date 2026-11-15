@@ -11,7 +11,7 @@ const LENGTH = /^(-?[0-9]*\.?[0-9]+)(rem|px)$/;
 // Unsigned decimal digits with an optional fraction, as token modules write a number.
 const PLAIN_NUMBER = /^(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/;
 
-// CSS Fonts 4 bounds a numeric `font-weight` to 1..1000, both inclusive.
+// CSS Fonts 4 bounds a numeric `font-weight` to the range 1 to 1000, both inclusive.
 const MIN_FONT_WEIGHT = 1;
 const MAX_FONT_WEIGHT = 1000;
 

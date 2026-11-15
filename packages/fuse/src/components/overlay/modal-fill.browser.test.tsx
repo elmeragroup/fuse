@@ -115,7 +115,7 @@ function scopeColor(token: string): string {
 }
 
 describe("modal fill", () => {
-  // Unit under test: the fill and text colour of each modal popup. Oracle: the issue's contract,
+  // Unit under test: the fill and text color of each modal popup. Oracle: #334's rule,
   // the page pair in branded light and the popover pair everywhere else, read as the scope's own
   // custom properties.
   const cases = [

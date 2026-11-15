@@ -5,10 +5,10 @@ import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-fac
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
-// Runtime-free recipe so ToggleGroup.Item can borrow it without Toggle's client graph.
+// This recipe is runtime-free, so ToggleGroup.Item can use it without Toggle's client graph.
 // The state face composes the `native` and `data` targets, like Button's, and the
-// hover and press faces sit behind the `enabled-hover:` / `enabled-active:` gate from
-// fuse.css, so a disabled toggle keeps pointer events (a Tooltip on it still opens) and
+// hover and press faces sit behind the `enabled-hover:` and `enabled-active:` gates from
+// fuse.css. A disabled toggle keeps pointer events, so a Tooltip on it still opens, and it
 // never repaints or scales under the pointer. A pressed toggle fills with the theme's
 // `toggle-pressed` pair. Neutral themes keep the quiet `muted` face on their neutral page.
 // Branded themes fill with `primary`, since `muted` barely clears their tinted brand pages

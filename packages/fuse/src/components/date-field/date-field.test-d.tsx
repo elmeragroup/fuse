@@ -282,11 +282,11 @@ test("DateInput reports a value's validation error in Calendar's words, plus its
 });
 
 test("a misspelt or undeclared prop does not compile", () => {
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _fieldMisspelt = <DateField label="Starts" granulartiy="minute" />;
   // @ts-expect-error field takes no `disabled`
   const _fieldUndeclared = <DateField label="Starts" disabled />;
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _rootMisspelt = <DateInput.Root aria-label="Starts" granulartiy="minute" />;
   // @ts-expect-error root takes no `isDisabled`
   const _rootUndeclared = <DateInput.Root aria-label="Starts" isDisabled />;

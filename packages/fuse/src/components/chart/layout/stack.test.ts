@@ -17,7 +17,7 @@ type Series = number[][];
 function offsetFacade(offset: StackOffset) {
   return (series: Series[], order: readonly number[]): void => {
     if (series.some((points) => points.some(([y0 = 0, y1 = 0]) => Number.isNaN(y1 - y0)))) {
-      // Section 8.1 reads a non-finite cell as no reading, where d3 keeps NaN in its output.
+      // Fuse reads a non-finite cell as no reading, where d3 keeps NaN in its output.
       throw new Error("Fuse reads NaN as no reading");
     }
     const ordered = order.map((index) => series[index] ?? []);
@@ -43,7 +43,7 @@ const BINDINGS = {
 };
 
 describe("d3-shape offset vectors", () => {
-  // Unit under test: stackSeries. Oracle: d3-shape 3.2.0's offset tests, frozen in the ground truth.
+  // Unit under test: stackSeries. Oracle: d3-shape 3.2.0's offset tests, copied into `fixtures/d3/d3-shape`.
   it.each([
     ["offset-diverging.json", diverging, 5],
     ["offset-expand.json", expand, 2],
@@ -112,7 +112,7 @@ describe("section 8.2 stacks, written by hand", () => {
   });
 
   it("hangs a negative spot hour below zero while the charges stay above", () => {
-    // S13's shape: a −12.40 øre spot hour under 95.10 øre of charges nets 82.70 øre.
+    // A −12.40 øre spot hour under 95.10 øre of charges nets 82.70 øre.
     const { extents } = stackSeries([[-12.4], [95.1]], "diverging");
     expect(extents).toEqual([[[-12.4, 0]], [[0, 95.1]]]);
   });

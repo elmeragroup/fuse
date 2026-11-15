@@ -15,7 +15,7 @@ describe("ring values along the spoke", () => {
   it("thins by stride, keeps every value a narrower dial showed, and stays under the 12 o'clock label", () => {
     // A 30 px label at 12 o'clock ends R + 2.375 up, under the rim's chip, which tops out at R + 8, so
     // the rim's value never shows; 0.75 R's chip tops out under it from R = 30. At 120 px, R = 60,
-    // and 0 sits on the centre, so 0.25, 0.5 and 0.75 have room, 15 px apart, too close; a stride of
+    // and 0 sits on the center, so 0.25, 0.5 and 0.75 have room, 15 px apart, too close; a stride of
     // 2 leaves 0.5 alone. At 160 px, R = 80, they sit 20 px apart, so all three show.
     const angles = [{ angle: 0, width: 30, shownAt: "always" as const }];
     expect(fitRingLabels(RADAR, { inner: 0, angles })).toEqual(["none", 160, 120, 160, "none"]);
@@ -73,7 +73,7 @@ describe("ring values along the spoke", () => {
 describe("a label on a hand inside the rim", () => {
   it("shows from the first width where it keeps the gap from the hole", () => {
     // At 90° a 30 px label's middle sits R − 6 − 15 in, so its inner edge lies R − 36 from the
-    // centre. With a hole of 0.5 R that edge keeps 2 px once R − 36 ≥ 0.5 R + 2, so R ≥ 76: the
+    // center. With a hole of 0.5 R that edge keeps 2 px once R − 36 ≥ 0.5 R + 2, so R ≥ 76: the
     // 160 px bucket. With no hole, R ≥ 38 holds at the first bucket.
     expect(fitHandLabel({ angle: 90, width: 30 }, 0.5)).toBe(160);
     expect(fitHandLabel({ angle: 90, width: 30 }, 0)).toBe(120);

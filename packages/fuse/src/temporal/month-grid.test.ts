@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * Unit under test: `monthWeeks`. Oracle: printed calendars for 2026 (February starts on a Sunday,
- * August on a Saturday), written out by hand.
+ * Unit under test: `monthWeeks`. Oracle: printed calendars for 2026, written out by hand. February
+ * starts on a Sunday and August on a Saturday.
  */
 import "../temporal-polyfill";
 import { monthWeeks } from "./month-grid";

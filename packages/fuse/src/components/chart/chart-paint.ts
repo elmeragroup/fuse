@@ -1,6 +1,6 @@
 /**
  * The paint model of a cartesian series, which the bars, the path form, lines, areas, the active
- * overlay, the point marks and the swatches all read, after CONTRACT sections 4 and 11. Every paint
+ * overlay, the point marks and the swatches all read. Every paint
  * reads the consumer's `--chart-color-<key>` first, so an override wins for a role, a role list, a
  * scale and both sides of a threshold alike.
  */
@@ -131,7 +131,7 @@ export type SeriesPaint = {
 
 const SCALE_STEPS = [1, 2, 3, 4, 5, 6, 7] as const;
 
-// One paint per series model and colour, so every mark and swatch of a model shares its bins.
+// One paint per series model and color, so every mark and swatch of a model shares its bins.
 const paints = new WeakMap<SeriesModel, Map<string, SeriesPaint>>();
 
 /**

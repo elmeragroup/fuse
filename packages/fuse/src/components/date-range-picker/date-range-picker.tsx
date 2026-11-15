@@ -358,7 +358,8 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
 
   // The calendar's view follows a range set from anywhere but the calendar itself.
   const [viewKey, markPicked] = useCalendarViewKey(committedKey);
-  // Worked out before the session, so a commit it makes while the popup closes reads this render's.
+  // The rules are worked out before the session, so a commit it makes while the popup closes reads
+  // this render's.
   const rules = usePickerRules(OWNER, minValue, maxValue, unavailable);
 
   // What committing a range reads, published before the session's effects run, so a commit the

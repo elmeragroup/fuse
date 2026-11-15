@@ -368,8 +368,8 @@ describe("Item", () => {
   });
 });
 
-// The fill the outline Item paints at rest and as a hovered link row, the text that travels with
-// it and the surface it states (see `surface-paint.tsx`).
+// The fill the outline Item paints at rest and as a hovered link row, the text color that goes
+// with it and the surface it states; see `surface-paint.tsx`.
 const ITEM_PARTS: readonly PartCase[] = [
   {
     label: "the outline Item",

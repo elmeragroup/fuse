@@ -215,7 +215,7 @@ function createGlider(): Glider {
     svg.querySelector(GLIDE)?.setAttribute("data-glide", "");
   };
 
-  // Take over the Sparklines a wrapper element owns, as `ref` describes. Returns the let-go.
+  // Take over the Sparklines a wrapper element owns, as `ref` describes. Returns the function that lets go.
   const connect = (root: Element): (() => void) => {
     roots.add(root);
     // Take over the Sparklines that arrived, initialized before they are marked, and let go of

@@ -285,7 +285,7 @@ export function LiveLineChartYAxis({
     );
     labels.current = shown;
     // Every mounted label, a leaving one included, takes its place in this frame from its value,
-    // centred on its height by a translation, so a frame lays nothing out.
+    // centered on its height by a translation, so a frame lays nothing out.
     for (const [value, label] of shown.list.sync(frameValueTicks(frame))) {
       const y = liveY(geometry, value);
       writeStyle(label, "translate", `0 calc(${livePixel(y)}px - 50%)`);

@@ -162,7 +162,10 @@ export function rayLabelOffset(angle: number, width: number, side: "outside" | "
   return { x: `${cssNumber(sign * sin)} * ${support}`, y: `${cssNumber(-sign * cos)} * ${support}` };
 }
 
-/** Where an angle label sits and how it aligns: the share of its box that lies before its point on each axis. */
+/**
+ * Where an angle label sits and how it aligns: the share of its box that lies before its point on
+ * each axis.
+ */
 export type AngleLabel = {
   readonly point: PolarPoint;
   /** 0 aligns the box's left edge on the point, 0.5 its center and 1 its right edge. */

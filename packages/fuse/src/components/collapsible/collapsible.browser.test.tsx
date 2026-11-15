@@ -128,7 +128,7 @@ describe("Collapsible", () => {
       throw new Error("expected the surrounding buttons");
     }
 
-    // Closed: the panel is not mounted, so Tab runs trigger -> After.
+    // Closed, the panel is not mounted, so Tab moves from the trigger to After.
     before.focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(triggerNamed("Show details"));
@@ -142,7 +142,7 @@ describe("Collapsible", () => {
       expect(link.query()).not.toBeNull();
     });
 
-    // Open: Tab from the trigger lands inside the panel before it reaches After.
+    // Open, Tab from the trigger lands inside the panel before it reaches After.
     triggerNamed("Show details").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(link.element());

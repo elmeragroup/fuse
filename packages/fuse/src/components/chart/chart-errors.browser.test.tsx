@@ -1,6 +1,5 @@
-// CONTRACT section 8.1's error tiers in a development build, for every rule layer 05 reaches. Each
-// case renders to a string and expects the thrown error's name and rule, both written by hand from
-// the section's table.
+// Chart's error tiers in a development build. Each case renders to a string and expects the thrown
+// error's name and rule, both written by hand.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -76,7 +75,7 @@ describe("composition errors", () => {
       ),
       composition("unknown-key"),
     ],
-    // q15 and s19: an explicit readout key must name a config key too.
+    // An explicit readout key must name a config key too.
     ["an unknown Swatch key", daily(<Chart.Swatch dataKey="typo" />), composition("unknown-key")],
     ["an unknown SeriesLabel key", daily(<Chart.SeriesLabel dataKey="typo" />), composition("unknown-key")],
     ["an unknown SeriesIcon key", daily(<Chart.SeriesIcon dataKey="typo" />), composition("unknown-key")],
@@ -250,7 +249,7 @@ describe("data errors in development", () => {
   });
 
   it("throws off-grid-x for an hourly value on a :15 row", () => {
-    // Section 8.8: an hourly series reads only the :00 rows, so 0,4 on 00:15 is off its grid.
+    // An hourly series reads only the :00 rows, so 0,4 on 00:15 is off its grid.
     const quarters = [
       { start: new Date(Date.UTC(2025, 8, 30, 22, 0)), price: 1 },
       { start: new Date(Date.UTC(2025, 8, 30, 22, 15)), price: 1, kwh: 0.4 },

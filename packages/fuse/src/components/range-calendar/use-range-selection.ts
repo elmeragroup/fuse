@@ -234,7 +234,7 @@ export function useRangeSelection(
   );
 
   // Every per-day answer reads the state its selector is handed, so the server and a hydrating day
-  // answer from the store's initial state (D-2-12).
+  // answer from the store's initial state.
   const model = useMemo(
     (): CalendarSelectionModel<RangeCalendarState> => ({
       dayFlags: (state, date) => rangeDayFlags(views.of(state), date, settings.isDateUnavailable),

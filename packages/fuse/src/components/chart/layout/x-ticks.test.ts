@@ -58,7 +58,7 @@ describe("wall-clock tick candidates, written by hand", () => {
 });
 
 describe("coarser calendar units", () => {
-  // jc4: the committed hourly year, 8,760 hours from 1 October 2025 00:00 in Oslo.
+  // The committed hourly year, 8,760 hours from 1 October 2025 00:00 in Oslo.
   const yearStarts = Array.from({ length: 8760 }, (_, hour) =>
     new Date(Date.UTC(2025, 8, 30, 22 + hour)).toISOString()
   );
@@ -148,7 +148,7 @@ describe("a stride that leaves out the first slot", () => {
 
   it("serves bucket after bucket with the labels the last bucket showed", () => {
     // Hand-derived: at 120 px, slot 5 starts at 45 px and slot 11 clamps to 100 px, so the first
-    // slot, then 5 and 11, fit. At 160 to 320 px every slot still crowds its neighbour, and the
+    // slot, then 5 and 11, fit. At 160 to 320 px every slot still crowds its neighbor, and the
     // same two slots hold every label the bucket before showed. At 360 px every slot fits.
     expect(fitsEveryBucket([{ slots: every }, { slots: [5, 11] }], geometry)).toBe(true);
   });
@@ -179,7 +179,7 @@ describe("label-aware thinning", () => {
   };
 
   it("shows every sixth hour from 120 px, every third from 200 px and every hour from 560 px", () => {
-    // Hand-derived: a two-digit label is 2 × 6.744 px, and with the 8 px gap a neighbour needs
+    // Hand-derived: a two-digit label is 2 × 6.744 px, and with the 8 px gap a neighbor needs
     // 21.488 px. One hour is 5 px at 120 px, so six hours fit, 30 px. At 160 px three hours are
     // 20 px, too few, and at 200 px they are 25 px. Every hour fits from 516 px.
     const shown = thinTicks(strides, geometry);
@@ -214,7 +214,7 @@ describe("label-aware thinning", () => {
   });
 
   it("clamps an edge label inside the axis, which can crowd its neighbour", () => {
-    // Hand-derived at 240 px: a 100 px label at the middle spans 70 to 170. A neighbour centred
+    // Hand-derived at 240 px: a 100 px label at the middle spans 70 to 170. A neighbor centered
     // at 228 px would end past the axis, so it clamps to 140 and overlaps. At 280 px the pair
     // spans 90 to 190 and 166 to 266 clamped, which still overlaps, and from 320 px it fits.
     const pair = [{ stride: 1, slots: [0, 1] }];
@@ -226,8 +226,8 @@ describe("label-aware thinning", () => {
   });
 
   it("fits two labels exactly one gap apart", () => {
-    // Hand-derived at 240 px: a 20 px label at 0 spans 0 to 20, so a neighbour starting at 28 px,
-    // centred at 38 px, fits with the 8 px gap.
+    // Hand-derived at 240 px: a 20 px label at 0 spans 0 to 20, so a neighbor starting at 28 px,
+    // centered at 38 px, fits with the 8 px gap.
     const pair = [{ stride: 1, slots: [0, 1] }];
     const shown = thinTicks(pair, { position: (slot) => (slot === 0 ? 0 : 38 / 240), width: () => 20 });
     expect(shown[1]).toEqual({ slot: 1, visibility: 240 });
@@ -241,8 +241,8 @@ describe("label-aware thinning", () => {
 });
 
 describe("the Roboto advance table", () => {
-  // Unit under test: label-width.ts's table. Oracle: the advances that
-  // .scratch/charts-v1/tools/l05-oracles/roboto_advances.py reads from Roboto's hmtx table.
+  // Unit under test: label-width.ts's table. Oracle: the advances in roboto-advances-12px.json,
+  // read from Roboto's hmtx table.
   it("matches every advance the font gives at 12 px", () => {
     for (const [character, width] of Object.entries(roboto.advances)) {
       expect([character, advanceOf(character)]).toEqual([character, width]);
@@ -274,7 +274,7 @@ describe("chart.css's width buckets", () => {
 
 describe("the always-shown first label", () => {
   it("counts in each fit check, so it never crowds a windowed neighbour", () => {
-    // s5 and q14: categories in a window of indices 1 to 11, each label 100 px wide. Stride 2
+    // Categories in a window of indices 1 to 11, each label 100 px wide. Stride 2
     // anchors on the even slots, so the first candidate, slot 1, is not among its labels. The
     // oracle is a brute-force overlap check of the clamped boxes at every bucket.
     const strides = [

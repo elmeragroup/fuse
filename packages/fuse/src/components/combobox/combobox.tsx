@@ -270,8 +270,8 @@ export function ComboboxInput({
             size="icon-sm"
             variant="ghost"
             aria-label={triggerLabel ?? strings.format("toggle")}
-            // Field.Label labelledby would win over aria-label. An empty list overrides it,
-            // so the caret stays dictionary `toggle`.
+            // Field.Label's `aria-labelledby` would win over `aria-label`. An empty list overrides
+            // it, so the caret keeps the dictionary's `toggle` name.
             aria-labelledby=""
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
@@ -558,15 +558,14 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           size="icon-inline"
           aria-label={label}
           // The remove button sits inside a chip in the field box, so it rounds inside the
-          // chip's corner instead of with Button's `--radius-button`. The inline square is as tall as the
-          // chip's 16px line and fits inside it. The explicit `text-xs` replaces icon-inline's
-          // inherited size and line height, so the square is the xs line's 16px, the chip's own
-          // line, even if a consumer restyles the chip's type; family and weight still inherit.
-          // The ghost button drops its transparent border, and Button's inline hit area makes
-          // the target 24px.
-          // The target reaches into the chip's inset and the chips' gap without meeting the
-          // next chip. The glyph takes the xs size, as on Button's
-          // smallest square.
+          // chip's corner instead of with Button's `--radius-button`. The inline square is as tall
+          // as the chip's 16px line and fits inside it. The explicit `text-xs` replaces
+          // icon-inline's inherited size and line height, so the square is the xs line's 16px, the
+          // chip's own line, even if a consumer restyles the chip's type. Family and weight still
+          // inherit. The ghost button drops its transparent border, and Button's inline hit area
+          // makes the target 24px. The target reaches into the chip's inset and the chips' gap
+          // without meeting the next chip. The glyph takes the xs size, as on Button's smallest
+          // square.
           className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", chipRemoveShellClass)}
         />
       }
@@ -592,9 +591,9 @@ export function ComboboxChipsInput({
         className,
         // No UA border, padding or fill, and the box's leading rather than the UA `normal`, in a
         // preflight-free host, where they would make the input taller than an sm chips box.
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- the native outline is off, and the shared within adapter draws the ring
         "min-w-16 flex-1 border-0 bg-transparent p-0 outline-none",
-        // The placeholder role colour `fieldBox` gives Combobox.Input. It sits on the input: the
+        // The placeholder role color `fieldBox` gives Combobox.Input. It sits on the input: the
         // chips box paints only the shell, so a `placeholder:` class there would not reach it.
         "placeholder:text-muted-foreground",
         // The text-entry 16px floor under `entry-floor` (see `entryType` in `field-size.ts`), over the

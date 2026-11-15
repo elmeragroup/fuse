@@ -266,7 +266,8 @@ type NamedValue = {
 /**
  * The controlled value read in the country it names, as {@link receiveValue} reads it there,
  * from the parse the record holds: its national number unless `international` keeps the digits
- * as written. No parse when the record holds the value's parse.
+ * as written. No parse when the record holds the value's parse, unless the national number
+ * behind the calling code is another input than the value's, as in {@link readNamedIn}.
  */
 function readNamed(record: EditorRecord, { value, country }: NamedValue): Snapshot {
   return readNamedIn(value, country, record.configuration, currentDetection(record)?.reading);
@@ -649,7 +650,8 @@ function pickedSnapshot(
  * once. A controlled value, which names no offered country here, is read as it stands in
  * `country`, and the pick is proposed over it, to show once the parent echoes its output. The
  * pick's output, when it differs from the value the parent holds, waits in `steered` for
- * `onChange`. At most one parse: the digits read in `country`, which a cleared pick does not need.
+ * `onChange`. At most one parse, the number read in `country`. An uncontrolled pick that clears
+ * the digits parses nothing.
  */
 function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountry): EditorRecord {
   const { configuration, value, preserveOnCountryChange } = record;

@@ -146,7 +146,7 @@ export function settleFloors(spans: readonly FloorSpan[], axis: FloorAxis): Uint
   }
   if (!(high > low)) return keeps;
   // Each series' rank in code-unit order of its key, and each span's. A mark's spans come
-  // together and share their series, so a span reads the rank its neighbour found.
+  // together and share their series, so a span reads the rank its neighbor found.
   const seen = new Set<string>();
   for (const { series } of spans) seen.add(series);
   const names = [...seen].toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));

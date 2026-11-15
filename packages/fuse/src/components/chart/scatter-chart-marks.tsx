@@ -109,7 +109,7 @@ function useScatterSeries(part: string, dataKey: string): SeriesSetup {
 
 /**
  * One series' points, drawn as one path of round dots. A data update redraws the path in place, so
- * 100 000 points stay one element per series, and the points sweep in with the entrance. The layer
+ * 100,000 points stay one element per series, and the points sweep in with the entrance. The layer
  * clips at the plot, past it by a dot's radius, so a point the domains glide toward stays inside
  * the chart until they reach it.
  *

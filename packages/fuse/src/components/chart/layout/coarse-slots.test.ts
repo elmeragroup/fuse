@@ -1,5 +1,5 @@
-// Unit under test: per-series resolution. Oracles: CONTRACT section 8.8's nesting list, written out
-// by hand below; the zoneinfo slot lists of format/fixtures/slots.json, which give 100 quarters and
+// Unit under test: per-series resolution. Oracles: the nesting list, written out by hand below;
+// the zoneinfo slot lists of format/fixtures/slots.json, which give 100 quarters and
 // 25 hours on Oslo's fall-back day and 92 quarters and 23 hours on its spring-forward day, counted
 // by hand from the lists; and row spans counted by hand. The judges in fixtures/slot-judges.ts
 // compare every quarter's hour and every hour's day with the lists, under other process zones too.
@@ -13,7 +13,7 @@ import { coarseSlots, intervalNests, ownWindowFirsts, ownWindowSlots, rowSpans }
 
 const ALL: readonly Interval[] = ["second", "minute", "quarter-hour", "hour", "day", "week", "month", "year"];
 
-/** Section 8.8: what each Root interval nests in, besides itself. */
+/** What each Root interval nests in, besides itself. */
 const NESTS_IN = {
   second: ["minute", "quarter-hour", "hour", "day", "week", "month", "year"],
   minute: ["quarter-hour", "hour", "day", "week", "month", "year"],

@@ -117,7 +117,7 @@ describe("useFormReset", () => {
 
   it("invokes the callback after a reset button's default action has restored the control", async () => {
     // The button path differs from form.reset(): the reset event fires inside the click's
-    // activation behaviour, so the deferred task is what lets the callback see the restored value.
+    // activation behavior, so the deferred task is what lets the callback see the restored value.
     const seen: string[] = [];
     const onReset = vi.fn(() => {
       seen.push(inputNamed("Field").value);

@@ -408,7 +408,7 @@ export function optionBand(
 ): readonly [number, number] {
   if (xScale === "band") return slotBand(frame, position);
   const length = alongLength(frame);
-  // The unsnapped centre, which lies inside the plot. The last point's snapped centre can lie past
+  // The unsnapped center, which lies inside the plot. The last point's snapped center can lie past
   // the plot's end, which would leave the clipped band empty.
   const centre = slotCentreAt(frame, position, xScale);
   const half = length / frame.count / 2;
@@ -504,8 +504,8 @@ export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [
   const { step, start } = frame.grid;
   const half = (step * cells) / 2;
   if (outsideRun(frame, centre)) return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
-  // The first cell: the one the centre lies in for one cell, and for several, the one the run's
-  // start lies in, which the centre's half a run before rounds to.
+  // For one cell, the first cell is the one `centre` lies in. For several, it is the one the run's
+  // start lies in, half a run before `centre`, which the rounding finds.
   // A plot of no length spreads its cells over nothing, so a run starts at the first.
   const first =
     step === 0
@@ -547,8 +547,8 @@ export function slotLine(
 /**
  * The hairline a slot reference draws at a tweened, unsnapped center inside the plot. It starts at
  * the center, snapped, moved inside the device pixels of the band of the slot the center lies in, as
- * `slotLine` draws it at rest. The caller decides whether the line shows before this, from the
- * center, so the band only ever contains a line that lies in the plot.
+ * `slotLine` draws it at rest. The caller checks first that the center lies in the plot, so the
+ * band contains only a line that lies in the plot.
  *
  * @param frame - The layout's frame.
  * @param centre - The tweened center along the slot axis, inside the plot.

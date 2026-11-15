@@ -25,8 +25,8 @@ import { scatterOptionName } from "./scatter-chart-text";
 
 /**
  * The hit radius in CSS pixels around the pointer, inside which the nearest point becomes active:
- * a 48 px catchment for a mouse, and 64 px for a finger or a pen, whose contact point is coarse.
- * Both reach well past the 24 px target floor, so a lone point is easy to hit.
+ * 24 px for a mouse, and 32 px for a finger or a pen, whose contact point is coarse.
+ * Both catchments, 48 px and 64 px across, are wider than the 24 px target floor.
  */
 const HIT_RADIUS = { fine: 24, coarse: 32 } as const;
 

@@ -230,7 +230,7 @@ export function usePickerFocusBoundary(
       }
     },
     onBlur(event) {
-      // A popup portalled into a container inside the app's root reaches React through both
+      // A popup portaled into a container inside the app's root reaches React through both
       // containers' listeners, so one native blur can arrive twice; it counts once.
       if (internalFocusouts.has(event.nativeEvent) || handled.current.has(event.nativeEvent)) {
         return;

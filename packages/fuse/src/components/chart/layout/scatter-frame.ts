@@ -266,7 +266,7 @@ export function referenceInDomains(
   const dy = form.to[1] - fy;
   let enter = 0;
   let leave = 1;
-  // Each edge as p · t ≤ q: left, right, bottom, top.
+  // Each edge is an inequality p · t ≤ q, in the order left, right, bottom, top.
   for (const [p, q] of [
     [-dx, fx - x0],
     [dx, x1 - fx],

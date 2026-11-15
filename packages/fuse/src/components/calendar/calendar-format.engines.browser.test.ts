@@ -3,8 +3,8 @@
  * locale, which Chromium and WebKit must each reproduce: for days and months, the strings
  * React Aria's Calendar writes through the same `Intl` options; for a range of months, CLDR's
  * month names joined by the locale's interval fallback separator, with a shared year written once.
- * The ranges are deliberately not `formatRange` output, whose shortening differs by engine (see
- * `calendar-format.ts`).
+ * The ranges are not `formatRange` output, whose shortening differs by engine; see
+ * `calendar-format.ts`.
  */
 import { describe, expect, it } from "vitest";
 

@@ -121,8 +121,8 @@ export function ChartPanel({
   const y = useMemo(() => layoutDomain({ ...model, stackOffset }, input), [model, stackOffset, input]);
   // The first commit under each update decides whether the update moves this Panel's domain. An
   // insertion effect runs in the commit, before any layout effect, so every mark of the commit
-  // reads every committed Panel's decision before it places, and a render that never commits, as a
-  // suspended one, decides nothing. The update the Panel mounts under moves nothing.
+  // reads every committed Panel's decision before it places, and a render that never commits, such as
+  // a suspended one, decides nothing. The update the Panel mounts under moves nothing.
   const { update } = context;
   const decided = useRef(update);
   useInsertionEffect(() => {

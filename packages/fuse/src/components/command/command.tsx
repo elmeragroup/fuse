@@ -430,13 +430,13 @@ export function CommandContent({
 }: CommandContentProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   const { handle, dialog, registerContent, session } = usePalette("Command.Content");
-  // A palette in a SkeletonReveal's ghost stays closed: its dialog root would lock the page's scroll.
+  // A palette in a SkeletonReveal's ghost stays closed, as its dialog root would lock the page's scroll.
   const override = useOverlayRootOverride();
   useLayoutEffect(registerContent, [registerContent]);
   // A new session mounts the children fresh, even in a popup an opening kept from its close. The
   // popup itself stays, so its focus manager keeps the element focus returns to on close. Absent
   // children stay absent, so a `render` target's own default children still show, and `render`
-  // passes through untouched: content it writes itself keeps its state.
+  // passes through untouched. Content that `render` writes itself keeps its state.
   const sessionChildren = children === undefined ? undefined : <Fragment key={session}>{children}</Fragment>;
   return (
     <DialogPrimitive.Root handle={handle} {...dialog} {...override}>

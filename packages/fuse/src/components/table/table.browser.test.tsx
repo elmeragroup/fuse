@@ -150,7 +150,7 @@ describe("VerticalTable", () => {
       throw new Error("expected a loading row");
     }
     expect(loadingRow.textContent.trim()).toBe("");
-    // IsLoading cells contain the skeleton node (no role; locate by the mandated slot).
+    // IsLoading cells contain the skeleton node, which has no role, so the test finds it by its slot.
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
   });
@@ -184,7 +184,7 @@ describe("VerticalTable", () => {
     );
 
     expect(htmlTable("Customer")).toBeTruthy();
-    // Wrapper id and tableProps id are distinct, each unique; ids have no role.
+    // The wrapper id and the tableProps id are distinct and each unique. An id has no role.
     expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     expect(document.body.querySelectorAll("#facts-table")).toHaveLength(1);
     expect(document.getElementById("facts")?.getAttribute("aria-labelledby")).toBe("wrapper-only");

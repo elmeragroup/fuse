@@ -260,10 +260,10 @@ export function ChartXAxis({
     return () => axis.touchTicks();
   }, [axis, ticks]);
   // A tick keeps its node while its slot stays, so a shifted window moves its labels rather than
-  // replacing them: the slot's render key, which Root keeps for a slot across updates. The first
-  // tick, which always shows, keeps one node across every window, since a stream's first slot
-  // changes with each append and a node inserted into the axis restyles its ancestors. Slot keys
-  // take a prefix, so no category name can match the first tick's key.
+  // replacing them. Its key is the slot's render key, which Root keeps for a slot across updates.
+  // The first tick, which always shows, keeps one node across every window, since a stream's first
+  // slot changes with each append and a node inserted into the axis restyles its ancestors. Slot
+  // keys take a prefix, so no category name can match the first tick's key.
   const keyOf = (slot: number, index: number): string =>
     index === 0 ? "first" : `slot:${context.update.keys[slot] ?? String(slot)}`;
   // Once Root measures, the axis spans the run the slot bands take, the plot less its leftover

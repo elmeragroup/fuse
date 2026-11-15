@@ -11,7 +11,7 @@ import { valueDomain } from "./value-domain";
 
 describe("the pinned d3-array release", () => {
   // Unit under test: the d3-array 3.2.4 functions the value axis calls. Oracle: d3-array's own
-  // test assertions, frozen in the charts ground truth. A pin bump that changed them fails here.
+  // test assertions, frozen in `fixtures/d3`. A pin bump that changed them fails here.
   it.each([
     ["ticks", tickCases],
     ["tickIncrement", tickIncrementCases],
@@ -24,7 +24,7 @@ describe("the pinned d3-array release", () => {
 });
 
 describe("S04's golden price ranges", () => {
-  // SCENARIOS.md S04: 0.96567 to 5.23563 SEK on the SE4 day and up to 4.10917 NOK on the NO3 day.
+  // The golden price ranges: 0.96567 to 5.23563 SEK on the SE4 day and up to 4.10917 NOK on the NO3 day.
   // Each case is written by hand from the 1-2-5 rule for 5 ticks: a fifth of the span picks the
   // step 1, 2, 5 or 10 times a power of ten, by its leading digit against √2, √10 and √50, and the
   // domain widens outward to whole steps. d3-array's own ticks of the domain cross-check each one.
@@ -49,9 +49,9 @@ describe("S04's golden price ranges", () => {
 });
 
 describe("valueDomain against the tick oracle", () => {
-  // Unit under test: valueDomain under the "none" baseline. Oracle: the count-5 cases of
-  // ground-truth ticks/cases.json, through a Python port of d3-array's nice and ticks plus
-  // section 8.2's widening, written by .scratch/charts-v1/tools/l05-oracles/value_domain_oracle.py.
+  // Unit under test: valueDomain under the "none" baseline. Oracle: the count-5 cases in
+  // `fixtures/value-domains.json`, computed by a port of d3-array's nice and ticks plus the
+  // domain's widening, outside this implementation.
   it.each(domains.cases.map((row) => [row.id, row] as const))("%s", (_, row) => {
     const result = valueDomain({ values: row.extent, baseline: "none" });
     expect(result.domain).toEqual(row.domain);

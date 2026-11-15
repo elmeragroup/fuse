@@ -75,7 +75,7 @@
           "type": "((rejections: FileRejection[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the files that did not pass, each with its `reason`. For one pick, it runs right after `onSelect`, in the same task.",
+          "description": "Called when a pick has files that did not pass, with each file and its `reason`. For one pick, it runs right after `onSelect`, in the same task.",
           "required": false
         },
         {
@@ -84,7 +84,7 @@
           "type": "((files: File[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the files that passed `accept` and the count rule, in a fresh array for each pick.",
+          "description": "Called when a pick has files that pass `accept` and the count rule, with those files in a fresh array. A pick in which no file passes does not call it.",
           "required": false
         },
         {

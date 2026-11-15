@@ -172,8 +172,8 @@ export function InputGroupButton({
   return (
     <Button
       type={type}
-      // The local compact axis is never Button's `size` prop: it is applied
-      // as extra classes and reflected to the DOM as `data-size`.
+      // The local compact axis is never Button's `size` prop. The recipe applies it as extra
+      // classes, and `data-size` reflects it to the DOM.
       data-size={size}
       variant={variant}
       className={cn(inputGroupButtonVariants({ size }), className)}
@@ -186,8 +186,8 @@ export function InputGroupButton({
 export function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElement {
   return (
     <span
-      // The reference omits the slot, which breaks the
-      // ButtonGroup `[data-slot]` child-selector contract.
+      // The reference implementation omits this slot, which ButtonGroup's `[data-slot]` child
+      // selectors need.
       data-slot="input-group-text"
       className={cn(
         fieldReads.type(),

@@ -1,6 +1,6 @@
 "use client";
 
-// The value popover: one Base UI Popover from a handle, shared by every chip. Each chip's Value is
+// The value popover is one Base UI Popover from a handle, shared by every chip. Each chip's Value is
 // a detached trigger of it, so the editors are written once, and a press on another chip's Value
 // while it is open moves the popover there instead of opening a second one. `Editor` lives here
 // too. The popover renders it for a chip, and the add menu renders the same part in place for a
@@ -85,7 +85,7 @@ export function DataTableFilterValueContent({
   // A consumer's ref joins the popup ref that initial focus and focus return read.
   const popupRefs = useMergedRefs(ref, useMergedRefs(popupRef, overlayRef));
   const field = state.editing === null ? undefined : meta.fields[state.editing];
-  // Anchored to the whole chip, while focus return and aria-expanded follow the Value that opened
+  // The popover anchors to the whole chip, while focus return and aria-expanded follow the Value that opened
   // it. Base UI 1.9 resolves a function anchor once per mount (`useAnchorPositioning.ts`), so the
   // element itself is passed, and a move to another chip anchors anew and glides. The chip
   // registered its element before the press that set `editing`.
@@ -136,7 +136,7 @@ export function DataTableFilterValueContent({
               if (meta.focusLeft("value", popupRef.current)) {
                 return false;
               }
-              // A ghost chip unmounts once this closes, so its focus goes to a neighbour.
+              // A ghost chip unmounts once this closes, so its focus goes to a neighbor.
               const index = state.chips.findIndex((chip) => chip.ghost);
               if (index !== -1) {
                 return meta.neighbourOf(state.chips, index) ?? true;

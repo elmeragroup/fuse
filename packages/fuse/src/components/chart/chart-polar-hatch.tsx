@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * The hatch an estimated slice or ring paints with, per CONTRACT section 8.7 and T172. It has the
- * cartesian hatched look's 45° stripes of a solid line and a tint of the item's own paint, which the
- * stylesheet mixes, in the dial's units, at its 5 px stride on a dial of the nominal size. A polar
+ * The hatch an estimated slice or ring paints with. It has the cartesian hatched look's 45° stripes
+ * of a solid line and a tint of the item's own paint, which the stylesheet mixes, in the dial's
+ * units, at its 5 px stride on a dial of the nominal size. A polar
  * chart draws in a viewBox, so the stripes scale with the dial and step evenly at any size.
  */
 import type { ReactElement } from "react";

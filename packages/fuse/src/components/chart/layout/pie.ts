@@ -1,8 +1,7 @@
 /**
  * The pie's layout: which rows draw as their own slice and which fold into Other, each slice's
- * angles in a sweep, and the rim floor that keeps every slice visible. CONTRACT section 8.4 gives
- * the fold and section 8.2 the degenerate rows. Slices follow data order through d3's pie with
- * `sort(null)`, so a month switch keeps each part in place.
+ * angles in a sweep, and the rim floor that keeps every slice visible. Slices follow data order
+ * through d3's pie with `sort(null)`, so a month switch keeps each part in place.
  */
 import { pie as d3Pie } from "d3-shape";
 
@@ -111,10 +110,10 @@ export type SliceAngles = {
 
 /**
  * Each item's slice in a sweep, through d3's pie with `sort(null)`. Only a finite reading above 0
- * draws, so a zero, missing or negative item takes no arc and no pad, as section 8.2 says. A pie
- * whose drawn readings sum to 0 draws nothing, and a single slice sweeps the whole sweep with no
- * pad. A negative pad overlaps neighbors. Each slice but the last runs that far under the next,
- * and the last stops at the sweep's end.
+ * draws, so a zero, missing or negative item takes no arc and no pad. A pie whose drawn readings
+ * sum to 0 draws nothing, and a single slice sweeps the whole sweep with no pad. A negative pad
+ * overlaps neighbors. Each slice but the last runs that far under the next, and the last stops at
+ * the sweep's end.
  *
  * @param values - Each item's reading, in sweep order.
  * @param sweep - The sweep.
@@ -244,9 +243,9 @@ export function floorSlices(
 
 /**
  * The slice under a pointer's angle, by arithmetic. Any point of the cell whose angle lies inside
- * the sweep picks, the hole and the space past the rim included, as CONTRACT section 9.5 makes the
- * cell one target. A slice's range runs from its start to the next drawn slice's start, so a pad
- * picks the slice it belongs to and an overlap picks the slice painted over it.
+ * the sweep picks, the hole and the space past the rim included, so the cell is one target. A
+ * slice's range runs from its start to the next drawn slice's start, so a pad picks the slice it
+ * belongs to and an overlap picks the slice painted over it.
  *
  * @param angle - The pointer's angle, as `pointerAngle` gives it.
  * @param slices - Each item's slice, or null for one that draws no arc, floored as drawn.

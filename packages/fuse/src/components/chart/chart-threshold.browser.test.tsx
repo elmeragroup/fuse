@@ -1,5 +1,5 @@
-// Threshold colours in Chromium. Units under test: the marks, the legend and the readouts of a
-// series whose config colour is a ChartThresholdColor. Oracles: the theme's own sentiment roles,
+// Threshold colors in Chromium. Units under test: the marks, the legend and the readouts of a
+// series whose config color is a ChartThresholdColor. Oracles: the theme's own sentiment roles,
 // resolved through a probe outside every chart rule; the rule ChartThresholdColor documents, a
 // value above the threshold paints `above` and a value at it or below paints `below`; the
 // threshold's y, where a ReferenceLine at the same number draws; and labels written by hand.

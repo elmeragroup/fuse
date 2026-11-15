@@ -1,9 +1,7 @@
 // Path data for lines and areas. Unit under test: linePaths and areaPaths. Oracles: d3-shape's own
-// curve assertions, frozen in fixtures/d3/d3-shape/ by
-// .scratch/charts-v1/tools/l06-oracles/trim_curve_cases.py with the expected paths the d3 author
-// wrote; the parity ledger's L17 to L19, which change d3's output where Fuse draws otherwise; and
-// hand-written paths. Fuse forwards its curves to d3-shape, so the vectors check the forwarding
-// with the vertex, gap and rounding wiring around it.
+// curve assertions, frozen in fixtures/d3/d3-shape/ with the expected paths the d3 author wrote,
+// and hand-written paths where Fuse draws otherwise than d3. Fuse forwards its curves to d3-shape,
+// so the vectors check the forwarding with the vertex, gap and rounding wiring around it.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -87,7 +85,7 @@ describe("linePaths against d3-shape's own curve tests", () => {
 
   it("runs step-after from cell edge to cell edge, which adds d3's missing last run (L19)", () => {
     // d3's stepAfter through the cell starts 0 and 2 ends at the last start, 2. Fuse's vertices
-    // sit at the cell centres 1 and 3, half a cell of 1 from each edge, and keep the last run to 4.
+    // sit at the cell centers 1 and 3, half a cell of 1 from each edge, and keep the last run to 4.
     const d3 = stepAfter.cases.find(({ points }) => JSON.stringify(points) === "[[0,1],[2,3]]")?.expected;
     expect(d3).toBe("M0,1L2,1L2,3");
     expect(linePaths([1, 1, 3, 3], topologyOf(["reading", "reading"]), placed("step-after", 1)).line).toBe(
@@ -195,7 +193,7 @@ describe("linePaths topology", () => {
 
 describe("areaPaths", () => {
   it("draws each lone reading as a dot for every non-step curve, and an estimated one hatched (B2-1)", () => {
-    // [10, null, 20]: two runs of one reading each, which no fill can paint. Each draws L18's dot,
+    // [10, null, 20]: two runs of one reading each, which no fill can paint. Each draws a dot of
     // two arcs of 2.5 px around its vertex, and the estimated first one hatches 4.5 px either side.
     const values = [0, 10, 50, 10, 15, 50, 20, 20, 50];
     const dots = "M-2.5,10a2.5,2.5 0 1,0 5,0a2.5,2.5 0 1,0 -5,0M17.5,20a2.5,2.5 0 1,0 5,0a2.5,2.5 0 1,0 -5,0";

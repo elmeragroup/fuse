@@ -1,6 +1,6 @@
 /**
- * Unit project. Summaries, list order, the cap and the dictionary, against handwritten
- * expectations.
+ * Filter summaries, their list order, the cap and the dictionary, checked against handwritten
+ * expectations in the unit project.
  */
 import { describe, expect, it } from "vitest";
 

@@ -165,7 +165,7 @@ export function RadioGroup({
  * of its own.
  */
 export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGroupProps): ReactElement {
-  // The default is spelled here because the docs API extractor reads a part's
+  // The default is written here because the docs API extractor reads a part's
   // documented defaults out of its own destructuring.
   return (
     <RadioGroup {...props} orientation={orientation}>

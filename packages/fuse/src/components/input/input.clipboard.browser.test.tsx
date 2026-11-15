@@ -241,7 +241,7 @@ describe("Input numeric filter", () => {
     expect(pin).toHaveProperty("value", "12");
     expect(changes).not.toHaveBeenCalled();
 
-    // The same run, not cancelled, takes the filtered path.
+    // The same run, not canceled, takes the filtered path.
     pin.dispatchEvent(mixedRun());
     expect(pin).toHaveProperty("value", "1234");
     expect(changes).toHaveBeenLastCalledWith("1234");

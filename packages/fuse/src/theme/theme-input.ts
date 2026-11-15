@@ -76,7 +76,7 @@ function isThemeAxisValue<A extends ThemeAxis>(axis: A, value: unknown): value i
  * @returns Its slug, the axis values joined with `-` in {@link THEME_AXES} order.
  */
 export function themeSlug(theme: ThemeInput): ThemeSlug {
-  // SAFETY: ThemeInput already correlates pinned brands with their segment; TS loses that
+  // SAFETY: ThemeInput already correlates pinned brands with their segment; TypeScript loses that
   // correlation across separate property reads, so the joined template is re-asserted.
   return THEME_AXES.map((axis) => theme[axis.name]).join("-") as ThemeSlug;
 }
@@ -204,7 +204,7 @@ export function parseThemeSlug(slug: string): ThemeInput | null {
 export const LEGAL_THEMES: readonly ThemeInput[] = THEME_IDENTITIES.flatMap((identity) =>
   BRAND_CODES.flatMap((brand) =>
     // SAFETY: brand and segment come from the BRANDS pin table, so every combination is a
-    // legal ThemeInput member; TS cannot correlate the mapped axes back to the union.
+    // legal ThemeInput member; TypeScript cannot correlate the mapped axes back to the union.
     BRANDS[brand].segments.map((segment): ThemeInput => ({ identity, brand, segment }) as ThemeInput)
   )
 );

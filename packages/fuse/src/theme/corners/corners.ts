@@ -84,14 +84,14 @@ const BRAND_CORNERS = {
     "radius-field": "var(--radius)",
     "radius-step": "2px",
   },
-  // Design has not specified the Elmera radius yet, so the set holds a 6px placeholder.
+  // Design has not specified the Elmera radius, so the set holds a 6px placeholder.
   elma: {
     radius: "0.375rem",
     "radius-button": "0.375rem",
     "radius-field": "var(--radius)",
     "radius-step": "2px",
   },
-  // Design has not specified the Nordic Green Energy radius yet, so the set holds a 6px
+  // Design has not specified the Nordic Green Energy radius, so the set holds a 6px
   // placeholder, and the button takes the pill other brands use.
   ngfi: {
     radius: "0.375rem",

@@ -1,6 +1,6 @@
 // A chart Root nested inside another chart's part, in Chromium. Unit under test: the nested Root's
 // own parts. Oracle: what each part's JSDoc says it does in a Root of its own, outside a polar
-// Root, a tooltip, a Headline and a Crosshair, and SPEC S14's cases for each polar family in both
+// Root, a tooltip, a Headline and a Crosshair, and cases for each polar family in both
 // directions.
 import type { ReactNode } from "react";
 
@@ -69,7 +69,7 @@ function centreOf(rect: DOMRect): [number, number] {
 }
 
 describe("a Root nested in another chart's part", () => {
-  // #453's repro and SPEC S14, in each polar family: a Chart.Root inside a polar Root lists its own
+  // #453's repro, in each polar family: a Chart.Root inside a polar Root lists its own
   // config keys, and none of the polar Root's categories.
   it.each([
     [
@@ -120,7 +120,7 @@ describe("a Root nested in another chart's part", () => {
     ).toEqual(["Forbruk", "Pris"]);
   });
 
-  // SPEC S14 the other way: a polar Root inside Chart.Tooltip reads its own model, not Chart's.
+  // The other direction: a polar Root inside Chart.Tooltip reads its own model, not Chart's.
   it.each([
     [
       "PieChart",
@@ -340,7 +340,7 @@ describe("a Root nested in another chart's part", () => {
   });
 
   it("gives a gauge part under another family's Root no outer gauge", () => {
-    // A pie inside a gauge's centre holds a gauge CenterLabel. In a chart of its own that label
+    // A pie inside a gauge's center holds a gauge CenterLabel. In a chart of its own that label
     // throws part-outside-root, as its JSDoc says, and nested it must do the same rather than read
     // the outer gauge.
     const render = () =>

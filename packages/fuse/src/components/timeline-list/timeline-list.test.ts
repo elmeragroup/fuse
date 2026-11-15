@@ -79,7 +79,8 @@ describe("TimelineList.Time", () => {
     const html = renderToStaticMarkup(
       createElement(
         TimelineList.Time,
-        // SAFETY: dateTime is omitted from the public type; this assertion feeds the runtime override contract.
+        // SAFETY: dateTime is omitted from the public type; this assertion feeds the runtime
+        // override contract.
         { date: new Date("2024-01-01T00:00:00.000Z"), dateTime: "not-this" } as never,
         "1 January"
       )

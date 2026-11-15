@@ -1,6 +1,6 @@
 // The date arithmetic behind every calendar Root: which months show, where focus goes for a key,
-// what a month button pages to, and whether it may. Pure: it takes Temporal values and returns
-// them, so the rules are unit-tested without React. The alignment rules reproduce React Aria's
+// what a month button pages to, and whether it may. The module is pure: it takes Temporal values
+// and returns them, so the rules are unit-tested without React. The alignment rules reproduce React Aria's
 // `react-stately` calendar utilities (`alignCenter`, `alignStart`, `alignEnd`, `constrainStart`,
 // `constrainValue`).
 

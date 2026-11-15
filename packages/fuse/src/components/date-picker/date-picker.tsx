@@ -650,12 +650,13 @@ export type DatePickerTimeInputProps = PickerInputPartProps;
  * The time of the picker's value, edited in the popup under the calendar, as React Spectrum's
  * picker edits it: a `DateInput.Root` showing only the hour onwards, named "Time". It renders
  * nothing while the picker's values have no time, that is a PlainDate or `granularity="day"`. A time
- * typed in a picker with a value changes that value's time; in an empty picker it waits for a day,
- * and a day picked then (with `shouldCloseOnSelect={false}`, or before it) commits at that time
- * rather than at midnight. A time waiting for a day is a wall-clock time: it takes the picker's
- * zone and kind as they are when the day comes, so a `timeZone` changed meanwhile applies. Typing
- * reports through the Root's `onValueChange` with the input's reasons. It is a Field of its own: it
- * submits nothing, and a half-typed time marks only itself.
+ * typed in a picker with a value changes that value's time. In an empty picker it waits for a day,
+ * and the day picked next commits at that time rather than at midnight. With
+ * `shouldCloseOnSelect={false}`, a day picked before the time waits for the time, then commits at
+ * it. A time waiting for a day is a wall-clock time: it takes the picker's zone and kind as they
+ * are when the day comes, so a `timeZone` changed meanwhile applies. Typing reports through the
+ * Root's `onValueChange` with the input's reasons. It is a Field of its own: it submits nothing,
+ * and a half-typed time marks only itself.
  */
 export function DatePickerTimeInput(props: DatePickerTimeInputProps): ReactElement | null {
   const root = useDatePickerRootContext("DatePicker.TimeInput");

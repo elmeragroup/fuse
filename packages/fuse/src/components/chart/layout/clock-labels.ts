@@ -190,7 +190,7 @@ function fits(
     index === 0 || label.unit % stride === 0 ? [{ angle: label.angle, width: widths[index] ?? 0 }] : []
   );
   if (shown.length < 2) return true;
-  // Every neighbouring pair, and the pair that meets across 12 o'clock.
+  // Every neighboring pair, and the pair that meets across 12 o'clock.
   return shown.every((label, index) => {
     const next = shown[(index + 1) % shown.length] ?? label;
     const apart = turnOf(next.angle - label.angle) || 360;
@@ -236,7 +236,7 @@ export function pageSlot(
       date.getUTCMinutes()
     );
   } else target = from + direction * (cycle === "day" ? 6 * HOUR : DAY);
-  // A target past either end wraps round the cycle.
+  // A target past either end wraps around the cycle.
   const wrapped = first + ((((target - first) % length) + length) % length);
   let slot = 0;
   for (let at = 0; at < count; at += 1) if ((walls[at] ?? 0) <= wrapped) slot = at;

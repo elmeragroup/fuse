@@ -167,7 +167,7 @@ describe("SkeletonReveal outgoing content", () => {
     for (const control of [input, button]) {
       control.focus();
       expect(document.activeElement).not.toBe(control);
-      // A press at the control's centre lands on whatever is above it, never the control.
+      // A press at the control's center lands on whatever is above it, never the control.
       const box = control.getBoundingClientRect();
       const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
       expect(hit === control || control.contains(hit)).toBe(false);

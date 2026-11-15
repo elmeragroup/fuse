@@ -10,8 +10,8 @@ export type PlaceBox = {
 export type PlaceSize = { readonly width: number; readonly height: number };
 
 /**
- * The viewport inset of every side test, CONTRACT section 9.5's 8 px. A side holds the popup only
- * when the popup stays this far inside the viewport there.
+ * The viewport inset of every side test, 8 px. A side holds the popup only when the popup stays
+ * this far inside the viewport there.
  */
 export const TOOLTIP_EDGE = 8;
 

@@ -1,5 +1,5 @@
 /**
- * The slots a datum selector picks, after CONTRACT section 8.10. Keywords compare what the part
+ * The slots a datum selector picks. Keywords compare what the part
  * draws inside the effective window, ties select every tied slot, and an x value outside the
  * domain selects nothing.
  */

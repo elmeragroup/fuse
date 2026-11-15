@@ -227,9 +227,9 @@ export function clockModel(input: ClockInput): PolarModel {
       if (count === 0) return null;
       const slot = Math.min(count - 1, Math.floor((pointerAngle(point.x, point.y) / 360) * count));
       if (series.length < 2) return { slot, near: null };
-      // The nearest series by its tip's radius at the slot, skipping a series with no reading there,
-      // and keeping the held series unless another is clearly nearer. A coarse series
-      // reads at every slot it covers, through the slot that owns its reading.
+      // The nearest series by its tip's radius at the slot, skipping a series with no reading there.
+      // The held series stays unless another lies nearer by more than 0.06 of the outer radius.
+      // A coarse series reads at every slot it covers, through the slot that owns its reading.
       const distance = Math.hypot(point.x, point.y);
       const gaps = series.map((entry) => {
         const own = ownerSlot(entry.slots.states, slot);

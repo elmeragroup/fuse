@@ -215,7 +215,7 @@ describe("TextField", () => {
 });
 
 // The fill the card variant paints at rest and read-only, the muted label that travels with it and
-// the surface it states (see `surface-paint.tsx`). The label keeps its own muted text, so a class
+// the surface it states, in `test/surface-paint.tsx`. The label keeps its own muted text, so a class
 // on the field does not reach it.
 describePartPaint(
   [false, true].map((isReadOnly): PartCase => ({

@@ -1,8 +1,8 @@
-// Source entry facade for `@elmeragroup/fuse/sidebar` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. The menu-button and menu-sub-button recipes stay module-private;
-// the viewport probe hook is package-private.
+// The source entry for `@elmeragroup/fuse/sidebar`. It holds explicit named re-exports only,
+// with no `export *`, no local declarations and no directives. The exports and barrel generators
+// find this file, so never edit `package.json#exports` or `src/index.ts` by hand.
+// The menu-button and menu-sub-button recipes stay module-private, and the viewport probe hook
+// is package-private.
 export {
   SIDEBAR_COOKIE_MAX_AGE,
   SIDEBAR_COOKIE_NAME,

@@ -159,7 +159,7 @@ describe("Popover", () => {
     const anchor = roleNamed("group", "Anchor");
 
     // Unit under test: the popup's placement. Oracle: the anchor's own box, read from the page,
-    // with the requested bottom side, 8px offset and centred alignment applied by hand.
+    // with the requested bottom side, 8px offset and centered alignment applied by hand.
     const expectPlacedAgainstAnchor = async () => {
       await vi.waitFor(() => {
         const target = anchor.getBoundingClientRect();

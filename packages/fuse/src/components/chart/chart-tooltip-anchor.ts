@@ -214,8 +214,8 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
     [roofed, motion, model, drawn, roofs, rootOf]
   );
   // Whether the pointer entered the popup by moving straight toward it from the active slot. Only
-  // that entry freezes the slot, as CONTRACT section 9.5's safe triangle does for polar charts, so
-  // a scrub that crosses the popup keeps following x. The surface records the last plot position.
+  // that entry freezes the slot, so a scrub that crosses the popup keeps following x. The surface
+  // records the last plot position.
   const freezes = (from: ClientPoint, to: ClientPoint, side: string | null): boolean => {
     // The pointer must come from the active slot and move along the axis that leads to the popup,
     // up or down to a popup above or below and across to one beside a row.

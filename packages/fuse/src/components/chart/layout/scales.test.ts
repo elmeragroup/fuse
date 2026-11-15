@@ -1,6 +1,5 @@
 // Unit under test: Fuse's band, point and linear scales, through a d3-scale-shaped facade.
-// Oracle: d3-scale 4.0.2's own test assertions, frozen in the charts ground truth and copied
-// into fixtures/d3/ by .scratch/charts-v1/tools/l05-oracles/trim_d3_cases.py.
+// Oracle: d3-scale 4.0.2's own test assertions, copied into fixtures/d3/.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -56,7 +55,7 @@ describe("d3-scale linear.json", () => judge("linear", linear, 142));
 
 describe("section 8.15 bands", () => {
   it("leaves a 25 % gap around each 40 px band, so each bar is 30 px wide and starts 5 px in", () => {
-    // Hand-derived from section 8.15: a 40 px step less 25 % is 30 px, centred 5 px in.
+    // Hand-derived: a 40 px step less 25 % is 30 px, centered 5 px in.
     const scale = bandScale({ count: 3, range: [0, 120], paddingInner: 0.25, paddingOuter: 0.125 });
     expect(scale.step).toBe(40);
     expect(scale.bandwidth).toBe(30);

@@ -1,5 +1,5 @@
 /**
- * The x domain of a cartesian chart, as CONTRACT section 8.6 defines it. A time axis lists every
+ * The x domain of a cartesian chart. A time axis lists every
  * slot from the first row to the last, or every slot of `period`, so gaps stay visible. A slot
  * comes from its start and the interval only, and Fuse never reads an end field. A category axis
  * lists the categories in data order.
@@ -37,7 +37,7 @@ export type XDomain =
 
 /** A data rule a row broke while the axis placed it, with the production fallback already applied. */
 export type RowIssue = {
-  /** The rule, as CONTRACT section 8.1 names it. */
+  /** The rule the row broke. */
   readonly rule: "invalid-x" | "off-grid-x" | "duplicate-x" | "row-outside-period";
   /** The row's index in `data`. */
   readonly row: number;

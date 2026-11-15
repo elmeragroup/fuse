@@ -1,6 +1,5 @@
-// WCAG 1.4.13 for the chart tooltip, rows T043 and T044, in Chromium. The sequence and its outcomes
-// come from CONTRACT section 9.12, and every expected label is written by hand from the committed
-// Elhub rows.
+// WCAG 1.4.13 for the chart tooltip, in Chromium. Every expected label is written by hand from the
+// committed Elhub rows.
 import type { ReactElement } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -130,8 +129,8 @@ describe.each([
   });
 
   it("reopens on the dismissed slot after the pointer leaves the plot and comes back", async () => {
-    // jc14: after Escape, a pointer that left the plot and returned to the same slot never
-    // reopened the popup, which fails 1.4.13's sequence at the 320 px reflow width.
+    // After Escape, a pointer that leaves the plot and returns to the same slot must reopen the
+    // popup, as 1.4.13's sequence asks at the 320 px reflow width.
     await page.viewport(width, 768);
     const { host } = chart();
     const plot = surfaceBox(host);
@@ -151,9 +150,9 @@ describe.each([
 
 describe("the tooltip after Escape and a blur", () => {
   it("opens on the slot Escape closed once focus has left the chart", async () => {
-    // From the button before the chart, Tab and five steps reach 05–06, and Escape closes it. The
+    // From the button before the chart, Tab and five steps reach 05 to 06, and Escape closes it. The
     // dismissal lasts only while the reader stays, so after Tab moves on to the button after the
-    // chart, a pointer that moves over 05–06 opens it.
+    // chart, a pointer that moves over 05 to 06 opens it.
     const { host } = chart();
     page.getByRole("button", { name: "før" }).element().focus();
     await userEvent.tab();
@@ -173,7 +172,7 @@ describe("the tooltip after Escape and a blur", () => {
 
 describe("tooltip readings", () => {
   it("adds the projection word after a projected value, as the option and the table do", async () => {
-    // q17 and s13: b is projected, and en-US spells the word "projected".
+    // B is projected, and en-US spells the word "projected".
     renderThemed(
       <div style={{ width: 400 }}>
         <LocaleProvider locale="en-US">
@@ -211,8 +210,8 @@ describe.each([
     ["3 px under the plot top, where the tallest columns end", (box: DOMRect) => box.top + 3],
     ["across the bars", (box: DOMRect) => box.top + box.height * 0.6],
   ])("names the slot under the pointer %s at every step", async (__, depth) => {
-    // jc2: the popup sat on the pointer's path, so a sweep over it kept naming an older slot. The
-    // oracle is the slot under the pointer, by x alone, as CONTRACT section 9.5 picks it.
+    // The popup sits off the pointer's path, so a sweep never names an older slot. The oracle is
+    // the slot under the pointer, by x alone.
     await page.viewport(width, 720);
     const { host } = renderThemed(
       <div style={{ padding: "24px", width: "100%", boxSizing: "border-box" }}>
@@ -257,14 +256,14 @@ describe.each([
 // A closing tooltip keeps all its content. Units under test: every public part that can sit in a
 // tooltip, with its dataKey left off where the part allows: TooltipLabel, TooltipItems with its
 // default rows, Swatch, SeriesLabel, SeriesIcon, TooltipValue, TooltipShare, and where the family
-// has them ActiveValue and TooltipTotal, and the centre parts, Center, CenterValue, CenterName,
+// has them ActiveValue and TooltipTotal, and the center parts, Center, CenterValue, CenterName,
 // CenterShare, CenterLabel and CenterMax, in custom tooltips over Chart, ClockChart, RadarChart,
-// RadialChart and PieChart, and ScatterChart's own TooltipLabel and TooltipValue. Oracle:
-// DECISIONS.md R2.1–R2.3, a closing tooltip keeps its place, width, lane and content until the
-// popup has closed, so the popup's text, each swatch's series and each icon read on every frame
-// from Escape until the popup has gone are the ones it showed open. Where the family has series, a
-// non-default one has focus, and ActiveValue's fallback reading differs from the active one, so a
-// reader that drops the held point shows on the first frame.
+// RadialChart and PieChart, and ScatterChart's own TooltipLabel and TooltipValue. Oracle: a
+// closing tooltip keeps its place, width, lane and content until the popup has closed, so the popup's
+// text, each swatch's series and each icon read on every frame from Escape until the popup has gone
+// are the ones it showed open. Where the family has series, a non-default one has focus, and
+// ActiveValue's fallback reading differs from the active one, so a reader that drops the held point
+// shows on the first frame.
 describe("a shut tooltip lets go of its point", () => {
   /** Two series in one stack, each with an icon, so every series part has something to show. */
   const SERIES = {

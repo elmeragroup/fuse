@@ -83,7 +83,7 @@ test("scatter config takes no slot fields and no scale, role list or threshold",
   />;
   <ScatterChart.Root
     data={weeks}
-    // @ts-expect-error -- a scale would colour by y, which the y axis shows already.
+    // @ts-expect-error -- a scale would color by y, which the y axis shows already.
     config={scaled}
     xKey="tempC"
     yKey="kwh"
@@ -101,7 +101,7 @@ test("scatter config takes no slot fields and no scale, role list or threshold",
   />;
   <ScatterChart.Root
     data={weeks}
-    // @ts-expect-error -- a threshold would colour by y, which the y axis shows already.
+    // @ts-expect-error -- a threshold would color by y, which the y axis shows already.
     config={thresholded}
     xKey="tempC"
     yKey="kwh"

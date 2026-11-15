@@ -231,10 +231,9 @@ describe("Tabs", () => {
     "paints inactive trigger text in --muted-foreground on both list variants, %s %s",
     (_name, scheme, theme) => {
       // Unit under test: the role an inactive, unhovered trigger paints its text in. Oracle:
-      // `--muted-foreground`, which `contrast-matrix.test.ts` holds to 4.5:1 on `muted` (the default
-      // list) and on every control surface a transparent line list sits on, in every theme and
+      // `--muted-foreground`, which `contrast-matrix.test.ts` holds to 4.5:1 on `muted`, the default
+      // list, and on every control surface a transparent line list sits on, in every theme and
       // scheme. Tying the trigger to that role makes a per-theme contrast measurement here redundant.
-      // Telinet light was the worst case of the old translucent foreground, at 3.38:1.
       for (const variant of ["default", "line"] as const) {
         const { unmount } = renderThemed(
           <div data-theme={scheme}>

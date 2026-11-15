@@ -1,7 +1,7 @@
-// Source entry facade for `@elmeragroup/fuse/button-group` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. Public recipe for component reuse.
+// The source entry for `@elmeragroup/fuse/button-group`. It holds explicit named re-exports only,
+// with no `export *`, no local declarations and no directives. The exports and barrel generators
+// find this file, so never edit `package.json#exports` or `src/index.ts` by hand.
+// It exports a public recipe for reuse in other components.
 export { ButtonGroup } from "./components/button-group";
 export type {
   ButtonGroupRootProps,

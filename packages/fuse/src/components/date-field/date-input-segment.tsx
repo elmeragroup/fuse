@@ -141,7 +141,8 @@ function segmentAttributes(
 ): ComponentProps<"span"> {
   const isZone = segment.type === "timeZoneName";
   const name = root.segmentName(segment.type);
-  // As React Aria: the unit, the field's aria-label, and the labelling element after this one's id.
+  // The label follows React Aria: the unit, the field's aria-label, then the labeling element after
+  // this one's id.
   const label = `${name}${root.ariaLabel === undefined ? "" : `, ${root.ariaLabel}`}${root.ariaLabelledBy === undefined ? "" : ", "}`;
   const attributes: ComponentProps<"span"> = {
     id,

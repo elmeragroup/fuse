@@ -154,7 +154,7 @@ export function parseTemporal(text: string): Result<TemporalValue, TemporalInput
 /**
  * The wall-clock time ISO text names, read without resolving any zone: `09:30`, or the time of a
  * date-time such as `2026-03-29T02:30:15`, whose offset and bracketed zone are ignored, so a time
- * the clipboard's zone skips on its own date still reads as written. Temporal's `PlainTime.from`.
+ * the clipboard's zone skips on its own date still reads as written. It calls Temporal's `PlainTime.from`.
  *
  * @param text - ISO text.
  * @returns The time, or `TemporalInputError` for text with no time, such as a date alone, and for

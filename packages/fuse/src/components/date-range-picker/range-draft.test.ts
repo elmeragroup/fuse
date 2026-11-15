@@ -1,7 +1,7 @@
 /**
  * Unit under test: clearing an end's popup time in the range picker's draft, the one transition no
- * browser test drives (the browser tests cover typing, picking and committing through
- * `DateRangePickerField`). Oracle: React Aria's `useDateRangePickerState`, worked out by hand: a
+ * browser test drives. The browser tests cover typing, picking and committing through
+ * `DateRangePickerField`. Oracle: React Aria's `useDateRangePickerState`, worked out by hand: a
  * value keeps its own time, a picked day without its time falls back to midnight, and a time typed
  * with no day is forgotten.
  */

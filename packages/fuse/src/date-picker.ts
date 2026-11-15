@@ -1,7 +1,7 @@
-// Source entry facade for `@elmeragroup/fuse/date-picker` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. No public recipe. The part classes stay module-private.
+// Source entry for `@elmeragroup/fuse/date-picker`. It holds explicit named re-exports only, with
+// no `export *`, no local declarations and no directives. The exports and barrel generators find
+// this file, so never hand-edit `exports` in package.json or src/index.ts. It has no public
+// recipe, and the part classes stay module-private.
 export { DatePicker, DatePickerField } from "./components/date-picker";
 export type {
   DatePickerCalendarProps,

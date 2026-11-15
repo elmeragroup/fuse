@@ -2,10 +2,9 @@
 
 import { countOf } from "../../intl/count-of";
 /**
- * The spoken text of a cartesian chart, as CONTRACT section 9.3 and section 9.4 define it. The
- * option names the active slot and the readings at it, and the description states the facts of the
- * effective window. Both read the spoken forms of layer 03's format modules, so a reader hears the
- * same unit and range words the table speaks.
+ * The spoken text of a cartesian chart. The option names the active slot and the readings at it,
+ * and the description states the facts of the effective window. Both read the spoken forms of the
+ * `format/` modules, so a reader hears the same unit and range words the table speaks.
  */
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { EmphasisEntry } from "./chart-store";
@@ -77,8 +76,8 @@ function slotDate(context: TextContext, slot: number): FormattedText {
 /**
  * The label of an interval that starts at an instant, in the interval's label preset or a given
  * format. On a domain that spans more than one local date, an interval finer than a day leads with
- * its date, and a date carries its year when the domain spans more than one calendar year, as
- * CONTRACT section 9.4 says. An explicit format replaces both.
+ * its date, and a date carries its year when the domain spans more than one calendar year.
+ * An explicit format replaces both.
  */
 function datedLabel(
   context: TextContext,
@@ -106,8 +105,8 @@ function datedLabel(
 /**
  * A slot's label, in the interval's label preset or Root's `xFormat`, or the category itself. On a
  * domain that spans more than one local date, a slot finer than a day leads with its date, and a
- * date carries its year when the domain spans more than one calendar year, as CONTRACT section
- * 9.4 says. An explicit format replaces both.
+ * date carries its year when the domain spans more than one calendar year. An explicit format
+ * replaces both.
  *
  * @param context - The model and the locale.
  * @param slot - A slot index.
@@ -307,7 +306,7 @@ export function optionName(
     const first = coarse === undefined ? slot : (coarse.first[slot] ?? slot);
     const emphasised = reading?.kind === "reading" && entry?.slots.includes(first) === true;
     const tail = emphasised ? `, ${entry.label ?? strings.emphasised}` : "";
-    // A coarse series names its own slot after its name, as `Forbruk kl. 02 til 03 0,35 kilowattimer`.
+    // A coarse series names its own slot after its name, such as `Forbruk kl. 02 til 03 0,35 kilowattimer`.
     const own = ownSlotLabel(context, key, slot);
     const name = seriesLabel(context, key).spoken;
     return `${own === null ? name : `${name} ${own.spoken}`} ${words}${tail}`;
@@ -393,7 +392,7 @@ export function chartDescription(context: TextContext): string {
   const unit = domain.kind === "time" ? domain.interval : "category";
   const count = countOf(locale, window.last - window.first + 1, strings.slots[unit]);
   sentences.push(sentence(strings.descriptionSpan(from, to === from ? undefined : to, count), locale));
-  // The quality counts by the interval they count in: Root's, or a coarse series' own.
+  // Each quality count uses the interval its series counts in, Root's or a coarse series' own.
   const states = new Map<Interval | "category", { missing: number; estimated: number; corrected: number }>();
   for (const entry of model.series) {
     const { key, readings, coarse } = entry;
@@ -411,7 +410,7 @@ export function chartDescription(context: TextContext): string {
       if (high === undefined || reading.value > high.value) high = { slot, value: reading.value };
     };
     // A coarse reading counts once, though every Root slot of its slot holds it. Any other series
-    // owns each Root slot of the window.
+    // counts each Root slot of the window.
     if (coarse === undefined) for (let slot = window.first; slot <= window.last; slot += 1) visit(slot);
     else for (const slot of ownWindowSlots(entry, window)) visit(slot);
     if (low === undefined || high === undefined) continue;

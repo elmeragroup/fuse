@@ -635,7 +635,7 @@ describe("aria-disabled rows", () => {
 
     // A middle-click fires `auxclick`, not `click`, and a link opens in a new tab as that event's
     // default action. The window listener runs after the row's own handler, records whether the
-    // row cancelled it, then cancels it itself so an unguarded row opens no tab.
+    // row canceled it, then cancels it itself so an unguarded row opens no tab.
     for (const { name, ariaDisabled, prevented, auxClicks } of [
       {
         name: "cancels a middle-click on a link row, so it opens no new tab and skips onAuxClick",

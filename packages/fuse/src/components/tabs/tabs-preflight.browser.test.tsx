@@ -1,4 +1,4 @@
-/* oxlint-disable fuse/one-browser-test-per-module -- a Tailwind-source host with preflight: its page injects Tailwind's preflight and theme sheets, which tabs.browser.test.tsx's preflight-free page must not see */
+/* oxlint-disable fuse/one-browser-test-per-module -- a Tailwind-source host with preflight, whose page injects Tailwind's preflight and theme sheets, which tabs.browser.test.tsx's preflight-free page must not see */
 import { compile } from "tailwindcss";
 import preflightCss from "tailwindcss/preflight.css?raw";
 import themeCss from "tailwindcss/theme.css?raw";

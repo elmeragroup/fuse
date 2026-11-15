@@ -185,7 +185,7 @@ function barOf(
 ): Pick<LineFragment, "barTop" | "barBottom"> {
   const metrics = metricsOf(style);
   if (metrics === null) {
-    // No canvas to read the type with: a bar centred in the line.
+    // No canvas to read the type with: a bar centered in the line.
     const height = Math.min(fontSize * 0.72, line.bottom - line.top);
     const middle = (line.top + line.bottom) / 2;
     return { barTop: middle - height / 2, barBottom: middle + height / 2 };

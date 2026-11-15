@@ -126,7 +126,7 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
     defaultActive === null ? INITIAL : { ...INITIAL, active: defaultActive, source: "default" };
   let state = initial;
   const listeners = new Set<() => void>();
-  // SAFETY: Object.keys of a literal object with exactly the ChartSnapshot fields.
+  // SAFETY: `Object.keys` reads a literal object that has exactly the `ChartSnapshot` fields.
   const keys = Object.keys(INITIAL) as (keyof ChartSnapshot)[];
   let last: TrackedPointer | null = null;
   return {

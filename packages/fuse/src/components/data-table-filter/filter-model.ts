@@ -159,7 +159,7 @@ type OperatorLookup = { readonly [K in FilterKind]: Readonly<Record<string, Oper
 /** The same table read by a runtime string. Widening is safe, because every spec is a subtype. */
 const OPERATOR_SPECS: OperatorLookup = OPERATORS;
 
-// The parse boundary. `columnFilters` values arrive untyped, since TanStack types each entry's
+// This is the parse boundary. `columnFilters` values arrive untyped, since TanStack types each entry's
 // `value` as unknown and a URL or a request body carries anything. These guards are the only
 // runtime type checks, and every predicate below builds on them.
 
@@ -569,7 +569,7 @@ export function filterValuesEqual(left: FilterValue | undefined, right: FilterVa
   );
 }
 
-// Reducers. Every UI write is one of these, applied through one `setColumnFilters` updater. They
+// The reducers. Every UI write is one of these, applied through one `setColumnFilters` updater. They
 // never reorder entries: a changed filter keeps its chip's place, and a new one goes last.
 
 /**

@@ -29,6 +29,6 @@ test("InputProps is the native input surface plus the numeric filter and the fie
   const _noControlSizeName = <Input size="md" />;
   // @ts-expect-error the box is not variant-axed
   const _noVariant = <Input variant="ghost" />;
-  // @ts-expect-error Input takes the native element only — no useRender polymorphism
+  // @ts-expect-error Input takes the native element only, with no useRender polymorphism
   const _noRender = <Input render={<textarea />} />;
 });

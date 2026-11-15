@@ -782,8 +782,8 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig
         | { projectedFrom: unknown }
         | { interval: unknown }
         ? { readonly "RadarChart config takes no stack, projectedFrom or interval": never }
-        : // Every member of the colour must be a role or a role list, so a union that holds a scale
-          // or a threshold, or a colour widened to ChartColor, fails too.
+        : // Every member of the color must be a role or a role list, so a union that holds a scale
+          // or a threshold, or a color widened to ChartColor, fails too.
           TConfig[K] extends { color: ChartRole | readonly [ChartRole, ChartRole, ...ChartRole[]] }
           ? unknown
           : { readonly "RadarChart colours are roles or role lists, never a scale or a threshold": never };

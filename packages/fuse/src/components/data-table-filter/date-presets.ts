@@ -1,5 +1,5 @@
 // The date presets' catalog: each key names a whole calendar period around today, or a span that
-// ends today. Pure and without React, so a server imports it as it is and its ranges are
+// ends today. It is pure and has no React, so a server imports it as it is and its ranges are
 // unit-tested on their own. It computes on ISO date strings through UTC dates, without Temporal,
 // so the filter needs no polyfill. Each week starts on the day the Temporal core's week table
 // gives for the locale.

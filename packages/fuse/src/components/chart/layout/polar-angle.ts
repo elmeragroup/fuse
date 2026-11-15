@@ -1,5 +1,5 @@
 /**
- * The polar angle convention of CONTRACT section 8.5, which every polar family draws and picks in.
+ * The polar angle convention, which every polar family draws and picks in.
  * Angles are degrees from 12 o'clock, and positive angles run clockwise, d3-shape's frame in
  * degrees. A point at angle a and radius r sits at `(r·sin a, −r·cos a)` from the center, in screen
  * coordinates whose y grows downward. Degrees turn into radians only at a d3-shape call.
@@ -176,7 +176,7 @@ export function sweepBox(sweep: Sweep): SweepBox {
   for (let quarter = Math.ceil(from / 90); quarter * 90 <= to; quarter += 1) {
     points.push(polarPoint(quarter * 90, 1));
   }
-  // Rounding to 12 digits lets sin(180°) read 0, so the box has no float sliver past the centre.
+  // Rounding to 12 digits lets sin(180°) read 0, so the box has no float sliver past the center.
   const tidy = (value: number) => Math.round(value * 1e12) / 1e12 + 0;
   return {
     left: tidy(Math.min(...points.map(({ x }) => x))),

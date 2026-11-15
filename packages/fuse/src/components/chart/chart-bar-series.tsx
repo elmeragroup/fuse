@@ -217,7 +217,7 @@ const BarMark = memo(function BarMark({
   plot,
 }: {
   readonly bar: BarDraw;
-  /** The series ordinal, which every mark writes on `data-series`, per CONTRACT section 11. */
+  /** The series ordinal, which every mark writes on `data-series`. */
   readonly series: number;
   /** The series' stack, or undefined for a loose series. */
   readonly stack: string | undefined;

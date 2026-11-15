@@ -212,13 +212,13 @@ const DOTS_COPY: AttachedCopy = {
     const template = live.firstElementChild?.cloneNode(false);
     if (!(kept instanceof Element)) return live;
     if (template instanceof Element) {
-      // An old dot fades out, so it never runs a fade-in of its own, and wears its own paint.
+      // An old dot fades out, so its copy drops `data-intro` to skip a fade-in, and its inline style.
       template.removeAttribute("data-intro");
       template.removeAttribute("style");
       kept.append(template);
     }
     // Dots draw only on readings, and a scale or a threshold paints every reading a step of its
-    // own, so either every dot wears an inline paint or none does, and the first dot tells which.
+    // own, so either every dot has an inline paint or none does, and the first dot tells which.
     if (live.firstElementChild === null || inlinePaint(live.firstElementChild) === "") return kept;
     keptPaints.set(kept, [...live.children].map(inlinePaint));
     return kept;
@@ -605,8 +605,8 @@ export function ChartActiveDot({
       shownBefore.current && before !== null && frame !== null
         ? pointCentre(frame, context.xScale, before[0] ?? 0, before[1] ?? 0)
         : null;
-    // The dot shows only while the series draws a reading at the active slot, and its circles wear
-    // the step of that reading's value under a scale or a threshold.
+    // The dot shows only while the series draws a reading at the active slot, and its circles take
+    // the paint of that reading's step under a scale or a threshold.
     if (svg !== null) {
       writeAttribute(svg, "data-value", point === null ? null : "");
       const own =
@@ -645,7 +645,7 @@ export function ChartActiveDot({
     if (ride === null) snapGlide(svg);
     else rideFrom(svg, stepSpring(store), ride);
   });
-  // The bar track the dot rides, as of the latest render, which the tooltip's roof holds.
+  // The bar track the dot rides, as of the latest render, which the tooltip's roof reads.
   const barRide = useRef<() => Track | null>(() => null);
   useLayoutEffect(() => {
     barRide.current = () =>
@@ -737,8 +737,8 @@ function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): v
  * reading or the minimum, as the Figma price chart's Now indicator draws. A `ValueLabel` child adds
  * the value as a pill above each dot, or beside it for `at="min"`, so it never covers the line
  * that rises on both sides of the lowest reading. It sits on a Line's or an Area's vertex, or at a
- * Bar's tip, and moves with what it sits on during a data update. It is plot output that readers
- * skip, and the option and description carry its meaning.
+ * Bar's tip, and moves with what it sits on during a data update. It is `aria-hidden`, so assistive
+ * technology skips it, and the option and its description give its meaning.
  *
  * @beta
  */

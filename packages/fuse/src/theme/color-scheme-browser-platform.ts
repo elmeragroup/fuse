@@ -63,7 +63,7 @@ function attempt<T>(operation: () => T, fallback: T): T {
 }
 
 function noop(): void {
-  // nothing to release
+  // There is no subscription to release.
 }
 
 function once(release: () => void): () => void {
@@ -76,8 +76,9 @@ function once(release: () => void): () => void {
 }
 
 /**
- * Creates the port over a browser-shaped host. It is the only code in the color-scheme runtime that
- * reads `window`, `document`, `localStorage` and `matchMedia`, and it handles every platform fault:
+ * Creates the port over a browser-shaped host. Apart from the inline bootstrap in
+ * `color-scheme-script.tsx`, it is the only color-scheme code that reads `window`, `document`,
+ * `localStorage` and `matchMedia`. It handles every platform fault:
  * a blocked or full storage area, a missing or throwing `matchMedia`, a legacy `MediaQueryList`,
  * and `storage` events from another area. It reads globals at call time, so constructing it during
  * a server render does nothing.

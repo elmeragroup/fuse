@@ -8,8 +8,8 @@
  * its own listbox element where its Root mounts it, with its own keys, pick and option names, and
  * reads the handoff, the naming and the status region from here.
  *
- * The fallback pattern of CONTRACT section 9.1 changes only the families' surfaces and this module.
- * There the listbox takes `tabIndex={0}` and DOM focus, the single option loses its tab index, and
+ * A fallback to `aria-activedescendant` would change only the families' surfaces and this module.
+ * In it the listbox takes `tabIndex={0}` and DOM focus, the single option loses its tab index, and
  * the listbox sets `aria-activedescendant` to the option's id. Names, positions, descriptions, keys
  * and the status region stay as they are, so a switch ships as a patch with no public change.
  */

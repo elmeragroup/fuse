@@ -181,13 +181,13 @@ export function useCarouselRotation(
   // element, read from the document, which also finds focus that arrived before the Root could
   // listen, or in a portal from its tree, which the element does not contain and only the tracked
   // focus events report. The tracked element is checked again before it counts, since removing it
-  // fires no blur the Root hears, which `stillKeyboardFocused` explains. The Autoplay's own layout effect is too early to read that on a first
-  // mount: it runs before its ancestor Root's ref attaches, and before an `autoFocus` later in the
-  // tree takes focus, whose focus event then finds no Autoplay mounted. So mounting only marks the
-  // choice `unread`, which rotates nothing, and the Root reads itself in its own layout effect
-  // after the commit that mounted the Autoplay. That commit has attached every ref and applied
-  // every `autoFocus`, and the read comes before paint and before any rotation timer, which waits
-  // for a settled choice.
+  // fires no blur the Root hears, which `stillKeyboardFocused` explains. The Autoplay's own layout
+  // effect is too early to read that on a first mount: it runs before its ancestor Root's ref
+  // attaches, and before an `autoFocus` later in the tree takes focus, whose focus event then
+  // finds no Autoplay mounted. So mounting only marks the choice `unread`, which rotates nothing,
+  // and the Root reads itself in its own layout effect after the commit that mounted the Autoplay.
+  // That commit has attached every ref and applied every `autoFocus`, and the read comes before
+  // paint and before any rotation timer, which waits for a settled choice.
   const mount = useCallback(() => {
     setChoice("unread");
     return () => setDelay(null);

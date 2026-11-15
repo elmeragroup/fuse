@@ -1,4 +1,4 @@
-// The chart surfaces' option through a window switch. Units under
+// The focused option of each chart surface through a window switch. Units under
 // test: the polar, cartesian and scatter surfaces' blur handling, through RadarChart.Root,
 // Chart.Root and ScatterChart.Root. Oracle: a reader who switches to another window and back
 // returns to the element they left, so the option keeps its node, its place and the keys. The

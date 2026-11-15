@@ -1,9 +1,9 @@
 // Unit under test: the bar geometry of layout/bar-geometry.ts, and the path form's columns up to
-// 2,000 slots through their production owner, layoutColumns and columnsDrawing. Oracles: section
-// 8.12's form threshold and M4 buckets, brute-forced over E13's committed hourly year; the entrance
-// stagger's steps for a 5-bar fixture, counted by hand from each wipe origin; stacked extents read
-// off the rows by hand; and pixel rectangles worked by hand from section 8.15's band layout on
-// plots of whole pixels, so snapping changes nothing.
+// 2,000 slots through their production owner, layoutColumns and columnsDrawing. Oracles: the form
+// threshold and M4 buckets, brute-forced over the committed hourly year; the entrance stagger's
+// steps for a 5-bar fixture, counted by hand from each wipe origin; stacked extents read off the
+// rows by hand; and pixel rectangles worked by hand from the band layout on plots of whole pixels,
+// so snapping changes nothing.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -39,7 +39,7 @@ function firstCell(model: ReturnType<typeof buildCartesianModel>) {
   return cell;
 }
 
-/** The contract's default spacing: a 25 % band gap and 2 px bar gap and seam. */
+/** The default spacing: a 25 % band gap and 2 px bar gap and seam. */
 const METRICS: BarMetrics = { bandGap: 0.25, barGap: 2, seam: 2 };
 
 /** The rectangles of one path's `d`, each an `M x y H x V y H x Z` subpath. */
@@ -99,7 +99,7 @@ describe("the bar form", () => {
   });
 
   it("keeps horizontal bars one element each at any count", () => {
-    // Section 8.12: each horizontal category takes a row of its own, so the rows never grow dense.
+    // Each horizontal category takes a row of its own, so the rows never grow dense.
     expect(barForm(categories(101), "horizontal")).toBe("bars");
   });
 });
@@ -187,7 +187,7 @@ describe("bar rectangles in pixels", () => {
   }
 
   it("draws a two-key group's bars 14 px wide at 5 and 21 px of a 40 px band", () => {
-    // Section 8.15: a 40 px band less 25 % leaves 30 px, and a 2 px gap halves the rest to 14 px.
+    // A 40 px band less 25 % leaves 30 px, and a 2 px gap halves the rest to 14 px.
     const model = pair(4, 2);
     const frame = plotFrame(box(40, 100), "vertical", 1, [0, 4]);
     const [a, b] = model.series.map((series) => barCells(model, series)[0]);
@@ -593,13 +593,13 @@ describe("grouped path columns", () => {
   }
 
   it("keeps category 1's second column of 400 on 240 px in its band's pixel [0, 1]", () => {
-    // Q5-1: category 1's band [0.6, 1.2] snaps both edges to 1 and keeps the pixel before, [0, 1].
+    // Category 1's band [0.6, 1.2] snaps both edges to 1 and keeps the pixel before, [0, 1].
     // Its second column [0.9, 1.125] snaps both edges to 1 too, and keeps that pixel, not [1, 2].
     expect(secondColumn(400, 240, 1)).toEqual([0, 1]);
   });
 
   it("keeps the fourth category's second column of 365 on 200 px in its band's pixel [1, 2]", () => {
-    // B5-1: the fourth band [1.64, 2.19] keeps [1, 2], and its second column [1.92, 2.12], whose
+    // The fourth band [1.64, 2.19] keeps [1, 2], and its second column [1.92, 2.12], whose
     // middle lies past 2, keeps the band's pixel, not [2, 3].
     expect(secondColumn(365, 200, 3)).toEqual([1, 2]);
   });

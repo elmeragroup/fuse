@@ -242,8 +242,8 @@ export type LayoutInput = {
 };
 
 /**
- * One layout's value domain over the rows inside the effective window, as CONTRACT section 8.3
- * gives it: Root's default layout over every config key, a Panel over its `series`. A stacked key
+ * One layout's value domain over the rows inside the effective window. Root's default layout covers
+ * every config key, and a Panel covers its `series`. A stacked key
  * reaches its stack's ends and an unstacked key its value, so a `none` baseline can leave 0 out.
  * It reads the model alone, so a Panel computes it during render and the server agrees.
  *
@@ -259,7 +259,7 @@ export function layoutDomain(
   if (model.empty || window === null) return EMPTY_DOMAIN;
   const keys = new Set(layout.keys);
   const members = model.series.filter(({ key }) => keys.has(key));
-  // The domain reads only the lowest and the highest finite value, so those two stand for all.
+  // The domain reads only the lowest and the highest finite value, so the loop keeps just those two.
   let low = Number.POSITIVE_INFINITY;
   let high = Number.NEGATIVE_INFINITY;
   const take = (value: number): void => {

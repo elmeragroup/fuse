@@ -1,6 +1,6 @@
 /**
  * The pieces every family's generated description shares: a sentence's capital and a label that
- * states the values' unit once, so each value after it speaks unitless, after CONTRACT section 9.3.
+ * states the values' unit once, so each value after it speaks unitless.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
 import type { ValueFormat } from "../chart-types";

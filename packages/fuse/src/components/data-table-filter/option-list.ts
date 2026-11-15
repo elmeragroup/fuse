@@ -1,5 +1,5 @@
 // The rows, order and cap every value list shares: a value submenu, quick search and the chip's
-// option editor. Pure functions the parts call while rendering.
+// option editor. These are pure functions the parts call while rendering.
 
 import type { BooleanFilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
 import type { FilterKind, FilterValue } from "./filter-model";

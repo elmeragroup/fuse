@@ -183,14 +183,14 @@ export function FieldFrame({
   // follows the control.
   const leadingDescription = heading === "legend" ? descriptionNode : null;
   const trailingDescription = heading === "legend" ? null : descriptionNode;
-  // FieldError with copy shows it always (`match`), and drops an undefined `match`. `false` is not
-  // "never": Base UI reads any `match` other than `true` or a validity key as its default, which
-  // shows the copy while the field is invalid or holds a Form error.
+  // A FieldError with copy shows it always through `match`, and drops an undefined `match`.
+  // `false` is not "never": Base UI reads any `match` other than `true` or a validity key as its
+  // default, which shows the copy while the field is invalid or holds a Form error.
   const errorNode = (
     <FieldError match={isErrorMessageAlwaysShown ? undefined : false}>{errorMessage}</FieldError>
   );
   // The error sits directly under the control, ahead of a trailing description, so a field in
-  // error shows its message there (Figma). A description beside the control shares its row,
+  // error shows its message there, as the Figma design does. A description beside the control shares its row,
   // so the error goes under the whole content instead.
   const body = (
     <>

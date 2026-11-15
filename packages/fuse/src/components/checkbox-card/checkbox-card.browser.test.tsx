@@ -12,7 +12,7 @@ import { Field } from "../field";
 import { CheckboxCard } from "./checkbox-card";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
-  // Substring match on purpose: the card's accessible name appends the description/tags.
+  // Substring match on purpose: the card's accessible name appends the description and tags.
   const element = page.getByRole("checkbox", { name, checked, exact: false }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected checkbox named ${name}`);
@@ -209,8 +209,8 @@ describe("CheckboxCard", () => {
   });
 });
 
-// The fill each variant paints, the text that travels with it and the surface it states (see
-// `surface-paint.tsx`). CheckboxCard takes no className, and its title sets its own `foreground`
+// The fill each variant paints, the text that travels with it and the surface it states; see
+// `surface-paint.tsx`. CheckboxCard takes no className, and its title sets its own `foreground`
 // on either fill.
 describePartPaint(
   (["default", "muted"] as const).map((variant): PartCase => ({

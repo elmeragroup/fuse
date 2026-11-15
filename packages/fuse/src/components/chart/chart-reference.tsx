@@ -459,7 +459,7 @@ function drawLine(node: HTMLDivElement, look: ReferenceLook, values: MarkValues)
   const { frame, axis, xScale, label } = look;
   if (frame === null) return;
   const [pixel = 0, tweened = 1] = values;
-  // The rule's width, which its stroke and its label's centring read, whole device pixels.
+  // The rule's width in whole device pixels, which its stroke and its label's centering read.
   const width = wholeWidth(frame.box, tweened);
   const state = lineDrawn(frame, axis, pixel, width, xScale);
   const share = referenceShare(frame, axis, state.span[0]);
@@ -593,7 +593,7 @@ export function ChartReferenceLine({
     (): ReferenceLook => ({ kind: "line", frame, axis, xScale: context.xScale, label: stacked }),
     [frame, axis, context.xScale, stacked]
   );
-  // A line tweens its unsnapped coordinate, a value's edge or its slot's centre, and its width, which
+  // A line tweens its unsnapped coordinate, a value's edge or its slot's center, and its width, which
   // a slot line narrows to its band. A slot line draws inside its band, as the crosshair does.
   const ruleWidth = (measured: PlotFrame): number => {
     if (position === null) return hairline(measured.box);

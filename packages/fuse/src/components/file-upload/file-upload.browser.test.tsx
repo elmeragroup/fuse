@@ -598,7 +598,7 @@ describe("FileUpload in a Field", () => {
       const trigger = roleNamed("button", "Browse files Attachments");
       const zone = host.querySelector('[data-slot="file-upload-dropzone"]');
       // The oracle: the same parts rendered in a valid Field, so the Dropzone's resting face is
-      // whatever its recipe paints, never a colour written here.
+      // whatever its recipe paints, never a color written here.
       const face = (element: Element | null) => {
         if (!isHTMLElement(element)) {
           return null;

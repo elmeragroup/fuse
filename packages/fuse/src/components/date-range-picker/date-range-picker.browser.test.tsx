@@ -1,9 +1,9 @@
 /*
  * DateRangePicker and DateRangePickerField in the browser: the two Fields under `startName` and
  * `endName` with the label, description and merged error wired to both, a half-filled range held,
- * an end before its start, `Form` errors by name, the range calendar in the popup (cancel, presets
- * dropping a half range, multi-month) and the cancelable details, typing across the two ends, and
- * the popup's time inputs.
+ * an end before its start, `Form` errors by name, the range calendar in the popup with cancel,
+ * presets that drop a half range and several months, the cancelable details, typing across the
+ * two ends, and the popup's time inputs.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -41,7 +41,7 @@ function log() {
 }
 
 /**
- * Choose a calendar day by keyboard once it renders: focus it and press Enter. Its name starts with
+ * Chooses a calendar day by keyboard once it renders: focus it and press Enter. Its name starts with
  * the day's: a range calendar adds the range to a day's name while one is being picked.
  */
 async function pickDay(day: string): Promise<void> {
@@ -464,7 +464,7 @@ describe("DateRangePicker typing across ends", () => {
 
 describe("DateRangePicker end day picked over a time, on October 25, 2026 in Oslo, whose 02:00–03:00 comes twice", () => {
   // React Aria moves a picked day under the time it held with `ZonedDateTime.set`: a wall clock that
-  // changes resolves as typed (the earlier, summer-time instant of a repeated hour), and one that
+  // changes resolves as typed, to the earlier, summer-time instant of a repeated hour, and one that
   // does not keeps the value as it is. Days inside the range shown carry the range in their names.
   async function pickOver(end: string): Promise<string[]> {
     const values: string[] = [];
@@ -1238,7 +1238,9 @@ describe("date props past the types", () => {
       <DateRangePickerField
         label="Period"
         value={{
-          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          // Text reaches the prop past the types, from plain JavaScript or as the ISO text a server
+          // component's Temporal object crosses as.
+          // @ts-expect-error -- a string is not a Temporal value
           start: "2026-10-05",
           end: Temporal.PlainDate.from("2026-10-09"),
         }}
@@ -1577,7 +1579,7 @@ describe("DateRangePicker held ranges", () => {
     }
 
     // Held times are wall times: 09:30 and 17:00 on November 11 and 12 in the zone and kind at the pick.
-    // The popup times name the zone they form in, today's (October 15's) name for it, and plain
+    // The popup times name the zone they form in, today's name for it, October 15's,, and plain
     // date-times name none.
     it.each([
       {
@@ -1711,7 +1713,7 @@ describe("DateRangePicker held ranges", () => {
       );
     }
     renderThemed(withLocale("en-US", <Controlled />));
-    // Clear the whole start: year (4 digits), day, month, moving back over each emptied segment.
+    // Clear the whole start: the year's 4 digits, then day and month, moving back over each emptied segment.
     await userEvent.click(roleNamed("spinbutton", "year, Start Date, Period"));
     await userEvent.keyboard("{Backspace>10/}");
     await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy", "10", "09", "2026"]);

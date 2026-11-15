@@ -149,7 +149,7 @@ describe("Card.Section", () => {
     await userEvent.keyboard("{Tab}");
     const button = roleNamed("button", "Change plan");
     expect(document.activeElement).toBe(button);
-    // One inset 2px ring in --ring: drawn inside the section's own border box on all four sides,
+    // One inset 2px ring in `--ring`, drawn inside the section's own border box on all four sides,
     // which the next section, painted after it, does not reach.
     settleTransitions(button);
     expect(ringLayers(button)).toEqual([

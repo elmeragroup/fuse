@@ -31,7 +31,7 @@ export type PaletteBrandCode = Exclude<BrandCode, "fkab">;
  * brands, is no WCAG 1.4.11 shortfall. A card on a `card`-colored surface, such as a nested Card,
  * has no boundary at all. `CheckboxCard` is a control and the TextField `card` box is a field
  * boundary, so both keep `--border` and the plain `shadow-xs`. Both roles are light-only, so dark
- * cards draw neither edge nor shadow. Whether they should keep an edge is an open design question.
+ * cards draw neither edge nor shadow.
  * The line between a Card's stacked sections takes the page tint, `--background`, so it reads as a
  * gap between segments of the card rather than a drawn rule.
  *
@@ -56,9 +56,9 @@ export type PaletteBrandCode = Exclude<BrandCode, "fkab">;
  * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
 export const BRANDED_IDENTITY_LAYER = {
-  // The neutral roles point at the brand neutral ramp, a grey at the brand hue, so the fills and
+  // The neutral roles point at the brand neutral ramp, a gray at the brand hue, so the fills and
   // lines beside the tinted page share its tint. Every step sits on the lightness the role had
-  // as an untinted grey, so the change is a tint, not a value shift. The hairline takes the
+  // as an untinted gray, so the change is a tint, not a value shift. The hairline takes the
   // darker 300 so it holds 1.19:1 on the darkest page tint.
   muted: brandRampStep("neutral", "100"),
   accent: brandRampStep("neutral", "100"),
@@ -198,12 +198,12 @@ export const BRAND_PALETTES = {
     "secondary-soft-foreground": "oklch(0.22503 0.06011 247.68)",
     feature: "oklch(0.56873 0.09344 229.37)",
     "feature-bright": "oklch(0.77836 0.11783 206.21)",
-    // The Telinet green, #36C275, is the brand's second colour: it seeds brand palette 2, which
+    // The Telinet green, #36C275, is the brand's second color: it seeds brand palette 2, which
     // passes through it at step 400, the step nearest its lightness of 0.722.
     "feature-foreground": brandRampStep("2", "400"),
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
-  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. No segment
+  // and feature-bright (P-75) are interpolated tones between neighboring sheet stops. No segment
   // delta.
   elma: {
     background: "oklch(0.98177 0.011862 223.5)",

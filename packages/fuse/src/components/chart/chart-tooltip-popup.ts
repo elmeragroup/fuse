@@ -19,9 +19,9 @@ import type { PlaceSize } from "./layout/tooltip-place";
  * The positioner props every chart tooltip starts from. The popup prefers the top and flips to the
  * opposite side, or shifts along its side, to stay in the viewport. When neither the preferred side
  * nor its opposite holds its content, as at 400 % zoom, it sits beside its anchor, and when no side
- * does, it overlays the plot, per CONTRACT section 9.5. Base UI's flip adds 1 px to the collision
- * padding, and 1 px more on the side opposite the preferred top, so these paddings make every flip
- * test read `TOOLTIP_EDGE`, the same 8 px inset the overlay offset tests.
+ * does, it overlays the plot. Base UI's flip adds 1 px to the collision padding, and 1 px more on
+ * the side opposite the preferred top, so these paddings make every flip test read `TOOLTIP_EDGE`,
+ * the same 8 px inset the overlay offset tests.
  */
 export const TOOLTIP_POSITIONER = {
   side: "top",
@@ -88,8 +88,8 @@ export function viewportSize(): PlaceSize {
  * beneath it, so frosted glass also drops the popover `--surface` the overlay fill states.
  */
 const tooltipPopup = tv({
-  // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
-  // popup is never taller than the room Base UI measures on its side, and scrolls past it.
+  // The chart popup has an 8 px radius and 8 px of block padding. It is never taller than the room
+  // Base UI measures on its side, and scrolls past it.
   base: "max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain rounded-lg py-2 [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))] data-[input=touch]:not-data-scrolls:pointer-events-none",
   variants: {
     variant: {

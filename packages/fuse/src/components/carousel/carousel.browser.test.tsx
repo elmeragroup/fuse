@@ -21,7 +21,7 @@ import type { CarouselIndexChangeReason } from "./carousel-context";
 import { useCarousel } from "./carousel-context";
 import { Carousel } from "./index";
 
-/** The fixture's slide width, so page N's slide starts N × WIDTH into the scroll range. */
+/** The fixture's slide width, so page N's slide starts N times WIDTH into the scroll range. */
 const WIDTH = 240;
 
 type FixtureProps = {
@@ -310,7 +310,7 @@ describe("Carousel custom parts", () => {
     expect(clicks).toEqual(["previous", "page 3", "next", "autoplay"]);
     expect(Math.round(viewport.scrollLeft)).toBe(WIDTH);
     expect(roleNamed("button", "Page 2").getAttribute("aria-disabled")).toBe("true");
-    // Neither the cancelled controls nor the cancelled rotation control stopped rotation.
+    // Neither the canceled controls nor the canceled rotation control stopped rotation.
     expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
   });
 });

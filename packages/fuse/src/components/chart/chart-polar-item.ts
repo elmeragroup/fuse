@@ -5,7 +5,7 @@
  * category or Other on a pie, a ring on a radial chart. The legend lists the items, Other last,
  * the tooltip shows the active item alone, a pie share is one largest-remainder set over the
  * absolute total and a ring share its value over its own maximum, and the table lists the rows
- * unfolded. CONTRACT sections 8.4, 8.13 and 9.4 give the rules.
+ * unfolded.
  */
 import type { ReactNode } from "react";
 
@@ -660,7 +660,7 @@ export function radialModel(input: RadialInput): PolarModel {
 
 /**
  * A radial chart's center: the active ring, or with nothing active the sum of the values over the
- * sum of the maxima when every ring shares one format, per CONTRACT section 8.13.
+ * sum of the maxima when every ring shares one format.
  */
 function radialCentre(
   items: readonly PolarItem[],

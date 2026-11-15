@@ -1,5 +1,5 @@
 /**
- * Tick label fitting, as CONTRACT section 8.11 defines it. Labels never rotate. For each container
+ * Tick label fitting. Labels never rotate. For each container
  * width bucket the axis picks the smallest stride whose labels fit, from width estimates the server
  * makes, and a wider bucket never takes a larger stride, so the label count never falls as the axis
  * grows. It reads candidates and widths alone, so a time axis, a category axis and a numeric axis

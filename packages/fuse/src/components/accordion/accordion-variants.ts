@@ -42,7 +42,7 @@ export const accordionVariants = tv({
     item: "p-(--surface-pad-md)",
     header: "flex",
     // Fuse ships no preflight, so `text-inherit` and `bg-transparent` replace the native button's
-    // ButtonText and ButtonFace: the label takes its item's text colour over its item's fill.
+    // ButtonText and ButtonFace: the label takes its item's text color over its item's fill.
     trigger: cn(
       "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 bg-transparent text-inherit enabled-hover:underline",
       selfFocusRingClass,
@@ -50,7 +50,7 @@ export const accordionVariants = tv({
       dataStateFaceClass
     ),
     indicator: "flex shrink-0 items-center",
-    // The caret takes its item's text colour, so it follows the default fill's soft foreground.
+    // The caret takes its item's text color, so it follows the default fill's soft foreground.
     icon: "size-4 shrink-0 transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content: cn(panelHeightTransition, "h-(--accordion-panel-height)"),
     // An open panel sits the large surface gap below its trigger, plus the 6px before its text.
@@ -64,7 +64,7 @@ export const accordionVariants = tv({
         // of touching and leaving a notch where two rounded corners meet.
         base: "space-y-3",
         // The brand's soft tint, the role Material's `secondary-container` maps to. `muted` is
-        // the hover and read-only grey, so a panel in it reads as disabled on a tinted page.
+        // the hover and read-only gray, so a panel in it reads as disabled on a tinted page.
         // The neutral ring falls under 3:1 on the tint, so focus takes the soft foreground,
         // as Alert's soft fills do. The rebind covers the whole item, so a control in the panel
         // also draws its ring in the soft foreground over the same tint.
@@ -76,7 +76,7 @@ export const accordionVariants = tv({
       card: {
         base: "space-y-3",
         // The item and its panel state their `card` fill as `--surface`, as every container fill
-        // does (see `TOKEN_NAMES`).
+        // does; see `TOKEN_NAMES`.
         item: [
           accordionCardItemShellClass,
           "border-card-border bg-card text-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
@@ -100,7 +100,7 @@ export const accordionVariants = tv({
       false: { trigger: "justify-start" },
     },
     radius: {
-      none: {}, // Not dead: the default and a published `radius` value.
+      none: {}, // The default and a published `radius` value, so it stays.
       lg: { item: [accordionItemLgShellClass, "overflow-hidden"] },
       xl: { item: [accordionItemXlShellClass, "overflow-hidden"] },
     },

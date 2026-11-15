@@ -118,7 +118,7 @@ describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
     );
     const figure = figureOf(host);
     expect(figure.getAttribute("aria-label")).toBe("Kake");
-    // Root's own children carry their slots in CONTRACT section 9.2's order.
+    // Root's own children carry their slots in this order.
     expect(
       [...figure.querySelectorAll("[data-slot]")]
         .map((element) => element.getAttribute("data-slot"))

@@ -127,9 +127,9 @@ function dotStretch(look: DotLook, angle: number): number | null {
   if (!look.active.current) return null;
   const values = look.drawn.current ?? look.series.rest;
   const at = radiusAt(look, values, angle);
-  // A stepped series, a Column's tips or a step curve, holds its radius across a slot and jumps at
-  // the slot's edge, a jump the dot makes in one frame at any pace, so slowing the hand there buys
-  // nothing and stutters it: its stretch is the radius alone.
+  // A stepped series, a Column's tips or a step curve, keeps its radius across a slot and jumps at
+  // the slot's edge. The dot makes that jump in one frame at any pace, so slowing the hand there
+  // gains nothing and makes it stutter. Its stretch is the radius alone.
   const curve = seriesCurve(look.motion, look.key);
   if (curve === null || curve === "step" || curve === "step-before" || curve === "step-after") return at;
   const before = radiusAt(look, values, angle - STRETCH_SPAN);

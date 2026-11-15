@@ -30,21 +30,22 @@ export const LAYER_DEFAULTS = {
   "card-soft-foreground": NEUTRAL_FOREGROUND,
   popover: WHITE,
   "popover-foreground": NEUTRAL_FOREGROUND,
-  // The fill and text of the modal surfaces, Dialog (and AlertDialog through it) and Sheet.
+  // The fill and text of the modal surfaces: Dialog, AlertDialog through it, and Sheet.
   // Neutral themes keep the popover pair the anchored popups use, and the branded identity
-  // layer fills light modals with the page tint, so card-coloured fields and selection rows
+  // layer fills light modals with the page tint, so card-colored fields and selection rows
   // inside keep the separation they have on the page. Dark keeps the popover pair.
   dialog: "var(--popover)",
   "dialog-foreground": "var(--popover-foreground)",
-  // The fill and text of the content panels a chart rests on: Frame panels, framed Table cells
-  // the bordered VerticalTable box, the default Alert and the outline Item. Light panels are the card, white in every theme, so a panel and a
-  // Card beside it match and chart cut-outs read as the same white. Dark keeps the page.
+  // The fill and text of the content panels a chart rests on: Frame panels, framed Table cells,
+  // the bordered VerticalTable box, the default Alert and the outline Item. Light panels are the
+  // card, white in every theme, so a panel and a Card beside it match and chart
+  // cut-outs read as the same white. Dark keeps the page.
   panel: "var(--card)",
   "panel-foreground": "var(--card-foreground)",
   muted: "oklch(0.97 0.0013 106.42)",
-  // The lightest grey, at three decimals, that measures at least 4.55:1 on `muted` and `card-soft`,
-  // the darkest resting surfaces muted copy lands on (a highlighted `accent` row recolours its
-  // descendants to `accent-foreground`), a margin over the 4.5:1 text floor.
+  // The lightest gray, at three decimals, that measures at least 4.55:1 on `muted` and `card-soft`,
+  // the darkest resting surfaces muted copy lands on, a margin over the 4.5:1 text floor. A
+  // highlighted `accent` row recolors its descendants to `accent-foreground`.
   "muted-foreground": "oklch(0.544 0 0)",
   accent: "oklch(0.96 0 0)",
   "accent-foreground": NEUTRAL_950,
@@ -89,7 +90,7 @@ export const LAYER_DEFAULTS = {
   // The line between a Card's stacked sections. Neutral themes draw it in the border role, and
   // the branded identity layer draws it in the page tint, so each card reads as split in segments.
   "card-section-divider": "var(--border)",
-  // The colour of a Card's `shadow-xs`, Tailwind's own 5% black. The branded identity layer
+  // The color of a Card's `shadow-xs`, Tailwind's own 5% black. The branded identity layer
   // makes it transparent. `CheckboxCard` and the TextField `card` box keep the plain `shadow-xs`.
   "card-shadow": "oklch(0 0 0 / 0.05)",
   // The outline Button's border. Neutral themes draw it as a 1px hairline in the border
@@ -106,7 +107,7 @@ export const LAYER_DEFAULTS = {
   "selection-checked-border": "var(--primary)",
   // The line between two stacked rows of a vertical SelectionItem group: a row's bottom edge, and
   // a checked row's top and bottom edges. Neutral themes draw it as the row's own edge, so a
-  // checked row stays boxed in the primary role, and the branded identity layer keeps the grey
+  // checked row stays boxed in the primary role, and the branded identity layer keeps the gray
   // border role here while the rows' outer edge goes transparent.
   "selection-divider": "var(--selection-border)",
   "selection-checked-divider": "var(--selection-checked-border)",
@@ -114,13 +115,13 @@ export const LAYER_DEFAULTS = {
   // Neutral themes fill it with the muted role, and the branded identity layer keeps the
   // card fill of an enabled row.
   "selection-disabled-background": "var(--muted)",
-  // The stripe colour of the disabled row's 45° hatch, a black alpha that reads the same in
+  // The stripe color of the disabled row's 45° hatch, a black alpha that reads the same in
   // both schemes. The branded identity layer makes it transparent, which drops the stripes.
   "selection-disabled-hatch": "oklch(0 0 0 / 0.02)",
   // The label row text of a disabled SelectionItem row. A token value can't be `currentColor`,
   // so it names the foreground role rather than inheriting; neutral `foreground` equals
-  // `card-foreground` in both schemes, so a neutral disabled title keeps its colour. The
-  // branded identity layer greys it to the muted foreground. It is not a text-grade role.
+  // `card-foreground` in both schemes, so a neutral disabled title keeps its color. The
+  // branded identity layer grays it to the muted foreground. It is not a text-grade role.
   "selection-disabled-foreground": "var(--foreground)",
   // The fill and label of a pressed Toggle and ToggleGroup item. Neutral themes keep the quiet
   // muted face on the neutral page, and the branded identity layer fills with the primary
@@ -146,7 +147,7 @@ export const LAYER_DEFAULTS = {
   "chart-6": "oklch(0.5605 0.1804 295.05)",
   "chart-7": "oklch(0.6346 0.1302 74.77)",
   "chart-8": "oklch(0.5443 0.1847 359.72)",
-  // A neutral grey that keeps normal ΔE 10 from every slot and 3:1 on every surface.
+  // A neutral gray that keeps normal ΔE 10 from every slot and 3:1 on every surface.
   "chart-other": "oklch(0.6 0 0)",
   // The sequential ramp at hue 255, step 1 the least magnitude and nearest the surface.
   "chart-seq-1": "oklch(0.7351 0.1275 254.95)",
@@ -160,7 +161,7 @@ export const LAYER_DEFAULTS = {
   // the neutral midpoint at zero, and steps 5 to 7 are an orange ramp at hue 50. The midpoint
   // paints every value near zero, so it is a mark and holds 3:1 on every chart surface. In both
   // schemes that sets it further from the surface than steps 3 and 5, so lightness alone no
-  // longer orders the scale outward from zero. The grey midpoint stays apart from them by chroma.
+  // longer orders the scale outward from zero. The gray midpoint stays apart from them by chroma.
   "chart-diverging-1": SEQ_6,
   "chart-diverging-2": SEQ_4,
   "chart-diverging-3": SEQ_2,
@@ -168,7 +169,7 @@ export const LAYER_DEFAULTS = {
   "chart-diverging-5": "oklch(0.675 0.15 50.03)",
   "chart-diverging-6": "oklch(0.5302 0.1291 49.8)",
   "chart-diverging-7": "oklch(0.3872 0.0948 49.92)",
-  // Favourable and unfavourable to the reader, such as a low and a high price, never the sign
+  // Favorable and unfavorable to the reader, such as a low and a high price, never the sign
   // of a value. Each is its own literal, so a host override of a slot leaves it alone.
   "chart-sentiment-positive": CHART_AQUA,
   "chart-sentiment-negative": CHART_ORANGE,
@@ -181,7 +182,7 @@ export const LAYER_DEFAULTS = {
   "sh-jsxliterals": "#4cbf99",
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
-  // A scope without a brand reads an untinted grey at every ramp step, at the lightness every
+  // A scope without a brand reads an untinted gray at every ramp step, at the lightness every
   // brand's ramps share. Each brand rule declares its own tinted ramps.
   ...GREY_RAMP_TOKENS,
   // The root rounds as a neutral theme does: one radius, buttons and fields aliasing it, and a

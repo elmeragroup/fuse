@@ -1,8 +1,9 @@
 /**
  * Unit under test: RangeCalendar's pure range rules. Oracles: React Aria's `useRangeCalendarState`
- * (`makeRange`, `nextUnavailableDate`, `previousAvailableDate`, `selectDate`, `commitSelection`,
- * `isInvalidSelection`) and the keyboard step of `useCalendarCell`, worked out by hand for each case
- * against a printed 2026 calendar and written as literal dates.
+ * and the keyboard step of `useCalendarCell`, worked out by hand for each case against a printed
+ * 2026 calendar and written as literal dates. The state rules are `makeRange`,
+ * `nextUnavailableDate`, `previousAvailableDate`, `selectDate`, `commitSelection` and
+ * `isInvalidSelection`.
  */
 import { describe, expect, it } from "vitest";
 
@@ -43,7 +44,7 @@ function printedPress(press: RangePress): string {
   }
 }
 
-/** October 2026 with the 10th, 17th and 24th unavailable (all Saturdays). */
+/** October 2026 with the 10th, 17th and 24th unavailable, all Saturdays. */
 const SATURDAYS = new Set(["2026-10-10", "2026-10-17", "2026-10-24"]);
 const saturdaysUnavailable: RangeRules = {
   bounds: NO_BOUNDS,

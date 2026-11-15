@@ -1,8 +1,7 @@
 /**
  * Unit under test: the public `formatChartSlot`. Oracle: the relation that an instant reads the
- * same as epoch milliseconds and as a `Date`, and the error the contract names. Its labels, and
- * those of `formatChartValue`, run in every engine as the shared judges in
- * `format/fixtures/judges.ts`.
+ * same as epoch milliseconds and as a `Date`, and a label written by hand. Its labels, and those
+ * of `formatChartValue`, run in every engine as the shared judges in `format/fixtures/judges.ts`.
  */
 import { describe, expect, it } from "vitest";
 

@@ -226,8 +226,8 @@ export function LiveSurface({
     if (to !== undefined) step(to);
     else if (event.key === "Escape") {
       if (store.active() === null) return;
-      // The one dismissal, which a pointer that rests on the plot does not undo, and the next
-      // step or pointer move does.
+      // Escape dismisses the active reading. A pointer that rests on the plot does not undo the
+      // dismissal, and the next step or pointer move does.
       store.dismiss();
       event.stopPropagation();
     } else return;

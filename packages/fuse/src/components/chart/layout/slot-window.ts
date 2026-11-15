@@ -1,7 +1,7 @@
 /**
- * The effective x window, as CONTRACT section 8.12 and section 9.4 define it. `xRange` names its
- * first and last slot, and the window is the domain's slots between them. The listbox walks the
- * window, its y domains read the window's rows, and an active slot keeps its x across new data.
+ * The effective x window. `xRange` names its first and last slot, and the window is the domain's
+ * slots between them. The listbox walks the window, its y domains read the window's rows, and an
+ * active slot keeps its x across new data.
  */
 import type { ChartScalar } from "../chart-types";
 import { instantOf, slotCount, slotOf } from "./x-domain";

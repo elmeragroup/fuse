@@ -1,7 +1,7 @@
-// Source entry facade for `@elmeragroup/fuse/checkbox` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. No public recipe.
+// The source entry for `@elmeragroup/fuse/checkbox`. It holds explicit named re-exports only,
+// with no `export *`, no local declarations and no directives. The exports and barrel generators
+// find this file, so never edit `package.json#exports` or `src/index.ts` by hand.
+// It exports no public recipe.
 export { Checkbox, CheckboxDescription, CheckboxGroup } from "./components/checkbox/checkbox";
 export { CheckboxItem } from "./components/checkbox/checkbox-item";
 export { CheckboxItemGroup } from "./components/checkbox/checkbox";

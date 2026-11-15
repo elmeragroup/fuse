@@ -85,7 +85,7 @@ export function ChartTooltipBody({
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
   // The point the popup showed last, its index and its near or focused series together, which its
-  // content keeps while it fades out, and lets go of once it has closed.
+  // content keeps while it fades out, and drops once it has closed.
   const [shown, setShown] = useState<HeldPoint | null>(null);
   if (active !== null && (active !== shown?.index || point.near !== shown.near))
     setShown({ index: active, near: point.near });
@@ -208,8 +208,8 @@ export function ChartTooltipBody({
             className={tooltipPopupClass(variant, className)}
             style={style}
             onClick={(event) => {
-              // A popup that scrolls takes touch, so a tap on it, which never scrolled, takes the
-              // one dismissal a tap beside the chart would.
+              // A popup that scrolls takes touch events, so a tap on it that did not scroll
+              // dismisses the tooltip, as a tap beside the chart would.
               if (event.currentTarget.dataset.input === "touch") store.dismiss();
             }}
             onPointerEnter={(event) => {

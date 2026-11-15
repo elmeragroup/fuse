@@ -1,10 +1,11 @@
 /**
- * The package-private class vocabulary shared by every overlay family, Dialog and Sheet.
+ * The package-private class vocabulary that the overlay families share, such as Dialog, Sheet,
+ * Popover, Select and Tooltip.
  * `package.json#exports` exports nothing here. The vocabulary reaches the standalone stylesheet only
  * through the emitted dist modules that import it, which are that sheet's only source.
  *
- * The resolved constants derive from the recipes below. The export names stay, so the thirteen
- * overlay consumers compile without edits.
+ * The resolved constants derive from the recipes below. The export names stay, so the overlay
+ * consumers compile without edits.
  */
 
 import { cn } from "../../styles/cn";
@@ -59,7 +60,7 @@ export const overlaySizeVariants = tv({
       "5xl": "[--overlay-width:min(var(--container-5xl),90%)]",
       "6xl": "[--overlay-width:min(var(--container-6xl),90%)]",
       "7xl": "[--overlay-width:min(var(--container-7xl),90%)]",
-      // No --container-8xl+ variables exist; the pixel caps stay literal.
+      // Tailwind defines no `--container-8xl` or larger variable, so these pixel caps stay literal.
       "8xl": "[--overlay-width:min(1366px,90%)]",
       "9xl": "[--overlay-width:min(1536px,90%)]",
       "10xl": "[--overlay-width:min(1920px,90%)]",
@@ -91,7 +92,7 @@ const overlayPopupVariants = tv({
   slots: {
     /**
      * The backdrop scrim. `bg-black/10` is not tokenized and is allowlisted as a raw palette
-     * literal. A dark-mode scrim token is on the roadmap.
+     * literal.
      */
     scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
     /**

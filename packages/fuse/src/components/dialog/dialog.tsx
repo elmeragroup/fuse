@@ -175,7 +175,7 @@ export function DialogTitle({
       data-slot="dialog-title"
       className={mergeClassName(className, dialogVariants({ isFocusable }).title())}
       {...props}
-      // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands.
+      // When isFocusable is set it decides the tab stop; otherwise the caller's tabIndex applies.
       tabIndex={isFocusable ? -1 : tabIndex}
     />
   );

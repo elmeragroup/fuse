@@ -1,8 +1,9 @@
 /**
  * Unit under test: the reveal planner. Oracle: the reveal rules the component documents, written
  * out by hand per context: `smart` lands content at once over a skeleton up under 150 ms or during
- * input, crossfades a refetch in 120 ms and small content (under 72 px or three pieces) in 200 ms,
- * and sequences the rest by row; `together` always crossfades; `sequence` always times by position.
+ * input, crossfades a refetch in 120 ms and small content in 200 ms, and sequences the rest by row.
+ * Small content is under 72 px or three pieces. `together` always crossfades; `sequence` always
+ * times by position.
  */
 import { describe, expect, it } from "vitest";
 

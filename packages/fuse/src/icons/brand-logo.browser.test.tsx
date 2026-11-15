@@ -75,7 +75,7 @@ describe("BrandLogo", () => {
   });
 
   it("throws an explicit error for an unknown brand code", () => {
-    // React 19 createRoot + flushSync reports render errors as unhandled instead of
+    // React 19 createRoot with flushSync reports render errors as unhandled instead of
     // rethrowing to the caller, so assert the throw on the component function.
     // SAFETY: runtime rejection is the contract under test; the public type is BrandCode.
     expect(() => BrandLogo({ brand: "zz" as ThemeInput["brand"] })).toThrow(/Unhandled brand: zz/);

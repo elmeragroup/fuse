@@ -188,7 +188,7 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
       // of taking the short way back. Whole turns of lag drop from the shown angle, so the hand
       // never chases an extra turn: every subscriber draws the angle through its sine, cosine or
       // remainder of 360°, or as a `rotate` with no transition on it, so the shift shows nothing.
-      // A step half a turn from the chased target, as a pointer through the dial's centre takes on an
+      // A step half a turn from the chased target, as a pointer through the dial's center takes on an
       // even count, has no way of its own, so it takes the short way from the angle shown.
       const chased = target ?? state?.angle ?? angle;
       const ahead = shortTarget(chased, angle);
@@ -216,8 +216,8 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
         call(next);
         return;
       }
-      // The pointer's pace, floored by the step's own span over 12 frames, or 10 past 90°. A step the floor carries
-      // leaps on the fastest spring, so its tail lands as soon as its pace does.
+      // The pointer's pace, floored by the step's own span over 12 frames, or 10 past 90°. A step
+      // the floor carries leaps on the fastest spring, so its tail lands as soon as its pace does.
       const stepPace = host.maxTurn(radius);
       const span = Math.abs(next - shown);
       const stepFloor = span / (span > LEAP_NEAR ? LEAP_FRAMES.far : LEAP_FRAMES.near);

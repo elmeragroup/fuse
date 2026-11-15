@@ -125,8 +125,8 @@ describe("ConfirmButton", () => {
     );
   });
 
-  // Unit under test: the label wrapping. Oracle: the same label written so that it renders the
-  // way main did, with no gap-separated piece. Button spaces its flex items with a gap, so a label
+  // Unit under test: the label wrapping. Oracle: the same label written as one run of text, with
+  // no gap-separated piece. Button spaces its flex items with a gap, so a label
   // split into several spans, or a whitespace-only span, comes out wider.
   it.each([
     ["an interpolated label", ["Delete ", 3, " items"], "Delete 3 items"],
@@ -259,7 +259,7 @@ describe("ConfirmButton", () => {
       </ConfirmButton>
     );
 
-    // Playwright refuses to click aria-disabled targets; force the pointer presses through.
+    // Playwright refuses to click aria-disabled targets, so the test forces the pointer presses.
     const button = page.getByRole("button", { name: "Delete", exact: true });
     await userEvent.click(button, { force: true });
     await userEvent.click(button, { force: true });

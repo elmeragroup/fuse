@@ -45,7 +45,7 @@ function BasicSheet({
 }
 
 /**
- * Lands the panel's slide-in at once. A click on a control inside a panel still travelling from its
+ * Finishes the panel's slide-in at once. A click on a control inside a panel still traveling from its
  * starting translate is aimed at a box the panel has already left, so the enter transition is run
  * to its end rather than waited out.
  */

@@ -1,6 +1,5 @@
-// Unit under test: chartDescription, the generated description, after layer 05's review findings
-// q16 and s14. Oracle: CONTRACT section 9.3's description facts and the en-US dictionary templates,
-// with every expected sentence written by hand from the rows below.
+// Unit under test: chartDescription, the generated description. Oracle: the en-US and nb-NO
+// dictionary templates, with every expected sentence written by hand from the rows below.
 import { describe, expect, it } from "vitest";
 
 import { chartDescription } from "./chart-text";
@@ -44,7 +43,7 @@ function describeRows(
 
 describe("chartDescription", () => {
   it("states the spoken unit once after each label, as CONTRACT section 9.3's example does", () => {
-    // js7: 9.3 writes "Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04", so the unit follows
+    // The nb-NO form is "Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04": the unit follows
     // the label and each value reads bare. A count joins its noun with a no-break space, and a sentence
     // starts with a capital.
     const rows = [

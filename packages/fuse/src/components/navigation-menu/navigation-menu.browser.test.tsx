@@ -124,7 +124,8 @@ describe("NavigationMenu", () => {
         expect(box.left).toBeGreaterThanOrEqual(0);
         expect(box.right).toBeLessThanOrEqual(document.documentElement.clientWidth);
       });
-      // A user's wheel gesture scrolls only a scroll container; a panel the viewport merely clips stays at 0.
+      // A user's wheel gesture scrolls only a scroll container; a panel the viewport clips stays
+      // at 0.
       await userEvent.wheel(content, { delta: { x: 100 } });
       await vi.waitFor(() => {
         expect(content.scrollLeft).toBeGreaterThan(0);
@@ -193,7 +194,7 @@ describe("NavigationMenu", () => {
 describe("nested NavigationMenu", () => {
   // The contracts here are placement, swapping, focus and paint. Without the popup's resize and
   // the positioner's glide, a row inside the popup is still when it is clicked or hovered, so
-  // no step waits for the motion to finish. The opacity and colour transitions stay on.
+  // no step waits for the motion to finish. The opacity and color transitions stay on.
   beforeEach(async () => {
     await emulateReducedMotion("reduce");
   });
@@ -301,7 +302,7 @@ describe("nested NavigationMenu", () => {
 
     const car = roleNamed("button", "Electric car Charging at home and away.");
     await userEvent.click(car);
-    // Move off the trigger so its hover recolour cannot stand in for the open-state one.
+    // Move off the trigger so its hover recolor cannot stand in for the open-state one.
     await userEvent.hover(await openedLink("Home charger"));
     expect(car.hasAttribute("data-popup-open")).toBe(true);
     expect(car.matches(":hover")).toBe(false);
@@ -414,7 +415,7 @@ describe("nested NavigationMenu", () => {
     });
 
     it("paints an open inline row and a hovered link row in a color the popup does not have", async () => {
-      // The document carries the theme, so the portalled popup takes it with the bar.
+      // The document carries the theme, so the portaled popup takes it with the bar.
       render(<InlineMenu />);
       const outerTrigger = roleNamed("button", "Audiences");
       await userEvent.click(outerTrigger);

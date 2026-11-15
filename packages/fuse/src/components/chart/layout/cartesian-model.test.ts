@@ -5,7 +5,7 @@ import type { ChartRow } from "../chart-types";
 import { buildCartesianModel, layoutDomain } from "./cartesian-model";
 import type { ModelInput } from "./cartesian-model";
 
-// Every expectation below is written by hand from CONTRACT sections 8.2, 8.3, 8.6 and 8.12.
+// Every expectation below is written by hand.
 
 const day = (n: number): Date => new Date(Date.UTC(2025, 9, n - 1, 22));
 
@@ -360,7 +360,7 @@ describe("coarse series (section 8.8)", () => {
   });
 
   it("flags an hourly value on the first row of a domain that starts inside the hour (W3, Q1-3)", () => {
-    // The domain starts at 00:15, so its first row is no hour's start: 0,4 there is off the grid,
+    // The domain starts at 00:15, so its first row is no hour's start. The 0,4 there is off the grid,
     // and in production it moves to the hour that holds it.
     const rows: ChartRow[] = [1, 2, 3].map((index) => ({ x: quarter(index), price: 1 }));
     rows[0] = { ...rows[0], kwh: 0.4 };
@@ -370,7 +370,7 @@ describe("coarse series (section 8.8)", () => {
   });
 
   it("keeps an unfinished hour pending until its own end, past the domain's last row (W3, B1-3)", () => {
-    // Quarters 00:00 and 00:15 with no consumption, now at 00:45: the hour ends at 01:00, after
+    // Quarters 00:00 and 00:15 with no consumption, now at 00:45. The hour ends at 01:00, after
     // now, so it is pending, though the domain's last row ends at 00:30.
     const rows: ChartRow[] = [0, 1].map((index) => ({ x: quarter(index), price: 1, kwh: null }));
     const time = { interval: "quarter-hour" as const, timeZone: "Europe/Oslo", now: quarter(3).getTime() };
@@ -380,7 +380,7 @@ describe("coarse series (section 8.8)", () => {
   });
 
   it("reads an hour that ended before now as missing, even when the domain ends inside it", () => {
-    // The same two quarters with now at 01:15, after the hour's end: the hour is missing.
+    // The same two quarters with now at 01:15, after the hour's end, so the hour is missing.
     const rows: ChartRow[] = [0, 1].map((index) => ({ x: quarter(index), price: 1, kwh: null }));
     const time = { interval: "quarter-hour" as const, timeZone: "Europe/Oslo", now: quarter(5).getTime() };
     const model = buildCartesianModel({ ...input(rows), time });

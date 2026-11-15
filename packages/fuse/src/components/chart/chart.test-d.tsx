@@ -1,7 +1,7 @@
 /**
- * Positive type cases of CONTRACT.md section 14, ported from the contract's revision check. The
- * TypeScript checker is the oracle, and each case compiles with no cast. `package-check-chart-types.ts` runs this file against
- * the packed `.d.ts` under TypeScript 7.0.2 and 5.9.3, with and without `exactOptionalPropertyTypes`.
+ * Positive type cases of the chart API. The TypeScript checker is the oracle, and each case
+ * compiles with no cast. `package-check-chart-types.ts` runs this file against the packed `.d.ts`
+ * under TypeScript 7.0.2 and 5.9.3, with and without `exactOptionalPropertyTypes`.
  */
 import type { ReactElement } from "react";
 

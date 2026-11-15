@@ -40,9 +40,9 @@ test("BadgeProps is native span props plus the recipe axes, and the element take
     </Badge>
   );
 
-  // @ts-expect-error `error` is not a variant value; the consumer-compat name is `destructive`
+  // @ts-expect-error `error` is not a variant value; the consumer-compatible name is `destructive`
   const _badVariant = <Badge variant="error" />;
-  // @ts-expect-error decorative sizes are sm | default | lg only
+  // @ts-expect-error decorative sizes are sm, default and lg only
   const _badSize = <Badge size="xl" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Badge as="span" />;

@@ -2,9 +2,9 @@
 // cartesian model a ClockChart.Root builds for one cycle. Oracles: the zoneinfo slot lists in
 // format/fixtures/slots.json for the 23-, 24- and 25-hour days in Europe/Oslo, their quarter-hours,
 // the ISO weeks around both 2025 changes and the months of 2025; calendar counts written by hand,
-// 365 and 366 days and 8,760 and 8,784 hours, from 1 January 00:00 CET; D11's equal slots,
+// 365 and 366 days and 8,760 and 8,784 hours, from 1 January 00:00 CET; equal slots,
 // 360/n degrees each; the hour labels written by hand, one per wall hour, so the repeated fall-back
-// hour labels once; "06" at slot 7's start on the 25-hour day, 7 × 14.4 = 100.8°; and PageDown's one
+// hour labels once; "06" at slot 7's start on the 25-hour day, 7 times 14.4 = 100.8°; and PageDown's one
 // label unit, six wall hours, which lands on 06:00 at slot 7 of the 25-hour day and slot 5 of the
 // 23-hour day. The dial reads the market's zone, so the result must not change with the process's.
 import { describe, expect, it } from "vitest";
@@ -155,7 +155,7 @@ describe("a day dial across the DST changes", () => {
     const { polar } = dayModel(day);
     expect(polar.page?.(0, 1)).toBe(six);
     expect(polar.page?.(six, -1)).toBe(0);
-    // PageUp from midnight wraps to 18:00, six wall hours back round the dial.
+    // PageUp from midnight wraps to 18:00, six wall hours back around the dial.
     expect(polar.page?.(0, -1)).toBe(polar.count - 6);
   });
 });

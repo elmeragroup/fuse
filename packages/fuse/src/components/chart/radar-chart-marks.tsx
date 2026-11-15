@@ -146,7 +146,7 @@ type SeriesLayer = {
   readonly style: CSSProperties | undefined;
 };
 
-/** One series layer bound to the loop, its drawing growing, moving or crossfading as R11 and S5 say. */
+/** One series layer bound to the loop, whose drawing grows, moves or crossfades. */
 function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElement {
   const { model, motion, box } = polar;
   const readout = useChartReadout(layer.part);

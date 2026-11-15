@@ -89,8 +89,8 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
   });
 
-  // fkas external: a 12px --radius and a 2px step, so rounded-md is 10px. A field alone rounds
-  // with the brand's 12px, or with a host's own --radius-field; the group ends override both.
+  // The fkas external theme has a 12px --radius and a 2px step, so rounded-md is 10px. A field alone
+  // rounds with the brand's 12px, or with a host's own --radius-field; the group ends override both.
   describe.each([
     ["the brand field corner", undefined, 12],
     ["a host field corner", hostFieldCorner, 4],

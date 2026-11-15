@@ -24,9 +24,8 @@ import type { Toggle } from "@elmeragroup/fuse/toggle";
 import type { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 /**
- * className contracts: a part either keeps Base UI's
- * string-or-state-callback union or is deliberately narrowed to a string. Each line below is
- * one part, so a failing assertion names the part in its line number.
+ * className contracts: a part either keeps Base UI's string-or-state-callback union or narrows to a
+ * string. Each line below is one part, so a failing assertion names the part in its line number.
  */
 type ClassNameOf<Part extends ElementType> = ComponentProps<Part>["className"];
 type StateCallback = (...args: never[]) => string | undefined;

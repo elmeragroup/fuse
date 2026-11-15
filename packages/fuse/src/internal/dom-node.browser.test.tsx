@@ -87,7 +87,8 @@ describe("realm-independent DOM checks", () => {
 
 describe("containsAcrossShadowRoots", () => {
   it("finds a node through nested shadow roots, open and closed, and nowhere else", () => {
-    // outer > host > (open shadow) inner host > (closed shadow) field, and a sibling beside outer.
+    // outer holds host, whose open shadow root holds an inner host, whose closed shadow root holds
+    // the field. A sibling sits beside outer.
     const outer = document.createElement("div");
     const sibling = document.createElement("div");
     const host = document.createElement("div");

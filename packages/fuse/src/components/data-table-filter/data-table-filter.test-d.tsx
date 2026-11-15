@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 /**
  * Public type guarantees of `@elmeragroup/fuse/data-table-filter`. Each positive case has a
  * negative control: a field must fit its column's type, a value's operator fixes its kind and
- * arity, facets fit their field's kind, the Root rejects a table without column filtering, and the
+ * arity, facets fit their field's kind, the Root rejects a table without column filtering, the
  * overlays take no focus routing, and the values footer scopes by field ids and composes into both
  * value lists.
  */

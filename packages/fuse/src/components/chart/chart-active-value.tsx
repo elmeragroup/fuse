@@ -179,7 +179,7 @@ function drawValueLine(box: HTMLDivElement, look: FollowerLook, values: MarkValu
   // The pill reads the drawn end as its share of the plot from the value axis's maximum. The tip
   // tweens unsnapped, as the bar's does, and draws on the pixel the bar's edge takes.
   writeStyle(box, "--chart-line-top", `${String(valueShare(frame, snapAcross(frame, end)))}%`);
-  // The rule's width, which its stroke and the pill's centring read.
+  // The rule's width, which its stroke and the pill's centering read.
   writeStyle(box, "--_rule-width", `${String(hairline(frame.box))}px`);
   const direction = frame.orientation === "vertical" ? "horizontal" : "vertical";
   writeAttributes(valueRule(box), ruleAcross(frame.box, direction, end));
@@ -212,10 +212,10 @@ function PlotValue({
   const layout = usePlotLayout("Chart.ActiveValue");
   assertLayoutKey("Chart.ActiveValue", layout, dataKey);
   const drawn = useChartFrame("Chart.ActiveValue", layout);
-  // Once measured, it moves in the bars' pixels, over the slot's centre at the bar's drawn end.
+  // Once measured, it moves in the bars' pixels, over the slot's center at the bar's drawn end.
   const frame = drawn?.frame ?? null;
   const look = useMemo((): FollowerLook => ({ frame }), [frame]);
-  // Its centre along the slot axis, then its tip across the value axis.
+  // Its center along the slot axis, then its tip across the value axis.
   const {
     ref: markRef,
     outgoingRef,

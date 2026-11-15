@@ -106,7 +106,7 @@ export function useDateInputField(options: DateInputFieldOptions, fallbackId: st
     };
   }, [inField, validation]);
 
-  // The registration: the first segment is the control, the ISO text its value.
+  // Registers the first segment as the control, with the ISO text as its value.
   const getValue = useCallback(() => hiddenInput.current?.value ?? "", []);
   useRegisterFieldControl(firstSegment, hiddenInputId, iso, getValue, !disabled, name);
 

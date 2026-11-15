@@ -1,6 +1,6 @@
 /**
- * Unit project. Every expectation below is a handwritten table, never a value recomputed through
- * the model under test.
+ * This file runs in the unit project. Every expectation below is a handwritten table, never a value
+ * recomputed through the model under test.
  */
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";

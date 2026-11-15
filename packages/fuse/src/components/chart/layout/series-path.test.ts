@@ -1,10 +1,10 @@
 // The vertices a Line or an Area draws. Unit under test: seriesPath over buildCartesianModel.
-// Oracles: hand-written readings and stacks; the review round 1 scenarios with their tops, bases,
+// Oracles: hand-written readings and stacks; decimated-stack scenarios with their tops, bases,
 // states and spans worked out by hand; and a brute-force scan over the raw rows of each M4
 // bucket's extremes, a stack's sums included, and of every slot where what a vertex draws as
-// changes, which must all be among a decimated window's vertices. The shared-path cache (review 2,
-// Y5) is held to M4's whole pixel columns: widths that round alike share a path, a window of 2,000
-// slots or fewer has none, and each series keeps one width.
+// changes, which must all be among a decimated window's vertices. The shared-path cache is held to
+// M4's whole pixel columns: widths that round alike share a path, a window of 2,000 slots or fewer
+// has none, and each series keeps one width.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -136,7 +136,7 @@ const AS_IS: PathPlacement = {
 
 describe("seriesPath in a decimated stack (review round 1, B1-1 and Q1-1)", () => {
   it("draws the upper series' top at the stack's sum over the lower series' peak", () => {
-    // B1-1: 2,400 rows on 300 px, a = 1 except a[4] = 10, b = 1. The stack peaks at 10 + 1 = 11.
+    // 2,400 rows on 300 px, a = 1 except a[4] = 10, b = 1. The stack peaks at 10 + 1 = 11.
     const rows = Array.from({ length: 2400 }, (_, index) => ({
       name: `s${String(index)}`,
       a: index === 4 ? 10 : 1,
@@ -155,7 +155,7 @@ describe("seriesPath in a decimated stack (review round 1, B1-1 and Q1-1)", () =
   });
 
   it("draws the upper series' base on the lower series' top at every vertex", () => {
-    // Q1-1: 2,400 rows on 200 px, the lower series 1 except 100 at index 5, the upper 1.
+    // 2,400 rows on 200 px, the lower series 1 except 100 at index 5, the upper 1.
     const rows = Array.from({ length: 2400 }, (_, index) => ({
       name: `s${String(index)}`,
       low: index === 5 ? 100 : 1,

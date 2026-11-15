@@ -1,6 +1,5 @@
-// Source entry facade for `@elmeragroup/fuse/form` (Appendix A). Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts.
+// Source entry for `@elmeragroup/fuse/form`. It holds explicit named re-exports only, with
+// no `export *`, no local declarations and no directives. The exports and barrel generators find
+// this file, so never hand-edit `exports` in package.json or src/index.ts.
 export { Form } from "./components/form/form";
 export type { FormProps } from "./components/form/form";

@@ -32,9 +32,10 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  * - `content` is the shared timed popup on the listbox shell. It is at least the anchor's width:
  *   `Combobox.Input`'s whole field box, or an external anchor such as `Combobox.Chips`. A search
  *   group the popup directly owns takes its own 4px inline margin and a width that fits inside
- *   it, which overrides the group's `w-full` (the phone field's), and the popup pads only above
- *   it. The popup pads nothing on the inline axis, so the List's own padding is the one inset its
- *   `--inner-corner` assumes.
+ *   it, which overrides the `w-full` of `inputGroupRootClass` in `field-box.ts`, and the popup
+ *   pads only above it. The phone field's country search is one such group. The popup pads
+ *   nothing on the inline axis, so the List's own padding is the one inset its `--inner-corner`
+ *   assumes.
  * - `list` is the listbox list shell, which pads the rows and publishes their corner, scrolling
  *   below 252px or the available height less 36px.
  * - `item` is the shared menu row with room for the trailing check, highlighted by Base UI's

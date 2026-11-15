@@ -27,7 +27,7 @@ type ResolvedTheme = { theme: Theme; attributes: ThemeAttributes };
  * @throws The validation error for an invalid theme.
  */
 export function useResolvedTheme(theme: ThemeInput): ResolvedTheme {
-  // SAFETY: untyped CMS/env input is the boundary; optional axis reads keep memo deps from
+  // SAFETY: untyped CMS or env input is the boundary; optional axis reads keep memo deps from
   // throwing before the memo can validate and report the real error.
   const axes = theme as ThemeInput | null;
   // Every theme axis is one memo key; the length check fails to compile when THEME_AXES gains

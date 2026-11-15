@@ -95,9 +95,9 @@ function expectTitled(markup: string, title: string, label?: string) {
 }
 
 /**
- * Every bespoke asset as it renders, once: each roster icon, each logo in both variants (so every
- * full, mark and glyph file draws), and the illustrations. A logo whose two variants draw the same
- * file, such as Steddi's glyph, renders identical markup and counts once.
+ * Every bespoke asset as it renders, once: each roster icon, each logo in both variants, and the
+ * illustrations. Both variants make every full, mark and glyph file draw. A logo whose two variants
+ * draw the same file, such as Steddi's glyph, renders identical markup and counts once.
  */
 function renderedAssets(): Array<readonly [string, string]> {
   const rendered = [
@@ -134,9 +134,9 @@ describe("bespoke icons", () => {
     expectTitled(renderToStaticMarkup(createElement(Icon, { title: " " })), " ");
   });
 
-  // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
-  // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
-  // checked together, for every logo, rather than for whichever one a case names.
+  // Each logo spells the guard twice, in `decorativeSvgProps(title)` and in its own
+  // `{title ? <title>…</title> : null}`. The two stay in step only if a test checks them
+  // together, for every logo, rather than for whichever one a case names.
   // Both variants, so every full and mark asset renders its title only from the prop.
   it.each(Object.entries(logosByName))("keeps %s's title guard and props in step", (name, Logo) => {
     for (const variant of ["full", "mark"] as const) {
@@ -160,7 +160,7 @@ describe("bespoke icons", () => {
     const visibleWhileDecorative = renderToStaticMarkup(createElement(Icon, { "aria-hidden": false }));
     expect(visibleWhileDecorative).toContain('aria-hidden="false"');
 
-    // aria-label is not a naming prop: an untitled icon stays hidden even when labelled.
+    // aria-label is not a naming prop: an untitled icon stays hidden even when labeled.
     const labeledUntitled = renderToStaticMarkup(createElement(Icon, { "aria-label": "Done", role: "img" }));
     expect(labeledUntitled).toContain('role="img"');
     expect(labeledUntitled).toContain('aria-label="Done"');
@@ -180,7 +180,7 @@ describe("bespoke icons", () => {
   });
 
   it("namespaces defs ids per asset so no id is defined by two assets", () => {
-    // The next Figma/Sketch intake with generic ids (mask0_1_353, linearGradient-1)
+    // The next Figma or Sketch intake with generic ids (mask0_1_353, linearGradient-1)
     // must fail here instead of colliding with another asset's defs in the DOM.
     const owners = new Map<string, string>();
     let definitions = 0;
@@ -201,7 +201,7 @@ describe("bespoke icons", () => {
 
   it("renders the same asset twice as duplicate-but-identical defs", () => {
     // Two instances of one asset share identical namespaced defs by construction,
-    // so the first definition in the DOM wins harmlessly. Cross-asset collisions
+    // so the first definition in the DOM wins without harm. Cross-asset collisions
     // are what the per-asset id namespace above prevents.
     for (const Component of [Signing, Contract, TelinetLogo]) {
       const html = renderToStaticMarkup(

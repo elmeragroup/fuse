@@ -387,7 +387,7 @@ export function FileUploadRoot({
   );
 
   // Paste listens on the Root's document, because Firefox targets `<body>` for a paste while a
-  // button has focus. `beforepaste` is cancelled so Safari enables its Paste menu item. Only the
+  // button has focus. `beforepaste` is canceled so Safari enables its Paste menu item. Only the
   // Root nearest to the focused element takes the paste, so nested Roots never both take it.
   useEffect(() => {
     if (disabled || element === null) {
@@ -455,8 +455,8 @@ export function FileUploadRoot({
     ]
   );
 
-  // A callback ref, so the write follows the posting input's every mount and remount (a name
-  // appearing mounts it, a new `render` element remounts it empty) as well as every `files` change.
+  // A callback ref, so the write follows every `files` change and every mount and remount of the
+  // posting input. A name that appears mounts it, and a new `render` element remounts it empty.
   const writePosted = useCallback(
     (input: HTMLInputElement | null) => {
       if (input !== null) {
@@ -511,9 +511,9 @@ export function FileUploadRoot({
                 onClick={(event) => event.stopPropagation()}
               />
               {postingInputShown ? (
-                // Visually hidden, not `hidden`, so a native submit can stop at it: the browser
-                // focuses an invalid control, and it hands that focus to the first enabled Trigger. It stays out
-                // of the accessibility tree and the tab order. A disabled Root posts nothing and is
+                // Visually hidden, not `hidden`, so a native submit can stop at it. The browser
+                // focuses an invalid control, and the input hands that focus to the first enabled
+                // Trigger. It stays out of the accessibility tree and the tab order. A disabled Root posts nothing and is
                 // never validated, as a disabled native control is.
                 <input
                   ref={postingInputRef}

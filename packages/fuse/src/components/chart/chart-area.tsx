@@ -113,7 +113,7 @@ function AreaMasks({
         <rect width="3" height="6" />
       </pattern>
       {look === "hatched" ? (
-        // A hatched fill already wears the hatch, so its marked spans hatch at half the period.
+        // A hatched fill already draws the hatch, so its marked spans hatch at half the period.
         <pattern
           id={`${prefix}-hatch-dense`}
           width="3"
@@ -177,7 +177,7 @@ export function ChartArea({
   const drawn = useFirstDraw(() =>
     resting === null ? null : areaPaths(resting.rest, resting.topology, placeOf(resting.look))
   );
-  // An active dot rides the area's top edge as it rests.
+  // An active dot follows the area's top edge while the area rests.
   useRestingLine(context.paths, seriesIndex, "area", resting, (rest) =>
     areaTopPath(rest.rest, rest.topology, placeOf(rest.look))
   );
@@ -227,7 +227,7 @@ export function ChartArea({
               mask={`url(#${prefix}-marks)`}
               d=""
             />
-            {/* A lone reading draws a dot, dashed where its reading is estimated, as L18 asks. */}
+            {/* A lone reading draws a dot, dashed where its reading is estimated. */}
             <path data-slot="chart-area" data-part="dot" data-series={seriesIndex} d={drawn.dots} />
             <path data-slot="chart-area" data-part="dot-marked" data-series={seriesIndex} d="" />
           </g>

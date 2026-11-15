@@ -92,13 +92,13 @@ function buttonNamed(name: string): HTMLElement {
 }
 
 /**
- * Chips are focusable `div`s with no role of their own (base-ui), so a focused chip is
- * identified by the remove button it owns, an accessible name, not a slot.
+ * Base UI renders chips as focusable `div`s with no role of their own, so the test finds a focused
+ * chip by the accessible name of the remove button it owns, not by a slot.
  */
 async function expectChipFocused(removeButtonName: string): Promise<void> {
-  // Identity, not `contains`: any ancestor up to <body> contains the button, so a
-  // containment check would also pass if focus escaped the chip to its container.
-  // Waited for: after a removal the neighbouring chip takes focus once it re-renders.
+  // The check compares identity, not `contains`: any ancestor up to <body> contains the button,
+  // so a containment check would also pass if focus left the chip for its container.
+  // The check waits, because after a removal the neighboring chip takes focus once it re-renders.
   await vi.waitFor(() => {
     expect(document.activeElement, `the chip owning ${removeButtonName} must hold focus`).toBe(
       buttonNamed(removeButtonName).parentElement

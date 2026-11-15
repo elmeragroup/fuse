@@ -51,13 +51,12 @@ export const selectTriggerVariants = tv({
       default: { trigger: controlLabel("md", { iconEdge: "omit" }) },
     },
   },
-  // The row, at every size, after the size's label, the order the trigger's classes have always
-  // rendered in.
+  // The trigger's row classes apply at every size and come after the size's label classes.
   compoundSlots: [
     {
       slots: ["trigger"],
       class:
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- the shared adapter draws the ring instead
         "group/select-trigger flex w-fit items-center justify-between whitespace-nowrap outline-none select-none data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     },
   ],

@@ -5,7 +5,7 @@ import * as Accept from "./accept";
 /** One hand-written row: the `accept` string, the file's name and type, and whether it passes. */
 type Row = readonly [accept: string | undefined, name: string, type: string, passes: boolean];
 
-// Each row follows a rule in SPEC "Accept", which follows the HTML `accept` attribute.
+// Each row follows a rule of the HTML `accept` attribute.
 const rows = {
   "an exact MIME type matches": ["application/pdf", "report.pdf", "application/pdf", true],
   "an exact MIME type rejects another type": ["application/pdf", "photo.png", "image/png", false],
@@ -43,7 +43,7 @@ describe("Accept.matchesFile", () => {
   });
 });
 
-// The drag verdict (SPEC "Drop") only sees MIME types, so it asks these two questions of the rule.
+// The drag verdict only sees MIME types, so it asks these two questions of the rule.
 describe("Accept.matchesMimeType", () => {
   it.each<readonly [accept: string | undefined, type: string, matches: boolean]>([
     ["image/*", "image/png", true],

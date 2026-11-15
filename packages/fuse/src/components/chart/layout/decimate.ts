@@ -1,6 +1,6 @@
 /**
  * M4 decimation, after Jugel and others, "M4: A Visualization-Oriented Time Series Data
- * Aggregation", VLDB 2014, as CONTRACT section 8.12 applies it. Decimation changes the drawn
+ * Aggregation", VLDB 2014. Decimation changes the drawn
  * geometry only, so every value the reader hears or the domain reads still comes from the raw rows.
  */
 
@@ -21,7 +21,8 @@ export const BUCKETS = 500;
  * `[edges[b], edges[b + 1])`. Above `buckets` slots every bucket holds at least one slot.
  */
 export function bucketEdges(count: number, buckets: number = BUCKETS): number[] {
-  // The first slot of bucket b is the least i with floor(i × buckets / n) = b, which is ceil(b × n / buckets).
+  // The first slot of bucket b is the least i with floor(i × buckets / n) = b, which is
+  // ceil(b × n / buckets).
   return Array.from({ length: buckets + 1 }, (_, bucket) => Math.ceil((bucket * count) / buckets));
 }
 

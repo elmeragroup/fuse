@@ -1,9 +1,11 @@
 const METER_CONSTANTS = {
-  // modes documentation
-  // default: full bar equals error colors
-  // inverted: full bar equals success colors
-  // success-only-when-full: full bar equals success colors all other values equals error colors
-  // neutral: primary-colored bar at every level (no good/bad semantics, no icon)
+  // The modes:
+  // - `default`: a full bar shows the error colors.
+  // - `inverted`: a full bar shows the success colors.
+  // - `success-only-when-full`: a full bar shows the success colors, and every other value shows
+  //   the error colors.
+  // - `neutral`: the bar shows the primary color at every level, with no good or bad meaning and
+  //   no icon.
   MODES: {
     DEFAULT: "default",
     INVERTED: "inverted",

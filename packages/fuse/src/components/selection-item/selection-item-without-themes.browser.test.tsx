@@ -1,4 +1,4 @@
-/* oxlint-disable fuse/one-browser-test-per-module -- a host without themes.css: the row role tokens fall back when no theme declares them, and selection-item.browser.test.tsx loads themes.css for its whole page */
+/* oxlint-disable fuse/one-browser-test-per-module -- this page must load no themes.css */
 import type { CSSProperties } from "react";
 
 import { describe, expect, it } from "vitest";

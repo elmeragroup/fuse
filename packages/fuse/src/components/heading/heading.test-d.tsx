@@ -31,7 +31,7 @@ test("HeadingProps is native heading props plus the recipe axes and level, and t
   );
   const _render = <Heading render={<a href="#order" />}>Order overview</Heading>;
 
-  // @ts-expect-error level is constrained to 1-6
+  // @ts-expect-error level is constrained to 1 to 6
   const _badLevel = <Heading level={7} />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Heading as="p" />;

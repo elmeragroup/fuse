@@ -1,9 +1,9 @@
 // A live line chart's clock. Unit under test: createLiveClock, driven frame by frame through a fake
 // host. Oracles: window ends read off the fake wall clock, domains worked out by hand from the
-// readings with the 12 % margin (extent [0, 100] fits [−12, 112], [0, 200] fits [−24, 224],
-// [0, 201] fits [−24.12, 225.12] and [0, 1000] fits [−120, 1120]),
-// and the live curve `cubic-bezier(0.5, 1, 0.89, 1)` worked by hand at its parameter t = 1/2, over
-// the 480 ms that `--chart-update` names and the 900 ms a contraction takes.
+// readings with the 12 % margin, and the live curve `cubic-bezier(0.5, 1, 0.89, 1)` worked by hand
+// at its parameter t = 1/2, over the 480 ms that `--chart-update` names and the 900 ms a
+// contraction takes. With that margin, extent [0, 100] fits [−12, 112], [0, 200] fits [−24, 224],
+// [0, 201] fits [−24.12, 225.12] and [0, 1000] fits [−120, 1120].
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 

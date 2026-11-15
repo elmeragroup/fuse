@@ -92,7 +92,10 @@ export function fitRingLabels(rings: readonly RingLabel[], clear: RingClearance)
   return shownAt;
 }
 
-/** Whether each value has room on the spoke at a width: clear of the shown angle labels, the marks and the hole. */
+/**
+ * Whether each value has room on the spoke at a width: clear of the shown angle labels, the marks
+ * and the hole.
+ */
 function roomAt(rings: readonly RingLabel[], clear: RingClearance, bucket: number): boolean[] {
   const radius = bucket / 2;
   const obstacles = clear.angles.flatMap((label) =>

@@ -75,7 +75,7 @@ type HydratedLifecycle = Extract<Lifecycle, { _tag: "hydrated" }>;
 type Phase = "event" | "commit";
 
 function noop(): void {
-  // no subscription to release
+  // There is no subscription to release.
 }
 
 function configsEqual(left: ColorSchemeRuntimeConfig, right: ColorSchemeRuntimeConfig): boolean {
@@ -157,7 +157,7 @@ export function createColorSchemeRuntime(
     return matches;
   }
 
-  // The one write path: write iff a write is allowed and the root differs. Before connect an
+  // The one write path. It writes only if a write is allowed and the root differs. Before connect an
   // unforced resolution from the default must not overwrite the bootstrap.
   function reconcile(): void {
     const writable =

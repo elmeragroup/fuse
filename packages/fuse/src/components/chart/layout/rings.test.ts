@@ -1,8 +1,8 @@
 // The radial chart's rings. Unit under test: ringBands, ringAt, ringFills, ringAngle and
-// ringStroke. Oracles, written by hand: ticket 08's Q4 radii from a 0.3 hole and a 0.7 fill,
-// CONTRACT section 8.4's maxima (1.12 × max draws the full sweep with `data-over-max`, and nothing
-// laps), Q5's caps (round caps inside the value's angle, butt caps below the stroke width, nothing
-// at 0) and D24's ring floor, one device pixel of arc along the centre line.
+// ringStroke. Oracles, written by hand: the radii from a 0.3 hole and a 0.7 fill; the maxima, where
+// 1.12 × max draws the full sweep with `data-over-max` and nothing laps; the caps, round inside the
+// value's angle, butt below the stroke width and nothing at 0; and the ring floor, one device pixel
+// of arc along the center line.
 import { describe, expect, it } from "vitest";
 
 import { ringAngle, ringAt, ringBands, ringFills, ringStroke } from "./rings";

@@ -275,8 +275,8 @@ export function NavigationMenuViewport({
 }
 
 /**
- * An arrow under the trigger that points at the open popup. It is hidden from assistive
- * technology.
+ * An arrow under the trigger that points at the open popup. Base UI's Icon part writes
+ * `aria-hidden`, so assistive technology skips it.
  */
 export function NavigationMenuIndicator({
   className,

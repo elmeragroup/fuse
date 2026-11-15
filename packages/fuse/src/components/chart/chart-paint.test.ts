@@ -1,8 +1,7 @@
 // The shared series paint. Unit under test: seriesPaintOf, which every mark and swatch reads.
-// Oracles: CONTRACT section 11's override form `var(--chart-color-<key>, var(--<role>))`, written
-// out by hand, section 8.9's chart-seq bins over a 0 to 70 extent, 7 equal steps of 10, and
-// ChartThresholdColor's documented rule: a value above the threshold paints `above`, a value at it
-// or below paints `below`.
+// Oracles: the override form `var(--chart-color-<key>, var(--<role>))`, written out by hand, the
+// chart-seq bins over a 0 to 70 extent, 7 equal steps of 10, and ChartThresholdColor's documented
+// rule. A value above the threshold paints `above`, and a value at it or below paints `below`.
 import { describe, expect, it } from "vitest";
 
 import {

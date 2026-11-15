@@ -56,7 +56,7 @@ test("Shell takes the public API, passes Field.Item props through, and has no po
   // @ts-expect-error control is required
   const _needsControl = <SelectionItem.Shell dataSlot="checkbox-item" />;
   const _badPosition = (
-    // @ts-expect-error controlPosition is start | end only
+    // @ts-expect-error controlPosition takes only start or end
     <SelectionItem.Shell dataSlot="checkbox-item" control={<span />} controlPosition="top" />
   );
   // @ts-expect-error polymorphism is never an as prop

@@ -50,8 +50,8 @@ export function CardSectionButton({ className, render, ...props }: CardSectionBu
     defaultTagName: "button",
     props: {
       "data-slot": "card-section-button",
-      // Filtered, as Button filters, so a forwarded `type={undefined}` cannot erase the default
-      // button's `type="button"`.
+      // The props are filtered, as Button filters them, so a forwarded `type={undefined}` cannot
+      // erase the default button's `type="button"`.
       ...mergeProps<"button">(
         { className: cn(cardSectionVariants().button(), className) },
         definedProps(props),

@@ -1,11 +1,10 @@
 /**
- * SCAFFOLD — browser project. All queries are role/label based; keyboard-interaction
- * tests cover the component's keyboard and accessibility behavior.
+ * SCAFFOLD. Browser project. Every query goes by role or label, and the keyboard tests cover the
+ * component's keyboard and accessibility behavior.
  *
- * `ROLE` below is a deliberate placeholder — the scaffold must not guess an accessible
- * role — and every query here throws until you replace it with the component's accessible role. Focus
- * rings go through `packages/fuse/test/assert-focus-ring.ts`, never a hand-rolled ring
- * assertion.
+ * `ROLE` below is a placeholder, because the scaffold cannot guess an accessible role. Every query
+ * here throws until you replace it with the component's role. Assert focus rings through
+ * `packages/fuse/test/assert-focus-ring.ts`.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
@@ -52,11 +51,11 @@ function measure(name: string) {
 }
 
 describe("{{pascalCase name}}", () => {
-  it("exposes its accessible role, name and keyboard behaviour", () => {
+  it("exposes its accessible role, name and keyboard behavior", () => {
     renderThemed(<{{pascalCase name}} size="md">scaffold</{{pascalCase name}}>);
     expect(named("scaffold")).toBeInstanceOf(HTMLElement);
     // TODO({{name}}): assert the keyboard/aria behaviors; delete this marker.
-    expect.unreachable("{{name}} behaviour tests are not implemented yet");
+    expect.unreachable("{{name}} behavior tests are not implemented yet");
   });
 });
 

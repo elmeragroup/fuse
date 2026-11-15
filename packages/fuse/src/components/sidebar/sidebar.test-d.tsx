@@ -129,9 +129,9 @@ test("the context surface and part props match the public API", () => {
   const _noAs = <Sidebar.MenuButton as="a" />;
   // @ts-expect-error locale is provider-only
   const _noLocale = <Sidebar.Provider locale="nb-NO" />;
-  // @ts-expect-error the size ladder is default | sm | lg
+  // @ts-expect-error the size ladder is default, sm or lg
   const _badSize = <Sidebar.MenuButton size="md" />;
-  // @ts-expect-error the sub-button ladder is sm | md
+  // @ts-expect-error the sub-button ladder is sm or md
   const _badSubSize = <Sidebar.MenuSubButton size="lg" />;
   // @ts-expect-error collapsible is a closed union
   const _badCollapsible = <Sidebar.Root collapsible="always" />;

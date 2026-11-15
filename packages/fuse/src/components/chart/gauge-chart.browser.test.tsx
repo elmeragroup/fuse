@@ -1,15 +1,14 @@
 // GaugeChart in Chromium. Units under test: GaugeChart.Root and its marks, Track, Fill, Ruler,
 // Needle, Zone, Sector, ProgressRing, Dots and the Center parts. Oracles, written by hand: the
-// spec's meter contract (role meter, its domain, the clamped value ARIA allows, and the true value's
-// spoken text, "3,9 kilowattimer" in Bokmål and "3.9 kilowatt-hours" in US English, each joined by
-// the no-break space every chart label writes); a 270° sweep
-// from −135°, where 3.9 of 0–5 kWh sits 0.78 · 270 = 210.6° along, at 75.6°; the lit-notch rule,
-// round(40 · share) and at least one above min, 31 at 3.9; the ruler's 0.2 kWh ticks, 20 of them at
-// or behind 3.9; the rim's room, 0.11 for an outside ruler, 0.08 for a zone and 0.06 for a ring;
-// the browser's own fill test for the gap between two notches, which keeps its whole device pixels
-// on a larger dial; and the spec's motion rules, one
-// value per frame for every mark, a sweep that only grows, and a retarget that starts where the
-// dial shows.
+// meter's role, its domain, the clamped value ARIA allows, and the true value's spoken text,
+// "3,9 kilowattimer" in Bokmål and "3.9 kilowatt-hours" in US English, each joined by the no-break
+// space every chart label writes; a 270° sweep from −135°, where 3.9 of 0 to 5 kWh sits
+// 0.78 · 270 = 210.6° along, at 75.6°; the lit-notch rule, round(40 · share) and at least one above
+// min, 31 at 3.9; the ruler's 0.2 kWh ticks, 20 of them at or behind 3.9; the rim's room, 0.11 for
+// an outside ruler, 0.08 for a zone and 0.06 for a ring; the browser's own fill test for the gap
+// between two notches, which keeps its whole device pixels on a larger dial; and the motion rules:
+// one value per frame for every mark, a sweep that only grows, and a retarget that starts where
+// the dial shows.
 import { Activity } from "react";
 import type { ReactNode } from "react";
 
@@ -60,14 +59,14 @@ type MediaCdp = {
   send: (method: "Emulation.setEmulatedMedia", params: { media: "print" | "screen" }) => Promise<void>;
 };
 
-/** Emulate the print or the screen media type for the page. */
+/** Emulates the print or the screen media type for the page. */
 async function emulateMedia(media: "print" | "screen"): Promise<void> {
   // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
   const session = cdp() as MediaCdp;
   await session.send("Emulation.setEmulatedMedia", { media });
 }
 
-/** Fake the loop's own seam, the browser's frames and clock, so a case steps it by hand. */
+/** Fakes the loop's own seam, the browser's frames and clock, so a case steps it by hand. */
 function fakeFrames(): void {
   vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
 }
@@ -142,7 +141,7 @@ function passedTicks(host: HTMLElement): number {
   return host.querySelectorAll('[data-slot="gauge-chart-tick"][data-passed]').length;
 }
 
-/** The lit notches the spec's rule gives an offset: its share of 40, rounded, one at least. */
+/** The lit notches for an offset: its share of 40, rounded, one at least. */
 function litFor(offset: number): number {
   if (offset <= 0) return 0;
   return Math.min(40, Math.max(1, Math.round((40 * offset) / 270)));
@@ -268,7 +267,7 @@ describe("the dial at rest", () => {
     for (const step of steps) expect(step).toBeCloseTo(steps[0] ?? 0, 2);
     expect((turns[0] ?? 0) + 135).toBeCloseTo(135 - (turns.at(-1) ?? 0), 2);
     const small = gapAt(host, notches(), steps[0] ?? 0);
-    // A gap lies between neighbours, narrower than a notch.
+    // A gap lies between neighbors, narrower than a notch.
     expect(small.degrees).toBeGreaterThan(0);
     expect(small.degrees).toBeLessThan(small.notch);
     rerender(<Gauge value={3.9} intro="none" width={320} />);
@@ -376,7 +375,7 @@ type Frame = {
   readonly lit: number;
   readonly ticks: number;
   readonly dots: number;
-  /** Whether the progress ring ends on the needle's angle, or null where its floor may show. */
+  /** Whether the progress ring ends on the needle's angle, or `null` where its floor may show. */
   readonly ring: boolean | null;
   readonly sector: number;
 };
@@ -407,7 +406,7 @@ function dotOffsets(host: HTMLElement): number[] {
   });
 }
 
-/** Read every mark's value in one frame. */
+/** Reads every mark's value in one frame. */
 function readFrame(host: HTMLElement): Frame {
   const angle = needle(host);
   const sector = host.querySelector<HTMLElement>('[data-slot="gauge-chart-sector"]');
@@ -440,14 +439,14 @@ const ALL_MARKS = (
  */
 const WRITTEN = 0.1;
 
-/** Expect a count to lie between what a rule gives just below and just above an offset. */
+/** Expects a count to lie between what a rule gives just below and just above an offset. */
 function expectAround(actual: number, rule: (offset: number) => number, offset: number): void {
   expect(actual).toBeGreaterThanOrEqual(rule(offset - WRITTEN));
   expect(actual).toBeLessThanOrEqual(rule(offset + WRITTEN));
 }
 
 /**
- * Each frame agrees with its own needle: the spec's one value per frame. A count may differ only
+ * Each frame agrees with its own needle, so every mark shows one value per frame. A count may differ only
  * where the needle's offset sits within the rounding of a written attribute of a boundary.
  */
 function expectOneValue(frames: readonly Frame[], offsets: readonly number[]): void {
@@ -520,8 +519,8 @@ describe("motion", () => {
       // The commit that brings 0.5 kWh leaves the dial where it showed: no jump.
       expect(needle(host)).toBe(shown);
       // The needle keeps the direction it rose in for the next frame, where a plain move turns at
-      // once, and then settles onto 0.5 kWh without passing it, within twice the update's 480 ms,
-      // the longest a turn the spring softens to keep its way for a frame takes.
+      // once, and then settles onto 0.5 kWh without passing it, within twice the update's 480 ms.
+      // That is the longest a turn takes when the spring softens it to keep its direction for a frame.
       const frames = Array.from({ length: 61 }, step);
       expect(frames[0]?.angle).toBeGreaterThan(shown);
       expect(frames.at(-1)?.angle).toBe(angleOf(0.5));
@@ -601,7 +600,7 @@ describe("a sweep that changes", () => {
     vi.useRealTimers();
   });
 
-  /** Run `count` frames of 16 ms on the faked clock, reading the marks on each. */
+  /** Runs `count` frames of 16 ms on the faked clock, reading the marks on each. */
   function framesOn(host: HTMLElement, end: number, count: number) {
     return Array.from({ length: count }, () => {
       vi.advanceTimersByTime(16);

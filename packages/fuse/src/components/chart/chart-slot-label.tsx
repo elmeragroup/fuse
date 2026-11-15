@@ -321,7 +321,7 @@ function measureLabel(node: HTMLElement, rolling: Rolling | null): Measured | nu
     node.querySelector<HTMLElement>('[data-part="pill"]') ??
     node.querySelector<HTMLElement>('[data-part="part"]');
   const scale = { x: clientScale(node).x, y: pill === null ? 1 : clientScale(pill).y };
-  // A box drawn at no size, as under scale(0), says nothing about layout pixels, so nothing is kept
+  // A box drawn at no size, as under `scale(0)`, says nothing about layout pixels, so nothing is kept
   // and a later paint measures again.
   if (!(scale.x > 0 && Number.isFinite(scale.x) && scale.y > 0 && Number.isFinite(scale.y))) return null;
   const parts = [...node.querySelectorAll('[data-part="part"]')];

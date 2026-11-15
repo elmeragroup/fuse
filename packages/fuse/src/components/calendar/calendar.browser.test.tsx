@@ -1,10 +1,10 @@
 /**
  * Unit under test: the Calendar parts in Chromium, through their roles and names. Oracles: the
  * React Aria Calendar's behavior (day names, grid names, keyboard targets, bound naming and
- * clamping, today naming), React Aria's
- * `react-stately` paging rules worked out by hand for the multi-month cases, and printed 2026
- * calendars. Every scenario runs under a clock frozen at local noon on June 15, 2030, outside
- * every month the scenarios show, except where a scenario names today itself.
+ * clamping, today naming), React Aria's `react-stately` paging rules worked out by hand for the
+ * multi-month cases, and printed 2026 calendars. Every scenario runs under a clock frozen at local
+ * noon on June 15, 2030, outside every month the scenarios show, except where a scenario names today
+ * itself.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -597,7 +597,7 @@ describe("Calendar server rendering without a value", () => {
 });
 
 describe("Calendar focus when the bounds change", () => {
-  /** The harness's minimum setter, which a test calls without moving focus to a button. */
+  /** The test's minimum setter, which a test calls without moving focus to a button. */
   type SetMinimum = (min: Temporal.PlainDate) => void;
 
   /** A calendar that hands its minimum's setter to `onReady` once mounted. */
@@ -763,7 +763,7 @@ describe("date props past the types", () => {
       'Calendar.Root value: received the string "2026-10-14"',
       <Calendar.Root
         aria-label="Delivery"
-        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        // @ts-expect-error -- ISO text past the types, from plain JavaScript or a server Temporal value
         value="2026-10-14"
       />
     );

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Unit under test: the draft rules in `date-draft.ts`. Oracle: React Aria's `IncompleteDate`
- * (`@react-stately/datepicker`) and `cycleValue` (`@internationalized/date`), applied by hand to
+ * from `@react-stately/datepicker` and `cycleValue` from `@internationalized/date`, applied by hand to
  * each input: the segment lists of `useDateFieldState`, the hour-cycle conversion, the wrap and
  * round rules per segment, and the constrain on commit. Every expectation is written out.
  */

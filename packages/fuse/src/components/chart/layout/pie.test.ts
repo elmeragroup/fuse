@@ -1,8 +1,7 @@
 // The pie's layout. Unit under test: foldPie, pieAngles, floorSlices, sliceAt and gaugeFill.
-// Oracles: d3-shape 3.2.0's own pie tests, frozen in fixtures/d3/d3-shape/pie.json by
-// .scratch/polar-charts/tools/trim_polar_cases.py, replayed through a facade that sorts as d3 does
-// and turns radians into Fuse's degrees; CONTRACT section 8.2's degenerate rows and section 8.4's
-// fold fixtures, written by hand; D24's rim floor, one device pixel of rim between a slice's seams;
+// Oracles: d3-shape 3.2.0's own pie tests, frozen in fixtures/d3/d3-shape/pie.json and replayed
+// through a facade that sorts as d3 does and turns radians into Fuse's degrees; degenerate rows and
+// fold fixtures, written by hand; the rim floor, one device pixel of rim between a slice's seams;
 // and a brute-force raster pick over wedge polygons, which shares no code with the arithmetic pick.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -183,7 +182,7 @@ describe("gaugeFill, written by hand", () => {
   });
 });
 
-/** The rim one device pixel past a seam takes, in degrees, D24's floor stated directly. */
+/** The rim one device pixel past a seam takes, in degrees. */
 function leastAngle(radius: number, dpr: number, seam: number): number {
   return ((seam + 1 / dpr) / radius) * (180 / Math.PI);
 }
@@ -351,7 +350,7 @@ function inside(x: number, y: number, points: readonly (readonly [number, number
   return hit;
 }
 
-/** The slice a raster point's wedge holds, null for none, or "edge" within a degree of a wedge edge. */
+/** The slice a raster point's wedge holds, `null` for none, or `"edge"` near a wedge edge. */
 function rasterPick(x: number, y: number, wedges: readonly Wedge[]): number | null | "edge" {
   const degrees = (Math.atan2(x, -y) * 180) / Math.PI;
   for (const { from, to } of wedges) {

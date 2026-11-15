@@ -33,8 +33,8 @@ function PhoneForm(props: Partial<PhoneNumberFieldProps> = {}) {
 }
 
 /**
- * The reset listener's plumbing (button vs programmatic path, cancel, unmount) is proved in
- * `use-form-reset.browser.test.tsx`; this case proves the phone composite's own state follows
+ * `use-form-reset.browser.test.tsx` covers the reset listener's wiring: the button and
+ * programmatic paths, cancel and unmount. This case proves the phone composite's own state follows
  * the native control and the field stays editable afterwards.
  */
 it("clears an uncontrolled number on reset without notifying", async () => {
@@ -64,7 +64,7 @@ it("clears an uncontrolled number on reset without notifying", async () => {
   expect(change).toHaveBeenLastCalledWith("+4799887766");
 });
 
-/** The shared lock/unlock harness: populate while editable, then reset while locked. */
+/** The shared lock and unlock steps: populate while editable, then reset while locked. */
 function lockedField(props: Partial<PhoneNumberFieldProps>) {
   const change = vi.fn();
   const countryChange = vi.fn();
@@ -107,7 +107,7 @@ it.each([
     phoneForm().reset();
 
     await settled();
-    // The reset task has landed; the counts now prove it stayed silent.
+    // The reset task has run; the counts now prove it called nothing.
     expect(change).toHaveBeenCalledTimes(changeCalls);
     expect(countryChange).toHaveBeenCalledTimes(countryCalls);
     if (afterUnlock !== undefined) {

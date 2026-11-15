@@ -108,8 +108,8 @@ function barParts(
       return { body: rect, cap: join(along, [cap, CAP], orientation) };
     }
     case "blocks": {
-      // Whole squares only, at least one, from the base, so the far end sits on a square's edge. The
-      // column never runs wider than its bar.
+      // The column holds whole squares, at least one, counted from the base, so the far end sits on a
+      // square's edge. The column is never wider than its bar.
       const width = Math.min(size, BLOCK, Math.max(BLOCK_GAP, size - BLOCK_GAP));
       const blocks = Math.max(
         BLOCK,

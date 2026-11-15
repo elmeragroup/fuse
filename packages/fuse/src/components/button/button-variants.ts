@@ -8,13 +8,14 @@ import { selfFocusRingClass } from "../../styles/utils";
 // The state face composes two targets. `native` covers a native <button> that borrows
 // the recipe, and `data` covers Base UI roots that never match `:disabled`, such as
 // `render={<a />}` or `focusableWhenDisabled`. Both carry the `aria-disabled` arm, which
-// covers `isVisuallyDisabled` and a consumer's own `aria-disabled`. No target drops pointer events, so a Tooltip on a
-// disabled button still opens, and Base UI already cancels clicks on a disabled root.
+// covers `isVisuallyDisabled` and a consumer's own `aria-disabled`. No target drops pointer
+// events, so a Tooltip on a disabled button still opens, and Base UI already cancels clicks on a
+// disabled root.
 // Hover and press styles use the `enabled-hover:` and `enabled-active:` variants from
 // fuse.css, so a disabled root never changes fill, border, text or position under the
 // pointer. `aria-expanded:` follows an open popup, not the pointer, so it has no gate.
 // The text and icon sizes take their box from the control-size recipe: `default` is the md
-// label, `icon*` the squares. The labels replace the control inset with Button's own,
+// label, and the `icon*` sizes are the squares. The labels replace the control inset with Button's own,
 // `--control-px-button-*`, which comfortable density widens to the customer-facing
 // reference's side padding while fields, Select and Toggle keep the control inset. The icon
 // edge follows it: `--control-px-button-icon-*` replaces the control icon edge, so a leading
@@ -29,8 +30,8 @@ import { selfFocusRingClass } from "../../styles/utils";
 // have no inline padding, and a ButtonGroup member, which rounds with the group, drops the
 // floor. Every Fuse part that replaces Button's corner drops it the same way, by setting
 // `--button-px-floor` to 0px: DataTableFilter's segments and header operator and the
-// date-picker presets. The padding reads the button's own `--button-px-floor`, which copies the theme's floor
-// and which a grouped button sets to 0px. The theme rules never declare that local property, so
+// date-picker presets. The padding reads the button's own `--button-px-floor`, which copies the
+// theme's floor and which a grouped button sets to 0px. The theme rules never declare that local property, so
 // a theme element that is itself the grouped button, whose unlayered theme rule declares the
 // floor, cannot bring it back.
 // A host without themes.css falls back to 0px and keeps the density inset.
@@ -62,13 +63,12 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Tailwind's `shadow-xs` value as a function of the width, which a host `--shadow-xs`
 // override does not reach. It equals `shadow-xs` at 1px. From 2px its blur is 0 and its
 // spread plus blur plus y offset is negative, so it stays inside the border box, where an
-// outer shadow never paints. It
-// starts with two plain lengths, so tailwind-merge still files it as a shadow, and a
-// consumer's own `shadow-*` utility replaces it.
+// outer shadow never paints. It starts with two plain lengths, so tailwind-merge still files it
+// as a shadow, and a consumer's own `shadow-*` utility replaces it.
 // The fill keeps the default border-box clip and paints under the transparent 1px border, so
 // the flush focus ring meets the fill with no hairline of page between them on the filled and
 // hovered ghost variants. On `destructive` and `success` the `/20` border composites over the
-// `/10` fill, a slightly stronger edge that is accepted.
+// `/10` fill. The result is a slightly stronger edge, which is accepted.
 export const buttonVariants = tv({
   base: cn(
     "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none [--button-px-floor:var(--button-label-px-min,0px)] in-data-[slot=button-group]:rounded-md in-data-[slot=button-group]:[--button-px-floor:0px] enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",

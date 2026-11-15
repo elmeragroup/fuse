@@ -28,7 +28,7 @@ describe("the nearest point", () => {
 
   it("picks the point nearest the pointer in pixels, not in data shares", () => {
     // From (50, 50): (40, 50) lies 10 px away and (50, 62) lies 12 px away. In shares of the
-    // plot, (50, 62) is nearer (0.12 tall against 0.05 wide), so a share distance would pick it.
+    // plot, (50, 62) is nearer, 0.12 tall against 0.05 wide, so a share distance would pick it.
     const index = placed(
       [
         [40, 50],

@@ -99,8 +99,8 @@ export function TabsContent({
   className,
   ...props
 }: ComponentProps<typeof TabsPrimitive.Panel>): ReactElement {
-  // Base UI keeps a closing panel shown until its exit transition ends, a painted frame even
-  // with none, so both panels would stack and the content below would jump. Tabs have no exit
+  // Base UI keeps a closing panel shown until its exit transition ends, and for one painted frame
+  // when there is none, so both panels would stack and the content below would jump. Tabs have no exit
   // transition: the closing panel hides on the render that closes it.
   return (
     <TabsPrimitive.Panel

@@ -13,8 +13,7 @@ import { cn } from "../../styles/cn";
  *
  * The preset runs without parse-level overrides. Its own defaults scan JSX, regular expressions
  * and template literals, and its packaged types do not accept `parse`'s options object. The same
- * function is in apps/docs/src/components/docs-code-block.tsx. Delete both copies when
- * sugar-high fixes its tokenize types.
+ * function is in `apps/docs/src/components/docs-code-block.tsx`.
  */
 function highlight(source: string): string {
   return render(parse(source, { tokenize: (code) => tokenize(code, undefined) }));
@@ -28,8 +27,9 @@ export type CodeProps = Omit<ComponentProps<"pre">, "children" | "aria-label"> &
    */
   code: string;
   /**
-   * The block's accessible name. A block named here or through `aria-labelledby` is a `region` landmark. An
-   * unnamed block has no role. The block is always a tab stop, so a keyboard user can scroll it.
+   * The block's accessible name. A block named here or through `aria-labelledby` is a `region`
+   * landmark. An unnamed block has no role. The block is a tab stop unless the consumer passes
+   * `tabIndex`, so a keyboard user can scroll it.
    */
   "aria-label"?: ComponentProps<"pre">["aria-label"];
 };

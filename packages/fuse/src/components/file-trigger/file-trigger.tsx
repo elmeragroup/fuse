@@ -42,11 +42,14 @@ export type FileTriggerProps = Omit<
     directory?: FileUploadRootProps["directory"];
     /** Whether the button is disabled. A disabled trigger ignores picks. */
     disabled?: FileUploadRootProps["disabled"];
-    /** Called with the files that passed `accept` and the count rule, in a fresh array for each pick. */
+    /**
+     * Called when a pick has files that pass `accept` and the count rule, with those files in a
+     * fresh array. A pick in which no file passes does not call it.
+     */
     onSelect?: FileUploadRootProps["onSelect"];
     /**
-     * Called with the files that did not pass, each with its `reason`. For one pick, it runs right
-     * after `onSelect`, in the same task.
+     * Called when a pick has files that did not pass, with each file and its `reason`. For one pick,
+     * it runs right after `onSelect`, in the same task.
      */
     onReject?: FileUploadRootProps["onReject"];
     /** The button's size, as on `Button`. */

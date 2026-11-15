@@ -71,7 +71,10 @@ type ColumnLook = {
   readonly drawn: { current: MarkValues | null };
 };
 
-/** The slots a series' columns draw at a radius: every slot, or past 2,000 M4's set at the dial's circumference. */
+/**
+ * The slots a series' columns draw at a radius. Up to 2,000 readings, every slot draws. Past that,
+ * M4 decimation picks the slots for one column per pixel of the dial's circumference.
+ */
 function shownAt(series: ClockSeries, radius: number): readonly number[] {
   if (series.values.length <= DECIMATE_ABOVE) return series.shown;
   const known = decimations.get(series);
@@ -195,7 +198,7 @@ export function ClockChartColumn({
     [clock, series, emphasis]
   );
   const emphasised = useMemo(() => new Set(picked), [picked]);
-  // The emphasised slots join the store, so their options append the emphasis word.
+  // The emphasized slots join the store, so their options append the emphasis word.
   useLayoutEffect(() => {
     if (picked.length === 0) return undefined;
     const { store } = kernel;

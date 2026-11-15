@@ -1,4 +1,4 @@
-// Coarse series in Chromium, after ticket svg-3's checks. Unit under test: a series whose interval
+// Coarse series in Chromium. Unit under test: a series whose interval
 // is coarser than Root's, from its own slots to the drawn steps, bars, emphasis and time state.
 // Oracle: pixels worked out by hand on quarter-hour grids, where an hour covers 4 quarters.
 import type { ReactNode } from "react";

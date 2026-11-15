@@ -1,9 +1,8 @@
 // The polar path writers. Unit under test: arcPath, arcCentroid and ringTrack. Oracles: d3-shape
-// 3.2.0's own arc tests,
-// frozen in fixtures/d3/d3-shape/ by .scratch/polar-charts/tools/trim_polar_cases.py with the
-// expected values the d3 author wrote, replayed through a facade that turns their radians into
-// Fuse's degrees; and hand-derived ring tracks. Fuse forwards its arcs to d3-shape, so
-// the vectors check the degree conversion, the defaults and the rounding around the forwarding.
+// 3.2.0's own arc tests, frozen in fixtures/d3/d3-shape/ with the expected values the d3 author
+// wrote, replayed through a facade that turns their radians into Fuse's degrees; and hand-derived
+// ring tracks. Fuse forwards its arcs to d3-shape, so the cases check the degree conversion, the
+// defaults and the rounding around the forwarding.
 import { describe, expect, it } from "vitest";
 
 import { arcPath, ringTrack } from "./arc-path";
@@ -50,7 +49,7 @@ describe("arc conversions written by hand", () => {
 
 describe("ringTrack", () => {
   it("draws a part sweep as one arc, its large-arc flag set past 180°", () => {
-    // At ±135° a point sits below the centre: (±50·sin 135°, −50·cos 135°) = (±35.355, 35.355).
+    // At ±135° a point sits below the center: (±50·sin 135°, −50·cos 135°) = (±35.355, 35.355).
     expect(ringTrack(50, sweepOf(-135, 135))).toBe("M-35.355,35.355A50,50 0 1 1 35.355,35.355");
     expect(ringTrack(50, sweepOf(0, 90))).toBe("M0,-50A50,50 0 0 1 50,0");
   });

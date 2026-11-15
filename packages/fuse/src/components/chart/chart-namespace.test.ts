@@ -12,12 +12,12 @@ import { ScatterChart } from "./scatter-chart-namespace";
 /** A chart part, which every namespace member and every part-module export is. */
 type Part = (props: never) => ReactElement;
 
-/** The `displayName` a part carries, or undefined. */
+/** The `displayName` a part carries, or `undefined`. */
 function displayNameOf(part: Part): string | undefined {
   return "displayName" in part ? String(part.displayName) : undefined;
 }
 
-/** The four namespaces in canonical-owner order, as CONTRACT.md section 3 ranks them. */
+/** The four namespaces in canonical-owner order. */
 const NAMESPACES: ReadonlyArray<readonly [string, Readonly<Record<string, Part>>]> = [
   ["Chart", Chart],
   ["PieChart", PieChart],
@@ -26,9 +26,9 @@ const NAMESPACES: ReadonlyArray<readonly [string, Readonly<Record<string, Part>>
 ];
 
 /**
- * The 18 parts every namespace shares as one component under the same key, from CONTRACT.md
- * section 3. Tooltip and Table hold their family's anchor and rows, so each family has its own
- * under the same key, which the test below pins.
+ * The 18 parts every namespace shares as one component under the same key. Tooltip and Table
+ * hold their family's anchor and rows, so each family has its own under the same key, which the
+ * test below checks.
  */
 const SHARED_KEYS = [
   "Headline",
@@ -54,9 +54,8 @@ const SHARED_KEYS = [
 describe("chart namespaces", () => {
   it("hold the part counts of CONTRACT.md section 3", () => {
     expect(NAMESPACES.map(([name, namespace]) => [name, Object.keys(namespace).length])).toEqual([
-      // 44 in section 3, and Chart.SlotLabel, which the polish run added.
       ["Chart", 45],
-      // Each with CenterName, which the centre's active name line added past section 3.
+      // Each counts CenterName, the line that names the active item in the center.
       ["PieChart", 32],
       ["RadialChart", 31],
       ["RadarChart", 30],

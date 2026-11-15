@@ -179,15 +179,14 @@ describe("series selection across Panels (B1-9)", () => {
   });
 });
 
-// The Panel rules in Chromium, after ticket svg-3's checks. Unit under test: Root's check of the
-// current tree's registrations, which throws a Panel rule from a layout effect once every Panel and
-// every plot part of the commit has registered. Oracles: CONTRACT section 8.1's messages and bar
-// heights worked out by hand on fixed domains.
+// The Panel rules in Chromium. Unit under test: Root's check of the current tree's registrations,
+// which throws a Panel rule from a layout effect once every Panel and every plot part of the commit
+// has registered. Oracles: the rules' messages and bar heights, worked out by hand on fixed domains.
 describe("panel rules", () => {
   describe("Panel rules after registration", () => {
     const rows = [{ name: "a", v: 1, w: 2 }];
     const config = { v: { label: "V", color: "chart-1" }, w: { label: "W", color: "chart-2" } } as const;
-    // Each message is the rule's own, written by hand from CONTRACT section 8.1's table.
+    // Each message is the rule's own, written by hand.
     it.each([
       [
         "key-outside-panels: a config key no Panel lists",

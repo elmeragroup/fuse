@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * The text in a pie's or radial chart's hole, as CONTRACT section 8.13 defines it. The Center lays
- * its parts in the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
- * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll.
- * The Center is plot output, hidden from readers, who read the same numbers from the options.
- * Every part that follows the active item reads it here, through `useActiveIndex`, so it renders
- * when the active item changes and never on a pointer move within one, and inside a closing tooltip
- * it keeps the item the popup held.
+ * The text in a pie's or radial chart's hole. The Center lays its parts in the square inscribed in
+ * the hole, and a CenterLabel is a text line among them. The numbers are parts of their own, in
+ * `pie-chart-center-value`, so a route that names none ships no digit roll. The Center is plot
+ * output, hidden from readers, who read the same numbers from the options. Every part that follows
+ * the active item reads it here, through `useActiveIndex`, so it renders when the active item
+ * changes and never on a pointer move within one, and inside a closing tooltip it keeps the item
+ * the popup held.
  */
 import type { ReactElement, ReactNode } from "react";
 
@@ -70,7 +70,7 @@ type CentreItem = { readonly centre: CentreModel | null; readonly active: number
 export function useCentreItem(part: string): CentreItem {
   const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
   const centre = centreOf(model);
-  // The centre follows the store wherever it sits, over every item, and a closing tooltip's held one.
+  // The center follows the store wherever it sits, over every item, and a closing tooltip's held one.
   const active = useActiveIndex(
     { store: kernel.store, window: model.count > 0 ? { first: 0, last: model.count - 1 } : null },
     true
@@ -92,8 +92,8 @@ export function PieChartCenter({ children, className, style }: PieChartCenterPro
   const fitted = useCentreFit();
   const hole = pieDrawingOf(model)?.innerRadius ?? radialDrawingOf(model)?.innerRadius;
   if (hole === undefined) return <></>;
-  // A pie with no hole lays its centre in the square inscribed in half the radius. The square
-  // keeps to the sweep's box, so a semicircle's centre sits above its flat edge.
+  // A pie with no hole lays its center in the square inscribed in half the radius. The square
+  // keeps to the sweep's box, so a semicircle's center sits above its flat edge.
   const half = (Math.SQRT2 * (hole > 0 ? hole : 0.5)) / 2;
   const left = Math.max(-half, box.left);
   const right = Math.min(half, box.right);

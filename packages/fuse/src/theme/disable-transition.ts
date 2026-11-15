@@ -77,7 +77,7 @@ export function disableColorSchemeTransitions(host: TransitionHost, nonce: strin
           host.getComputedStyle(body);
         }
       } catch {
-        // body may be absent during runtime writes
+        // The body may be absent during runtime writes.
       }
       host.setTimeout(() => {
         css.remove();

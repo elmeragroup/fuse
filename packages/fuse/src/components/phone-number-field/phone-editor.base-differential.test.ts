@@ -23,10 +23,10 @@ import { defaultMetadata } from "./phone-engine";
  *
  * Without `countryCode` the field behaves exactly as it did before controlled country. The oracle
  * is that editor itself, frozen in `test/phone-base` as #586 left it: every generated trace runs
- * through both, with the same props and parent answers, and after every step what the field shows
- * (display, output, country and caret) and what `onChange` hears must agree. Metadata comes as
- * distinct min and max documents only: a shallow copy of one is the same catalog since the
- * structural metadata key, a deliberate change from the base, which compared by identity.
+ * through both, with the same props and parent answers. After every step the two must agree on
+ * what the field shows, its display, output, country and caret, and on what `onChange` hears.
+ * Metadata comes as distinct min and max documents only: a shallow copy of one is the same catalog
+ * since the structural metadata key, a deliberate change from the base, which compared by identity.
  */
 describe("PhoneEditor without countryCode, against the base editor", () => {
   type Code = TraceCode;
@@ -225,7 +225,7 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
   );
   const userAction = traceUserAction;
   /**
-   * Any subset of the props a render can change at once: the value (taking control), the
+   * Any subset of the props a render can change at once: the value, which takes control, the
    * defaults, the catalog, the format, the flags, detection and the metadata. Several at once
    * reach `reconcile` together, as a value with a new catalog, or a format while a proposal waits.
    */

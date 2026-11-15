@@ -199,7 +199,7 @@ function GlideMarks({ band }: { readonly band?: string }): ReactElement {
   return (
     // SparklineHover's controller writes this group's place as inline custom properties and its
     // `data-glide` marker, maybe before a Suspense boundary around the Sparkline hydrates, so
-    // hydration leaves them be.
+    // hydration leaves them as they are.
     <g {...SPARKLINE_SLOT.glide} suppressHydrationWarning>
       {band === undefined ? null : (
         <g data-part={SPARKLINE_PART.bandStart}>

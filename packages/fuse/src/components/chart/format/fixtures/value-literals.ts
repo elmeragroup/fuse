@@ -392,7 +392,7 @@ type MinorWords = { readonly [C in Currency]: readonly [string, string, string] 
 
 /**
  * Every spoken unit name in the singular and plural, and every currency subunit as its symbol and
- * its two spoken forms. These are drafted words awaiting sign-off.
+ * its two spoken forms.
  */
 export const WORDS = {
   "nb-NO": {

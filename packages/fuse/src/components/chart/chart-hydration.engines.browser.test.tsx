@@ -1,6 +1,6 @@
 // A cartesian chart's hydration, in Chromium and WebKit, whose Intl data each format the axis and
 // the description. Units under test: Chart.Root and Chart.Bar from server HTML to the hydrated
-// figure. Oracles: D18's first paint, where the server sends the plot's hidden loader and no mark,
+// figure. Oracles: the first paint, where the server sends the plot's hidden loader and no mark,
 // and the hydrated chart draws one bar per row and series; and React's own hydration contract, no
 // recoverable error, also when a series' Suspense boundary hydrates after the rest.
 import { Suspense, use, useEffect } from "react";

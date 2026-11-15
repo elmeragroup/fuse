@@ -136,7 +136,7 @@ export const PHOSPHOR_ICON_NAMES = [
 
 export type PhosphorIconName = (typeof PHOSPHOR_ICON_NAMES)[number];
 
-/** The bespoke icon and logo names published from `/icons`. Only the assets ticket extends it. */
+/** The bespoke icon and logo names published from `/icons`. */
 export const BESPOKE_ICON_NAMES = [
   "AlertMark",
   "BankIdDna",

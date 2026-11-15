@@ -28,8 +28,8 @@ function renderMeter(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
 
 /**
  * The status glyph exposed as `img` with this exact name, or `null`. Role queries skip
- * `aria-hidden` subtrees, so a hidden glyph reads as absent. `roleNamed` can't serve here:
- * the glyph is an `SVGElement`, not an `HTMLElement`.
+ * `aria-hidden` subtrees, so a hidden glyph reads as absent. `roleNamed` does not fit here,
+ * because the glyph is an `SVGElement`, not an `HTMLElement`.
  */
 function statusIcon(name: string): Element | null {
   return page.getByRole("img", { name, exact: true }).query();

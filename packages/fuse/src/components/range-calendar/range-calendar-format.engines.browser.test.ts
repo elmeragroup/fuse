@@ -1,12 +1,11 @@
 /**
  * Unit under test: the description RangeCalendar names its range's ends with, in every engine.
  * Oracle: React Aria's RangeCalendar names for the same ranges, read from its range-start
- * day button in Chromium per locale and written out by hand. en-US is that text exactly (the parity
- * harness pins it). In nb-NO, sv-SE and fi-FI React Aria's own text comes from
- * `formatRangeToParts`, which differs between engines (a shared month dropped, sv-SE days
- * zero-padded in Chromium), so there the oracle is React Aria's sentence with each end's date as
- * that locale's CLDR long date without the year the end repeats (D-3-19); Chromium and
- * WebKit must each reproduce it.
+ * day button in Chromium per locale and written out by hand. en-US is that text exactly. In nb-NO,
+ * sv-SE and fi-FI React Aria's own text comes from `formatRangeToParts`, which differs between
+ * engines: Chromium drops a shared month and zero-pads sv-SE days. There the oracle is React Aria's
+ * sentence with each end's date as that locale's CLDR long date without the year the end repeats.
+ * Chromium and WebKit must each reproduce it.
  */
 import { LocalizedStringFormatter } from "@internationalized/string";
 import { describe, expect, it } from "vitest";

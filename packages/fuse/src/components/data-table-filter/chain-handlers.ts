@@ -1,4 +1,4 @@
-// The event-handler chaining the filter's parts share. Private to the filter: no barrel exports it.
+// The event-handler chaining the filter's parts share. It is private to the filter, and no barrel exports it.
 
 /**
  * Runs the part's own handler after the consumer's, unless the consumer prevented it.

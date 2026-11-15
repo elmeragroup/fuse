@@ -1,4 +1,4 @@
-// Unit under test: the colour a chart's cut-outs paint in each host a chart rests on, through
+// Unit under test: the color a chart's cut-outs paint in each host a chart rests on, through
 // `--surface` in chart.css and the hosts' recipes. Oracle: the host's own computed
 // `background-color`, which the browser resolves from the host's fill class and never from the
 // chart CSS, and in light themes the white every Card, `Frame.Panel`, framed Table cell, default
@@ -96,7 +96,7 @@ describe("chart cut-outs", () => {
 // Unit under test: the text a chart writes on a chip or halo of its surface, the clock's and
 // radar's ring values, the clock's Now label in the default and the muted tone, the value pill,
 // and a reference label, in each host at both densities. Oracle: WCAG 1.4.3, 4.5:1 for these
-// small labels, measured between the text colour and the colour of the chip or halo it sits on,
+// small labels, measured between the text color and the color of the chip or halo it sits on,
 // as the browser computes them.
 const CHIP_START = Date.parse("2025-10-26T23:00:00Z");
 const CHIP_HOURS = Array.from({ length: 24 }, (_, hour) => ({

@@ -1,6 +1,5 @@
-// The x-tick judge of CONTRACT section 8.11, in Chromium and WebKit: the 90-case matrix
-// of the pass-2 cross-browser check, the DST days and a width sweep. The rendered label boxes are
-// the oracle. They never overlap, stay inside the root, and never fall in count as the width grows.
+// Chart's x-tick labels in Chromium and WebKit. Oracle: labels written by hand, the month starts
+// of a year of hours and the seconds of a ten-second axis.
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
@@ -13,8 +12,8 @@ import "./chart.css";
 import year from "./format/fixtures/elhub/no1-household-hourly-2025-10_2026-09.json" with { type: "json" };
 
 describe("a year of hours", () => {
-  // jc4: the committed hourly year, from 1 October 2025 in Oslo. Its labels fall back to month
-  // starts, which read the ground truth's CLDR 48 nb-NO short months in slots.json, with the year
+  // The committed hourly year, from 1 October 2025 in Oslo. Its labels fall back to month starts,
+  // in the CLDR 48 nb-NO short months that `format/fixtures/slots.json` also holds, with the year
   // on 1 January.
   const rows: HourRow[] = year.values.map((household, hour) => ({
     start: new Date(Date.parse(year.start) + hour * 3_600_000),

@@ -375,7 +375,7 @@ describe("the readout", () => {
     await userEvent.keyboard("{End}");
     expect(crosshairAt(host)).toBe("translate(300 12)");
     expect(dotAt(host)).toBe("translate(300 12)");
-    // The option centres on the reading, where the crosshair rings it.
+    // The option centers on the reading, where the crosshair rings it.
     const option = page.getByRole("option").element().getBoundingClientRect();
     const ring = host.querySelector('[data-slot="live-line-chart-crosshair"] [data-slot="chart-dot"]');
     const rung = ring?.getBoundingClientRect();
@@ -658,7 +658,7 @@ describe("live motion", () => {
     expect(opacity(label("20"))).toBe(1);
     const top = lines.find((line) => Math.abs(Number(line.getAttribute("y1")) - 12) < 1e-6);
     expect(opacity(top)).toBeCloseTo(0.75, 6);
-    // Each label centres on its grid line.
+    // Each label centers on its grid line.
     const box = label("100")?.getBoundingClientRect();
     expect((box?.top ?? 0) + (box?.height ?? 0) / 2).toBeCloseTo(top?.getBoundingClientRect().top ?? 0, 1);
   });
@@ -724,7 +724,7 @@ describe("live motion", () => {
     };
     const dot = host.querySelector('[data-slot="live-line-chart-live-dot"] [data-slot="chart-dot"]');
     expect(centre(twenty)).toBeCloseTo(centre(dot), 1);
-    // A finished fade removes its tick, and so does a cancelled one, as reduced motion cancels it.
+    // A finished fade removes its tick, and so does a canceled one, as reduced motion cancels it.
     for (const fade of fades) fade.finish();
     for (const fade of forty.getAnimations()) fade.cancel();
     await expect.poll(() => twenty.isConnected).toBe(false);

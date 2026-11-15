@@ -116,7 +116,7 @@ export function ChartSurface({
   const drawn = useRootFrame("Chart.Root");
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
-  // One canonical active identity. When new data or a new window drops the option's slot, the
+  // The surface keeps one active identity. When new data or a new window drops the option's slot, the
   // option takes the slot Root falls back to, as Root's store does, and a focused series that
   // leaves the config gives way to all series.
   const [seen, setSeen] = useState(() => ({ model, keys: model.series.map(({ key }) => key) }));
@@ -170,7 +170,8 @@ export function ChartSurface({
       if (keys > 1 && focus !== current.focus) move({ focus, order: "series-first" });
     } else if (event.key === "Enter" || event.key === " ") {
       if (context.hasToggles()) {
-        // With a LegendToggleGroup mounted, Enter selects the focused series and clears it under "all series".
+        // With a LegendToggleGroup mounted, Enter selects the focused series, and under "all series"
+        // it clears the selection.
         const key = current.focus === -1 ? null : (model.series[current.focus]?.key ?? null);
         context.select(key === selectedKey ? null : key, "keyboard", event.nativeEvent);
       } else {
@@ -179,7 +180,7 @@ export function ChartSurface({
     } else if (event.key === "Escape") {
       const snapshot = store.get();
       if (snapshot.active === null && !snapshot.pinned) return;
-      // The one dismissal, which a pointer that stays on the slot does not undo.
+      // Escape dismisses the tooltip, and a pointer that stays on the slot does not reopen it.
       store.dismiss();
       event.stopPropagation();
     } else {
@@ -251,7 +252,7 @@ export function ChartSurface({
   ): void => {
     const snapshot = store.get();
     // Under a LegendToggleGroup a touch reader selects through the toggles, so a second tap on
-    // the slot whose tooltip shows dismisses it, as CONTRACT section 9.5's Touch rule says.
+    // the slot whose tooltip shows dismisses it.
     if (shown) {
       store.dismiss();
       return;

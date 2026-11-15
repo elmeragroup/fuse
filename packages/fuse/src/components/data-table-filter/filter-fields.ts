@@ -1,5 +1,5 @@
-// Field config: a plain object per filterable column, keyed by column id, discriminated by `kind`
-// and checked against the row type. Serializable apart from icons, so a server module can define
+// The field config is a plain object per filterable column, keyed by column id, discriminated by `kind`
+// and checked against the row type. It is serializable apart from icons, so a server module can define
 // the map and pass it to the client Root.
 
 import type { ReactNode } from "react";

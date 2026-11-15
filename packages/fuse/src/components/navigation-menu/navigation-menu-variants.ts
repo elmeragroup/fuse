@@ -103,7 +103,7 @@ export const navigationMenuVariants = tv({
   // A bar sits on the page and highlights with `muted`. A row sits on the popover and
   // highlights with `accent`, as menu items in Select, Combobox and DropdownMenu do: accent
   // is the role defined as a lift from the popover, so a row tint stays off the popup. A
-  // highlighted row also recolours its descendants to accent-foreground, as those menus' items do.
+  // highlighted row also recolors its descendants to accent-foreground, as those menus' items do.
   variants: {
     orientation: {
       horizontal: {

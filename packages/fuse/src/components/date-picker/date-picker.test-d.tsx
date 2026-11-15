@@ -251,11 +251,11 @@ test("DatePicker.Presets passes the key and cancelable details, as the picker's 
 });
 
 test("a misspelt or undeclared prop does not compile", () => {
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _fieldMisspelt = <DatePickerField label="Starts" granulartiy="minute" />;
   // @ts-expect-error field takes no `disabled`
   const _fieldUndeclared = <DatePickerField label="Starts" disabled />;
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _rootMisspelt = <DatePicker.Root aria-label="Starts" granulartiy="minute" />;
   // @ts-expect-error root takes no `isDisabled`
   const _rootUndeclared = <DatePicker.Root aria-label="Starts" isDisabled />;

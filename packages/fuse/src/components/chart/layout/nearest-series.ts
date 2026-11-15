@@ -1,6 +1,6 @@
 /**
- * The series nearest the pointer at one slot, as CONTRACT section 9.5 defines it. The pick reads
- * the layout's config keys, never the marks a consumer wrote, so a BarGroup changes no pick.
+ * The series nearest the pointer at one slot. The pick reads the layout's config keys, never the
+ * marks a consumer wrote, so a BarGroup changes no pick.
  */
 
 /**

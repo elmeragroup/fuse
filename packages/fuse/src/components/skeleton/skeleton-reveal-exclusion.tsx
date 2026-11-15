@@ -21,7 +21,8 @@ import type { LabelableValue } from "./skeleton-reveal-labelable";
  * detached context must keep a write of its own to stay a Field's context.
  */
 function ignoreWrite(): void {
-  // Detached: the Field this control stands in for is not the one it would report to.
+  // The write is dropped, because the Field this control stands in for is not the one it would
+  // report to.
 }
 
 /** What a live pane registered in the Field's labelable scope, so it can take exactly that back. */
@@ -75,7 +76,7 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
   const setLabelId = useCallback(
     (action: SetStateAction<string | undefined>) => {
       // Base UI's label sets its id outright; an updater is applied to what this pane set.
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- React's SetStateAction is a value or an updater function
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- SetStateAction is a value or an updater
       recorded.current.label = typeof action === "function" ? action(recorded.current.label) : action;
       fieldSetLabel(action);
     },
@@ -83,7 +84,7 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
   );
   const setMessageIds = useCallback(
     (action: SetStateAction<string[]>) => {
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- React's SetStateAction is a value or an updater function
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- SetStateAction is a value or an updater
       recorded.current.messages = typeof action === "function" ? action(recorded.current.messages) : action;
       fieldSetMessages(action);
     },

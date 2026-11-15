@@ -1,7 +1,7 @@
 // ListDetail's two layouts and the changes between them. Unit under test: ListDetail.Root and its
 // parts, sized through the width of the root's parent. Oracles: the documented breakpoint,
-// Tailwind's `@4xl` container size of 56rem, measured as a container query measures it (layout
-// width, rem at the root font size); the complementary landmark and the dialog, each named by the
+// Tailwind's `@4xl` container size of 56rem, measured as a container query measures it, in layout
+// width with rem at the root font size; the complementary landmark and the dialog, each named by the
 // Title or else the Detail's `aria-label`; and the documented layout rules, which keep the detail
 // and focus where the user was.
 import { useState } from "react";

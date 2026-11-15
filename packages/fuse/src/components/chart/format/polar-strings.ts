@@ -1,8 +1,7 @@
 import type { Inflected } from "../../../intl/count-of";
 /**
- * The polar families' own words in the four locales, drafts until the content owner signs them off
- * with the rest of the chart dictionary. They live apart from `CHART_STRINGS`, so a cartesian
- * route ships none of them.
+ * The polar families' own words in the four locales. They live apart from `CHART_STRINGS`, so a
+ * cartesian route ships none of them.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
 
@@ -34,7 +33,7 @@ export type PolarStrings = {
   readonly maxHeader: string;
 };
 
-// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
+// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the ring's name
 const NB_NO: PolarStrings = {
   categoryGroup: "Kategorier",
   descriptionPie: (count, total) => `Kakediagram med ${count}, totalt ${total}.`,
@@ -51,7 +50,7 @@ const NB_NO: PolarStrings = {
   maxHeader: "Maksimum",
 };
 
-// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
+// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the ring's name
 const SV_SE: PolarStrings = {
   categoryGroup: "Kategorier",
   descriptionPie: (count, total) => `Cirkeldiagram med ${count}, totalt ${total}.`,
@@ -84,7 +83,7 @@ const FI_FI: PolarStrings = {
   maxHeader: "Enimmäisarvo",
 };
 
-// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
+// oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the ring's name
 const EN_US: PolarStrings = {
   categoryGroup: "Categories",
   descriptionPie: (count, total) => `Pie chart with ${count}, ${total} in total.`,

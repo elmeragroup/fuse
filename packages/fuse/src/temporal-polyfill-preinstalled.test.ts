@@ -1,7 +1,7 @@
 /**
  * Unit under test: the `@elmeragroup/fuse/temporal-polyfill` entry after a host installed its own
- * Temporal implementation. Oracle: the entry's contract (install only where no Temporal is there
- * when it runs, set the marker either way) and the full implementation's own behavior, written out
+ * Temporal implementation. Oracle: the entry's contract, which installs only where no Temporal is
+ * there when it runs and sets the marker either way, and the full implementation's own behavior, written out
  * by hand. The host's implementation is `temporal-polyfill/full/global`, which reads non-ISO
  * calendars and installs its own `Intl.DateTimeFormat`; `test/temporal-polyfill-stage.ts`
  * installs it in place of the runtime's own Temporal, then loads the entry.

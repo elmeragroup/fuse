@@ -32,7 +32,7 @@ const BRAND_MARKS = {
 } satisfies Record<BrandCode, ((props: LogoProps) => ReactElement) | null>;
 
 // The ngfi and fkse svgs have a viewBox but no width or height, so the clamp below would collapse
-// them to 0×0 in a span nobody sizes. They fall back to their viewBox extent.
+// them to 0 by 0 in a span nobody sizes. They fall back to their viewBox extent.
 const MARK_FALLBACK_SIZES = {
   fkas: null,
   fkab: null,

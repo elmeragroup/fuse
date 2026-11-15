@@ -22,8 +22,8 @@ import { publishShellBoundary } from "../corner-radius";
 // `--frame-shadow-blur`, shadow-xs's 1px offset and 2px blur. A panel and a framed Table body draw
 // their shadow from them, and a collapsible section derives its clip from them and the overhang.
 // They spell it `shadow-[shadow:…_black]/5`, as `shadow-xs/5` draws it: the `shadow:` label makes
-// tailwind-merge treat it as a box shadow, so a consumer's `shadow-<colour>` keeps it, and the
-// literal colour lets Tailwind read it through `--tw-shadow-color`, so that class recolours it.
+// tailwind-merge treat it as a box shadow, so a consumer's `shadow-<color>` keeps it, and the
+// literal color lets Tailwind read it through `--tw-shadow-color`, so that class recolors it.
 //
 // A panel rounds its top and bottom with two private properties, `--frame-panel-top-corner` and
 // `--frame-panel-bottom-corner`, which default to its corner. Where the stacked and flush layouts

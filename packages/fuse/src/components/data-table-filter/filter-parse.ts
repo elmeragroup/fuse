@@ -1,4 +1,4 @@
-// Untrusted input, such as a URL or a request body, to filter state. It drops what the field
+// Turns untrusted input, such as a URL or a request body, into filter state. It drops what the field
 // config does not admit instead of throwing, so a stale link degrades to fewer filters.
 
 import type { FilterFieldMap } from "./filter-fields";

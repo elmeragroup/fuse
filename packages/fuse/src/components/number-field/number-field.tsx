@@ -154,7 +154,7 @@ export function NumberField({
   const strings = useLocalizedStrings(numberFieldStrings);
   const numberInputRef = useRef<HTMLInputElement>(null);
   const isControlled = value !== undefined;
-  // base-ui does not observe native form reset; the hook remounts the primitive instead.
+  // Base UI does not observe a native form reset, so the hook remounts the Base UI root instead.
   const reset = useResetRemount(numberInputRef, !isControlled);
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
   const slots = numberFieldVariants({ size, isMuted: isDisabled || isReadOnly });

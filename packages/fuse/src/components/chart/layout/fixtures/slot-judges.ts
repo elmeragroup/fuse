@@ -3,7 +3,7 @@
  * in `format/fixtures/slots.json`, for every day, month and year the file holds in Oslo, Stockholm
  * and Helsinki. Rows on the slot starts must list the same slots, and a period from the first
  * start to the next day, month or year must list them too. The coarse judges group one list's slots
- * by the slots of a coarser list, which CONTRACT section 8.8 counts by instants in the zone.
+ * by the slots of a coarser list, counted by instants in the zone.
  */
 import { ZONES } from "../../format/fixtures/judgement";
 import type { Judgement } from "../../format/fixtures/judgement";

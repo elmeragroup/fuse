@@ -307,7 +307,7 @@ export function layoutBars(input: BarsInput): BarsLayout {
           : undefined,
     };
   });
-  // An empty chart draws no missing marker, as section 8.13 says.
+  // An empty chart draws no missing marker.
   const missing: MissingTick[] = [];
   for (let slot = window.first; slot <= window.last && !model.empty; slot = ownSlot(series, slot)[1] + 1) {
     if (series.readings[slot]?.kind !== "missing") continue;

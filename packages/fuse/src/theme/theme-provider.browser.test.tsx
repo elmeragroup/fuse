@@ -28,7 +28,8 @@ afterEach(() => {
 
 function ThemeProbe() {
   try {
-    // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
+    // The probe asserts the provider's synchronous throw path, and the hook never commits.
+    // oxlint-disable-next-line react-hooks/rules-of-hooks -- see the note above
     const theme = useTheme();
     return (
       <span>

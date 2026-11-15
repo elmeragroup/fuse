@@ -7,8 +7,7 @@ const SEQ_2 = "oklch(0.5328 0.1506 255.06)"; // #236CC1
 const SEQ_4 = "oklch(0.6902 0.1501 255.12)"; // #569DF6
 const SEQ_6 = "oklch(0.8476 0.0705 254.48)"; // #AED0FB
 
-// Shared dark values for roles the supplied palettes lack. Several remain provisional
-// until design reviews them.
+// Shared dark values for roles the supplied palettes lack.
 export const DARK_DEFAULTS = {
   "muted-foreground": "oklch(0.8280204 0.0042636 121.5755)", // #C6C7C4
   error: "oklch(0.8383036 0.089085 26.7575)", // #FFB4AB

@@ -29,7 +29,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
 }
 
 // Nested providers never fork the document writer; they only validate their own theme.
-// useResolvedTheme memoizes on axis primitives so a production coercion warns once per
+// useResolvedTheme memoizes on primitive axis values so a production coercion warns once per
 // illegal theme, not on every re-render.
 function NestedThemeValidator({ theme, children }: { theme: ThemeInput; children: ReactNode }) {
   useResolvedTheme(theme);

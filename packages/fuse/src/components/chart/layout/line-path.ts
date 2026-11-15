@@ -1,8 +1,7 @@
 /**
- * Path data for a Line or an Area from drawn vertices, after CONTRACT sections 8.6 and 8.7 and the
- * parity ledger's L17 to L19. Each vertex is a pixel along the slot axis and one or two across the
- * value axis. The curves are d3-shape's, except step-after and step-before, which run from cell edge
- * to cell edge so the last slot keeps its run. A run of readings draws one subpath, a lone reading
+ * Path data for a Line or an Area from drawn vertices. Each vertex is a pixel along the slot axis
+ * and one or two across the value axis. The curves are d3-shape's, except step-after and
+ * step-before, which run from cell edge to cell edge so the last slot keeps its run. A run of readings draws one subpath, a lone reading
  * draws a dot, and the spans that draw dashed or hatched come back beside the path: a segment that
  * touches an estimated reading, a bridge over a missing one and the projected tail. Both the chart's
  * writers and the server-drawn Sparkline call this module, so a resting path is one string.
@@ -38,8 +37,8 @@ export type PathTopology = {
   readonly missing: "gap" | "connect";
   /**
    * The side of zero each stacked reading stacks on, null for a loose series. A run breaks where
-   * the side changes, so a stacked series that changes sign draws a broken band, as CONTRACT
-   * section 8.9 says, and never a band across the series below it.
+   * the side changes, so a stacked series that changes sign draws a broken band, and never a
+   * band across the series below it.
    */
   readonly sides: readonly ("positive" | "negative" | null)[];
   /**
@@ -260,7 +259,7 @@ function spansOf(topology: PathTopology, runs: readonly number[][], read: Reader
   for (const run of runs) {
     run.forEach((index, at) => {
       const next = run[at + 1];
-      // Readings in one run that are not neighbours have missing readings between them, bridged.
+      // Readings in one run that are not neighbors have missing readings between them, bridged.
       if (
         next !== undefined &&
         next > index + 1 &&

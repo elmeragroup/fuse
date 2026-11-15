@@ -58,7 +58,7 @@ function layoutUnder(context: ChartRootContextValue, box: DOMRect, clientY: numb
  * The slot and the nearest series under a client point, picked by arithmetic over the plot box.
  * The surface and the tooltip popup both read it, so a pointer over the popup picks as the plot
  * does. With Panels the pointer's y picks the Panel under it, and the nearest series comes from
- * that Panel's series alone, as CONTRACT section 9.5 says.
+ * that Panel's series alone.
  *
  * @param context - The Root.
  * @param frame - Root's measured frame, whose slot bands a band slot is picked from, or null before

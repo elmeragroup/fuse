@@ -1,7 +1,7 @@
-// Polar labels. Unit under test: insideLabel, outsideLabels and angleLabel. Oracles: CONTRACT
-// section 8.4's three-slice fixture, chart-1, chart-seq-4 and chart-other, which gives one inside
-// and two outside labels; ticket 08's Q10 leaders, which leave the rim on the slice's bisector and
-// turn 8 % past it; d3's arc centroid, which d3-shape's own tests check through arc-path.test.ts;
+// Polar labels. Unit under test: insideLabel, outsideLabels and angleLabel. Oracles: a
+// three-slice fixture, chart-1, chart-seq-4 and chart-other, which gives one inside and two outside
+// labels; leaders that leave the rim on the slice's bisector and turn 8 % past it; d3's arc
+// centroid, which d3-shape's own tests check through arc-path.test.ts;
 // and the property that no two label boxes overlap.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";

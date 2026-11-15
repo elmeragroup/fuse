@@ -47,7 +47,7 @@ export const calendarVariants = tv({
       selfFocusRingClass,
       // Only a day the user can select takes the hover face.
       "enabled-hover:not-aria-disabled:not-data-selected:bg-muted",
-      // A neighbouring month's day keeps its grid slot so the weeks stay aligned, and is invisible,
+      // A neighboring month's day keeps its grid slot so the weeks stay aligned, and is invisible,
       // which also drops it from the accessibility tree: it is pickable from its own month.
       "data-outside-month:invisible",
       "data-current:font-semibold",

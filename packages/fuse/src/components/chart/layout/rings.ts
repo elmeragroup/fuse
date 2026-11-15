@@ -1,7 +1,7 @@
 /**
  * The radial chart's rings: where each ring runs, the maximum each fills against, the band a
- * pointer picks it in, and the stroke that draws its value. CONTRACT section 8.4 gives the maxima:
- * rings run from the first row outermost to the last innermost, and a ring never laps.
+ * pointer picks it in, and the stroke that draws its value. Rings run from the first row outermost
+ * to the last innermost, and a ring never laps.
  */
 import { toDegrees } from "./polar-angle";
 
@@ -17,7 +17,10 @@ export type RingBand = {
   readonly outer: number;
 };
 
-/** What the rings divide: the outer radius, the hole's share of it and the share of each band a ring fills. */
+/**
+ * What the rings divide: the outer radius, the hole's share of it and the share of each band a ring
+ * fills.
+ */
 export type RingFrame = {
   readonly outer: number;
   /** The hole's radius as a share of the outer radius, 0.3 by default. */
@@ -127,11 +130,17 @@ export type RingStroke = {
   readonly start: number;
   /** The dash's length in degrees. */
   readonly length: number;
-  /** `"round"` caps sit inside the value's angle, and `"butt"` draws a short arc at its true length. */
+  /**
+   * The cap. `"round"` caps sit inside the value's angle, `"butt"` draws a short arc at its true
+   * length, and `"none"` draws nothing, for an angle of 0 or an unmeasured radius.
+   */
   readonly cap: "round" | "butt" | "none";
 };
 
-/** What a ring's stroke measures in: its center line's radius, its stroke width and the device pixel ratio. */
+/**
+ * What a ring's stroke measures in: its center line's radius, its stroke width and the device pixel
+ * ratio.
+ */
 export type RingPixels = {
   /** The center line's radius in CSS pixels. */
   readonly radius: number;

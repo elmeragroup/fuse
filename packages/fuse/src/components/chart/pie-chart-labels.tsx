@@ -50,7 +50,7 @@ export type PieChartLabelsProps = ChartLayerProps & {
   children?: ReactNode;
 };
 
-/** A label's line, 12 px on a 16 px line at both densities, as CONTRACT section 10 sets it. */
+/** A label's line, 12 px on a 16 px line at both densities. */
 const LINE = 16;
 
 /** The leader's run sideways from its elbow, in CSS pixels. */

@@ -34,8 +34,8 @@ export type ThemeScopeContainerStore = ScopeElementSource & {
 
 export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
   let element: HTMLElement | null = null;
-  // Set by a detach and cleared by any attach, so a detach React follows with an attach (a
-  // replacement, StrictMode's double attach, a reveal) is never acted on.
+  // Set by a detach and cleared by any attach, so a detach React follows with an attach is never acted
+  // on. A replacement, StrictMode's double attach and a reveal each do that.
   let detached = false;
   const listeners = new Set<() => void>();
   const publish = (next: HTMLElement | null) => {

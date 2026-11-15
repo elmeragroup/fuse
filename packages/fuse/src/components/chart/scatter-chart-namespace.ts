@@ -8,7 +8,7 @@
 /**
  * Scatter charts over a numeric x and a numeric y, from long rows with a series column. `Points`
  * draws a series as dots and `Line` joins a series' points in x order, so the same compound draws
- * curves over a numeric x, such as a fitted normal line or a charging curve. Up to 100 000 points
+ * curves over a numeric x, such as a fitted normal line or a charging curve. Up to 100,000 points
  * draw as one SVG path per series.
  *
  * Preview: names and props can change until Fuse's first stable release.

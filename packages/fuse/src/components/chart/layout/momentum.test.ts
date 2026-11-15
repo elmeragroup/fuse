@@ -1,18 +1,20 @@
 // Unit under test: layout/momentum.ts, the momentum spring, as createChartMotion's momentum move
-// schedules it, on a clock the test steps frame by frame.
-// Oracles, written by hand: a mark sent from 0 to 100 that is sent to 10 while it still rises keeps
-// rising for a frame and turns back without a jump, where a plain move turns at once, and settles
-// within twice the update's 480 ms, the longest a softened turn may take; the gauge's
-// contract, that a mark never passes the value it reads, never leaves the values it moved between
-// (so never the sweep), rests on its target exactly, and carries no velocity out of a delay it has
-// not left, even when a retarget lands in an entrance's delay, a degree ahead of a fast rise, or
-// several times before the next frame; a resize that doubles the plot's width mid-turn doubles every
-// x coordinate the spring moves between, so the mark stays between the doubled target and twice the
-// highest value it drew; a resize whose target the commit recomputes a float error off the mapped
-// one draws in every frame what the unresized spring draws, mapped by hand, and rests on the
-// commit's target exactly; a mark whose target a resize moves off its mapped place keeps the way it
-// moved for the frame after, rising or falling, and turns at most once, as a critically damped
-// spring does; and a mark at rest, or under reduced motion, moves as it did.
+// schedules it, on a clock the test steps frame by frame. Oracles, written by hand:
+// - A mark sent from 0 to 100, then sent to 10 while it still rises, keeps rising for a frame and
+//   turns back without a jump, where a plain move turns at once. It settles within twice the
+//   update's 480 ms, the longest a softened turn may take.
+// - A gauge mark never passes the value it reads and never leaves the values it moved between, so
+//   it never leaves the sweep. It rests on its target exactly, and carries no velocity out of a
+//   delay it has not left. These hold when a retarget lands in an entrance's delay, a degree ahead
+//   of a fast rise, or several times before the next frame.
+// - A resize that doubles the plot's width mid-turn doubles every x coordinate the spring moves
+//   between, so the mark stays between the doubled target and twice the highest value it drew.
+// - After a resize whose target the commit recomputes a float error off the mapped one, every frame
+//   draws what the unresized spring draws, mapped by hand, and the mark rests on the commit's
+//   target exactly.
+// - A mark whose target a resize moves off its mapped place keeps its direction for the frame
+//   after, rising or falling, and turns at most once, as a critically damped spring does.
+// - A mark at rest, or under reduced motion, moves as it did.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -109,7 +111,7 @@ describe("a momentum move", () => {
     expect(shown).toBeLessThan(100);
     expect(kept.atPlace).toBe(kept.shown);
     expect(kept.after).toBeGreaterThan(kept.shown);
-    // The frame's step is no larger than the rise's own step before it: the course bends.
+    // The frame's step is no larger than the rise's own step before it, so the mark slows before it turns.
     expect(kept.after - kept.shown).toBeLessThanOrEqual(shown - previous);
     const plain = retarget({ kind: "move" });
     expect(plain.atPlace).toBe(plain.shown);
@@ -192,7 +194,8 @@ describe("a momentum move", () => {
       // Every placement draws where the mark showed.
       expect(mark.drawn.at(-1)).toBe(shown);
       mark.frame();
-      // The rise carries on for the frame, as one retarget's does, where a lost velocity falls.
+      // The rise carries on for the frame, as one retarget's does, where a mark that lost its velocity
+      // would fall at once.
       expect(mark.drawn.at(-1)).toBeGreaterThan(shown);
       const last = targets.at(-1) ?? Number.NaN;
       settle(mark, last);
@@ -233,7 +236,7 @@ describe("a momentum move", () => {
       fresh: 10 / 3,
     },
     {
-      // The slot pitch grows from 7 px to 9 px on a grid that starts at 0, so slot 1's centre moves
+      // The slot pitch grows from 7 px to 9 px on a grid that starts at 0, so slot 1's center moves
       // from 10.5 to 13.5, and the resize maps it to 13.500000000000002.
       name: "a slot grid whose pitch grows from 7 px to 9 px",
       to: 10.5,

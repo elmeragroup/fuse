@@ -40,7 +40,8 @@ describe("SkeletonReveal", () => {
     expect(skeleton.getAttribute("aria-hidden")).toBe("true");
     expect(skeleton.inert).toBe(true);
 
-    // The ghost renders the sample's real Button, which is neither named to assistive tech nor focusable.
+    // The ghost renders the sample's real Button, which assistive tech cannot name and focus cannot
+    // reach.
     expect(page.getByRole("button").query()).toBeNull();
     const ghostButton = skeleton.querySelector("button");
     expect(ghostButton).toBeInstanceOf(HTMLButtonElement);
@@ -420,7 +421,7 @@ describe("lifecycle", () => {
           await nextFrames(2);
           rerender(view(false, false));
         } else {
-          // Up past the smart hold would not matter here: together always fades.
+          // `together` always fades, so waiting past the smart hold changes nothing here.
           rerender(view(false, false));
         }
         await expect

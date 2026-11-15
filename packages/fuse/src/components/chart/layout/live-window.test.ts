@@ -1,8 +1,8 @@
 // A live line chart's window geometry. Unit under test: parseLiveSeries, parseLiveLatest,
-// visibleSpan, nearestIndex, stepIndex, walkRange, liveDomain, liveValueTicks, tickStep, timeTicks, edgeFade, liveVertices,
-// liveLinePath and liveAreaPath. Oracles:
-// readings, indices, domains, tick instants and pixels worked out by hand, on a 30 s window over a
-// 300 by 100 px plot, where one second is 10 px, and value tick steps worked by d3's rule by hand.
+// visibleSpan, nearestIndex, stepIndex, walkRange, liveDomain, liveValueTicks, tickStep, timeTicks,
+// edgeFade, liveVertices, liveLinePath and liveAreaPath. Oracles: readings, indices, domains, tick
+// instants and pixels worked out by hand, on a 30 s window over a 300 by 100 px plot, where one
+// second is 10 px, and value tick steps worked by hand with d3's rule.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 

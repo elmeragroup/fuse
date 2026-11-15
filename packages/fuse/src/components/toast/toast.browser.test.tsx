@@ -92,7 +92,7 @@ async function waitForEnding(root: HTMLElement): Promise<void> {
   });
 }
 
-/** Moves focus into the viewport region, named by the render's locale (English by default). */
+/** Moves focus into the viewport region, named by the render's locale, English by default. */
 async function expandViewport(name: string = NOTIFICATIONS_COPY["en-US"]): Promise<HTMLElement> {
   const viewport = page.getByRole("region", { name, exact: true }).element();
   if (!(viewport instanceof HTMLElement)) {
@@ -480,7 +480,7 @@ describe("Toast layer", () => {
 });
 
 describe("early queue", () => {
-  /** Each toast's accessible name (its title), in DOM order. Every toast here is low priority. */
+  /** Each toast's accessible name, which is its title, in DOM order. Every toast here is low priority. */
   function toastTitles(): string[] {
     return page
       .getByRole("dialog")

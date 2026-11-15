@@ -40,7 +40,7 @@ const HALVES_CONFIG = {
   fast: { label: "Fastledd", color: "chart-4" },
 } as const;
 
-/** October's bill, 1 386 kr: shares 44.16, 31.60, 20.71 and 3.54, rounding together to 44, 32, 21 and 3. */
+/** October's bill, 1,386 kr: shares 44.16, 31.60, 20.71 and 3.54, rounding together to 44, 32, 21 and 3. */
 const BILL = [
   { part: "strom", kr: 612 },
   { part: "nettleie", kr: 438 },
@@ -371,9 +371,9 @@ describe("the centre (section 8.13)", () => {
     expect(centreText(host, "pie-chart-center-value")).toBe("");
   });
 
-  // B4 and r4 Q2: two formats that name the same options, in another key order or with an option
-  // set to undefined, which prints as if omitted, are one format. Unit under test: the centre's
-  // total, maximum and share. Oracle: the same chart with identical formats.
+  // Two formats that name the same options, in another key order or with an option set to
+  // undefined, which prints as if omitted, are one format. Unit under test: the center's total,
+  // maximum and share. Oracle: the same chart with identical formats.
   const energy: ValueFormat = { preset: "energy", unit: "kWh" };
   it.each(
     (["pie", "radial"] as const).flatMap((family) => [
@@ -499,7 +499,7 @@ describe("the centre's name line (CenterName)", () => {
   // is on and "Elbil" for the ring the keys reach, and the children with nothing active, as
   // CenterValue prints the active item's value and, at rest, the total.
   const nameOf = (host: HTMLElement): string | null =>
-    // The centre is aria-hidden plot text, read by its slot.
+    // The center is aria-hidden plot text, read by its slot.
     host.querySelector('[data-slot="pie-chart-center-name"]')?.textContent ?? null;
 
   it("names the slice under the pointer, and prints its children at rest", async () => {
@@ -531,7 +531,7 @@ describe("the centre's name line (CenterName)", () => {
     await hoverAt(...clientPoint(pieSvg(host), point.x, point.y));
     expect(nameOf(host)).toBe("Nettleie");
     expect(centreText(host, "pie-chart-center-value")).toBe("438\u00a0kr");
-    // The pointer leaves the plot for the page, and after the leave's grace the centre rests.
+    // The pointer leaves the plot for the page, and after the leave's grace the center rests.
     page
       .getByRole("listbox")
       .element()
@@ -579,7 +579,7 @@ describe("the centre's name line (CenterName)", () => {
         </div>
       </LocaleProvider>
     );
-    // The centre is aria-hidden plot text, read by its slot.
+    // The center is aria-hidden plot text, read by its slot.
     const label = host.querySelector('[data-slot="pie-chart-center-label"]');
     expect(nameOf(host)).toBe("I alt");
     expect(label?.firstChild?.textContent).toBe("av ");
@@ -594,7 +594,7 @@ describe("the centre's name line (CenterName)", () => {
 
 describe("a default active category and the fold (L3)", () => {
   // Eight appliance categories and seven rows, so the default six-slice cap keeps five and folds the
-  // two smallest, lys and lading, into Other. L3: a folding pie starts on Other when
+  // two smallest, lys and lading, into Other. A folding pie starts on Other when
   // `defaultActiveKey` names a folded category. A category with no row is in no slice and folds into
   // nothing, so the pie starts with nothing active, and CenterName prints its children.
   const appliances = {
@@ -635,7 +635,7 @@ describe("a default active category and the fold (L3)", () => {
         </PieChart.Root>
       </LocaleProvider>
     );
-    // The centre is aria-hidden plot output, read by its slot.
+    // The center is aria-hidden plot output, read by its slot.
     return host.querySelector('[data-slot="pie-chart-center-name"]')?.textContent ?? null;
   };
 

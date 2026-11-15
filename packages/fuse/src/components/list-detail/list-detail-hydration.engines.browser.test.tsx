@@ -1,6 +1,6 @@
 // ListDetail's first paint and hydration, in Chromium and WebKit. Unit under test: ListDetail.Root
 // from server HTML to the hydrated layout. Oracles: the documented server state, the split layout
-// whose pane CSS hides in a root narrower than Tailwind's `@4xl` container size (56rem); and
+// whose pane CSS hides in a root narrower than Tailwind's `@4xl` container size, 56rem; and
 // React's hydration contract, no recoverable error, after which a narrow root shows its open
 // detail in a dialog instead.
 import { hydrateRoot } from "react-dom/client";

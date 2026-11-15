@@ -331,7 +331,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     },
     fallbackId
   );
-  // Read apart: the hidden input's ref is a ref, the rest are render values.
+  // These are read one by one, because the hidden input's ref is a ref and the rest are render values.
   const { disabled, invalid, hiddenInput, hiddenInputId, labelId, setFocused, blurred, revalidate } = field;
 
   // A new committed value, hour cycle or set of segments drops any draft typed over the old ones,
@@ -587,7 +587,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
           "aria-describedby": describedBy,
           "aria-disabled": disabled || undefined,
           className: cn(dateInputVariants({ size }).root(), className),
-          // Unicode isolation keeps the segments in order inside right-to-left text, as React Aria's group.
+          // Unicode isolation keeps the segments in order inside right-to-left text, as React Aria's
+          // group does.
           style: { unicodeBidi: "isolate" },
           onFocus(event) {
             if (isNode(event.relatedTarget) && event.currentTarget.contains(event.relatedTarget)) {

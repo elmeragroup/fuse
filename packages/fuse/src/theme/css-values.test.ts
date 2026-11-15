@@ -59,7 +59,7 @@ describe("cssFontWeight", () => {
   });
 
   it.each([
-    // Outside 1..1000.
+    // Values outside 1 to 1000.
     "0",
     "0.5",
     ".5",
