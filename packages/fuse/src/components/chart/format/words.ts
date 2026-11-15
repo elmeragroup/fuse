@@ -24,8 +24,6 @@ export type VatBasis = Extract<ValueFormat, { readonly preset: "unit-price" }>["
 export type ChartWords = {
   /** The locale's clock. `h23` locales write `00` to `24`, and `h12` locales write `12 AM` to `11 PM`. */
   readonly clock: "h23" | "h12";
-  /** The visual range separator between two clock times, from CLDR's interval format. */
-  readonly rangeSeparator: string;
   /**
    * A slot finer than a day on a domain of more than one date, its date leading its own label,
    * such as `onsdag 1. oktober, kl. 00 til 01`.
@@ -61,7 +59,6 @@ const same = (word: string): Inflected => ({ one: word, other: word });
 
 const NB_NO: ChartWords = {
   clock: "h23",
-  rangeSeparator: "\u2013",
   slotOnDate: (date, slot) => `${date}, ${slot}`,
   spokenTime: (time) => `kl. ${time}`,
   spokenRange: (start, end) => `kl. ${start} til ${end}`,
@@ -86,7 +83,6 @@ const NB_NO: ChartWords = {
 
 const SV_SE: ChartWords = {
   clock: "h23",
-  rangeSeparator: "\u2013",
   slotOnDate: (date, slot) => `${date}, ${slot}`,
   spokenTime: (time) => `kl. ${time}`,
   spokenRange: (start, end) => `kl. ${start} till ${end}`,
@@ -111,7 +107,6 @@ const SV_SE: ChartWords = {
 
 const FI_FI: ChartWords = {
   clock: "h23",
-  rangeSeparator: "\u2013",
   slotOnDate: (date, slot) => `${date}, ${slot}`,
   spokenTime: (time) => `klo ${time}`,
   spokenRange: (start, end) => `klo ${start} ja ${end} välillä`,
@@ -140,7 +135,6 @@ const FI_FI: ChartWords = {
 
 const EN_US: ChartWords = {
   clock: "h12",
-  rangeSeparator: "\u2009\u2013\u2009",
   slotOnDate: (date, slot) => `${date}, ${slot}`,
   spokenTime: (time) => time,
   spokenRange: (start, end) => `${start} to ${end}`,

@@ -4,7 +4,7 @@
  * React Aria's Calendar writes through the same `Intl` options; for a range of months, CLDR's
  * month names joined by the locale's interval fallback separator, with a shared year written once.
  * The ranges are not `formatRange` output, whose shortening differs by engine; see
- * `calendar-format.ts`.
+ * `intl/range-separator.ts`.
  */
 import { describe, expect, it } from "vitest";
 

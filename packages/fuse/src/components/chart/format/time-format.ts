@@ -7,6 +7,7 @@ import { dateTimeFormat } from "../../../internal/intl-cache";
  */
 import { formatDateTime } from "../../../intl/date-time-join";
 import type { SupportedLocale } from "../../../intl/locale-context";
+import { rangeSeparator } from "../../../intl/range-separator";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
 import { CHART_WORDS } from "./words";
@@ -461,7 +462,7 @@ function range(
   const last = clock(locale, words, end, precision);
   const start = first.dayPeriod === last.dayPeriod ? first.text : first.full;
   return makeFormattedText(
-    `${start}${words.rangeSeparator}${last.full}`,
+    `${start}${rangeSeparator(locale)}${last.full}`,
     words.spokenRange(first.full, last.full)
   );
 }
