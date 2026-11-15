@@ -96,7 +96,7 @@ choice row and choice card on `children`. `Input`, `Textarea` and `InputGroup.In
 wiring only through `Field.Control`'s `render`. `InputGroup.Root` documents on `children` that
 its state comes from its direct input or textarea, and `InputGroup.Addon` documents `align` and
 what an addon holds. `NumberField` documents `onChange` against `onValueCommitted` and the locale
-behind `formatOptions`, `SearchField` its Enter, Escape and clear button behaviour, and
+behind `formatOptions`, `SearchField` its Enter, Escape and clear button behavior, and
 `PhoneNumberField` country detection and how a controlled country answers a proposal.
 `TextField` declares its `size` default, and `PhoneNumberField` its `defaultCountryCode`,
 `autoDetectCountry`, `international`, `preserveOnCountryChange`, `outputFormat` and `formatOnType`
@@ -146,7 +146,7 @@ checked preset on `value` and `defaultValue`. `DateRangePicker.Label`, `Descript
 document their `children`. `DataTable.Pagination` documents a stable `data`, `total` and page size
 changes, and `DataTable.RowActions` its own `label`. `DataTableFilter.Root` documents the fields
 map, its parts and `actions.edit` on `fields` and `children`, the filter function on `table`, and `Bar`, `Content`, `Editor`,
-`ValuesFooter` and `DateEditor` their behaviour on `children`. `Table.Row` documents
+`ValuesFooter` and `DateEditor` their behavior on `children`. `Table.Row` documents
 `data-state="selected"`, `Skeleton` documents `aria-busy` on `className`, and `SkeletonReveal`
 documents how it draws, its focus and form rules and its markers on `children`. The month buttons
 declare their `icon` size and `ghost` variant, and `DatePickerField` and `DateRangePickerField`
@@ -156,7 +156,7 @@ them. The public types are unchanged.
 
 `Chart`, `BarChart`, `LineChart`, `AreaChart` and `ScatterChart` now document their rules on the
 props they concern. `Chart.Root` documents its keys on `defaultActiveX` and `orientation`, stacks,
-series intervals, scales and threshold colours on `config`, the server render on `data`, a late
+series intervals, scales and threshold colors on `config`, the server render on `data`, a late
 `Bar` on `data-intro`, references outside the data on `yInclude`, and `--surface` and
 `--chart-hover-dim` on `style`. `Chart.Panel` documents where each part goes, `Chart.Tooltip` its
 placement, glide and dismissal on `anchor`, `Chart.Crosshair` its width and glide on `variant`, and
@@ -172,11 +172,11 @@ are unchanged.
 
 `LiveLineChart`, `PieChart`, `RadarChart`, `RadialChart`, `GaugeChart`, `ClockChart`, `Sparkline`
 and `SparklineHover` now document their rules on the props they concern. Each Root documents its
-keys and touch behaviour on `children`, its entrance on `data-intro`, and its empty state and
+keys and touch behavior on `children`, its entrance on `data-intro`, and its empty state and
 server render on `data`. `LiveLineChart.Root` documents its feed, clock and reduced motion on
 `data`, `value` and `paused`, and `LiveLineChart.YAxis` documents on `side` that a `Badge` takes
 the end column. `PieChart.Root` documents its gauge on `max` and its Other slice on `maxSlices`, and the
-centre parts shared with `RadialChart` say what each prints with nothing active. `RadialChart.Root`
+center parts shared with `RadialChart` say what each prints with nothing active. `RadialChart.Root`
 documents ring order, maxima and values past them on `data`, `max` and `maxKey`. `RadarChart.Root`
 documents its four-series cap on `config`. `GaugeChart.Root` documents its meter on `valueFormat`
 and its sweeps on `value`. `ClockChart` documents comparing cycles on `Line`'s `dataKey`, stacks on
