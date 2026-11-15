@@ -170,6 +170,30 @@ describe("the tooltip after Escape and a blur", () => {
   });
 });
 
+describe("the tooltip under touch after a mouse", () => {
+  it("lets taps through to the plot from a touch on the slot the mouse showed", async () => {
+    // CONTRACT section 9.5: under touch the popup passes taps through to the plot. A touch on the
+    // slot the mouse already shows moves no active slot, so only the input kind changes.
+    const { host } = chart();
+    const plot = surfaceBox(host);
+    const x = plot.left + (plot.width / 24) * 14.5;
+    const y = plot.top + plot.height * 0.8;
+    await pointerTo(x, y);
+    const open = openPopup();
+    expect(getComputedStyle(open).pointerEvents).toBe("auto");
+    // A synthetic touch press is the only way to give Chromium a touch pointer type without
+    // emulating a touch device for the whole file.
+    page
+      .getByRole("listbox")
+      .element()
+      .dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, clientX: x, clientY: y, pointerType: "touch" })
+      );
+    await expect.poll(() => getComputedStyle(open).pointerEvents).toBe("none");
+    expect(label()).toBe("14–15");
+  });
+});
+
 describe("tooltip readings", () => {
   it("adds the projection word after a projected value, as the option and the table do", async () => {
     // B is projected, and en-US spells the word "projected".

@@ -55,6 +55,17 @@ export function chartTakesPress(details: TooltipDismissal, chart: HTMLElement | 
 }
 
 /**
+ * The popup's `data-input` for the kind of pointer the user last used. Touch and pen mark it
+ * `"touch"`, so the popup lets taps and scrubs through to the plot unless it scrolls.
+ *
+ * @param input - The store's last pointer type, or `null` before any.
+ * @returns `"touch"` under touch or pen, or `undefined` to write none.
+ */
+export function tooltipInput(input: string | null): "touch" | undefined {
+  return input === "touch" || input === "pen" ? "touch" : undefined;
+}
+
+/**
  * The popup's classes: Fuse's overlay surface, shell and motion, then the chart popup's own look in
  * the variant, then the consumer's.
  *

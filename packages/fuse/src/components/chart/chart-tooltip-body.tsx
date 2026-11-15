@@ -18,10 +18,17 @@ import { useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
 import { ChartHeldPointContext, ChartLiveContext } from "./chart-scope-contexts";
 import type { HeldPoint } from "./chart-scope-contexts";
+import { useChartStore } from "./chart-store";
 import { shareCorridor } from "./chart-tooltip-corridor";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
-import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
+import {
+  chartTakesPress,
+  TOOLTIP_POSITIONER,
+  tooltipInput,
+  tooltipPopupClass,
+  watchOverflow,
+} from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
 
 /** What a family's Tooltip part passes the shared body. */
@@ -173,8 +180,8 @@ export function ChartTooltipBody({
   // Whether the pointer entered the popup by moving straight toward it from the active datum, which
   // holds the active index while the pointer crosses the popup.
   const frozen = useRef(false);
-  // The input that last moved the active index, read on each render the index change causes.
-  const touchInput = ["touch", "pen"].includes(store.pointer()?.type ?? "");
+  // The popup's input mark, which follows the reader's pointer whether or not it moves the slot.
+  const input = useChartStore(store, (snapshot) => tooltipInput(snapshot.input));
   return (
     <TooltipPrimitive.Root
       open={open}
@@ -202,7 +209,7 @@ export function ChartTooltipBody({
           <TooltipPrimitive.Popup
             data-slot="chart-tooltip"
             data-variant={variant}
-            data-input={touchInput ? "touch" : undefined}
+            data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
             className={tooltipPopupClass(variant, className)}
