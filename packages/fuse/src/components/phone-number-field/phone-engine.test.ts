@@ -7,6 +7,7 @@ import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../..
 import { flagAssets } from "../../flags";
 import { phoneNumberFieldStrings } from "./intl";
 import {
+  createPhoneParser,
   defaultMetadata,
   getCountries,
   processInputWithDetection,
@@ -85,7 +86,7 @@ describe("phone-number-field picker set", () => {
         countries,
         autoDetectCountry,
         international: false,
-        metadata: defaultMetadata,
+        parser: createPhoneParser(defaultMetadata),
       });
 
     const sweden = detect("+46701234567");
@@ -121,12 +122,12 @@ describe("phone number international identity", () => {
       countries,
       autoDetectCountry: true,
       international: false,
-      metadata: defaultMetadata,
+      parser: createPhoneParser(defaultMetadata),
     });
     const values = resolvePhoneFieldValues({
       digits: next.digits,
       country: next.country.code,
-      metadata: defaultMetadata,
+      parser: createPhoneParser(defaultMetadata),
       outputFormat: "e164",
       international: false,
       formatOnType: false,
@@ -140,7 +141,7 @@ describe("national drafts with a trunk prefix", () => {
     resolvePhoneFieldValues({
       digits,
       country,
-      metadata: defaultMetadata,
+      parser: createPhoneParser(defaultMetadata),
       outputFormat: "e164",
       international: false,
       formatOnType,
@@ -177,7 +178,7 @@ describe("national drafts with a trunk prefix", () => {
       countries,
       autoDetectCountry: true,
       international: false,
-      metadata: defaultMetadata,
+      parser: createPhoneParser(defaultMetadata),
     });
     expect(detected.country.code).toBe("AI");
     expect(detected).toMatchObject({ digits: "2642351", parsedNational: true });
@@ -186,7 +187,7 @@ describe("national drafts with a trunk prefix", () => {
         resolvePhoneFieldValues({
           ...detected,
           country: detected.country.code,
-          metadata: defaultMetadata,
+          parser: createPhoneParser(defaultMetadata),
           outputFormat: "e164",
           international: false,
           formatOnType,
@@ -204,14 +205,14 @@ describe("national drafts with a trunk prefix", () => {
       countries,
       autoDetectCountry: true,
       international: false,
-      metadata: defaultMetadata,
+      parser: createPhoneParser(defaultMetadata),
     });
     expect(detected).toEqual({ digits: "701234567", country: sweden, parsedNational: true });
     expect(
       resolvePhoneFieldValues({
         ...detected,
         country: detected.country.code,
-        metadata: defaultMetadata,
+        parser: createPhoneParser(defaultMetadata),
         outputFormat: "e164",
         international: false,
         formatOnType: true,

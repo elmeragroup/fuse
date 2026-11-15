@@ -2,24 +2,19 @@ import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import type { CountryObservation } from "./phone-country-notices";
 import { resolveSelectedCountry } from "./phone-engine";
-import type {
-  InternationalReading,
-  PhoneCountryCode,
-  PhoneNumberCountry,
-  PhoneNumberFormat,
-} from "./phone-engine";
+import type { ParsePins, PhoneCountryCode, PhoneNumberCountry, PhoneNumberFormat } from "./phone-engine";
 import { pendingProposal, proposalFate } from "./phone-proposal";
 import type { JudgedProps, PendingProposal } from "./phone-proposal";
 import {
   carry,
   catalogReplaced,
   configure,
-  hasOwnPrefix,
   moveInto,
   offeredCountry,
+  pinReads,
+  prefixCountry,
   readEntry as readEntryIn,
   readInternationalIn,
-  readNamedIn,
   readValueIn,
   receiveValue,
   snapshot,
@@ -150,23 +145,11 @@ type EditorRecord = {
    * form it heard still holds the number. It is `null` without a waiting proposal.
    */
   readonly numberAnswer: string | null;
-  /** The country the controlled value's own prefix detects, cached by value and metadata. */
-  readonly detection: ValueDetection | null;
   /**
    * How many transitions led to this state: 0 for a new field, one more for each transition. A
    * caller that sees states out of order, as the hook's notices do, tells the older one by it.
    */
   readonly version: number;
-};
-
-/**
- * The parse of a value string's own `+` form, for the value and metadata it was made with: the
- * country its prefix detects, and a parse that serves the value in any country.
- */
-type ValueDetection = {
-  readonly value: string;
-  readonly metadata: MetadataJson;
-  readonly reading: InternationalReading | undefined;
 };
 
 /**
@@ -179,10 +162,40 @@ export type ValueNotice = {
   readonly value: string;
 };
 
-const RECORD = Symbol("PhoneEditorState");
+const OPEN = Symbol("open");
 
-/** The editor's state. Read it through {@link view}; change it through the transitions. */
-export type PhoneEditorState = { readonly [RECORD]: EditorRecord };
+/**
+ * The editor's state. Read it through {@link view}; change it through the transitions. Beside its
+ * record, each state pins the parses of the record's numbers and value. The editor reconciles
+ * during render, and React may discard a render. A parser-wide set of pins that the latest
+ * transition made could then belong to a state that never commits. Because each state keeps its
+ * own pins, its parses survive any history of other states, committed or discarded, and a read
+ * of an older state finds them.
+ *
+ * The record and pins are private fields, and `[OPEN]` is the only way to reach them. No
+ * transition or read can reach a record without first restoring its pins, so the parse budget
+ * does not depend on each export remembering to restore them. The module exports only the type
+ * and keeps the symbol that keys the entry, so no other module can build a state or open one.
+ */
+class PhoneEditorState {
+  readonly #record: EditorRecord;
+  readonly #pins: ParsePins;
+
+  /** Creates the state for `record` and pins its parses. Every transition returns through it. */
+  constructor(record: EditorRecord) {
+    const { configuration, value, accepted, proposal } = record;
+    this.#record = record;
+    this.#pins = pinReads(configuration, value, proposal ? [accepted, proposal] : [accepted]);
+  }
+
+  /** Restores this state's pins and returns its record. Every transition and read starts here. */
+  [OPEN](): EditorRecord {
+    this.#record.configuration.parser.restore(this.#pins);
+    return this.#record;
+  }
+}
+
+export type { PhoneEditorState };
 
 /** Edits that remove what follows the caret, so it waits before the next digit. */
 const FORWARD_DELETIONS = new Set([
@@ -197,64 +210,7 @@ const SIGNIFICANT_REGEX = /[\d+]/;
 
 /** `record` as the state that follows `stored`, one version on. */
 function succeed(stored: EditorRecord, record: EditorRecord): PhoneEditorState {
-  return wrap({ ...record, version: stored.version + 1 });
-}
-
-function wrap(record: EditorRecord): PhoneEditorState {
-  return { [RECORD]: record };
-}
-
-/**
- * The controlled value when it can name a country: a controlled `countryCode` is set, detection
- * is on, and the value itself carries a `+` or `00` prefix. Otherwise it is `null`.
- */
-function namingValue({ value, countryCode, configuration }: EditorRecord): string | null {
-  return value !== undefined &&
-    countryCode !== undefined &&
-    configuration.autoDetectCountry &&
-    hasOwnPrefix(value)
-    ? value
-    : null;
-}
-
-/**
- * The record with the parse a read of its controlled value carries, at no cost: the accepted
- * number's, when it read the value as a whole. That parse of the number with its `+` prefix is
- * the same in every country, so its country is the one the prefix detects.
- */
-function seeded(record: EditorRecord): EditorRecord {
-  const { value, configuration, accepted } = record;
-  if (value === undefined || !hasOwnPrefix(value)) {
-    return record;
-  }
-  return {
-    ...record,
-    detection: { value, metadata: configuration.metadata, reading: accepted.values.reading },
-  };
-}
-
-/** The detection the record holds for its current value under its metadata, or `null`. */
-function currentDetection({ value, configuration, detection }: EditorRecord): ValueDetection | null {
-  return detection !== null && detection.value === value && detection.metadata === configuration.metadata
-    ? detection
-    : null;
-}
-
-/**
- * The record with the parse of its controlled value, when the value can name a country: the
- * one it holds, the accepted number's parse of the same text, or one parse of the value as it
- * stands. Every later read of the value, in any country, reuses it, so detection and the reads
- * that follow share one parse.
- */
-function detected(record: EditorRecord): EditorRecord {
-  const value = namingValue(record);
-  const controlled = controlledCountry(record);
-  if (value === null || controlled === null || currentDetection(record) !== null) return record;
-  const { configuration, accepted } = record;
-  // The accepted number's reading serves when it read the very text the value holds, as an
-  // adopted raw echo of a paste did; the engine reuses a reading of that input only.
-  const { reading } = readValueIn(value, controlled, configuration, accepted.values.reading).values;
-  return { ...record, detection: { value, metadata: configuration.metadata, reading } };
+  return new PhoneEditorState({ ...record, version: stored.version + 1 });
 }
 
 /** A controlled value and the offered country its own prefix names. */
@@ -264,35 +220,17 @@ type NamedValue = {
 };
 
 /**
- * The controlled value read in the country it names, as {@link receiveValue} reads it there,
- * from the parse the record holds: its national number unless `international` keeps the digits
- * as written. No parse when the record holds the value's parse, unless the national number
- * behind the calling code is another input than the value's, as in {@link readNamedIn}.
+ * The country a controlled `value` names under a controlled `countryCode`, with detection on. It
+ * is the offered country that the value's own `+` or `00` prefix detects. It reads the value
+ * string as a whole, never a snapshot of a national entry, whose parse would give a partial number
+ * the picker's country. A value without a prefix, which `raw` or `national` output usually is,
+ * names none, whatever country the field showed its digits in. Without a controlled country the
+ * shown country follows the proposal and picker as before, so a value names none.
  */
-function readNamed(record: EditorRecord, { value, country }: NamedValue): Snapshot {
-  return readNamedIn(value, country, record.configuration, currentDetection(record)?.reading);
-}
-
-/**
- * The country the record's controlled value names, from the detection it holds only, so it
- * parses nothing; `null` without one.
- */
-function cachedValueCountry(record: EditorRecord): NamedValue | null {
-  const value = namingValue(record);
-  const country = offeredCountry(record.configuration, currentDetection(record)?.reading?.country);
-  return value !== null && country !== undefined ? { value, country } : null;
-}
-
-/**
- * The country a controlled `value` names under a controlled `countryCode`: the offered country
- * the value's own prefix detects. It reads the value string as a whole, never a snapshot
- * of a national entry, whose parse would lend a partial number the picker's country. A value
- * without a prefix, as `raw` or `national` output usually is, names none, whatever country its
- * digits were shown in. Without a controlled country the shown country follows the proposal
- * and picker as before, so a value names none.
- */
-function valueCountry(record: EditorRecord): NamedValue | null {
-  return cachedValueCountry(detected(record));
+function valueCountry({ value, countryCode, configuration }: EditorRecord): NamedValue | null {
+  if (value === undefined || countryCode === undefined || !configuration.autoDetectCountry) return null;
+  const country = offeredCountry(configuration, prefixCountry(value, configuration));
+  return country === undefined ? null : { value, country };
 }
 
 /** The country a controlled `countryCode` resolves to in the record's catalog. */
@@ -459,22 +397,18 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
     value ?? props.defaultValue ?? "",
     resolveSelectedCountry(configuration.countries, props.defaultCountryCode)
   );
-  // A controlled value read as a whole carries its own detection.
-  return wrap(
-    seeded({
-      ...readSettings(props),
-      configuration,
-      value,
-      countryCode,
-      accepted,
-      proposal: null,
-      caret: null,
-      steered: null,
-      numberAnswer: null,
-      detection: null,
-      version: 0,
-    })
-  );
+  return new PhoneEditorState({
+    ...readSettings(props),
+    configuration,
+    value,
+    countryCode,
+    accepted,
+    proposal: null,
+    caret: null,
+    steered: null,
+    numberAnswer: null,
+    version: 0,
+  });
 }
 
 /**
@@ -497,7 +431,7 @@ function adoptedProposal(stored: EditorRecord, next: EditorRecord, before: Snaps
 function judged(record: EditorRecord): JudgedProps {
   const { value, countryCode, configuration } = record;
   const controlled = controlledCountry(record);
-  const named = cachedValueCountry(record)?.country ?? null;
+  const named = valueCountry(record)?.country ?? null;
   return { value, countryCode, configuration, controlled, named };
 }
 
@@ -546,7 +480,7 @@ function placeNumber(
   if (adopted) return carry(stored.configuration, configuration, adopted, value);
   if (newValue !== null) {
     const country = controlled ?? resolveSelectedCountry(configuration.countries, before.country.code);
-    return receiveValue(newValue, country, configuration, currentDetection(next)?.reading);
+    return receiveValue(newValue, country, configuration);
   }
   const named = controlled === null ? null : valueCountry(next);
   const target = named?.country ?? controlled;
@@ -557,7 +491,7 @@ function placeNumber(
   ) {
     return carry(stored.configuration, configuration, before, value);
   }
-  if (named !== null) return readNamed(next, named);
+  if (named !== null) return receiveValue(named.value, named.country, configuration);
   if (value !== undefined) return realign(next, before, target);
   return moveInto(stored.configuration, configuration, before, target);
 }
@@ -572,7 +506,12 @@ function alignToPrecedence(record: EditorRecord): EditorRecord {
   const named = valueCountry(record);
   const country = named?.country ?? controlledCountry(record) ?? accepted.country;
   if (accepted.country.code === country.code) return record;
-  return { ...record, accepted: named ? readNamed(record, named) : realign(record, accepted, country) };
+  return {
+    ...record,
+    accepted: named
+      ? receiveValue(named.value, named.country, record.configuration)
+      : realign(record, accepted, country),
+  };
 }
 
 /**
@@ -584,13 +523,9 @@ function alignToPrecedence(record: EditorRecord): EditorRecord {
  * A waiting proposal's fate is {@link proposalFate}'s. Notifications come from the same
  * transition: a pick's output, or an uncontrolled proposal that showed only now.
  */
-function settle(stored: EditorRecord, given: EditorRecord): EditorRecord {
+function settle(stored: EditorRecord, next: EditorRecord): EditorRecord {
   const before = visibleSnapshot(stored);
-  const { value } = given;
-  // A new value that echoes no proposal is read as a whole, which carries its detection, so
-  // only a value the field already holds, or one a proposal proposed, takes a detection parse.
-  const echoes = stored.proposal !== null && stored.proposal.values.outputValue === value;
-  const next = value === stored.value || echoes ? detected(given) : given;
+  const { value } = next;
   const adopted = adoptedProposal(stored, next, before);
   const newValue = adopted === null && value !== undefined && value !== stored.value ? value : null;
   const pending = adopted === null ? pendingProposal(stored, next) : null;
@@ -606,7 +541,7 @@ function settle(stored: EditorRecord, given: EditorRecord): EditorRecord {
     proposal: waiting?.proposal ?? null,
     numberAnswer: waiting?.numberAnswer ?? null,
   };
-  const aligned = alignToPrecedence(newValue === null ? placed : seeded(placed));
+  const aligned = alignToPrecedence(placed);
   if (adopted && value === undefined && !shows(stored, adopted)) {
     // An uncontrolled proposal shows only now, so `onChange` hears it only now.
     const output = aligned.accepted.values.outputValue;
@@ -622,8 +557,7 @@ function settle(stored: EditorRecord, given: EditorRecord): EditorRecord {
  */
 function realign(record: EditorRecord, accepted: Snapshot, country: PhoneNumberCountry): Snapshot {
   const { value, configuration } = record;
-  if (value !== undefined)
-    return readValueIn(value, country, configuration, currentDetection(record)?.reading);
+  if (value !== undefined) return readValueIn(value, country, configuration);
   return readInternationalIn(accepted, country, configuration);
 }
 
@@ -666,7 +600,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
       steered: output === before.values.outputValue ? record.steered : { value: output },
     };
   }
-  const read = readValueIn(value, country, configuration, currentDetection(record)?.reading);
+  const read = readValueIn(value, country, configuration);
   const picked = preserveOnCountryChange ? read : snapshot({ digits: "", country }, configuration);
   const output = picked.values.outputValue;
   return {
@@ -695,7 +629,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
  * @throws When the props leave no picker country, a configuration defect.
  */
 export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): PhoneEditorState {
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   const configuration = configure(props, stored.configuration);
   const settings = readSettings(props);
   const changesReading =
@@ -742,7 +676,7 @@ export function edit(
 ): PhoneEditorState {
   const side: CaretSide =
     inputType !== null && FORWARD_DELETIONS.has(inputType) ? "beforeNext" : "afterPrevious";
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   const next = readEntry(stored, value);
   const display = next.values.displayValue;
   // The caret is kept as the digits after each end, which the new display keeps even where
@@ -769,7 +703,7 @@ export function edit(
  * @returns The state with the paste proposed.
  */
 export function paste(state: PhoneEditorState, text: string): PhoneEditorState {
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   return propose(stored, readEntry(stored, text), null);
 }
 
@@ -782,7 +716,7 @@ export function paste(state: PhoneEditorState, text: string): PhoneEditorState {
  * the state with the pick proposed.
  */
 export function selectCountry(state: PhoneEditorState, code: CountryCode | undefined): PhoneEditorState {
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   const current = visibleSnapshot(stored);
   if (!code || code === current.country.code) return state;
   const country = offeredCountry(stored.configuration, code);
@@ -800,7 +734,7 @@ export function selectCountry(state: PhoneEditorState, code: CountryCode | undef
  * @returns The reset state.
  */
 export function reset(state: PhoneEditorState): PhoneEditorState {
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   const { configuration, defaultValue } = stored;
   return succeed(stored, {
     ...stored,
@@ -829,7 +763,7 @@ export function reset(state: PhoneEditorState): PhoneEditorState {
  * @returns The display, output, country, picker rows and the caret to restore.
  */
 export function view(state: PhoneEditorState): PhoneEditorView {
-  const stored = state[RECORD];
+  const stored = state[OPEN]();
   const shown = visibleSnapshot(stored);
   const { displayValue, outputValue } = shown.values;
   return {
@@ -862,7 +796,7 @@ export function view(state: PhoneEditorState): PhoneEditorView {
  * value the parent holds.
  */
 export function proposedValue(state: PhoneEditorState): string | null {
-  return proposalOutput(state[RECORD]);
+  return proposalOutput(state[OPEN]());
 }
 
 /**
@@ -877,7 +811,7 @@ export function proposedValue(state: PhoneEditorState): string | null {
  * transition or reset.
  */
 export function steeredValue(state: PhoneEditorState): ValueNotice | null {
-  return state[RECORD].steered;
+  return state[OPEN]().steered;
 }
 
 /**
@@ -888,6 +822,6 @@ export function steeredValue(state: PhoneEditorState): ValueNotice | null {
  * @returns The observation for `phone-country-notices`.
  */
 export function observeCountry(state: PhoneEditorState): CountryObservation {
-  const { version, countryCode, proposal } = state[RECORD];
+  const { version, countryCode, proposal } = state[OPEN]();
   return { version, countryCode, shown: view(state).country, proposed: proposal?.country ?? null };
 }

@@ -1,23 +1,27 @@
-import type { MetadataJson } from "libphonenumber-js/core";
+import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import {
   cleanPhoneInput,
+  createPhoneParser,
   defaultMetadata,
   getCountries,
   hasInternationalPrefix,
+  internationalNumber,
   processInputWithDetection,
   requirePickerCountries,
   resolvePhoneFieldValues,
   resolveSelectedCountry,
   toE164Digits,
+  valuesRead,
 } from "./phone-engine";
 import type {
-  InternationalReading,
-  PhoneParse,
   PhoneCountryCode,
   PhoneFieldValues,
   PhoneNumberCountry,
   PhoneNumberFormat,
+  ParsePins,
+  ParseRead,
+  PhoneParser,
   ProcessedPhoneInput,
 } from "./phone-engine";
 
@@ -25,9 +29,10 @@ import type {
  * Reading text into snapshots: a number, the country it is read in and the values it shows and
  * submits, under one configuration of the field. It decides how props become a configuration, from the
  * catalog by structural metadata and listed codes and from the four flags, how a controlled value or
- * entry is read with or without detection, how a number keeps its international identity through a
- * catalog change, and how one parse of a `+` number serves its reads in any country. It holds no state
- * of its own; the editor keeps the snapshots.
+ * entry is read with or without detection, and how a number keeps its international identity through
+ * a catalog change. Every read parses through the configuration's {@link PhoneParser}, so a read of
+ * an input that another read parsed recently costs no parse. The module keeps no state of its own.
+ * Each configuration's parser keeps the memo, and the editor keeps the snapshots.
  */
 
 /** The props a configuration reads, as `PhoneNumberField` takes them. */
@@ -47,10 +52,11 @@ export type Snapshot = ProcessedPhoneInput & {
 
 /**
  * The props that decide how numbers parse and show. `countryCodes` is what the props said;
- * `countries` is the picker rows it resolves to.
+ * `countries` is the picker rows it resolves to; `parser` parses with `metadata`.
  */
 export type Configuration = {
   readonly metadata: MetadataJson;
+  readonly parser: PhoneParser;
   readonly countryCodes: readonly PhoneCountryCode[] | undefined;
   readonly countries: PhoneNumberCountry[];
   readonly autoDetectCountry: boolean;
@@ -87,14 +93,17 @@ function sameMetadata(left: MetadataJson, right: MetadataJson): boolean {
 
 /**
  * The configuration for `props`, or `previous` itself when nothing in it changed: metadata by
- * {@link sameMetadata}, which keeps the previous object, country codes by value, and the four
- * flags. A list written inline in the parent's
- * render therefore keeps its rows. An empty list stays empty, and so throws, rather than
- * reading as no list.
+ * {@link sameMetadata}, in which case it keeps the previous object and its parser with the parses
+ * that parser made, country codes by value, and the four flags. A list written inline in the
+ * parent's render therefore keeps its rows. An empty list stays empty, and so throws, rather than
+ * reading as no list. Without `previous`, `configure` creates a new parser, so no two editors share
+ * one.
  */
 export function configure(props: ConfigurationProps, previous?: Configuration): Configuration {
   const given = props.metadata ?? defaultMetadata;
-  const metadata = previous && sameMetadata(previous.metadata, given) ? previous.metadata : given;
+  const keepsMetadata = previous !== undefined && sameMetadata(previous.metadata, given);
+  const metadata = keepsMetadata ? previous.metadata : given;
+  const parser = keepsMetadata ? previous.parser : createPhoneParser(metadata);
   const countryCodes = props.countries;
   const autoDetectCountry = props.autoDetectCountry ?? true;
   const international = props.international ?? false;
@@ -113,6 +122,7 @@ export function configure(props: ConfigurationProps, previous?: Configuration): 
   }
   return {
     metadata,
+    parser,
     countryCodes: countryCodes && [...countryCodes],
     countries:
       previous !== undefined && sameCatalog
@@ -147,64 +157,75 @@ function decodeFieldValue(value: string): string {
   }
 }
 
-/**
- * A processed number with the values it shows and submits; `reading` spares a parse of its `+`
- * form, `parse` one of the same digits in the same country.
- */
-export function snapshot(
-  next: ProcessedPhoneInput,
-  configuration: Configuration,
-  reading?: InternationalReading,
-  parse?: PhoneParse
-): Snapshot {
+/** A processed number with the values it shows and submits. */
+export function snapshot(next: ProcessedPhoneInput, configuration: Configuration): Snapshot {
   const values = resolvePhoneFieldValues({
     ...configuration,
     digits: next.digits,
     parsedNational: next.parsedNational,
     country: next.country.code,
-    reading,
-    parse,
   });
   return { ...next, values };
 }
 
-export function receiveValue(
-  input: string,
-  country: PhoneNumberCountry,
-  configuration: Configuration,
-  known?: InternationalReading
-): Snapshot {
-  // One parse reads the value as it stands, none with `known`, a parse of its `+` form already
-  // made; that parse is the same in every country, so it also detects the country, and the read
-  // there reuses it.
-  const read = readValueIn(input, country, configuration, known);
-  const { reading } = read.values;
-  if (!configuration.autoDetectCountry || reading === undefined) return read;
-  const detected = offeredCountry(configuration, reading.country);
-  return detected ? readNamedIn(input, detected, configuration, reading) : read;
+/**
+ * The country that a field value's own `+` or `00` prefix detects. It comes from the parse of the
+ * value's `+` form, which is the same in every country.
+ *
+ * @param value - The value, as the `value` or `defaultValue` prop gives it.
+ * @param configuration - The field's configuration.
+ * @returns The detected country, or `undefined` without a prefix or when the parse identifies no
+ * country, such as for `"+10"`.
+ */
+export function prefixCountry(value: string, configuration: Configuration): CountryCode | undefined {
+  return internationalNumber(cleanPhoneInput(decodeFieldValue(value)), configuration.parser)?.country;
 }
 
 /**
- * A controlled value read in `country` as it stands, with no detection: for a value that names
- * no offered country, so detection could select none. It parses at most once, and not at all
- * when `reading` already parsed its `+` form.
+ * A field value read from `country`, with detection when `autoDetectCountry` is on. With detection
+ * on, it reads a value whose own prefix names an offered country in that country, as its national
+ * number unless `international` keeps the digits as written. With detection off or no offered
+ * country detected, it reads the value in `country` as it stands. The parse that detects the country is the parse of the value's `+` form, which is the
+ * same in every country and is the one {@link prefixCountry} also reads.
+ *
+ * @param value - The value, as the `value` or `defaultValue` prop gives it.
+ * @param country - The country to read it from.
+ * @param configuration - The field's configuration.
+ * @returns The snapshot of the value.
+ */
+export function receiveValue(
+  value: string,
+  country: PhoneNumberCountry,
+  configuration: Configuration
+): Snapshot {
+  return readEntry(decodeFieldValue(value), country, configuration);
+}
+
+/** A field value processed in `country` as it stands, with no detection, so it parses nothing. */
+function valueEntry(
+  value: string,
+  country: PhoneNumberCountry,
+  configuration: Configuration
+): ProcessedPhoneInput {
+  return processInputWithDetection({
+    ...configuration,
+    autoDetectCountry: false,
+    input: cleanPhoneInput(decodeFieldValue(value)),
+    currentCountry: country,
+  });
+}
+
+/**
+ * A controlled value read in `country` as it stands, with no detection. Use it for a value that
+ * names no offered country, where detection could select none. It parses at most once and parses
+ * nothing when the configuration's parser already keeps that read.
  */
 export function readValueIn(
   value: string,
   country: PhoneNumberCountry,
-  configuration: Configuration,
-  reading?: InternationalReading
+  configuration: Configuration
 ): Snapshot {
-  return snapshot(
-    processInputWithDetection({
-      ...configuration,
-      autoDetectCountry: false,
-      input: cleanPhoneInput(decodeFieldValue(value)),
-      currentCountry: country,
-    }),
-    configuration,
-    reading
-  );
+  return snapshot(valueEntry(value, country, configuration), configuration);
 }
 
 /**
@@ -242,14 +263,9 @@ function reformat(
     // output format and the two display flags, never on which other countries the catalog lists:
     // a catalog change alone keeps it as it is, without a parse.
     if (sameReading(from, to)) return previous.country === country ? previous : { ...previous, country };
-    // The metadata is the same, so the digits read again from the parse already made of them:
-    // in any country for a number written with its `+`, in the same one for a national draft.
-    return snapshot(
-      { digits: previous.digits, country, parsedNational: previous.parsedNational },
-      to,
-      previous.values.reading,
-      previous.values.parse
-    );
+    // The metadata is the same, so both configurations use one parser, and reading the digits
+    // again reuses the parse it already made of them.
+    return snapshot({ digits: previous.digits, country, parsedNational: previous.parsedNational }, to);
   }
   // Catalog replacement keeps the existing number's international identity. An
   // unsupported prefix remains visible instead of being reinterpreted in the new country.
@@ -275,12 +291,11 @@ export function carry(
     // A controlled value the parent kept: its number reads again by its international form,
     // which keeps the number's identity, unless the field was submitting `value` and that
     // would change it. A `raw` value carries no country, so it then reads again as itself in
-    // the country that remains, through the reading of its international form just made when
-    // the value is written that way.
+    // the country that remains.
     const kept = reformat(previous, country, from, to, true);
     return kept.values.outputValue === value || previous.values.outputValue !== value
       ? kept
-      : receiveValue(value, country, to, kept.values.reading);
+      : receiveValue(value, country, to);
   }
   return reformat(previous, country, from, to, replaced);
 }
@@ -299,12 +314,40 @@ export function moveInto(
   country: PhoneNumberCountry
 ): Snapshot {
   const input = entryForm(previous);
-  const read = readValueIn(input, country, to);
-  if (!catalogReplaced(from, to, previous.country)) return read;
-  const { reading } = read.values;
-  return to.autoDetectCountry && reading?.country === country.code
-    ? readNamedIn(input, country, to, reading)
-    : read;
+  if (!catalogReplaced(from, to, previous.country)) return readValueIn(input, country, to);
+  // Detection reads the input in `country` only when its prefix names `country` itself.
+  return to.autoDetectCountry && prefixCountry(input, to) === country.code
+    ? receiveValue(input, country, to)
+    : readValueIn(input, country, to);
+}
+
+/** The read {@link snapshot} parses for `entry`. */
+function entryRead(
+  { digits, parsedNational, country }: ProcessedPhoneInput,
+  { parser }: Configuration
+): ParseRead {
+  return valuesRead(digits, parsedNational, country.code, parser.metadata);
+}
+
+/**
+ * The parses a field's state needs, for the state to keep as its pins. They are each number's own
+ * parse and, with a controlled value, the value's parse as {@link readValueIn} reads it in the
+ * first number's country. For a value with its own prefix, that is also the parse that names its
+ * country. It parses nothing.
+ *
+ * @param configuration - The state's configuration.
+ * @param value - The controlled value, if any.
+ * @param numbers - The state's numbers, the accepted one first.
+ * @returns The parses the configuration's parser keeps of those reads.
+ */
+export function pinReads(
+  configuration: Configuration,
+  value: string | undefined,
+  numbers: readonly [Snapshot, ...Snapshot[]]
+): ParsePins {
+  const entries: readonly ProcessedPhoneInput[] =
+    value === undefined ? numbers : [...numbers, valueEntry(value, numbers[0].country, configuration)];
+  return configuration.parser.pin(entries.map((entry) => entryRead(entry, configuration)));
 }
 
 /**
@@ -351,41 +394,6 @@ export function readInternationalIn(
   configuration: Configuration
 ): Snapshot {
   return readValueIn(entryForm(number), country, configuration);
-}
-
-/**
- * A value read in `country`, the country it names, as {@link receiveValue} reads it there, from
- * a parse of its `+` form: its national number unless `international` keeps the digits as
- * written. No parse when `reading` is that parse, unless the national number behind the calling
- * code is another input than the value's, as a trunk 0 after the calling code makes it.
- *
- * @param value - The controlled value.
- * @param country - The country the value names.
- * @param configuration - The field's configuration.
- * @param reading - The parse of the value's `+` form, if one is known.
- * @returns The snapshot in `country`.
- */
-export function readNamedIn(
-  value: string,
-  country: PhoneNumberCountry,
-  configuration: Configuration,
-  reading: InternationalReading | undefined
-): Snapshot {
-  if (reading === undefined) return receiveValue(value, country, configuration);
-  if (configuration.international || reading.nationalNumber === undefined) {
-    return readValueIn(value, country, configuration, reading);
-  }
-  // The national number is read again behind the calling code. When that is the value's own input,
-  // the reading serves; otherwise it is another input, which libphonenumber can read differently
-  // ("+4600…" keeps a trunk 0 that "+460…" loses), and takes a parse of its own. Either way the
-  // snapshot keeps the value's reading, the parse that named its country, so the value goes on
-  // naming it.
-  const national = snapshot(
-    { digits: reading.nationalNumber, country, parsedNational: true },
-    configuration,
-    reading
-  );
-  return { ...national, values: { ...national.values, reading } };
 }
 
 /**

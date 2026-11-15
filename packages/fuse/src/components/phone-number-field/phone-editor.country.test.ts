@@ -212,6 +212,21 @@ describe("PhoneEditor controlled countryCode", () => {
     });
   });
 
+  it("shows the country an echoed paste names after a value a newline cut short", () => {
+    const props = { countryCode: "NO", countries: ["NO", "SE"], formatOnType: true } as const;
+    // libphonenumber stops reading at the newline, after "+46", so the first value names no
+    // number of its own.
+    const pasted = PhoneEditor.paste(
+      PhoneEditor.create({ ...props, value: "+46\n701234567" }),
+      "+46701234567"
+    );
+    expect(shown(PhoneEditor.reconcile(pasted, { ...props, value: "+46701234567" }))).toEqual({
+      display: "070-123 45 67",
+      output: "+46701234567",
+      country: "SE",
+    });
+  });
+
   it("keeps the shown country and number when the parent releases the country after rejecting a pick", () => {
     const rejected = PhoneEditor.reconcile(PhoneEditor.selectCountry(typedInNorway(), "SE"), {
       countryCode: "NO",
@@ -700,6 +715,61 @@ describe("PhoneEditor controlled country parse budget", () => {
     const released = PhoneEditor.reconcile(state, props);
     expect(parses.count).toBe(0);
     expect(shown(released)).toEqual(expected);
+  });
+
+  /** More inputs than `PARSE_MEMO_SIZE`, the number of recent parses the parser keeps. */
+  const OUTLASTING_READS = 20;
+
+  /**
+   * Reconciles `state` with `OUTLASTING_READS` different values and keeps none of the results. The
+   * hook reconciles during render, so each call models a render React discards before commit.
+   */
+  function discardRenders(state: PhoneEditorState, props: PhoneEditorProps): void {
+    for (let index = 0; index < OUTLASTING_READS; index += 1) {
+      PhoneEditor.reconcile(state, { ...props, value: `+474123${String(index).padStart(4, "0")}` });
+    }
+  }
+
+  it("costs at most one parse for a countryCode change however many edits the field read before it", () => {
+    // The controlled value names Great Britain, so adding `countryCode` reads it there. The parse
+    // that names its country is the one the field made of the value on mount, and only the parse
+    // of its national number behind the calling code is new. In between, the field parses the
+    // inputs of edits the parent leaves unanswered. They outnumber the recent parses the parser
+    // keeps, and they never evict the value's parse.
+    const props = { value: "+44 (0)20 1234 5678", outputFormat: "raw" } as const;
+    let state = PhoneEditor.reconcile(PhoneEditor.create({ ...props, autoDetectCountry: false }), props);
+    for (let index = 0; index < OUTLASTING_READS; index += 1) {
+      state = PhoneEditor.reconcile(
+        PhoneEditor.paste(state, `412300${String(index).padStart(2, "0")}`),
+        props
+      );
+    }
+    parses.reset();
+    const placed = PhoneEditor.reconcile(state, { ...props, countryCode: "NO" });
+    expect(shown(placed).country).toBe("GB");
+    expect(parses.count).toBeLessThanOrEqual(1);
+  });
+
+  it("costs at most one parse for a countryCode change after renders React discarded", () => {
+    // The next change to the committed state still reuses the parse of its value.
+    const props = { value: "+44 (0)20 1234 5678", outputFormat: "raw" } as const;
+    const state = PhoneEditor.reconcile(PhoneEditor.create({ ...props, autoDetectCountry: false }), props);
+    discardRenders(state, props);
+    parses.reset();
+    expect(shown(PhoneEditor.reconcile(state, { ...props, countryCode: "NO" })).country).toBe("GB");
+    expect(parses.count).toBeLessThanOrEqual(1);
+  });
+
+  it("costs nothing for equal props after renders React discarded", () => {
+    // An unanswered paste waits under a controlled country, beside a value that names Sweden.
+    // After the discarded renders, reconciling the committed state with its own props still
+    // parses nothing.
+    const props = { value: "+46701234567", countryCode: "NO" } as const;
+    const state = PhoneEditor.paste(PhoneEditor.create(props), "41234567");
+    discardRenders(state, props);
+    parses.reset();
+    PhoneEditor.reconcile(state, props);
+    expect(parses.count).toBe(0);
   });
 
   it("costs one parse for a value-first exact echo, the read of the value in the shown country", () => {
