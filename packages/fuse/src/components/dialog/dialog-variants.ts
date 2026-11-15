@@ -7,7 +7,7 @@ import {
   overlayLayer,
   overlayModalFillClass,
   overlayModalPopupClass,
-  overlayScrimClass,
+  overlayScrimVariants,
   overlaySizeVariants,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
@@ -41,7 +41,8 @@ export const dialogContentVariants = tv({
  * component sync.
  *
  * - `overlay` is the scrim over the viewport, fading in and out with the popup on the overlay
- *   layer.
+ *   layer. `backdropBlur` takes the shared scrim's blur axis, so Dialog and Sheet drop the same
+ *   class.
  * - `header` stacks the title and description 8px apart.
  * - `footer` is the shared overlay footer: actions stacked, reversed, then in an end-aligned row
  *   from `sm`.
@@ -52,7 +53,6 @@ export const dialogContentVariants = tv({
 export const dialogVariants = tv({
   slots: {
     overlay: [
-      overlayScrimClass,
       "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
       overlayLayer,
     ],
@@ -67,8 +67,13 @@ export const dialogVariants = tv({
     isFocusable: {
       true: { title: selfFocusRingClass },
     },
+    backdropBlur: {
+      true: { overlay: overlayScrimVariants({ backdropBlur: true }) },
+      false: { overlay: overlayScrimVariants({ backdropBlur: false }) },
+    },
   },
   defaultVariants: {
     isFocusable: false,
+    backdropBlur: true,
   },
 });

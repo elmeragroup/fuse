@@ -145,8 +145,9 @@ function Workspace(): ReactElement {
             <Gear data-icon="inline-start" aria-hidden />
             Settings
           </Dialog.Trigger>
-          {/* Opening with the page moves no focus, so it does not pull the camera. */}
-          <Dialog.Content ref={popup} initialFocus={false}>
+          {/* Opening with the page moves no focus, so it does not pull the camera. A backdrop blur
+              would sample the artboard's transformed scope at the wrong scale. */}
+          <Dialog.Content ref={popup} initialFocus={false} backdropBlur={false}>
             <Dialog.Header>
               <Dialog.Title>Workspace settings</Dialog.Title>
               <Dialog.Description>Changes apply to everyone in the workspace.</Dialog.Description>
@@ -179,7 +180,9 @@ function Workspace(): ReactElement {
                     <AlertDialog.Trigger render={<Button variant="destructive" />}>
                       Delete workspace
                     </AlertDialog.Trigger>
+                    {/* A backdrop blur would sample the artboard's transformed scope at the wrong scale. */}
                     <AlertDialog.Content
+                      backdropBlur={false}
                       title={`Delete the ${saved.name} workspace?`}
                       actionLabel="Delete workspace"
                       isAutomaticallyCloseOnActionEnabled

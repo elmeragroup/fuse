@@ -104,6 +104,7 @@ export function AlertDialogContent({
   isAutomaticallyCloseOnActionEnabled = false,
   className,
   initialFocus,
+  backdropBlur = true,
   ...props
 }: AlertDialogContentProps): ReactElement | null {
   const strings = useLocalizedStrings(alertDialogStrings);
@@ -140,6 +141,7 @@ export function AlertDialogContent({
     <DialogContent
       className={className}
       initialFocus={initialFocus ?? fallbackFocus}
+      backdropBlur={backdropBlur}
       {...props}
       role="alertdialog"
       showCloseButton={false}>

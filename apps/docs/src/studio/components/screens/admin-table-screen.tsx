@@ -194,7 +194,8 @@ export function AdminTableScreen(): ReactElement {
           Add customer
         </Button>
         <Dialog.Root open={adding} onOpenChange={setAdding}>
-          <Dialog.Content>
+          {/* A backdrop blur would sample the artboard's transformed scope at the wrong scale. */}
+          <Dialog.Content backdropBlur={false}>
             <Dialog.Header>
               <Dialog.Title>Add customer</Dialog.Title>
               <Dialog.Description>The customer starts active, with nothing owed.</Dialog.Description>
@@ -418,8 +419,9 @@ export function AdminTableScreen(): ReactElement {
             setProfile(undefined);
           }
         }}>
+        {/* A backdrop blur would sample the artboard's transformed scope at the wrong scale. */}
         {profile === undefined ? null : (
-          <Dialog.Content>
+          <Dialog.Content backdropBlur={false}>
             <Dialog.Header>
               <Dialog.Title>{profile.name}</Dialog.Title>
               <Dialog.Description>{`Customer ${profile.id}`}</Dialog.Description>

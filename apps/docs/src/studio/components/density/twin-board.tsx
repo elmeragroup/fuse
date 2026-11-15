@@ -166,7 +166,8 @@ export function TwinBoard(): ReactElement {
             <Gear data-icon="inline-start" />
             Advanced settings
           </Dialog.Trigger>
-          <Dialog.Content data-twin-id="advanced-dialog">
+          {/* A backdrop blur would sample the artboard's transformed scope at the wrong scale. */}
+          <Dialog.Content data-twin-id="advanced-dialog" backdropBlur={false}>
             <Dialog.Header>
               <Dialog.Title>Advanced settings</Dialog.Title>
               <Dialog.Description>These apply to every meter on the account.</Dialog.Description>
