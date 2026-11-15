@@ -1,71 +1,43 @@
 "use client";
 
-import {
-  Fragment,
-  use,
-  useCallback,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import type { KeyboardEvent, ReactElement } from "react";
+import { Fragment, use, useCallback, useId, useMemo, useRef } from "react";
+import type { ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
-import { isElement, isNode } from "../../internal/dom-node";
-import { displayNames } from "../../internal/intl-cache";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import type { Bounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";
 import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { today } from "../../temporal/today";
-import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { useTemporalProp } from "../calendar/calendar-input";
-import { createCalendarStore } from "../calendar/calendar-store";
 import { draftOf, editableSegments, placeholderValue } from "./date-draft";
-import { dayPeriodNames, describeValue, fieldSegments, resolveHourCycle } from "./date-field-format";
+import { dayPeriodNames, fieldSegments, resolveHourCycle } from "./date-field-format";
 import type { FieldFormat } from "./date-field-format";
 import { readFieldText } from "./date-field-text";
-import { DateInputRootContext, SEGMENT_SELECTOR } from "./date-input-context";
-import type { DateInputActions, DateInputRootContextValue } from "./date-input-context";
+import { DateInputRootContext } from "./date-input-context";
+import type { DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
+import { boxPressHandlers, firstFocusableSegment } from "./date-input-focus";
+import { useIsIOS } from "./date-input-ios";
+import { useDateInputNaming } from "./date-input-naming";
 import { DateInputNeighborContext } from "./date-input-neighbors";
-import type { DateInputFocusDirection, DateInputNeighbor } from "./date-input-neighbors";
 import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
-import {
-  basisOf,
-  canceled,
-  confirm,
-  draftOver,
-  entryOf,
-  erase,
-  focusEntered,
-  initialSession,
-  paste,
-  rebase,
-  resetSession,
-  segmentFocused,
-  step,
-  toEdge,
-  typeKey,
-} from "./date-input-session";
-import type { SessionSettings, SessionState, SessionTransition } from "./date-input-session";
+import { basisOf, draftOver, entryOf } from "./date-input-session";
+import type { SessionSettings } from "./date-input-session";
+import { useSessionActions, useSessionStore } from "./date-input-store";
 import type {
   DateInputRootProps,
   DateInputRootState,
   DateInputSegmentData,
   DateInputValue,
 } from "./date-input-types";
-import { entryError, errorMessage, valueError } from "./date-input-validation";
+import { entryError, errorMessage } from "./date-input-validation";
 import type { DateInputRules } from "./date-input-validation";
 import { dateInputVariants } from "./date-input-variants";
 import { todayInstant, useFieldZoneName, zoneNamingInstant } from "./date-input-zone";
@@ -86,106 +58,6 @@ export type {
 
 /** The part diagnostics name. */
 const OWNER = "DateInput.Root";
-
-/** React Aria's page steps: Page Up and Page Down move a segment this far. */
-const PAGE_STEP = {
-  year: 5,
-  month: 2,
-  day: 7,
-  hour: 2,
-  minute: 15,
-  second: 15,
-  dayPeriod: 1,
-} as const;
-
-// iOS VoiceOver cannot focus a spinbutton, so the segments are textboxes there, as React Aria's
-// are, detected as React Aria's `isIOS` does: an iPhone, iPad or iPod platform, or a Mac platform
-// with touch, which is how iPadOS reports itself. The platform is read after hydration: the server
-// and the hydrating render write spinbuttons.
-function isIOS(): boolean {
-  const { platform, maxTouchPoints } = navigator;
-  return /^iP(?:hone|ad|od)/u.test(platform) || (platform.startsWith("Mac") && maxTouchPoints > 1);
-}
-const noSubscription = (): (() => void) => () => undefined;
-function useIsIOS(): boolean {
-  return useSyncExternalStore(noSubscription, isIOS, () => false);
-}
-
-/** A Root element's focusable segments, in document order. */
-function focusableSegments(root: Element | null): HTMLElement[] {
-  return [...(root?.querySelectorAll<HTMLElement>(SEGMENT_SELECTOR) ?? [])];
-}
-
-/** Focuses the last segment before `target`, then back over empty ones, as React Aria's field press. */
-function focusBefore(root: Element, target: EventTarget): void {
-  const list = focusableSegments(root);
-  const before =
-    isNode(target) && target !== root
-      ? list.filter(
-          (element) => (element.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
-        )
-      : list;
-  let index = (before.length > 0 ? before : list).length - 1;
-  while (
-    index > 0 &&
-    list[index]?.hasAttribute("data-placeholder") === true &&
-    list[index - 1]?.hasAttribute("data-placeholder") === true
-  ) {
-    index -= 1;
-  }
-  list[index]?.focus();
-}
-
-/**
- * Focuses the segment `direction` places from `from` among the Root's focusable segments; past the
- * first or last, the nearest segment of the input beside this one, when a control owns both.
- */
-function focusSibling(
-  root: HTMLElement | null,
-  from: Element,
-  direction: DateInputFocusDirection,
-  neighbor: DateInputNeighbor | undefined
-): void {
-  const list = focusableSegments(root);
-  const index = list.findIndex((element) => element === from);
-  if (index < 0) {
-    return;
-  }
-  const sibling = list[index + (direction === "next" ? 1 : -1)];
-  if (sibling !== undefined) {
-    sibling.focus();
-    return;
-  }
-  const next = root === null ? null : (neighbor?.(root, direction) ?? null);
-  const segments = focusableSegments(next);
-  (direction === "next" ? segments[0] : segments.at(-1))?.focus();
-}
-
-/** The transition a key makes on a segment, or `undefined` for a key the segment leaves alone. */
-function keyTransition(
-  key: string,
-  type: keyof typeof PAGE_STEP,
-  page: number,
-  settings: SessionSettings,
-  state: SessionState
-): SessionTransition | undefined {
-  switch (key) {
-    case "ArrowUp":
-      return step(state, type, 1, settings);
-    case "ArrowDown":
-      return step(state, type, -1, settings);
-    case "PageUp":
-      return step(state, type, page, settings);
-    case "PageDown":
-      return step(state, type, -page, settings);
-    case "Home":
-      return toEdge(state, type, "min", settings);
-    case "End":
-      return toEdge(state, type, "max", settings);
-    default:
-      return undefined;
-  }
-}
 
 const ROOT_STATE_ATTRIBUTES = {
   invalid: (value: boolean) => (value ? { "data-invalid": "true" } : null),
@@ -252,11 +124,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const maxBound = useTemporalProp(maxValue, OWNER, "maxValue") ?? undefined;
 
   const hourCycle = resolveHourCycle(locale, hourCycleProp);
-  // The edit session's one store: every gesture is a transition of it (`date-input-session.ts`).
-  // The segments are not known yet, so the first session holds no draft and no basis: the rebase
-  // below sets it before any gesture reads it.
-  const [store] = useState(() => createCalendarStore(initialSession(parsedDefault, "")));
-  const session = useSyncExternalStore(store.subscribe, store.get, () => store.initial);
+  // The edit session's one store. Every gesture is a transition of it; see `date-input-store.ts`.
+  const { store, session } = useSessionStore(parsedDefault);
   const committed = controlled ? parsedValue : session.own;
 
   // A kind a value or default value named sticks, so emptying a zoned input and typing again emits
@@ -313,7 +182,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const firstSegment = useMemo(
     () => ({
       get current(): HTMLElement | null {
-        return rootRef.current?.querySelector<HTMLElement>(SEGMENT_SELECTOR) ?? null;
+        return firstFocusableSegment(rootRef.current);
       },
     }),
     []
@@ -331,19 +200,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     },
     fallbackId
   );
-  const { disabled, invalid, hiddenInput, hiddenInputId, labelId, setFocused, blurred, revalidate } = field;
-
-  // A new committed value, hour cycle or set of segments drops any draft typed over the old ones,
-  // for good. A dropped draft no longer counts as incomplete, so an error it showed is checked again;
-  // a change of value does that by itself, but a granularity change alone does not.
-  useLayoutEffect(() => {
-    const before = store.get();
-    const after = rebase(before, basis);
-    store.set(after);
-    if (before.draft !== null && after.draft === null) {
-      revalidate();
-    }
-  }, [store, basis, revalidate]);
+  const { disabled, invalid, hiddenInput, hiddenInputId, labelId } = field;
 
   // The zone's name for today while the input is empty or holds a time on the stand-in day.
   const zoneName = useFieldZoneName(format, zoneNamingInstant(committed, inputScope));
@@ -391,132 +248,28 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       inputScope,
     ]
   );
-  // What gestures read at event time: this render's settings and callback.
-  const eventProps = useRef({ settings, rules, onValueChange, neighbor });
-  useLayoutEffect(() => {
-    eventProps.current = { settings, rules, onValueChange, neighbor };
+  const { actions, rootHandlers } = useSessionActions(store, {
+    basis,
+    settings,
+    rules,
+    onValueChange,
+    neighbor,
+    rootRef,
+    defaultValue: parsedDefault,
+    field,
   });
 
-  /** Applies a transition: reports its commit, keeps the edit unless the commit is canceled. */
-  const run = useCallback(
-    (transition: SessionTransition, event: Event, trigger: Element | undefined): void => {
-      const before = store.get();
-      const { commit } = transition;
-      if (commit !== undefined) {
-        const details = createChangeEventDetails(commit.reason, event, trigger, {
-          getValidationError: () =>
-            commit.value === null ? null : valueError(commit.value, eventProps.current.rules),
-        });
-        // SAFETY: the committed value is of the input's resolved kind, which is `T`'s.
-        eventProps.current.onValueChange?.(commit.value as T | null, details);
-        if (details.isCanceled) {
-          store.set(canceled(before));
-          return;
-        }
-      }
-      store.set(transition.state);
-      if (transition.focus !== undefined && trigger !== undefined) {
-        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.neighbor);
-      }
-    },
-    [store]
-  );
-
-  const actions = useMemo(
-    (): DateInputActions => ({
-      keyDown(segment, event: KeyboardEvent<HTMLElement>) {
-        const { settings: current } = eventProps.current;
-        const { currentTarget, nativeEvent } = event;
-        // A chord such as Cmd+ArrowUp, Alt+ArrowLeft or Ctrl+Backspace is the browser's or the
-        // host's, as React Aria's segments leave it.
-        if (event.ctrlKey || event.metaKey || event.altKey) {
-          return;
-        }
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-          event.preventDefault();
-          focusSibling(
-            rootRef.current,
-            currentTarget,
-            event.key === "ArrowRight" ? "next" : "previous",
-            eventProps.current.neighbor
-          );
-          return;
-        }
-        if (event.key === "Backspace" || event.key === "Delete") {
-          event.preventDefault();
-          if (segment.isEditable) {
-            run(erase(store.get(), segment, current), nativeEvent, currentTarget);
-          }
-          return;
-        }
-        if (!segment.isEditable || !current.editable) {
-          return;
-        }
-        const transition = keyTransition(
-          event.key,
-          segment.type,
-          PAGE_STEP[segment.type],
-          current,
-          store.get()
-        );
-        if (transition !== undefined) {
-          event.preventDefault();
-          run(transition, nativeEvent, currentTarget);
-        }
-      },
-      erase(segment, event, target) {
-        run(erase(store.get(), segment, eventProps.current.settings), event, target);
-      },
-      type(type, key, event, target) {
-        run(typeKey(store.get(), type, key, eventProps.current.settings), event, target);
-      },
-      segmentFocused() {
-        store.set(segmentFocused(store.get()));
-      },
-      segmentRemoved(element) {
-        const list = focusableSegments(rootRef.current);
-        const index = list.indexOf(element);
-        if (index >= 0) {
-          (list[index - 1] ?? list[index + 1])?.focus();
-        }
-      },
-    }),
-    [store, run]
-  );
-
-  useFormReset(
-    hiddenInput,
-    controlled
-      ? null
-      : () => {
-          store.set(resetSession(parsedDefault, hourCycle, fields, scope));
-          field.reset();
-        }
-  );
-
-  const description =
-    committed === null
-      ? undefined
-      : scope === "time"
-        ? strings.format("selectedTimeDescription", { time: describeValue(format, committed, zoneName) })
-        : strings.format("selectedDateDescription", { date: describeValue(format, committed, zoneName) });
-  const descriptionId = `${fallbackId}-description`;
-  const describedBy =
-    [description === undefined ? undefined : descriptionId, ariaDescribedBy, field.describedBy]
-      .filter((id) => id !== undefined && id !== "")
-      .join(" ") || undefined;
-  const labelledBy = ariaLabelledBy ?? labelId;
-
-  const segmentName = useCallback(
-    (type: Parameters<DateInputRootContextValue["segmentName"]>[0]): string => {
-      try {
-        return displayNames(locale, { type: "dateTimeField" }).of(type) ?? strings.format(type);
-      } catch {
-        return strings.format(type);
-      }
-    },
-    [locale, strings]
-  );
+  const { description, descriptionId, describedBy, labelledBy, segmentName } = useDateInputNaming({
+    strings,
+    format,
+    committed,
+    zoneName,
+    id: fallbackId,
+    ariaLabelledBy,
+    ariaDescribedBy,
+    fieldLabelId: labelId,
+    fieldDescribedBy: field.describedBy,
+  });
 
   const context = useMemo(
     (): DateInputRootContextValue => ({
@@ -576,9 +329,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       "data-slot": "field-group",
       "data-size": size,
       ...mergeProps<"div">(
-        // The blur and paste handlers read this render's settings at event time; mergeProps
+        // The session's handlers read the last render's settings at event time; mergeProps
         // composes them and calls none while rendering.
-        // oxlint-disable-next-line react/refs -- a handler's ref read, not a read during render
         {
           role: "group",
           "aria-label": ariaLabel,
@@ -589,46 +341,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
           // Unicode isolation keeps the segments in order inside right-to-left text, as React Aria's
           // group does.
           style: { unicodeBidi: "isolate" },
-          onFocus(event) {
-            if (isNode(event.relatedTarget) && event.currentTarget.contains(event.relatedTarget)) {
-              return;
-            }
-            store.set(focusEntered(store.get()));
-            setFocused(true);
-          },
-          onBlur(event) {
-            if (isNode(event.relatedTarget) && event.currentTarget.contains(event.relatedTarget)) {
-              return;
-            }
-            run(confirm(store.get(), eventProps.current.settings), event.nativeEvent, undefined);
-            blurred(store.get().edited);
-          },
-          onPointerDown(event) {
-            // A press on the box, not on a segment, focuses the last filled segment before it.
-            if (disabled || event.pointerType !== "mouse") {
-              return;
-            }
-            event.preventDefault();
-            focusBefore(event.currentTarget, event.target);
-          },
-          onPointerUp(event) {
-            if (disabled || event.pointerType === "mouse") {
-              return;
-            }
-            if (isElement(event.target) && event.target.closest(SEGMENT_SELECTOR) !== null) {
-              return;
-            }
-            focusBefore(event.currentTarget, event.target);
-          },
-          onPaste(event) {
-            event.preventDefault();
-            const trigger = isElement(event.target) ? event.target : undefined;
-            run(
-              paste(store.get(), event.clipboardData.getData("text"), eventProps.current.settings),
-              event.nativeEvent,
-              trigger
-            );
-          },
+          ...rootHandlers,
+          ...boxPressHandlers(disabled),
           children: segments.map((segment) =>
             children === undefined ? (
               <DateInputSegment key={segmentKey(segment)} segment={segment} />
