@@ -751,8 +751,9 @@ export type CalendarDayButtonProps = DayButtonElementProps & {
    * writing direction, Arrow Up and Down a week, Home and End go to the month's first and last
    * day, and Page Up and Page Down a month, or a year with Shift. Focus stays inside the bounds
    * and moves between visible months without paging; past them the view pages. Enter and Space
-   * select, once however long they are held. A key with Alt, Control or Meta, and Shift with any
-   * other key, is left to the browser.
+   * select, once however long they are held. In a RangeCalendar, Escape drops a range being chosen
+   * and then goes no further, with any modifier. For keys other than Escape, a key with Alt,
+   * Control or Meta, and Shift with any other key, is left to the browser.
    */
   children?: DayButtonElementProps["children"];
 };
@@ -837,6 +838,14 @@ export function CalendarDayButton({
       }
     },
     onKeyDown(event) {
+      // Escape goes to the selection model with any modifier, since an enclosing popup closes on
+      // Escape with any modifier.
+      if (event.key === "Escape") {
+        if (selection.cancel()) {
+          event.stopPropagation();
+        }
+        return;
+      }
       // A key with Alt, Control or Meta is a browser or system shortcut, such as Alt+Arrow Left
       // for Back; the grid leaves it alone, as React Aria matches its shortcuts' exact modifiers.
       if (event.altKey || event.ctrlKey || event.metaKey) {

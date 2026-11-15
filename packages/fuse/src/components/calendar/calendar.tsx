@@ -204,6 +204,8 @@ export function CalendarRoot({
         // One day has no preview, so the pointer changes no flags, and no name prefix or
         // description: a day's own name says it is selected.
         hover: () => undefined,
+        // A Calendar chooses a day in one press, so Escape finds nothing open and passes through.
+        cancel: () => false,
         dayNamePrefix: () => "",
         dayDescriptionId: undefined,
         multiselectable: false,

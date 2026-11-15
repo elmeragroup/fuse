@@ -2,10 +2,10 @@
 
 // RangeCalendar's selection, beside the navigation every calendar Root shares
 // (`useCalendarNavigation`): each day's flags and name from the range shown, a day press or key
-// that anchors or completes the range, the pointer preview, the commit a focus-out or an outside
-// press makes, and the rule that a calendar turned read-only or disabled drops an open range. The
-// rules themselves are `range-selection.ts`'s; this module wires them to the Root's store and
-// callbacks.
+// that anchors or completes the range, the pointer preview, Escape on a day dropping an open
+// range, the commit a focus-out or an outside press makes, and the rule that a calendar turned
+// read-only or disabled drops an open range. The rules themselves are `range-selection.ts`'s; this
+// module wires them to the Root's store and callbacks.
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
@@ -138,6 +138,20 @@ function reportRange(
   return !details.isCanceled;
 }
 
+/**
+ * Drops an open range's anchor.
+ *
+ * @returns Whether a range was open.
+ */
+function dropAnchor(store: CalendarStore<RangeCalendarState>): boolean {
+  const state = store.get();
+  if (state.anchor === null) {
+    return false;
+  }
+  store.set({ ...state, anchor: null });
+  return true;
+}
+
 /** What the selection reads from the Root when an input runs, published after each render. */
 type LatestInput = Pick<RangeSelectionInput, "rules" | "onValueChange" | "controlled" | "commitBehavior">;
 
@@ -174,9 +188,8 @@ export function useRangeSelection(
   // no event runs between the two, so a commit never meets an open range in such a calendar.
   const { disabled, readOnly } = settings;
   useLayoutEffect(() => {
-    const state = store.get();
-    if ((disabled || readOnly) && state.anchor !== null) {
-      store.set({ ...state, anchor: null });
+    if (disabled || readOnly) {
+      dropAnchor(store);
     }
   }, [store, disabled, readOnly]);
 
@@ -259,6 +272,7 @@ export function useRangeSelection(
         // moves there, DOM focus stays where it is.
         store.set({ ...state, focused: date, focusRequest: false });
       },
+      cancel: () => dropAnchor(store),
     }),
     [store, settings, views, descriptionId, select]
   );

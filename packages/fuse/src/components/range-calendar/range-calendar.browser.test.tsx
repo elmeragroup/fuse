@@ -7,7 +7,7 @@
  * local noon on June 15, 2030, outside every month the scenarios show.
  */
 import { useState } from "react";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -30,7 +30,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function Parts(props: RangeCalendarRootProps): ReactElement {
+type PartsProps = RangeCalendarRootProps & {
+  months?: ComponentProps<typeof RangeCalendar.Months>["children"];
+};
+
+function Parts({ months, ...props }: PartsProps): ReactElement {
   return (
     <RangeCalendar.Root aria-label="Stay" {...props}>
       <RangeCalendar.Header>
@@ -38,16 +42,13 @@ function Parts(props: RangeCalendarRootProps): ReactElement {
         <RangeCalendar.VisibleRangeHeading />
         <RangeCalendar.IncrementMonth />
       </RangeCalendar.Header>
-      <RangeCalendar.Months />
+      <RangeCalendar.Months>{months}</RangeCalendar.Months>
     </RangeCalendar.Root>
   );
 }
 
 /** A range calendar printing each range it reports, with the reason and validation error. */
-function Harness({
-  cancel,
-  ...props
-}: RangeCalendarRootProps & { cancel?: (reason: string) => boolean }): ReactElement {
+function Harness({ cancel, ...props }: PartsProps & { cancel?: (reason: string) => boolean }): ReactElement {
   const [value, setValue] = useState("unchanged");
   return (
     <>
@@ -266,32 +267,63 @@ describe("RangeCalendar committing an open range", () => {
     expect(selectedDays()).toEqual(["12", "13", "14", "15"]);
   });
 
-  it("stops Escape that drops an anchor from reaching the page, and lets it through otherwise", async () => {
-    const escapes = vi.fn<() => void>();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        escapes();
+  // A day button whose `render` element names its own slot still handles Escape. The key reaches the
+  // selection model through the button, never through the button's slot.
+  it.each([
+    ["the default day buttons", undefined],
+    [
+      "day buttons that name their own slot",
+      (month: Temporal.PlainYearMonth) => (
+        <RangeCalendar.Month key={month.toString()} value={month}>
+          <RangeCalendar.DayGrid>
+            <RangeCalendar.DayGridBody>
+              {(week) => (
+                <RangeCalendar.DayGridRow key={week.toString()} value={week}>
+                  {(day) => (
+                    <RangeCalendar.DayGridCell key={day.toString()} value={day}>
+                      <RangeCalendar.DayButton render={<button type="button" data-slot="stay-day" />} />
+                    </RangeCalendar.DayGridCell>
+                  )}
+                </RangeCalendar.DayGridRow>
+              )}
+            </RangeCalendar.DayGridBody>
+          </RangeCalendar.DayGrid>
+        </RangeCalendar.Month>
+      ),
+    ],
+  ] as const)(
+    "drops an anchor on Escape without letting it reach the page, and lets it through otherwise, on %s",
+    async (_, months) => {
+      const escapes = vi.fn<() => void>();
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          escapes();
+        }
+      };
+      document.addEventListener("keydown", onKeyDown);
+      try {
+        mount(
+          <Harness
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+            months={months}
+          />
+        );
+        await focusDay("Monday, October 12, 2026");
+        await userEvent.keyboard("{Enter}");
+        expect(selectedDays()).toEqual(["12", "13"]);
+        await userEvent.keyboard("{Escape}");
+        expect(selectedDays()).toEqual(["5", "6", "7", "8", "9"]);
+        expect(escapes).not.toHaveBeenCalled();
+        await userEvent.keyboard("{Escape}");
+        expect(escapes).toHaveBeenCalledTimes(1);
+      } finally {
+        document.removeEventListener("keydown", onKeyDown);
       }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    try {
-      mount(
-        <Harness
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-        />
-      );
-      await focusDay("Monday, October 12, 2026");
-      await userEvent.keyboard("{Enter}{Escape}");
-      expect(escapes).not.toHaveBeenCalled();
-      await userEvent.keyboard("{Escape}");
-      expect(escapes).toHaveBeenCalledTimes(1);
-    } finally {
-      document.removeEventListener("keydown", onKeyDown);
     }
-  });
+  );
 });
 
 describe("RangeCalendar unavailable days", () => {
