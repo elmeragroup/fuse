@@ -32,7 +32,7 @@ import {
   menuItemIndicatorRoomClass,
   menuSeparatorClass,
 } from "../overlay/menu-row-classes";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass, overlayResizingPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { switchVariants } from "../switch/switch-variants";
 import {
@@ -278,7 +278,7 @@ export function DataTableFilterContent({
               className={mergeClassName(
                 className,
                 selfFocusRingClass,
-                overlayTimedPopupClass,
+                overlayResizingPopupClass,
                 menuPopupShellClass,
                 slots.menu()
               )}
@@ -618,7 +618,7 @@ function FieldSubmenu({
               data-field={fieldId}
               // Base UI hands the trigger's label to the list inside, so the dialog names itself.
               aria-label={field.label}
-              className={cn(selfFocusRingClass, overlayTimedPopupClass, menuPopupShellClass, slots.menu())}
+              className={cn(selfFocusRingClass, overlayResizingPopupClass, menuPopupShellClass, slots.menu())}
               onKeyDown={keepKeysFromToolbar}>
               <OptionMenuBody fieldId={fieldId} field={field} query={query}>
                 {children}

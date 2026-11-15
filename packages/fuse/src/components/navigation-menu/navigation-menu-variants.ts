@@ -40,7 +40,7 @@ const barBoxClass = cn(
  * `NavigationMenu`'s part classes, one slot per rendered part.
  *
  * The popup animates its size and position through transitions on the `--popup-*` and
- * `--positioner-*` variables Base UI writes, not through the `data-open` keyframes the
+ * `--positioner-*` variables Base UI writes, not through the per-side slide and zoom the
  * timed anchored popups use, so it takes the shared surface without the shared motion.
  *
  * Base UI measures the popup inside the positioner, which caps it at the available width.

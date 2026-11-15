@@ -21,7 +21,7 @@ import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
 import type { ParentHandle } from "../../../test/parent-handle";
 import { popupFocusRestored } from "../../../test/popup-focus";
-import { waitForPopupSettled } from "../../../test/popup-settled";
+import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
@@ -864,7 +864,7 @@ describe("DateRangePicker presets with a dateValue", () => {
         </DateRangePicker.Root>
       )
     );
-    await waitForPopupSettled();
+    await waitForPopupFocus(await waitForPopupSettled());
     // Half a range: the start alone reports nothing.
     roleNamed("spinbutton", "month, Start Date, Period").focus();
     await userEvent.keyboard("11022026");
@@ -993,7 +993,7 @@ describe("DateRangePicker dateValue presets and the pane's checked key", () => {
 
   it("re-applies a checked preset by a pointer press after Space re-applied it", async () => {
     renderThemed(withLocale("en-US", <Rules paneKey="This week" />));
-    await waitForPopupSettled();
+    await waitForPopupFocus(await waitForPopupSettled());
     roleNamed("radio", "This week").focus();
     await userEvent.keyboard(" ");
     await pickRange("Monday, October 12, 2026", "Wednesday, October 14, 2026");

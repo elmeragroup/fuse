@@ -5,6 +5,7 @@ import {
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
+  overlayResizingPopupClass,
   overlayTimedPopupClass,
 } from "./overlay-classes";
 
@@ -79,21 +80,39 @@ describe("overlayTimedPopupClass", () => {
         "ring-1",
         "ring-foreground/10",
         "rounded-md",
+        "transition-opacity",
+        "ease-[ease]",
+        "data-starting-style:opacity-0",
+        "data-ending-style:opacity-0",
+        "motion-safe:data-starting-style:scale-95",
+        "motion-safe:data-ending-style:scale-95",
         "origin-(--transform-origin)",
-        "data-[side=bottom]:slide-in-from-top-2",
-        "data-[side=top]:slide-in-from-bottom-2",
-        "data-[side=left]:slide-in-from-right-2",
-        "data-[side=right]:slide-in-from-left-2",
-        "data-[side=inline-start]:slide-in-from-right-2",
-        "data-[side=inline-end]:slide-in-from-left-2",
-        "data-open:animate-in",
-        "data-open:fade-in-0",
-        "data-open:zoom-in-95",
-        "data-closed:animate-out",
-        "data-closed:fade-out-0",
-        "data-closed:zoom-out-95",
+        "motion-safe:transition-[opacity,scale,translate]",
+        "motion-safe:data-starting-style:data-[side=bottom]:-translate-y-2",
+        "motion-safe:data-starting-style:data-[side=top]:translate-y-2",
+        "motion-safe:data-starting-style:data-[side=left]:translate-x-2",
+        "motion-safe:data-starting-style:data-[side=right]:-translate-x-2",
+        "motion-safe:data-starting-style:data-[side=inline-start]:translate-x-2",
+        "motion-safe:data-starting-style:data-[side=inline-end]:-translate-x-2",
         "duration-100",
       ])
     );
+  });
+});
+
+describe("overlayResizingPopupClass", () => {
+  /** The properties each `motion-safe:transition-[…]` token in a class list names. */
+  function motionSafeLists(value: string): string[][] {
+    return [...tokens(value)]
+      .map((token) => /^motion-safe:transition-\[(.+)\]$/u.exec(token)?.[1])
+      .filter((list) => list !== undefined)
+      .map((list) => list.split(","));
+  }
+
+  // Unit under test: the resizing composite's transition list. Oracle: the anchored popups' list in
+  // overlayPopupMotionClass, which the composite restates literally and must extend by the size.
+  it("carries the anchored popups' transition list with height and width added, as its one list", () => {
+    const [anchored] = motionSafeLists(overlayPopupMotionClass);
+    expect(motionSafeLists(overlayResizingPopupClass)).toEqual([[...(anchored ?? []), "height", "width"]]);
   });
 });

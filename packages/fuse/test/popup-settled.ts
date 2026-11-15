@@ -1,3 +1,4 @@
+import { expect } from "vitest";
 import { page } from "vitest/browser";
 
 import { nextFrames } from "./animation-frames";
@@ -40,4 +41,16 @@ export async function waitForPopupSettled(
     options.signal?.throwIfAborted();
   }
   throw new Error(`Expected a popup to finish opening within ${String(OPENING_FRAMES)} frames.`);
+}
+
+/**
+ * Waits until the popup holds focus. Base UI can move focus into a popup that mounts open after
+ * {@link waitForPopupSettled} returns, because such a popup has no entrance transition to wait for.
+ * A test that then moves focus elsewhere calls this first, or Base UI takes focus back. A popup with
+ * `initialFocus={false}` never takes focus, so its tests do not call it.
+ *
+ * @param popup - The settled popup.
+ */
+export async function waitForPopupFocus(popup: HTMLElement): Promise<void> {
+  await expect.poll(() => popup.contains(popup.ownerDocument.activeElement)).toBe(true);
 }

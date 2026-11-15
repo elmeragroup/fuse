@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { label, pointerAt } from "../../../test/chart/marks";
+import { recordFrames } from "../../../test/animation-frames";
+import { label, pointerAt, popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -49,15 +50,17 @@ const SPOKE_CONFIG = {
 
 function Pie({
   children,
+  width = 400,
   ...props
 }: {
   readonly children?: ReactNode;
+  readonly width?: number;
   readonly startAngle?: number;
   readonly endAngle?: number;
 }) {
   return (
     <LocaleProvider locale="nb-NO">
-      <div style={{ width: 400 }}>
+      <div style={{ width }}>
         <PieChart.Root
           data={BILL}
           config={BILL_CONFIG}
@@ -289,6 +292,82 @@ describe("Escape and pinning", () => {
     await expect.poll(label).toBe("Nettleie");
     await userEvent.click(page.getByRole("listbox"));
     expect(figureOf(host).hasAttribute("data-pinned")).toBe(true);
+  });
+});
+
+/**
+ * Pauses the popup's exit halfway. Once Base UI marks the popup `data-ending-style`, the helper holds
+ * its opacity transition toward the close's 0 at half its duration.
+ *
+ * @param popup - The open popup.
+ * @returns The paused transition.
+ */
+function pausedExit(popup: HTMLElement): Promise<Animation> {
+  return new Promise((resolve, reject) => {
+    const observer = new MutationObserver(() => {
+      if (!popup.hasAttribute("data-ending-style")) return;
+      observer.disconnect();
+      // Reading them computes the ending style, which starts the exit's transitions.
+      const fade = popup
+        .getAnimations()
+        .find((running) => running instanceof CSSTransition && running.transitionProperty === "opacity");
+      if (fade === undefined) {
+        reject(new Error("no exit transition"));
+        return;
+      }
+      fade.pause();
+      fade.currentTime = Number(fade.effect?.getComputedTiming().duration) / 2;
+      resolve(fade);
+    });
+    observer.observe(popup, { attributes: true, attributeFilter: ["data-ending-style"] });
+  });
+}
+
+describe("the tooltip's placement hold", () => {
+  it("shows a popup that reopens on the dial's other half during its exit transparent in its new lane", async () => {
+    // Strøm sweeps 0° to 223.2°, so 90° rests its popup in the right lane, and Nettleie, 223.2° to
+    // 345.6°, rests its popup at 300° in the left lane. Escape starts the exit, which is paused
+    // halfway, so the hover that follows opens Nettleie before it ends. The positioner carries the
+    // popup across the dial, and its first frame in the left lane shows nothing. The side lanes need a viewport
+    // wider than the default.
+    await page.viewport(1024, 768);
+    onTestFinished(() => page.viewport(414, 896));
+    const { host } = renderThemed(
+      <Pie width={800}>
+        <PieChart.Tooltip />
+      </Pie>
+    );
+    await hover(...pointAt(host, 90, 0.5));
+    await expect.poll(label).toBe("Strøm");
+    const open = popup();
+    if (open === null) throw new Error("no popup");
+    await expect.poll(() => getComputedStyle(open).opacity).toBe("1");
+    // The positioner carries the popup to its lane; the popup's own entrance slides it inside.
+    const positioner = open.parentElement;
+    if (positioner === null) throw new Error("no positioner");
+    const lane = (): number => positioner.getBoundingClientRect().left;
+    const dial = page.getByRole("listbox").element().getBoundingClientRect();
+    const center = dial.left + dial.width / 2;
+    expect(lane()).toBeGreaterThan(center);
+    const recorded = recordFrames(
+      () => ({ left: lane(), opacity: Number(getComputedStyle(open).opacity) }),
+      () => label() === "Nettleie" && getComputedStyle(open).opacity === "1"
+    );
+    const exit = pausedExit(open);
+    await userEvent.keyboard("{Escape}");
+    // The close waits on the transition the pause holds, so it cannot end before the hover.
+    const paused = await exit;
+    expect(paused.playState).toBe("paused");
+    const halfway = Number(getComputedStyle(open).opacity);
+    expect(halfway).toBeGreaterThan(0);
+    expect(halfway).toBeLessThan(1);
+    await hover(...pointAt(host, 300, 0.5));
+    const frames = await recorded;
+    // The hover reopened the same popup during its exit.
+    expect(popup()).toBe(open);
+    const left = lane();
+    expect(positioner.getBoundingClientRect().right).toBeLessThan(center);
+    expect(frames.find((frame) => Math.abs(frame.left - left) < 1)?.opacity).toBe(0);
   });
 });
 

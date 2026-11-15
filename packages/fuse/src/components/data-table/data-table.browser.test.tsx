@@ -185,7 +185,8 @@ describe("DataTable pagination", () => {
     renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
 
     await userEvent.click(roleNamed("combobox", "Rows per page"));
-    await userEvent.click(roleNamed("option", "25"));
+    // The listbox mounts after the click commits, so the locator waits for the option.
+    await userEvent.click(page.getByRole("option", { name: "25", exact: true }));
     await expect.element(page.getByText("Page 1 of 1", { exact: true })).toBeVisible();
     expect(roleNamed("cell", "Customer 25")).toBeInstanceOf(HTMLTableCellElement);
   });

@@ -86,7 +86,7 @@ export const selectContentVariants = tv({
     content: [
       overlayTimedPopupClass,
       selectPopupShellClass,
-      "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:animate-none",
+      "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:transition-none",
     ],
     item: [
       menuItemClass,

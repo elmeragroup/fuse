@@ -212,7 +212,7 @@ export function ChartTooltipBody({
             data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
-            className={tooltipPopupClass(variant, className)}
+            className={tooltipPopupClass(variant, "overlay", className)}
             style={style}
             onClick={(event) => {
               // A popup that scrolls takes touch events, so a tap on it that did not scroll

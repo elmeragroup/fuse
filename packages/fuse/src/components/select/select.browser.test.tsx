@@ -281,10 +281,16 @@ describe("Select", () => {
 
     async function openedContentAndTrigger(): Promise<{ content: DOMRect; trigger: DOMRect }> {
       await openWithClick();
-      // The entrance slide shifts the popup until it settles in place.
+      // The entrance slide shifts the popup until it settles in place. It is a transition, which
+      // starts once Base UI drops the starting style, so the wait outlasts that frame first.
       await vi.waitFor(() => {
-        expect(selectContent().getAnimations()).toHaveLength(0);
+        expect(selectContent().hasAttribute("data-starting-style")).toBe(false);
       });
+      await Promise.all(
+        selectContent()
+          .getAnimations()
+          .map((animation) => animation.finished)
+      );
       return {
         content: selectContent().getBoundingClientRect(),
         trigger: comboboxNamed("Fruit").getBoundingClientRect(),
