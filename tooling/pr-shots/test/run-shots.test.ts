@@ -352,6 +352,40 @@ describe("runShots", () => {
     }).pipe(Effect.scoped)
   );
 
+  it.live("takes only the after shots with --before none, and leaves the diff out", () =>
+    Effect.gen(function* () {
+      const root = yield* checkout;
+      const record = newRecord();
+      const options = shotOptions([
+        "new-demo",
+        "--route",
+        "/components/line-chart",
+        "--target",
+        "figure:Charging power",
+        "--before",
+        "none",
+        "--after",
+        "http://127.0.0.1:9/",
+      ]);
+      // The stub probe answers 200, so a run that probed the before side would capture it too.
+      yield* runShots(options, root).pipe(Effect.provide(stubs(record, "run")));
+      assert.deepStrictEqual(record.captures, [
+        ["http://127.0.0.1:9", "after-default-theme-stage-density-light-chromium-1280x900-stage.png"],
+      ]);
+      const output = yield* outputOf(root, "new-demo");
+      assert.deepStrictEqual(Object.keys(output), [
+        "after-default-theme-stage-density-light-chromium-1280x900-stage.png",
+        "table.md",
+      ]);
+      assert.deepStrictEqual(output["table.md"]?.split("\n").slice(0, 4), [
+        'Screenshots of figure "Charging power" in its demo stage on `/components/line-chart`. Before: none. After: http://127.0.0.1:9. The change adds what these shots show, so there are no before shots.',
+        "",
+        "| Shot | Before | After |",
+        "| --- | --- | --- |",
+      ]);
+    }).pipe(Effect.scoped)
+  );
+
   it.live("captures nothing and clears nothing when the local docs server is taken", () =>
     Effect.gen(function* () {
       const root = yield* checkout;
