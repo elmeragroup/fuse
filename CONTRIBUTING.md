@@ -90,6 +90,26 @@ check.
   change. Upload screenshots and recordings to the PR and keep them out of the
   repository.
 
+<a id="size-ceilings"></a>
+
+## Raise a size ceiling
+
+The `size-limit` gate in `pnpm check` and CI measures the packed tarball's entries, a few named
+imports and each stylesheet: gzip bytes of minified JS consumer bundles, and of each CSS file as
+shipped. [`size-budgets.ts`](packages/fuse/scripts/size-budgets.ts) records one measurement per
+row, and each ceiling is that measurement × 1.05, with at least 512 bytes of headroom. On a PR,
+the size comment shows each changed entry against `main`.
+
+When a PR breaks a ceiling, first look for an accidental cause, such as a dependency pulled
+into the wrong entry or a change that defeats tree-shaking. Raise the ceiling only when the
+added bytes are the feature's real cost:
+
+1. Run `pnpm exec turbo run size-limit --filter=@elmeragroup/fuse`. A direct `size-limit` run
+   measures whatever tarball `.artifacts/` holds, so go through turbo, which packs first.
+2. Copy the printed measurement into the row in `size-budgets.ts`. A new entry fails until it
+   has a row; add the one the failure prints. Remove the row of a deleted entry.
+3. Say in the PR's description which rows changed, by how many bytes and why.
+
 ## Merging and closing
 
 Before merging, a code owner checks the problem, the Fuse-or-consumer decision, the

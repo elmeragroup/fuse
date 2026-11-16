@@ -73,6 +73,7 @@ it("the merge checks schedule all required gates without browser work", () => {
     "@elmeragroup/fuse#test",
     "@elmeragroup/fuse#test:types",
     "@elmeragroup/fuse#package:check",
+    "@elmeragroup/fuse#size-limit",
     "@elmeragroup/fuse#api:report",
     "@elmeragroup/color#test",
     "@elmeragroup/color#type-check",
@@ -115,9 +116,9 @@ it("schedules every publish gate through the ci:checks aggregate", () => {
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
   // the tasks this list names, which CI alone runs. Fuse's no-op aggregate anchors are not gates.
-  // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json), and `pack` the
-  // tarball only the packed-artifact tier reads.
-  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check", "pack"];
+  // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json). `pack` stays in
+  // the local gate, because `size-limit` measures the tarball.
+  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check"];
   const gates = (/** @type {string} */ aggregate) =>
     new Set(executableTaskIds(resolvedTasks(["run", aggregate])).filter((id) => !AGGREGATE_ANCHORS.has(id)));
   const full = gates("ci:checks");
