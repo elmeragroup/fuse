@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactElement, ReactNode } from "react";
+import type { ComponentProps, HTMLAttributes, ReactElement, ReactNode } from "react";
 
 import type { VariantProps } from "tailwind-variants";
 
@@ -23,7 +23,7 @@ type CardVariantProps = {
   direction?: VariantProps<typeof cardVariants>["direction"];
 };
 
-type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
+type CardDivProps = ComponentProps<"div"> & CardVariantProps;
 
 type CardRootProps = CardDivProps & {
   /**
