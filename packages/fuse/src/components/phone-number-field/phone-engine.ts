@@ -136,23 +136,146 @@ export function resolveSelectedCountry(
 }
 
 type ParsedPhoneInput = {
-  phoneNumber: PhoneNumber | undefined;
+  readonly phoneNumber: PhoneNumber | undefined;
   /** What `AsYouType#input` returned: the entry formatted as far as its digits allow. */
-  formatted: string;
+  readonly formatted: string;
+};
+
+/** An input and the default country to parse it in, as {@link PhoneParser.parse} takes them. */
+export type ParseRead = {
+  /** A cleaned entry, or a national number behind its calling code. */
+  readonly input: string;
+  /** The default country, which libphonenumber ignores for a `+` number. */
+  readonly country: CountryCode | undefined;
 };
 
 /** One libphonenumber parse. Callers read both results from it rather than parse twice. */
-function parsePhoneInput(
-  input: string,
-  country: CountryCode | undefined,
-  metadata: MetadataJson
-): ParsedPhoneInput {
-  if (!input) {
-    return { phoneNumber: undefined, formatted: "" };
-  }
+function parsePhoneInput({ input, country }: ParseRead, metadata: MetadataJson): ParsedPhoneInput {
   const asYouType = new AsYouType(country, metadata);
   const formatted = asYouType.input(input);
   return { phoneNumber: asYouType.getNumber(), formatted };
+}
+
+/**
+ * The parses one editor state needs, kept on the state itself, as {@link PhoneParser.pin} returns
+ * them. The map's values are the parse objects themselves, so no eviction from the memo can lose
+ * them.
+ */
+export type ParsePins = ReadonlyMap<string, ParsedPhoneInput>;
+
+/**
+ * The parser a field uses under one catalog, with a memo of its parses. Every read of a number
+ * calls it. When any read, transition or render reads an input again in the same default country,
+ * it reuses the parse while the memo keeps it.
+ */
+export type PhoneParser = {
+  /** The catalog every parse uses. */
+  readonly metadata: MetadataJson;
+  /**
+   * Returns the parse of `read`.
+   *
+   * @param read - A non-empty input and its default country.
+   * @returns The number the input parses to, if any, and its as-you-type output.
+   */
+  readonly parse: (read: ParseRead) => ParsedPhoneInput;
+  /**
+   * Returns the parses of `reads` that this parser has made and still keeps, for a state to keep
+   * as its pins. It parses nothing. A read this parser never parsed under its catalog has nothing to pin,
+   * and its first parse is a new one.
+   *
+   * @param reads - The reads a state needs.
+   * @returns The kept parses of those reads.
+   */
+  readonly pin: (reads: Iterable<ParseRead>) => ParsePins;
+  /**
+   * Makes the parser look up `pins` before its recent parses until the next call, whatever else it
+   * parses meanwhile. A transition calls it with the pins of the state it starts from.
+   *
+   * @param pins - The pins of the state a transition starts from, made by this parser.
+   */
+  readonly restore: (pins: ParsePins) => void;
+};
+
+/**
+ * The most parses a {@link PhoneParser} keeps beyond the pinned ones. A transition parses at most
+ * a few inputs, and a read that finds its parse among the recent ones moves it to the back. So a
+ * parse that one transition reads is still kept when the same transition reads it again, and an
+ * editor that sees thousands of keystrokes keeps sixteen. The state a later transition starts
+ * from pins the parses that transition needs.
+ */
+const PARSE_MEMO_SIZE = 16;
+
+/**
+ * The run of digits at an input's start, after any `+`, with the separators among them that
+ * libphonenumber's as-you-type reader skips. They are the characters of its `VALID_PUNCTUATION`
+ * that `cleanPhoneInput` keeps: the space, the no-break and ideographic spaces, dashes and round
+ * brackets. The reader reads the `+` and the digits up to the first character it does not skip.
+ * So whatever follows the run, such as a tab, a newline or a second `+`, can end the number it
+ * reads.
+ */
+const SKIPPED_RUN_REGEX = /^[\d \u00A0\u3000\-()]*/;
+
+/**
+ * The memo key of an input. The key is the input's `+`, then the digits of its leading run without
+ * the separators the reader skips there, then the rest exactly as given. Two inputs with the same
+ * key have the same `+`, the same digits before the rest, and the same rest, so libphonenumber
+ * reads them alike. A tab or newline that ends one number gives it a key apart from the same
+ * digits without one. libphonenumber takes a `+` number's country from its calling code and parses
+ * it the same in every default country, so its key leaves the country out. It reads the digits of
+ * any other input in the default country, so their key includes that country.
+ */
+function parseKey({ input, country }: ParseRead): string {
+  const international = hasInternationalDigits(input);
+  const body = international ? input.slice(INTERNATIONAL_PREFIX.length) : input;
+  const run = SKIPPED_RUN_REGEX.exec(body)?.[0] ?? "";
+  const key = toNationalDigits(run) + body.slice(run.length);
+  return international ? INTERNATIONAL_PREFIX + key : `${country ?? ""}:${key}`;
+}
+
+/**
+ * Creates a parser for one catalog, with its own memo. `parsePhoneInput` is pure, so a kept parse
+ * equals a new parse of the same read. The memo changes how often libphonenumber runs, never what
+ * a read returns. Each editor's configuration has its own parser and keeps it while the catalog
+ * stays the same. A new catalog gets a new parser, so no parse outlives the metadata it came from.
+ * Editors share no parser, so each editor's parse count depends on its own history alone.
+ *
+ * @param metadata - The catalog to parse with.
+ * @returns A parser with an empty memo.
+ */
+export function createPhoneParser(metadata: MetadataJson): PhoneParser {
+  // A Map iterates in insertion order, so moving each read parse to the back leaves the least
+  // recently read one first, where eviction finds it. Pinned parses come from a state's pins, in a
+  // separate map that eviction never touches.
+  const recent = new Map<string, ParsedPhoneInput>();
+  let pinned: ParsePins = new Map();
+  return {
+    metadata,
+    parse(read) {
+      const key = parseKey(read);
+      const kept = pinned.get(key);
+      if (kept) return kept;
+      const parsed = recent.get(key) ?? parsePhoneInput(read, metadata);
+      recent.delete(key);
+      recent.set(key, parsed);
+      if (recent.size > PARSE_MEMO_SIZE) {
+        const oldest = recent.keys().next();
+        if (!oldest.done) recent.delete(oldest.value);
+      }
+      return parsed;
+    },
+    pin(reads) {
+      const pins = new Map<string, ParsedPhoneInput>();
+      for (const read of reads) {
+        const key = parseKey(read);
+        const parsed = pinned.get(key) ?? recent.get(key);
+        if (parsed) pins.set(key, parsed);
+      }
+      return pins;
+    },
+    restore(pins) {
+      pinned = pins;
+    },
+  };
 }
 
 /**
@@ -270,12 +393,20 @@ function normalizeInternationalPrefix(input: string): string {
   return input;
 }
 
-/** The country of an already-normalized `+` international number. */
-function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
-  if (!hasInternationalDigits(input)) {
+/**
+ * The number a cleaned entry with its own `+` or `00` prefix parses to. libphonenumber reads it by
+ * its calling code alone, so the number is the same in every country, and its country is the one
+ * the prefix detects.
+ *
+ * @param input - A cleaned entry.
+ * @param parser - The parser of the field's catalog.
+ * @returns The number, or `undefined` without a prefix or when the input forms no number, such as `"+10"`.
+ */
+export function internationalNumber(input: string, parser: PhoneParser): PhoneNumber | undefined {
+  if (!hasInternationalPrefix(input)) {
     return undefined;
   }
-  return parsePhoneInput(input, undefined, metadata).phoneNumber?.country;
+  return parser.parse({ input: normalizeInternationalPrefix(input), country: undefined }).phoneNumber;
 }
 
 export type ProcessedPhoneInput = {
@@ -296,7 +427,7 @@ type ProcessInputOptions = {
   countries: readonly PhoneNumberCountry[];
   autoDetectCountry: boolean;
   international: boolean;
-  metadata: MetadataJson;
+  parser: PhoneParser;
 };
 
 export function processInputWithDetection({
@@ -305,7 +436,7 @@ export function processInputWithDetection({
   countries,
   autoDetectCountry,
   international,
-  metadata,
+  parser,
 }: ProcessInputOptions): ProcessedPhoneInput {
   if (!hasInternationalPrefix(input)) {
     return { digits: input, country: currentCountry };
@@ -313,74 +444,53 @@ export function processInputWithDetection({
 
   const normalized = normalizeInternationalPrefix(input);
   if (!autoDetectCountry) return { digits: normalized, country: currentCountry };
-  const detected = detectCountryFromInput(normalized, metadata);
+  // The parse that detects the country gives the same number in every default country, so its
+  // national number matches a read in the detected country.
+  const number = internationalNumber(normalized, parser);
+  const detected = number?.country;
   const nextCountry = detected ? countries.find((row) => row.code === detected) : undefined;
   const country = nextCountry && nextCountry.code !== currentCountry.code ? nextCountry : currentCountry;
 
-  if (!international && nextCountry) {
-    const { phoneNumber } = parsePhoneInput(normalized, country.code, metadata);
-    return phoneNumber
-      ? { digits: phoneNumber.nationalNumber, country, parsedNational: true }
-      : { digits: normalized, country };
+  if (!international && nextCountry && number) {
+    return { digits: number.nationalNumber, country, parsedNational: true };
   }
 
   return { digits: normalized, country };
 }
 
 /**
- * One libphonenumber parse of a number written with its own `+` prefix. libphonenumber reads
- * an international number without its default country, so the parse is the same in every
- * country: a snapshot of the same input in any country reuses it, and its country is the one
- * the prefix detects. It is read-only and comes from {@link resolvePhoneFieldValues}.
+ * The read that {@link resolvePhoneFieldValues} parses for a snapshot's values. Detected digits
+ * are already a national number, so the read puts them behind their calling code. Any other
+ * digits go in as they stand.
+ *
+ * The original international input and this read can differ after detection strips a trunk
+ * prefix. libphonenumber strips a trunk prefix once per parse, so `"+4600701234567"` keeps a `0`
+ * that `"+460701234567"` loses. The different input needs another parse unless the parser already
+ * keeps it.
+ *
+ * @param digits - The snapshot's digits.
+ * @param parsedNational - Whether detection made them a national number.
+ * @param country - The country to read them in, which is the read's default country.
+ * @param metadata - The catalog, for the calling code.
+ * @returns The input and its default country.
  */
-export type InternationalReading = {
-  /**
-   * The parsed input's `+` and digits alone. libphonenumber ignores the spacing, dashes and
-   * brackets between them, so inputs with the same key parse the same.
-   */
-  readonly key: string;
-  /** The catalog it was parsed with. */
-  readonly metadata: MetadataJson;
-  /** The country the prefix detects; none for a partial number such as `"+10"`. */
-  readonly country: CountryCode | undefined;
-  /** The national significant number, once the digits make a number. */
-  readonly nationalNumber: string | undefined;
-  /**
-   * The parse itself, which a snapshot of the same input reuses. Only the same input: one with the
-   * same canonical number written otherwise, as its national number behind the calling code,
-   * can parse differently, since libphonenumber strips a trunk prefix once per parse, so
-   * "+4600701234567" keeps a 0 that "+460701234567" loses.
-   */
-  readonly parsed: Readonly<ParsedPhoneInput>;
-};
+export function valuesRead(
+  digits: string,
+  parsedNational: boolean | undefined,
+  country: CountryCode | undefined,
+  metadata: MetadataJson
+): ParseRead {
+  return { input: parsedNational ? getInternationalPrefix(country, metadata) + digits : digits, country };
+}
 
-/**
- * A parse of one input in one default country under one catalog. The output format and the
- * display flags only format what it found, so the same digits re-derived under another format
- * reuse it: a national draft as much as a `+` number.
- */
-export type PhoneParse = {
-  /** The parsed input's `+` and digits alone, as {@link InternationalReading.key}. */
-  readonly key: string;
-  /** The default country the input was parsed in. */
-  readonly country: CountryCode | undefined;
-  /** The catalog it was parsed with. */
-  readonly metadata: MetadataJson;
-  readonly parsed: Readonly<ParsedPhoneInput>;
-};
-
-/**
- * What a snapshot shows and submits, with the parses that made it for the next snapshot of the
- * same input to reuse. The parses are threaded by hand; #616 tracks memoizing the parse instead.
- */
+/** What a snapshot shows and submits. */
 export type PhoneFieldValues = {
   displayValue: string;
   outputValue: string;
-  /** The parse, when its input was a number with its own `+` prefix, for reuse in any country. */
-  reading: InternationalReading | undefined;
-  /** The parse, for the same digits re-derived in the same country under another format. */
-  parse: PhoneParse | undefined;
-  /** The E.164 number the digits parse to, once they make one; the number's identity. */
+  /**
+   * The E.164 number the digits parse to, once they make one; the number's identity. A later read
+   * under another catalog takes it as the number entered under this one.
+   */
   number: string | undefined;
 };
 
@@ -389,29 +499,23 @@ type ResolvePhoneFieldValuesOptions = {
   digits: string;
   parsedNational?: boolean;
   country: CountryCode | undefined;
-  metadata: MetadataJson;
+  parser: PhoneParser;
   outputFormat: PhoneNumberFormat;
   international: boolean;
   formatOnType: boolean;
-  /** A parse of the same `+` input to reuse instead of parsing again. */
-  reading?: InternationalReading | undefined;
-  /** A parse of the same input in the same country, under any format, to reuse. */
-  parse?: PhoneParse | undefined;
 };
 
 export function resolvePhoneFieldValues({
   digits,
   parsedNational,
   country,
-  metadata,
+  parser,
   outputFormat,
   international,
   formatOnType,
-  reading,
-  parse,
 }: ResolvePhoneFieldValuesOptions): PhoneFieldValues {
   if (!digits) {
-    return { displayValue: "", outputValue: "", reading: undefined, parse: undefined, number: undefined };
+    return { displayValue: "", outputValue: "", number: undefined };
   }
   // A national draft parses as a national entry, with the country as its default. The
   // as-you-type output then keeps a typed trunk prefix for the display ("070-1", where behind
@@ -421,16 +525,7 @@ export function resolvePhoneFieldValues({
   // selected, "2351234" submits as +12642351234, and a typed ten-digit number passes through
   // such a value at its seventh key. Detected digits are already a national number, so they
   // parse behind the calling code again, where a partial one takes no such rule.
-  const input = parsedNational ? getInternationalPrefix(country, metadata) + digits : digits;
-  const prefixed = hasInternationalDigits(input);
-  // The `+` and digits are the part of the input a parse depends on.
-  const key = toE164Digits(input);
-  const parsed =
-    prefixed && reading?.metadata === metadata && reading.key === key
-      ? reading.parsed
-      : parse?.metadata === metadata && parse.key === key && parse.country === country
-        ? parse.parsed
-        : parsePhoneInput(input, country, metadata);
+  const parsed = parser.parse(valuesRead(digits, parsedNational, country, parser.metadata));
   return {
     displayValue: getDisplayValue(parsed, { digits, parsedNational }, country, {
       international,
@@ -438,16 +533,6 @@ export function resolvePhoneFieldValues({
     }),
     outputValue: formatOutputValue(parsed.phoneNumber, digits, outputFormat),
     number: parsed.phoneNumber?.number,
-    parse: { key, country, metadata, parsed },
-    reading: prefixed
-      ? {
-          key,
-          metadata,
-          country: parsed.phoneNumber?.country,
-          nationalNumber: parsed.phoneNumber?.nationalNumber,
-          parsed,
-        }
-      : undefined,
   };
 }
 

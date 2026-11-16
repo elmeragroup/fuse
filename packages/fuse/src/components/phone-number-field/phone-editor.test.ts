@@ -594,6 +594,25 @@ describe("PhoneEditor.reconcile", () => {
     expect(PhoneEditor.view(next).countries.map((row) => row.code)).toEqual(["NO", "SE"]);
   });
 
+  it("reads the same digits apart from a tab or newline that stops the number before them", () => {
+    // libphonenumber reads a number only up to a tab or newline, so it reads "41\n234567" as
+    // "41". The same digits written without a tab or newline must still read as the whole
+    // number, however recently the field read the cut one.
+    const props = { countryCode: "NO", formatOnType: true } as const;
+    const cut = PhoneEditor.create({ ...props, value: "41\n234567" });
+    expect(shown(PhoneEditor.reconcile(cut, { ...props, value: "41234567" }))).toEqual({
+      display: "41 23 45 67",
+      output: "+4741234567",
+      country: "NO",
+    });
+    const pasted = echo(PhoneEditor.paste(PhoneEditor.create({ value: "" }), "4123\t4567"), {});
+    expect(shown(echo(PhoneEditor.paste(pasted, "41234567"), { formatOnType: true }))).toEqual({
+      display: "41 23 45 67",
+      output: "+4741234567",
+      country: "NO",
+    });
+  });
+
   it("reads an external replacement even when configuration changes in the same transition", () => {
     const proposed = fill(PhoneEditor.create({ value: "", international: true }), "41234567");
     const next = PhoneEditor.reconcile(proposed, {
@@ -922,10 +941,13 @@ describe("PhoneEditor parse budget", () => {
     }
   });
 
-  it("costs three parses for a paste that carries an international prefix", () => {
+  it("costs at most one parse for a paste that carries an international prefix", () => {
+    // Detecting the country, reading the national number and reading it behind the calling code
+    // all parse the same input, "+46701234567", so the memo reuses one parse. The echo accepts that
+    // snapshot without parsing.
     const state = echo(PhoneEditor.paste(PhoneEditor.create({ value: "" }), "+46701234567"), {});
     expect(PhoneEditor.view(state).displayValue).toBe("701234567");
-    expect(parses.count).toBe(3);
+    expect(parses.count).toBeLessThanOrEqual(1);
   });
 
   it("costs one parse for a country change", () => {

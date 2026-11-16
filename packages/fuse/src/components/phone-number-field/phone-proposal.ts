@@ -26,11 +26,11 @@ export type ProposalRecord = ProposalProps & {
   readonly numberAnswer: string | null;
 };
 
-/** New props, with the countries the editor derives from them without a parse. */
+/** New props, with the countries the editor derives from them. */
 export type JudgedProps = ProposalProps & {
   /** The country `countryCode` resolves to in the new catalog, or `null`. */
   readonly controlled: PhoneNumberCountry | null;
-  /** The offered country the value names, from its cached detection only, or `null`. */
+  /** The offered country the value's own prefix names, or `null`. */
   readonly named: PhoneNumberCountry | null;
 };
 
@@ -194,8 +194,7 @@ function carryProposal(
  *
  * A waiting proposal also ends when it can never show: the parent holds its number already, and
  * the value names an offered country other than the proposal's, which wins whatever `countryCode`
- * the parent sets. That is read from the value's cached detection only, so equal props parse
- * nothing; without one the proposal stays.
+ * the parent sets.
  *
  * @param stored - The props the proposal was made under, with the proposal.
  * @param next - The new props, which do not show the proposal.

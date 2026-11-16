@@ -66,10 +66,10 @@ const parses = parseCounter();
  *   that writes a trunk prefix after its calling code when control starts, with detection on and
  *   international off; a new value alone, such as an echo of a proposal's output, parses at most
  *   twice. Any other step costs at most what the base editor, #586 frozen in `test/phone-base`,
- *   charges for it without `countryCode`, plus `CONTROLLED_ALLOWANCE`, 3 until #616, once country
+ *   charges for it without `countryCode`, plus `CONTROLLED_ALLOWANCE`, which is 2, once country
  *   control is in the trace, with `countryCode` set before or after the step, or earlier. A trace
- *   never under control costs no more than the base, step by step. The base editor runs the
- *   same trace, every props step and user action, with country control removed;
+ *   never under control costs no more than the base, step by step. The base editor runs the same
+ *   trace, every props step and user action, with country control removed;
  * - (viii) props that keep the controlled country never clear the number;
  * - (ix) a user proposal reaches `onChange` at most once per output, whatever order the parent
  *   answers in: together, country first or value first. An immediate answer gives the country
@@ -93,11 +93,12 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
 
   /**
    * What a step under country control may cost beyond the base editor's price, where no tighter
-   * class above bounds it. A compound render reads the shown number and a waiting proposal again,
-   * each in its own country: a metadata replacement costs up to 3 more, a value and `countryCode`
-   * together or a catalog change up to 2. Sharing those parses is #616, which lowers this allowance.
+   * class above bounds it. A read reuses a parse the configuration's parser still keeps, pinned by
+   * the state or among its recent parses. An input without a kept parse costs a parse. A metadata
+   * replacement starts a new parser, and a compound render then reads the shown number and a waiting proposal again in the new catalog,
+   * for up to 2 more.
    */
-  const CONTROLLED_ALLOWANCE = 3;
+  const CONTROLLED_ALLOWANCE = 2;
 
   const offered = (props: Props, code: Code) => props.countries.includes(code);
   const resolve = (props: Props, code: Code) => resolveCode(props.countries, code);
@@ -730,9 +731,9 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
     change,
   });
 
-  // Counterexamples generated traces once shrank to, kept by what they pin, each with the parses
-  // its steps' renders take, with no slack: one parse more or fewer fails the case, so the
-  // change that lowers them (#616) updates these rows with CONTROLLED_ALLOWANCE.
+  // Counterexamples that generated traces once shrank to, kept for the behavior each one pins.
+  // Each row lists the most parses each step's renders may take. The parser's memo decides the
+  // cost, so a row bounds it at the count the memo gives today, and one parse more fails the case.
   it.each<[string, Props, readonly Step[], readonly number[]]>([
     [
       "a waiting national draft keeps its country when the metadata is replaced and detection turns on",
@@ -751,7 +752,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("country first", { autoDetectCountry: true, metadata: "min" }),
         },
       ],
-      [3],
+      [2],
     ],
     [
       "a waiting paste keeps its country when the catalog widens and the metadata is replaced",
@@ -770,7 +771,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("country first", { countries: ["FI", "SJ"], metadata: "max" }),
         },
       ],
-      [2],
+      [1],
     ],
     [
       "a waiting edit keeps its country when detection turns on with max metadata",
@@ -782,10 +783,10 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("country first", { autoDetectCountry: true, metadata: "max" }),
         },
       ],
-      [3],
+      [2],
     ],
     [
-      "an echo after a country answer that clears the value and turns detection on costs two parses",
+      "an echo after a country answer that clears the value and turns detection on",
       { ...plain, countries: ["SE"] },
       [
         { kind: "props", change: { outputFormat: "raw" } },
@@ -795,7 +796,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("country first", { value: "", autoDetectCountry: true }),
         },
       ],
-      [0, 2],
+      [0, 1],
     ],
     [
       "a pasted trunk zero answered with country control and a metadata replacement in one render",
@@ -827,7 +828,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         outputFormat: "raw",
       },
       [{ kind: "props", change: { countries: ["FI", "SE", "SJ"], autoDetectCountry: true, release: true } }],
-      [3],
+      [1],
     ],
     [
       "a pick answered with value and country together over a repeated trunk prefix",
@@ -876,10 +877,14 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("together", { autoDetectCountry: true, metadata: "max" }),
         },
       ],
-      [4],
+      [2],
     ],
-  ])("holds every contract and its parse budget when %s", (_name, initial, steps, costs) => {
-    expect(run(initial, steps), "the parses each step's renders take").toEqual(costs);
+  ])("holds every contract and its parse budget when %s", (_name, initial, steps, bounds) => {
+    const costs = run(initial, steps);
+    expect(costs, "one cost per step").toHaveLength(bounds.length);
+    costs.forEach((cost, index) => {
+      expect(cost, `the parses step ${index + 1}'s renders take`).toBeLessThanOrEqual(bounds[index] ?? 0);
+    });
   });
 
   it("holds every contract after every step of generated traces", () => {
