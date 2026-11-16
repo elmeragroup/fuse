@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
@@ -107,7 +116,10 @@ export type ChartRootProps<
     /**
      * The rows, one per slot or category. Every cell is serializable, so a server component passes
      * it. The plot keeps its height and draws no mark until the browser measures it, and a loading
-     * icon fades in at its middle if that takes more than a moment.
+     * icon fades in at its middle if that takes more than a moment. A new `data` moves the marks
+     * over 480 ms. A new `data` that moves the window by whole slots, such as an append that drops
+     * the first row, slides the marks over the time since the previous `data` when that is shorter.
+     * A feed faster than 480 ms then finishes each slide before the next one starts.
      */
     data: readonly TRow[];
     /**
@@ -627,6 +639,12 @@ export function ChartRoot<
     // Each follower asks its own commit classifier how to reach the carried-over slot.
     followers.paint(slot, "commit");
   }, [model, store, followers, commit.update, plot, orientation]);
+  // Root notes each data update to its loop before any mark's layout effect places for it, as
+  // insertion effects all run first, so a slide paced to its feed reads the gap since the `data`
+  // before, even one that moved no mark.
+  useInsertionEffect(() => {
+    if (commit.update.kind === "data") motion.dataUpdated(commit.update);
+  }, [commit.update, motion]);
   // A range step applies every mark's geometry at once and cancels a running data update, the
   // tweens of the loop and the opacity fade of a bar that the update added alike. An update that
   // relays the plot ends every tween too, so no mark it leaves alone glides through the new ones.

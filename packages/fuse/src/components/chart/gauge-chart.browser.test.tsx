@@ -17,7 +17,7 @@ import { cdp, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames, pollFrames, recordFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, recordFrames, useFakeFrames } from "../../../test/animation-frames";
 import { render } from "../../../test/browser-render";
 import { centerText } from "../../../test/chart/pie";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -64,11 +64,6 @@ async function emulateMedia(media: "print" | "screen"): Promise<void> {
   // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
   const session = cdp() as MediaCdp;
   await session.send("Emulation.setEmulatedMedia", { media });
-}
-
-/** Fakes the loop's own seam, the browser's frames and clock, so a case steps it by hand. */
-function fakeFrames(): void {
-  vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
 }
 
 function Gauge({
@@ -483,10 +478,7 @@ describe("motion", () => {
     // The page's frames and clock are fake here, so the loop's own seam, the browser's
     // requestAnimationFrame and performance.now, runs frame by frame at 16 ms, however slow the
     // runner: 7 frames into the 480 ms update the needle is mid-sweep on every machine.
-    beforeEach(fakeFrames);
-    afterEach(() => {
-      vi.useRealTimers();
-    });
+    beforeEach(useFakeFrames);
 
     it("bends the sweep when a value lands mid-sweep, from where the dial shows, and never passes it", () => {
       const { host, rerender } = renderThemed(
@@ -595,10 +587,7 @@ describe("a sweep that changes", () => {
     };
   }
 
-  beforeEach(fakeFrames);
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  beforeEach(useFakeFrames);
 
   /** Runs `count` frames of 16 ms on the faked clock, reading the marks on each. */
   function framesOn(host: HTMLElement, end: number, count: number) {

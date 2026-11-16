@@ -60,6 +60,12 @@ export type ChartUpdate = {
    * a pairing or a crossfade, decided once for every mark that reads it.
    */
   readonly window: PathMotion;
+  /**
+   * Whether the update brings a new `data`, compared by identity, or keeps the rows of the commit
+   * before it, as a config change does. Only a new `data` counts toward the cadence a slide is paced
+   * to.
+   */
+  readonly rows: "new" | "same";
 };
 
 /**

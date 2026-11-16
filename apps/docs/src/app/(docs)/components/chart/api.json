@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per slot or category. Every cell is serializable, so a server component passes it. The plot keeps its height and draws no mark until the browser measures it, and a loading icon fades in at its middle if that takes more than a moment.",
+          "description": "The rows, one per slot or category. Every cell is serializable, so a server component passes it. The plot keeps its height and draws no mark until the browser measures it, and a loading icon fades in at its middle if that takes more than a moment. A new `data` moves the marks over 480 ms. A new `data` that moves the window by whole slots, such as an append that drops the first row, slides the marks over the time since the previous `data` when that is shorter. A feed faster than 480 ms then finishes each slide before the next one starts.",
           "required": true
         },
         {

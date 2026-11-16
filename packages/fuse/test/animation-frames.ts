@@ -29,6 +29,18 @@ export function useFakeTimeouts(): void {
 }
 
 /**
+ * Fakes the page's animation frames and its `performance` clock for the rest of the current test,
+ * so a rAF loop runs frame by frame only as the test moves the clock, and restores the real ones
+ * when the test finishes. Call it in a test or a `beforeEach`.
+ */
+export function useFakeFrames(): void {
+  vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+}
+
+/**
  * Waits until the page has a fake timeout pending, checking once per animation frame. A component
  * that arms its next timeout in an effect commits the render that shows the last one's work first,
  * and the runner can render a frame between that commit and the effect, so a test that moves the

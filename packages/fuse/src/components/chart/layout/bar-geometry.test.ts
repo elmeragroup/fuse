@@ -76,6 +76,7 @@ function pathForm(chart: CartesianModel, series: SeriesModel, frame: PlotFrame, 
     gliding: new Set<string>(),
     layouts: { relays: false, moved: new Set<string>() },
     window: { mode: "tween", by: 0 },
+    rows: "new",
   } as const;
   const layout = layoutColumns({ model: chart, update }, series, frame, METRICS, sub, paint, new Set());
   const drawing = columnsDrawing(frame, layout.topology, layout.values);

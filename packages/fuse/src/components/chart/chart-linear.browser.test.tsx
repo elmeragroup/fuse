@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { bars, label, pointerAt, surfaceBox } from "../../../test/chart/marks";
+import { bars, label, linePath, pointerAt, surfaceBox } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -268,9 +268,7 @@ describe('xScale="linear"', () => {
         </div>
       </LocaleProvider>
     );
-    // The line is aria-hidden plot output, so its slot locates it.
-    const path = () =>
-      host.querySelector('[data-slot="chart-line"][data-part="solid"]')?.getAttribute("d") ?? "";
+    const path = () => linePath(host);
     await expect.poll(path).not.toBe("");
     const box = surfaceBox(host);
     // Each run's two ends, read off the path's points along x: 0 to 2, 2 to 5 and 5 to 10 kW of a
