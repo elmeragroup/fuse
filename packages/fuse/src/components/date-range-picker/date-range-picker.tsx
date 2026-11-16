@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Children,
-  Fragment,
-  isValidElement,
-  useCallback,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Children, Fragment, isValidElement, useCallback, useId, useMemo, useState } from "react";
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
 import type { useRender } from "@base-ui/react/use-render";
@@ -44,7 +34,6 @@ import {
   usePickerRules,
   usePresetReader,
 } from "../date-picker/picker-root";
-import type { PickerHeldOrigin } from "../date-picker/picker-session";
 import { usePresetRegistry } from "../date-picker/picker-shell";
 import type { PickerState } from "../date-picker/picker-shell";
 import { usePickerTimeBinding } from "../date-picker/picker-time-input";
@@ -347,40 +336,27 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   children,
   ...elementProps
 }: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>): ReactElement {
-  const controlled = valueProp !== undefined;
   const parsedValue = useRangeProp(valueProp, OWNER, "value");
   const parsedDefault = useRangeProp(defaultValue, OWNER, "defaultValue");
-  const [own, setOwn] = useState<Ends | null>(parsedDefault);
-  const committed: Ends = (controlled ? parsedValue : own) ?? EMPTY_ENDS;
-  const committedKey = rangeKey(committed);
   // SAFETY: the picker checks values of its resolved kind, which is `T`'s.
   const unavailable = isDateUnavailable as ((value: TemporalValue) => boolean) | undefined;
-
-  // The calendar's view follows a range set from anywhere but the picker itself.
-  const [outsideChanges, markPicked] = useOutsideChanges(committedKey);
   // The rules are worked out before the session, so a commit it makes while the popup closes reads
   // this render's.
   const rules = usePickerRules(OWNER, minValue, maxValue, unavailable);
 
-  // What committing a range reads, published before the session's effects run, so a commit the
-  // session makes while the popup closes reaches this render's `onValueChange`, not the last one's.
-  const publishedDeps = { committed, onValueChange, controlled, parsedDefault };
-  const commitDeps = useRef(publishedDeps);
-  useLayoutEffect(() => {
-    commitDeps.current = publishedDeps;
-  });
-
   // The preset panes, told when the range is committed by anything but a preset press.
   const presetPanes = usePresetRegistry();
 
-  /** Reports a whole range, or `null` for one that lost an end, and applies it unless canceled. */
-  function commitRange(
+  /**
+   * Reports a whole range, or `null` for one that lost an end, and returns whether it was accepted.
+   * The caller then applies an accepted range to the session.
+   */
+  function reportRange(
     range: { readonly start: TemporalValue; readonly end: TemporalValue } | null,
     reason: DateRangePickerValueChangeReason,
     event: Event,
     trigger: Element | undefined
   ): boolean {
-    const deps = commitDeps.current;
     const details = createChangeEventDetails(reason, event, trigger, {
       getValidationError: (): DateRangePickerValidationError | null => {
         if (range === null) return null;
@@ -392,25 +368,26 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       },
     });
     // SAFETY: both ends are of the picker's resolved kind, which is `T`'s.
-    deps.onValueChange?.(range as DateRangePickerValue<T> | null, details);
+    onValueChange?.(range as DateRangePickerValue<T> | null, details);
     if (details.isCanceled) {
       return false;
     }
-    if (!deps.controlled) {
-      setOwn(range);
-    }
-    commitDeps.current = { ...deps, committed: range ?? EMPTY_ENDS };
     if (reason !== "preset-press") {
       presetPanes.valueCommitted();
     }
     return true;
   }
 
-  const session = usePickerSession<RangeDraft, RangeHeldReason>({
+  // The edit session stores the committed range and what the picker holds before it commits, and
+  // runs the open transitions and the form reset; see `use-picker-session.ts`.
+  const session = usePickerSession<RangeDraft, Ends, RangeHeldReason>({
     open: openProp,
     defaultOpen,
     onOpenChange,
-    basis: committedKey,
+    parent: valueProp === undefined ? undefined : { value: parsedValue ?? EMPTY_ENDS },
+    defaultValue: parsedDefault ?? EMPTY_ENDS,
+    keyOf: rangeKey,
+    draftOf: draftOfRange,
     // A range the close finalizes is always whole; an end picked without a time takes midnight.
     // Called after this render has resolved `kind`.
     finalize(held, origin) {
@@ -418,26 +395,24 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       if (range === null) {
         return true;
       }
-      if (!commitRange(range, origin.reason, origin.event, origin.trigger)) {
+      if (!reportRange(range, origin.reason, origin.event, origin.trigger)) {
         return false;
       }
+      session.commit(range);
       // The calendar made this range, so a close that the parent cancels keeps the view where it is.
       markPicked(rangeKey(range));
       return true;
     },
     onReset() {
-      if (!commitDeps.current.controlled) {
-        setOwn(commitDeps.current.parsedDefault);
-      }
       presetPanes.valueCommitted();
     },
   });
-  const { generation, hold, release, held } = session;
   // What the picker holds before it commits (`range-draft.ts`): half a range the inputs hold, a
   // range picked in an empty time picker that stays open, or times typed in the popup waiting for
   // days. Without one, the committed range is the draft.
-  const committedDraft = useMemo(() => draftOfRange(committed), [committed]);
-  const draft = held?.value ?? committedDraft;
+  const { generation, hold, edit, held, draft, value: committed } = session;
+  // The calendar's view follows a range set from anywhere but the picker itself.
+  const [outsideChanges, markPicked] = useOutsideChanges(session.basis);
 
   const [messagesOf, setMessagesOf] = useState<Readonly<Record<Endpoint, EndpointMessages>>>({
     start: NO_MESSAGES,
@@ -495,10 +470,10 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   const { kind } = resolvedKind;
   // A preset's range replaces whatever the inputs or the calendar held.
   const readPreset = usePresetReader(presetRange, kind, (range: DatePickerPresetRange, event, trigger) => {
-    if (!commitRange(range, "preset-press", event, trigger)) {
+    if (!reportRange(range, "preset-press", event, trigger)) {
       return false;
     }
-    release();
+    session.commitHolding(range, null);
     return true;
   });
   // Each end as its input shows it, one object while the draft and the kind hold.
@@ -533,29 +508,6 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     registerPresets,
     readPreset,
   });
-  // What a gesture reads: this render's draft and the close origin it was held with, which a
-  // gesture earlier in the same event updates through `publish`.
-  const published = { draft, origin: held?.finalizeOnClose ?? null, shouldCloseOnSelect };
-  const latest = useRef(published);
-  useLayoutEffect(() => {
-    latest.current = published;
-  });
-
-  /** Publishes a draft a gesture made to the gestures that follow, before the Root renders it. */
-  function publish(next: RangeDraft, origin: PickerHeldOrigin<RangeHeldReason> | null): void {
-    latest.current = { ...latest.current, draft: next, origin };
-  }
-
-  /** Holds a draft and publishes it. */
-  function holdDraft(
-    next: RangeDraft,
-    origin: PickerHeldOrigin<RangeHeldReason> | null,
-    basis?: string
-  ): void {
-    hold(next, origin, basis);
-    publish(next, origin);
-  }
-
   /**
    * Applies a draft a gesture made: a whole range commits, and so does a whole range that just lost
    * an end, as `null`, which React Aria reports too. A range filled one end at a time reports
@@ -572,22 +524,22 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     trigger: Element | undefined
   ): WholeRange | null | "canceled" {
     const range = wholeRange(next, kind);
-    const reports = range !== null || commitDeps.current.committed.start !== null;
-    if (reports && !commitRange(range, reason, event, trigger)) {
+    if (range === null && session.now().value.start === null) {
+      // The range is already empty, so there is nothing to report.
+      hold(next, null);
+      return null;
+    }
+    if (!reportRange(range, reason, event, trigger)) {
       return "canceled";
     }
-    if (range === null) {
-      holdDraft(next, null, rangeKey(EMPTY_ENDS));
-    } else {
-      release();
-      publish(draftOfRange(range), null);
-    }
+    // A range that lost an end holds the end it kept over the empty range it commits.
+    session.commitHolding(range ?? EMPTY_ENDS, range === null ? next : null);
     return range;
   }
 
   const inputChange = useStableCallback(
     (endpoint: Endpoint, next: TemporalValue | null, details: DateInputValueChangeEventDetails) => {
-      const edited = editInput(latest.current.draft, endpoint, next);
+      const edited = editInput(session.now().draft, endpoint, next);
       if (apply(edited, details.reason, details.event, details.trigger) === "canceled") {
         details.cancel();
       }
@@ -595,20 +547,19 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   );
   const selectRange = useStableCallback(
     (range: RangeCalendarValue, details: RangeCalendarRootValueChangeEventDetails) => {
-      const state = latest.current;
+      const now = session.now();
       // Each end keeps its time: its value's, the one typed in the popup, or midnight.
-      const next = pickRange(state.draft, range, kind);
-      const { committed: current } = commitDeps.current;
+      const next = pickRange(now.draft, range, kind);
       if (
         kind.kind !== "PlainDate" &&
-        current.start === null &&
-        current.end === null &&
+        now.value.start === null &&
+        now.value.end === null &&
         awaitsTime(next) &&
-        !state.shouldCloseOnSelect
+        !shouldCloseOnSelect
       ) {
         // As the single picker's day: an empty time range is held until both ends have a time
         // typed in the popup, or until the popup closes.
-        holdDraft(next, { reason: details.reason, event: details.event, trigger: details.trigger });
+        hold(next, { reason: details.reason, event: details.event, trigger: details.trigger });
         return;
       }
       const applied = apply(next, details.reason, details.event, details.trigger);
@@ -619,7 +570,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       if (applied !== null) {
         markPicked(rangeKey(applied));
       }
-      if (state.shouldCloseOnSelect && (details.reason === "day-press" || details.reason === "keyboard")) {
+      if (shouldCloseOnSelect && (details.reason === "day-press" || details.reason === "keyboard")) {
         root.requestOpen(false, details.reason, details.event, details.trigger);
       }
     }
@@ -628,20 +579,20 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   const timeChange = useStableCallback(
     (endpoint: Endpoint, time: TemporalValue | null, details: DateInputValueChangeEventDetails) => {
       // A range the calendar holds keeps closing commits it until both ends have their time.
-      const { draft: current, origin } = latest.current;
+      const current = session.now().draft;
       if (time === null) {
         // A value keeps its own time, which the input shows again; anything else forgets it.
         const cleared = clearTime(current, endpoint);
         if (cleared === undefined) {
           details.cancel();
         } else if (cleared !== current) {
-          holdDraft(cleared, origin);
+          edit(cleared);
         }
         return;
       }
       const next = editTime(current, endpoint, time, kind);
       if (awaitsTime(next)) {
-        holdDraft(next, origin);
+        edit(next);
         return;
       }
       const applied = apply(next, details.reason, details.event, details.trigger);

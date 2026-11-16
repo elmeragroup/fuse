@@ -1959,6 +1959,45 @@ describe("DateRangePicker held ranges", () => {
     await expect.poll(segmentTexts).toEqual(["10", "05", "2026", "10", "09", "2026"]);
   });
 
+  it("keeps an end edited in the same task as a start cleared, once the parent accepts the empty range", async () => {
+    const values: string[] = [];
+    function Accepting(): ReactElement {
+      const [value, setValue] = useState<DateRangePickerValue | null>(range("2026-10-05", "2026-10-09"));
+      return (
+        <DateRangePickerField
+          label="Period"
+          value={value}
+          onChange={(next) => {
+            values.push(next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    renderThemed(withLocale("en-US", <Accepting />));
+    // Empty the start but for the year's last digit; a start missing a segment reports nothing.
+    await userEvent.click(roleNamed("spinbutton", "day, Start Date, Period"));
+    await userEvent.keyboard("{Backspace}");
+    await userEvent.click(roleNamed("spinbutton", "month, Start Date, Period"));
+    await userEvent.keyboard("{Backspace>2/}");
+    const startYear = roleNamed("spinbutton", "year, Start Date, Period");
+    await userEvent.click(startYear);
+    await userEvent.keyboard("{Backspace>3/}");
+    await expect.poll(segmentTexts).toEqual(["mm", "dd", "2", "10", "09", "2026"]);
+
+    // The start's last digit and the end's day go in one task, so the parent renders the cleared
+    // range only after the end is edited.
+    startYear.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Backspace", bubbles: true, cancelable: true })
+    );
+    const endDay = roleNamed("spinbutton", "day, End Date, Period");
+    endDay.focus();
+    endDay.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+
+    expect(values).toEqual(["null"]);
+    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy", "10", "10", "2026"]);
+  });
+
   it("checks the held range a parent's close commits against the minValue of that same render", async () => {
     const calls: string[] = [];
     function Controlled({

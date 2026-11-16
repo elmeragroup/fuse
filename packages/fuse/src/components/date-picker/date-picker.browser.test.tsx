@@ -394,6 +394,56 @@ describe("DatePicker.TimeInput", () => {
     await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
   });
 
+  it("picks a day at the parent's time after the parent declines a typed time without canceling it", async () => {
+    const reported: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <TimedPicker
+          value={OCTOBER_5_NINE}
+          defaultOpen
+          onValueChange={(next) => reported.push(next?.toString() ?? "null")}
+        />
+      )
+    );
+    await waitForPopupSettled();
+    // Focus moves to the input without a press, which would close the popup.
+    roleNamed("spinbutton", "hour, Starts").focus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(reported).toEqual(["2026-10-05T10:00:00"]);
+
+    // The parent kept 09:00, so the day picked next keeps 09:00, not the 10:00 it never took.
+    await userEvent.click(roleNamed("button", "Saturday, October 10, 2026"));
+    expect(reported).toEqual(["2026-10-05T10:00:00", "2026-10-10T09:00:00"]);
+  });
+
+  it("picks a day at a typed time the parent accepts in the same task, before it renders", async () => {
+    const reported: string[] = [];
+    function Accepting(): ReactElement {
+      const [value, setValue] = useState<Temporal.PlainDateTime | null>(OCTOBER_5_NINE);
+      return (
+        <TimedPicker
+          value={value}
+          defaultOpen
+          onValueChange={(next) => {
+            reported.push(next?.toString() ?? "null");
+            setValue(next);
+          }}
+        />
+      );
+    }
+    renderThemed(withLocale("en-US", <Accepting />));
+    await waitForPopupSettled();
+    // Both gestures run in one task, so the parent renders neither before the second reads it.
+    const hour = roleNamed("spinbutton", "hour, Starts");
+    hour.focus();
+    hour.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+    roleNamed("button", "Saturday, October 10, 2026").click();
+
+    expect(reported).toEqual(["2026-10-05T10:00:00", "2026-10-10T10:00:00"]);
+    await expect.poll(() => segmentTexts().slice(0, 4)).toEqual(["10", "10", "2026", "10"]);
+  });
+
   it.each([
     { name: "startTransition", Parent: TransitionParent },
     { name: "useDeferredValue", Parent: DeferredParent },
