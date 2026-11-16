@@ -15,7 +15,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { definedProps } from "../../internal/defined-props";
-import { isElement } from "../../internal/dom-node";
+import { documentOrder, isElement } from "../../internal/dom-node";
 import { fieldActionName } from "../../internal/field-action-name";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
@@ -24,6 +24,8 @@ import type { ValueKind } from "../../temporal/temporal-value";
 import { Button } from "../button/button";
 import type { LabelButtonProps } from "../button/button";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
+import { CalendarDayRegistryContext } from "../calendar/calendar-context";
+import type { CalendarDayRegistration } from "../calendar/calendar-context";
 import {
   CalendarDecrementMonth,
   CalendarHeader,
@@ -337,11 +339,6 @@ export function DatePickerTrigger({
 /** Props for `DatePicker.Popup`: Popover's content props. */
 export type DatePickerPopupProps = PopoverContentProps;
 
-/** The tab-stop day inside the popup, which takes focus when it opens. */
-function tabStopDay(popup: HTMLElement | null): HTMLElement | null {
-  return popup?.querySelector<HTMLElement>('[data-slot="calendar-day-button"][tabindex="0"]') ?? null;
-}
-
 /**
  * The popup the trigger opens: a Popover `dialog` named as the trigger is, such as "Calendar Start
  * date", as React Aria's dialog is. Opening moves focus to the calendar's focused day, the selected one
@@ -359,20 +356,41 @@ export function DatePickerPopup({
   const shell = usePickerShellContext("DatePicker.Popup");
   const { triggerId, labelledBy, popupRef, openerRef } = shell;
   const mergedRef = useMergedRefs<HTMLDivElement>(popupRef, ref ?? null);
+  // Every calendar's days register here. On open, the first day whose rendered `tabIndex` is 0 takes
+  // focus. That is the tab stop, or a day that a consumer's props made one. `contains` checks only
+  // the popup's own tree, which `documentOrder` ranks. This lookup does not support day buttons
+  // inside shadow roots; see #713.
+  const days = useRef(new Set<HTMLElement>());
+  const registerDay = useCallback<CalendarDayRegistration>((button) => {
+    days.current.add(button);
+    return () => {
+      days.current.delete(button);
+    };
+  }, []);
+  const firstTabStop = (): HTMLElement | undefined =>
+    [...days.current]
+      .filter((day) => day.tabIndex === 0 && popupRef.current?.contains(day) === true)
+      .sort(documentOrder)[0];
+  // The provider renders outside the Popover content, so the calendars inside a `render` element
+  // with its own children, which replace the content's, still register.
   return (
-    <PopoverContent
-      data-slot="date-picker-popup"
-      side="bottom"
-      align="end"
-      aria-labelledby={labelledBy === undefined ? triggerId : `${triggerId} ${labelledBy}`}
-      initialFocus={initialFocus ?? (() => tabStopDay(popupRef.current) ?? true)}
-      // Back to the segment the popup opened from, as React Aria restores it; else the trigger.
-      finalFocus={finalFocus ?? (() => (openerRef.current?.isConnected === true ? openerRef.current : true))}
-      ref={mergedRef}
-      className={mergeClassName(className, styles.popup())}
-      {...definedProps(props)}>
-      {children}
-    </PopoverContent>
+    <CalendarDayRegistryContext value={registerDay}>
+      <PopoverContent
+        data-slot="date-picker-popup"
+        side="bottom"
+        align="end"
+        aria-labelledby={labelledBy === undefined ? triggerId : `${triggerId} ${labelledBy}`}
+        initialFocus={initialFocus ?? (() => firstTabStop() ?? true)}
+        // Back to the segment the popup opened from, as React Aria restores it; else the trigger.
+        finalFocus={
+          finalFocus ?? (() => (openerRef.current?.isConnected === true ? openerRef.current : true))
+        }
+        ref={mergedRef}
+        className={mergeClassName(className, styles.popup())}
+        {...definedProps(props)}>
+        {children}
+      </PopoverContent>
+    </CalendarDayRegistryContext>
   );
 }
 

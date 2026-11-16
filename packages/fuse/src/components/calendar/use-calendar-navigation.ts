@@ -129,7 +129,8 @@ export type CalendarNavigation = {
  * @param settings - The Root's resolved props.
  * @param timeZone - The zone today is read in.
  * @param onVisibleRangeChange - The Root's `onVisibleRangeChange`, read when called.
- * @param rootRef - The Root's element, which tells a move between days from a move out of them.
+ * @param rootRef - The Root's element. The hook rereads today's date when the Root's document
+ *   becomes visible, and keeps focus when it realigns the view.
  * @returns The parts' actions and `showDay`; both are stable for the Root's lifetime.
  */
 export function useCalendarNavigation<S extends CalendarSharedState>(
@@ -228,7 +229,15 @@ export function useCalendarNavigation<S extends CalendarSharedState>(
       store.set({ ...state, focused: date, visible, focusRequest: true, paged: state.paged || pages });
       return true;
     };
+    // This Root's mounted day buttons. A blur between days moves focus from one of them to another.
+    const days = new Set<Element>();
     const actions: CalendarActions = {
+      registerDay(button) {
+        days.add(button);
+        return () => {
+          days.delete(button);
+        };
+      },
       focusDay(date) {
         const state = store.get();
         if (state.focused?.equals(date) === true && state.gridFocused) {
@@ -238,12 +247,7 @@ export function useCalendarNavigation<S extends CalendarSharedState>(
       },
       blurTo(left, next) {
         const leaveFor = (target: Element) => {
-          const root = rootRef.current;
-          if (
-            root !== null &&
-            containsAcrossShadowRoots(root, target) &&
-            target.closest("[data-slot=calendar-day-button]") !== null
-          ) {
+          if (days.has(target)) {
             return;
           }
           const state = store.get();
@@ -301,5 +305,5 @@ export function useCalendarNavigation<S extends CalendarSharedState>(
       },
     };
     return { actions, showDay };
-  }, [store, rootRef]);
+  }, [store]);
 }

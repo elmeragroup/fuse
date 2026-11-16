@@ -13,7 +13,7 @@
 // `Intl` rather than a first letter, today rolls over at midnight, and a focus request survives a
 // month remount (the design of Base UI #4462).
 
-import { useId, useLayoutEffect, useMemo, useRef } from "react";
+import { use, useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
@@ -30,6 +30,7 @@ import { Button } from "../button/button";
 import type { IconButtonProps, IconButtonSize } from "../button/button";
 import {
   CalendarDayContext,
+  CalendarDayRegistryContext,
   CalendarMonthContext,
   DAY_FLAG_STATE_ATTRIBUTES,
   dayFlagState,
@@ -790,6 +791,7 @@ export function CalendarDayButton({
   // Only a day the user may select reaches the owner's `select`.
   const selectable = !disabled && !unavailable && !settings.readOnly;
   const ref = useRef<HTMLButtonElement>(null);
+  const registerWithOwner = use(CalendarDayRegistryContext);
 
   useLayoutEffect(() => {
     if (requested && !disabled) {
@@ -892,7 +894,9 @@ export function CalendarDayButton({
   return useRender({
     defaultTagName: "button",
     render,
-    ref,
+    // The Root and any container around it find this day through the part's own ref rather than its
+    // public `data-slot`. The ref survives prop and ref merging when a `render` element forwards it.
+    ref: [ref, actions.registerDay, registerWithOwner ?? null],
     state,
     stateAttributesMapping: DAY_STATE_ATTRIBUTES,
     props: {
