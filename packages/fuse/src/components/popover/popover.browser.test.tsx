@@ -242,6 +242,23 @@ describe("Popover", () => {
     expect(dialog.getAttribute("data-align")).toBe("start");
   });
 
+  it("keeps the popup collisionPadding pixels from the viewport edge it would cross", async () => {
+    renderThemed(
+      <div style={{ position: "fixed", top: 0, left: 0 }}>
+        <BasicPopover side="bottom" align="start" collisionPadding={{ left: 40 }} style={{ width: 160 }} />
+      </div>
+    );
+    const dialog = await openPopover();
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished));
+    const trigger = page.getByRole("button", { name: "Details", exact: true }).element();
+    // Unit under test: the popup's horizontal placement. Oracle: the trigger pinned at the
+    // viewport's left edge, plus the requested 40px. Start alignment alone would line the popup up
+    // with the trigger, and Base UI's default padding would leave it 5px in.
+    await vi.waitFor(() => {
+      expect(dialog.getBoundingClientRect().left).toBeCloseTo(trigger.getBoundingClientRect().left + 40, 0);
+    });
+  });
+
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
     renderThemed(<BasicPopover />);
     const dialog = await openPopover();

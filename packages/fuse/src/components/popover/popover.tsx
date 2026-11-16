@@ -4,6 +4,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -52,6 +53,18 @@ export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> 
      * then, such as a new virtual element, to place the popup again.
      */
     anchor?: ComponentProps<typeof PopoverPrimitive.Positioner>["anchor"];
+    /**
+     * The space the popup keeps from the edge of the viewport or its clipping ancestor, in pixels.
+     * Pass an object, such as `{ top: 64 }`, to clear a sticky header on one side. Defaults to
+     * Base UI's `5`.
+     */
+    collisionPadding?: ComponentProps<typeof PopoverPrimitive.Positioner>["collisionPadding"];
+    /**
+     * How the popup avoids the edge of the viewport or its clipping ancestor: whether it flips to
+     * the other side or shifts along it, per axis. Defaults to Base UI's popover setting, which flips
+     * on both axes and then tries the side at the end of the other axis.
+     */
+    collisionAvoidance?: ComponentProps<typeof PopoverPrimitive.Positioner>["collisionAvoidance"];
   } & OverlayContainerProps;
 
 /**
@@ -66,6 +79,8 @@ export function PopoverContent({
   sideOffset = 4,
   showArrow = false,
   anchor,
+  collisionPadding,
+  collisionAvoidance,
   children,
   container,
   ...props
@@ -78,6 +93,7 @@ export function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         anchor={anchor}
+        {...definedProps({ collisionPadding, collisionAvoidance })}
         className={overlayPositionerClass}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"

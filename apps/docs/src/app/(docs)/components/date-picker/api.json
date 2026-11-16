@@ -561,6 +561,24 @@
           "required": false
         },
         {
+          "name": "collisionAvoidance",
+          "origin": "declared",
+          "type": "CollisionAvoidance | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How the popup avoids the edge of the viewport or its clipping ancestor: whether it flips to the other side or shifts along it, per axis. Defaults to Base UI's popover setting, which flips on both axes and then tries the side at the end of the other axis.",
+          "required": false
+        },
+        {
+          "name": "collisionPadding",
+          "origin": "declared",
+          "type": "Padding | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The space the popup keeps from the edge of the viewport or its clipping ancestor, in pixels. Pass an object, such as `{ top: 64 }`, to clear a sticky header on one side. Defaults to Base UI's `5`.",
+          "required": false
+        },
+        {
           "name": "container",
           "origin": "declared",
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",

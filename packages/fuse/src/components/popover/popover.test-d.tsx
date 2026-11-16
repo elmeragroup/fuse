@@ -14,6 +14,12 @@ test("Content takes the positioner props, showArrow and container", () => {
 
   const _content = <Popover.Content showArrow side="top" align="start" sideOffset={8} alignOffset={4} />;
 
+  const _collision = (
+    <Popover.Content collisionPadding={{ top: 64 }} collisionAvoidance={{ side: "shift", align: "shift" }} />
+  );
+  // @ts-expect-error collision avoidance takes Base UI's modes, not a boolean
+  const _collisionBoolean = <Popover.Content collisionAvoidance />;
+
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Popover.Trigger as="div" />;
 });
