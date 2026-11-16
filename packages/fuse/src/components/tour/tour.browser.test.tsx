@@ -12,8 +12,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed as renderThemedTree, roleNamed } from "../../../test/themed-browser-render";
+import {
+  overlayBackdropOf,
+  renderThemed as renderThemedTree,
+  roleNamed,
+} from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { Tooltip } from "../tooltip";
 import type { TourEvent } from "./tour-controller";
@@ -139,6 +144,41 @@ describe("Tour run", () => {
     expect((await recordsOf(storage)).welcome?.status).toBe("completed");
     expect(events.at(-1)).toMatchObject({ type: "end", reason: "completed", status: "completed" });
     expect(roleNamed("status", "welcome state")).toHaveTextContent("completed");
+  });
+
+  it("fades out beside the element it pointed at when the run ends", async () => {
+    const solo = defineTour({ id: "solo", steps: ["usage"], targetTimeoutMs: 100 });
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={solo} />
+        <div style={{ position: "fixed", right: 8, bottom: 8 }}>
+          <Tour.Target tour={solo} step="usage" title="Usage">
+            Usage card
+          </Tour.Target>
+        </div>
+        <StepPopup tour={solo} />
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    const popup = await dialogNamed("Usage");
+    // Unit under test: where a closing popup sits. Oracle: it fades out where it was, beside its
+    // element, so it never moves farther than its own height and never takes the centered placement.
+    const before = popup.getBoundingClientRect();
+    // A detached popup measures as an empty box, so `read` skips the frame after it leaves.
+    const recording = recordFrames(
+      () =>
+        popup.isConnected
+          ? { top: popup.getBoundingClientRect().top, placement: popup.getAttribute("data-placement") ?? "" }
+          : null,
+      () => !popup.isConnected
+    );
+    await userEvent.click(roleNamed("button", "Close"));
+    await expectNoDialog();
+    const frames = (await recording).filter((frame) => frame !== null);
+    const farthest = Math.max(0, ...frames.map((frame) => Math.abs(frame.top - before.top)));
+    const placements = new Set(frames.map((frame) => frame.placement));
+    expect(farthest).toBeLessThan(before.height);
+    expect([...placements]).toEqual(["target"]);
   });
 
   it("moves between steps with the Arrow keys while focus is in the popup", async () => {
@@ -811,6 +851,183 @@ describe("Tour storage and auto start", () => {
     expect(events.at(-1)).toMatchObject({ type: "end", reason: "synced", status: null });
   });
 });
+
+describe("Tour.Spotlight", () => {
+  function renderGuided({
+    events,
+    withClose = true,
+  }: {
+    events: TourEvent[];
+    withClose?: boolean;
+  }): TourStorage {
+    const storage = memoryTourStorage();
+    renderThemed(
+      <Tour.Provider storage={storage} onEvent={(event) => events.push(event)}>
+        <Starter tour={welcome} />
+        <Tour.Target tour={welcome} step="usage" title="Usage">
+          Usage card
+        </Tour.Target>
+        <PriceButton />
+        <Tour.Popup tour={welcome} modal="trap-focus">
+          <Tour.Spotlight />
+          <Tour.Header>{withClose ? <Tour.Close /> : null}</Tour.Header>
+          <Tour.Title />
+          <Tour.Footer>
+            <Tour.Prev />
+            <Tour.Next />
+          </Tour.Footer>
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    return storage;
+  }
+
+  it("holds focus in the popup and hides the page from assistive technology", async () => {
+    const events: TourEvent[] = [];
+    renderGuided({ events });
+    const starter = roleNamed("button", "Take the tour");
+    await userEvent.click(starter);
+    const dialog = await dialogNamed("Welcome");
+    for (let press = 0; press < 4; press += 1) {
+      await userEvent.keyboard("{Tab}");
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    expect(starter.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it("ends the run as outside-press with no status on a press on the backdrop or on the lit hole", async () => {
+    const events: TourEvent[] = [];
+    const storage = renderGuided({ events });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await userEvent.click(roleNamed("button", "Next"));
+    const dialog = await dialogNamed("Usage");
+    const backdrop = overlayBackdropOf(dialog);
+    const target = page.getByText("Usage card").element().getBoundingClientRect();
+    const plane = backdrop.getBoundingClientRect();
+    // A press in the middle of the step's element, where the cutout lights the page.
+    await userEvent.click(backdrop, {
+      position: {
+        x: target.left + target.width / 2 - plane.left,
+        y: target.top + target.height / 2 - plane.top,
+      },
+    });
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "outside-press", status: null });
+    expect((await recordsOf(storage)).welcome?.status).toBeUndefined();
+
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    const again = await dialogNamed("Welcome");
+    await userEvent.click(overlayBackdropOf(again), { position: { x: 4, y: 4 } });
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "outside-press", status: null });
+  });
+
+  it("warns in development when the popup has no Tour.Close", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    renderGuided({ events: [], withClose: false });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    // The warning is the only observable behavior of the missing Close part.
+    await vi.waitFor(() => {
+      expect(
+        warn.mock.calls.some(([message]) => String(message).includes("Tour.Spotlight needs a Tour.Close"))
+      ).toBe(true);
+    });
+    warn.mockRestore();
+  });
+
+  it("keeps the lit hole on the step's element while the dim fades out", async () => {
+    renderGuided({ events: [] });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    const dialog = await dialogNamed("Usage");
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+    const cutout = cutoutOf();
+    const width = (): string => cutout.style.getPropertyValue("--tour-cutout-w");
+    const lit = width();
+    // Unit under test: the hole while the popup closes. Oracle: it stays the size of the element it
+    // lit, and never closes to the 0px point a centered step uses.
+    const widths: string[] = [];
+    const observer = new MutationObserver(() => widths.push(width()));
+    observer.observe(cutout, { attributes: true, attributeFilter: ["style"] });
+    await userEvent.keyboard("{Escape}");
+    await expectNoDialog();
+    observer.disconnect();
+    expect(widths.filter((value) => value !== lit)).toEqual([]);
+  });
+
+  it("moves the lit hole with the element when the layout shifts under it", async () => {
+    // The shift moves the element down and keeps the page's height, so nothing scrolls or resizes.
+    function Shifting({ children }: { children: ReactNode }): ReactElement {
+      const [shifted, setShifted] = useState(false);
+      return (
+        <>
+          <button type="button" hidden onClick={() => setShifted(true)}>
+            Shift
+          </button>
+          <div style={{ paddingBlockStart: shifted ? 120 : 0, paddingBlockEnd: shifted ? 0 : 120 }}>
+            {children}
+          </div>
+        </>
+      );
+    }
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Shifting>
+          <Tour.Target tour={welcome} step="usage" title="Usage">
+            Usage card
+          </Tour.Target>
+        </Shifting>
+        <PriceButton />
+        <Tour.Popup tour={welcome} modal="trap-focus">
+          <Tour.Spotlight />
+          <Tour.Close />
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    const dialog = await dialogNamed("Usage");
+    // The step settles first, so no scroll or entrance animation is still moving anything.
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+    const cutout = cutoutOf();
+    const target = page.getByText("Usage card").element();
+    // Unit under test: the hole's box. Oracle: it covers the element's box, wherever the element is.
+    const covers = (): boolean => {
+      const hole = cutout.getBoundingClientRect();
+      const element = target.getBoundingClientRect();
+      return hole.top <= element.top && hole.bottom >= element.bottom;
+    };
+    await vi.waitFor(() => {
+      expect(covers()).toBe(true);
+    });
+    // Two frames pass, so no measure the step's own changes asked for is still pending.
+    await nextFrames(2);
+    const top = target.getBoundingClientRect().top;
+    // A layout shift with no scroll and no resize, as a late image or an opening banner makes. The
+    // backdrop takes presses on the page, so the shift comes from a script.
+    document.querySelector<HTMLButtonElement>("button[hidden]")?.click();
+    await vi.waitFor(() => {
+      expect(target.getBoundingClientRect().top).toBeGreaterThan(top);
+    });
+    await vi.waitFor(() => {
+      expect(covers()).toBe(true);
+    });
+  });
+});
+
+function cutoutOf(): HTMLElement {
+  const cutout = document.querySelector<HTMLElement>('[data-slot="tour-cutout"]');
+  if (cutout === null) {
+    throw new Error("expected the spotlight's cutout");
+  }
+  return cutout;
+}
 
 describe("Tour re-renders", () => {
   it("renders an unrelated child once, a Target as it becomes and stops being shown, and another tour's Popup only on step changes", async () => {

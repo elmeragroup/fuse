@@ -499,6 +499,7 @@ function namespaceElements(): ReactElement[] {
       "Header",
       "Progress",
       "Close",
+      "Spotlight",
       "Title",
       "Description",
       "Footer",

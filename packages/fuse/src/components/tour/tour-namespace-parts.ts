@@ -10,6 +10,7 @@ export {
   TourHeader as Header,
   TourProgress as Progress,
   TourClose as Close,
+  TourSpotlight as Spotlight,
   TourTitle as Title,
   TourDescription as Description,
   TourFooter as Footer,
