@@ -15,14 +15,14 @@ import { selfFocusRingClass } from "../../styles/utils";
 import {
   overlayLayer,
   overlayModalFillClass,
-  overlayScrimClass,
+  overlayScrimVariants,
   overlaySizeVariants,
   overlayTitleClass,
 } from "../overlay/overlay-classes";
 import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { overlayCornerCloseClass } from "../overlay/overlay-corner-close-class";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import type { OverlayContainerProps } from "../overlay/overlay-props";
+import type { BackdropBlurProps, OverlayContainerProps } from "../overlay/overlay-props";
 
 /**
  * Maps each `side` to Base UI Drawer's `swipeDirection`, so a swipe toward the anchored edge
@@ -120,17 +120,17 @@ export function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>)
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/** Props for `Sheet.Overlay`. */
+type SheetOverlayProps = ComponentProps<typeof SheetPrimitive.Backdrop> & BackdropBlurProps;
+
 /** The scrim behind the panel. `Sheet.Content` renders one itself. */
-export function SheetOverlay({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Backdrop>): ReactElement {
+export function SheetOverlay({ className, backdropBlur = true, ...props }: SheetOverlayProps): ReactElement {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={mergeClassName(
         className,
-        overlayScrimClass,
+        overlayScrimVariants({ backdropBlur }),
         "fixed inset-0 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none",
         overlayLayer
       )}
@@ -150,7 +150,8 @@ export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
     size?: VariantProps<typeof sheetContentVariants>["size"];
     /** Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner. */
     showCloseButton?: boolean;
-  } & OverlayContainerProps & {
+  } & BackdropBlurProps &
+  OverlayContainerProps & {
     /** The corner close button's accessible name. Defaults to the locale dictionary's `overlay.close`. */
     closeLabel?: string;
   };
@@ -161,6 +162,7 @@ export function SheetContent({
   children,
   size = "md",
   showCloseButton = true,
+  backdropBlur = true,
   container,
   closeLabel,
   ...props
@@ -169,7 +171,7 @@ export function SheetContent({
 
   return (
     <OverlayPortal portal={SheetPortal} container={container}>
-      <SheetOverlay />
+      <SheetOverlay backdropBlur={backdropBlur} />
       <SheetPrimitive.Viewport
         data-slot="sheet-viewport"
         // One stacking level for Overlay and Viewport: Popup sits inside

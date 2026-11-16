@@ -425,6 +425,15 @@
       "forwardedCount": 275,
       "props": [
         {
+          "name": "backdropBlur",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the scrim blurs the page behind it. Set it to `false` for an overlay portaled into a transformed scope, such as a zoomable canvas or an artboard, where the blur samples shifted content and the blurred copy no longer lines up with the page. The scrim keeps its tint either way.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
@@ -480,6 +489,15 @@
       ],
       "forwardedCount": 275,
       "props": [
+        {
+          "name": "backdropBlur",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the scrim blurs the page behind it. Set it to `false` for an overlay portaled into a transformed scope, such as a zoomable canvas or an artboard, where the blur samples shifted content and the blurred copy no longer lines up with the page. The scrim keeps its tint either way.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {

@@ -247,23 +247,32 @@ export function roleNamed(role: QueryableRole, name: string): HTMLElement {
 }
 
 /**
- * The styled backdrop behind an open overlay popup, found as the popup's nearest preceding
- * `role="presentation"` sibling. Base UI also renders an inert internal backdrop with that
- * role further back, which never receives the pointer, so the walk stops at the first match
- * rather than querying the role. Suites cannot select the styled one by `data-slot` instead.
+ * The styled backdrop behind an open overlay popup, found as the nearest preceding
+ * `role="presentation"` sibling of the popup or, when the popup sits inside a wrapper such as
+ * Sheet's Viewport, of the nearest ancestor that has one. Base UI also renders an inert internal
+ * backdrop with that role further back, which never receives the pointer, so each walk stops at
+ * the first match rather than querying the role. Suites cannot select the styled one by
+ * `data-slot` instead.
  *
- * @param popup - The open dialog or alert-dialog popup.
+ * @param popup - The open dialog, alert-dialog or sheet popup.
  * @returns The backdrop a pointer click outside the popup lands on.
- * @throws When no presentation sibling precedes the popup, which is a defect in the suite.
+ * @throws When no presentation sibling precedes the popup or an ancestor below `<body>`, which is
+ *   a defect in the suite.
  */
 export function overlayBackdropOf(popup: HTMLElement): HTMLElement {
   for (
-    let sibling = popup.previousElementSibling;
-    sibling !== null;
-    sibling = sibling.previousElementSibling
+    let level: Element | null = popup;
+    level !== null && level !== document.body;
+    level = level.parentElement
   ) {
-    if (sibling instanceof HTMLElement && sibling.getAttribute("role") === "presentation") {
-      return sibling;
+    for (
+      let sibling = level.previousElementSibling;
+      sibling !== null;
+      sibling = sibling.previousElementSibling
+    ) {
+      if (sibling instanceof HTMLElement && sibling.getAttribute("role") === "presentation") {
+        return sibling;
+      }
     }
   }
   throw new Error("expected a backdrop before the popup");

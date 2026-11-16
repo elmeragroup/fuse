@@ -150,7 +150,8 @@ function Actions(): ReactElement {
       </DropdownMenu.Root>
       <Dialog.Root>
         <Dialog.Trigger render={<Button variant="secondary" />}>Share access</Dialog.Trigger>
-        <Dialog.Content>
+        {/* A backdrop blur would sample the artboard's transformed scope at the wrong scale. */}
+        <Dialog.Content backdropBlur={false}>
           <Dialog.Header>
             <Dialog.Title>Share access</Dialog.Title>
             <Dialog.Description>

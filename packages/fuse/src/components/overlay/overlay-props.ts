@@ -17,6 +17,22 @@ export type OverlayContainerProps = {
 };
 
 /**
+ * Props for the scrim's blur on `Dialog.Content`, `Dialog.Overlay`, `Sheet.Content`, `Sheet.Overlay`
+ * and `AlertDialog.Content`, which takes it through `Dialog.Content`. This module declares the prop
+ * once, so every prop table that intersects it shows the same sentence.
+ */
+export type BackdropBlurProps = {
+  /**
+   * Whether the scrim blurs the page behind it. Set it to `false` for an overlay portaled into a
+   * transformed scope, such as a zoomable canvas or an artboard, where the blur samples shifted
+   * content and the blurred copy no longer lines up with the page. The scrim keeps its tint either
+   * way.
+   * @default true
+   */
+  backdropBlur?: boolean;
+};
+
+/**
  * The four positioner props an overlay lifts onto its Content part and forwards to the
  * internal Positioner. It holds descriptions only; each component's destructuring sets the
  * published defaults. The generic is a structural bound on the four keys, because Base UI

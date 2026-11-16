@@ -72,6 +72,27 @@ export const overlaySizeVariants = tv({
 });
 
 /**
+ * The backdrop scrim of both modal families, Dialog and Sheet. `bg-black/10` is not tokenized and
+ * is allowlisted as a raw palette literal.
+ *
+ * The `backdropBlur` axis blurs what the scrim covers where the browser supports backdrop filters.
+ * `false` keeps the tint and drops the blur, for a modal portaled into a transformed scope. There the
+ * filter samples the backdrop at the wrong scale and offset, so the blurred copy no longer lines up
+ * with the content under it.
+ */
+export const overlayScrimVariants = tv({
+  base: "bg-black/10",
+  variants: {
+    backdropBlur: {
+      true: "supports-backdrop-filter:backdrop-blur-xs",
+    },
+  },
+  defaultVariants: {
+    backdropBlur: true,
+  },
+});
+
+/**
  * Popup-surface slots. Fill and edge stay separate slots, because Tooltip inverts the fill and
  * paints neither shadow nor ring, and it cannot subtract them from a composed surface. `ring-0` does
  * not remove `ring-foreground/10`, because tailwind-merge 3.7.0 treats ring width and ring color as
@@ -90,11 +111,6 @@ export const overlaySizeVariants = tv({
  */
 const overlayPopupVariants = tv({
   slots: {
-    /**
-     * The backdrop scrim. `bg-black/10` is not tokenized and is allowlisted as a raw palette
-     * literal.
-     */
-    scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
     /**
      * The modal title typography that `Dialog.Title` and `Sheet.Title` share, so none of them can
      * drift. AlertDialog's title takes it through `Dialog.Title`. `text-xl` keeps its own 28px line,
@@ -161,7 +177,6 @@ const overlayPopupVariants = tv({
 /** The popup slots, resolved once at module scope. The recipe has no axes, so no render repeats the work. */
 const overlayPopupSlots = overlayPopupVariants();
 
-export const overlayScrimClass = overlayPopupSlots.scrim();
 export const overlayTitleClass = overlayPopupSlots.title();
 export const overlayTitleLineClass = overlayPopupSlots.titleLine();
 export const overlayFooterClass = overlayPopupSlots.footer();

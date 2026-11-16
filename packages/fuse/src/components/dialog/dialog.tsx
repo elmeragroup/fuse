@@ -15,7 +15,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import { OverlayCloseButton, OverlayFooterCloseButton } from "../overlay/overlay-close-button";
 import { overlayCornerCloseClass } from "../overlay/overlay-corner-close-class";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import type { OverlayContainerProps } from "../overlay/overlay-props";
+import type { BackdropBlurProps, OverlayContainerProps } from "../overlay/overlay-props";
 import { dialogContentVariants, dialogVariants } from "./dialog-variants";
 
 const slots = dialogVariants();
@@ -60,15 +60,19 @@ export function DialogClose({
   );
 }
 
+/** Props for `Dialog.Overlay`. */
+type DialogOverlayProps = ComponentProps<typeof DialogPrimitive.Backdrop> & BackdropBlurProps;
+
 /** The scrim behind the popup. `Dialog.Content` already renders one. */
 export function DialogOverlay({
   className,
+  backdropBlur = true,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Backdrop>): ReactElement {
+}: DialogOverlayProps): ReactElement {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
-      className={mergeClassName(className, slots.overlay())}
+      className={mergeClassName(className, dialogVariants({ backdropBlur }).overlay())}
       {...props}
     />
   );
@@ -83,7 +87,8 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> & 
   size?: VariantProps<typeof dialogContentVariants>["size"];
   /** Whether the popup shows a close button, a ghost icon `Dialog.Close`, in its top-right corner. */
   showCloseButton?: boolean;
-} & OverlayContainerProps & {
+} & BackdropBlurProps &
+  OverlayContainerProps & {
     /** The corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary. */
     closeLabel?: string;
   };
@@ -96,6 +101,7 @@ export function DialogContent({
   className,
   children,
   showCloseButton = true,
+  backdropBlur = true,
   size = "md",
   container,
   closeLabel,
@@ -103,7 +109,7 @@ export function DialogContent({
 }: DialogContentProps): ReactElement | null {
   return (
     <OverlayPortal portal={DialogPortal} container={container}>
-      <DialogOverlay />
+      <DialogOverlay backdropBlur={backdropBlur} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={mergeClassName(className, dialogContentVariants({ size }))}
