@@ -1187,6 +1187,12 @@ const ZERO_MINIMUM = "Figma takes no zero minimum, and its auto layout never shr
 const WHOLE_PARENT_MAXIMUM =
   "its parent hugs what it holds and nothing bounds the width CSS gives the parent, so 100% of the parent is never narrower than the box";
 
+/**
+ * Why a maximum of the whole parent or more drops beside a length that fills the parent, as
+ * preflight's `max-width: 100%` beside an image's `size-full` does.
+ */
+const FILLING_MAXIMUM = "the box fills its parent, so it is never longer than 100% of the parent";
+
 const CAPPED_LENGTH =
   "the 100% maximum lowers the height to the parent's content height, which a fill down draws";
 const CAPPING_MAXIMUM = "the box fills its parent's content height, which the height reaches";
@@ -1251,8 +1257,8 @@ function readLimit(value: string, variables: VariableIndex, percent: PercentBasi
 /**
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
  * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
- * as `inside` names it. Where the parent is at least as long as each layer it holds (`roomy`), a
- * maximum of `100%` or more never limits the box, so it drops. A length that does not map leaves
+ * as `inside` names it. Where the parent is at least as long as each layer it holds (`roomy`), or the
+ * box fills the parent, a maximum of `100%` or more never limits the box, so it drops. A length that does not map leaves
  * the axis hugging in its place, which the result marks as not `known`.
  */
 function readAxis(
@@ -1282,12 +1288,13 @@ function readAxis(
     : room.auto;
   const size = read ?? HUG;
   const maximum = reader.resolved(axis.max);
-  const inertMaximum = roomy && maximum !== undefined && (evaluatePercentage(maximum) ?? 0) >= 1;
+  const inertMaximum =
+    (roomy || size.kind === "fill") && maximum !== undefined && (evaluatePercentage(maximum) ?? 0) >= 1;
   if (inertMaximum) {
     reader.read(
       axis.max,
       (value) => value,
-      () => ({ outcome: "dropped", detail: WHOLE_PARENT_MAXIMUM }),
+      () => ({ outcome: "dropped", detail: roomy ? WHOLE_PARENT_MAXIMUM : FILLING_MAXIMUM }),
       []
     );
   }

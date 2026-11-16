@@ -105,7 +105,7 @@ export const CAPTURE_THEME: PreviewTheme = {
   density: "dense",
 };
 
-/** A cell's forced state left its styles as its resting twin's, so the capture would record rest. */
+/** A cell's forced state left its read as its resting twin's, so the capture would record rest. */
 export class StateNotReached extends Error {
   readonly _tag = "StateNotReached" as const;
 }
@@ -855,12 +855,9 @@ async function readCells(
   const page = new Map<string, RawElement>();
   const read: RawCell[] = [];
   const counts: number[] = [];
+  // A forced state may change no computed style, as a pressed Toggle's hover, whose fill outranks the
+  // hover's: the rules written for the state match and lose. `capturedCells` checks the read instead.
   for (const { request, key } of cells) {
-    if (forcesState(request) && !opened.forced.has(request.id)) {
-      return new StateNotReached(
-        `${key}: forcing ${request.forced.join(" and ")} changed no style against the cell at rest`
-      );
-    }
     if (request.measured.length === 0) {
       return new CaptureUnsupported(`${key}: the cell measures no element`);
     }
@@ -949,15 +946,55 @@ function capturedCells(
     }
     captured.push(one.cell);
   }
-  // A forced state that leaves every winner as at rest drew the cell at rest, however its computed
-  // styles changed, as a forced state DevTools lost by node id did.
-  const printed = new Map(captured.map((each) => [each.key, JSON.stringify(each.roots)]));
-  for (const { key, rest } of cells) {
-    if (rest !== undefined && printed.get(key) === printed.get(rest)) {
-      return new StateNotReached(`${key}: the capture holds the same winners as ${rest}`);
+  // A forced state is reached where a rule written for it matched an element of the cell, won or
+  // lost, and matched none of its resting twin's. Nothing else in the read counts: a winner or an
+  // attribute can differ for reasons of its own, as a renderer that stamps the cell's state does.
+  const readAt = new Map(cells.map(({ key }, at) => [key, read[at]] as const));
+  for (const { key, rest, request } of cells) {
+    const resting = rest === undefined ? undefined : readAt.get(rest);
+    const forced = readAt.get(key);
+    if (rest === undefined || resting === undefined || forced === undefined) {
+      continue;
+    }
+    const patterns = statePatterns(request);
+    const atRest = matchedSelectors(resting);
+    const reached = [...matchedSelectors(forced)].some(
+      (selector) => !atRest.has(selector) && patterns.some((pattern) => pattern.test(selector))
+    );
+    if (!reached) {
+      return new StateNotReached(
+        `${key}: no rule written for its forced state matched an element of the cell that ${rest} does not match`
+      );
     }
   }
   return { page, declarations: table.declarations, cells: captured };
+}
+
+/**
+ * How a matched rule's selector names the state a cell forces: each pseudo-class the page forces,
+ * such as `:hover`, and the `data-highlighted` attribute it writes on a highlighted row.
+ */
+function statePatterns(request: CellRequest): readonly RegExp[] {
+  const highlight = request.writesHighlightAttribute ? ["\\[data-highlighted"] : [];
+  return [...request.forced.map((name) => `:${name}`), ...highlight].map(
+    (pattern) => new RegExp(`${pattern}(?![\\w-])`)
+  );
+}
+
+/** The selector of every rule matched on a cell's elements and their pseudo-elements, around its roots too. */
+function matchedSelectors(cell: readonly RawCell[]): ReadonlySet<string> {
+  const found = new Set<string>();
+  const visit = (element: RawElement): void => {
+    for (const rule of [...element.rules, ...element.pseudo.flatMap(({ rules }) => rules)]) {
+      found.add(rule.selector);
+    }
+    element.children.forEach(visit);
+  };
+  for (const { around, root } of cell) {
+    around.forEach(visit);
+    visit(root);
+  }
+  return found;
 }
 
 /**

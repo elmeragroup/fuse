@@ -11,6 +11,7 @@
  */
 import { loaderVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { IconManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
 
@@ -31,18 +32,20 @@ function recipeFor(cell: Cell): ReturnType<typeof loaderVariants> {
   return loaderVariants({ size });
 }
 
-/** The spinner, a direct `<svg>` child of the box, at the cell's size. */
+/** The spinner, a direct `<svg>` child of the box, as a manifest names it. */
+const SPINNER: IconManifest = {
+  key: "spinner",
+  name: "Spinner",
+  side: "start",
+  direct: true,
+  dataIcon: undefined,
+  icon: "SpinnerGap",
+  swapProperty: undefined,
+};
+
+/** The spinner at the cell's size. */
 function spinner(cell: Cell): IconSlot {
-  return {
-    key: "spinner",
-    name: "Spinner",
-    side: "start",
-    direct: true,
-    dataIcon: undefined,
-    icon: "SpinnerGap",
-    swapProperty: undefined,
-    classes: recipeFor(cell).icon(),
-  };
+  return { ...SPINNER, classes: recipeFor(cell).icon() };
 }
 
 /** A loader, as `<Loader size={size} aria-label="Loading" />`. */
@@ -58,5 +61,17 @@ export const LOADER: ComponentDefinition = {
   omittedStates: new Set(),
   label: undefined,
   iconsFor: (cell) => [spinner(cell)],
+  swapProperties: [],
+};
+
+/** The loader's manifest, which the capture-backed build reads with `captures/loader.json`. */
+export const LOADER_MANIFEST: SetManifest = {
+  key: "loader",
+  name: "Loader",
+  slot: "loader",
+  axes: LOADER.axes,
+  columnAxis: "size",
+  label: undefined,
+  iconsFor: () => [SPINNER],
   swapProperties: [],
 };

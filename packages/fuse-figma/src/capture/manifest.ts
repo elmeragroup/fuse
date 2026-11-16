@@ -34,6 +34,8 @@ export type LabelManifest = {
   readonly shownIn: (cell: Cell) => boolean;
   /** The attribute a control holds its text in, such as `placeholder`, where it is not a text node. */
   readonly textAttribute?: (cell: Cell) => string | undefined;
+  /** Set where the sample's text starts with a space, as Meter's value holds one after its icon. */
+  readonly leadingSpace?: true;
 } & (
   | { readonly characters: string; readonly textProperty: string | undefined }
   | { readonly charactersFor: (cell: Cell) => string }
@@ -73,6 +75,8 @@ export type PartManifest = BoxManifest & {
   readonly optional?: BooleanPropertySpec;
   /** Whether the part's element follows its box's text in the markup, as a row's shortcut does. */
   readonly after?: "label";
+  /** The picture the sample shows in the part, as Avatar's image shows the docs portrait. */
+  readonly image?: () => Uint8Array;
 } & (
     | { readonly slot: string; readonly place?: never }
     | { readonly slot: undefined; readonly place: string }
@@ -138,12 +142,13 @@ export type SetManifest = BoxManifest & {
  * a sample sits in, chosen for the kit's previews, never computed from a component's own CSS. A size
  * a component's CSS sets, as a popup's `min-w-36` or its anchor's width, comes from the capture.
  *
- * - 512: an Alert's host, the docs Variants demo's `max-w-lg` column.
+ * - 512: an Alert's host, the docs Variants demo's `max-w-lg` column, and Empty's.
  * - 384: a Field's width, the field boxes' and the Input group's host.
  * - 320: a Command row's host.
+ * - 256: a Meter's host, the `w-64` a container gives it.
  * - 160: a Dropdown menu row's host.
  */
-export const SAMPLE_HOST_WIDTHS: ReadonlySet<number> = new Set([512, 384, 320, 160]);
+export const SAMPLE_HOST_WIDTHS: ReadonlySet<number> = new Set([512, 384, 320, 256, 160]);
 
 /**
  * The fields each kind of manifest object may hold, as its type lists them. The oracle test walks
@@ -172,9 +177,18 @@ export const MANIFEST_FIELDS = {
     "iconsFor",
     "parts",
   ],
-  part: ["key", "shownIn", "optional", "after", "slot", "place", "label", "iconsFor", "parts"],
+  part: ["key", "shownIn", "optional", "after", "image", "slot", "place", "label", "iconsFor", "parts"],
   instance: ["kind", "key", "of", "cell", "properties", "shownIn", "optional", "after", "exposed", "slot"],
-  label: ["key", "name", "shownIn", "textAttribute", "characters", "textProperty", "charactersFor"],
+  label: [
+    "key",
+    "name",
+    "shownIn",
+    "textAttribute",
+    "leadingSpace",
+    "characters",
+    "textProperty",
+    "charactersFor",
+  ],
   icon: ["key", "name", "side", "direct", "dataIcon", "icon", "swapProperty", "optional"],
 } as const satisfies Record<string, readonly string[]>;
 

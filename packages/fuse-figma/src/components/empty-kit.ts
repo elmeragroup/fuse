@@ -29,13 +29,15 @@
  */
 import { emptyMediaVariants, emptyVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import { swapProperties } from "./component-spec";
 import type {
   Cell,
   ComponentDefinition,
   IconSlot,
   InstanceDefinition,
+  LabelDefinition,
   PartDefinition,
 } from "./component-spec";
 import { always } from "./popup-facts";
@@ -84,16 +86,40 @@ const TRAY: IconSlot = {
   swapProperty: "Icon",
 };
 
+/** The BOOLEAN property that hides the media. */
+const MEDIA_PROPERTY = { name: "Media", defaultValue: true };
+
 /** The icon media, behind the `Media` BOOLEAN property. */
 const MEDIA: PartDefinition = {
   key: "media",
   slot: "empty-media",
   shownIn: always,
-  optional: { name: "Media", defaultValue: true },
+  optional: MEDIA_PROPERTY,
   classesFor: () => emptyMediaVariants({ variant: "icon" }),
   label: undefined,
   iconsFor: () => [TRAY],
 };
+
+/** The title's text, which the `Title` property sets. */
+const TITLE_TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: EMPTY_TITLE_TEXT,
+  textProperty: "Title",
+  shownIn: always,
+};
+
+/** The description's text, which the `Description text` property sets. */
+const DESCRIPTION_TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: EMPTY_DESCRIPTION_TEXT,
+  textProperty: "Description text",
+  shownIn: always,
+};
+
+/** The BOOLEAN property that hides the description. */
+const DESCRIPTION_PROPERTY = { name: "Description", defaultValue: true };
 
 /** The title. */
 const TITLE: PartDefinition = {
@@ -101,7 +127,7 @@ const TITLE: PartDefinition = {
   slot: "empty-title",
   shownIn: always,
   classesFor: () => styles.title(),
-  label: { key: "text", name: "text", characters: EMPTY_TITLE_TEXT, textProperty: "Title", shownIn: always },
+  label: TITLE_TEXT,
   iconsFor: () => [],
 };
 
@@ -110,15 +136,9 @@ const DESCRIPTION: PartDefinition = {
   key: "description",
   slot: "empty-description",
   shownIn: always,
-  optional: { name: "Description", defaultValue: true },
+  optional: DESCRIPTION_PROPERTY,
   classesFor: () => styles.description(),
-  label: {
-    key: "text",
-    name: "text",
-    characters: EMPTY_DESCRIPTION_TEXT,
-    textProperty: "Description text",
-    shownIn: always,
-  },
+  label: DESCRIPTION_TEXT,
   iconsFor: () => [],
 };
 
@@ -162,12 +182,15 @@ function actionOf(key: string, variant: string, label: string): InstanceDefiniti
   };
 }
 
+/** The BOOLEAN property that shows the actions, which starts false. */
+const ACTIONS_PROPERTY = { name: EMPTY_ACTIONS_PROPERTY, defaultValue: false };
+
 /** The content around the actions, behind the `Actions` BOOLEAN property, which starts false. */
 const CONTENT: PartDefinition = {
   key: "content",
   slot: "empty-content",
   shownIn: always,
-  optional: { name: EMPTY_ACTIONS_PROPERTY, defaultValue: false },
+  optional: ACTIONS_PROPERTY,
   classesFor: () => styles.content(),
   label: undefined,
   iconsFor: () => [],
@@ -196,4 +219,73 @@ export const EMPTY: ComponentDefinition = {
   iconsFor: () => [],
   parts: [HEADER, CONTENT],
   swapProperties: swapProperties([TRAY]),
+};
+
+/** An action as a manifest names it, as {@link actionOf} draws it. */
+function actionManifest(key: string, variant: string, label: string): InstanceManifest {
+  return {
+    kind: "instance",
+    key,
+    of: BUTTON_MANIFEST,
+    cell: () => ({ variant, size: "default", state: "rest", icon: "none" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/** The header's manifest: the media, the title and the description. */
+const HEADER_MANIFEST: PartManifest = {
+  key: "header",
+  slot: "empty-header",
+  shownIn: always,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "media",
+      slot: "empty-media",
+      shownIn: always,
+      optional: MEDIA_PROPERTY,
+      label: undefined,
+      iconsFor: () => [TRAY],
+    },
+    { key: "title", slot: "empty-title", shownIn: always, label: TITLE_TEXT, iconsFor: () => [] },
+    {
+      key: "description",
+      slot: "empty-description",
+      shownIn: always,
+      optional: DESCRIPTION_PROPERTY,
+      label: DESCRIPTION_TEXT,
+      iconsFor: () => [],
+    },
+  ],
+};
+
+/** The content's manifest, around the two actions. */
+const CONTENT_MANIFEST: PartManifest = {
+  key: "content",
+  slot: "empty-content",
+  shownIn: always,
+  optional: ACTIONS_PROPERTY,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    actionManifest("primary", "default", EMPTY_PRIMARY_ACTION_LABEL),
+    actionManifest("secondary", "secondary", EMPTY_SECONDARY_ACTION_LABEL),
+  ],
+};
+
+/** Empty's manifest, which the capture-backed build reads with `captures/empty.json`. */
+export const EMPTY_MANIFEST: SetManifest = {
+  key: "empty",
+  name: "Empty",
+  slot: "empty",
+  axes: EMPTY.axes,
+  columnAxis: "variant",
+  previewWidth: EMPTY_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [HEADER_MANIFEST, CONTENT_MANIFEST],
+  swapProperties: EMPTY.swapProperties,
 };

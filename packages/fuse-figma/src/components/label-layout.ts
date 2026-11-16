@@ -651,7 +651,8 @@ function readDecorationColor(
   textColor: string | undefined,
   variables: VariableIndex
 ): DecorationColor | undefined {
-  const normalized = normalizeCss(value);
+  // CSS keywords match ASCII case-insensitively, and the built CSS a capture reads writes `currentColor`.
+  const normalized = normalizeCss(value).replaceAll(/currentcolor/giu, "currentcolor");
   const arms = lightDarkArms(normalized);
   const light = arms?.light ?? normalized;
   const dark = arms === undefined || arms.dark === arms.light ? undefined : arms.dark;

@@ -1273,8 +1273,13 @@ export class RecipeBoxCascade implements BoxCascade {
   }
 }
 
-/** What a class that styles every child but the last makes of a box that holds `children`. */
-function childSpacingNote(children: number | undefined): CoverageNote {
+/**
+ * What a class that styles every child but the last makes of a box that holds `children`.
+ *
+ * @param children - How many element children the box holds, or undefined where the build cannot tell.
+ * @returns The note of each of the class's rows where no item spacing reads them.
+ */
+export function childSpacingNote(children: number | undefined): CoverageNote {
   if (children === undefined) {
     return {
       outcome: "unmapped",

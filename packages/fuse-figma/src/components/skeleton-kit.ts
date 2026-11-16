@@ -12,6 +12,7 @@
  */
 import { cn, skeletonClass } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition } from "./component-spec";
 
 /**
@@ -52,6 +53,18 @@ export const SKELETON: ComponentDefinition = {
   states: {},
   facts: new Map(),
   omittedStates: new Set(),
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The skeleton's manifest, which the capture-backed build reads with `captures/skeleton.json`. */
+export const SKELETON_MANIFEST: SetManifest = {
+  key: "skeleton",
+  name: "Skeleton",
+  slot: "skeleton",
+  axes: SKELETON.axes,
+  columnAxis: "shape",
   label: undefined,
   iconsFor: () => [],
   swapProperties: [],

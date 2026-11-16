@@ -8,6 +8,9 @@ import type { Result } from "effect";
 import alertDialogContent from "../../captures/alert-dialog-content.json" with { type: "json" };
 import alertDialogOpen from "../../captures/alert-dialog-open.json" with { type: "json" };
 import alert from "../../captures/alert.json" with { type: "json" };
+import avatarGroup from "../../captures/avatar-group.json" with { type: "json" };
+import avatar from "../../captures/avatar.json" with { type: "json" };
+import badge from "../../captures/badge.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
 import comboboxItem from "../../captures/combobox-item.json" with { type: "json" };
@@ -16,6 +19,7 @@ import comboboxPopup from "../../captures/combobox-popup.json" with { type: "jso
 import commandDialogOpen from "../../captures/command-dialog-open.json" with { type: "json" };
 import commandItem from "../../captures/command-item.json" with { type: "json" };
 import commandPalette from "../../captures/command-palette.json" with { type: "json" };
+import confirmButton from "../../captures/confirm-button.json" with { type: "json" };
 import dialogContent from "../../captures/dialog-content.json" with { type: "json" };
 import dialogOpen from "../../captures/dialog-open.json" with { type: "json" };
 import dropdownMenuCheckboxItem from "../../captures/dropdown-menu-checkbox-item.json" with { type: "json" };
@@ -24,23 +28,33 @@ import dropdownMenuOpen from "../../captures/dropdown-menu-open.json" with { typ
 import dropdownMenuPopup from "../../captures/dropdown-menu-popup.json" with { type: "json" };
 import dropdownMenuRadioItem from "../../captures/dropdown-menu-radio-item.json" with { type: "json" };
 import dropdownMenuSubTrigger from "../../captures/dropdown-menu-sub-trigger.json" with { type: "json" };
+import empty from "../../captures/empty.json" with { type: "json" };
 import fieldDescription from "../../captures/field-description.json" with { type: "json" };
 import fieldError from "../../captures/field-error.json" with { type: "json" };
+import fieldLegend from "../../captures/field-legend.json" with { type: "json" };
+import fieldTitle from "../../captures/field-title.json" with { type: "json" };
 import iconButton from "../../captures/icon-button.json" with { type: "json" };
+import iconToggle from "../../captures/icon-toggle.json" with { type: "json" };
 import inputGroup from "../../captures/input-group.json" with { type: "json" };
 import input from "../../captures/input.json" with { type: "json" };
 import kbdGroup from "../../captures/kbd-group.json" with { type: "json" };
 import kbd from "../../captures/kbd.json" with { type: "json" };
 import label from "../../captures/label.json" with { type: "json" };
+import link from "../../captures/link.json" with { type: "json" };
+import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
 import menuSeparator from "../../captures/menu-separator.json" with { type: "json" };
+import meter from "../../captures/meter.json" with { type: "json" };
 import popoverContent from "../../captures/popover-content.json" with { type: "json" };
 import popoverOpen from "../../captures/popover-open.json" with { type: "json" };
 import selectItem from "../../captures/select-item.json" with { type: "json" };
 import selectOpen from "../../captures/select-open.json" with { type: "json" };
 import selectPopup from "../../captures/select-popup.json" with { type: "json" };
 import selectTrigger from "../../captures/select-trigger.json" with { type: "json" };
+import separator from "../../captures/separator.json" with { type: "json" };
+import skeleton from "../../captures/skeleton.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
+import toggle from "../../captures/toggle.json" with { type: "json" };
 import tooltipContent from "../../captures/tooltip-content.json" with { type: "json" };
 import tooltipOpen from "../../captures/tooltip-open.json" with { type: "json" };
 import { decodeCapture } from "./capture-format.ts";
@@ -86,6 +100,20 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["command-item", commandItem],
   ["command-palette", commandPalette],
   ["command-dialog-open", commandDialogOpen],
+  ["badge", badge],
+  ["separator", separator],
+  ["skeleton", skeleton],
+  ["loader", loader],
+  ["field-legend", fieldLegend],
+  ["field-title", fieldTitle],
+  ["link", link],
+  ["avatar", avatar],
+  ["avatar-group", avatarGroup],
+  ["meter", meter],
+  ["empty", empty],
+  ["confirm-button", confirmButton],
+  ["toggle", toggle],
+  ["icon-toggle", iconToggle],
 ]);
 
 /**

@@ -166,21 +166,24 @@ export const FIELD_TITLE: ComponentDefinition = {
 };
 
 /**
- * A text part's manifest: its key, name, slot, matrix and text, as its definition names them, at the
- * field box's preview width, which the description and the error both take.
+ * A text part's manifest: its key, name, slot, matrix and text, as its definition names them, at its
+ * definition's preview width: the field box's for the description, the error and the legend, and
+ * none for the title, which hugs its text.
  */
 function textManifest(definition: ComponentDefinition): SetManifest {
-  return {
+  const manifest: SetManifest = {
     key: definition.key,
     name: definition.name,
     slot: definition.slot,
-    previewWidth: FIELD_BOX_PREVIEW_WIDTH,
     axes: definition.axes,
     columnAxis: definition.columnAxis,
     label: definition.label,
     iconsFor: () => [],
     swapProperties: [],
   };
+  return definition.previewWidth === undefined
+    ? manifest
+    : { ...manifest, previewWidth: definition.previewWidth };
 }
 
 /** The description's manifest, which the capture-backed build reads with `captures/field-description.json`. */
@@ -188,3 +191,9 @@ export const FIELD_DESCRIPTION_MANIFEST: SetManifest = textManifest(FIELD_DESCRI
 
 /** The error's manifest, which the capture-backed build reads with `captures/field-error.json`. */
 export const FIELD_ERROR_MANIFEST: SetManifest = textManifest(FIELD_ERROR);
+
+/** The legend's manifest, which the capture-backed build reads with `captures/field-legend.json`. */
+export const FIELD_LEGEND_MANIFEST: SetManifest = textManifest(FIELD_LEGEND);
+
+/** The title's manifest, which the capture-backed build reads with `captures/field-title.json`. */
+export const FIELD_TITLE_MANIFEST: SetManifest = textManifest(FIELD_TITLE);

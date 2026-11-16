@@ -1,0 +1,126 @@
+{
+  "set": "field-title",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows, under the definition's hand-written facts. The capture lists the class once: unmapped where no rule written for it matched any cell, or dropped where a transition explains it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, or whose rules matched and lost, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.clips",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing here (`overflow` is `visible` initially, CSS Overflow 3 §3) and the set's root casts no shadow in any cell, so the capture-backed root leaves its layers unclipped, and a ring at its edge shows as in the browser. A root that casts a shadow still clips, since Figma draws a spread only from a clipping frame (PR2)."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a visually hidden child of the Field, which no cell holds"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
+        "outcome": "dropped"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The recipe definition dropped the Field root's child rule by hand. In the browser it sets the title's width, as the row below reads it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
+        "property": "width",
+        "outcome": "literal"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's child rule sets its child's width; the recipe build dropped it by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field-title",
+        "className": "w-fit",
+        "property": "width"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's `[&>:where(…)]:w-full` (0,1,0) beats the title's `w-fit` (0,1,0) by source order, so the title is 100% wide; the recipe cascade gave `w-fit` the win. The title sits alone in its set, so it hugs its text either way."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "outcome": "dropped",
+        "detail": "the Field lays out its label, control and messages, which the set does not draw"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build listed the Field root's own layout under the title's set. The capture reads the Field root as an element around the title and passes down only what inherits."
+    }
+  ]
+}

@@ -10,7 +10,8 @@
  */
 import { badgeVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type { Cell, ComponentDefinition, LabelDefinition } from "./component-spec";
 import { ownKey } from "./own-key";
 
 type BadgeVariant = keyof typeof badgeVariants.variants.variant;
@@ -44,6 +45,15 @@ function classesFor(cell: Cell): string {
  */
 export const BADGE_LABEL = "Badge";
 
+/** The label layer, which the `Label` text property sets. */
+const BADGE_LABEL_LAYER: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: BADGE_LABEL,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 /** A Badge with a label, as `<Badge>Badge</Badge>`. */
 export const BADGE: ComponentDefinition = {
   key: "badge",
@@ -61,7 +71,19 @@ export const BADGE: ComponentDefinition = {
   // the root's own text, so no cell has that span, and the root's own `text-*` and the base's
   // `font-medium` set the same type.
   omittedStates: new Set(["[&>span]"]),
-  label: { key: "label", name: "label", characters: BADGE_LABEL, textProperty: "Label", shownIn: () => true },
+  label: BADGE_LABEL_LAYER,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The Badge's manifest, which the capture-backed build reads with `captures/badge.json`. */
+export const BADGE_MANIFEST: SetManifest = {
+  key: "badge",
+  name: "Badge",
+  slot: "badge",
+  axes: BADGE.axes,
+  columnAxis: "size",
+  label: BADGE_LABEL_LAYER,
   iconsFor: () => [],
   swapProperties: [],
 };

@@ -12,6 +12,7 @@
  */
 import { cn, separatorClass } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition } from "./component-spec";
 
 /**
@@ -35,6 +36,18 @@ export const SEPARATOR: ComponentDefinition = {
     ["data-vertical", (cell: Cell) => cell.orientation === "vertical"],
   ]),
   omittedStates: new Set(),
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The separator's manifest, which the capture-backed build reads with `captures/separator.json`. */
+export const SEPARATOR_MANIFEST: SetManifest = {
+  key: "separator",
+  name: "Separator",
+  slot: "separator",
+  axes: SEPARATOR.axes,
+  columnAxis: "orientation",
   label: undefined,
   iconsFor: () => [],
   swapProperties: [],

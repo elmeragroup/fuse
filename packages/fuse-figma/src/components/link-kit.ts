@@ -18,7 +18,8 @@
  */
 import { linkVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type { Cell, ComponentDefinition, LabelDefinition } from "./component-spec";
 import { HOST_TYPE } from "./host-type";
 import { ownKey } from "./own-key";
 
@@ -67,6 +68,15 @@ function classesFor(cell: Cell): string {
   return linkVariants(linkLooks(cell));
 }
 
+/** The link's text, which the `Label` text property sets. */
+const LABEL: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: LINK_LABEL,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 /** A link, as `<Link href="/invoices/1042">invoice 1042</Link>` at a variant and underline. */
 export const LINK: ComponentDefinition = {
   key: "link",
@@ -88,13 +98,19 @@ export const LINK: ComponentDefinition = {
     "[&>[data-icon=inline-start]]",
     "has-[>[data-icon]]",
   ]),
-  label: {
-    key: "label",
-    name: "label",
-    characters: LINK_LABEL,
-    textProperty: "Label",
-    shownIn: () => true,
-  },
+  label: LABEL,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The link's manifest, which the capture-backed build reads with `captures/link.json`. */
+export const LINK_MANIFEST: SetManifest = {
+  key: "link",
+  name: "Link",
+  slot: "link",
+  axes: LINK.axes,
+  columnAxis: "state",
+  label: LABEL,
   iconsFor: () => [],
   swapProperties: [],
 };

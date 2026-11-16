@@ -20,12 +20,19 @@
  */
 
 import { KitUnmappable } from "../components/build-errors.ts";
-import { CellLedger, inheritance, inheritsProperty, LayerStyle } from "../components/cascade.ts";
+import {
+  CellLedger,
+  childSpacingNote,
+  inheritance,
+  inheritsProperty,
+  LayerStyle,
+} from "../components/cascade.ts";
 import type {
   Applied,
   BoxCascade,
   CellScope,
   ChildSpacing,
+  CoverageNote,
   InPlace,
   InstanceScope,
   Layer,
@@ -43,6 +50,7 @@ import type {
 } from "../components/component-spec.ts";
 import { CascadeLogs, routed } from "../components/coverage-log.ts";
 import type { Origin } from "../components/coverage-log.ts";
+import { exceptLastChildClass } from "../components/css-selector.ts";
 import { evaluateLength } from "../components/css-values.ts";
 import type { Viewport } from "../components/css-values.ts";
 import { modalLayout } from "../components/fixed-placement.ts";
@@ -66,6 +74,23 @@ const AROUND_UNDRAWN =
 
 /** Why the kit draws none of an element between a box and its part. */
 const BETWEEN_UNDRAWN = "an element between a box and its part, which the kit draws no layer for";
+
+/**
+ * The font size `<html>` takes where no rule sets one: the initial `medium` (CSS Fonts 4 §2.5), which
+ * Chromium draws at 16px. No rule declares it, so the capture holds no winner for it, and a root
+ * whose own classes set no size, as Link's, inherits it.
+ */
+function initialFontSize(origin: Origin): Applied {
+  return {
+    part: "html",
+    className: "user agent",
+    origin,
+    rank: -3,
+    specificity: [0, 0, 0],
+    order: -1,
+    declarations: [{ property: "font-size", value: "16px" }],
+  };
+}
 
 /**
  * The names the capture gives a rule that selects through no class and the page or the reset sets
@@ -169,6 +194,49 @@ function isReset(declaration: CapturedDeclaration, index: number, initial: Reado
   const reset =
     declaration.source === "preflight" || declaration.source === "user-agent" || declaration.layer === "base";
   return reset && initial.has(index);
+}
+
+/**
+ * Whether a child wins a declaration through its parent's class by a rule of the shape Tailwind
+ * compiles a `space-x-*` or `space-y-*` to, `:where(.space-x-2 > :not(:last-child))`, which styles
+ * every child of the class's element but the last.
+ */
+function spacesSiblings(declaration: CapturedDeclaration | undefined): boolean {
+  return declaration?.owner === 1 && exceptLastChildClass(declaration.selector) === declaration.className;
+}
+
+/** The spacing declarations each element child of a box wins, by index, child by child. */
+function spacingByChild(read: CellRead, box: CapturedElement | undefined): readonly ReadonlySet<number>[] {
+  return (box?.children ?? []).map(
+    (child) => new Set(child.declarations.filter((index) => spacesSiblings(read.declarations[index])))
+  );
+}
+
+/**
+ * The spacing declarations any element child of a box wins. The box's spacing reads them, so its
+ * children leave them out, as the recipe cascade keeps a box's except-last rules on the box.
+ */
+function exceptLastOf(read: CellRead, box: CapturedElement | undefined): ReadonlySet<number> {
+  return new Set(spacingByChild(read, box).flatMap((held) => [...held]));
+}
+
+/** Why a box's spacing declarations stay unmapped where its children do not all win them alike. */
+const UNEVEN_SPACING: CoverageNote = {
+  outcome: "unmapped",
+  detail:
+    "not every child but the last wins the class's spacing alike, or the last child wins it too, which one item spacing cannot draw",
+};
+
+/**
+ * The declarations of the element at the end of `path`, less those its parent's spacing reads. Only
+ * a drawn box spaces its children and records those rows, so a child of an element the kit draws no
+ * layer for keeps them.
+ */
+function ownDeclarations(read: CellRead, path: readonly Placed[]): readonly number[] {
+  const own = path.at(-1)?.element;
+  const parent = path.at(-2)?.element;
+  const withheld = parent !== undefined && read.drawn.has(parent) ? exceptLastOf(read, parent) : new Set();
+  return (own?.declarations ?? []).filter((index) => !withheld.has(index));
 }
 
 /** The declarations of an element as the cascade applies them, in the capture's order. */
@@ -634,12 +702,15 @@ export class CaptureCellCascade {
     ];
     for (const { element, undrawn, page } of elements) {
       path.push({ element, name: undrawnName(element), origin });
-      const applied = appliedOf(
-        this.#read,
-        element.declarations,
-        path,
-        ({ property }) => inheritsProperty(property, context) && !(page && context.variables.owns(property))
-      );
+      const applied = [
+        ...(parent === undefined ? [initialFontSize(origin)] : []),
+        ...appliedOf(
+          this.#read,
+          element.declarations,
+          path,
+          ({ property }) => inheritsProperty(property, context) && !(page && context.variables.owns(property))
+        ),
+      ];
       parent = this.#ledger.add(
         parent === undefined ? new Map() : inheritance(parent, context),
         applied,
@@ -990,7 +1061,7 @@ class CaptureBoxCascade implements BoxCascade {
     this.#layer = ledger.add(
       parent === undefined ? new Map() : inheritance(parent, read.context),
       [
-        ...appliedOf(read, own?.element.declarations ?? [], placed, () => true),
+        ...appliedOf(read, ownDeclarations(read, placed), placed, () => true),
         ...placeholderOf(read, ledger, placed),
         ...composed.applied,
       ],
@@ -1002,8 +1073,41 @@ class CaptureBoxCascade implements BoxCascade {
     this.measured = own === undefined ? undefined : measuredBox(own.element, read.declarations);
   }
 
-  spaceChildren(_children: number | undefined, _spacing?: ChildSpacing): NumberSpec | undefined {
-    return undefined;
+  spaceChildren(children: number | undefined, spacing?: ChildSpacing): NumberSpec | undefined {
+    const own = this.#placed.at(-1);
+    const byChild = spacingByChild(this.#read, own?.element);
+    const indexes = [...new Set(byChild.flatMap((held) => [...held]))];
+    const withheld = indexes.flatMap((index) => {
+      const declaration = this.#read.declarations[index];
+      return declaration === undefined ? [] : [declaration];
+    });
+    if (own === undefined || withheld.length === 0) {
+      return undefined;
+    }
+    // One item spacing draws the class only where every child but the last wins all of it and the
+    // last child none, as CSS gives it where nothing on a child outranks it.
+    const even =
+      byChild.at(-1)?.size === 0 &&
+      byChild.slice(0, -1).every((held) => indexes.every((index) => held.has(index)));
+    const spaced =
+      even && children !== undefined && children > 1
+        ? spacing?.(withheld.map(({ property, value }) => ({ property, value })))
+        : undefined;
+    const note = even ? childSpacingNote(children) : UNEVEN_SPACING;
+    for (const { className, property, value } of withheld) {
+      const origin = own.passed?.classes.has(className) === true ? own.passed.origin : own.origin;
+      routed(
+        this.#layer.inPlace,
+        origin
+      )({
+        part: own.name,
+        className,
+        property,
+        value,
+        ...(spaced?.notes.get(property) ?? note),
+      });
+    }
+    return spaced?.itemSpacing;
   }
 
   inPlace(): InPlace | undefined {

@@ -17,8 +17,8 @@ import {
   ALERT_DIALOG_OPEN_MANIFEST,
 } from "./alert-dialog-kit";
 import { ALERT, ALERT_MANIFEST } from "./alert-kit";
-import { AVATAR, AVATAR_GROUP } from "./avatar-kit";
-import { BADGE } from "./badge-kit";
+import { AVATAR, AVATAR_GROUP, AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
+import { BADGE, BADGE_MANIFEST } from "./badge-kit";
 import {
   BREADCRUMB_ELLIPSIS,
   BREADCRUMB_LINK,
@@ -47,7 +47,7 @@ import {
 import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
-import { CONFIRM_BUTTON } from "./confirm-button-kit";
+import { CONFIRM_BUTTON, CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
 import { DIALOG_CONTENT, DIALOG_CONTENT_MANIFEST, DIALOG_OPEN, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM,
@@ -66,14 +66,16 @@ import {
   DROPDOWN_MENU_POPUP_MANIFEST,
   DROPDOWN_MENU_SUB_CONTENT,
 } from "./dropdown-popup-kit";
-import { EMPTY } from "./empty-kit";
+import { EMPTY, EMPTY_MANIFEST } from "./empty-kit";
 import {
   FIELD_DESCRIPTION,
   FIELD_DESCRIPTION_MANIFEST,
   FIELD_ERROR,
   FIELD_ERROR_MANIFEST,
   FIELD_LEGEND,
+  FIELD_LEGEND_MANIFEST,
   FIELD_TITLE,
+  FIELD_TITLE_MANIFEST,
 } from "./field-text-kit";
 import { FILE_UPLOAD_DROPZONE } from "./file-upload-kit";
 import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
@@ -82,15 +84,15 @@ import { ITEM, ITEM_LINK } from "./item-kit";
 import { KBD, KBD_GROUP, KBD_GROUP_MANIFEST, KBD_MANIFEST } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL, LABEL_MANIFEST } from "./label-kit";
-import { LINK } from "./link-kit";
-import { LOADER } from "./loader-kit";
+import { LINK, LINK_MANIFEST } from "./link-kit";
+import { LOADER, LOADER_MANIFEST } from "./loader-kit";
 import {
   MENU_GROUP_LABEL,
   MENU_GROUP_LABEL_MANIFEST,
   MENU_SEPARATOR,
   MENU_SEPARATOR_MANIFEST,
 } from "./menu-kit";
-import { METER } from "./meter-kit";
+import { METER, METER_MANIFEST } from "./meter-kit";
 import {
   NAVIGATION_MENU_BAR_LINK,
   NAVIGATION_MENU_BAR_TRIGGER,
@@ -120,7 +122,7 @@ import {
   SELECT_POPUP_MANIFEST,
 } from "./select-kit";
 import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
-import { SEPARATOR } from "./separator-kit";
+import { SEPARATOR, SEPARATOR_MANIFEST } from "./separator-kit";
 import {
   SIDEBAR_GROUP_LABEL,
   SIDEBAR_MENU_BADGE,
@@ -135,13 +137,13 @@ import {
   SIDEBAR_MENU_ITEM_WITH_BADGE,
   SIDEBAR_MENU_SUB,
 } from "./sidebar-section-kit";
-import { SKELETON } from "./skeleton-kit";
+import { SKELETON, SKELETON_MANIFEST } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
 import { TEXT_FIELD, TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
 import { TOGGLE_GROUP } from "./toggle-group-kit";
-import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
+import { ICON_TOGGLE, ICON_TOGGLE_MANIFEST, TOGGLE, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR } from "./toolbar-kit";
 import {
   TOOLTIP_CONTENT,
@@ -351,6 +353,7 @@ export const KIT: readonly KitEntry[] = [
     definition: CONFIRM_BUTTON,
     page: BUTTON_PAGE,
     previewCells: previewCells(CONFIRM_BUTTON, "default", {}, ["armed"]),
+    manifest: CONFIRM_BUTTON_MANIFEST,
   },
   {
     definition: TOGGLE,
@@ -359,16 +362,23 @@ export const KIT: readonly KitEntry[] = [
       ...previewCells(TOGGLE, "default", { icon: "none" }, ["pressed"]),
       ...iconCells(TOGGLE, "default", { pressed: "off" }),
     ],
+    manifest: TOGGLE_MANIFEST,
   },
   {
     definition: ICON_TOGGLE,
     page: TOGGLE_PAGE,
     previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
+    manifest: ICON_TOGGLE_MANIFEST,
   },
   // A spaced Toggle group has no state, so its previews place every cell of its matrix.
   { definition: TOGGLE_GROUP, page: TOGGLE_PAGE, previewCells: matrixCells(TOGGLE_GROUP.axes) },
   // A Badge has no state, so its previews place every cell of its matrix.
-  { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
+  {
+    definition: BADGE,
+    page: BADGE_PAGE,
+    previewCells: matrixCells(BADGE.axes),
+    manifest: BADGE_MANIFEST,
+  },
   {
     definition: KBD,
     page: KBD_PAGE,
@@ -385,9 +395,24 @@ export const KIT: readonly KitEntry[] = [
   { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
   { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
   { definition: SWITCH, page: SWITCH_PAGE, previewCells: matrixCells(SWITCH.axes) },
-  { definition: SEPARATOR, page: SEPARATOR_PAGE, previewCells: matrixCells(SEPARATOR.axes) },
-  { definition: SKELETON, page: SKELETON_PAGE, previewCells: matrixCells(SKELETON.axes) },
-  { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
+  {
+    definition: SEPARATOR,
+    page: SEPARATOR_PAGE,
+    previewCells: matrixCells(SEPARATOR.axes),
+    manifest: SEPARATOR_MANIFEST,
+  },
+  {
+    definition: SKELETON,
+    page: SKELETON_PAGE,
+    previewCells: matrixCells(SKELETON.axes),
+    manifest: SKELETON_MANIFEST,
+  },
+  {
+    definition: LOADER,
+    page: LOADER_PAGE,
+    previewCells: matrixCells(LOADER.axes),
+    manifest: LOADER_MANIFEST,
+  },
   { definition: LABEL, page: FIELD_PAGE, previewCells: matrixCells(LABEL.axes), manifest: LABEL_MANIFEST },
   {
     definition: FIELD_DESCRIPTION,
@@ -401,8 +426,18 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(FIELD_ERROR.axes),
     manifest: FIELD_ERROR_MANIFEST,
   },
-  { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
-  { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
+  {
+    definition: FIELD_LEGEND,
+    page: FIELD_PAGE,
+    previewCells: matrixCells(FIELD_LEGEND.axes),
+    manifest: FIELD_LEGEND_MANIFEST,
+  },
+  {
+    definition: FIELD_TITLE,
+    page: FIELD_PAGE,
+    previewCells: matrixCells(FIELD_TITLE.axes),
+    manifest: FIELD_TITLE_MANIFEST,
+  },
   // The labelled radio rows and the group, which show Field's legend, description and error.
   { definition: RADIO_ROW, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ROW.axes) },
   { definition: RADIO_GROUP, page: RADIO_PAGE, previewCells: matrixCells(RADIO_GROUP.axes) },
@@ -421,9 +456,24 @@ export const KIT: readonly KitEntry[] = [
   },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
   { definition: TEXTAREA_FIELD, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA_FIELD.axes) },
-  { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
-  { definition: AVATAR_GROUP, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR_GROUP.axes) },
-  { definition: METER, page: METER_PAGE, previewCells: matrixCells(METER.axes) },
+  {
+    definition: AVATAR,
+    page: AVATAR_PAGE,
+    previewCells: matrixCells(AVATAR.axes),
+    manifest: AVATAR_MANIFEST,
+  },
+  {
+    definition: AVATAR_GROUP,
+    page: AVATAR_PAGE,
+    previewCells: matrixCells(AVATAR_GROUP.axes),
+    manifest: AVATAR_GROUP_MANIFEST,
+  },
+  {
+    definition: METER,
+    page: METER_PAGE,
+    previewCells: matrixCells(METER.axes),
+    manifest: METER_MANIFEST,
+  },
   { definition: PAGINATION_LINK, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_LINK.axes) },
   { definition: PAGINATION_EDGE, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_EDGE.axes) },
   {
@@ -591,8 +641,18 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
     manifest: COMMAND_DIALOG_OPEN_MANIFEST,
   },
-  { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
-  { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
+  {
+    definition: EMPTY,
+    page: EMPTY_PAGE,
+    previewCells: matrixCells(EMPTY.axes),
+    manifest: EMPTY_MANIFEST,
+  },
+  {
+    definition: LINK,
+    page: LINK_PAGE,
+    previewCells: matrixCells(LINK.axes),
+    manifest: LINK_MANIFEST,
+  },
   { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
   { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes), manifest: ALERT_MANIFEST },
