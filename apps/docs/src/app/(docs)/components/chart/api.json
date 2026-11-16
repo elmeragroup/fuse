@@ -126,10 +126,10 @@
         {
           "name": "defaultActiveX",
           "origin": "declared",
-          "type": "ChartXValue<TRow[TXKey]> | undefined",
+          "type": "number | ChartXValue<TRow[TXKey]> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The slot that is active before any pointer or key moves. An x survives a reload where an index would not. The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth of the window's slots and at least one, and Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a `LegendToggleGroup` is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on.",
+          "description": "The slot that is active before any pointer or key moves, by its x. On a linear axis the x is a number. An x survives a reload where an index would not. The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth of the window's slots and at least one, and Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a `LegendToggleGroup` is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on.",
           "required": false
         },
         {
@@ -144,10 +144,10 @@
         {
           "name": "defaultXRange",
           "origin": "declared",
-          "type": "ChartXRange<TRow[TXKey]> | undefined",
+          "type": "ChartXRange<TRow[TXKey]> | readonly [first: number, last: number] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The brushed window on first render.",
+          "description": "The window on first render.",
           "required": false
         },
         {
@@ -165,7 +165,7 @@
           "type": "Interval | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. The slot length, which is also the finest interval in the chart. A time axis requires it. The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds throws `slot-limit`.",
+          "description": "The slot length, which is also the finest interval in the chart. A time axis requires it. The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds throws `slot-limit`.",
           "required": false,
           "values": [
             "day",
@@ -250,7 +250,7 @@
           "type": "ChartInstant | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. The current instant. Fuse never reads the clock.",
+          "description": "The current instant. Fuse never reads the clock.",
           "required": false
         },
         {
@@ -268,7 +268,7 @@
           "type": "((range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called on every brush step with the first and last slot. A data update never calls it.",
+          "description": "Called on every brush step with the first and last slot. A data update never calls it. A linear axis has no brush, so it takes none.",
           "required": false
         },
         {
@@ -277,7 +277,7 @@
           "type": "((range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called once when a brush drag, track press or key press ends. Fetch new data here.",
+          "description": "Called once when a brush drag, track press or key press ends. Fetch new data here. A linear axis has no brush, so it takes none.",
           "required": false
         },
         {
@@ -286,7 +286,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall. On a horizontal chart, ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the series focus.",
+          "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall. On a horizontal chart, ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the series focus. A linear axis runs along the bottom only.",
           "required": false,
           "values": [
             "horizontal",
@@ -317,7 +317,7 @@
           "type": "ChartPeriod | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. The whole window the axis lists, past the first and last rows, such as one calendar month. Every slot inside it gets a cell, with or without a row. A series with no reading at a slot that starts at or after `now` is pending there, which draws nothing. A past slot inside the series' run of readings is missing, which draws the missing marker. So leave out the rows of days to come, or give their cells null.",
+          "description": "The whole window the axis lists, past the first and last rows, such as one calendar month. Every slot inside it gets a cell, with or without a row. A series with no reading at a slot that starts at or after `now` is pending there, which draws nothing. A past slot inside the series' run of readings is missing, which draws the missing marker. So leave out the rows of days to come, or give their cells null.",
           "required": false
         },
         {
@@ -375,16 +375,25 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. The IANA zone of the data's market, such as \"Europe/Oslo\". It overrides LocaleProvider's, and a time axis with neither throws.",
+          "description": "The IANA zone of the data's market, such as \"Europe/Oslo\". It overrides LocaleProvider's, and a time axis with neither throws.",
           "required": false
         },
         {
           "name": "xFormat",
           "origin": "declared",
-          "type": "XFormat | undefined",
+          "type": "ValueFormat | XFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The x label format in the tooltip, the table and spoken text. A time axis takes an `XFormat`. A linear axis takes a `ValueFormat`, and its axis and options also print with it.",
+          "required": false
+        },
+        {
+          "name": "xInclude",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. The x label format in the tooltip, the table and spoken text.",
+          "description": "Values a linear axis's x domain must reach, such as 0 kW.",
           "required": false
         },
         {
@@ -393,32 +402,50 @@
           "type": "TXKey",
           "shortType": null,
           "defaultValue": null,
-          "description": "The x column. It names a column with no null values. A `Date` or epoch-milliseconds column makes a time axis, which needs `interval`, and a string column makes a category axis in data order.",
+          "description": "The x column. It names a column with no null values. A `Date` or epoch-milliseconds column makes a time axis, which needs `interval`, and a string column makes a category axis in data order. A number column under `xScale=\"linear\"` makes a linear axis instead.",
           "required": true
+        },
+        {
+          "name": "xLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The x measure's name, such as \"Ladenivå\", which the options and the table's header print. The table's header defaults to the dictionary's \"Verdi\". `XAxis` takes the axis title as its own `label`. Only a linear axis takes it.",
+          "required": false
         },
         {
           "name": "xRange",
           "origin": "declared",
-          "type": "ChartXRange<TRow[TXKey]> | undefined",
+          "type": "ChartXRange<TRow[TXKey]> | readonly [first: number, last: number] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The first and last slot of the brushed window, both inclusive. Prefer the uncontrolled `defaultXRange` with `onXRangeCommitted`, because a controlled range renders every series on each brush step.",
+          "description": "The first and last slot of the window, both inclusive. On a linear axis they are any two x numbers, and the window holds the rows between them. Under a brush, prefer the uncontrolled `defaultXRange` with `onXRangeCommitted`, because a controlled range renders every series on each brush step.",
           "required": false
         },
         {
           "name": "xScale",
           "origin": "declared",
-          "type": "\"band\" | \"point\" | undefined",
+          "type": "\"band\" | \"linear\" | \"point\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"band\"",
-          "description": "The x scale. \"band\" gives each slot a band of its own, which bars fill. \"point\" places each slot at a point, which line and area charts usually pass.",
+          "description": "The x scale. \"band\" gives each slot a band of its own, which bars fill. \"point\" places each slot at a point, which line and area charts usually pass. \"linear\" places each row at its x number over a nice x domain from the lowest number to the highest, and needs a number column. Pass it for unevenly spaced numbers. Its rows may arrive in any order, and a repeated number keeps its first row. Evenly spaced numbers also work as categories under \"point\" once converted to strings, since a number column on a band or point scale is a time axis that needs `interval`.",
           "required": false,
           "values": [
             "band",
+            "linear",
             "point"
           ],
           "requires": {
             "band": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "linear": [
               [
                 "aria-label"
               ],
@@ -621,7 +648,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. Defaults to the interval's tick preset. A tick that starts a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under `format=\"hour-range\"`. A calendar preset or Intl options format them as given.",
+          "description": "The tick label format of a time axis. Defaults to the interval's tick preset. A tick that starts a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under `format=\"hour-range\"`. A calendar preset or Intl options format them as given. A category axis prints its categories, and a linear axis prints d3 nice ticks over its x domain in Root's `xFormat`, so neither reads it.",
           "required": false
         },
         {
@@ -836,7 +863,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The d3 curve through the readings. `monotone` stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either orientation. `step-after` and `step-before` run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under `\"point\"`.",
+          "description": "The d3 curve through the readings. `monotone` stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. It also stays monotone over unevenly spaced x under `xScale=\"linear\"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either orientation. `step-after` and `step-before` run each reading across its whole cell under `xScale=\"band\"`, so the last hour of a day keeps its run. Under `xScale=\"linear\"`, `step-after` holds each reading from its x to the next reading's x, and the last reading to the plot's end, as a tariff ladder holds each price from its threshold. `step-before` holds each reading from the x before it. They throw `step-curve-needs-cells` under `\"point\"`.",
           "required": false,
           "values": [
             "basis",
@@ -907,7 +934,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The d3 curve along the area's edge. \"monotone\" stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. \"monotone-y\" is d3's monotoneY, monotone along screen y in either orientation. \"step-after\" and \"step-before\" run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
+          "description": "The d3 curve along the area's edge. \"monotone\" stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. \"monotone-y\" is d3's monotoneY, monotone along screen y in either orientation. \"step-after\" and \"step-before\" follow `Line`'s `curve`. Under `xScale=\"band\"` they run each reading across its whole cell, so the last hour of a day keeps its run, and under `xScale=\"linear\"` they run from x to x. They throw `step-curve-needs-cells` under \"point\".",
           "required": false,
           "values": [
             "basis",
@@ -1384,7 +1411,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a `y` or an `x`.",
+          "description": "The x the line marks. An x string on a time axis, or anything but a number on a linear axis, throws `x-type-mismatch`. A line takes a `y` or an `x`.",
           "required": false
         },
         {
@@ -1493,7 +1520,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
+          "description": "The band's first x. An x string on a time axis, or anything but a number on a linear axis, throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         },
         {
@@ -1502,7 +1529,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
+          "description": "The band's last x. An x string on a time axis, or anything but a number on a linear axis, throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         },
         {
@@ -2082,7 +2109,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
+          "description": "The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the categories of pie, radial and radar charts print as they are. A linear axis prints its x number in Root's `xFormat`, so it does not read this.",
           "required": false
         },
         {

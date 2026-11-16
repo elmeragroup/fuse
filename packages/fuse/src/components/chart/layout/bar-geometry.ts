@@ -6,10 +6,10 @@ import type { ChartBarVariant } from "../chart-types";
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { ownSlot, ownSpan } from "./coarse-slots";
-import { BUCKETS, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
 import { barSpan, floorBody, frameRect, valueAt } from "./plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./plot-frame";
+import { windowSplit } from "./slot-scale";
 import type { Extent } from "./stack";
 import { slotCount } from "./x-domain";
 
@@ -383,8 +383,12 @@ export function barTip(frame: PlotFrame, cell: BarCell): number {
  * percent.
  */
 export type BucketColumn = {
+  /** Where the column starts along the slot axis, as a share of the plot's length. */
   readonly x0: number;
+  /** Where it ends, as a share of the plot's length. */
   readonly x1: number;
+  /** The middle of its bucket's slots, as a place in the window. */
+  readonly at: number;
   readonly top: number;
   readonly bottom: number;
   /** The slot whose reading the column draws, which picks its color step and quality. */
@@ -437,7 +441,9 @@ function sidesOf(model: CartesianModel, series: SeriesModel): StackSides {
 /**
  * The path form's decimated columns of one series, which `layoutColumns` draws above
  * `DECIMATE_ABOVE` slots, where every slot up to it draws its own entry. The window splits into M4
- * buckets by slot index, each split into the BarGroup's sub-bands. A loose series draws each bucket's
+ * buckets as `windowSplit` gives them, by slot index, or by pixel column on a linear axis, so a
+ * column stands where its slots' values place them. Each bucket splits into the BarGroup's
+ * sub-bands. A loose series draws each bucket's
  * column from its lowest negative extent to its highest positive extent, and the column takes the
  * slot of its larger extreme, so its color step and quality are that reading's. A stacked series
  * draws the segment of the bucket's slot with the largest total magnitude on each side of zero.
@@ -459,31 +465,28 @@ export function bucketColumns(
   const scale = linearScale(y, [100, 0]);
   const count = window.last - window.first + 1;
   const columns: BucketColumn[] = [];
-  const push = (
-    from: number,
-    to: number,
-    extent: Extent | undefined,
-    slot: number,
-    at: { readonly first: number; readonly side: BucketColumn["side"] }
-  ): void => {
-    if (!extent || extent[0] === extent[1]) return;
-    const width = (to - from) / band.count;
-    const x0 = from + band.index * width;
-    columns.push({
-      x0,
-      x1: x0 + width,
-      top: scaleValue(scale, extent[1]),
-      bottom: scaleValue(scale, extent[0]),
-      slot,
-      ...at,
-    });
-  };
-  const edges = bucketEdges(count);
+  const { edges, starts } = windowSplit(model);
   const sides = series.stack === undefined ? null : sidesOf(model, series);
-  for (let bucket = 0; bucket < BUCKETS; bucket += 1) {
+  for (let bucket = 0; bucket + 1 < edges.length; bucket += 1) {
     const from = edges[bucket] ?? count;
     const to = edges[bucket + 1] ?? count;
     if (to <= from) continue;
+    const start = starts[bucket] ?? 0;
+    const width = ((starts[bucket + 1] ?? 1) - start) / band.count;
+    const x0 = start + band.index * width;
+    const push = (extent: Extent | undefined, slot: number, side: BucketColumn["side"]): void => {
+      if (!extent || extent[0] === extent[1]) return;
+      columns.push({
+        x0,
+        x1: x0 + width,
+        at: (from + to) / 2 - 0.5,
+        top: scaleValue(scale, extent[1]),
+        bottom: scaleValue(scale, extent[0]),
+        slot,
+        first: window.first + from,
+        side,
+      });
+    };
     if (series.stack === undefined) {
       // The slots of the bucket's lowest and highest extents, and ties keep the first.
       let lowSlot = -1;
@@ -503,10 +506,7 @@ export function bucketColumns(
       const low = Math.min(0, lowest[0]);
       const high = Math.max(0, highest[1]);
       // The larger extreme decides what the column stands for, and a tie keeps the positive one.
-      push(from, to, [low, high], -low > high ? lowSlot : highSlot, {
-        first: window.first + from,
-        side: "across",
-      });
+      push([low, high], -low > high ? lowSlot : highSlot, "across");
       continue;
     }
     for (const negative of [false, true]) {
@@ -522,8 +522,7 @@ export function bucketColumns(
         }
       }
       const extent = best === -1 ? undefined : series.extents[best];
-      if (extent && isNegative(extent) === negative)
-        push(from, to, extent, best, { first: window.first + from, side: negative ? "below" : "above" });
+      if (extent && isNegative(extent) === negative) push(extent, best, negative ? "below" : "above");
     }
   }
   return columns;

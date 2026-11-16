@@ -1,7 +1,7 @@
 ---
 lede: >
-  Preview, so names and props can change until Fuse's first stable release. Bars over a category
-  or time axis, side by side or stacked.
+  Preview, so names and props can change until Fuse's first stable release. Bars over a category,
+  time or numeric axis, side by side or stacked.
 ---
 
 import { BarChartActiveDot } from "./demos/bar-chart-active-dot";
@@ -16,6 +16,7 @@ import { BarChartExpandable } from "./demos/bar-chart-expandable";
 import { BarChartFallBackDay } from "./demos/bar-chart-fall-back-day";
 import { BarChartGradient } from "./demos/bar-chart-gradient";
 import { BarChartHatched } from "./demos/bar-chart-hatched";
+import { BarChartHeatPumpOutput } from "./demos/bar-chart-heat-pump-output";
 import { BarChartHorizontal } from "./demos/bar-chart-horizontal";
 import { BarChartIcons } from "./demos/bar-chart-icons";
 import { BarChartIsometric } from "./demos/bar-chart-isometric";
@@ -72,6 +73,15 @@ import "@elmeragroup/fuse/chart.css";
 
 <Demo slug="bar-chart" id="horizontal" title="Horizontal" level={3} file="bar-chart-horizontal.tsx">
   <BarChartHorizontal />
+</Demo>
+
+<Demo
+  slug="bar-chart"
+  id="heat-pump-output"
+  title="Heat pump output"
+  level={3}
+  file="bar-chart-heat-pump-output.tsx">
+  <BarChartHeatPumpOutput />
 </Demo>
 
 <Demo slug="bar-chart" id="hatched" title="Hatched" level={3} file="bar-chart-hatched.tsx">

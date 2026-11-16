@@ -38,9 +38,9 @@ export type ChartAreaProps = ChartLayerProps & {
    * The d3 curve along the area's edge.
    * "monotone" stays monotone along the category axis, so it runs along x, and along y under
    * `orientation="horizontal"`. "monotone-y" is d3's monotoneY, monotone along screen y in either
-   * orientation. "step-after" and "step-before" run each reading across
-   * its whole cell, so the last hour of a day keeps its run. They need `xScale="band"` and throw
-   * `step-curve-needs-cells` under "point".
+   * orientation. "step-after" and "step-before" follow `Line`'s `curve`. Under `xScale="band"` they
+   * run each reading across its whole cell, so the last hour of a day keeps its run, and under
+   * `xScale="linear"` they run from x to x. They throw `step-curve-needs-cells` under "point".
    */
   curve?: ChartCurve;
 };

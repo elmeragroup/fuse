@@ -106,23 +106,17 @@ export type ChartValueLabelProps = ChartLayerProps & {
 const DOT_RADIUS = { default: 4, ring: 4, halo: 5, ping: 4 } as const;
 
 /** What a point mark's writer reads: the frame it draws in, or null before Root measures it. */
-type PointLook = { readonly frame: PlotFrame | null; readonly xScale: "band" | "point" };
+type PointLook = { readonly frame: PlotFrame | null };
 
 /**
  * Writes each dot's center from the loop's numbers, a place and a value per point, in order. A point
  * may draw more than one circle, as a ping ring and its dot do, which share its numbers.
  */
-function writeCenters(
-  dots: Iterable<Element>,
-  look: { readonly frame: PlotFrame; readonly xScale: "band" | "point" },
-  values: MarkValues,
-  perPoint = 1
-): void {
-  const { frame, xScale } = look;
+function writeCenters(dots: Iterable<Element>, frame: PlotFrame, values: MarkValues, perPoint = 1): void {
   let index = 0;
   for (const dot of dots) {
     const point = Math.floor(index / perPoint);
-    const { cx, cy } = pointCenter(frame, xScale, values[point * 2] ?? 0, values[point * 2 + 1] ?? 0);
+    const { cx, cy } = pointCenter(frame, values[point * 2] ?? 0, values[point * 2 + 1] ?? 0);
     writeAttribute(dot, "cx", cx);
     writeAttribute(dot, "cy", cy);
     index += 1;
@@ -131,8 +125,8 @@ function writeCenters(
 
 /** Draws a series' dots from the loop's numbers. */
 function drawDots(group: SVGGElement, look: PointLook, values: MarkValues): void {
-  const { frame, xScale } = look;
-  if (frame !== null) writeCenters(group.children, { frame, xScale }, values);
+  const { frame } = look;
+  if (frame !== null) writeCenters(group.children, frame, values);
 }
 
 /**
@@ -246,7 +240,7 @@ const DOTS_COPY: AttachedCopy = {
  */
 export function ChartDots({ dataKey, variant = "default", className, style }: ChartDotsProps): ReactElement {
   const { context, layout } = useSeriesPart("Chart.Dots", dataKey);
-  const { model, update, xScale } = context;
+  const { model, update } = context;
   const { window } = model;
   const series = seriesOf(model, dataKey);
   const paint = pointPaint(context, dataKey, series);
@@ -256,9 +250,8 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   const dots = useMemo(() => {
     if (series === undefined || frame === null) return [];
     const path = seriesPathOf(model, series, update.keys, alongLength(frame));
-    const place = { window, xScale };
     return path.vertices.flatMap((vertex, index) => {
-      const point = vertex.state === "reading" ? restingPoint(place, frame, series, vertex.slot) : null;
+      const point = vertex.state === "reading" ? restingPoint(window, frame, series, vertex.slot) : null;
       return point === null
         ? []
         : [
@@ -270,10 +263,10 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
             },
           ];
     });
-  }, [model, update.keys, series, frame, window, xScale, paint]);
+  }, [model, update.keys, series, frame, window, paint]);
   const rest = useMemo(() => dots.flatMap(({ point }) => [...point]), [dots]);
   const slots = useMemo(() => dots.map(({ slot }) => slot), [dots]);
-  const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
+  const look = useMemo((): PointLook => ({ frame }), [frame]);
   const {
     ref: markRef,
     outgoingRef,
@@ -313,7 +306,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
         <>
           <g ref={markRef}>
             {dots.map(({ key, point, paint: own }) => {
-              const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
+              const { cx, cy } = pointCenter(frame, point[0], point[1]);
               return (
                 <Dot
                   key={key}
@@ -370,10 +363,10 @@ const ACTIVE_DOT_COPY: AttachedCopy = {
 
 /** Draws the active dot at the loop's numbers, its place and its value, with its ping ring if any. */
 function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues): void {
-  const { frame, xScale } = look;
+  const { frame } = look;
   if (frame === null) return;
   const dots = activeDots(svg);
-  writeCenters(dots, { frame, xScale }, values, dots.length);
+  writeCenters(dots, frame, values, dots.length);
 }
 
 /** A dot's center in its layer's pixels. */
@@ -410,9 +403,8 @@ function barEnd(
   const cell = barCellAt(context.model, series, slot);
   if (cell === null) return null;
   const point = kind === "bars" ? barTipAt(context, series, cell.slot) : columnAt(context, series, cell.slot);
-  const resting =
-    point ?? restingPoint({ window: context.model.window, xScale: context.xScale }, frame, series, slot);
-  return resting === null ? null : pointCenter(frame, context.xScale, resting[0], resting[1]);
+  const resting = point ?? restingPoint(context.model.window, frame, series, slot);
+  return resting === null ? null : pointCenter(frame, resting[0], resting[1]);
 }
 
 /** A bar's middle along the slot axis and its tip, where it rests in the loop, or null. */
@@ -577,7 +569,7 @@ export function ChartActiveDot({
   const paint = pointPaint(context, dataKey, series);
   const drawn = useChartFrame("Chart.ActiveDot", layout);
   const frame = drawn?.frame ?? null;
-  const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
+  const look = useMemo((): PointLook => ({ frame }), [frame]);
   const {
     ref: markRef,
     node: markNode,
@@ -596,14 +588,14 @@ export function ChartActiveDot({
     const point =
       active === null || series === undefined || frame === null
         ? null
-        : restingPoint({ window: context.model.window, xScale: context.xScale }, frame, series, active.slot);
+        : restingPoint(context.model.window, frame, series, active.slot);
     const svg = markNode();
     // Where the dot showed before this paint, as the loop last drew it, a data update's tween
     // included, or null when it showed nowhere.
     const before = drawnPoint();
     const from =
       shownBefore.current && before !== null && frame !== null
-        ? pointCenter(frame, context.xScale, before[0] ?? 0, before[1] ?? 0)
+        ? pointCenter(frame, before[0] ?? 0, before[1] ?? 0)
         : null;
     // The dot shows only while the series draws a reading at the active slot, and its circles take
     // the paint of that reading's step under a scale or a threshold.
@@ -630,10 +622,7 @@ export function ChartActiveDot({
     // The dot rests where what it joins placed it: on a line's vertex, or where a decimated line
     // passes its slot, or on its bar's far end.
     const placed = point === null ? null : drawnPoint();
-    const to =
-      placed === null || frame === null
-        ? null
-        : pointCenter(frame, context.xScale, placed[0] ?? 0, placed[1] ?? 0);
+    const to = placed === null || frame === null ? null : pointCenter(frame, placed[0] ?? 0, placed[1] ?? 0);
     // Only a step from one reading to another glides, and not while a data update moves the dot
     // with what it sits on. Showing, hiding, a commit and reduced motion place it at once.
     const { motion, orientation, store } = context;
@@ -721,12 +710,12 @@ const markerParts = partsCache((box) => ({
 
 /** Draws a Marker's dots and its pills' anchors from the loop's numbers, a place and a value per slot. */
 function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): void {
-  const { frame, xScale } = look;
+  const { frame } = look;
   if (frame === null) return;
   const { dots, anchors } = markerParts(box);
-  writeCenters(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
+  writeCenters(dots, frame, values, dots.length / Math.max(1, values.length / 2));
   anchors.forEach((anchor, index) => {
-    const { cx, cy } = pointCenter(frame, xScale, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
+    const { cx, cy } = pointCenter(frame, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
     writeStyle(anchor, "--chart-marker-x", `${String(cx)}px`);
     writeStyle(anchor, "--chart-marker-y", `${String(cy)}px`);
   });
@@ -761,17 +750,12 @@ export function ChartMarker({
       series === undefined || frame === null
         ? []
         : slots.flatMap((slot) => {
-            const point = restingPoint(
-              { window: context.model.window, xScale: context.xScale },
-              frame,
-              series,
-              slot
-            );
+            const point = restingPoint(context.model.window, frame, series, slot);
             return point === null ? [] : [{ slot, point, paint: readingPaint(paint, series.readings[slot]) }];
           }),
-    [context.model, context.xScale, series, frame, slots, paint]
+    [context.model, series, frame, slots, paint]
   );
-  const look = useMemo((): PointLook => ({ frame, xScale: context.xScale }), [frame, context.xScale]);
+  const look = useMemo((): PointLook => ({ frame }), [frame]);
   const {
     ref: markRef,
     outgoingRef,
@@ -818,7 +802,7 @@ export function ChartMarker({
           <>
             <svg aria-hidden="true">
               {marked.flatMap(({ slot, point, paint: own }) => {
-                const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
+                const { cx, cy } = pointCenter(frame, point[0], point[1]);
                 const dot = (
                   <Dot
                     key={`${String(slot)}-dot`}
@@ -847,7 +831,7 @@ export function ChartMarker({
               })}
             </svg>
             {marked.map(({ slot, point }) => {
-              const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
+              const { cx, cy } = pointCenter(frame, point[0], point[1]);
               return (
                 <span
                   key={slot}

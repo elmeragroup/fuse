@@ -96,10 +96,10 @@ export function ChartCrosshair({
     const [start, end] =
       look === "band"
         ? [
-            optionBand(frame, Math.max(first, window.first) - window.first, xScale)[0],
-            optionBand(frame, Math.min(last, window.last) - window.first, xScale)[1],
+            optionBand(frame, Math.max(first, window.first) - window.first)[0],
+            optionBand(frame, Math.min(last, window.last) - window.first)[1],
           ]
-        : slotLine(frame, position, xScale, wholeWidth(box, token));
+        : slotLine(frame, position, wholeWidth(box, token));
     writeAttribute(node, vertical ? "x" : "y", start);
     writeAttribute(node, vertical ? "width" : "height", end - start);
     // The cross axis spans the plot, which a step leaves alone, so only a resize writes it.

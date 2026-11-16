@@ -2,7 +2,10 @@
 
 import type { ReactElement, ReactNode } from "react";
 
+import { useChartRoot } from "./chart-context";
 import type { ChartLayerProps, XFormat } from "./chart-types";
+import { ChartCompositionError } from "./layout/errors";
+import { isLinearScale } from "./layout/slot-scale";
 
 /**
  * Props for `Chart.Brush`, a closed part.
@@ -42,11 +45,22 @@ export type ChartBrushPreviewProps = ChartLayerProps & {
 
 /**
  * Two thumbs and a pan window that edit Root's `xRange`, as three native range inputs with spoken
- * value text.
+ * value text. It windows a time or category axis, slot by slot.
  *
+ * @throws A `ChartCompositionError` of rule `brush-needs-slot-axis` under `xScale="linear"`, whose
+ *   rows are numbers rather than slots of one step. A brush over a linear axis is open work, tracked
+ *   in #703.
  * @beta
  */
 export function ChartBrush(_props: ChartBrushProps): ReactElement {
+  const { xScale } = useChartRoot("Chart.Brush");
+  if (isLinearScale(xScale)) {
+    throw new ChartCompositionError(
+      "Chart.Brush",
+      "brush-needs-slot-axis",
+      'draws under xScale="linear", which a brush cannot window yet. Leave the brush out, or pass xRange on Chart.Root to show part of the x domain.'
+    );
+  }
   return <></>;
 }
 

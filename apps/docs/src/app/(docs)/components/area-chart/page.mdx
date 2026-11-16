@@ -1,9 +1,10 @@
 ---
 lede: >
   Preview, so names and props can change until Fuse's first stable release. Filled areas over a
-  category or time axis, alone or stacked.
+  category, time or numeric axis, alone or stacked.
 ---
 
+import { AreaChartCapacityTariff } from "./demos/area-chart-capacity-tariff";
 import { AreaChartCurveBasis } from "./demos/area-chart-curve-basis";
 import { AreaChartCurveBump } from "./demos/area-chart-curve-bump";
 import { AreaChartCurveLinear } from "./demos/area-chart-curve-linear";
@@ -113,6 +114,15 @@ import "@elmeragroup/fuse/chart.css";
   level={3}
   file="area-chart-curve-step-after.tsx">
   <AreaChartCurveStepAfter />
+</Demo>
+
+<Demo
+  slug="area-chart"
+  id="capacity-tariff"
+  title="Capacity tariff"
+  level={3}
+  file="area-chart-capacity-tariff.tsx">
+  <AreaChartCapacityTariff />
 </Demo>
 
 <Demo slug="area-chart" id="bump" title="Bump curve" level={3} file="area-chart-curve-bump.tsx">

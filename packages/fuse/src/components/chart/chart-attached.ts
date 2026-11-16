@@ -40,31 +40,24 @@ function pointValue(series: SeriesModel, slot: number): number | null {
   return low < 0 && high <= 0 ? low : high;
 }
 
-/** What a resting point reads besides the frame and the series: the model's window and Root's x scale. */
-export type PointPlace = {
-  readonly window: SlotWindow | null;
-  readonly xScale: "band" | "point";
-};
-
 /**
  * A series' resting point at a slot, unsnapped, the numbers its attached marks place and tween.
  *
- * @param place - The model's window and Root's x scale.
+ * @param window - The model's window.
  * @param frame - The layout's frame.
  * @param series - The series.
  * @param slot - The domain slot.
  * @returns The point along the slot axis and across the value axis, or null without a reading.
  */
 export function restingPoint(
-  place: PointPlace,
+  window: SlotWindow | null,
   frame: PlotFrame,
   series: SeriesModel,
   slot: number
 ): readonly [number, number] | null {
-  const { window, xScale } = place;
   const value = pointValue(series, slot);
   if (window === null || value === null) return null;
-  return [slotCenterAt(frame, ownCenter(series, window, slot), xScale), valueAt(frame, value)];
+  return [slotCenterAt(frame, ownCenter(series, window, slot)), valueAt(frame, value)];
 }
 
 /**
@@ -72,18 +65,12 @@ export function restingPoint(
  * pixel of its value, as the path's vertex draws.
  *
  * @param frame - The layout's frame.
- * @param xScale - Root's x scale.
  * @param along - The unsnapped coordinate along the slot axis.
  * @param across - The unsnapped coordinate along the value axis.
  * @returns The center as SVG `cx` and `cy`.
  */
-export function pointCenter(
-  frame: PlotFrame,
-  xScale: "band" | "point",
-  along: number,
-  across: number
-): { cx: number; cy: number } {
-  const x = pointAlong(frame, along, xScale);
+export function pointCenter(frame: PlotFrame, along: number, across: number): { cx: number; cy: number } {
+  const x = pointAlong(frame, along);
   const y = snapAcross(frame, across);
   return frame.orientation === "vertical" ? { cx: x, cy: y } : { cx: y, cy: x };
 }

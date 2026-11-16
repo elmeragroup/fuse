@@ -14,6 +14,7 @@ import { useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
+import type { ChartX } from "./chart-types";
 import { optionBand } from "./layout/plot-frame";
 import { keepSlot, stepSlot } from "./layout/slot-window";
 import type { SlotStep, SlotWindow } from "./layout/slot-window";
@@ -33,7 +34,7 @@ type Gesture = { readonly pinned: boolean; readonly slot: number; readonly shown
 
 /** What one option names. Its x, not its index, survives a data update. */
 type OptionState = {
-  readonly x: string | Date;
+  readonly x: ChartX;
   /** The focused series by config order, or -1 for all series. */
   readonly focus: number;
   readonly order: OptionOrder;
@@ -73,7 +74,7 @@ function seriesStepOf(orientation: "vertical" | "horizontal", key: string): 1 | 
 }
 
 /** Whether two slot x values name the same slot. */
-function sameX(a: string | Date, b: string | Date): boolean {
+function sameX(a: ChartX, b: ChartX): boolean {
   return a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : a === b;
 }
 
@@ -348,8 +349,7 @@ export function ChartSurface({
         const isCurrent = option === current;
         // Once the plot is measured, the option covers its slot's pixel columns, the same ones as
         // the crosshair band and the tooltip anchor.
-        const band =
-          drawn === null ? undefined : optionBand(drawn.frame, slot - window.first, context.xScale);
+        const band = drawn === null ? undefined : optionBand(drawn.frame, slot - window.first);
         return (
           <div
             key={option.id}

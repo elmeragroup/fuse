@@ -5,6 +5,7 @@
  * grows. It reads candidates and widths alone, so a time axis, a category axis and a numeric axis
  * all thin through it.
  */
+import { labelWidth } from "./label-width";
 
 /** The candidates one stride offers, ascending. */
 export type TickCandidates = { readonly slots: readonly number[] };
@@ -210,4 +211,58 @@ export function fitsEveryBucket(strides: readonly TickCandidates[], geometry: Ti
     if (shown === undefined) return false;
   }
   return true;
+}
+
+/**
+ * The tick strides a numeric axis thins by. Each divides the next, so every wider width bucket
+ * shows a superset of a narrower one's labels, as the thinning requires, and each keeps a nice step.
+ */
+const NICE_STRIDES = [1, 2, 10, 20, 100] as const;
+
+/**
+ * A value's share of a numeric domain, never −0, the middle of a domain of no width.
+ *
+ * @param domain - The domain, lower bound first.
+ * @param value - The value.
+ * @returns The share, 0 at the lower bound and 1 at the upper.
+ */
+export function domainShare(domain: readonly [number, number], value: number): number {
+  const [low, high] = domain;
+  return high === low ? 0.5 : (value - low) / (high - low) + 0;
+}
+
+/** One nice tick a numeric axis shows at some width. */
+export type ShownValueTick = {
+  readonly value: number;
+  readonly text: string;
+  readonly visibility: number | "always";
+};
+
+/**
+ * The nice ticks a numeric x axis shows: a scatter chart's and a cartesian chart's linear one. The
+ * candidates keep every 1st, 2nd or 10th tick, counted from the lowest, so the shown values keep a
+ * nice step of the ticks' own, such as −2, 2, 6 and so on up to 18.
+ *
+ * @param ticks - The domain's nice ticks, lowest first.
+ * @param domain - The domain the ticks sit in.
+ * @param texts - Each tick's label, by tick.
+ * @returns The ticks that show at some width, with the width bucket each shows from.
+ */
+export function thinValueTicks(
+  ticks: readonly number[],
+  domain: readonly [number, number],
+  texts: readonly string[]
+): ShownValueTick[] {
+  const strides = NICE_STRIDES.filter((stride) => stride === 1 || stride < texts.length).map((stride) => ({
+    slots: texts.flatMap((_text, slot) => (slot % stride === 0 ? [slot] : [])),
+  }));
+  const shown = thinTicks(strides, {
+    position: (slot) => domainShare(domain, ticks[slot] ?? 0),
+    width: (slot) => labelWidth(texts[slot] ?? ""),
+  });
+  return shown.map(({ slot, visibility }) => ({
+    value: ticks[slot] ?? 0,
+    text: texts[slot] ?? "",
+    visibility,
+  }));
 }

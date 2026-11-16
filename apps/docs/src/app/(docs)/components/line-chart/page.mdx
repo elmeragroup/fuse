@@ -1,11 +1,12 @@
 ---
 lede: >
-  Preview, so names and props can change until Fuse's first stable release. Lines over a category
-  or time axis.
+  Preview, so names and props can change until Fuse's first stable release. Lines over a category,
+  time or numeric axis.
 ---
 
 import { LineChartConnectedGap } from "./demos/line-chart-connected-gap";
 import { LineChartCurveBasis } from "./demos/line-chart-curve-basis";
+import { LineChartChargingCurve } from "./demos/line-chart-charging-curve";
 import { LineChartCurveBump } from "./demos/line-chart-curve-bump";
 import { LineChartCurveLinear } from "./demos/line-chart-curve-linear";
 import { LineChartCurveMonotoneY } from "./demos/line-chart-curve-monotone-y";
@@ -56,6 +57,15 @@ import "@elmeragroup/fuse/chart.css";
 
 <Demo slug="line-chart" id="point-scale" title="Point scale" level={3} file="line-chart-point-scale.tsx">
   <LineChartPointScale />
+</Demo>
+
+<Demo
+  slug="line-chart"
+  id="charging-curve"
+  title="Charging curve"
+  level={3}
+  file="line-chart-charging-curve.tsx">
+  <LineChartChargingCurve />
 </Demo>
 
 <Demo

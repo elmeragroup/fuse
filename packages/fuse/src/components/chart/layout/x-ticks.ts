@@ -102,7 +102,8 @@ function everyNth(count: number, stride: number): number[] {
 /**
  * The tick candidates of each stride. On a time axis a label sits on a whole wall-clock unit,
  * never on a slot index, and the second of two slots that share a wall-clock start, as the repeated
- * fall-back hour does, gets no tick. A category axis counts rows from the first.
+ * fall-back hour does, gets no tick. A category axis counts rows from the first. A linear axis ticks
+ * at nice numbers of its x domain, not at slots, so it lists none.
  *
  * @param domain - The x domain.
  * @returns One entry per stride, finest first.
@@ -115,6 +116,7 @@ export function tickStrides(domain: XDomain): TickStride[] {
       slots: everyNth(domain.names.length, stride),
     }));
   }
+  if (domain.kind === "linear") return [];
   const walls = wallTimes(domain.starts, domain.timeZone);
   // The starts ascend, so a slot whose wall clock lies at or before the latest one so far repeats
   // it, as the fall-back hour's second pass does, and only the first pass ticks. Every coarser

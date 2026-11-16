@@ -8,9 +8,11 @@ import slots from "../format/fixtures/slots.json" with { type: "json" };
 import { ChartCompositionError } from "./errors";
 import { slotJudgements } from "./fixtures/slot-judges";
 import {
+  LINEAR_AXIS,
   createRowPlacer,
   instantOf,
   placeCategoryRows,
+  placeLinearRows,
   placeTimeRows,
   projectedSlot,
   slotOf,
@@ -238,6 +240,57 @@ describe("category axes and lookups", () => {
     expect(slotOf(domain, new Date("2025-10-26T01:59:59.999Z"))).toBe(3);
     expect(slotOf(domain, new Date("2025-10-27T00:00:00Z"))).toBe(-1);
     expect(slotOf(domain, "02:00")).toBe(-1);
+  });
+});
+
+// Unit under test: placeLinearRows and the lookups on its domain. Oracle: the rows' numbers sorted
+// by hand, and section 8.1's rules as a time axis reads them, written by hand.
+describe("linear axes", () => {
+  it("lists each distinct number once, ascending, and keeps the first of two equal numbers", () => {
+    const { domain, rowAt, issues } = placeLinearRows([50, 0, 20, 5, 20, 100]);
+    expect(domain).toEqual({ kind: "linear", values: [0, 5, 20, 50, 100] });
+    // The slots read rows 1, 3, 2, 0 and 5, and row 4 repeats 20.
+    expect(rowAt).toEqual([1, 3, 2, 0, 5]);
+    expect(issues).toEqual([{ rule: "duplicate-x", row: 4 }]);
+  });
+
+  it("drops every cell that is not a finite number within 1e15 as invalid-x, in row order", () => {
+    const { domain, issues } = placeLinearRows([
+      3,
+      Number.NaN,
+      "4",
+      new Date(0),
+      Number.POSITIVE_INFINITY,
+      1e16,
+      null,
+      -1e15,
+    ]);
+    expect(domain).toEqual({ kind: "linear", values: [-1e15, 3] });
+    expect(issues).toEqual([1, 2, 3, 4, 5, 6].map((row) => ({ rule: "invalid-x", row })));
+  });
+
+  it("names -0 and 0 as one x", () => {
+    const { domain, issues } = placeLinearRows([0, -0]);
+    expect(domain.kind === "linear" && domain.values.map((value) => Object.is(value, -0))).toEqual([false]);
+    expect(issues).toEqual([{ rule: "duplicate-x", row: 1 }]);
+  });
+
+  it("finds a slot by its exact number, projects from the first slot at or after a number, and reports the number", () => {
+    const { domain } = placeLinearRows([0, 5, 20, 50]);
+    expect(slotOf(domain, 20)).toBe(2);
+    expect(slotOf(domain, 21)).toBe(-1);
+    expect(slotOf(domain, "20")).toBe(-1);
+    expect(projectedSlot(domain, 21)).toBe(3);
+    expect(projectedSlot(domain, -1)).toBe(0);
+    expect(projectedSlot(domain, 60)).toBe(4);
+    expect(slotX(domain, 1)).toBe(5);
+  });
+
+  it("hands back its last placement while every number reads the same", () => {
+    const place = createRowPlacer();
+    const first = place([10, 0], LINEAR_AXIS);
+    expect(place([10, 0], LINEAR_AXIS)).toBe(first);
+    expect(place([10, 1], LINEAR_AXIS)).not.toBe(first);
   });
 });
 

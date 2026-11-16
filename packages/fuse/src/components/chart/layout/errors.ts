@@ -37,7 +37,9 @@ export type ChartCompositionRule =
   | "series-drawn-twice"
   | "invalid-gauge-domain"
   | "invalid-sweep"
-  | "slot-limit";
+  | "slot-limit"
+  | "horizontal-linear-axis"
+  | "brush-needs-slot-axis";
 
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =
@@ -120,7 +122,7 @@ export const DATA_MESSAGES = {
     "received a threshold color whose threshold is not a finite number. Pass a number, such as the period's average. Production paints every value in the threshold's below role.",
   "value-out-of-range": "received a value above 1e15 in magnitude. Production counts the reading as missing.",
   "invalid-x":
-    "received a time-axis x that is not a valid Date or epoch milliseconds. Production drops the row.",
+    "received an x that is not a valid Date or epoch milliseconds on a time axis, or not a finite number within 1e15 in magnitude on a linear axis. Production drops the row.",
   "off-grid-x":
     "received a time-axis x that is not a slot start in the chart's zone. A day stored as UTC midnight is the common cause, so store each slot's start instant in the market's zone. Production moves the row to the slot that holds the instant.",
   "duplicate-x": "received two rows for one slot or category. Production keeps the first row in data order.",

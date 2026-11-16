@@ -1,6 +1,7 @@
 "use client";
 
 import { countOf } from "../../intl/count-of";
+import type { Inflected } from "../../intl/count-of";
 /**
  * The spoken text of a cartesian chart. The option names the active slot and the readings at it,
  * and the description states the facts of the effective window. Both read the spoken forms of the
@@ -8,11 +9,12 @@ import { countOf } from "../../intl/count-of";
  */
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { EmphasisEntry } from "./chart-store";
-import type { ChartSeriesConfig, XFormat } from "./chart-types";
+import type { ChartSeriesConfig, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { sentence, unitLabel } from "./format/description-words";
 import type { UnitLabel } from "./format/description-words";
-import type { FormattedText } from "./format/formatted-text";
+import type { FormattedText, LabelRole } from "./format/formatted-text";
+import { POINT_WORDS } from "./format/point-words";
 import { seriesLabel } from "./format/series-label";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
 import type { Interval } from "./format/time-format";
@@ -28,9 +30,22 @@ export type TextContext = {
   readonly locale: SupportedLocale;
   readonly model: CartesianModel;
   readonly config: { readonly [key: string]: ChartSeriesConfig };
-  /** Root's `xFormat`, which overrides the interval's label preset. */
+  /** Root's `xFormat` on a time axis, which overrides the interval's label preset. */
   readonly xFormat: XFormat | undefined;
+  /**
+   * A linear axis's x words: Root's `xFormat` for its numbers and its `xLabel`, the x measure's
+   * name. Only a linear axis reads them, and without them its numbers print in the default format.
+   */
+  readonly xValue?: LinearXText | undefined;
   readonly now: number | undefined;
+};
+
+/** How a linear axis prints its x: Root's `xFormat` and `xLabel` under `xScale="linear"`. */
+export type LinearXText = {
+  /** The x numbers' format. */
+  readonly format: ValueFormat;
+  /** The x measure's name, such as "Ladenivå", or undefined. */
+  readonly label: string | undefined;
 };
 
 /** The intervals finer than a day, whose labels name a time of day and no date. */
@@ -45,7 +60,7 @@ type DomainSpan = { readonly dates: boolean; readonly years: boolean };
 /** Which calendar spans a time domain covers in its zone. */
 function domainSpan(model: CartesianModel): DomainSpan {
   const { domain } = model;
-  if (domain.kind === "category") return { dates: false, years: false };
+  if (domain.kind !== "time") return { dates: false, years: false };
   const first = domain.starts[0];
   const last = domain.starts.at(-1);
   if (first === undefined || last === undefined) return { dates: false, years: false };
@@ -69,7 +84,7 @@ function dateAt(context: TextContext, timeZone: string, start: number): Formatte
 /** A slot's date, as `dateAt` gives it for the slot's start. */
 function slotDate(context: TextContext, slot: number): FormattedText {
   const { domain } = context.model;
-  if (domain.kind === "category") return { text: "", spoken: "" };
+  if (domain.kind !== "time") return { text: "", spoken: "" };
   return dateAt(context, domain.timeZone, domain.starts[slot] ?? 0);
 }
 
@@ -103,14 +118,30 @@ function datedLabel(
 }
 
 /**
- * A slot's label, in the interval's label preset or Root's `xFormat`, or the category itself. On a
- * domain that spans more than one local date, a slot finer than a day leads with its date, and a
- * date carries its year when the domain spans more than one calendar year. An explicit format
- * replaces both.
+ * A linear slot's number in Root's `xFormat`.
+ *
+ * @param context - The locale and the linear axis's words.
+ * @param value - The x number.
+ * @param role - `"tick"` for an axis label, or `"full"` for a readout.
+ * @returns The visual and spoken number.
+ */
+export function linearLabel(
+  context: Pick<TextContext, "locale" | "xValue">,
+  value: number,
+  role: LabelRole = "full"
+): FormattedText {
+  return formatValue(context.locale, value, context.xValue?.format ?? {}, role);
+}
+
+/**
+ * A slot's label, in the interval's label preset or Root's `xFormat`, the category itself, or a
+ * linear slot's number in Root's `xFormat`. On a domain that spans more than one local date, a slot
+ * finer than a day leads with its date, and a date carries its year when the domain spans more than
+ * one calendar year. An explicit format replaces both.
  *
  * @param context - The model and the locale.
  * @param slot - A slot index.
- * @param format - A preset or Intl options that replace the default.
+ * @param format - A preset or Intl options that replace a time slot's default.
  * @returns The visual and spoken label.
  */
 export function slotLabel(context: TextContext, slot: number, format?: XFormat): FormattedText {
@@ -119,6 +150,7 @@ export function slotLabel(context: TextContext, slot: number, format?: XFormat):
     const name = domain.names[slot] ?? "";
     return { text: name, spoken: name };
   }
+  if (domain.kind === "linear") return linearLabel(context, domain.values[slot] ?? 0);
   return datedLabel(
     context,
     domain.timeZone,
@@ -275,6 +307,16 @@ function holdsNow(context: TextContext, slot: number): boolean {
 export type OptionOrder = "slot-first" | "series-first";
 
 /**
+ * The slot an option names, spoken: its label, led on a linear axis by Root's `xLabel`, so a
+ * reader hears which measure the number is, as `Ladenivå 35 prosent`.
+ */
+function optionX(context: TextContext, slot: number): string {
+  const label = slotLabel(context, slot).spoken;
+  const name = context.model.domain.kind === "linear" ? context.xValue?.label : undefined;
+  return name === undefined ? label : `${name} ${label}`;
+}
+
+/**
  * The option's name for one slot.
  *
  * Under "all series" focus it names every series at the slot. With one series focused it names
@@ -295,7 +337,7 @@ export function optionName(
   emphasis: { readonly [key: string]: EmphasisEntry } = {}
 ): string {
   const strings = CHART_STRINGS[context.locale];
-  const label = slotLabel(context, slot).spoken;
+  const label = optionX(context, slot);
   const x = holdsNow(context, slot) ? `${label}, ${strings.now}` : label;
   const { series } = context.model;
   const focused = focus === -1 ? series : series.filter(({ seriesIndex }) => seriesIndex === focus);
@@ -367,8 +409,21 @@ export function extremesSentence(
  */
 function spanLabel(context: TextContext, slot: number): string {
   const { domain } = context.model;
-  if (domain.kind === "category") return domain.names[slot] ?? "";
-  return SUB_DAY.has(domain.interval) ? slotDate(context, slot).spoken : slotLabel(context, slot).spoken;
+  return domain.kind === "time" && SUB_DAY.has(domain.interval)
+    ? slotDate(context, slot).spoken
+    : slotLabel(context, slot).spoken;
+}
+
+/**
+ * The words a chart counts its slots in: the interval's or a category axis's, and on a linear axis
+ * the point word ScatterChart and LiveLineChart count their points in too.
+ *
+ * @param locale - The chart's locale.
+ * @param unit - The interval, or the axis kind.
+ * @returns The counted words.
+ */
+function slotWords(locale: SupportedLocale, unit: Interval | "category" | "linear"): Inflected {
+  return unit === "linear" ? POINT_WORDS[locale] : CHART_STRINGS[locale].slots[unit];
 }
 
 /**
@@ -389,11 +444,14 @@ export function chartDescription(context: TextContext): string {
   const sentences: string[] = [];
   const from = spanLabel(context, window.first);
   const to = spanLabel(context, window.last);
-  const unit = domain.kind === "time" ? domain.interval : "category";
-  const count = countOf(locale, window.last - window.first + 1, strings.slots[unit]);
+  const unit = domain.kind === "time" ? domain.interval : domain.kind;
+  const count = countOf(locale, window.last - window.first + 1, slotWords(locale, unit));
   sentences.push(sentence(strings.descriptionSpan(from, to === from ? undefined : to, count), locale));
   // Each quality count uses the interval its series counts in, Root's or a coarse series' own.
-  const states = new Map<Interval | "category", { missing: number; estimated: number; corrected: number }>();
+  const states = new Map<
+    Interval | "category" | "linear",
+    { missing: number; estimated: number; corrected: number }
+  >();
   for (const entry of model.series) {
     const { key, readings, coarse } = entry;
     const own = coarse?.interval ?? unit;
@@ -442,7 +500,7 @@ export function chartDescription(context: TextContext): string {
     for (const [interval, counts] of states) {
       if (counts[state] > 0)
         sentences.push(
-          strings.descriptionQuality(countOf(locale, counts[state], strings.slots[interval]), state)
+          strings.descriptionQuality(countOf(locale, counts[state], slotWords(locale, interval)), state)
         );
     }
   }

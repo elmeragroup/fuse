@@ -466,6 +466,24 @@ export type ChartLegendValueProps = ChartDomProps<"span"> & {
 function ChartLine(input: ChartLineProps): ReactElement;
 
 // @beta
+export type ChartLinearScaleProps = {
+    xScale: "linear";
+    xFormat?: ValueFormat;
+    xLabel?: string;
+    xInclude?: readonly number[];
+    interval?: never;
+    period?: never;
+    now?: never;
+    timeZone?: never;
+    orientation?: "vertical";
+    xRange?: readonly [first: number, last: number];
+    defaultXRange?: readonly [first: number, last: number];
+    onXRangeChange?: never;
+    onXRangeCommitted?: never;
+    defaultActiveX?: number;
+};
+
+// @beta
 export type ChartLineProps = ChartLayerProps & {
     dataKey: string;
     variant?: "default" | "dashed" | "flowing" | "quiet";
@@ -500,7 +518,7 @@ export type ChartPeriod = readonly [start: ChartInstant, end: ChartInstant];
 // @beta
 export type ChartPoint = {
     readonly index: number;
-    readonly x: string | Date;
+    readonly x: string | number | Date;
     readonly label: FormattedText;
     readonly key: string | null;
     readonly values: Readonly<Record<string, number | null>>;
@@ -609,23 +627,16 @@ export type ChartRevealProps = ChartLayerProps & {
 export type ChartRole = ChartCategoricalRole | ChartSequentialRole | ChartDivergingRole | ChartSentimentRole | "chart-other";
 
 // @beta
-function ChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartXKey<TRow>>(input: ChartRootProps<TRow, TConfig, TXKey>): ReactElement;
+function ChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartXKey<TRow>>(input: ChartRootProps<TRow, TConfig, TXKey, ChartXAxisKind>): ReactElement;
 
 // @beta
-export type ChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartXKey<TRow> = ChartXKey<TRow>> = ChartAccessibleName & ChartFigureProps & ChartSelectionProps<keyof TConfig & string> & ChartTimeAxisProps<TRow[TXKey]> & {
+export type ChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartXKey<TRow> = ChartXKey<TRow>, TAxis extends ChartXAxisKind = "slot"> = ChartAccessibleName & ChartFigureProps & ChartSelectionProps<keyof TConfig & string> & ChartXScaleProps<TRow[TXKey], TAxis> & {
     data: readonly TRow[];
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow>;
     xKey: TXKey;
-    xScale?: "band" | "point";
-    orientation?: "vertical" | "horizontal";
     stackOffset?: "diverging" | "expand";
     yBaseline?: "zero" | "none";
     yInclude?: readonly number[];
-    xRange?: ChartXRange<TRow[TXKey]>;
-    defaultXRange?: ChartXRange<TRow[TXKey]>;
-    onXRangeChange?: (range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
-    onXRangeCommitted?: (range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
-    defaultActiveX?: ChartXValue<TRow[TXKey]>;
     "data-intro"?: ChartIntro;
     "data-fade"?: "past";
     description?: string;
@@ -741,6 +752,19 @@ function ChartSlotLabel(input: ChartSlotLabelProps): ReactElement;
 export type ChartSlotLabelProps = ChartLayerProps & {
     format?: XFormat;
 };
+
+// @beta
+export type ChartSlotScaleProps<TX> = {
+    xScale?: "band" | "point";
+    orientation?: "vertical" | "horizontal";
+    xRange?: ChartXRange<TX>;
+    defaultXRange?: ChartXRange<TX>;
+    onXRangeChange?: (range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
+    onXRangeCommitted?: (range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
+    defaultActiveX?: ChartXValue<TX>;
+    xLabel?: never;
+    xInclude?: never;
+} & ChartTimeAxisProps<TX>;
 
 // @beta
 export type ChartStyle = CSSProperties & ChartStyleVars;
@@ -917,6 +941,9 @@ export type ChartX = string | number | Date;
 function ChartXAxis(input: ChartXAxisProps): ReactElement;
 
 // @beta
+export type ChartXAxisKind = "slot" | "linear";
+
+// @beta
 export type ChartXAxisProps = ChartLayerProps & {
     format?: XFormat;
     label?: string;
@@ -934,6 +961,9 @@ export type ChartXRange<TX> = readonly [first: ChartXValue<TX>, last: ChartXValu
 
 // @beta
 export type ChartXRangeChangeReason = "drag" | "keyboard" | "track-press" | "input-change";
+
+// @beta
+export type ChartXScaleProps<TX, TAxis extends ChartXAxisKind = ChartXAxisKind> = ("slot" extends TAxis ? ChartSlotScaleProps<TX> : never) | ("linear" extends TAxis ? [TX] extends [string] ? never : [TX] extends [number] ? ChartLinearScaleProps : [TX] extends [ChartInstant] ? never : ChartLinearScaleProps : never);
 
 // @beta
 export type ChartXValue<TX> = [TX] extends [string] ? TX : [TX] extends [ChartInstant] ? ChartInstant : ChartX;

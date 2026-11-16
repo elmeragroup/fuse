@@ -2,9 +2,10 @@
  * The x domain of a cartesian chart. A time axis lists every
  * slot from the first row to the last, or every slot of `period`, so gaps stay visible. A slot
  * comes from its start and the interval only, and Fuse never reads an end field. A category axis
- * lists the categories in data order.
+ * lists the categories in data order. A linear axis lists the rows' numbers in ascending order, one
+ * slot per number, and places each at its value, so unevenly spaced numbers keep their distances.
  */
-import type { ChartScalar } from "../chart-types";
+import type { ChartScalar, ChartX } from "../chart-types";
 import {
   DAY,
   SUB_DAY_MS,
@@ -17,6 +18,7 @@ import type { Interval } from "../format/time-format";
 import { ChartCompositionError } from "./errors";
 import { sameItems } from "./same-items";
 import { numberOf, stringOf } from "./scalar";
+import { isBoundedValue } from "./value-domain";
 
 /** The slots of an axis. */
 export type XDomain =
@@ -33,6 +35,11 @@ export type XDomain =
       readonly kind: "category";
       /** The categories in data order. */
       readonly names: readonly string[];
+    }
+  | {
+      readonly kind: "linear";
+      /** Each slot's x, ascending, every one finite and within the value limit. */
+      readonly values: readonly number[];
     };
 
 /** A data rule a row broke while the axis placed it, with the production fallback already applied. */
@@ -286,66 +293,132 @@ export function placeCategoryRows(xs: readonly ChartScalar[]): PlacedRows {
 }
 
 /**
- * Places rows on their slots: `placeTimeRows` on a time axis, `placeCategoryRows` on a category
- * axis.
+ * The number a linear-axis cell holds. Only a finite number within the value limit is one, so a
+ * string, a `Date` or NaN is no x.
+ *
+ * @param value - A data cell.
+ * @returns The number, or NaN when the cell holds no valid x.
  */
-export type RowPlacer = (xs: readonly ChartScalar[], time: TimeAxisOptions | undefined) => PlacedRows;
+export function linearOf(value: ChartScalar): number {
+  const number = numberOf(value);
+  return number !== undefined && isBoundedValue(number) ? number : Number.NaN;
+}
+
+/**
+ * Places linear-axis rows on their slots, one slot per distinct number, in ascending order. Rows may
+ * arrive in any order, as a time axis's may.
+ *
+ * - A cell that is not a finite number within 1e15 in magnitude is `invalid-x`, and the row is
+ *   dropped.
+ * - A second row with the same number is `duplicate-x`, and the first row in data order wins.
+ *
+ * @param xs - Each row's x cell, in data order.
+ * @returns The domain, the row each slot reads and the issues.
+ */
+export function placeLinearRows(xs: readonly ChartScalar[]): PlacedRows {
+  return placeNumbers(xs.map(linearOf));
+}
+
+/** Places linear-axis rows by each row's number, as `placeLinearRows` reads them. */
+function placeNumbers(cells: readonly number[]): PlacedRows {
+  const issues: RowIssue[] = [];
+  const firstRow = new Map<number, number>();
+  cells.forEach((value, row) => {
+    if (Number.isNaN(value)) issues.push({ rule: "invalid-x", row });
+    // -0 and 0 name one x.
+    else if (firstRow.has(value + 0)) issues.push({ rule: "duplicate-x", row });
+    else firstRow.set(value + 0, row);
+  });
+  const values = [...firstRow.keys()].toSorted((a, b) => a - b);
+  return {
+    domain: { kind: "linear", values },
+    rowAt: values.map((value) => firstRow.get(value)),
+    issues,
+  };
+}
+
+/** A linear axis, which reads its rows' numbers and no time options. */
+export type LinearAxisOptions = { readonly scale: "linear" };
+
+/** The linear axis's options, one object for every placement. */
+export const LINEAR_AXIS: LinearAxisOptions = { scale: "linear" };
+
+/**
+ * How an axis reads its rows: a time axis's interval, zone and period, the linear axis, or
+ * undefined for a category axis.
+ */
+export type AxisOptions = TimeAxisOptions | LinearAxisOptions | undefined;
+
+/**
+ * Places rows on their slots: `placeTimeRows` on a time axis, `placeLinearRows` on a linear axis
+ * and `placeCategoryRows` on a category axis.
+ */
+export type RowPlacer = (xs: readonly ChartScalar[], axis: AxisOptions) => PlacedRows;
 
 /** What a placement reads of the rows and the axis, which alone decide it. */
 type PlacedCells =
-  | {
-      readonly kind: "time";
-      readonly interval: Interval;
-      readonly timeZone: string;
-      readonly period: readonly [number, number] | undefined;
-      readonly instants: readonly number[];
-    }
+  | { readonly kind: "time"; readonly axis: TimeAxisOptions; readonly instants: readonly number[] }
+  | { readonly kind: "linear"; readonly values: readonly number[] }
   | { readonly kind: "category"; readonly names: readonly (string | undefined)[] };
 
-function placedCells(xs: readonly ChartScalar[], time: TimeAxisOptions | undefined): PlacedCells {
-  if (time === undefined) return { kind: "category", names: xs.map(stringOf) };
-  const { interval, timeZone, period } = time;
-  return { kind: "time", interval, timeZone, period, instants: xs.map(instantOf) };
+function placedCells(xs: readonly ChartScalar[], axis: AxisOptions): PlacedCells {
+  if (axis === undefined) return { kind: "category", names: xs.map(stringOf) };
+  if ("scale" in axis) return { kind: "linear", values: xs.map(linearOf) };
+  return { kind: "time", axis, instants: xs.map(instantOf) };
 }
 
 function sameCells(a: PlacedCells, b: PlacedCells): boolean {
   if (a.kind === "category") return b.kind === "category" && sameItems(a.names, b.names);
-  if (b.kind === "category") return false;
+  if (a.kind === "linear") return b.kind === "linear" && sameItems(a.values, b.values);
+  if (b.kind !== "time") return false;
   return (
-    a.interval === b.interval &&
-    a.timeZone === b.timeZone &&
-    Object.is(a.period?.[0], b.period?.[0]) &&
-    Object.is(a.period?.[1], b.period?.[1]) &&
+    a.axis.interval === b.axis.interval &&
+    a.axis.timeZone === b.axis.timeZone &&
+    Object.is(a.axis.period?.[0], b.axis.period?.[0]) &&
+    Object.is(a.axis.period?.[1], b.axis.period?.[1]) &&
     sameItems(a.instants, b.instants)
   );
 }
 
+/** Places rows from what `placedCells` read of them and of the axis. */
+function placeCells(cells: PlacedCells, xs: readonly ChartScalar[]): PlacedRows {
+  switch (cells.kind) {
+    case "time":
+      return placeInstants(cells.instants, cells.axis);
+    case "linear":
+      return placeNumbers(cells.values);
+    case "category":
+      return placeCategoryRows(xs);
+  }
+}
+
 /**
- * Places rows without memory, as `placeTimeRows` and `placeCategoryRows` do.
+ * Places rows without memory, as `placeTimeRows`, `placeLinearRows` and `placeCategoryRows` do.
  *
  * @param xs - Each row's x cell, in data order.
- * @param time - A time axis's interval, zone and period, or undefined for a category axis.
+ * @param axis - A time axis's interval, zone and period, the linear axis, or undefined for a
+ *   category axis.
  * @returns The domain, the row each slot reads and the issues.
  */
-export function placeRows(xs: readonly ChartScalar[], time: TimeAxisOptions | undefined): PlacedRows {
-  return time === undefined ? placeCategoryRows(xs) : placeTimeRows(xs, time);
+export function placeRows(xs: readonly ChartScalar[], axis: AxisOptions): PlacedRows {
+  if (axis === undefined) return placeCategoryRows(xs);
+  return "scale" in axis ? placeLinearRows(xs) : placeTimeRows(xs, axis);
 }
 
 /**
  * A row placer that hands back its last placement while the rows' x cells and the axis read the
- * same. A placement reads only the instant or the category of each row's x and the axis's
- * interval, zone and period, so a data update that keeps every x keeps the domain object, and the
- * work that reads only the domain, such as the x ticks and the slot keys, does not run again.
+ * same. A placement reads only the instant, the number or the category of each row's x and the
+ * axis's interval, zone and period, so a data update that keeps every x keeps the domain object,
+ * and the work that reads only the domain, such as the x ticks and the slot keys, does not run again.
  *
  * @returns A placer with its own memory of one placement.
  */
 export function createRowPlacer(): RowPlacer {
   let last: { readonly cells: PlacedCells; readonly placed: PlacedRows } | undefined;
-  return (xs, time) => {
-    const cells = placedCells(xs, time);
+  return (xs, axis) => {
+    const cells = placedCells(xs, axis);
     if (last !== undefined && sameCells(last.cells, cells)) return last.placed;
-    const placed =
-      cells.kind === "time" && time !== undefined ? placeInstants(cells.instants, time) : placeRows(xs, time);
+    const placed = placeCells(cells, xs);
     last = { cells, placed };
     return placed;
   };
@@ -353,21 +426,32 @@ export function createRowPlacer(): RowPlacer {
 
 /** The number of slots in a domain. */
 export function slotCount(domain: XDomain): number {
-  return domain.kind === "time" ? domain.starts.length : domain.names.length;
+  switch (domain.kind) {
+    case "time":
+      return domain.starts.length;
+    case "linear":
+      return domain.values.length;
+    case "category":
+      return domain.names.length;
+  }
 }
 
 /**
- * The slot an x value names. On a time axis any instant inside the slot finds it, and on a category
- * axis the match is exact.
+ * The slot an x value names. On a time axis any instant inside the slot finds it, and on a linear
+ * or a category axis the match is exact.
  *
  * @param domain - The domain.
- * @param x - An instant on a time axis or a category string.
+ * @param x - An instant on a time axis, a number on a linear axis or a category string.
  * @returns The slot index, or -1 when no slot holds the value or its kind does not fit the axis.
  */
 export function slotOf(domain: XDomain, x: ChartScalar): number {
   if (domain.kind === "category") {
     const name = stringOf(x);
     return name === undefined ? -1 : domain.names.indexOf(name);
+  }
+  if (domain.kind === "linear") {
+    const value = linearOf(x);
+    return Number.isNaN(value) ? -1 : sortedIndex(domain.values, value, "exact");
   }
   const instant = instantOf(x);
   if (Number.isNaN(instant)) return -1;
@@ -384,8 +468,9 @@ export function slotOf(domain: XDomain, x: ChartScalar): number {
 }
 
 /**
- * The first slot at or after an x, which config `projectedFrom` names. An instant before the domain
- * gives the first slot, and one after it, or a category the axis lacks, gives the slot count.
+ * The first slot at or after an x, which config `projectedFrom` names. An instant or a number before
+ * the domain gives the first slot, and one after it, or a category the axis lacks, gives the slot
+ * count.
  *
  * @param domain - The domain.
  * @param x - The x, or undefined for none.
@@ -398,6 +483,10 @@ export function projectedSlot(domain: XDomain, x: ChartScalar | undefined): numb
     const index = slotOf(domain, x);
     return index === -1 ? count : index;
   }
+  if (domain.kind === "linear") {
+    const value = linearOf(x);
+    return Number.isNaN(value) ? count : sortedIndex(domain.values, value, "at-or-after");
+  }
   const instant = instantOf(x);
   if (Number.isNaN(instant)) return count;
   const index = domain.ends.findIndex((end) => end > instant);
@@ -405,12 +494,38 @@ export function projectedSlot(domain: XDomain, x: ChartScalar | undefined): numb
 }
 
 /**
- * The x a callback reports for a slot, the category or the slot start as a `Date`.
+ * The index of a number in an ascending list: the slot that holds exactly that number, or the first
+ * slot at or after it.
+ *
+ * @returns The index, -1 for no exact match, or the list's length when every number lies before.
+ */
+function sortedIndex(values: readonly number[], value: number, match: "exact" | "at-or-after"): number {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if ((values[middle] ?? 0) < value) low = middle + 1;
+    else high = middle;
+  }
+  if (match === "at-or-after") return low;
+  return values[low] === value ? low : -1;
+}
+
+/**
+ * The x a callback reports for a slot: the category, the number on a linear axis or the slot start
+ * as a `Date`.
  *
  * @param domain - The domain.
  * @param slot - A slot index inside the domain.
- * @returns The category string or the start `Date`.
+ * @returns The category string, the number or the start `Date`.
  */
-export function slotX(domain: XDomain, slot: number): string | Date {
-  return domain.kind === "category" ? (domain.names[slot] ?? "") : new Date(domain.starts[slot] ?? 0);
+export function slotX(domain: XDomain, slot: number): ChartX {
+  switch (domain.kind) {
+    case "category":
+      return domain.names[slot] ?? "";
+    case "linear":
+      return domain.values[slot] ?? 0;
+    case "time":
+      return new Date(domain.starts[slot] ?? 0);
+  }
 }

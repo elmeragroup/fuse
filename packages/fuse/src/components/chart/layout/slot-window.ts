@@ -4,7 +4,7 @@
  * active slot keeps its x across new data.
  */
 import type { ChartScalar } from "../chart-types";
-import { instantOf, slotCount, slotOf } from "./x-domain";
+import { instantOf, linearOf, slotCount, slotOf } from "./x-domain";
 import type { XDomain } from "./x-domain";
 
 /** A run of slots, both ends inclusive. */
@@ -13,6 +13,7 @@ export type SlotWindow = { readonly first: number; readonly last: number };
 /**
  * The window a range selects. A time axis keeps every slot that overlaps the span from the first
  * value's slot to the last value's slot, so an instant a millisecond late still finds its slot. A
+ * linear axis keeps every slot whose number lies between the two values, both inclusive. A
  * category axis needs both values to exist. When no slot remains, or no range is set, the window is
  * the whole domain.
  *
@@ -33,6 +34,14 @@ export function effectiveWindow(
     const b = slotOf(domain, range[1]);
     if (a === -1 || b === -1) return whole;
     return { first: Math.min(a, b), last: Math.max(a, b) };
+  }
+  if (domain.kind === "linear") {
+    // An invalid number makes both bounds NaN, so no slot lies between them and the window is whole.
+    const low = Math.min(linearOf(range[0]), linearOf(range[1]));
+    const high = Math.max(linearOf(range[0]), linearOf(range[1]));
+    const first = domain.values.findIndex((value) => value >= low);
+    const last = domain.values.findLastIndex((value) => value <= high);
+    return first === -1 || last < first ? whole : { first, last };
   }
   // An invalid instant makes both bounds NaN, so no slot overlaps and the window is whole.
   const from = Math.min(instantOf(range[0]), instantOf(range[1]));

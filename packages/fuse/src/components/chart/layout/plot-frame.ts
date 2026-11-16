@@ -8,12 +8,15 @@
  * and it lands on the pixel the browser gives the focused option's box. Sharing one snap is what
  * keeps a bar, its crosshair band and the focused option on one column. Each frame also holds one
  * slot grid, which places every slot band, slot center and bar, so every gap between bars draws
- * the same whole device pixels.
+ * the same whole device pixels. A linear x scale places its slots at their values instead, so its
+ * centers, cells and bars come from the scale's shares and the grid only spans the plot.
  */
 import { DECIMATE_ABOVE } from "./decimate";
 import type { FloorAxis } from "./floor-settle";
 import { linearScale, scaleValue } from "./linear-scale";
 import type { LinearScale } from "./linear-scale";
+import { centerShare, isLinearScale, linearCell, nearestLinear } from "./slot-scale";
+import type { LinearSlots, SlotScale } from "./slot-scale";
 import { valueFloor } from "./value-floor";
 
 /** The plot box as Root measured it. */
@@ -79,6 +82,11 @@ export type PlotFrame = {
   readonly value: LinearScale;
   /** The slot bands every slot-axis lookup reads. */
   readonly grid: SlotGrid;
+  /**
+   * Root's x scale, which every slot center, option band, hairline and bar span of the frame reads,
+   * so a linear slot places at its value. The frame is its one owner along the slot axis.
+   */
+  readonly scale: SlotScale;
 };
 
 /** A rectangle in CSS pixels from the plot's top left. */
@@ -95,8 +103,8 @@ export type PlotRect = {
  * sits at the right.
  *
  * Under a band x scale every slot takes the same whole device pixels, at least one, from a start
- * that splits the leftover between both ends. That is the `"exact"` grid. A point scale, a window too
- * dense for a device pixel per slot and a decimated window spread instead.
+ * that splits the leftover between both ends. That is the `"exact"` grid. A point scale, a linear
+ * scale, a window too dense for a device pixel per slot and a decimated window spread instead.
  *
  * @param box - The measured plot box.
  * @param orientation - Root's orientation.
@@ -110,7 +118,7 @@ export function plotFrame(
   orientation: "vertical" | "horizontal",
   count: number,
   domain: readonly [number, number],
-  xScale: "band" | "point" = "band"
+  xScale: SlotScale = "band"
 ): PlotFrame {
   const range: readonly [number, number] = orientation === "vertical" ? [box.height, 0] : [0, box.width];
   const slots = Math.max(1, count);
@@ -125,7 +133,7 @@ export function plotFrame(
   const grid: SlotGrid = exact
     ? { rule: "exact", start: Math.floor(leftover / 2) / dpr, step: whole / dpr, whole }
     : { rule: "spread", start: 0, step: length / slots, whole: Math.floor((length * dpr) / slots) };
-  return { box, orientation, count: slots, value: linearScale(domain, range), grid };
+  return { box, orientation, count: slots, value: linearScale(domain, range), grid, scale: xScale };
 }
 
 /** How far from a tie, in device pixels, a coordinate still counts as the tie. */
@@ -366,18 +374,16 @@ export function slotAxisAt(frame: PlotFrame, share: number): number {
 
 /**
  * The center of a slot along the slot axis, unsnapped, the number a slot reference tweens. Band
- * slots center in their band, and point slots run from the first edge to the last. A position
- * outside the window lies outside the plot.
+ * slots center in their band, point slots run from the first edge to the last, and linear slots sit
+ * at their values' shares of the x domain. A position outside the window lies outside the plot.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
- * @param xScale - Root's x scale.
  * @returns The center in CSS pixels.
  */
-export function slotCenterAt(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
-  if (xScale === "band") return frame.grid.start + (position + 0.5) * frame.grid.step;
-  const length = alongLength(frame);
-  return frame.count === 1 ? length / 2 : (position * length) / (frame.count - 1);
+export function slotCenterAt(frame: PlotFrame, position: number): number {
+  if (frame.scale === "band") return frame.grid.start + (position + 0.5) * frame.grid.step;
+  return centerShare(frame.scale, frame.count, position) * alongLength(frame);
 }
 
 /**
@@ -385,32 +391,33 @@ export function slotCenterAt(frame: PlotFrame, position: number, xScale: "band" 
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
- * @param xScale - Root's x scale.
  * @returns The center in CSS pixels.
  */
-export function centerOf(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
-  return snapAlong(frame, slotCenterAt(frame, position, xScale));
+export function centerOf(frame: PlotFrame, position: number): number {
+  return snapAlong(frame, slotCenterAt(frame, position));
 }
 
 /**
  * The pixel columns a slot takes for focus and the tooltip. They are its band under a band scale,
- * and a band-wide cell centered on the point under a point scale, clipped to the plot.
+ * and a band-wide cell centered on the point under a point scale, clipped to the plot. Under a
+ * linear scale they are the cell from halfway to the previous slot to halfway to the next, so the
+ * cells tile the plot and each column belongs to its nearest slot.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
- * @param xScale - Root's x scale.
  * @returns The start and end along the slot axis in CSS pixels, snapped.
  */
-export function optionBand(
-  frame: PlotFrame,
-  position: number,
-  xScale: "band" | "point"
-): readonly [number, number] {
-  if (xScale === "band") return slotBand(frame, position);
+export function optionBand(frame: PlotFrame, position: number): readonly [number, number] {
+  const { scale } = frame;
+  if (scale === "band") return slotBand(frame, position);
   const length = alongLength(frame);
+  if (isLinearScale(scale)) {
+    const [start, end] = linearCell(scale, position);
+    return snapSpan(frame, start * length, end * length);
+  }
   // The unsnapped center, which lies inside the plot. The last point's snapped center can lie past
   // the plot's end, which would leave the clipped band empty.
-  const center = slotCenterAt(frame, position, xScale);
+  const center = slotCenterAt(frame, position);
   const half = length / frame.count / 2;
   return snapSpan(frame, Math.max(0, center - half), Math.min(length, center + half));
 }
@@ -461,14 +468,13 @@ export function wholeWidth(box: PlotBox, width: number): number {
  *
  * @param frame - The layout's frame.
  * @param at - The unsnapped coordinate along the slot axis.
- * @param xScale - Root's x scale.
  * @returns The point's coordinate in CSS pixels.
  */
-export function pointAlong(frame: PlotFrame, at: number, xScale: "band" | "point"): number {
+export function pointAlong(frame: PlotFrame, at: number): number {
   const width = hairline(frame.box);
   if (outsideRun(frame, at)) return snapAlong(frame, at) + width / 2;
   // The hairline `slotLineAt` draws here, no wider than the band it sits in.
-  const band = slotBandAt(frame, at, xScale);
+  const band = slotBandAt(frame, at);
   const line = Math.min(width, band[1] - band[0]);
   const start = lineStart(frame, at, band, line);
   return (start + (start + line)) / 2;
@@ -529,19 +535,17 @@ export function cellRun(frame: PlotFrame, center: number, cells = 1): readonly [
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
- * @param xScale - Root's x scale.
  * @param line - The line's width in CSS pixels, whole device pixels.
  * @returns The line's start and end along the slot axis, snapped.
  */
 export function slotLine(
   frame: PlotFrame,
   position: number,
-  xScale: "band" | "point",
   line = hairline(frame.box)
 ): readonly [number, number] {
-  const [start, end] = optionBand(frame, position, xScale);
+  const [start, end] = optionBand(frame, position);
   const width = Math.min(line, end - start);
-  return slotLineAt(frame, slotCenterAt(frame, position, xScale), xScale, width);
+  return slotLineAt(frame, slotCenterAt(frame, position), width);
 }
 
 /**
@@ -552,45 +556,33 @@ export function slotLine(
  *
  * @param frame - The layout's frame.
  * @param center - The tweened center along the slot axis, inside the plot.
- * @param xScale - Root's x scale.
  * @param width - The line's width, whole device pixels.
  * @returns The line's start and end along the slot axis, snapped.
  */
-export function slotLineAt(
-  frame: PlotFrame,
-  center: number,
-  xScale: "band" | "point",
-  width: number
-): readonly [number, number] {
-  const at = lineStart(frame, center, slotBandAt(frame, center, xScale), width);
+export function slotLineAt(frame: PlotFrame, center: number, width: number): readonly [number, number] {
+  const at = lineStart(frame, center, slotBandAt(frame, center), width);
   return [at, at + width];
 }
 
 /**
  * The band of the slot a coordinate along the slot axis lies in, as `optionBand` gives it. Under a
- * point scale it is the nearest point's, and under a band scale the band that holds it, the first or
- * last band past either end of the grid.
+ * point scale it is the nearest point's, under a linear scale the nearest slot's, and under a band
+ * scale the band that holds it, the first or last band past either end of the grid.
  *
  * @param frame - The layout's frame.
  * @param at - CSS pixels from the plot's left or top edge, unsnapped.
- * @param xScale - Root's x scale.
  * @returns The band's start and end along the slot axis, snapped.
  */
-export function slotBandAt(
-  frame: PlotFrame,
-  at: number,
-  xScale: "band" | "point"
-): readonly [number, number] {
-  const { grid, count } = frame;
+export function slotBandAt(frame: PlotFrame, at: number): readonly [number, number] {
+  const { grid, count, scale } = frame;
   const length = alongLength(frame);
+  const share = length === 0 ? 0 : at / length;
   // A plot of no length spreads its bands over nothing, so every coordinate takes the first band.
-  const nearest =
-    xScale === "band"
-      ? grid.step > 0
-        ? Math.floor((at - grid.start) / grid.step)
-        : 0
-      : Math.round((length === 0 ? 0 : at / length) * Math.max(0, count - 1));
-  return optionBand(frame, Math.min(Math.max(nearest, 0), count - 1), xScale);
+  let nearest: number;
+  if (scale === "band") nearest = grid.step > 0 ? Math.floor((at - grid.start) / grid.step) : 0;
+  else if (scale === "point") nearest = Math.round(share * Math.max(0, count - 1));
+  else nearest = nearestLinear(scale, share);
+  return optionBand(frame, Math.min(Math.max(nearest, 0), count - 1));
 }
 
 /** Where a line `width` wide starts, at its snapped center moved inside the band's device pixels. */
@@ -608,7 +600,8 @@ function lineStart(frame: PlotFrame, center: number, band: readonly [number, num
  * least one, and its remainder splits between both ends. A band too narrow for a device pixel per
  * bar, as a window denser than the device pixels draws, keeps the ideal shares and the pixel floor
  * instead, and gaps that would use up the band take half of it, so every bar still draws a device
- * pixel among its band's.
+ * pixel among its band's. Under a linear x scale every bar centers on its slot's value, and every
+ * bar of the layout takes one width, `linearBarSpan`'s.
  *
  * @param frame - The layout's frame.
  * @param position - The slot's place in the window, from 0.
@@ -626,7 +619,8 @@ export function barSpan(
   span = 1
 ): readonly [number, number] {
   const { dpr } = frame.box;
-  const { grid } = frame;
+  const { grid, scale } = frame;
+  if (isLinearScale(scale)) return linearBarSpan(frame, scale, position, metrics, sub);
   // The run's own edges in device pixels, which the next run shares even where slots are narrower
   // than a device pixel and their floored bands overlap.
   const edge = (at: number) =>
@@ -648,17 +642,80 @@ export function barSpan(
   }
   const band = grid.step * span;
   const inside = band * (1 - metrics.bandGap);
-  const gaps = sub.count - 1;
-  // Gaps that would leave the bars less than a device pixel each take half the band.
-  const subGap =
-    gaps && (inside - gaps * metrics.barGap >= sub.count / dpr ? metrics.barGap : inside / (2 * gaps));
-  const size = (inside - gaps * subGap) / sub.count;
-  const start = slotAxisAt(frame, position / frame.count) + (band - inside) / 2 + sub.index * (size + subGap);
+  const [start, end] = subBandSpan(
+    slotAxisAt(frame, position / frame.count) + (band - inside) / 2,
+    inside,
+    metrics.barGap,
+    sub,
+    dpr
+  );
   // A bar keeps its pixels among its bands', so the crosshair band and the focused option cover it.
-  return snapBarSpan(frame, start, start + size, [
+  return snapBarSpan(frame, start, end, [
     slotBand(frame, position)[0],
     slotBand(frame, position + span - 1)[1],
   ]);
+}
+
+/**
+ * The band a linear slot's bars fill, centered on the slot's value. It is as wide as the bar pitch
+ * less its band gap, and the pitch is the smallest distance between two neighboring slots. So the
+ * closest two bars keep the gap a band bar keeps from its neighbor, and no two bars overlap. Every
+ * bar of the layout takes the same width. The plot clips a band that would reach past its edge, as
+ * a slot on the x domain's bound does. `bandGap` is the share of the pitch left empty between the
+ * closest bars, and the band comes back unsnapped.
+ */
+function linearBarBand(
+  frame: PlotFrame,
+  slots: LinearSlots,
+  position: number,
+  bandGap: number
+): readonly [number, number] {
+  const length = alongLength(frame);
+  const center = (slots.centers[position] ?? 0.5) * length;
+  const half = (slots.pitch * length * (1 - Math.min(1, Math.max(0, bandGap)))) / 2;
+  return [Math.max(0, center - half), Math.min(length, center + half)];
+}
+
+/**
+ * The span a bar draws on a linear slot: its slot's `linearBarBand`, which a BarGroup splits into
+ * sub-bands `barGap` apart, each snapped through `snapBarSpan`, so every bar of one width snaps to
+ * the same whole device pixels.
+ */
+function linearBarSpan(
+  frame: PlotFrame,
+  slots: LinearSlots,
+  position: number,
+  metrics: BarMetrics,
+  sub: SubBand
+): readonly [number, number] {
+  const [from, to] = linearBarBand(frame, slots, position, metrics.bandGap);
+  const [start, end] = subBandSpan(from, to - from, metrics.barGap, sub, frame.box.dpr);
+  return snapBarSpan(frame, start, end);
+}
+
+/**
+ * A BarGroup's sub-band of a bar band, unsnapped: the band split into `sub.count` bars `barGap`
+ * apart. Gaps that would leave the bars less than a device pixel each take half the band.
+ *
+ * @param from - Where the band starts along the slot axis, in CSS pixels.
+ * @param inside - The band's length, in CSS pixels.
+ * @param barGap - The gap between sub-bands, in CSS pixels.
+ * @param sub - The Bar's sub-band.
+ * @param dpr - The device pixel ratio.
+ * @returns The sub-band's start and end in CSS pixels.
+ */
+function subBandSpan(
+  from: number,
+  inside: number,
+  barGap: number,
+  sub: SubBand,
+  dpr: number
+): readonly [number, number] {
+  const gaps = sub.count - 1;
+  const between = gaps && (inside - gaps * barGap >= sub.count / dpr ? barGap : inside / (2 * gaps));
+  const size = (inside - gaps * between) / sub.count;
+  const start = from + sub.index * (size + between);
+  return [start, start + size];
 }
 
 /**

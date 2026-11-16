@@ -43,10 +43,13 @@ export type ChartLineProps = ChartLayerProps & {
   /**
    * The d3 curve through the readings.
    * `monotone` stays monotone along the category axis, so it runs along x, and along y under
-   * `orientation="horizontal"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either
-   * orientation. `step-after` and `step-before` run each reading across
-   * its whole cell, so the last hour of a day keeps its run. They need `xScale="band"` and throw
-   * `step-curve-needs-cells` under `"point"`.
+   * `orientation="horizontal"`. It also stays monotone over unevenly spaced x under
+   * `xScale="linear"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either
+   * orientation. `step-after` and `step-before` run each reading across its whole cell under
+   * `xScale="band"`, so the last hour of a day keeps its run. Under `xScale="linear"`, `step-after`
+   * holds each reading from its x to the next reading's x, and the last reading to the plot's end,
+   * as a tariff ladder holds each price from its threshold. `step-before` holds each reading from
+   * the x before it. They throw `step-curve-needs-cells` under `"point"`.
    */
   curve?: ChartCurve;
 };

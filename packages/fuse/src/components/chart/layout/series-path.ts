@@ -14,6 +14,7 @@ import { DECIMATE_ABOVE, m4Indexes } from "./decimate";
 import type { PathSlots } from "./path-motion";
 import type { ReadingQuality } from "./readings";
 import { slotId, slotIds } from "./slot-keys";
+import { windowSplit } from "./slot-scale";
 import type { XDomain } from "./x-domain";
 
 /** What a vertex's slot holds for the series: a reading, a missing reading or one still to come. */
@@ -92,7 +93,7 @@ export function windowSlots(model: CartesianModel, keys: readonly string[]): Pat
   const ids = slotIds(model.domain);
   // A window over the whole domain lists the domain's own keys and identities.
   const whole = first === 0 && count === ids.length;
-  const slots: PathSlots = {
+  const even: PathSlots = {
     keys:
       whole && keys.length === count
         ? keys
@@ -102,14 +103,16 @@ export function windowSlots(model: CartesianModel, keys: readonly string[]): Pat
           ),
     ids: whole ? ids : ids.slice(first, first + count),
   };
+  // A linear axis's slots lie unevenly, so its paths never slide.
+  const slots: PathSlots = model.domain.kind === "linear" ? { ...even, spacing: "uneven" } : even;
   byKeys.set(keys, { first, count, slots });
   return slots;
 }
 
 /**
  * The resolution a path lays out at: none for a window of `DECIMATE_ABOVE` slots or fewer, which
- * keeps every slot at any width, and otherwise the whole pixel columns M4 splits the window into, as
- * `m4Indexes` rounds them. Two widths in one bucket count share one path.
+ * keeps every slot at any width, and otherwise the whole pixel columns M4 splits the window into, at
+ * least one. Two widths in one bucket count share one path.
  *
  * @param model - Root's model.
  * @param columns - The plot's length along the slot axis in pixel columns, or none before it is measured.
@@ -215,7 +218,8 @@ const QUALITY_LOOK = { measured: 0, estimated: 1, corrected: 2 } as const;
  * its slots with every member, so neighboring areas draw one shared boundary. Each member keeps
  * each pixel column's M4 slots of both ends its vertices draw, which are the stack's cumulative
  * boundaries, and the slots on both sides of every change in what a vertex draws as, so a gap, a
- * dash, a projected tail and a sign change keep their edges.
+ * dash, a projected tail and a sign change keep their edges. The buckets split the series' own
+ * entries as `windowSplit` gives them, by entry index, or by pixel column on a linear axis.
  */
 function drawnSlots(
   model: CartesianModel,
@@ -238,6 +242,15 @@ function drawnSlots(
   const stack = model.stacks.find(({ id: stackId }) => stackId === series.stack);
   const members = stack === undefined ? [series] : model.series.filter(({ key }) => stack.keys.includes(key));
   const kept = new Set([first, last]);
+  // The buckets split this series' own entries, one per coarse slot for a coarse series, and a
+  // linear axis buckets them by pixel column, so readings apart on the plot keep their own buckets.
+  // A series on Root's interval owns every window slot, the split's default.
+  const window = model.window;
+  const places =
+    window === null || series.coarse === undefined
+      ? undefined
+      : all.map((slot) => ownCenter(series, window, slot));
+  const { edges } = windowSplit(model, places, columns);
   for (const member of members) {
     // One pass computes both ends that `endsOf` gives each slot, null where the slot holds no
     // reading, and each vertex's look. A look is one number for the state, the quality, the side,
@@ -278,10 +291,10 @@ function drawnSlots(
       }
       previousLook = look;
     }
-    for (const index of m4Indexes(tops, columns)) kept.add(all[index] ?? first);
+    for (const index of m4Indexes(tops, edges)) kept.add(all[index] ?? first);
     // Bases of one value keep each bucket's first and last reading under M4, which the tops,
     // read at the same slots, keep already.
-    if (bases !== undefined) for (const index of m4Indexes(bases, columns)) kept.add(all[index] ?? first);
+    if (bases !== undefined) for (const index of m4Indexes(bases, edges)) kept.add(all[index] ?? first);
   }
   const sorted = [...kept].toSorted((a, b) => a - b);
   planned.set(owner, { resolution: columns, value: sorted });

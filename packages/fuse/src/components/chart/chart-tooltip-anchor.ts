@@ -57,7 +57,7 @@ function restAt(
 export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const { active: slot, positioner, placement, measures } = input;
   const context = useChartRoot("Chart.Tooltip");
-  const { store, model, id, xScale, orientation, root: rootOf, motion, riders } = context;
+  const { store, model, id, orientation, root: rootOf, motion, riders } = context;
   const window = model.window;
   const drawn = useRootFrame("Chart.Tooltip");
   const pick = useCartesianPick(context, "Chart.Tooltip");
@@ -83,14 +83,14 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const client = (x: number, y: number, width: number, height: number) =>
         new DOMRect(surface.left + x * scaleX, surface.top + y * scaleY, width * scaleX, height * scaleY);
       // The anchor's span along the slot axis, resolved before the orientation: the point itself
-      // under a point scale, the drawn bar row on a horizontal band chart, so the popup's edge
+      // under a point or a linear scale, the drawn bar row on a horizontal band chart, so the popup's edge
       // meets the bars, and the focused option's and the crosshair's columns on a vertical one.
       const along = (): readonly [number, number] => {
-        if (xScale === "point") {
-          const center = centerOf(frame, position, "point");
+        if (frame.scale !== "band") {
+          const center = centerOf(frame, position);
           return [center, center];
         }
-        if (orientation === "vertical") return optionBand(frame, position, "band");
+        if (orientation === "vertical") return optionBand(frame, position);
         return barSpan(frame, position, metrics, WHOLE_BAND);
       };
       const [start, end] = along();
@@ -171,7 +171,7 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
       placed: () => latest ?? measure(),
     };
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- a new `measures` count asks Base UI to place the popup again over marks that drew something new
-  }, [slot, window, xScale, model, roofed, id, orientation, drawn, rootOf, motion, roofs, measures]);
+  }, [slot, window, model, roofed, id, orientation, drawn, rootOf, motion, roofs, measures]);
   // A data update or a resize of the plot moves the popup at once.
   const revision = useMemo(() => ({ model, drawn }), [model, drawn]);
   const forget = useCallback(

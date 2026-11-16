@@ -7,8 +7,9 @@
  * grows out of the zero line. An entry holds its column's middle and tip first, where the marks
  * attached to the series sit, then its span, its base, its missing tick's span and its emphasis
  * box's span. Its paint step, quality, projection and emphasis are topology, which the topology holds.
- * Above `DECIMATE_ABOVE` slots each M4 bucket is one entry, and each missing or emphasized slot one
- * more, which draws its tick or its box and no column, so decimation never drops an annotation.
+ * Above `DECIMATE_ABOVE` slots each M4 bucket is one entry, in the pixel columns its slots draw in,
+ * and each missing or emphasized slot one more, which draws its tick or its box and no column, so
+ * decimation never drops an annotation.
  */
 import { missingTickAt } from "./chart-bar-draw";
 import type { ChartRootContextValue } from "./chart-context";
@@ -41,6 +42,7 @@ import {
 import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./layout/plot-frame";
 import { windowSlots } from "./layout/series-path";
 import { slotId } from "./layout/slot-keys";
+import { isLinearScale } from "./layout/slot-scale";
 
 /** The numbers of one column entry. */
 export const COLUMN_STRIDE = 9;
@@ -176,7 +178,6 @@ export function layoutColumns(
     };
   }
   const count = window.last - window.first + 1;
-  const step = frame.box.width / Math.max(count, 1);
   const zero = valueAt(frame, 0);
   // A scale or a threshold fills from one path per step, so an entry keeps its path index across
   // updates, and a role or a role list from one. Each step has its own estimated and projected
@@ -198,14 +199,17 @@ export function layoutColumns(
   };
   const keyOf = (slot: number) => update.keys[slot] ?? slotId(model.domain, slot);
   const placeAt = floorPlaces(model, series);
+  const linear = isLinearScale(frame.scale);
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
     const { position, span } = ownSpan(series, window, slot);
     // The column, its emphasis box and the active overlay over it draw the element form's bar span.
     const [x0, x1] = barSpan(frame, position, metrics, sub, span);
     // The missing tick spans the middle half of the slot's run along the grid, unsnapped, so slots
-    // narrower than a device pixel keep it inside their own.
-    const tickAt = (share: number) => slotAxisAt(frame, (position + share * span) / frame.count);
+    // narrower than a device pixel keep it inside their own. A linear slot has no run of its own, so
+    // its tick spans the middle half of its bar.
+    const tickAt = (share: number) =>
+      linear ? x0 + (x1 - x0) * share : slotAxisAt(frame, (position + share * span) / frame.count);
     const reading = series.readings[slot];
     const extent = series.extents[slot];
     const negative = extent !== null && extent !== undefined && extent[0] < 0 && extent[1] <= 0;
@@ -240,8 +244,8 @@ export function layoutColumns(
     // bucket's first slot, so a column keeps its data through a slide.
     const buckets = bucketColumns(model, series, frame.value.domain, sub).map((column): Entry => {
       const toY = (percent: number) => (percent / 100) * frame.box.height;
-      const x0 = column.x0 * step;
-      const x1 = column.x1 * step;
+      const x0 = column.x0 * frame.box.width;
+      const x1 = column.x1 * frame.box.width;
       const own = series.extents[column.slot];
       // The side of zero the column's own reading lies on, in value space.
       const side = own && isNegative(own) ? "negative" : "positive";
@@ -251,7 +255,7 @@ export function layoutColumns(
       // its own new place, and `baseAt` names its base.
       return {
         key: `bucket ${keyOf(column.first)} ${column.side}`,
-        at: (column.x0 + column.x1) / 2 - 0.5,
+        at: column.at,
         numbers: [(x0 + x1) / 2, top, x0, x1, bottom, x0, x0, x0, x0],
         entry: {
           ...columnOf(column.slot),
@@ -317,7 +321,7 @@ export function columnsDrawing(
   const emphasis: PlotRect[] = [];
   let missing = "";
   /** The band of the slot a coordinate along the slot axis lies in. */
-  const bandAt = (along: number) => slotBandAt(frame, along, "band");
+  const bandAt = (along: number) => slotBandAt(frame, along);
   topology.entries.forEach((entry, index) => {
     const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
     const place = placeOf(entry, index);
@@ -366,7 +370,7 @@ export function columnBody(
 ): PlotRect {
   const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
   const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
-  const span = columnSpan(frame, at(2), at(3), slotBandAt(frame, at(0), "band"));
+  const span = columnSpan(frame, at(2), at(3), slotBandAt(frame, at(0)));
   return frameRect(frame, span, columnEnds(values, index, entry));
 }
 
@@ -381,7 +385,7 @@ export function columnBody(
  */
 export function emphasisSpan(frame: PlotFrame, values: MarkValues, index: number): readonly [number, number] {
   const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
-  return snapBarSpan(frame, at(7), at(8), slotBandAt(frame, at(0), "band"));
+  return snapBarSpan(frame, at(7), at(8), slotBandAt(frame, at(0)));
 }
 
 /**

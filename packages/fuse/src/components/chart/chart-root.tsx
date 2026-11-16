@@ -41,10 +41,9 @@ import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
 import { chartDescription } from "./chart-text";
-import type { TextContext } from "./chart-text";
+import type { LinearXText, TextContext } from "./chart-text";
 import type {
   ChartAccessibleName,
-  ChartChangeEventDetails,
   ChartConfig,
   ChartFigureProps,
   ChartIntro,
@@ -54,12 +53,11 @@ import type {
   ChartSelectionChangeReason,
   ChartSelectionProps,
   ChartSeriesConfigCheck,
-  ChartTimeAxisProps,
+  ChartXAxisKind,
   ChartXKey,
-  ChartXOut,
-  ChartXRange,
-  ChartXRangeChangeReason,
-  ChartXValue,
+  ChartXScaleProps,
+  ValueFormat,
+  XFormat,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { seriesLabel } from "./format/series-label";
@@ -78,25 +76,34 @@ import {
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { sameItems } from "./layout/same-items";
 import { numberOf, stringOf } from "./layout/scalar";
+import { linearSlots, sameSlotScale, windowLinearSlots } from "./layout/slot-scale";
+import type { SlotScale } from "./layout/slot-scale";
 import { keepSlot } from "./layout/slot-window";
+import { EMPTY_DOMAIN } from "./layout/value-domain";
 import { createRowPlacer, instantOf, slotOf, slotX } from "./layout/x-domain";
 
 /**
- * Props for `Chart.Root`, the root of every cartesian chart.
+ * Props for `Chart.Root`, the root of every cartesian chart. `Chart.Root` takes every kind of x
+ * axis. The props type admits a slot axis, a time or category one, by default, which is one object
+ * type, so a wrapper can `Omit` or `Pick` its props and forward the rest to `Chart.Root`. A wrapper
+ * around a linear axis passes "linear" as `TAxis`, or "slot" | "linear" for both kinds, which is a
+ * union that keeps each kind's x props together, so it narrows on `xScale` before it omits any.
  *
  * @template TRow - The row type, inferred from `data`.
  * @template TConfig - The config, inferred with its literal keys.
  * @template TXKey - The x column, inferred from `xKey`.
+ * @template TAxis - The kinds of x axis the props admit, "slot" by default.
  * @beta
  */
 export type ChartRootProps<
   TRow extends ChartRowOf<TRow> = ChartRow,
   TConfig extends ChartConfig = ChartConfig,
   TXKey extends ChartXKey<TRow> = ChartXKey<TRow>,
+  TAxis extends ChartXAxisKind = "slot",
 > = ChartAccessibleName &
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> &
-  ChartTimeAxisProps<TRow[TXKey]> & {
+  ChartXScaleProps<TRow[TXKey], TAxis> & {
     /**
      * The rows, one per slot or category. Every cell is serializable, so a server component passes
      * it. The plot keeps its height and draws no mark until the browser measures it, and a loading
@@ -131,22 +138,9 @@ export type ChartRootProps<
     /**
      * The x column. It names a column with no null values. A `Date` or epoch-milliseconds column
      * makes a time axis, which needs `interval`, and a string column makes a category axis in data
-     * order.
+     * order. A number column under `xScale="linear"` makes a linear axis instead.
      */
     xKey: TXKey;
-    /**
-     * The x scale. "band" gives each slot a band of its own, which bars fill. "point" places each
-     * slot at a point, which line and area charts usually pass.
-     */
-    xScale?: "band" | "point";
-    /**
-     * "horizontal" draws the x column down the left edge and values left to right, for horizontal
-     * bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and
-     * `YAxis` always the value axis. Each category row is `--chart-row-height` tall. On a horizontal
-     * chart, ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the
-     * series focus.
-     */
-    orientation?: "vertical" | "horizontal";
     /**
      * How the series of a stack id add up. "diverging" stacks negative values below zero. "expand"
      * scales each column to a total of 1, so each part reads as its share.
@@ -164,35 +158,6 @@ export type ChartRootProps<
      * through this list. Each Panel takes its own.
      */
     yInclude?: readonly number[];
-    /**
-     * The first and last slot of the brushed window, both inclusive. Prefer the uncontrolled
-     * `defaultXRange` with `onXRangeCommitted`, because a controlled range renders every series on
-     * each brush step.
-     */
-    xRange?: ChartXRange<TRow[TXKey]>;
-    /** The brushed window on first render. */
-    defaultXRange?: ChartXRange<TRow[TXKey]>;
-    /** Called on every brush step with the first and last slot. A data update never calls it. */
-    onXRangeChange?: (
-      range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>],
-      details: ChartChangeEventDetails<ChartXRangeChangeReason>
-    ) => void;
-    /** Called once when a brush drag, track press or key press ends. Fetch new data here. */
-    onXRangeCommitted?: (
-      range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>],
-      details: ChartChangeEventDetails<ChartXRangeChangeReason>
-    ) => void;
-    /**
-     * The slot that is active before any pointer or key moves. An x survives a reload where an
-     * index would not.
-     *
-     * The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth
-     * of the window's slots and at least one, and Home and End go to the window's first and last
-     * slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series
-     * while a `LegendToggleGroup` is mounted, and pin the tooltip otherwise. Escape hides the
-     * tooltip and keeps focus, and a second Escape passes on.
-     */
-    defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
      * The entrance wipe origin, physical under `dir="rtl"` too. "none" turns the entrance off. The
      * entrance plays once, the first time a third of the plot's height is in view, or half the
@@ -222,6 +187,40 @@ export type ChartRootProps<
      */
     children?: ReactNode;
   };
+
+/**
+ * Throws for props a linear axis cannot take. The props type forbids them, and the check also
+ * reaches an untyped caller.
+ *
+ * @throws {ChartCompositionError} `x-type-mismatch` for a time-axis prop, and
+ *   `horizontal-linear-axis` under `orientation="horizontal"`.
+ */
+function assertLinearAxis(props: {
+  readonly interval: unknown;
+  readonly period: unknown;
+  readonly now: unknown;
+  readonly timeZone: unknown;
+  readonly orientation: "vertical" | "horizontal";
+}): void {
+  const timeProp = (["interval", "period", "now", "timeZone"] as const).find(
+    (name) => props[name] !== undefined
+  );
+  if (timeProp !== undefined) {
+    throw new ChartCompositionError(
+      "Chart.Root",
+      "x-type-mismatch",
+      `received ${timeProp} under xScale="linear", which places numbers and has no time axis. Leave ${timeProp} out, or pass xScale="band" or "point" for a time axis.`
+    );
+  }
+  if (props.orientation === "horizontal") {
+    // A horizontal linear axis is open work, tracked in #704.
+    throw new ChartCompositionError(
+      "Chart.Root",
+      "horizontal-linear-axis",
+      'draws xScale="linear" under orientation="horizontal", which gives each row a row of its own and has no numeric axis down the side. Pass orientation="vertical", or xScale="band" for horizontal bars.'
+    );
+  }
+}
 
 /** Orders two Panels as their plots sit on the page. */
 function inPageOrder(a: PanelEntry, b: PanelEntry): number {
@@ -376,14 +375,19 @@ export function ChartRoot<
   now,
   timeZone: ownZone,
   xFormat,
+  xLabel,
+  xInclude,
   description,
   children,
   style,
   ref,
   ...figure
-}: ChartRootProps<TRow, TConfig, TXKey>): ReactElement {
+}: ChartRootProps<TRow, TConfig, TXKey, ChartXAxisKind>): ReactElement {
   const { locale, timeZone: providerZone } = useLocale();
-  const timeZone = ownZone ?? providerZone;
+  const linear = xScale === "linear";
+  if (linear) assertLinearAxis({ interval, period, now, timeZone: ownZone, orientation });
+  // A linear axis reads no zone, so the provider's never makes it a time axis.
+  const timeZone = linear ? undefined : (ownZone ?? providerZone);
   if (interval !== undefined && timeZone === undefined) {
     throw new ChartCompositionError(
       "Chart.Root",
@@ -401,22 +405,23 @@ export function ChartRoot<
         "Chart.Root",
         "interval-not-nested",
         interval === undefined
-          ? `has config ${JSON.stringify(key)} interval ${JSON.stringify(entry.interval)} on a category axis. A series interval needs Root's time axis, so pass interval on Chart.Root.`
+          ? `has config ${JSON.stringify(key)} interval ${JSON.stringify(entry.interval)} on a ${linear ? "linear" : "category"} axis. A series interval needs Root's time axis, so pass interval on Chart.Root.`
           : `has config ${JSON.stringify(key)} interval ${JSON.stringify(entry.interval)}, which does not nest Root's ${JSON.stringify(interval)}. Root's interval is the finest in the chart, so give Root the finest one, and give a series an interval that holds whole Root slots.`
       );
     }
-    if (
-      entry.projectedFrom === undefined ||
-      (interval !== undefined) !== (stringOf(entry.projectedFrom) !== undefined)
-    ) {
-      continue;
-    }
+    if (entry.projectedFrom === undefined) continue;
+    const named = linear
+      ? numberOf(entry.projectedFrom) !== undefined
+      : (interval !== undefined) !== (stringOf(entry.projectedFrom) !== undefined);
+    if (named) continue;
     throw new ChartCompositionError(
       "Chart.Root",
       "x-type-mismatch",
-      interval === undefined
-        ? `received a Date or number as config ${JSON.stringify(key)} projectedFrom on a category axis. Pass the category string.`
-        : `received a string as config ${JSON.stringify(key)} projectedFrom on a time axis. Pass a Date or epoch milliseconds, because a date-only string parses as UTC midnight and lands on the wrong day.`
+      linear
+        ? `received a ${stringOf(entry.projectedFrom) === undefined ? "Date" : "string"} as config ${JSON.stringify(key)} projectedFrom on a linear axis. Pass the x number.`
+        : interval === undefined
+          ? `received a Date or number as config ${JSON.stringify(key)} projectedFrom on a category axis. Pass the category string.`
+          : `received a string as config ${JSON.stringify(key)} projectedFrom on a time axis. Pass a Date or epoch milliseconds, because a date-only string parses as UTC midnight and lands on the wrong day.`
     );
   }
   const nowInstant = now === undefined ? undefined : instantOf(now);
@@ -427,6 +432,7 @@ export function ChartRoot<
   // restarts every tween, and never hands the parts a new context.
   const windowRange = useSteady(range, sameRange);
   const include = useSteady(yInclude, sameItems);
+  const includeX = useSteady(xInclude, sameItems);
   const modelPeriod = useSteady(period, sameRange);
   const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   // The placer keeps the last placement while every x reads the same, so a value update keeps the
@@ -450,18 +456,22 @@ export function ChartRoot<
               ] as const
           ),
           xKey,
-          time:
-            interval === undefined || timeZone === undefined
-              ? undefined
-              : {
-                  interval,
-                  timeZone,
-                  period:
-                    modelPeriod === undefined
-                      ? undefined
-                      : [instantOf(modelPeriod[0]), instantOf(modelPeriod[1])],
-                  now: nowInstant,
-                },
+          ...(linear
+            ? { linear: { include: includeX ?? [] } }
+            : {
+                time:
+                  interval === undefined || timeZone === undefined
+                    ? undefined
+                    : {
+                        interval,
+                        timeZone,
+                        period:
+                          modelPeriod === undefined
+                            ? undefined
+                            : [instantOf(modelPeriod[0]), instantOf(modelPeriod[1])],
+                        now: nowInstant,
+                      },
+              }),
           stackOffset,
           baseline: yBaseline,
           include: include ?? [],
@@ -474,6 +484,8 @@ export function ChartRoot<
       data,
       modelConfig,
       xKey,
+      linear,
+      includeX,
       interval,
       timeZone,
       modelPeriod,
@@ -650,11 +662,33 @@ export function ChartRoot<
   // A key that names no config key acts as null, and Root calls no callback for it.
   const selected = requested !== null && Object.hasOwn(modelConfig, requested) ? requested : null;
   const strings = CHART_STRINGS[locale];
-  // An inline xFormat object that names the same options is no change either.
-  const steadyFormat = useSteady(xFormat, sameShallow);
+  // An inline xFormat object that names the same options is no change either. A linear axis reads
+  // it as its numbers' format, and a time axis as its slots'.
+  const steadyFormat = useSteady<XFormat | ValueFormat | undefined>(xFormat, sameShallow);
+  // A linear axis's x words keep their identity across data updates, so its ticks and slot labels do.
+  const xValue = useMemo(
+    (): LinearXText | undefined =>
+      // SAFETY: under xScale="linear" the props type xFormat as a ValueFormat.
+      linear ? { format: (steadyFormat ?? {}) as ValueFormat, label: xLabel } : undefined,
+    [linear, steadyFormat, xLabel]
+  );
   const text = useMemo(
-    (): TextContext => ({ config: modelConfig, locale, model, xFormat: steadyFormat, now: nowInstant }),
-    [modelConfig, locale, model, steadyFormat, nowInstant]
+    (): TextContext => ({
+      config: modelConfig,
+      locale,
+      model,
+      // SAFETY: under a band or point scale the props type xFormat as an XFormat.
+      xFormat: linear ? undefined : (steadyFormat as XFormat | undefined),
+      xValue,
+      now: nowInstant,
+    }),
+    [linear, modelConfig, locale, model, steadyFormat, xValue, nowInstant]
+  );
+  // Where the window's slots sit along the slot axis. A linear axis's slots keep their identity
+  // while they place alike, so a data update that keeps every x keeps every frame.
+  const slotScale = useSteady<SlotScale>(
+    xScale === "linear" ? (windowLinearSlots(model) ?? linearSlots([], EMPTY_DOMAIN)) : xScale,
+    sameSlotScale
   );
   // What a selection reads when it happens, so `select` keeps one identity for the Root's life and
   // an inline `onSelectedKeyChange` never hands the parts a new context.
@@ -796,7 +830,7 @@ export function ChartRoot<
   const context = useMemo(
     (): ChartRootContextValue => ({
       ...text,
-      xScale,
+      xScale: slotScale,
       orientation,
       stackOffset,
       baseline: yBaseline,
@@ -851,7 +885,7 @@ export function ChartRoot<
       drawsBar,
       registerEmphasis,
       text,
-      xScale,
+      slotScale,
       orientation,
       stackOffset,
       yBaseline,

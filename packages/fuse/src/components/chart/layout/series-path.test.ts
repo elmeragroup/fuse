@@ -447,3 +447,70 @@ describe("seriesPathOf", () => {
     expect(back.vertices).toEqual(first.vertices);
   });
 });
+
+// Unit under test: a decimated window's M4 buckets under a linear x axis. Oracle: each row's pixel
+// column, worked by hand from its x over the x domain, as the axis and the pointer place it.
+describe("seriesPath on a linear x axis", () => {
+  it("buckets a decimated window by pixel column, so readings apart on the plot all draw", () => {
+    // 9,900 rows of 0 crowd x = 0 to 0.99, then 100 readings sit at x = 10, 20, ..., 1,000. The x
+    // domain runs from 0 to 1,000 over 500 columns, 2 units each, so the crowd fills column 0 and
+    // each reading has a column of its own, 5 apart: 5, 10, ..., 495 and the last clamped to 499.
+    const crowd = Array.from({ length: 9900 }, (_, index) => ({ x: index / 10_000, a: 0, b: 1 }));
+    const spread = Array.from({ length: 100 }, (_, index) => ({
+      x: (index + 1) * 10,
+      a: (index * 7) % 10,
+      b: 1,
+    }));
+    const chart = buildCartesianModel({
+      rows: [...crowd, ...spread],
+      series: [
+        ["a", { stack: "s" }],
+        ["b", { stack: "s" }],
+      ],
+      xKey: "x",
+      linear: { include: [] },
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    expect(chart.x?.domain).toEqual([0, 1000]);
+    // Column 0 keeps its first and last row, every value there being alike, and each reading's
+    // column keeps its one reading. Both members of the stack keep the same slots.
+    const expected = [0, 9899, ...Array.from({ length: 100 }, (_, index) => 9900 + index)];
+    for (const series of chart.series) {
+      expect(seriesPath(chart, series, [], 500).vertices.map(({ slot }) => slot)).toEqual(expected);
+    }
+  });
+});
+
+// Unit under test: a coarse series' M4 buckets on a time axis. Oracle: M4 over the series' own
+// entries, one per coarse slot, split by entry index into 500 buckets, worked by hand.
+describe("seriesPath on a coarse series", () => {
+  it("buckets a decimated coarse series by its own slots, so each column keeps its own peak", () => {
+    // 2,100 hourly readings on a quarter-hour grid: 8,400 Root slots, one coarse slot per 4. Every
+    // reading is 0 but a peak of 5 at hour 2 and of 9 at hour 10. Bucket b of 500 holds the hours
+    // from ceil(4.2b), 4 or 5 of them, so bucket 0 holds hours 0 to 4 and bucket 2 hours 9 to 12:
+    // each bucket keeps its first and last hour, and its own peak besides, 500 × 2 + 2 vertices.
+    const start = Date.UTC(2025, 9, 1);
+    const rows = Array.from({ length: 8400 }, (_, index) => ({
+      x: new Date(start + index * 900_000),
+      v: index % 4 === 0 ? ({ 2: 5, 10: 9 }[index / 4] ?? 0) : null,
+    }));
+    const chart = buildCartesianModel({
+      rows,
+      series: [["v", { interval: "hour" }]],
+      xKey: "x",
+      time: { interval: "quarter-hour", timeZone: "UTC" },
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const [series] = chart.series;
+    if (series === undefined) throw new Error("The model has no series.");
+    const slots = seriesPath(chart, series, [], 500).vertices.map(({ slot }) => slot);
+    expect(slots).toHaveLength(1002);
+    // Hour h starts at Root slot 4h: hour 2's peak and hour 10's both draw.
+    expect(slots.slice(0, 6)).toEqual([0, 8, 16, 20, 32, 36]);
+    expect(slots).toContain(40);
+  });
+});

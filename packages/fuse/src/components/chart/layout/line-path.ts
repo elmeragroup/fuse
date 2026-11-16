@@ -56,9 +56,16 @@ export type PathPlacement = {
   readonly along: (at: number) => number;
   /**
    * The span a step run takes around its own slot's center, from cell edge to cell edge over the
-   * slot's Root cells, snapped.
+   * slot's Root cells, snapped. A placement over unevenly spaced slots, which have no cells of one
+   * width, runs from the vertex to a neighbor instead, so it reads where the vertex before and the
+   * vertex after lie along the slot axis, unsnapped, each undefined at its end of the path.
    */
-  readonly run: (center: number, cells: number) => readonly [number, number];
+  readonly run: (
+    center: number,
+    cells: number,
+    before: number | undefined,
+    after: number | undefined
+  ) => readonly [number, number];
   /**
    * Places a plain step curve's riser, from the unsnapped place halfway between two vertices,
    * snapped as a cell edge is, so a stroked riser covers whole device pixels.
@@ -239,7 +246,14 @@ function readerOf(
   topology: PathTopology
 ): Reader {
   const raw = (index: number) => values[index * stride] ?? 0;
-  const run = (index: number) => place.run(raw(index), topology.cells[index] ?? 1);
+  const count = Math.floor(values.length / stride);
+  const run = (index: number) =>
+    place.run(
+      raw(index),
+      topology.cells[index] ?? 1,
+      index > 0 ? raw(index - 1) : undefined,
+      index + 1 < count ? raw(index + 1) : undefined
+    );
   return {
     along: (index) => place.along(raw(index)),
     top: (index) => place.across(values[index * stride + 1] ?? 0),

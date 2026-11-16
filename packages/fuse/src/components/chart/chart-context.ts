@@ -23,6 +23,7 @@ import type { LayoutInput } from "./layout/cartesian-model";
 import { assertKnownKey, ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import type { PathMotion } from "./layout/path-motion";
+import type { SlotScale } from "./layout/slot-scale";
 
 export { assertKnownKey } from "./layout/errors";
 import type { ValueDomain } from "./layout/value-domain";
@@ -99,7 +100,11 @@ export function reportLayoutDomain(
 
 /** What every cartesian part reads from Root. */
 export type ChartRootContextValue = TextContext & {
-  readonly xScale: "band" | "point";
+  /**
+   * Root's `xScale`, where the window's slots sit along the slot axis. A linear axis carries each
+   * window slot's share of the x domain.
+   */
+  readonly xScale: SlotScale;
   readonly orientation: "vertical" | "horizontal";
   readonly stackOffset: "diverging" | "expand";
   readonly baseline: "zero" | "none";

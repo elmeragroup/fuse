@@ -13,6 +13,7 @@ import { invertValue, linearScale } from "./layout/linear-scale";
 import { nearestSeries } from "./layout/nearest-series";
 import { slotRun } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
+import { nearestLinear } from "./layout/slot-scale";
 
 /** The layout under the pointer: its config keys, its value domain and its plot's client span. */
 type PickedLayout = {
@@ -82,12 +83,16 @@ export function pointerSlot(
     orientation === "vertical"
       ? (clientX - box.left) / Math.max(1, box.width)
       : (clientY - box.top) / Math.max(1, box.height);
-  // Band slots lie in the run the frame's slot bands take, which leaves its leftover at both ends.
-  const scale =
-    context.xScale === "point"
-      ? pointScale({ count, range: [0, 1] })
-      : bandScale({ count, range: frame === null ? [0, 1] : slotRun(frame) });
-  const slot = window.first + nearestIndex(scale, Math.min(Math.max(along, 0), 1));
+  const share = Math.min(Math.max(along, 0), 1);
+  const { xScale } = context;
+  // Band slots lie in the run the frame's slot bands take, which leaves its leftover at both ends,
+  // and a linear slot owns the cell from halfway to each neighbor, so its nearest slot wins.
+  let position: number;
+  if (xScale === "point") position = nearestIndex(pointScale({ count, range: [0, 1] }), share);
+  else if (xScale === "band")
+    position = nearestIndex(bandScale({ count, range: frame === null ? [0, 1] : slotRun(frame) }), share);
+  else position = nearestLinear(xScale, share);
+  const slot = window.first + position;
   const layout = layoutUnder(context, box, clientY);
   const across =
     orientation === "vertical"

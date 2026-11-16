@@ -100,7 +100,7 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
   // A change of the axis's tick nodes renders the label again, so it measures the new ones.
   useAxisTicks(context.axis);
   const steadyFormat = useSteady(format, sameShallow) ?? axisFormat;
-  const { locale, xScale, orientation } = context;
+  const { locale, orientation, xValue } = context;
   const { domain, window } = context.model;
   const first = window?.first;
   const last = window?.last;
@@ -113,16 +113,16 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
       !shows || compact || first === undefined || last === undefined
         ? []
         : Array.from({ length: last - first + 1 }, (_, index) =>
-            slotTickLabel({ domain, locale }, first + index, steadyFormat)
+            slotTickLabel({ domain, locale, xValue }, first + index, steadyFormat)
           ),
-    [shows, compact, domain, first, last, locale, steadyFormat]
+    [shows, compact, domain, first, last, locale, xValue, steadyFormat]
   );
   const rolling = useMemo(() => (compact ? null : rollingOf(labels)), [compact, labels]);
   // A compact label formats the active slot alone, and again only when the slot or what it
   // formats with changes.
   const labelInputs = useMemo(
-    () => ({ domain, locale, format: steadyFormat }),
-    [domain, locale, steadyFormat]
+    () => ({ domain, locale, xValue, format: steadyFormat }),
+    [domain, locale, xValue, steadyFormat]
   );
   const lastLabel = useRef<{ readonly inputs: object; readonly slot: number; readonly text: string } | null>(
     null
@@ -147,7 +147,7 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
     // The pill keeps inside the plot's length, as the tick labels keep inside the axis.
     const half = width / 2 + known.padding;
     const length = alongLength(frame);
-    const center = Math.min(Math.max(centerOf(frame, position, xScale), half), Math.max(half, length - half));
+    const center = Math.min(Math.max(centerOf(frame, position), half), Math.max(half, length - half));
     const rider = node.firstElementChild;
     if (rider instanceof HTMLElement) writeStyle(rider, "translate", `${String(center)}px 0`);
     for (const { node: tick, box } of known.ticks) {

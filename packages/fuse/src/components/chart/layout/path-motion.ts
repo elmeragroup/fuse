@@ -14,6 +14,9 @@
  *    from the old vertex at its position, and the shorter window pads with its end vertex, so extra
  *    vertices grow out of the end or shrink into it.
  * 4. Any other change of slots crossfades the old path into the new one.
+ *
+ * A slide moves every vertex by whole even steps, so a window of unevenly spaced slots, as a linear
+ * x axis lists, crossfades where an even one would slide.
  */
 import { sameItems } from "./same-items";
 
@@ -23,6 +26,8 @@ export type PathSlots = {
   readonly keys: readonly string[];
   /** Each slot's identity: its start instant on a time axis or its name on a category axis. */
   readonly ids: readonly string[];
+  /** "uneven" for a linear axis's slots, which never slide. Even steps when left out. */
+  readonly spacing?: "uneven";
 };
 
 /**
@@ -71,7 +76,8 @@ export function pathMotion(previous: PathSlots, next: PathSlots): PathMotion {
   const { keys } = next;
   if (sameItems(previous.keys, keys)) return { mode: "tween", by: 0 };
   const by = shiftOf(previous.keys, keys);
-  const moved: PathMotion = by === null ? { mode: "crossfade" } : { mode: "slide", by };
+  const moved: PathMotion =
+    by === null || next.spacing === "uneven" ? { mode: "crossfade" } : { mode: "slide", by };
   // Windows keyed by their own identities share a slot exactly when they share a key, and with no
   // key shared their keys pair by no position, so an append hashes no identity.
   if (previous.keys === previous.ids && keys === next.ids) return moved;

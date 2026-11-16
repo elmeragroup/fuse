@@ -9,7 +9,7 @@
 import type { ChartRow } from "../chart-types";
 import type { PointShares } from "./point-index";
 import { numberOf, stringOf } from "./scalar";
-import { isBoundedValue, valueDomain } from "./value-domain";
+import { isBoundedValue, valueDomain, X_TICK_COUNT } from "./value-domain";
 import type { ValueDomain } from "./value-domain";
 
 /** What Root reads the model from. */
@@ -103,9 +103,6 @@ export type WalkPosition = { readonly position: number; readonly size: number };
 /** A key step through a walk. */
 export type ScatterStep = "next" | "previous" | "first" | "last";
 
-/** The x axis aims for d3's default of 10 ticks, since it runs along the plot's long side. */
-const X_TICKS = 10;
-
 /** The y axis aims for the value axis's 5 ticks. */
 const Y_TICKS = 5;
 
@@ -191,7 +188,7 @@ export function buildScatterModel(input: ScatterModelInput): ScatterModel {
       values: count === 0 ? [] : [lowX, highX],
       baseline: "none",
       include: input.xInclude,
-      count: X_TICKS,
+      count: X_TICK_COUNT,
     }),
     y: valueDomain({
       values: count === 0 ? [] : [lowY, highY],
