@@ -117,7 +117,7 @@ describe("theme catalog payload", () => {
 
 describe("workspace package boundary", () => {
   it("does not list transpilePackages in the docs host", () => {
-    // oxlint-disable-next-line fuse/no-source-reading-tests -- consumer-compatibility contract: the docs host runs Fuse's built output as a consumer does; transpilePackages would compile the source instead
+    // oxlint-disable-next-line tests/no-source-reading-tests -- consumer-compatibility contract: the docs host runs Fuse's built output as a consumer does; transpilePackages would compile the source instead
     expect(readFileSync(join(appsRoot, "docs/next.config.ts"), "utf8")).not.toContain("transpilePackages");
   });
 });

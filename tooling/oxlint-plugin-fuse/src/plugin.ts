@@ -8,22 +8,16 @@ import { jsdocVoice } from "./rules/jsdoc-voice.ts";
 import { motionSafeTransform } from "./rules/motion-safe-transform.ts";
 import { namespaceIndexExports } from "./rules/namespace-index-exports.ts";
 import { noBaseUiPreviewMenu } from "./rules/no-base-ui-preview-menu.ts";
-import { noClassAssertions } from "./rules/no-class-assertions.ts";
 import { noColorLiteral } from "./rules/no-color-literal.ts";
 import { noDisplayNameAssignment } from "./rules/no-display-name-assignment.ts";
-import { noFixedDelay } from "./rules/no-fixed-delay.ts";
-import { noGeometryAssertions } from "./rules/no-geometry-assertions.ts";
 import { noHookCalls } from "./rules/no-hook-calls.ts";
-import { noSourceReadingTests } from "./rules/no-source-reading-tests.ts";
-import { noTestRetry } from "./rules/no-test-retry.ts";
+import { noRingShadowRead } from "./rules/no-ring-shadow-read.ts";
 import { noThemeColorWrite } from "./rules/no-theme-color-write.ts";
 import { noUseClient } from "./rules/no-use-client.ts";
-import { noWallClock } from "./rules/no-wall-clock.ts";
 import { oneBrowserTestPerModule } from "./rules/one-browser-test-per-module.ts";
 import { overlayRootOverrideLast } from "./rules/overlay-root-override-last.ts";
 import { ownedClassTokens } from "./rules/owned-class-tokens.ts";
 import { renderElementWiring } from "./rules/render-element-wiring.ts";
-import { requireDisableReason } from "./rules/require-disable-reason.ts";
 import { restrictedImports } from "./rules/restricted-imports.ts";
 import { sideOverlayState } from "./rules/side-overlay-state.ts";
 import { stateFace } from "./rules/state-face.ts";
@@ -45,22 +39,16 @@ const plugin: Plugin = {
     "motion-safe-transform": motionSafeTransform,
     "namespace-index-exports": namespaceIndexExports,
     "no-base-ui-preview-menu": noBaseUiPreviewMenu,
-    "no-class-assertions": noClassAssertions,
     "no-color-literal": noColorLiteral,
     "no-display-name-assignment": noDisplayNameAssignment,
-    "no-fixed-delay": noFixedDelay,
-    "no-geometry-assertions": noGeometryAssertions,
     "no-hook-calls": noHookCalls,
-    "no-source-reading-tests": noSourceReadingTests,
-    "no-test-retry": noTestRetry,
+    "no-ring-shadow-read": noRingShadowRead,
     "no-theme-color-write": noThemeColorWrite,
     "no-use-client": noUseClient,
-    "no-wall-clock": noWallClock,
     "one-browser-test-per-module": oneBrowserTestPerModule,
     "overlay-root-override-last": overlayRootOverrideLast,
     "owned-class-tokens": ownedClassTokens,
     "render-element-wiring": renderElementWiring,
-    "require-disable-reason": requireDisableReason,
     "restricted-imports": restrictedImports,
     "side-overlay-state": sideOverlayState,
     "state-face": stateFace,

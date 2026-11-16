@@ -167,6 +167,28 @@ function restrictModules(
   return ["error", { modules, tests }];
 }
 
+/** A fake-clock helper the published test rules recognize, and the clock APIs it fakes. */
+type FakeClockHelper = { name: string; fakes: string[] };
+
+/** The repo's fake clock: `useFakeTimeouts()` (`packages/fuse/test/animation-frames.ts`) fakes `setTimeout` only. */
+const FAKE_CLOCK_HELPERS: FakeClockHelper[] = [{ name: "useFakeTimeouts", fakes: ["setTimeout"] }];
+
+/**
+ * `tests/no-fixed-delay` with the repo's helpers. `wait(ms)` (`packages/fuse/test/animation-frames.ts`)
+ * spins on animation frames and `performance.now()`, which `useFakeTimeouts()` leaves alone, so it
+ * waits for real under any fake timers.
+ */
+const NO_FIXED_DELAY: ["error", { realWaitHelpers: string[]; fakeClockHelpers: FakeClockHelper[] }] = [
+  "error",
+  { realWaitHelpers: ["wait"], fakeClockHelpers: FAKE_CLOCK_HELPERS },
+];
+
+/** `tests/no-wall-clock` with the repo's fake clock. */
+const NO_WALL_CLOCK: ["error", { fakeClockHelpers: FakeClockHelper[] }] = [
+  "error",
+  { fakeClockHelpers: FAKE_CLOCK_HELPERS },
+];
+
 export default defineConfig({
   plugins: ["typescript", "oxc", "import", "unicorn"],
   jsPlugins: [
@@ -181,6 +203,10 @@ export default defineConfig({
       specifier: "@elmeragroup/internal/oxlint/anti-slop",
     },
     {
+      name: "tests",
+      specifier: "@elmeragroup/internal/oxlint/tests",
+    },
+    {
       name: "fuse",
       specifier: "./tooling/oxlint-plugin-fuse/src/plugin.ts",
     },
@@ -190,7 +216,7 @@ export default defineConfig({
   },
   rules: {
     "turbo/no-undeclared-env-vars": "error",
-    "fuse/require-disable-reason": "error",
+    "elmera/require-disable-reason": "error",
     "no-unused-vars": [
       "error",
       {
@@ -733,26 +759,32 @@ export default defineConfig({
     {
       files: ["**/*.test.{ts,tsx,mts,mjs}"],
       rules: {
-        "fuse/no-class-assertions": "error",
-        "fuse/no-fixed-delay": "error",
-        "fuse/no-geometry-assertions": "error",
-        "fuse/no-source-reading-tests": "error",
-        "fuse/no-test-retry": "error",
-        "fuse/no-wall-clock": "error",
+        "tests/no-class-assertions": "error",
+        "tests/no-fixed-delay": NO_FIXED_DELAY,
+        "tests/no-geometry-assertions": "error",
+        "tests/no-source-reading-tests": "error",
+        "tests/no-test-retry": "error",
+        "tests/no-wall-clock": NO_WALL_CLOCK,
       },
     },
     {
       // Shared test helpers wait and time on the tests' behalf, so they meet the same bar.
       files: ["**/test/**/*.{ts,tsx,mts,mjs}"],
       rules: {
-        "fuse/no-fixed-delay": "error",
-        "fuse/no-wall-clock": "error",
+        "tests/no-fixed-delay": NO_FIXED_DELAY,
+        "tests/no-wall-clock": NO_WALL_CLOCK,
       },
     },
     {
       files: ["**/vitest.*", "**/vite.config.*", "**/playwright.config.*"],
       rules: {
-        "fuse/no-test-retry": "error",
+        "tests/no-test-retry": "error",
+      },
+    },
+    {
+      files: ["packages/fuse/src/components/**/*.test.{ts,tsx}"],
+      rules: {
+        "fuse/no-ring-shadow-read": "error",
       },
     },
     {

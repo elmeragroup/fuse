@@ -169,7 +169,7 @@ export async function startDocsProductionServer({ e2eBuild = false } = {}): Prom
       child.kill("SIGTERM");
       let watchdog: NodeJS.Timeout | undefined;
       const killed = new Promise<"killed">((resolve) => {
-        // oxlint-disable-next-line fuse/no-fixed-delay -- a cleanup watchdog, not a wait for a condition: the close still awaits the exit, and the grace period only bounds how long a stalled graceful shutdown may hold the run
+        // oxlint-disable-next-line tests/no-fixed-delay -- a cleanup watchdog, not a wait for a condition: the close still awaits the exit, and the grace period only bounds how long a stalled graceful shutdown may hold the run
         watchdog = setTimeout(() => {
           child.kill("SIGKILL");
           resolve("killed");

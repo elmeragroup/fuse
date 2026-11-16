@@ -31,6 +31,7 @@ const cliEnvironment = Layer.mergeAll(
     Terminal.make({
       columns: Effect.succeed(100),
       rows: Effect.succeed(40),
+      size: Effect.die("the CLI never watches the terminal size"),
       readInput: Effect.die("the CLI never reads input"),
       readLine: Effect.die("the CLI never reads input"),
       display: () => Effect.void,

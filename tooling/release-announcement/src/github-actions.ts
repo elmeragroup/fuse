@@ -8,7 +8,8 @@
  */
 
 import { NodeRuntime } from "@effect/platform-node";
-import { Cause, Config, Console, Crypto, Effect, FileSystem, Schema } from "effect";
+import { Cause, Config, Console, Effect, FileSystem, Schema } from "effect";
+import { SecureRandom } from "effect/crypto";
 
 /** An annotation's level. */
 type AnnotationLevel = "notice" | "warning" | "error";
@@ -42,13 +43,7 @@ export const setOutputs = Effect.fn("GitHubActions.setOutputs")(function* (
   outputs: ReadonlyArray<readonly [name: string, value: string]>
 ) {
   const path = yield* Config.NonEmptyString("GITHUB_OUTPUT");
-  const uuid = yield* (yield* Crypto.Crypto)
-    .randomUUIDv4()
-    .pipe(
-      Effect.mapError(
-        (error) => new OutputFailed({ message: `Could not draw a delimiter: ${error.message}` })
-      )
-    );
+  const uuid = yield* (yield* SecureRandom.SecureRandom).uuidV4();
   const delimiter = `ghadelimiter_${uuid}`;
   const lines: string[] = [];
   for (const [name, value] of outputs) {

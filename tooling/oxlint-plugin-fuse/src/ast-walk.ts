@@ -38,20 +38,6 @@ export function isFunction(node: ESTree.Node): node is ESTree.Function | ESTree.
 }
 
 /**
- * Whether `node` lies inside `root`.
- *
- * @param node - Any AST node.
- * @param root - The possible ancestor.
- * @returns Whether `root` is `node` or one of its ancestors.
- */
-export function within(node: ESTree.Node, root: ESTree.Node): boolean {
-  for (let current: ESTree.Node | null = node; current !== null; current = current.parent) {
-    if (current === root) return true;
-  }
-  return false;
-}
-
-/**
  * The binding that names a function: a declaration's own name, or the variable it is assigned to.
  *
  * @param fn - A function node.
@@ -102,22 +88,4 @@ export function descendants(
     stack.push(...childrenOf(context, node).toReversed());
   }
   return found;
-}
-
-/**
- * Whether a function is a `new Promise` executor or a callback created inside one, which run in
- * the turn the promise is created rather than later.
- *
- * @param fn - A function node.
- * @returns Whether it runs as part of a `new Promise(…)` expression.
- */
-export function isPromiseCallback(fn: ESTree.Node): boolean {
-  for (let parent = fn.parent; parent !== null; parent = parent.parent) {
-    if (parent.type === "NewExpression") {
-      const callee = unwrap(parent.callee);
-      if (callee.type === "Identifier" && callee.name === "Promise") return true;
-    }
-    if (isFunction(parent)) return isPromiseCallback(parent);
-  }
-  return false;
 }
