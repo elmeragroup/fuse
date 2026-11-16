@@ -145,7 +145,7 @@ function RadialRingMark({
         <path ref={ref} data-slot="radial-chart-ring" d={track} {...dash} />
       ) : (
         <>
-          {/* The region covers the whole dial and a hovered ring's scale, past the 10 % default. */}
+          {/* The region covers the whole dial and a hovered ring's scale, past the 10% default. */}
           <mask id={mask} maskUnits="userSpaceOnUse" x="-1.5" y="-1.5" width="3" height="3">
             <path ref={ref} data-slot="radial-chart-ring" data-part="mask" d={track} {...dash} />
           </mask>

@@ -11,7 +11,7 @@ test("Root takes the three-value orientation axis, Legend the two-value variant 
 
   // @ts-expect-error orientation is the three public values only
   const _badOrientation = <Field.Root orientation="inline" />;
-  // @ts-expect-error the legend axis is legend | label
+  // @ts-expect-error the legend axis is `"legend"` or `"label"`
   const _badLegend = <Field.Legend variant="title" />;
   // @ts-expect-error fieldVariants is package-private; no size axis exists
   const _noSize = <Field.Root size="sm" />;

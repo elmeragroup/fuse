@@ -1,6 +1,5 @@
 /**
- * Each series' state at each slot, as CONTRACT section 8.6 and section 8.7 define them. Fuse
- * decides the state per series and per slot, because series publish on different clocks.
+ * Each series' state at each slot. Fuse decides the state per series and per slot, because series publish on different clocks.
  */
 import type { ChartScalar } from "../chart-types";
 import { numberOf } from "./scalar";
@@ -64,7 +63,7 @@ function readCell(cell: ChartScalar, quality: ChartScalar, slot: number, issues:
     issues.push({ rule: "value-out-of-range", slot });
     return { kind: "missing" };
   }
-  // Normalise −0, because no attribute or label may carry a negative zero.
+  // Normalize −0, because no attribute or label may carry a negative zero.
   const number = value === 0 ? 0 : value;
   if (quality === null || quality === undefined || quality === "measured") {
     return { kind: "reading", value: number, quality: "measured" };

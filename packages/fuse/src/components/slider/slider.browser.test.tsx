@@ -268,7 +268,7 @@ describe("Slider onValueCommitted", () => {
     // The thumb moved while the button was held, and nothing committed until the release.
     expect(midDrag.changes).toBeGreaterThan(0);
     expect(midDrag.commits).toEqual([]);
-    // The thumb centres on the control edges, so 75% of the control's width is 75.
+    // The thumb centers on the control edges, so 75% of the control's width is 75.
     expect(commits).toHaveLength(1);
     expect(commits[0]).toBeGreaterThanOrEqual(73);
     expect(commits[0]).toBeLessThanOrEqual(77);
@@ -293,7 +293,7 @@ describe("Slider onValueCommitted", () => {
     const control = controlOf("Return");
     const box = control.getBoundingClientRect();
     const thumb = thumbOf("Return").getBoundingClientRect();
-    // The press starts on the thumb's centre, so returning the pointer there returns the value.
+    // The press starts on the thumb's center, so returning the pointer there returns the value.
     const origin = { x: thumb.left + thumb.width / 2 - box.left, y: box.height / 2 };
     await userEvent.hover(page.elementLocator(control), { position: origin });
     await whilePointerPressed(async () => {

@@ -1,6 +1,6 @@
 // Unit under test: the plot frame, the one projection every mark, the focus ring and the tooltip
-// anchor draw through. Oracles: band edges and centres worked by hand from CONTRACT section 8.15's
-// equal cells and section 9.5's point scale, a linear value axis worked by hand, and the browser's
+// anchor draw through. Oracles: band edges and centers worked by hand from equal cells and a
+// point scale, a linear value axis worked by hand, and the browser's
 // own snapping of a box: an edge lands on the device pixel nearest its page position, and the
 // layer's origin on the one nearest the plot's, so every snapped edge is a whole number of device
 // pixels from the origin.
@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   WHOLE_BAND,
   barSpan,
-  centreOf,
+  centerOf,
   floorBody,
   frameRect,
   optionBand,
@@ -28,7 +28,7 @@ function box(width: number, height: number, dpr = 1, left = 0, top = 0): PlotBox
   return { width, height, dpr, left, top };
 }
 
-describe("slot bands and centres", () => {
+describe("slot bands and centers", () => {
   it("splits a 300 px plot into three 100 px bands", () => {
     const frame = plotFrame(box(300, 50), "vertical", 3, [0, 1]);
     expect([0, 1, 2].map((position) => slotBand(frame, position))).toEqual([
@@ -36,17 +36,17 @@ describe("slot bands and centres", () => {
       [100, 200],
       [200, 300],
     ]);
-    expect(centreOf(frame, 1, "band")).toBe(150);
+    expect(centerOf(frame, 1, "band")).toBe(150);
   });
 
-  it("shares each edge between neighbouring bands a device pixel or more wide, at any width and pixel ratio", () => {
+  it("shares each edge between neighboring bands a device pixel or more wide, at any width and pixel ratio", () => {
     fc.assert(
       fc.property(
         fc.double({ min: 1, max: 2000, noNaN: true }),
         fc.integer({ min: 2, max: 400 }),
         fc.constantFrom(1, 1.5, 2, 4),
         (width, count, dpr) => {
-          // Narrower bands keep a device pixel each, so neighbours may share it.
+          // Narrower bands keep a device pixel each, so neighbors may share it.
           fc.pre(width / count >= 1 / dpr);
           const frame = plotFrame(box(width, 50, dpr), "vertical", count, [0, 1]);
           for (let position = 1; position < count; position += 1) {
@@ -58,10 +58,10 @@ describe("slot bands and centres", () => {
   });
 
   it("runs point slots from the first edge to the last, and gives each a clipped band-wide cell", () => {
-    // Four points on 300 px lie 100 px apart, and each owns 75 px around its point. An edge half
+    // Four points on 300 px lie 100 px apart, and each takes the 75 px around its point. An edge half
     // way between two pixels rounds toward the left.
     const frame = plotFrame(box(300, 50), "vertical", 4, [0, 1]);
-    expect([0, 1, 3].map((position) => centreOf(frame, position, "point"))).toEqual([0, 100, 300]);
+    expect([0, 1, 3].map((position) => centerOf(frame, position, "point"))).toEqual([0, 100, 300]);
     expect(optionBand(frame, 1, "point")).toEqual([62, 137]);
     expect(optionBand(frame, 0, "point")).toEqual([0, 37]);
     expect(optionBand(frame, 3, "point")).toEqual([262, 300]);
@@ -83,7 +83,7 @@ describe("slot bands and centres", () => {
     const frame = plotFrame(box(514.109375, 50, 2), "vertical", 31, [0, 1]);
     expect(slotBand(frame, 0)).toEqual([1, 17.5]);
     expect(slotBand(frame, 30)).toEqual([496, 512.5]);
-    expect(centreOf(frame, 0, "band")).toBe(9);
+    expect(centerOf(frame, 0, "band")).toBe(9);
     // At 1x the plot draws 514 pixels, 16 per slot leaves 18, so the bands start 9 px in and slot
     // 30 runs from 9 + 480 to 505.
     expect(slotBand(plotFrame(box(514.109375, 50, 1), "vertical", 31, [0, 1]), 30)).toEqual([489, 505]);
@@ -95,7 +95,7 @@ describe("slot bands and centres", () => {
   });
 
   it("keeps every slot lookup finite on a plot of no length", () => {
-    // R1-2: a plot measured 0 px along the slot axis spreads its bands over nothing, a step of 0.
+    // A plot measured 0 px along the slot axis spreads its bands over nothing, a step of 0.
     // Every lookup still returns finite numbers, at the plot's origin.
     for (const orientation of ["vertical", "horizontal"] as const) {
       const frame = plotFrame(box(0, 0), orientation, 3, [0, 1]);
@@ -119,7 +119,7 @@ describe("slot bands and centres", () => {
 
 describe("exact gaps for the bars of a layout", () => {
   // Unit under test: barSpan, which every bar, its overlay, its tooltip row and a path column's
-  // emphasis box draw. Oracle: the owner's grid rule worked from the box alone. The browser draws
+  // emphasis box draw. Oracle: barSpan's grid rule, worked from the box alone. The browser draws
   // the plot from the device pixel nearest its start to the one nearest its end, P device pixels.
   // A band x scale over n slots with w = floor(P / n) >= 1 gives every band w device pixels from
   // floor((P - n * w) / 2). One bar gap G = max(1, round(w * bandGap)) device pixels, none when w
@@ -174,7 +174,7 @@ describe("exact gaps for the bars of a layout", () => {
           const [first = 0] = bars[0] ?? [];
           const lastEnd = bars.at(-1)?.[1] ?? 0;
           const leftover = pixels - count * whole;
-          // Rule A: the first band starts floor(leftover / 2) in, and the bar G's smaller half after.
+          // The first band starts floor(leftover / 2) in, and the bar G's smaller half after.
           expect(Math.round(first)).toBe(Math.floor(leftover / 2) + Math.floor(gap / 2));
           if (positions.length * span === count)
             expect(Math.round(pixels - lastEnd)).toBe(
@@ -231,7 +231,7 @@ describe("the value axis", () => {
   });
 
   it("keeps one device pixel of a span narrower than a pixel, and none of an empty span", () => {
-    // B2-1: 0.5 px from 3 px snaps both edges to 3 at 1x, and 0.2 px from 3 px both to 3 at 2x.
+    // 0.5 px from 3 px snaps both edges to 3 at 1x, and 0.2 px from 3 px both to 3 at 2x.
     const one = plotFrame(box(400, 200), "vertical", 1, [0, 1]);
     const two = plotFrame(box(400, 200, 2), "vertical", 1, [0, 1]);
     expect(frameRect(one, [3, 3.5], [0, 100])).toEqual({ x: 3, y: 0, width: 1, height: 100 });

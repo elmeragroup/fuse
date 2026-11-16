@@ -64,7 +64,7 @@ describe("Span", () => {
         <Span size="lg">Large branded</Span>
       </ThemeScope>
     );
-    // snug 1.375 × 14, 16 and 18px, not the branded 20, 22 and 24.
+    // The snug line height, 1.375 times 14, 16 and 18px, not the branded 20, 22 and 24px.
     expect(px(getComputedStyle(spanNamed("Small branded")).lineHeight)).toBe(19.25);
     expect(px(getComputedStyle(spanNamed("Default branded")).lineHeight)).toBe(22);
     expect(px(getComputedStyle(spanNamed("Large branded")).lineHeight)).toBe(24.75);

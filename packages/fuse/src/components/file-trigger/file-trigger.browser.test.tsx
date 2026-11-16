@@ -130,7 +130,7 @@ describe("FileTrigger", () => {
     renderThemed(<FileTrigger>Attach file</FileTrigger>);
     roleNamed("button", "Attach file").focus();
     const event = paste(document.body, [png("a.png")]);
-    // FileUpload cancels a paste it takes before it reads the files, so an uncancelled paste was
+    // FileUpload cancels a paste it takes before it reads the files, so an uncanceled paste was
     // never taken.
     expect(event.defaultPrevented).toBe(false);
   });
@@ -227,7 +227,7 @@ describe("FileTrigger", () => {
         stampDensity(density);
         // Unit under test: FileTrigger's button. Oracle: a Button with a marked leading icon.
         const expected = iconBox("Plain");
-        // The oracle took the marker: its icon side is tighter than its label side.
+        // The oracle has the marker, so its icon side is tighter than its label side.
         expect(Number.parseFloat(expected.start), density).toBeLessThan(Number.parseFloat(expected.end));
         expect(iconBox("Attach"), density).toEqual(expected);
       }

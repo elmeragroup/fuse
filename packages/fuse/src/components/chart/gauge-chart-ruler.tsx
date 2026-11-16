@@ -94,7 +94,7 @@ export function GaugeChartRuler({
   const layer = useRef<HTMLDivElement>(null);
   const firstRest = useGaugePainter(gauge, layer, layout, rulerDrawing);
   const outside = variant === "outside";
-  // The ticks stand in from the rim outside, and hang in from inside the track inside.
+  // The outside ticks start at the rim and the inside ticks start inside the track, and both run inward.
   const top = outside ? 1 : GAUGE_RADII.rulerInside;
   const width = box.right - box.left;
   const height = box.bottom - box.top;
@@ -140,7 +140,7 @@ export function GaugeChartRuler({
         if (!mark.major) return null;
         const angle = gaugeAngle(sweep, mark.offset);
         const at = polarPoint(angle, outside ? 1 : INSIDE_LABEL);
-        // The label reads away from its anchor: outward past the rim, inward inside the track.
+        // The label extends from its anchor outward past the rim, or inward inside the track.
         const away = polarPoint(angle, outside ? 1 : -1);
         return (
           <span

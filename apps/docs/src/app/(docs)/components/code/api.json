@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The block's accessible name. A block named here or through `aria-labelledby` is a `region` landmark. An unnamed block has no role. The block is always a tab stop, so a keyboard user can scroll it.",
+          "description": "The block's accessible name. A block named here or through `aria-labelledby` is a `region` landmark. An unnamed block has no role. The block is a tab stop unless the consumer passes `tabIndex`, so a keyboard user can scroll it.",
           "required": false
         },
         {

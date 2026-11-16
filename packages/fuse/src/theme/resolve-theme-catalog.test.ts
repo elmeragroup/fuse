@@ -41,14 +41,13 @@ const SLUGS = [
   "branded-ngfi-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
-// checked selection row borders and dividers, the disabled selection row fill, stripe and text,
-// the pressed Toggle fill and label, the selection row title weight, the three paragraph line
-// heights, the size, line height and weight of h1 to h3, the modal fill and text, the
-// content panel fill and text, the 26 chart roles: 8 slot foregrounds, Other and its
-// foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and 11 steps from 50 to 950 in
-// each of the three brand ramps: the brand neutral ramp and brand palettes 1 and 2. Themes name
+// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the `radius-field` field corner,
+// the card edge, section divider and shadow, the two outline Button roles, the resting and checked selection
+// row borders and dividers, the disabled selection row fill, stripe and text, the pressed Toggle fill and
+// label, the selection row title weight, the three paragraph line heights, the size, line height and weight
+// of h1 to h3, the modal fill and text, the content panel fill and text, the 26 chart roles: 8 slot
+// foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and 11 steps from
+// 50 to 950 in each of the three brand ramps: the brand neutral ramp and brand palettes 1 and 2. Themes name
 // no fonts, so `font-sans` and `font-heading` are not tokens.
 const TOKEN_COUNT = 168;
 
@@ -137,8 +136,8 @@ describe("resolveThemeCatalog", () => {
       reference: { space: "token", name: "error" },
     });
     // Branded dark themes take --error from DARK_DEFAULTS, and a light-scheme hop would
-    // resolve to the light error instead. Each colour oracle below converts a hand-copied
-    // literal with the colour package's own conversion.
+    // resolve to the light error instead. Each color oracle below converts a hand-copied
+    // literal with the color package's own conversion.
     const darkError = getOrThrow(Oklch.parse("oklch(0.8383036 0.089085 26.7575)"));
     expect(guenDark.tokens.destructive.value).toEqual(Oklch.toSrgb(darkError));
 
@@ -180,7 +179,7 @@ describe("resolveThemeCatalog", () => {
 
   it("resolves branded fkab-company to the tokens of branded fkas-company in both schemes", () => {
     // Unit under test: branded-fkab-company. Oracle: branded-fkas-company, which fkab
-    // aliases by policy, so every token must resolve to the same colour, length or weight.
+    // aliases by policy, so every token must resolve to the same color, length or weight.
     // Only the brand pointer may name fkab, and it resolves to the fkas accent.
     const fkab = theme("branded-fkab-company");
     const fkas = theme("branded-fkas-company");
@@ -201,7 +200,7 @@ describe("resolveThemeCatalog", () => {
     expect(fkab.schemes.dark.tokens.secondary.css).toBe("oklch(0.9085589 0.0595841 225.0316)");
   });
 
-  it("reads colours as unrounded sRGB", () => {
+  it("reads colors as unrounded sRGB", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(light("neutral-fkas-private").tokens["sh-identifier"]).toMatchObject({
       css: "#5c6773",
@@ -216,9 +215,9 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded selection row edge to a zero-alpha colour and its divider to the border, in both schemes", () => {
+  it("resolves the branded selection row edge to a zero-alpha color and its divider to the border, in both schemes", () => {
     // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)` and aliases the checked edge
-    // to it, so design tools get a transparent colour, not a `transparent` keyword they cannot read.
+    // to it, so design tools get a transparent color, not a `transparent` keyword they cannot read.
     for (const scheme of ["light", "dark"] as const) {
       const tokens = theme("branded-tkas-company").schemes[scheme].tokens;
       expect(tokens["selection-border"], scheme).toMatchObject({
@@ -265,7 +264,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded card edge to a zero-alpha colour in both schemes and the neutral one to the border", () => {
+  it("resolves the branded card edge to a zero-alpha color in both schemes and the neutral one to the border", () => {
     // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
       expect(theme("branded-fkse-private").schemes[scheme].tokens["card-border"], scheme).toMatchObject({
@@ -282,7 +281,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the branded card shadow to a zero-alpha colour in both schemes and the neutral one to 5% black", () => {
+  it("resolves the branded card shadow to a zero-alpha color in both schemes and the neutral one to 5% black", () => {
     // BRANDED_IDENTITY_LAYER writes the shadow as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
       expect(theme("branded-fkse-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
@@ -290,7 +289,7 @@ describe("resolveThemeCatalog", () => {
         reference: undefined,
         value: { alpha: 0 },
       });
-      // Neutral cards keep Tailwind's `shadow-xs` colour, black at 5%, in both schemes.
+      // Neutral cards keep Tailwind's `shadow-xs` color, black at 5%, in both schemes.
       expect(theme("neutral-fkas-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
         css: "oklch(0 0 0 / 0.05)",
         reference: undefined,
@@ -352,7 +351,7 @@ describe("resolveThemeCatalog", () => {
   it("resolves the pressed Toggle pair to the muted pair in neutral themes and the primary pair in branded ones, in both schemes", () => {
     // LAYER_DEFAULTS aliases the pair to `--muted` and `--foreground`, and BRANDED_IDENTITY_LAYER
     // to `--primary` and `--primary-foreground`. The pair is light-only, so a dark scheme keeps the
-    // alias and resolves it against its own dark role. Each colour is the literal its source table
+    // alias and resolves it against its own dark role. Each color is the literal its source table
     // writes for that role: neutral light from LAYER_DEFAULTS, neutral dark from
     // NEUTRAL_DARK_PALETTE, branded fkas from its light palette and its dark sheet (#FFEEE6 on
     // black).

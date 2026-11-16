@@ -105,7 +105,7 @@ describe("Tooltip", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).toBeNull();
     });
-    // A hand-off opens a neighbour on the next render; a Root with its own delay waits it out.
+    // A hand-off opens a neighbor on the next render; a Root with its own delay waits it out.
     await nextFrames(2);
     expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
   });

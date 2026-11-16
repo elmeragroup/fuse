@@ -70,8 +70,8 @@ export function ScrollAreaRoot({
           data-slot="scroll-area-content"
           // Base UI's inline `min-width: fit-content` grows the content to its widest line so it can
           // scroll sideways, which also keeps a `truncate` child from narrowing. Only a horizontal
-          // area scrolls sideways, so a vertical one drops that floor (the important modifier
-          // outranks the inline style) and its content fills the viewport.
+          // area scrolls sideways, so a vertical one drops that floor and its content fills the
+          // viewport. The important modifier outranks the inline style.
           className={cn(orientation === "vertical" && "min-w-0!")}>
           {children}
         </ScrollAreaPrimitive.Content>

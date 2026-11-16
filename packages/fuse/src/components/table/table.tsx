@@ -147,7 +147,7 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
         // A framed cell pairs its `panel` fill with `panel-foreground`. The body writes its text
         // through one plain `text-(color:--table-body-foreground)`, and the framed arm sets only
         // the property, so a `text-*` in `className` replaces the utility in every state. Cells
-        // inherit the body's and row's colour, so a cell's own colour wins too.
+        // inherit the body's and row's color, so a cell's own color wins too.
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "before:shadow-[0_1px_--theme(--color-black/6%)] relative text-(color:--table-body-foreground) [--table-body-foreground:currentColor] before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 framed-table:[--table-body-foreground:--theme(--color-panel-foreground)] [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-panel framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:[--surface-muted-foreground:--theme(--color-muted-foreground)] framed-table:*:[tr]:*:[td]:[--surface:--theme(--color-panel)] framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className

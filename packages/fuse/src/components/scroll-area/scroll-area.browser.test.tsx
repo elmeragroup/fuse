@@ -130,7 +130,8 @@ describe("ScrollArea", () => {
     expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight);
     expect(getComputedStyle(viewport).overflowY).toBe("scroll");
 
-    // Trusted ArrowDown/PageDown in this iframe never move scrollTop; the default must stay uncancelled.
+    // Trusted ArrowDown and PageDown in this iframe never move scrollTop, so the test asserts that
+    // the default stays uncanceled.
     const arrow = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
     const pageDown = new KeyboardEvent("keydown", { key: "PageDown", bubbles: true, cancelable: true });
     expect(viewport.dispatchEvent(arrow)).toBe(true);

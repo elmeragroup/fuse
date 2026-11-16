@@ -50,7 +50,7 @@ export type PieChartLabelsProps = ChartLayerProps & {
   children?: ReactNode;
 };
 
-/** A label's line, 12 px on a 16 px line at both densities, as CONTRACT section 10 sets it. */
+/** A label's line, 12 px on a 16 px line at both densities. */
 const LINE = 16;
 
 /** The leader's run sideways from its elbow, in CSS pixels. */
@@ -60,7 +60,7 @@ const RUN = 8;
 const NOMINAL_CELL = 184;
 
 /** The color roles with an on-color role, which an inside label reads its text color from. */
-const ON_COLOUR = /^chart-(?:[1-8]|other)$/u;
+const ON_COLOR = /^chart-(?:[1-8]|other)$/u;
 
 /** Where one slice's label sits, in units of the outer radius from the center. */
 type Placed =
@@ -106,7 +106,7 @@ function placeLabels(
         padAngle: angles.pad,
       },
       unit(sizes[index]),
-      ON_COLOUR.test(slice.role)
+      ON_COLOR.test(slice.role)
     );
   });
   const outside = pie.slices.flatMap((_, index) => {

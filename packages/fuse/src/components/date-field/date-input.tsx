@@ -37,8 +37,8 @@ import { readFieldText } from "./date-field-text";
 import { DateInputRootContext, SEGMENT_SELECTOR } from "./date-input-context";
 import type { DateInputActions, DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
-import { DateInputNeighbourContext } from "./date-input-neighbours";
-import type { DateInputFocusDirection, DateInputNeighbour } from "./date-input-neighbours";
+import { DateInputNeighborContext } from "./date-input-neighbors";
+import type { DateInputFocusDirection, DateInputNeighbor } from "./date-input-neighbors";
 import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
 import {
@@ -144,7 +144,7 @@ function focusSibling(
   root: HTMLElement | null,
   from: Element,
   direction: DateInputFocusDirection,
-  neighbour: DateInputNeighbour | undefined
+  neighbor: DateInputNeighbor | undefined
 ): void {
   const list = focusableSegments(root);
   const index = list.findIndex((element) => element === from);
@@ -156,7 +156,7 @@ function focusSibling(
     sibling.focus();
     return;
   }
-  const next = root === null ? null : (neighbour?.(root, direction) ?? null);
+  const next = root === null ? null : (neighbor?.(root, direction) ?? null);
   const segments = focusableSegments(next);
   (direction === "next" ? segments[0] : segments.at(-1))?.focus();
 }
@@ -241,7 +241,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const { locale, timeZone: localeTimeZone } = useLocale();
   const strings = useLocalizedStrings(dateFieldStrings);
   const ios = useIsIOS();
-  const neighbour = use(DateInputNeighbourContext);
+  const neighbor = use(DateInputNeighborContext);
   const inputScope = use(DateInputScopeContext);
   const scope = inputScope.units;
   const controlled = valueProp !== undefined;
@@ -331,7 +331,6 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     },
     fallbackId
   );
-  // Read apart: the hidden input's ref is a ref, the rest are render values.
   const { disabled, invalid, hiddenInput, hiddenInputId, labelId, setFocused, blurred, revalidate } = field;
 
   // A new committed value, hour cycle or set of segments drops any draft typed over the old ones,
@@ -393,9 +392,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     ]
   );
   // What gestures read at event time: this render's settings and callback.
-  const eventProps = useRef({ settings, rules, onValueChange, neighbour });
+  const eventProps = useRef({ settings, rules, onValueChange, neighbor });
   useLayoutEffect(() => {
-    eventProps.current = { settings, rules, onValueChange, neighbour };
+    eventProps.current = { settings, rules, onValueChange, neighbor };
   });
 
   /** Applies a transition: reports its commit, keeps the edit unless the commit is canceled. */
@@ -417,7 +416,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       }
       store.set(transition.state);
       if (transition.focus !== undefined && trigger !== undefined) {
-        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.neighbour);
+        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.neighbor);
       }
     },
     [store]
@@ -439,7 +438,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
             rootRef.current,
             currentTarget,
             event.key === "ArrowRight" ? "next" : "previous",
-            eventProps.current.neighbour
+            eventProps.current.neighbor
           );
           return;
         }
@@ -587,7 +586,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
           "aria-describedby": describedBy,
           "aria-disabled": disabled || undefined,
           className: cn(dateInputVariants({ size }).root(), className),
-          // Unicode isolation keeps the segments in order inside right-to-left text, as React Aria's group.
+          // Unicode isolation keeps the segments in order inside right-to-left text, as React Aria's
+          // group does.
           style: { unicodeBidi: "isolate" },
           onFocus(event) {
             if (isNode(event.relatedTarget) && event.currentTarget.contains(event.relatedTarget)) {

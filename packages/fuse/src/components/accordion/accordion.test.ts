@@ -13,7 +13,7 @@ describe("accordionVariants", () => {
     const slots = accordionVariants();
     expect(slots.header()).toContain("flex");
     expect(slots.trigger()).toContain("group/accordion-trigger");
-    // The open gap lives in the panel, so the trigger has no open-state padding.
+    // The open gap sits in the panel, so the trigger has no open-state padding.
     expect(slots.trigger()).not.toContain("data-[panel-open]:pb");
     expect(slots.trigger()).not.toContain("data-[state=open]");
     // Oracle: the shared focus recipe the part composes.

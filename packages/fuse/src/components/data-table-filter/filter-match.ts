@@ -1,5 +1,5 @@
 // The filter predicates, shared by the client filter function and a server that filters rows in
-// memory. Pure, with no directive.
+// memory. It is pure and has no directive.
 
 import type { FilterValue, IsoDate } from "./filter-model";
 import { isBoolean, isFiniteNumber, isIsoDate, isNegated, isString } from "./filter-model";

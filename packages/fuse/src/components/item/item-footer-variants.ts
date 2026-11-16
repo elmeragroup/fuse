@@ -21,10 +21,11 @@ const itemFooterMotionClass = cn(
 // content at any edge. The focused invalid face reaches 4px, so it paints whole at the default
 // root, and a smaller root clips a fraction of its halo. A clip holds an absolutely positioned
 // descendant only when it is, or contains, that descendant's containing block. Content with no
-// positioned ancestor inside the footer would otherwise take the footer root (its slide transform
-// makes it one) or a positioned ancestor further out, and escape. `relative` makes the content
-// element its containing block. Without it, a visually hidden input in a collapsed footer, such as
-// DateField's, sits below the row unclipped and lengthens the page or scroll container around it.
+// positioned ancestor inside the footer would otherwise take the footer root, which its slide
+// transform makes a containing block, or a positioned ancestor further out, and escape.
+// `relative` makes the content element its containing block. Without it, a visually hidden input
+// in a collapsed footer, such as DateField's, sits below the row unclipped and lengthens the page
+// or scroll container around it.
 const itemFooterClipClass = cn("relative -m-1 overflow-clip p-1");
 
 /**

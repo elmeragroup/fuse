@@ -5,13 +5,13 @@
  * category or Other on a pie, a ring on a radial chart. The legend lists the items, Other last,
  * the tooltip shows the active item alone, a pie share is one largest-remainder set over the
  * absolute total and a ring share its value over its own maximum, and the table lists the rows
- * unfolded. CONTRACT sections 8.4, 8.13 and 9.4 give the rules.
+ * unfolded.
  */
 import type { ReactNode } from "react";
 
 import { countOf } from "../../intl/count-of";
 import type { SupportedLocale } from "../../intl/locale-context";
-import type { CentreModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
+import type { CenterModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
 import type { ChartReadout, ReadoutItem } from "./chart-readout-port";
 import type { ChartConfig, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -85,7 +85,7 @@ export function qualityOf(reading: Reading): "estimated" | "corrected" | "missin
 }
 
 /**
- * The quality of the readings Other holds, per section 8.7. Folding is a drawing rule, so Other
+ * The quality of the readings Other holds. Folding is a drawing rule, so Other
  * keeps their uncertainty: estimated when any is estimated, corrected when any is corrected and none
  * estimated, missing only when every one is missing, and measured otherwise.
  *
@@ -508,7 +508,7 @@ export function pieModel(input: PieInput): PolarModel {
               key === OTHER_KEY && members.some((member) => rows[member]?.category === category)
           ),
       },
-      centre: {
+      center: {
         label: (index) => items[index]?.label.text ?? null,
         value: (index) => items[index]?.value ?? null,
         format: (index) => items[index]?.format ?? valueFormat ?? {},
@@ -653,21 +653,21 @@ export function radialModel(input: RadialInput): PolarModel {
           };
         }),
       },
-      centre: radialCentre(items, fills, share, valueFormat),
+      center: radialCenter(items, fills, share, valueFormat),
     },
   };
 }
 
 /**
  * A radial chart's center: the active ring, or with nothing active the sum of the values over the
- * sum of the maxima when every ring shares one format, per CONTRACT section 8.13.
+ * sum of the maxima when every ring shares one format.
  */
-function radialCentre(
+function radialCenter(
   items: readonly PolarItem[],
   fills: readonly RingFill[],
   share: (index: number, digits: number) => number | null,
   valueFormat: ValueFormat | undefined
-): CentreModel {
+): CenterModel {
   const format = sharedFormat(items);
   const sum = items.reduce((total, { value }) => total + (value !== null && value > 0 ? value : 0), 0);
   const maxima = fills.flatMap(({ max }) => (max === null ? [] : [max]));

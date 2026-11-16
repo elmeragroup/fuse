@@ -1,10 +1,10 @@
 // RadialChart's rings and readouts in Chromium, and the polar quality looks of both families.
 // Units under test: RadialChart.Bar, Track, Glow and the Center parts under RadialChart.Root, and
-// PieChart.Pie and Track for quality and the gauge's corners. Oracles, written by hand: CONTRACT
-// section 8.4's rings, three of them splitting the band from 0.3 to 1, each filling its value over
-// its maximum and never lapping; the browser's own stroke test, which the pick must agree with;
-// D24's device pixel of arc; Q12's 40 dots and 6° segments; section 8.7's hatched estimate and
-// missing reading; the Motion table's hover scales; section 8.13's centre; and S9's category word.
+// PieChart.Pie and Track for quality and the gauge's corners. Oracles, written by hand: three rings
+// splitting the band from 0.3 to 1, each filling its value over its maximum and never lapping; the
+// browser's own stroke test, which the pick must agree with; a device pixel of arc; 40 dots and 6°
+// segments; the hatched estimate and missing reading; the hover scales; the center; and the
+// category word.
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -13,7 +13,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
-  centreText,
+  centerText,
   clientPoint,
   dialPoint,
   hoverAt,
@@ -91,13 +91,13 @@ function extent(path: SVGPathElement): number {
   return start + length + cap;
 }
 
-describe("the rings (section 8.4, Q5, Q8)", () => {
+describe("the rings", () => {
   it("strokes each ring up to its value's angle, the third past its maximum all round, and picks the ring under the pointer", async () => {
     const { host } = renderThemed(<Budgets />);
     await nextFrames(1);
     const drawn = rings(host);
     expect(drawn).toHaveLength(3);
-    // Each ring holds the middle of its value on its centre line, and no other ring does.
+    // Each ring holds the middle of its value on its center line, and no other ring does.
     [148, 151, 180].forEach((angle, index) => {
       const point = dialPoint(angle, RADII[index] ?? 0);
       expect(drawn.map((path) => path.isPointInStroke(point))).toEqual(
@@ -134,7 +134,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
   });
 });
 
-describe("the radial centre (section 8.13)", () => {
+describe("the radial center", () => {
   it("prints the sum of the values over the sum of the maxima, then the active ring's own", async () => {
     // 412 + 168 + 233 = 813 of 500 + 200 + 180 = 880, 92 %.
     const { host } = renderThemed(
@@ -146,13 +146,13 @@ describe("the radial centre (section 8.13)", () => {
         </RadialChart.Center>
       </Budgets>
     );
-    expect(centreText(host, "pie-chart-center-value")).toBe("813 kWh");
-    expect(centreText(host, "pie-chart-center-share")).toBe("92 %");
-    expect(centreText(host, "pie-chart-center-max")).toBe("880 kWh");
+    expect(centerText(host, "pie-chart-center-value")).toBe("813 kWh");
+    expect(centerText(host, "pie-chart-center-share")).toBe("92 %");
+    expect(centerText(host, "pie-chart-center-max")).toBe("880 kWh");
     await userEvent.tab();
     await userEvent.keyboard("{ArrowDown}");
-    expect(centreText(host, "pie-chart-center-value")).toBe("168 kWh");
-    expect(centreText(host, "pie-chart-center-share")).toBe("84 %");
-    expect(centreText(host, "pie-chart-center-max")).toBe("200 kWh");
+    expect(centerText(host, "pie-chart-center-value")).toBe("168 kWh");
+    expect(centerText(host, "pie-chart-center-share")).toBe("84 %");
+    expect(centerText(host, "pie-chart-center-max")).toBe("200 kWh");
   });
 });

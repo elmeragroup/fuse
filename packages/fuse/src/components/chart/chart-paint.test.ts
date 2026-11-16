@@ -1,12 +1,11 @@
 // The shared series paint. Unit under test: seriesPaintOf, which every mark and swatch reads.
-// Oracles: CONTRACT section 11's override form `var(--chart-color-<key>, var(--<role>))`, written
-// out by hand, section 8.9's chart-seq bins over a 0 to 70 extent, 7 equal steps of 10, and
-// ChartThresholdColor's documented rule: a value above the threshold paints `above`, a value at it
-// or below paints `below`.
+// Oracles: the override form `var(--chart-color-<key>, var(--<role>))`, written out by hand, the
+// chart-seq bins over a 0 to 70 extent, 7 equal steps of 10, and ChartThresholdColor's documented
+// rule. A value above the threshold paints `above`, and a value at it or below paints `below`.
 import { describe, expect, it } from "vitest";
 
 import {
-  colourFamilyError,
+  colorFamilyError,
   nonFiniteThresholds,
   seriesPaintOf,
   stackedScaleError,
@@ -28,7 +27,7 @@ function series(values: readonly number[]): SeriesModel {
 }
 
 describe("seriesPaintOf", () => {
-  it("returns one paint per series model and colour, so a pointer step reuses the bins", () => {
+  it("returns one paint per series model and color, so a pointer step reuses the bins", () => {
     const model = series([0, 70]);
     const first = seriesPaintOf("v", "chart-seq", model);
     expect(seriesPaintOf("v", "chart-seq", model)).toBe(first);
@@ -68,7 +67,7 @@ function threshold(at: number): ChartThresholdColor {
   };
 }
 
-describe("a threshold colour", () => {
+describe("a threshold color", () => {
   it("is a two-step paint: below then above, split at the threshold", () => {
     const paint = seriesPaintOf("v", threshold(50), series([20, 50, 80]));
     expect(paint.ramp).toEqual([POSITIVE, NEGATIVE]);
@@ -137,13 +136,13 @@ describe("a threshold colour", () => {
     ).toEqual(["b", "d"]);
   });
 
-  it("counts both sides' roles in a layout's colour family", () => {
+  it("counts both sides' roles in a layout's color family", () => {
     const config = {
       price: { label: "Price", color: threshold(1) },
       usage: { label: "Usage", color: "chart-1" },
     } as const;
-    expect(colourFamilyError("Chart.Root", config, ["price"])).toBeNull();
-    expect(colourFamilyError("Chart.Root", config, ["price", "usage"])?.rule).toBe(
+    expect(colorFamilyError("Chart.Root", config, ["price"])).toBeNull();
+    expect(colorFamilyError("Chart.Root", config, ["price", "usage"])?.rule).toBe(
       "mixed-sentiment-categorical"
     );
   });
@@ -151,10 +150,10 @@ describe("a threshold colour", () => {
   it("cannot paint a stacked or expanded path, as a scale cannot", () => {
     expect(stackedScaleError("Chart.Line", threshold(1), false, "diverging")).toBeNull();
     expect(stackedScaleError("Chart.Line", threshold(1), true, "diverging")?.rule).toBe(
-      "scale-colour-on-stack"
+      "scale-color-on-stack"
     );
     expect(stackedScaleError("Chart.Area", threshold(1), false, "expand")?.message).toBe(
-      'Chart.Area paints a threshold colour on stackOffset="expand", where the path draws at stacked values the threshold doesn\'t follow. Give the series a role, or draw it with Chart.Bar.'
+      'Chart.Area paints a threshold color on stackOffset="expand", where the path draws at stacked values the threshold doesn\'t follow. Give the series a role, or draw it with Chart.Bar.'
     );
   });
 });

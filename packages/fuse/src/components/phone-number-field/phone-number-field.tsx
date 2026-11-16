@@ -3,10 +3,9 @@
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-// Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
-// null React context. Keep the package-root import until upstream fixes it.
-// Root, Trigger, and the popup's search Input are the raw
-// primitives; the popup surface itself is the library Combobox.
+// Import from the package root. The subpath import, `@base-ui/react/combobox`, type-checks but
+// crashes at runtime with a null React context. Root, Trigger and the popup's search Input come
+// from Base UI directly; the popup itself is Fuse's `ComboboxContent`.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { useFormContext } from "@base-ui/react/internals/form-context";
 import { useLabelableContext } from "@base-ui/react/internals/labelable-provider";
@@ -257,7 +256,7 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
   return (
     <>
       {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
-          getByRole("button", {name}) contract the browser tests freeze. The picker's own
+          getByRole("button", {name}) contract the browser tests assert. The picker's own
           labelable scope already keeps the field's label off it; the explicit aria-labelledby
           also wins over any label Base UI would wire, so the name stays the text below. Don't
           "simplify" either without updating the browser tests. The min height is 1.5rem,
@@ -376,7 +375,7 @@ export function PhoneNumberField({
   // trigger, so its left edge lines up with the field rather than inset to the flag.
   const inputGroupRef = useRef<HTMLDivElement>(null);
   // Combobox.Root stringifies the selected item on mount; names are only needed
-  // once the popup is open (list rows + filter).
+  // once the popup is open, for the list rows and the filter.
   const countryPickerOpenRef = useRef(false);
   // The locale whose name order the picker rows follow, taken as the picker opens; null until
   // the first open. A locale change shows in the order at the next open, so it cannot move
@@ -445,7 +444,7 @@ export function PhoneNumberField({
   // Every native edit path honors both flags together.
   const isEditable = !isDisabled && !isReadOnly;
 
-  // A number typed (or autofilled) before hydration is proposed as an edit.
+  // A number typed or autofilled before hydration is proposed as an edit.
   useEarlyInputValue(
     numberInputRef,
     phone.displayValue,
@@ -467,8 +466,8 @@ export function PhoneNumberField({
     <div className="flex items-center gap-1">
       <Flag country={phone.country.code} />
       {/* The input's font size, touch floor included, so both runs of digits have one size.
-          Leading is `normal` because a text input centres its text on the font's normal
-          metrics whatever its line-height; the dial code centres the same way. */}
+          Leading is `normal` because a text input centers its text on the font's normal
+          metrics whatever its line-height; the dial code centers the same way. */}
       <span className={cn(fieldReads.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
         {phone.country.dialCode}
       </span>
@@ -538,9 +537,9 @@ export function PhoneNumberField({
               disabled={isDisabled}
               readOnly={isReadOnly}
               autoComplete={autoComplete}
-              // Detach the country Combobox from the host form so base-ui's own hidden
+              // Detach the country Combobox from the host form so Base UI's own hidden
               // country input never reaches FormData beside `${name}` and
-              // `${name}-display-value`. The id names no rendered form on purpose
+              // `${name}-display-value`. The id names no rendered form on purpose.
               form="fuse-phone-country-unbound"
               locale={locale}>
               <InputGroupAddon className="text-foreground" align="inline-start">
@@ -573,7 +572,7 @@ export function PhoneNumberField({
                     aria-labelledby=""
                     autoComplete="one-time-code"
                     // An empty name keeps the search box out of autofill heuristics and
-                    // out of any FormData: a nameless control is never submitted
+                    // out of any FormData: a nameless control is never submitted.
                     name=""
                     aria-autocomplete="none"
                     aria-haspopup="false"

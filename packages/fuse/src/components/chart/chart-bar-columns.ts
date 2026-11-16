@@ -149,7 +149,7 @@ type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
  * @param metrics - The bar spacing, which every column and its emphasis box read.
  * @param sub - The Bar's sub-band.
  * @param paint - The series' paint.
- * @param emphasised - The emphasized slots.
+ * @param emphasized - The emphasized slots.
  * @returns The entries.
  */
 export function layoutColumns(
@@ -159,7 +159,7 @@ export function layoutColumns(
   metrics: BarMetrics,
   sub: SubBand,
   paint: SeriesPaint,
-  emphasised: ReadonlySet<number>
+  emphasized: ReadonlySet<number>
 ): ColumnsLayout {
   const { model, update } = context;
   const window = model.window;
@@ -180,7 +180,7 @@ export function layoutColumns(
   const zero = valueAt(frame, 0);
   // A scale or a threshold fills from one path per step, so an entry keeps its path index across
   // updates, and a role or a role list from one. Each step has its own estimated and projected
-  // paths too, so a reading's colour never depends on its quality.
+  // paths too, so a reading's color never depends on its quality.
   const { bins, ramp } = paint;
   const fills = bins === undefined || ramp === undefined ? [""] : ramp;
   /** A slot's column: its paint step and the path of its quality, or step -1 where it draws none. */
@@ -209,7 +209,7 @@ export function layoutColumns(
     const reading = series.readings[slot];
     const extent = series.extents[slot];
     const negative = extent !== null && extent !== undefined && extent[0] < 0 && extent[1] <= 0;
-    const emphasis = emphasised.has(slot);
+    const emphasis = emphasized.has(slot);
     const [base, tip] =
       reading?.kind === "reading" && extent !== null && extent !== undefined
         ? projectedEnds(frame, extent, negative)
@@ -221,7 +221,7 @@ export function layoutColumns(
       entry: {
         ...columnOf(slot),
         baseAt: 4,
-        // The model reads no missing marker for an empty chart, as section 8.13 says.
+        // The model reads no missing marker for an empty chart.
         missing: reading?.kind === "missing" && !model.empty,
         emphasis,
         leaving: false,
@@ -263,9 +263,9 @@ export function layoutColumns(
         },
       };
     });
-    // Each missing or emphasised slot keeps its own tick or box, drawing no column of its own.
+    // Each missing or emphasized slot keeps its own tick or box and draws no column of its own.
     const notes = slots
-      .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasised.has(slot))
+      .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasized.has(slot))
       .map((slot): Entry => {
         const own = slotEntry(slot);
         const entry: ColumnEntry = { ...own.entry, fill: -1, part: "fill" };

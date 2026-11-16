@@ -417,7 +417,7 @@ export function resolvePhoneFieldValues({
   // as-you-type output then keeps a typed trunk prefix for the display ("070-1", where behind
   // the calling code it reads "+46 070 1"), and every country's trunk prefix stays out of the
   // number: behind the calling code, Kazakhstan's 8 or Uruguay's 0 was read as part of it.
-  // A typed draft at a local number's length takes local-dialling rules: with Anguilla
+  // A typed draft at a local number's length takes local-dialing rules: with Anguilla
   // selected, "2351234" submits as +12642351234, and a typed ten-digit number passes through
   // such a value at its seventh key. Detected digits are already a national number, so they
   // parse behind the calling code again, where a partial one takes no such rule.

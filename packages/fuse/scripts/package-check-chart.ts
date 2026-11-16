@@ -27,8 +27,8 @@ export async function readChartDisplays(page: Page): Promise<string[]> {
 }
 
 /**
- * The growth rule, verbatim from CONTRACT.md section 1. A consumer reads the preview label and
- * this rule in the namespace JSDoc, so the published declarations must carry it.
+ * The growth rule, verbatim. A consumer reads the preview label and this rule in the namespace
+ * JSDoc, so the published declarations must carry it.
  */
 const GROWTH_RULE =
   "Every later chart change follows the growth rule. A new capability becomes a new part, a variant or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on a part below Root.";
@@ -262,7 +262,7 @@ const PART_ROUTES: readonly PartRoute[] = [
     control: "RadarChart.ActiveDot, RadarChart.Glow",
   },
   {
-    // The digit roll is what only the centre's numbers read.
+    // The digit roll is what only the center's numbers read.
     part: "PieChart.Center",
     forbidden: [
       slotRule("CenterValue", "pie-chart-center-value"),

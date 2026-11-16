@@ -2,11 +2,11 @@
 
 /**
  * The active point every readout part reads. This module is the one place that reads the live
- * scope, the store subscription, the window rule and the point a closing tooltip holds. A point is
- * an index and the series nearest the pointer or focused there, and a closing tooltip holds both
- * together, so its content keeps the slot and the series it showed until the popup has closed. The
- * module reads only the scope contexts and the store, so the light model paths that import it ship
- * no readout code.
+ * scope and the point a closing tooltip holds, and it applies them and the window rule to the
+ * store's active point for every readout part. A point is an index and the series nearest the
+ * pointer or focused there, and a closing tooltip holds both together, so its content keeps the
+ * slot and the series it showed until the popup has closed. The module reads only the scope
+ * contexts and the store, so the light model paths that import it ship no readout code.
  */
 import { use } from "react";
 

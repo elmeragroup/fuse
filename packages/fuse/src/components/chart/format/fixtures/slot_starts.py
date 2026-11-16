@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the expected slot starts for the Fuse charts v1 run.
+"""Generate the expected slot starts for the Fuse chart format tests.
 
 This script is an oracle. It uses only the Python standard library, plus the
 pinned tzdata package as zone data. It never reads Fuse code and never runs
@@ -9,7 +9,7 @@ the fold attribute, so it shares no conversion logic with the code under test.
 Run it with the venv beside it, with PYTHONTZPATH set to the empty string so
 that zoneinfo reads the pinned tzdata package:
 
-    PYTHONTZPATH= .venv/bin/python3 -I slot_starts.py [<ground-truth>/time]
+    PYTHONTZPATH= .venv/bin/python3 -I slot_starts.py [<oracle>/time]
 
 One run computes every sample twice. The pinned source is tzdata 2025c. CI runs
 Node 26.13.0 with tzdata 2026e, which has the same transitions at every sampled
@@ -29,7 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "slot-starts.json"
-# The charts v1 ground truth keeps slots-hourly-golden.json one folder up. A copy
+# The zoneinfo oracle keeps slots-hourly-golden.json one folder up. A copy
 # of this script elsewhere takes that folder as its first argument, or skips the
 # golden check when it has none.
 GOLDEN_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent

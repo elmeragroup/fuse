@@ -32,11 +32,11 @@ export type InsidePlacement =
  *
  * @param arc - The slice's arc.
  * @param size - The label's box size.
- * @param onColour - Whether the slice's role has an on-color role.
+ * @param onColor - Whether the slice's role has an on-color role.
  * @returns The placement, with the box when inside.
  */
-export function insideLabel(arc: ArcSpec, size: LabelSize, onColour: boolean): InsidePlacement {
-  if (!onColour) return { placement: "outside" };
+export function insideLabel(arc: ArcSpec, size: LabelSize, onColor: boolean): InsidePlacement {
+  if (!onColor) return { placement: "outside" };
   const [x, y] = arcCentroid(arc);
   const box = { left: x - size.width / 2, top: y - size.height / 2, width: size.width, height: size.height };
   const pad = (arc.padAngle ?? 0) / 2;
@@ -99,22 +99,22 @@ export function outsideLabels(
   const placed = bisectors.map((angle, index) => {
     const elbow = polarPoint(angle, radius * (1 + reach));
     const side: "start" | "end" = elbow.x >= 0 ? "end" : "start";
-    return { index, angle, centre: elbow.y, side, size: sizes[index] ?? { width: 0, height: 0 } };
+    return { index, angle, center: elbow.y, side, size: sizes[index] ?? { width: 0, height: 0 } };
   });
   for (const side of ["start", "end"] as const) {
-    const group = placed.filter((label) => label.side === side).sort((a, b) => a.centre - b.centre);
+    const group = placed.filter((label) => label.side === side).sort((a, b) => a.center - b.center);
     for (let at = 1; at < group.length; at += 1) {
       const above = group[at - 1];
       const label = group[at];
       if (above === undefined || label === undefined) continue;
-      const least = above.centre + (above.size.height + label.size.height) / 2;
-      if (label.centre < least) label.centre = least;
+      const least = above.center + (above.size.height + label.size.height) / 2;
+      if (label.center < least) label.center = least;
     }
   }
-  return placed.map(({ angle, centre, side, size }): OutsideLabel => {
+  return placed.map(({ angle, center, side, size }): OutsideLabel => {
     const reached = polarPoint(angle, radius * (1 + reach));
-    const elbow = { x: reached.x, y: centre };
-    const end = { x: elbow.x + (side === "end" ? run : -run), y: centre };
+    const elbow = { x: reached.x, y: center };
+    const end = { x: elbow.x + (side === "end" ? run : -run), y: center };
     return {
       anchor: polarPoint(angle, radius),
       elbow,
@@ -122,7 +122,7 @@ export function outsideLabels(
       side,
       box: {
         left: side === "end" ? end.x : end.x - size.width,
-        top: centre - size.height / 2,
+        top: center - size.height / 2,
         width: size.width,
         height: size.height,
       },
@@ -162,7 +162,10 @@ export function rayLabelOffset(angle: number, width: number, side: "outside" | "
   return { x: `${cssNumber(sign * sin)} * ${support}`, y: `${cssNumber(-sign * cos)} * ${support}` };
 }
 
-/** Where an angle label sits and how it aligns: the share of its box that lies before its point on each axis. */
+/**
+ * Where an angle label sits and how it aligns: the share of its box that lies before its point on
+ * each axis.
+ */
 export type AngleLabel = {
   readonly point: PolarPoint;
   /** 0 aligns the box's left edge on the point, 0.5 its center and 1 its right edge. */

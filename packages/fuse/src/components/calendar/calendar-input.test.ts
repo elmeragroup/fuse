@@ -50,7 +50,9 @@ describe("the date-prop seam", () => {
 
   it("refuses ISO text with a TypeError naming the Root, the prop and the fix", () => {
     const call = () =>
-      // @ts-expect-error -- text reaches the seam past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+      // Text reaches the seam past the types: from plain JavaScript, or as the ISO text a server
+      // component's Temporal object crosses as.
+      // @ts-expect-error -- text that reaches the seam past the types
       printedProp("2026-10-05T09:30", "DatePicker.Root", "defaultValue");
     expect(call).toThrow(TypeError);
     expect(call).toThrow(

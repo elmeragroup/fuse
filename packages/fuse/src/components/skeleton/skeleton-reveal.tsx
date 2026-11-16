@@ -125,7 +125,7 @@ type RevealState<T> = {
 };
 
 function isDataForm<T>(props: SkeletonRevealProps<T>): props is SkeletonRevealDataProps<T> {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the two prop forms differ only in whether children is a render function
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the prop forms differ only in children's type
   return typeof props.children === "function";
 }
 
@@ -311,8 +311,8 @@ export function SkeletonReveal<T>(props: SkeletonRevealProps<T>): ReactElement {
       else panes.current.set(id, element);
     };
 
-  // Input while a skeleton is up: someone mid-gesture gets the content at once. Heard in the
-  // reveal's own window, a same-origin frame's for a reveal rendered into one.
+  // Input while a skeleton is up shows the content at once, so a user mid-gesture gets it. The
+  // reveal listens in its own window, which is a same-origin frame's for a reveal rendered into one.
   useEffect(() => {
     const root = rootRef.current;
     if (currentKind !== "skeleton" || root === null) return undefined;

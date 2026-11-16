@@ -11,7 +11,7 @@ import type { MeterIconName, MeterTone } from "./meter-tone";
 const MODES = Object.values(METER_CONSTANTS.MODES);
 const LEVELS = Object.values(METER_CONSTANTS.LEVELS);
 
-/** the whole published matrix, one row per mode × level. */
+/** The whole published matrix, one row per mode × level. */
 const MATRIX = {
   default: {
     LOW: { tone: "success", icon: "none" },

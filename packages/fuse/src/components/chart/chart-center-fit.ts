@@ -73,7 +73,7 @@ function overflows(hole: HTMLElement): boolean {
  *
  * @param hole - The center's hole, whose `data-fit` the stylesheet reads.
  */
-function fitCentre(hole: HTMLElement): void {
+function fitCenter(hole: HTMLElement): void {
   writeAttribute(hole, "data-fit", null);
   if (!overflows(hole)) return;
   writeAttribute(hole, "data-fit", "value");
@@ -87,13 +87,13 @@ function fitCentre(hole: HTMLElement): void {
  *
  * @returns The ref for the hole.
  */
-export function useCentreFit(): RefObject<HTMLDivElement | null> {
+export function useCenterFit(): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const hole = ref.current;
     if (hole === null) return undefined;
     const fit = (): void => {
-      fitCentre(hole);
+      fitCenter(hole);
     };
     fit();
     const sizes = new ResizeObserver(fit);

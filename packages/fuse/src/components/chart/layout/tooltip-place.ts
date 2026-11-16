@@ -10,8 +10,8 @@ export type PlaceBox = {
 export type PlaceSize = { readonly width: number; readonly height: number };
 
 /**
- * The viewport inset of every side test, CONTRACT section 9.5's 8 px. A side holds the popup only
- * when the popup stays this far inside the viewport there.
+ * The viewport inset of every side test, 8 px. A side holds the popup only when the popup stays
+ * this far inside the viewport there.
  */
 export const TOOLTIP_EDGE = 8;
 
@@ -80,7 +80,7 @@ export type PopupPlace = { readonly left: number; readonly bottom: number };
 /** What a popup's resting place over the plot depends on, in plot pixels. */
 export type RoofInput = {
   /** The active slot's center along x. */
-  readonly centre: number;
+  readonly center: number;
   /** The popup's width. */
   readonly width: number;
   /** The chart Root's left and right edges, which hold the popup. */
@@ -110,8 +110,8 @@ export type RoofInput = {
  * @returns The resting place.
  */
 export function roofRest(input: RoofInput): PopupPlace {
-  const { centre, width, within, viewport, roof, floor, from } = input;
-  const left = heldIn(heldIn(centre - width / 2, width, within), width, viewport);
+  const { center, width, within, viewport, roof, floor, from } = input;
+  const left = heldIn(heldIn(center - width / 2, width, within), width, viewport);
   const bottom = (roof(left, left + width) ?? floor) - ROOF_GAP;
   if (from === null) return { left, bottom };
   if (bottom < from.bottom) {

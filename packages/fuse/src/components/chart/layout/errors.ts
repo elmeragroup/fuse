@@ -1,5 +1,5 @@
 /**
- * The chart error tiers of CONTRACT section 8.1. Composition errors depend only on props, config
+ * The chart error tiers. Composition errors depend only on props, config
  * and the tree, so they throw in every build. Data errors throw in development and, in production,
  * warn once per Root for each rule and subject, such as a column, and render the fallback the rule
  * names. Both classes stay private, as `CommandCompositionError` does, and each carries its rule.
@@ -29,7 +29,7 @@ export type ChartCompositionRule =
   | "horizontal-panels"
   | "series-in-two-panels"
   | "stack-across-panels"
-  | "scale-colour-on-stack"
+  | "scale-color-on-stack"
   | "series-not-in-panel"
   | "key-outside-panels"
   | "part-outside-panel"
@@ -112,7 +112,7 @@ export const DATA_MESSAGES = {
   "non-finite-value":
     "received a value cell that is not a finite number. Pass numbers, null or undefined. Production counts the reading as missing.",
   "non-finite-threshold":
-    "received a threshold colour whose threshold is not a finite number. Pass a number, such as the period's average. Production paints every value in the threshold's below role.",
+    "received a threshold color whose threshold is not a finite number. Pass a number, such as the period's average. Production paints every value in the threshold's below role.",
   "value-out-of-range": "received a value above 1e15 in magnitude. Production counts the reading as missing.",
   "invalid-x":
     "received a time-axis x that is not a valid Date or epoch milliseconds. Production drops the row.",

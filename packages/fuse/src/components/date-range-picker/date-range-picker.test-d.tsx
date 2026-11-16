@@ -231,11 +231,11 @@ test("no date prop takes ISO text", () => {
 });
 
 test("a misspelt or undeclared prop does not compile", () => {
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _fieldMisspelt = <DateRangePickerField label="Period" granulartiy="minute" />;
   // @ts-expect-error field takes no `disabled`
   const _fieldUndeclared = <DateRangePickerField label="Period" disabled />;
-  // @ts-expect-error granularity is misspelt
+  // @ts-expect-error granularity is misspelled
   const _rootMisspelt = <DateRangePicker.Root aria-label="Period" granulartiy="minute" />;
   // @ts-expect-error root takes no `isDisabled`
   const _rootUndeclared = <DateRangePicker.Root aria-label="Period" isDisabled />;

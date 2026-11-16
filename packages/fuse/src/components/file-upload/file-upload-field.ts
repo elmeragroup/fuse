@@ -9,7 +9,7 @@
 // then validates at once in `onChange` mode, and after a failed submit in `onSubmit` mode. The
 // Trigger's blur marks the Field touched and, in `onBlur` mode, commits validation, as
 // Select.Trigger's and Checkbox's blur do. Opening the OS picker blurs the window, which blurs the
-// Trigger while it stays its root's active element; that blur is no leaving of the control, so it
+// Trigger while it stays its root's active element. The user has not left the control, so that blur
 // commits nothing before the user has picked. Outside any Field, Base UI's default context is a
 // shared object of no-ops whose ref no input may take, so both hooks leave it alone.
 

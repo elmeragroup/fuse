@@ -58,7 +58,7 @@ export function pick(input: HTMLInputElement, files: readonly File[]): void {
 
 /**
  * Dispatches a paste carrying `files` at `target`, and returns the event to read its outcome.
- * FileUpload cancels a paste it takes before it reads the files, so an uncancelled paste delivered
+ * FileUpload cancels a paste it takes before it reads the files, so an uncanceled paste delivered
  * nothing.
  *
  * @param target - Where the paste lands, such as `document.body` or a focused field.

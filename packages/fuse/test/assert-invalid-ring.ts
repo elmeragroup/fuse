@@ -3,18 +3,18 @@ import { expect } from "vitest";
 import { cssVarColor } from "./themed-browser-render";
 
 /**
- * A ring layer of a computed `box-shadow`: its spread, its computed colour string and whether
+ * A ring layer of a computed `box-shadow`: its spread, its computed color string and whether
  * it paints inside the border box.
  */
 export type RingLayer = { readonly spread: string; readonly color: string; readonly inset: boolean };
 
 /**
- * The invalid ring's colour, written by hand: the `--error` role at 20% alpha, mixed the way
+ * The invalid ring's color, written by hand: the `--error` role at 20% alpha, mixed the way
  * Tailwind's `/20` opacity modifier mixes it.
  */
 const INVALID_RING_COLOR = "color-mix(in oklab, var(--error) 20%, transparent)";
 
-/** Split a computed `box-shadow` into layers at the commas outside colour functions. */
+/** Split a computed `box-shadow` into layers at the commas outside color functions. */
 function shadowLayers(boxShadow: string): string[] {
   if (boxShadow === "none") {
     return [];
@@ -45,7 +45,7 @@ type ShadowLengths = {
 };
 
 /**
- * The lengths of one computed box-shadow layer. Chromium serializes a layer as its colour,
+ * The lengths of one computed box-shadow layer. Chromium serializes a layer as its color,
  * then x, y, blur and spread, so a layer without exactly those four lengths has none.
  */
 function shadowLayerLengths(layer: string): ShadowLengths | undefined {
@@ -64,9 +64,9 @@ function shadowLayerLengths(layer: string): ShadowLengths | undefined {
 }
 
 /**
- * Resolve a CSS colour expression to the string Chromium computes for it, the way
- * `cssVarColor` resolves a token: a probe under the same theme scope takes it as its colour.
- * Chromium serializes a box-shadow layer's colour the same way, so the two compare exactly.
+ * Resolve a CSS color expression to the string Chromium computes for it, the way
+ * `cssVarColor` resolves a token: a probe under the same theme scope takes it as its color.
+ * Chromium serializes a box-shadow layer's color the same way, so the two compare exactly.
  */
 export function computedColor(host: HTMLElement, color: string): string {
   const probe = document.createElement("span");
@@ -99,7 +99,7 @@ export function settleTransitions(...elements: readonly HTMLElement[]): void {
 /**
  * The rings an element paints, read from its computed `box-shadow` as it stands: every layer
  * with no offset and no blur but a spread, as the `ring-*` utilities emit. Chromium writes each
- * layer's colour first, its four lengths after it and an `inset` keyword last; the transparent
+ * layer's color first, its four lengths after it and an `inset` keyword last; the transparent
  * placeholder layers Tailwind stacks have no spread. Call {@link settleTransitions} first to
  * read the settled value.
  */
@@ -118,13 +118,13 @@ export function ringLayers(element: HTMLElement): RingLayer[] {
 /**
  * Assert the invalid face's ring and border: an `--error` border and exactly one 3px ring
  * of the `--error` role at 20% alpha. Every expected value is written here by hand; the
- * role colour is read from the theme, never from the recipe.
+ * role color is read from the theme, never from the recipe.
  *
  * @param label - The control's name in failure messages.
  * @param element - The control that paints the invalid face.
  */
 export function expectInvalidRing(label: string, element: HTMLElement): void {
-  // The probes are child elements, which an <input> cannot hold, so they resolve colours
+  // The probes are child elements, which an <input> cannot hold, so they resolve colors
   // where the control's parent sits in the same theme scope.
   settleTransitions(element);
   const host = element.parentElement ?? element;
@@ -139,7 +139,7 @@ export function expectInvalidRing(label: string, element: HTMLElement): void {
  * role flush against it, then the resting halo, `--error` at 20% alpha, as the outermost line,
  * reaching 4px past the border. Chromium lists the solid line's layer first, so it paints above
  * the halo's layer, which leaves 3px of halo showing beyond it. Every expected value is written
- * here by hand; the role colour is read from the theme.
+ * here by hand; the role color is read from the theme.
  *
  * @param label - The ring host's name in failure messages.
  * @param element - The element that paints the face: the control, or its within/state group.

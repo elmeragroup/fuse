@@ -88,12 +88,12 @@ export function FileUploadTrigger({
   const { state, actions, meta } = useFileUploadContext("FileUpload.Trigger");
   const field = useFieldRootContext();
   const labelable = useLabelableContext();
-  // Base UI's convention for "no Field here": its default Field context has a NOOP
-  // `setValidityData`. The labelable context is no witness, because SkeletonReveal provides its
-  // own outside any Field. Outside a Field the Trigger writes no id, label or invalid state.
+  // Base UI marks "no Field here" with a `NOOP` `setValidityData` on its default Field
+  // context. The labelable context cannot tell, because SkeletonReveal provides its own outside
+  // any Field. Outside a Field the Trigger writes no id, label or invalid state.
   const inField = field.setValidityData !== NOOP;
-  // As on Base UI's Select.Trigger: the Field's control id until the labelable registers the
-  // Trigger's own `id` after mount, so server markup keeps the label paired with the Trigger.
+  // As on Base UI's Select.Trigger, the id is the Field's control id until the labelable registers
+  // the Trigger's own `id` after mount, so server markup keeps the label paired with the Trigger.
   const controlId = useLabelableId({ id: ownId, enabled: inField });
   const id = inField ? controlId : ownId;
   const { registerTrigger, registerFieldTrigger, triggerLeft } = meta;

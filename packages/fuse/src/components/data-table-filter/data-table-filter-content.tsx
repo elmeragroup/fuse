@@ -1,6 +1,6 @@
 "use client";
 
-// The add menu: a Base UI 1.9 filterable Menu, opened by the Trigger through a detached handle.
+// The add menu is a Base UI 1.9 filterable Menu, opened by the Trigger through a detached handle.
 // Option, multi-option and boolean fields are filterable submenus of checkbox items, ticked live,
 // and a boolean toggle is one checkbox row of the field list. Text, number and date fields drill
 // in place: the field list gives way to that field's editor in the same popup, which is a
@@ -151,7 +151,7 @@ function useStepMorph(step: string) {
     }
   }, [step]);
   // The morph hands each dimension back to the content when it ends, so a later keystroke snaps.
-  // Only `transitionend`: a cancelled transition is one a newer morph replaced.
+  // Only `transitionend`: a canceled transition is one a newer morph replaced.
   const onTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
     const dimension = MORPHED.find((name) => name === event.propertyName);
     if (event.target === event.currentTarget && dimension !== undefined) {
@@ -265,7 +265,8 @@ export function DataTableFilterContent({
               data-slot="data-table-filter-content"
               data-step={state.drilled === null ? "fields" : "editor"}
               aria-label={meta.format("addFilter")}
-              // The Trigger, Base UI's default, unless focus already moved to the value popover.
+              // Focus returns to the Trigger, Base UI's default, unless it already moved to the value
+              // popover.
               finalFocus={() => !meta.focusLeft("menu", popupRef.current)}
               className={mergeClassName(
                 className,
@@ -359,7 +360,7 @@ export function DataTableFilterFieldList({ children }: DataTableFilterFieldListP
   }, []);
   const { returnTo, drillOrigin } = state;
   const { clearReturnTo } = actions;
-  // Back from an in-place editor: focus returns to the search. A search that took the field's
+  // On Back from an in-place editor, focus returns to the search. A search that took the field's
   // name is selected, so typing replaces it.
   useLayoutEffect(() => {
     const search = searchRef.current;
@@ -596,9 +597,9 @@ function FieldSubmenu({
         <OverlayPortal portal={MenuPrimitive.Portal}>
           <MenuPrimitive.Positioner
             data-slot="data-table-filter-submenu-positioner"
-            // Beside the row on a wide screen, 4px out, its search level with the field row. Below
-            // the row on a narrow one, 2px down. Either way -4 cancels the menu's 4px padding, so a
-            // submenu below its row is flush with the menu's edge.
+            // On a wide screen the submenu sits beside the row, 4px out, with its search level with
+            // the field row. On a narrow one it sits below the row, 2px down. Either way -4 cancels
+            // the menu's 4px padding, so a submenu below its row is flush with the menu's edge.
             sideOffset={({ side }) => (side === "top" || side === "bottom" ? 2 : 4)}
             alignOffset={-4}
             collisionPadding={8}

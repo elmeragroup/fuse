@@ -20,7 +20,6 @@ import { selfFocusRingClass } from "../../styles/utils";
  * utility, so a consumer shadow size class replaces it whole, and a shadow color class tints it.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
- * Fuse splits the external reference's surface and padding axes into `direction` and `size`.
  * `size` sets the card's surface tier on the base as `--card-pad`: the medium tier,
  * `--surface-pad-md`, by default and the large tier, `--surface-pad-lg`, at `lg`. Sections pad
  * with it, and a content or footer below another section drops its top padding, so the tier is
@@ -75,7 +74,7 @@ export const cardVariants = tv({
   },
 });
 
-// A `Card.SectionMedia` child makes a section a two-column grid, the media centred beside the content.
+// A `Card.SectionMedia` child makes a section a two-column grid, the media centered beside the content.
 const sectionMediaGridClass = cn(
   "has-[>[data-slot=card-section-media]]:grid has-[>[data-slot=card-section-media]]:grid-cols-[auto_minmax(0,1fr)] has-[>[data-slot=card-section-media]]:items-center has-[>[data-slot=card-section-media]]:gap-x-(--surface-gap-md)"
 );

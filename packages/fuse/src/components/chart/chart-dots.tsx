@@ -10,7 +10,7 @@ import {
   followedKind,
   noteShownText,
   pointAxes,
-  pointCentre,
+  pointCenter,
   restingPoint,
   useAttachedMark,
 } from "./chart-attached";
@@ -112,7 +112,7 @@ type PointLook = { readonly frame: PlotFrame | null; readonly xScale: "band" | "
  * Writes each dot's center from the loop's numbers, a place and a value per point, in order. A point
  * may draw more than one circle, as a ping ring and its dot do, which share its numbers.
  */
-function writeCentres(
+function writeCenters(
   dots: Iterable<Element>,
   look: { readonly frame: PlotFrame; readonly xScale: "band" | "point" },
   values: MarkValues,
@@ -122,7 +122,7 @@ function writeCentres(
   let index = 0;
   for (const dot of dots) {
     const point = Math.floor(index / perPoint);
-    const { cx, cy } = pointCentre(frame, xScale, values[point * 2] ?? 0, values[point * 2 + 1] ?? 0);
+    const { cx, cy } = pointCenter(frame, xScale, values[point * 2] ?? 0, values[point * 2 + 1] ?? 0);
     writeAttribute(dot, "cx", cx);
     writeAttribute(dot, "cy", cy);
     index += 1;
@@ -132,7 +132,7 @@ function writeCentres(
 /** Draws a series' dots from the loop's numbers. */
 function drawDots(group: SVGGElement, look: PointLook, values: MarkValues): void {
   const { frame, xScale } = look;
-  if (frame !== null) writeCentres(group.children, { frame, xScale }, values);
+  if (frame !== null) writeCenters(group.children, { frame, xScale }, values);
 }
 
 /**
@@ -212,13 +212,13 @@ const DOTS_COPY: AttachedCopy = {
     const template = live.firstElementChild?.cloneNode(false);
     if (!(kept instanceof Element)) return live;
     if (template instanceof Element) {
-      // An old dot fades out, so it never runs a fade-in of its own, and wears its own paint.
+      // An old dot fades out, so its copy drops `data-intro` to skip a fade-in, and its inline style.
       template.removeAttribute("data-intro");
       template.removeAttribute("style");
       kept.append(template);
     }
     // Dots draw only on readings, and a scale or a threshold paints every reading a step of its
-    // own, so either every dot wears an inline paint or none does, and the first dot tells which.
+    // own, so either every dot has an inline paint or none does, and the first dot tells which.
     if (live.firstElementChild === null || inlinePaint(live.firstElementChild) === "") return kept;
     keptPaints.set(kept, [...live.children].map(inlinePaint));
     return kept;
@@ -313,7 +313,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
         <>
           <g ref={markRef}>
             {dots.map(({ key, point, paint: own }) => {
-              const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
+              const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
               return (
                 <Dot
                   key={key}
@@ -373,11 +373,11 @@ function drawActiveDot(svg: SVGSVGElement, look: PointLook, values: MarkValues):
   const { frame, xScale } = look;
   if (frame === null) return;
   const dots = activeDots(svg);
-  writeCentres(dots, { frame, xScale }, values, dots.length);
+  writeCenters(dots, { frame, xScale }, values, dots.length);
 }
 
 /** A dot's center in its layer's pixels. */
-type Centre = { readonly cx: number; readonly cy: number };
+type Center = { readonly cx: number; readonly cy: number };
 
 /**
  * The track an active dot last rode and what it was read from: a line's path data, or the series,
@@ -406,13 +406,13 @@ function barEnd(
   frame: PlotFrame,
   slot: number,
   kind: "columns" | "bars"
-): Centre | null {
+): Center | null {
   const cell = barCellAt(context.model, series, slot);
   if (cell === null) return null;
   const point = kind === "bars" ? barTipAt(context, series, cell.slot) : columnAt(context, series, cell.slot);
   const resting =
     point ?? restingPoint({ window: context.model.window, xScale: context.xScale }, frame, series, slot);
-  return resting === null ? null : pointCentre(frame, context.xScale, resting[0], resting[1]);
+  return resting === null ? null : pointCenter(frame, context.xScale, resting[0], resting[1]);
 }
 
 /** A bar's middle along the slot axis and its tip, where it rests in the loop, or null. */
@@ -530,13 +530,13 @@ function keptBarTrack(
 function rideOf(
   layer: Element,
   track: Track,
-  from: Centre,
-  to: Centre,
+  from: Center,
+  to: Center,
   orientation: "vertical" | "horizontal"
 ): Ride | null {
   const vertical = orientation === "vertical";
-  const along = (centre: Centre) => (vertical ? centre.cx : centre.cy);
-  const across = (centre: Centre) => (vertical ? centre.cy : centre.cx);
+  const along = (center: Center) => (vertical ? center.cx : center.cy);
+  const across = (center: Center) => (vertical ? center.cy : center.cx);
   // Where the dot shows now, a running glide's offset included.
   const shown = glideShown(layer) ?? [0, 0];
   const start = {
@@ -603,10 +603,10 @@ export function ChartActiveDot({
     const before = drawnPoint();
     const from =
       shownBefore.current && before !== null && frame !== null
-        ? pointCentre(frame, context.xScale, before[0] ?? 0, before[1] ?? 0)
+        ? pointCenter(frame, context.xScale, before[0] ?? 0, before[1] ?? 0)
         : null;
-    // The dot shows only while the series draws a reading at the active slot, and its circles wear
-    // the step of that reading's value under a scale or a threshold.
+    // The dot shows only while the series draws a reading at the active slot, and its circles take
+    // the paint of that reading's step under a scale or a threshold.
     if (svg !== null) {
       writeAttribute(svg, "data-value", point === null ? null : "");
       const own =
@@ -633,7 +633,7 @@ export function ChartActiveDot({
     const to =
       placed === null || frame === null
         ? null
-        : pointCentre(frame, context.xScale, placed[0] ?? 0, placed[1] ?? 0);
+        : pointCenter(frame, context.xScale, placed[0] ?? 0, placed[1] ?? 0);
     // Only a step from one reading to another glides, and not while a data update moves the dot
     // with what it sits on. Showing, hiding, a commit and reduced motion place it at once.
     const { motion, orientation, store } = context;
@@ -645,7 +645,7 @@ export function ChartActiveDot({
     if (ride === null) snapGlide(svg);
     else rideFrom(svg, stepSpring(store), ride);
   });
-  // The bar track the dot rides, as of the latest render, which the tooltip's roof holds.
+  // The bar track the dot rides, as of the latest render, which the tooltip's roof reads.
   const barRide = useRef<() => Track | null>(() => null);
   useLayoutEffect(() => {
     barRide.current = () =>
@@ -724,9 +724,9 @@ function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): v
   const { frame, xScale } = look;
   if (frame === null) return;
   const { dots, anchors } = markerParts(box);
-  writeCentres(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
+  writeCenters(dots, { frame, xScale }, values, dots.length / Math.max(1, values.length / 2));
   anchors.forEach((anchor, index) => {
-    const { cx, cy } = pointCentre(frame, xScale, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
+    const { cx, cy } = pointCenter(frame, xScale, values[index * 2] ?? 0, values[index * 2 + 1] ?? 0);
     writeStyle(anchor, "--chart-marker-x", `${String(cx)}px`);
     writeStyle(anchor, "--chart-marker-y", `${String(cy)}px`);
   });
@@ -737,8 +737,8 @@ function drawMarker(box: HTMLDivElement, look: PointLook, values: MarkValues): v
  * reading or the minimum, as the Figma price chart's Now indicator draws. A `ValueLabel` child adds
  * the value as a pill above each dot, or beside it for `at="min"`, so it never covers the line
  * that rises on both sides of the lowest reading. It sits on a Line's or an Area's vertex, or at a
- * Bar's tip, and moves with what it sits on during a data update. It is plot output that readers
- * skip, and the option and description carry its meaning.
+ * Bar's tip, and moves with what it sits on during a data update. It is `aria-hidden`, so assistive
+ * technology skips it, and the option and its description give its meaning.
  *
  * @beta
  */
@@ -818,7 +818,7 @@ export function ChartMarker({
           <>
             <svg aria-hidden="true">
               {marked.flatMap(({ slot, point, paint: own }) => {
-                const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
+                const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
                 const dot = (
                   <Dot
                     key={`${String(slot)}-dot`}
@@ -847,7 +847,7 @@ export function ChartMarker({
               })}
             </svg>
             {marked.map(({ slot, point }) => {
-              const { cx, cy } = pointCentre(frame, context.xScale, point[0], point[1]);
+              const { cx, cy } = pointCenter(frame, context.xScale, point[0], point[1]);
               return (
                 <span
                   key={slot}

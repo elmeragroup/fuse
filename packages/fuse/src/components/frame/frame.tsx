@@ -81,7 +81,7 @@ function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): 
         // variants in `frame-variants.css`, as `inner-corner/frame.ts` defines them. The gutter
         // layout sets adjacent panels 4px apart.
         "data-[layout=gutter]:frame-seam-lower:mt-1",
-        // The stacked and flush layouts fuse adjacent panels: the shell squares the corners that
+        // The stacked and flush layouts join adjacent panels: the shell squares the corners that
         // meet, the lower panel drops the border they would share, and the upper one hides the
         // highlight that would darken it.
         "not-data-[layout=gutter]:frame-seam-upper:before:hidden not-data-[layout=gutter]:frame-seam-lower:border-t-0",

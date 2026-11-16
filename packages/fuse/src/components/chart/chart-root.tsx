@@ -20,7 +20,7 @@ import { createChartLabels } from "./chart-labels";
 import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
-import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
+import { colorFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
 import { usePanelSpan } from "./chart-plot";
 import { useMeasuredPlot } from "./chart-plot-measure";
@@ -124,7 +124,7 @@ export type ChartRootProps<
      * bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip,
      * the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the
      * same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under
-     * `stackOffset="expand"`, throws `scale-colour-on-stack` for a scale or a threshold. Set
+     * `stackOffset="expand"`, throws `scale-color-on-stack` for a scale or a threshold. Set
      * `--chart-color-<key>` on Root for a color outside the roles.
      */
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow>;
@@ -231,7 +231,7 @@ function inPageOrder(a: PanelEntry, b: PanelEntry): number {
 }
 
 /**
- * The error of Panels that break section 8.3's layouts: a key listed by two Panels and a config key
+ * The error of Panels that break the Panel layouts: a key listed by two Panels and a config key
  * that no Panel lists. It reads every Panel of the current tree, so it runs once their effects
  * have registered them all.
  *
@@ -430,7 +430,7 @@ export function ChartRoot<
   const modelPeriod = useSteady(period, sameRange);
   const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   // The placer keeps the last placement while every x reads the same, so a value update keeps the
-  // domain object and the axis ticks and slot keys, which read the domain alone, stay done.
+  // domain object, and the axis ticks and slot keys, which read the domain alone, are not recomputed.
   const [placeRows] = useState(createRowPlacer);
   const model = useMemo(
     () =>
@@ -504,8 +504,8 @@ export function ChartRoot<
   const [registry] = useState(() => new Set<PanelEntry>());
   const [panels, setPanels] = useState<readonly PanelEntry[]>([]);
   const domains = useMemo(() => keyDomains(model, stackOffset, panels), [model, stackOffset, panels]);
-  const colourRule = useMemo(
-    () => colourFamilyError("Chart.Root", modelConfig, Object.keys(modelConfig)),
+  const colorRule = useMemo(
+    () => colorFamilyError("Chart.Root", modelConfig, Object.keys(modelConfig)),
     [modelConfig]
   );
   // The mounted Bars, which register after they mount, so a data update knows which series draw bars.
@@ -827,10 +827,10 @@ export function ChartRoot<
       placeSpan,
       panels,
       domains,
-      colourRule,
+      colorRule,
     }),
     [
-      colourRule,
+      colorRule,
       placeSpan,
       registerPanel,
       registerRootPart,

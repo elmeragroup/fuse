@@ -128,7 +128,7 @@ export function createChartRoof(): ChartRoof {
   // preference changes, which starts or stops a ping ring's animation.
   let excess = 0;
   let excessReduced: boolean | null = null;
-  // The rider revision the kept profile holds the tracks of.
+  // The rider revision whose tracks the kept profile holds.
   let keptRiders = -1;
   let watching: MutationObserver | null = null;
   return {
@@ -324,13 +324,13 @@ function routeRoof(view: RoofView): RoofProfile | null {
     1,
     Math.min(MOST_FRACTIONS, Math.ceil(travel), Math.floor(ROUTE_BUDGET / Math.max(1, numbers)))
   );
-  // How far apart two neighbouring fractions draw a number, in plot pixels.
+  // How far apart two neighboring fractions draw a number, in plot pixels.
   const gap = travel / fractions;
   const selector = `${LAYERS},${ACTIVE_DOTS}`;
   const raster = pathRaster(view, selector);
-  // Each box's and dot's swept footprint: one box around where it shows, where its route ends and
-  // where it rests. Its edges move in straight lines, so that box holds it in every frame, a bar
-  // that slides along x with a window included.
+  // The area each box and dot sweeps, as one box around where it shows, where its route ends and
+  // where it rests. Its edges move in straight lines, so that box contains it in every frame. That
+  // includes a bar that slides along x with a window.
   const swept = new Map<SVGGraphicsElement, { bounds: PieceBounds | null; reach: number }>();
   const sweep = (): void => {
     for (const drawing of drawingsOf(view, selector)) {
@@ -414,8 +414,8 @@ function pathRaster(view: RoofView, selector: string): PathRaster {
     canvas.height = height;
   }
   const { surface, scale } = view;
-  // Client pixels to canvas pixels: the plot's left edge at the stretch's start, its top at the
-  // overhang.
+  // The transform from client pixels to canvas pixels. It puts the plot's left edge at the
+  // stretch's start and its top at the overhang.
   const toCanvas = new DOMMatrix()
     .translate(-first, OVERHANG)
     .scale(1 / scale.x, 1 / scale.y)
@@ -494,7 +494,7 @@ function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
     const point = new DOMPoint(x, y).matrixTransform(matrix);
     return [(point.x - surface.left) / scale.x, (point.y - surface.top) / scale.y];
   };
-  // Plot pixels per user unit, for the stroke.
+  // The plot pixels per user unit, for the stroke width.
   const perUnit =
     Math.sqrt(Math.abs(matrix.a * matrix.d - matrix.b * matrix.c)) / Math.sqrt(scale.x * scale.y);
   const style = getComputedStyle(drawing);

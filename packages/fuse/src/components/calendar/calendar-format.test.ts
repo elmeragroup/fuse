@@ -1,7 +1,8 @@
 /**
- * Unit under test: the calendar's day and month text in the unit project's process zone, Oslo. Oracle: printed calendars, written out by hand: the text names the day it was
- * given whatever the zone, since a day at UTC midnight a zone formatted locally would name the day
- * before in New York.
+ * Unit under test: the calendar's day and month text in the unit project's process zone, Oslo.
+ * Oracle: printed calendars, written out by hand. The text names the day it was given whatever the
+ * zone. Formatted in the local zone, a day stored at UTC midnight would name the day before in
+ * New York.
  */
 import { describe, expect, it } from "vitest";
 

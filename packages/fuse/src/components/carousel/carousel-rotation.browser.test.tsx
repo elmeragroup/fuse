@@ -1,8 +1,9 @@
 /**
  * Unit under test: Carousel rotation in Chromium, through the rotation control's name and the
- * current indicator. Oracles: the APG carousel pattern (rotation pauses on hover, stops on keyboard
- * focus and any other user action, restarts only from the rotation control, which then keeps it
- * running) and WCAG 2.2.2, under which rotation the user did not ask for stays stopped.
+ * current indicator. Oracles: the APG carousel pattern and WCAG 2.2.2. Under the APG pattern,
+ * rotation pauses on hover, stops on keyboard focus and any other user action, and restarts only
+ * from the rotation control, which then keeps it running. Under WCAG 2.2.2, rotation the user did
+ * not ask for stays stopped.
  */
 import { useState, createElement } from "react";
 import type { ReactElement } from "react";
@@ -19,13 +20,13 @@ import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Carousel } from "./index";
 
-/** The fixture's slide width, so page N's slide starts N × WIDTH into the scroll range. */
+/** The fixture's slide width, so page N's slide starts N times `WIDTH` into the scroll range. */
 const WIDTH = 240;
 
 /** The autoplay delay every fixture sets, the time {@link turn} moves the page's clock on. */
 const DELAY = 200;
 
-// The page's timeouts are fake, so rotation turns a page only when a test moves the clock: a slow
+// The page's timeouts are fake, so rotation turns a page only when a test moves the clock. A slow
 // runner can neither skip a page nor turn one early.
 beforeEach(() => {
   useFakeTimeouts();
@@ -179,7 +180,7 @@ describe("Carousel autoplay", () => {
       .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
       .not.toBeNull();
 
-    // An explicit Play: focus stays on the control, and rotation runs.
+    // After an explicit Play, focus stays on the control and rotation runs.
     await userEvent.keyboard("{Enter}");
     expect(document.activeElement).toBe(roleNamed("button", "Stop automatic slide show"));
     await turn(1);
@@ -233,13 +234,13 @@ describe("Carousel autoplay that mounts late", () => {
     await expect.poll(() => carouselIndicators().length).toBe(4);
     await userEvent.hover(viewport);
     show();
-    // Rotating, as nothing stopped it, but paused under the pointer.
+    // It rotates, as nothing stopped it, but the pointer over it pauses it.
     await expect
       .poll(() => page.getByRole("button", { name: "Stop automatic slide show" }).query())
       .not.toBeNull();
     expect(viewport.getAttribute("aria-live")).toBe("polite");
     await staysOnFirstPage();
-    // The pointer leaving resumes it: the hover paused it and stopped nothing.
+    // The pointer leaving resumes it, because the hover paused it and stopped nothing.
     await userEvent.hover(roleNamed("button", "Outside"));
     await turn(1);
   });
@@ -309,7 +310,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
     await userEvent.keyboard("{Enter}");
     const field = roleNamed("textbox", "Code");
     expect(document.activeElement).toBe(field);
-    // The precondition: the browser counts this focus as keyboard focus.
+    // As a precondition, the browser counts this focus as keyboard focus.
     expect(field.matches(":focus-visible")).toBe(true);
     // APG: keyboard focus inside stops rotation, and only the rotation control starts it.
     await expect
@@ -332,7 +333,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
     await userEvent.click(roleNamed("button", "Open"));
     const details = roleNamed("button", "Details");
     expect(document.activeElement).toBe(details);
-    // The precondition: focus that follows a mouse press is not keyboard focus.
+    // As a precondition, focus that follows a mouse press is not keyboard focus.
     expect(details.matches(":focus-visible")).toBe(false);
     // The pointer rests on Open, above the carousel, so nothing pauses the rotation either.
     expect(roleNamed("region", "Offers").matches(":hover")).toBe(false);
@@ -364,14 +365,14 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
       )
     );
     const region = roleNamed("region", "Offers");
-    // A popover's field: in the carousel's React tree, outside its element. It takes keyboard
+    // A popover's field sits in the carousel's React tree, outside its element. It takes keyboard
     // focus while the carousel rotates, before the clock moves.
     const note = roleNamed("textbox", "Note");
     expect(region.contains(note)).toBe(false);
     expect(page.getByRole("button", { name: "Stop automatic slide show" }).query()).not.toBeNull();
     note.focus();
     expect(note.matches(":focus-visible")).toBe(true);
-    // Stopped, not paused: with the pointer off the carousel, the first page stays.
+    // Rotation is stopped, not paused, so the first page stays with the pointer off the carousel.
     await userEvent.hover(roleNamed("button", "Outside"));
     expect(page.getByRole("button", { name: "Start automatic slide show" }).query()).not.toBeNull();
     await staysOnFirstPage();
@@ -415,7 +416,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
     note.focus();
     expect(note.matches(":focus-visible")).toBe(true);
     show();
-    // APG: keyboard focus inside the carousel, a portal from it included, stops rotation.
+    // Under the APG pattern, keyboard focus inside the carousel, a portal from it included, stops rotation.
     await expect
       .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
       .not.toBeNull();
@@ -479,13 +480,13 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
 });
 
 /**
- * Unit under test: Carousel rotation in Chromium where the starting state is unusual: hover
- * that began before hydration, which only `:hover` still knows, and keyboard focus inside a
- * shadow root, whose focus event reaches the carousel retargeted to the shadow host, or inside
- * a same-origin frame a slide portals into, which the outer document reports only as the frame. Oracles: the
- * APG carousel pattern (rotation pauses while the pointer is over the carousel and stops when an
- * element in it receives keyboard focus) and each engine's own `:hover` and `:focus-visible`,
- * which the tests read as preconditions.
+ * Unit under test: Carousel rotation in Chromium where the starting state is unusual. The cases
+ * are hover that began before hydration, which only `:hover` still knows, and keyboard focus inside
+ * a shadow root, whose focus event reaches the carousel retargeted to the shadow host, or inside a
+ * same-origin frame a slide portals into, which the outer document reports only as the frame.
+ * Oracles: the APG carousel pattern, under which rotation pauses while the pointer is over the
+ * carousel and stops when an element in it receives keyboard focus, and each engine's own `:hover`
+ * and `:focus-visible`, which the tests read as preconditions.
  */
 describe("Carousel rotation across engines", () => {
   /** Moves the clock past several delays and lets the page render whatever they turned. */
@@ -531,8 +532,8 @@ describe("Carousel rotation across engines", () => {
     page.getByRole("button", { name: `${name} automatic slide show`, exact: true }).query();
 
   /**
-   * Rotation was stopped, not paused: with the pointer moved off the carousel, the rotation control
-   * offers Start and page `on` stays through several delays.
+   * Checks that rotation was stopped, not paused. With the pointer moved off the carousel, the
+   * rotation control offers Start and page `on` stays through several delays.
    */
   async function expectStoppedWithPointerOutside(on = 0): Promise<void> {
     await userEvent.hover(roleNamed("button", "Outside"));
@@ -545,10 +546,10 @@ describe("Carousel rotation across engines", () => {
     const server = serverRendered(<Hero />);
     const region = roleNamed("region", "Offers");
     await userEvent.hover(carouselViewport(region));
-    // The precondition: the engine knows the pointer is over the server's HTML.
+    // As a precondition, the engine knows the pointer is over the server's HTML.
     expect(region.matches(":hover")).toBe(true);
     server.hydrate();
-    // Rotating, since nothing stopped it, but paused under the pointer.
+    // It rotates, since nothing stopped it, but the pointer over it pauses it.
     await expect.poll(() => rotationControl("Stop")).not.toBeNull();
     await expect.poll(() => carouselViewport(region).getAttribute("aria-live")).toBe("polite");
     await pastSeveralDelays();
@@ -571,12 +572,12 @@ describe("Carousel rotation across engines", () => {
     if (!(host instanceof HTMLElement) || !(field instanceof HTMLInputElement)) {
       throw new Error("expected the code field's shadow input");
     }
-    // Synchronously after mount, so no rotation can have moved the field's slide out of view:
-    // the carousel rotates, and a lazy form control autofocuses its own field, as it would once
+    // This runs synchronously after mount, so no rotation can have moved the field's slide out of
+    // view. The carousel rotates, and a lazy form control autofocuses its own field, as it would once
     // its script loads.
     expect(rotationControl("Stop")).not.toBeNull();
     field.focus();
-    // The preconditions: the inner field has keyboard focus, and the host its focus event
+    // As preconditions, the inner field has keyboard focus, and the host its focus event
     // names does not match `:focus-visible` itself.
     expect(host.shadowRoot?.activeElement).toBe(field);
     expect(field.matches(":focus-visible")).toBe(true);
@@ -595,7 +596,7 @@ describe("Carousel rotation across engines", () => {
       throw new Error("expected the code field's shadow input");
     }
     field.focus();
-    // The precondition: keyboard focus is inside the carousel, below a shadow root, which a plain
+    // As a precondition, keyboard focus is inside the carousel, below a shadow root, which a plain
     // `contains` from the carousel does not reach.
     expect(field.matches(":focus-visible")).toBe(true);
     expect(region.contains(field)).toBe(false);
@@ -620,7 +621,7 @@ describe("Carousel rotation across engines", () => {
     renderThemed(<Hero extra={createPortal(<input aria-label="Frame code" />, frameDocument.body)} />);
     const field = frameDocument.querySelector("input");
     if (field === null) {
-      throw new Error("expected the portalled field in the frame");
+      throw new Error("expected the portaled field in the frame");
     }
     expect(rotationControl("Stop")).not.toBeNull();
     // A frame's freshly rendered field can turn down its first focus, so focus is retried until
@@ -632,7 +633,7 @@ describe("Carousel rotation across engines", () => {
         return frameDocument.activeElement;
       })
       .toBe(field);
-    // The preconditions: the field has keyboard focus in its own document, while the outer
+    // As preconditions, the field has keyboard focus in its own document, while the outer
     // document names the frame, which does not match `:focus-visible` itself.
     expect(field.matches(":focus-visible")).toBe(true);
     expect(document.activeElement).toBe(frame);

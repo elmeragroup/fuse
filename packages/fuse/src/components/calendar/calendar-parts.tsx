@@ -271,7 +271,7 @@ function PlaceholderMonth({ single }: { readonly single: boolean }): ReactElemen
             <tr key={row} data-slot="calendar-day-grid-row" className={styles.dayGridRow()}>
               {Array.from({ length: 7 }, (_, column) => (
                 <td key={column} data-slot="calendar-day-grid-cell" className={styles.dayGridCell()}>
-                  {/* An empty day keeps the day's size, invisible as a neighbouring month's day. */}
+                  {/* An empty day keeps the day's size, invisible as a neighboring month's day. */}
                   <span data-slot="calendar-day-button" data-outside-month="" className={styles.day()} />
                 </td>
               ))}

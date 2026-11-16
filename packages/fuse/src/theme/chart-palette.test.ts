@@ -220,7 +220,7 @@ describe("chart palette", () => {
       }
     });
 
-    it(`${scheme} ${slug}: cyclic neighbours, 3-slot windows and the sentiment pair separate in normal and CVD vision`, () => {
+    it(`${scheme} ${slug}: cyclic neighbors, 3-slot windows and the sentiment pair separate in normal and CVD vision`, () => {
       for (const pair of [...measured.cyclicPairs, ...measured.skipPairs, measured.sentiment]) {
         expectApart(pair);
       }
@@ -235,7 +235,7 @@ describe("chart palette", () => {
       }
     });
 
-    it(`${scheme} ${slug}: equal diverging steps separate, and the midpoint is a grey apart from both arms`, () => {
+    it(`${scheme} ${slug}: equal diverging steps separate, and the midpoint is a gray apart from both arms`, () => {
       for (const pair of measured.equalSteps) {
         expectApart(pair);
       }

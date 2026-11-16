@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * Unit under test: `monthWeeks`. Oracle: printed calendars for 2026 (February starts on a Sunday,
- * August on a Saturday), written out by hand.
+ * Unit under test: `monthWeeks`. Oracle: printed calendars for 2026, written out by hand. February
+ * starts on a Sunday and August on a Saturday.
  */
 import "../temporal-polyfill";
 import { monthWeeks } from "./month-grid";
@@ -25,7 +25,7 @@ describe("monthWeeks", () => {
     ]);
   });
 
-  it("borrows the neighbouring months' days that share the first and last week", () => {
+  it("borrows the neighboring months' days that share the first and last week", () => {
     expect(weekSpans("2026-02", 1)).toEqual([
       "2026-01-26..2026-02-01 (7)",
       "2026-02-02..2026-02-08 (7)",

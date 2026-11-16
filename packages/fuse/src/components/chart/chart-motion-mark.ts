@@ -223,7 +223,7 @@ export function useCommitMotion(
     readonly frame: PlotFrame | null;
     readonly space: string;
   } | null>(null);
-  // A mark that unmounts forgets what it drew, so a remount, as Strict Mode rehearses one, draws
+  // A mark that unmounts forgets what it drew, so a remount, such as Strict Mode's, draws
   // its first commit again.
   useLayoutEffect(
     () => () => {

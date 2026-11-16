@@ -7,7 +7,7 @@ import type { Reading } from "./readings";
 const kinds = (readings: readonly Reading[]): string[] =>
   readings.map((reading) => (reading.kind === "reading" ? reading.quality : reading.kind));
 
-describe("section 8.7 quality mapping, written by hand", () => {
+describe("quality mapping, written by hand", () => {
   it.each([
     [1.5, undefined, "measured"],
     [1.5, null, "measured"],
@@ -80,7 +80,7 @@ describe("section 8.7 quality mapping, written by hand", () => {
     expect(kinds(readings)).toEqual(["measured", "missing", "missing", "measured"]);
   });
 
-  it("reads a broken cell at the series' edge as missing, the fallback section 8.1 names", () => {
+  it("reads a broken cell at the series' edge as missing", () => {
     const { readings } = readSeries({ values: [2e15, 1, Number.NaN], qualities: [] }, undefined, undefined);
     expect(kinds(readings)).toEqual(["missing", "measured", "missing"]);
   });
@@ -91,7 +91,7 @@ describe("section 8.7 quality mapping, written by hand", () => {
   });
 });
 
-describe("section 8.6 S07, the month to date", () => {
+describe("the month to date", () => {
   // Days 1 to 15 measured, day 5 missing, day 9 corrected, day 16 estimated, days 17 to 31 with no
   // rows, and now at noon on 16 October. Expected by hand: 31 cells, 1 missing marker and 15
   // pending cells.

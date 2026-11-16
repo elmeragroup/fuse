@@ -2,7 +2,7 @@ import axe from "axe-core";
 import { expect } from "vitest";
 
 /**
- * axe-core rules a component suite leaves out. `color-contrast` reads the rendered colours, which
+ * axe-core rules a component suite leaves out. `color-contrast` reads the rendered colors, which
  * the theme suites check against the role tokens; `region` wants every node in a landmark, which a
  * component fixture is not.
  */

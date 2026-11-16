@@ -374,7 +374,7 @@ export function slotAxisAt(frame: PlotFrame, share: number): number {
  * @param xScale - Root's x scale.
  * @returns The center in CSS pixels.
  */
-export function slotCentreAt(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
+export function slotCenterAt(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
   if (xScale === "band") return frame.grid.start + (position + 0.5) * frame.grid.step;
   const length = alongLength(frame);
   return frame.count === 1 ? length / 2 : (position * length) / (frame.count - 1);
@@ -388,8 +388,8 @@ export function slotCentreAt(frame: PlotFrame, position: number, xScale: "band" 
  * @param xScale - Root's x scale.
  * @returns The center in CSS pixels.
  */
-export function centreOf(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
-  return snapAlong(frame, slotCentreAt(frame, position, xScale));
+export function centerOf(frame: PlotFrame, position: number, xScale: "band" | "point"): number {
+  return snapAlong(frame, slotCenterAt(frame, position, xScale));
 }
 
 /**
@@ -408,11 +408,11 @@ export function optionBand(
 ): readonly [number, number] {
   if (xScale === "band") return slotBand(frame, position);
   const length = alongLength(frame);
-  // The unsnapped centre, which lies inside the plot. The last point's snapped centre can lie past
+  // The unsnapped center, which lies inside the plot. The last point's snapped center can lie past
   // the plot's end, which would leave the clipped band empty.
-  const centre = slotCentreAt(frame, position, xScale);
+  const center = slotCenterAt(frame, position, xScale);
   const half = length / frame.count / 2;
-  return snapSpan(frame, Math.max(0, centre - half), Math.min(length, centre + half));
+  return snapSpan(frame, Math.max(0, center - half), Math.min(length, center + half));
 }
 
 /**
@@ -484,7 +484,7 @@ export function pointAlong(frame: PlotFrame, at: number, xScale: "band" | "point
  * @param width - The stroke's width in CSS pixels, 0 for a fill.
  * @returns The coordinate the stroke's center line takes.
  */
-export function strokeCentre(frame: PlotFrame, snapped: number, width: number): number {
+export function strokeCenter(frame: PlotFrame, snapped: number, width: number): number {
   const { dpr } = frame.box;
   return Math.round(width * dpr) % 2 === 1 ? snapped + 0.5 / dpr : snapped;
 }
@@ -496,29 +496,29 @@ export function strokeCentre(frame: PlotFrame, snapped: number, width: number): 
  * covers several of Root's cells, such as an hour's 4 quarters.
  *
  * @param frame - The layout's frame.
- * @param centre - The own slot's unsnapped center.
+ * @param center - The own slot's unsnapped center.
  * @param cells - How many of Root's cells the own slot covers.
  * @returns The run's start and end in CSS pixels.
  */
-export function cellRun(frame: PlotFrame, centre: number, cells = 1): readonly [number, number] {
+export function cellRun(frame: PlotFrame, center: number, cells = 1): readonly [number, number] {
   const { step, start } = frame.grid;
   const half = (step * cells) / 2;
-  if (outsideRun(frame, centre)) return [snapAlong(frame, centre - half), snapAlong(frame, centre + half)];
-  // The first cell: the one the centre lies in for one cell, and for several, the one the run's
-  // start lies in, which the centre's half a run before rounds to.
+  if (outsideRun(frame, center)) return [snapAlong(frame, center - half), snapAlong(frame, center + half)];
+  // For one cell, the first cell is the one `center` lies in. For several, it is the one the run's
+  // start lies in, half a run before `center`, which the rounding finds.
   // A plot of no length spreads its cells over nothing, so a run starts at the first.
   const first =
     step === 0
       ? 0
       : cells === 1
-        ? Math.floor((centre - start) / step)
-        : Math.round((centre - half - start) / step);
+        ? Math.floor((center - start) / step)
+        : Math.round((center - half - start) / step);
   const position = Math.min(Math.max(first, 0), frame.count - cells);
   const band: readonly [number, number] = [
     slotBand(frame, position)[0],
     slotBand(frame, Math.min(position + cells - 1, frame.count - 1))[1],
   ];
-  return snapSpan(frame, centre - half, centre + half, band);
+  return snapSpan(frame, center - half, center + half, band);
 }
 
 /**
@@ -541,28 +541,28 @@ export function slotLine(
 ): readonly [number, number] {
   const [start, end] = optionBand(frame, position, xScale);
   const width = Math.min(line, end - start);
-  return slotLineAt(frame, slotCentreAt(frame, position, xScale), xScale, width);
+  return slotLineAt(frame, slotCenterAt(frame, position, xScale), xScale, width);
 }
 
 /**
  * The hairline a slot reference draws at a tweened, unsnapped center inside the plot. It starts at
  * the center, snapped, moved inside the device pixels of the band of the slot the center lies in, as
- * `slotLine` draws it at rest. The caller decides whether the line shows before this, from the
- * center, so the band only ever contains a line that lies in the plot.
+ * `slotLine` draws it at rest. The caller checks first that the center lies in the plot, so the
+ * band contains only a line that lies in the plot.
  *
  * @param frame - The layout's frame.
- * @param centre - The tweened center along the slot axis, inside the plot.
+ * @param center - The tweened center along the slot axis, inside the plot.
  * @param xScale - Root's x scale.
  * @param width - The line's width, whole device pixels.
  * @returns The line's start and end along the slot axis, snapped.
  */
 export function slotLineAt(
   frame: PlotFrame,
-  centre: number,
+  center: number,
   xScale: "band" | "point",
   width: number
 ): readonly [number, number] {
-  const at = lineStart(frame, centre, slotBandAt(frame, centre, xScale), width);
+  const at = lineStart(frame, center, slotBandAt(frame, center, xScale), width);
   return [at, at + width];
 }
 
@@ -594,8 +594,8 @@ export function slotBandAt(
 }
 
 /** Where a line `width` wide starts, at its snapped center moved inside the band's device pixels. */
-function lineStart(frame: PlotFrame, centre: number, band: readonly [number, number], width: number): number {
-  return Math.min(Math.max(snapAlong(frame, centre), band[0]), band[1] - width);
+function lineStart(frame: PlotFrame, center: number, band: readonly [number, number], width: number): number {
+  return Math.min(Math.max(snapAlong(frame, center), band[0]), band[1] - width);
 }
 
 /**

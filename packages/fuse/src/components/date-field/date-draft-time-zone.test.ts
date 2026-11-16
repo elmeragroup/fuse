@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Unit under test: the zoned hour step, through `cycleSegment` on a zoned draft and
- * `draftToValue` of the stepped draft, as a field's arrow keys use them. Oracle: `@internationalized/date`'s `cycleZoned` for the hour, which React Aria's
- * `IncompleteDate.cycle` uses for a zoned field: it counts whole hours since the epoch between
- * the day's first and last hour, so on Oslo's fall-back night (2026-10-25, 03:00 CEST → 02:00 CET)
- * the 02 hour comes twice, and on its spring-forward night (2026-03-29, 02:00 → 03:00) 02 never
- * comes. The expectations are those instants, written out. Every value names its zone, so they
- * hold in any process zone.
+ * `draftToValue` of the stepped draft, as a field's arrow keys use them. Oracle:
+ * `@internationalized/date`'s `cycleZoned` for the hour, which React Aria's
+ * `IncompleteDate.cycle` uses for a zoned field. It counts whole hours since the epoch between
+ * the day's first and last hour. On Oslo's fall-back night, 2026-10-25, when 03:00 CEST turns back
+ * to 02:00 CET, the 02 hour comes twice. On its spring-forward night, 2026-03-29, when 02:00 jumps
+ * to 03:00, 02 never comes. The expectations are those instants, written out. Every value names
+ * its zone, so they hold in any process zone.
  */
 import "../../temporal-polyfill";
 import { cycleSegment, draftOf, draftToValue } from "./date-draft";

@@ -25,7 +25,7 @@ test("SwitchProps is the primitive surface plus the optical size axis, and the e
   const _controlled = <Switch checked onCheckedChange={() => undefined} aria-label="Held" />;
   const _form = <Switch name="alerts" value="on" defaultChecked inputRef={null} nativeButton />;
 
-  // @ts-expect-error sizes are sm | default only
+  // @ts-expect-error sizes are `"sm"` or `"default"` only
   const _badSize = <Switch size="md" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Switch as="div" />;

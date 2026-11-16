@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Trim the charts v1 zoneinfo oracle into slots.json for the format tests.
+"""Trim the zoneinfo oracle into slots.json for the format tests.
 
-Run with the ground-truth folder as the only argument:
+Run with the oracle's time/ folder as the only argument:
 
-    python3 -I trim-slots.py <ground-truth>/time
+    python3 -I trim-slots.py <oracle>/time
 
 The script copies fields verbatim and computes nothing. It keeps each slot's
 UTC start and the labels the tests compare, and stores each day as columns.
@@ -84,10 +84,9 @@ def weeks():
 meta = load("slots-hourly.json")["meta"]
 out = {
     "meta": {
-        "source": "charts v1 ground truth time/ generate.py, trimmed by trim-slots.py",
+        "source": "the zoneinfo oracle's time/ generate.py, trimmed by trim-slots.py",
         "tzdata": meta["tzdata"],
         "cldr": meta["cldr"],
-        "week_labels_status": load("slots-iso-weeks.json")["meta"]["labels_status"],
     },
     "hour": sub_day_files("slots-hourly.json", "slots-hourly-golden.json"),
     "quarter-hour": sub_day_files("slots-quarter-hour.json", "slots-quarter-hour-golden.json"),

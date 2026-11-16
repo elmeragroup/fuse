@@ -322,7 +322,7 @@ const HOSTS = [
   },
   {
     // A host app paints its page `bg-background`, as the docs body does; no Fuse host states a
-    // surface here, so readers fall back to the page colour.
+    // surface here, so readers fall back to the page color.
     label: "the page",
     node: (part) => (
       <div role="region" aria-label="Usage page" className="bg-background">

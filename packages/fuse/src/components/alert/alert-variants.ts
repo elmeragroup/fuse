@@ -12,7 +12,7 @@ import { tv } from "../../styles/tv";
 export const alertVariants = tv({
   slots: {
     base: "relative",
-    // Beside a description Item.Media is one title line tall and centres the glyph on it. Item sizes
+    // Beside a description Item.Media is one title line tall and centers the glyph on it. Item sizes
     // that line for Item.Title's fixed `text-sm`; the alert title reads `--label-text`, so the media
     // line does too. It replaces Item.Media's own `item-described:` value of the same property.
     media: "item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]",
@@ -26,7 +26,7 @@ export const alertVariants = tv({
     // description does: 14px dense and 16px comfortable. The size carries the line height as its
     // `/normal` modifier, because tailwind-merge drops a line height that comes before a font size.
     // `text-inherit` replaces Item's `text-muted-foreground`, so the body takes the variant's
-    // text colour from `base`, as the title does. Zeroes its blocks' own block margins and puts
+    // text color from `base`, as the title does. Zeroes its blocks' own block margins and puts
     // 8px between consecutive blocks, twice the title's 4px gap; the selectors live in fuse.css.
     description: "text-(length:--label-text)/normal text-inherit rich-text-block:my-0 rich-text-gap:mt-2",
     button: "",
@@ -49,7 +49,7 @@ export const alertVariants = tv({
       },
       destructive: {
         // `error` text on the 5% `error` tint over the page, card or card-soft is a gated pair
-        // (contrast-matrix.test.ts), for the title and the body alike.
+        // in `contrast-matrix.test.ts`, for the title and the body alike.
         // A translucent tint keeps the surface beneath it, so it drops the outline Item's `panel`.
         base: "border-error bg-error/5 text-error [--surface-muted-foreground:inherit] [--surface:inherit]",
         icon: "text-error",
@@ -58,7 +58,7 @@ export const alertVariants = tv({
       },
       warning: {
         // The flush focus ring takes the soft foreground, held to 4.5:1 on this fill, where
-        // the neutral grey falls under 3:1 in dark. The soft fill is opaque, so it is the surface,
+        // the neutral gray falls under 3:1 in dark. The soft fill is opaque, so it is the surface,
         // and its soft foreground is the surface's muted text, which a chart's chips read.
         base: "border-warning bg-warning-soft text-warning-soft-foreground [--ring:var(--warning-soft-foreground)] [--surface-muted-foreground:--theme(--color-warning-soft-foreground)] [--surface:--theme(--color-warning-soft)]",
         icon: "text-warning",
@@ -73,7 +73,7 @@ export const alertVariants = tv({
         button: "bg-success text-success-foreground hover:bg-success/90",
       },
       info: {
-        // The flush focus ring takes the soft foreground, as on warning: the neutral grey
+        // The flush focus ring takes the soft foreground, as on warning: the neutral gray
         // falls under 3:1 on the info-soft fill in dark.
         base: "border-info bg-info-soft text-info-soft-foreground [--ring:var(--info-soft-foreground)] [--surface-muted-foreground:--theme(--color-info-soft-foreground)] [--surface:--theme(--color-info-soft)]",
         icon: "text-info",

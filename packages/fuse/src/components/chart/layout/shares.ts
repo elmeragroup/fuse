@@ -1,6 +1,6 @@
 /**
- * Shares that a reader adds up, rounded together so they sum to exactly 100 %, as CONTRACT
- * section 8.13 defines them. Rounding each share alone gives 99 % for three equal thirds.
+ * Shares that a reader adds up, rounded together so they sum to exactly 100 %. Rounding each share
+ * alone gives 99 % for three equal thirds.
  */
 
 /**

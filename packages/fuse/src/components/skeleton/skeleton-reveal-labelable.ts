@@ -27,7 +27,7 @@ const BASE_UI_ASSUMED = "@base-ui/react 1.9.0";
 function contextOf(element: ReactElement): Context<LabelableValue> | null {
   // Typed as a tag or a component, but React renders a context as its own provider object.
   const type: unknown = element.type;
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an element's type is a tag, a function or an object; only the object can be a context
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- only an object type can be a context
   if (typeof type !== "object" || type === null || !("$$typeof" in type)) return null;
   if (type.$$typeof !== Symbol.for("react.context")) return null;
   // SAFETY: React marks a context with the context symbol, and this is the context Base UI's

@@ -38,7 +38,7 @@ describe("M4 decimation over the committed hourly year", () => {
   });
 
   it("keeps the year's 0.5875 low and 3.7574 high", () => {
-    // Printed by trim_elhub_year.py: the low at index 6965 and the high at index 2467.
+    // The year's low sits at index 6965 and its high at index 2467.
     const kept = new Set(m4Indexes(values));
     expect(kept.has(6965)).toBe(true);
     expect(kept.has(2467)).toBe(true);

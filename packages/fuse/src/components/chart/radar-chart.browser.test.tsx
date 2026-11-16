@@ -1,13 +1,12 @@
-// RadarChart's grid, axes and series marks in Chromium. Units under test: RadarChart.Grid,
-// AngleAxis, RadiusAxis, Area, Line, Dots, ActiveDot and Glow under RadarChart.Root. Oracles,
-// written by hand: the vertices of values 1 to 4 on a [0, 4] domain, (0, −R/4),
-// (R/2, 0), (0, 3R/4) and (−R, 0); CONTRACT section 8.4's [−2, 1, 3] fixture, whose domain is
-// [−2, 3] with the zero ring at 2/5 of R, spoke 0 filled inside 2/5 only and spoke 1 from 2/5 to
-// 3/5 only; the zero ring in the zero line's colour, the frame's muted foreground; R5's six-spoke
-// fixture, spoke 1 estimated and spoke 4 missing, with two dashed edges, two hatched quadrilaterals
-// and five dots; R6's nearest spoke by angle and nearest drawn vertex, found by brute force; D19's
-// hover, 0.45 on the other series and twice the area opacity on the nearest; and the axes' places,
-// the ring values beside spoke 0 at the ring radii and each spoke label 1.1 R out.
+// RadarChart's grid, axes and series marks in Chromium. Units under test: RadarChart.Grid, AngleAxis,
+// RadiusAxis, Area, Line, Dots, ActiveDot and Glow under RadarChart.Root. Oracles, written by hand: the
+// vertices of values 1 to 4 on a [0, 4] domain, (0, −R/4), (R/2, 0), (0, 3R/4) and (−R, 0); the [−2, 1, 3]
+// fixture, whose domain is [−2, 3] with the zero ring at 2/5 of R, spoke 0 filled inside 2/5 only and spoke 1
+// from 2/5 to 3/5 only; the zero ring in the zero line's color, the frame's muted foreground; the six-spoke
+// fixture, spoke 1 estimated and spoke 4 missing, with two dashed edges, two hatched quadrilaterals and five
+// dots; the nearest spoke by angle and nearest drawn vertex, found by brute force; the hover, 0.45 on the
+// other series and twice the area opacity on the nearest; and the axes' places, the ring values beside spoke
+// 0 at the ring radii and each spoke label 1.1 R out.
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
@@ -65,7 +64,7 @@ function rows(a: readonly (number | null)[], b?: readonly (number | null)[]): Sp
   return a.map((value, index) => ({ spoke: `s${String(index)}`, a: value, b: b?.[index] ?? null }));
 }
 
-describe("the pick (R6) and hover (D19)", () => {
+describe("the pick and hover", () => {
   it("picks the nearest spoke by angle and the series whose drawn vertex lies nearest, with hysteresis", async () => {
     const a = [3, 1, 4, 2, 5, 1];
     const b = [1, 4, 2, 5, 2, 3];
@@ -109,7 +108,7 @@ describe("the pick (R6) and hover (D19)", () => {
         // A near series holds for 150 ms of event time after it changes, read from the events'
         // own timeStamp, which no fake clock reaches; the wait is a lower bound, so a slow runner
         // only widens the gap the hold needs.
-        // oxlint-disable-next-line fuse/no-fixed-delay -- the near-series hold runs on the events' timeStamp, which no fake clock reaches; 160 ms is a lower bound past the 150 ms hold
+        // oxlint-disable-next-line fuse/no-fixed-delay -- the hold reads event timeStamps, not a fake clock
         await wait(160);
         await hoverAt(...clientPoint(radarLayer(host, "radar-chart-line"), point.x, point.y));
         expect(figure.style.getPropertyValue("--chart-active")).toBe(String(spoke));
@@ -121,9 +120,9 @@ describe("the pick (R6) and hover (D19)", () => {
   });
 });
 
-describe("the description (A1-17)", () => {
+describe("the description", () => {
   it("states a series' unit once after its label, as every series family's description does", () => {
-    // CONTRACT section 9.3's form, `Forbruk i kilowattimer: lavest 0,33`: the unit follows the
+    // The description's form, `Forbruk i kilowattimer: lavest 0,33`: the unit follows the
     // label, and the extremes print without it. Forbruk reads 3, 1,5 and 7 kWh over NO1 to NO3, so
     // its lowest is 1,5 at NO2 and its highest 7 at NO3. A count joins its word by a no-break space.
     const { host } = renderThemed(

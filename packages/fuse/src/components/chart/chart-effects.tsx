@@ -9,7 +9,7 @@ import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import { glideLength, snapGlide, stepSpring } from "./chart-spring";
 import type { ChartLayerProps } from "./chart-types";
-import { pointAlong, slotCentreAt } from "./layout/plot-frame";
+import { pointAlong, slotCenterAt } from "./layout/plot-frame";
 
 /**
  * Props for `Chart.Glow`, a closed part.
@@ -81,7 +81,7 @@ export function ChartReveal({ className, style, children }: ChartRevealProps): R
         ? null
         : pointAlong(
             drawn.frame,
-            slotCentreAt(drawn.frame, active.slot - window.first, context.xScale),
+            slotCenterAt(drawn.frame, active.slot - window.first, context.xScale),
             context.xScale
           );
     const from = shown.current;

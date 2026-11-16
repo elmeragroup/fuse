@@ -1,9 +1,9 @@
 // The range rules behind RangeCalendar, outside React: what pressing a day does with and without an
 // anchor, how far a range may reach from its anchor past unavailable days, where keyboard focus
 // goes after anchoring, what a commit on blur or an outside press selects, the view of the range a
-// calendar shows, and each day's flags in it. Pure: it takes Temporal values and returns them, so
-// the rules are unit-tested without React. The rules reproduce React Aria's `useRangeCalendarState` (react-stately) and the
-// keyboard step of `useCalendarCell` (react-aria).
+// calendar shows, and each day's flags in it. The module is pure: it takes Temporal values and returns
+// them, so the rules are unit-tested without React. The rules reproduce React Aria's
+// `useRangeCalendarState`, from react-stately, and the keyboard step of `useCalendarCell`, from react-aria.
 
 import { checkBounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";
@@ -254,8 +254,8 @@ export function commitRange(
 /**
  * Why a selected range fails the Root's rules, in Calendar's `ValidityState` words:
  * `"rangeUnderflow"` for a start before the minimum, `"rangeOverflow"` for an end after the
- * maximum, or `"unavailable"` for an end `isDateUnavailable` refuses with no anchor. React Aria checks only the ends,
- * so a value spanning an unavailable day passes.
+ * maximum, or `"unavailable"` for an end `isDateUnavailable` refuses with no anchor. React Aria
+ * checks only the ends, so a value spanning an unavailable day passes.
  *
  * @param range - The range.
  * @param rules - The Root's rules.

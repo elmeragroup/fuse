@@ -1,6 +1,5 @@
-// Unit under test: chartDescription, the generated description, after layer 05's review findings
-// q16 and s14. Oracle: CONTRACT section 9.3's description facts and the en-US dictionary templates,
-// with every expected sentence written by hand from the rows below.
+// Unit under test: chartDescription, the generated description. Oracle: the en-US and nb-NO
+// dictionary templates, with every expected sentence written by hand from the rows below.
 import { describe, expect, it } from "vitest";
 
 import { chartDescription } from "./chart-text";
@@ -43,8 +42,8 @@ function describeRows(
 }
 
 describe("chartDescription", () => {
-  it("states the spoken unit once after each label, as CONTRACT section 9.3's example does", () => {
-    // js7: 9.3 writes "Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04", so the unit follows
+  it("states the spoken unit once after each label", () => {
+    // The nb-NO form is "Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04": the unit follows
     // the label and each value reads bare. A count joins its noun with a no-break space, and a sentence
     // starts with a capital.
     const rows = [
@@ -152,7 +151,7 @@ describe("the description of a domain into a new year", () => {
   });
 });
 
-describe("chartDescription over a coarse series (X2)", () => {
+describe("chartDescription over a coarse series", () => {
   it("counts a missing hour once, in hours, and names each extreme by its hour", () => {
     // Eight quarters of 1 October 2025 in Oslo, 00:00 to 02:00, with now at 02:00. Price reads 1 on
     // every quarter. Usage is hourly: 2 on hour 0's first quarter, nothing for hour 1, which has
@@ -189,7 +188,7 @@ describe("chartDescription over a coarse series (X2)", () => {
   });
 });
 
-describe("chartDescription dates a coarse series' extremes (Y1, B3-1)", () => {
+describe("chartDescription dates a coarse series' extremes", () => {
   /** A committed dated label, by its case name. */
   const dated = (name: string): string => {
     const found = DATED_SLOT_CASES.find((entry) => entry.name === name);

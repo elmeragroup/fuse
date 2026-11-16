@@ -19,15 +19,13 @@
  */
 
 // oxlint-disable elmera/facade-reexport-grammar -- An installer entry, not a facade: it exports
-// nothing and its statements are the install (scripts/entries.ts INSTALLER_ENTRIES).
+// nothing and its statements are the install, as `INSTALLER_ENTRIES` in `scripts/entries.ts` lists it.
 
-// Exit criterion: once stable Safari on macOS and iOS and every Node LTS that Fuse supports ship
-// Temporal, this entry stops installing and only sets the marker, and the next major removes it
-// together with the `temporal-polyfill` dependency. Until then Fuse's date components throw
-// without Temporal, so the entry stays the one supported way to provide it.
+// Fuse's date components throw without Temporal, and this entry is the one supported way to
+// provide it.
 //
-// `package.json#sideEffects` lists this file by the path each manifest's exports resolve
-// (scripts/generate-exports.ts). Without that, a bundler would drop a bare import of an entry
+// `package.json#sideEffects` lists this file by the path each manifest's exports resolve, as
+// `scripts/generate-exports.ts` writes it. Without that, a bundler would drop a bare import of an entry
 // that exports nothing.
 
 import { installImplementation } from "temporal-polyfill/shim";

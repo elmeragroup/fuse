@@ -68,7 +68,7 @@ test("details cancel and report the gesture", () => {
 
 test("pageBehavior and firstDayOfWeek take their own names only", () => {
   expectTypeOf<CalendarPageBehavior>().toEqualTypeOf<"visible" | "single">();
-  // @ts-expect-error pageBehavior is visible | single
+  // @ts-expect-error pageBehavior is `"visible"` or `"single"`
   const _paged = <Calendar.Root aria-label="Delivery" pageBehavior="all" />;
   // @ts-expect-error firstDayOfWeek takes React Aria's three-letter names
   const _monday = <Calendar.Root aria-label="Delivery" firstDayOfWeek={1} />;

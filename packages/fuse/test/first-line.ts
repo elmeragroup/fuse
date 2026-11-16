@@ -36,9 +36,9 @@ export function hostCss(host: Host): string {
  * The viewport y of the middle of an element's border box.
  *
  * @param element - The element to measure.
- * @returns Its vertical centre in viewport pixels.
+ * @returns Its vertical center in viewport pixels.
  */
-export function centreY(element: Element): number {
+export function centerY(element: Element): number {
   const box = element.getBoundingClientRect();
   return box.top + box.height / 2;
 }

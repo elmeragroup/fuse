@@ -137,7 +137,7 @@ describe("emitted-directive walker", () => {
 
   it("scopes the walker to discoverEntries().sourceFiles, not all of src", () => {
     const discovered = discoverEntries(packageRoot);
-    // Test-only fixture: reachable from no entry (Dialog made the hook itself reachable).
+    // Test-only fixture, reachable from no entry. Dialog made the hook itself reachable.
     expect(discovered.sourceFiles).not.toContain("src/hooks/intl-fixture/index.ts");
     expect(discovered.sourceFiles).toContain("src/theme.ts");
   });

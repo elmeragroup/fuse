@@ -18,7 +18,7 @@ A line and an area change colour where they cross the threshold, and a bar, an e
 a marker, the active dot, the tooltip swatch and `Glow`'s halo take their own value's side. The legend shows one entry per side
 with its label, and the tooltip, the table and spoken text keep the series' own `label`. Pass the
 same number to a `ReferenceLine` to show the split. On a stacked `Line` or `Area` a threshold throws
-`scale-colour-on-stack`, as a scale does. A threshold that is not a finite number throws
+`scale-color-on-stack`, as a scale does. A threshold that is not a finite number throws
 `non-finite-threshold` in development, and production paints every value in the `below` role. Pie,
 radial and radar config reject a threshold at the type level. The new types are
 `ChartThresholdColor` and `ChartThresholdSide`.

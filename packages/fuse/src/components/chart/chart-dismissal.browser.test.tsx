@@ -1,5 +1,4 @@
-// The tooltip's one dismissal and the one active identity, in Chromium, after
-// layer 05's review findings q9, q10, s3, s4 and s12. Oracle: CONTRACT section 9.4's pointer and
+// The tooltip's one dismissal and the one active identity, in Chromium. Oracle: the pointer and
 // key rules and the rows' own names and values, written by hand.
 import type { ReactNode } from "react";
 
@@ -106,7 +105,7 @@ describe("the one dismissal", () => {
 
 describe("the one active identity", () => {
   it("follows Root's fallback when new data drops the focused slot and later brings it back", async () => {
-    // s3: focus b in [a, b], replace the data with [c, d], then with [b, c, d].
+    // Focus b in [a, b], replace the data with [c, d], then with [b, c, d].
     const { host, rerender } = renderThemed(<Plot data={ROWS.slice(0, 2)} />);
     host.querySelector("button")?.focus();
     await userEvent.keyboard("{Tab}{ArrowRight}");
@@ -135,7 +134,7 @@ describe("the one active identity", () => {
   });
 
   it("follows Root's fallback when the window drops the focused slot and widens again", async () => {
-    // q10: focus b, narrow the window to a, widen it again.
+    // Focus b, narrow the window to a, widen it again.
     const { host, rerender } = renderThemed(<Plot data={ROWS} xRange={["a", "c"]} />);
     host.querySelector("button")?.focus();
     await userEvent.keyboard("{Tab}{ArrowRight}");
@@ -147,7 +146,7 @@ describe("the one active identity", () => {
   });
 
   it("gives a removed focused series way to all series", async () => {
-    // s4: focus the third series, then replace the config with one series.
+    // Focus the third series, then replace the config with one series.
     const three = {
       x: { label: "X", color: "chart-1" },
       y: { label: "Y", color: "chart-2" },
@@ -169,7 +168,7 @@ describe("the one active identity", () => {
 
 describe("value identity", () => {
   it("tells two windows apart whose names would join alike", async () => {
-    // q11: ["a|sb", "c"] and ["a", "b|sc"] both joined to "sa|sb|sc" under the old key.
+    // The windows ["a|sb", "c"] and ["a", "b|sc"] both joined to "sa|sb|sc" under the old key.
     const rows = ["a", "a|sb", "b|sc", "c"].map((name, index) => ({ name, v: index + 1 }));
     const { host, rerender } = renderThemed(<Plot data={rows} xRange={["a|sb", "c"]} />);
     host.querySelector("button")?.focus();

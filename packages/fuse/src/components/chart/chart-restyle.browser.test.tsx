@@ -134,7 +134,7 @@ async function largestRestyle(operation: () => Promise<void>): Promise<number> {
     });
     tracing = true;
     await operation();
-    // Each element's inline colour changes, which restyles each of them, in one forced recalc.
+    // Each element's inline color changes, which restyles each of them, in one forced recalc.
     performance.mark(CONTROL_START);
     for (const item of items) item.style.color = "rgb(1, 2, 3)";
     void document.body.offsetHeight;

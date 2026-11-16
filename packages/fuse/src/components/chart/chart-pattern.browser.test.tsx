@@ -1,8 +1,6 @@
-// CONTRACT section 9.1's pattern checks, run in Chromium before any other
-// part exists. Oracle: the spoken logs in test/chart/pattern-phrases.json, which
-// .scratch/charts-v1/tools/l05-oracles/pattern_phrases.py writes from frozen Elhub data, layer 03's
-// literal spoken forms, the drafted dictionary and vsr's own phrase grammar. No expectation comes
-// from Fuse.
+// The chart's focus pattern checks, run in Chromium on a minimal chart. Oracle: the spoken logs in
+// test/chart/pattern-phrases.json, written from frozen Elhub data, the literal spoken forms, the
+// drafted dictionary and vsr's own phrase grammar. No expectation comes from Fuse.
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
 import { cdp, server, userEvent } from "vitest/browser";
@@ -17,7 +15,7 @@ import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
 
-/** Section 9.1's key sequence, in vsr's key names. */
+/** The pattern checks' key sequence, in vsr's key names. */
 const KEYS = [
   "Tab",
   "ArrowRight",
@@ -34,7 +32,7 @@ const KEYS = [
   "Shift+Tab",
 ] as const;
 
-/** Wait for `count` animation frames. */
+/** Waits for `count` animation frames. */
 async function frames(count: number): Promise<void> {
   for (let frame = 0; frame < count; frame += 1) {
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -70,7 +68,7 @@ function chart(rows: readonly HourRow[], labels: readonly string[]) {
   );
 }
 
-/** Run the key sequence, logging focus events and the active element after each step. */
+/** Runs the key sequence and logs focus events and the active element after each step. */
 async function walk(host: HTMLElement) {
   const records: FocusRecord[] = [];
   const log = (event: FocusEvent): void => {
@@ -131,8 +129,8 @@ describe.each([
 
 describe("the negative control", () => {
   it("speaks no option after ArrowRight under the aria-activedescendant fallback", async () => {
-    // A test-only page wired as the fallback of section 9.1: the listbox holds focus and points
-    // at its option. vsr speaks on focus, so a changing aria-activedescendant stays silent.
+    // A test-only page wired as the aria-activedescendant fallback. The listbox has focus and
+    // points at its option. vsr speaks on focus, so a changing aria-activedescendant stays silent.
     const host = document.createElement("div");
     document.body.append(host);
     const before = document.createElement("button");
@@ -218,7 +216,7 @@ describe("the accessibility tree in Chromium", () => {
       const focused = nodes.find(
         (node) => property(node, "focused") === true && node.role?.value !== "RootWebArea"
       );
-      // Hand-written from S06's third hour: per-meter 1.1781 kWh household and 0.6535 kWh cabin.
+      // Hand-written from the third hour of `S06_HOURS`, per meter 1.1781 kWh household and 0.6535 kWh cabin.
       expect(focused?.role?.value).toBe("option");
       expect(focused?.name?.value).toBe(
         "kl. 02 til 03: Husholdning 1,18 kilowattimer, Hytte 0,65 kilowattimer"

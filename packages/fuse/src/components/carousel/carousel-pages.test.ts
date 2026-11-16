@@ -55,8 +55,8 @@ describe("pagesOf", () => {
     expect(pagesOf(port(900), slides).positions).toEqual([0, 290, 590]);
   });
 
-  it("centres and end-aligns snap areas in the snapport", () => {
-    // 200px slides: centred, slide 1 (200–400) centres at 300, so the viewport starts at 150.
+  it("centers and end-aligns snap areas in the snapport", () => {
+    // 200px slides: centered, slide 1, from 200 to 400, centers at 300, so the viewport starts at 150.
     expect(pagesOf(port(800), row(4, 200, 0, "center")).positions).toEqual([0, 150, 350, 500]);
     // End-aligned, slide 1 ends at 400, so the viewport starts at 100; slide 0 clamps to 0.
     expect(pagesOf(port(800), row(4, 200, 0, "end")).positions).toEqual([0, 100, 300, 500]);

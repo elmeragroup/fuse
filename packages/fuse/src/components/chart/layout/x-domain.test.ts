@@ -18,8 +18,8 @@ import {
 } from "./x-domain";
 import type { XDomain } from "./x-domain";
 
-// Unit under test: placeTimeRows. Oracle: the zoneinfo slot lists in slots.json, which the charts
-// ground truth wrote with Python's zoneinfo, and the counts of CONTRACT section 8.6.
+// Unit under test: placeTimeRows. Oracle: the zoneinfo slot lists in slots.json, written with
+// Python's zoneinfo, and the slot counts each case writes out.
 
 const instants = (list: readonly string[]): number[] => list.map((start) => Date.parse(start));
 const household = (rows: readonly { readonly consumptionGroup: string; readonly startTime: string }[]) =>

@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The way from a chart's active part to its open tooltip, after CONTRACT section 9.5. While the popup
- * shows, the tooltip shares the test its anchor gives, so the plot keeps the active part for a
- * pointer that heads for the popup: over the parts it crosses on the way, and across the gap between
- * the plot and the popup, where no plot event reaches it.
+ * The way from a chart's active part to its open tooltip. While the popup shows, the tooltip shares
+ * the test its anchor gives, so the plot keeps the active part for a pointer that heads for the
+ * popup: over the parts it crosses on the way, and across the gap between the plot and the popup,
+ * where no plot event reaches it.
  */
 import type { ClientPoint } from "./chart-readout-port";
 import type { ChartStore } from "./chart-store";

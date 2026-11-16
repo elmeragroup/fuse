@@ -1,7 +1,7 @@
 /**
- * The growth rule and the HTML collision rule of CONTRACT.md section 7, over every part of every
- * namespace. The TypeScript checker is the oracle. A part's own props are read against baselines
- * that Fuse does not define, React's element props and Base UI's `useRender` props, so a prop that
+ * The growth rule and the HTML collision rule for chart props, over every part of every namespace.
+ * The TypeScript checker is the oracle. A part's own props are read against baselines that Fuse
+ * does not define, React's element props and Base UI's `useRender` props, so a prop that
  * a Fuse base type adds or an inherited prop that a part redeclares counts as its own. The two part
  * lists below are the reviewed inventory, and a new part must join one of them or the coverage case
  * fails. Each detector has a negative control that a planted violation turns red.
@@ -105,7 +105,10 @@ type PolarClosed =
   | "CenterName"
   | "Glow";
 
-/** Each namespace's closed parts by member name, whose own keys are every key past `className` and `style`. */
+/**
+ * Each namespace's closed parts by member name, whose own keys are every key past `className` and
+ * `style`.
+ */
 type ClosedNames = {
   Chart:
     | SharedClosed

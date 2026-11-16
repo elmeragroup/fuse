@@ -111,7 +111,7 @@ export function ClockChartReferenceArea({
   if (props.y1 !== undefined) {
     // The band clips to the radius domain, from the hole to the rim, and a band outside it draws
     // nothing. It clips the values, since the area-true scale clamps a value below the domain
-    // to a dial with no hole's centre.
+    // to a dial with no hole's center.
     const [min, max] = clock.domain;
     const from = Math.max(min, Math.min(props.y1, props.y2));
     const to = Math.min(max, Math.max(props.y1, props.y2));

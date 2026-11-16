@@ -1,5 +1,5 @@
-// Unit under test: per-series resolution. Oracles: CONTRACT section 8.8's nesting list, written out
-// by hand below; the zoneinfo slot lists of format/fixtures/slots.json, which give 100 quarters and
+// Unit under test: per-series resolution. Oracles: the nesting list, written out by hand below;
+// the zoneinfo slot lists of format/fixtures/slots.json, which give 100 quarters and
 // 25 hours on Oslo's fall-back day and 92 quarters and 23 hours on its spring-forward day, counted
 // by hand from the lists; and row spans counted by hand. The judges in fixtures/slot-judges.ts
 // compare every quarter's hour and every hour's day with the lists, under other process zones too.
@@ -13,7 +13,7 @@ import { coarseSlots, intervalNests, ownWindowFirsts, ownWindowSlots, rowSpans }
 
 const ALL: readonly Interval[] = ["second", "minute", "quarter-hour", "hour", "day", "week", "month", "year"];
 
-/** Section 8.8: what each Root interval nests in, besides itself. */
+/** What each Root interval nests in, besides itself. */
 const NESTS_IN = {
   second: ["minute", "quarter-hour", "hour", "day", "week", "month", "year"],
   minute: ["quarter-hour", "hour", "day", "week", "month", "year"],
@@ -39,7 +39,7 @@ const starts = (list: readonly string[]) => list.map((start) => Date.parse(start
 
 describe("interval nesting", () => {
   it.each(ALL.flatMap((root) => ALL.map((series) => [root, series] as const)))(
-    "decides whether %s nests in %s as section 8.8 lists",
+    "decides whether %s nests in %s as the nesting table lists",
     (root, series) => {
       const coarser: readonly Interval[] = NESTS_IN[root];
       expect(intervalNests(root, series)).toBe(root === series || coarser.includes(series));
@@ -127,7 +127,7 @@ describe("Table row spans", () => {
   });
 });
 
-describe("own window slots (X2)", () => {
+describe("own window slots", () => {
   // Root slots 0 to 7, two hours of 4 quarters, as the row-span fixture above.
   const hourly: SeriesModel = {
     key: "kwh",
@@ -152,7 +152,7 @@ describe("own window slots (X2)", () => {
     expect(ownWindowSlots(hourly, { first: 5, last: 7 })).toEqual([5]);
   });
 
-  it("walks each hour's first quarter, before the window when it starts inside an hour (Y4)", () => {
+  it("walks each hour's first quarter, before the window when it starts inside an hour", () => {
     expect(ownWindowFirsts(hourly, { first: 0, last: 7 })).toEqual([0, 4]);
     expect(ownWindowFirsts(hourly, { first: 2, last: 5 })).toEqual([0, 4]);
     expect(ownWindowFirsts(hourly, { first: 5, last: 7 })).toEqual([4]);

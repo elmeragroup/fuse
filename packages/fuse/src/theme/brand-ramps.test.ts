@@ -42,7 +42,7 @@ function stepColor(tokens: TokenContract, name: (typeof BRAND_RAMP_TOKEN_NAMES)[
 describe("brand neutral ramp", () => {
   it("tints every branded light neutral role with the theme's feature hue at low chroma", () => {
     // Oracle: issue #433's acceptance criterion. The brand hue is the hue of the theme's own
-    // curated `feature` role, and each neutral role is a grey at that hue with chroma 0.005-0.02.
+    // curated `feature` role, and each neutral role is a gray at that hue with chroma 0.005-0.02.
     for (const theme of LEGAL_THEMES.filter((candidate) => candidate.identity === "branded")) {
       const tokens = composeTheme(theme, "light");
       const brandHue = tokenOklch(tokenLiteral(tokens, "feature")).h;
@@ -101,9 +101,9 @@ type CuratedSeeds = { readonly "1": string; readonly "2"?: string };
 /**
  * The colors each brand curates, copied from where design set them, independent of the ramp
  * recipe. Palette 1 is each brand's light `feature` literal, with Fjordkraft company's teal for
- * its segment and `fkab`. Palette 2 is a brand's second color, which only Telinet (its green, its
- * light `feature-foreground` before #432) and Gudbrandsdal Energi (its orange, its dark
- * `secondary`) have.
+ * its segment and `fkab`. Palette 2 is a brand's second color, which only Telinet and Gudbrandsdal
+ * Energi have. Telinet's is its green, its light `feature-foreground` before #432. Gudbrandsdal
+ * Energi's is its orange, its dark `secondary`.
  */
 const CURATED_SEEDS = new Map<string, CuratedSeeds>([
   ["fkas", { "1": "oklch(0.57866 0.19387 36.96)" }],
@@ -160,7 +160,7 @@ describe("brand palettes", () => {
     }
   });
 
-  it("points a single-colour brand's palette 2 at its palette 1, step for step", () => {
+  it("points a single-color brand's palette 2 at its palette 1, step for step", () => {
     for (const theme of branded.filter((candidate) => seedsOf(candidate)["2"] === undefined)) {
       const tokens = composeTheme(theme);
       for (const step of RAMP_STEPS) {
@@ -170,7 +170,7 @@ describe("brand palettes", () => {
   });
 
   it("paints Telinet's feature foreground from a step of palette 2", () => {
-    // Issue #432: a role points at a palette and a step, not a colour.
+    // Issue #432: a role points at a palette and a step, not a color.
     const tokens = composeTheme({ identity: "branded", brand: "fkse", segment: "private" });
     expect(tokens["feature-foreground"]).toMatch(/^var\(--brand-2-\d+\)$/);
   });

@@ -182,7 +182,7 @@ type FocusTarget = { readonly chip: string; readonly edge: "first" | "last" } | 
  * Where focus goes when a chip is removed: the next chip's first segment, else the previous chip's
  * last, else the Trigger.
  */
-function neighbourTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
+function neighborTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
   const next = list[index + 1];
   if (next !== undefined) {
     return { chip: next.id, edge: "first" };
@@ -251,7 +251,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   const [drillOrigin, setDrillOrigin] = useState<"list" | "edit">("list");
   const [returnTo, setReturnTo] = useState<string | null>(null);
   const pendingFocus = useRef<FocusTarget | null>(null);
-  // Each chip's Operator, Value and Remove, by field id, so focus can move to a neighbour chip's
+  // Each chip's Operator, Value and Remove, by field id, so focus can move to a neighbor chip's
   // segment whatever element it renders.
   const segments = useRef(new Map<string, Set<HTMLElement>>());
   const registerSegment = useCallback((fieldId: string, element: HTMLElement) => {
@@ -313,7 +313,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   // late callbacks stay with the session that ended.
   const [openCount, setOpenCount] = useState(0);
   const rootId = useId();
-  // The Command.Root pattern: overlays register on mount, so a press with nothing to open can
+  // This follows the Command.Root pattern: overlays register on mount, so a press with nothing to open can
   // name the missing part. Only press handlers read them, so they are refs, not state.
   const contentRegistered = useRef(false);
   const valueContentRegistered = useRef(false);
@@ -417,9 +417,9 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       ? focusEdge(undefined, "first", triggerElement())
       : focusEdge(segments.current.get(target.chip), target.edge, triggerElement());
 
-  // Focuses the neighbour of a chip that goes, now rather than after a commit.
-  const neighbourOf = (list: readonly ChipFilter[], index: number): HTMLElement | null =>
-    focusTarget(neighbourTarget(list, index));
+  // Focuses the neighbor of a chip that goes, now rather than after a commit.
+  const neighborOf = (list: readonly ChipFilter[], index: number): HTMLElement | null =>
+    focusTarget(neighborTarget(list, index));
 
   // Focus after a remove or a clear. The chips it names exist once this commit lands.
   useLayoutEffect(() => {
@@ -529,11 +529,11 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       remove: (fieldId) => {
         discardEditors(fieldId);
         if (findFilter(filters, fieldId) === undefined) {
-          // Nothing to write. A ghost's editor closed with the discard above, and its finalFocus
+          // There is nothing to write. A ghost's editor closed with the discard above, and its finalFocus
           // settles focus. Another field's open editor stays.
           return;
         }
-        pendingFocus.current = neighbourTarget(
+        pendingFocus.current = neighborTarget(
           chips,
           chips.findIndex((chip) => chip.id === fieldId)
         );
@@ -680,7 +680,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       chipElement,
       hasContent: () => contentRegistered.current,
       hasValueContent: () => valueContentRegistered.current,
-      neighbourOf,
+      neighborOf,
       focusChipEdge: (chip, edge) => focusTarget({ chip, edge }),
       focusLeft: (kind, popup) =>
         focusMovedElsewhere(popup, [

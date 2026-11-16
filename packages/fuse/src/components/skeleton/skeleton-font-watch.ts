@@ -8,9 +8,9 @@
  * since a host swapping its brand face for another loaded one in one task keeps the count and the
  * status.
  *
- * The set holds the page's `@font-face` rules and the faces scripts added, a few dozen at most, so
- * a frame reads that many references and strings, stopping at the first difference, and
- * allocates nothing unless the set changed. That is negligible beside a frame's layout and paint.
+ * The set holds the page's `@font-face` rules and the faces scripts added. A frame reads each
+ * face and its status, stopping at the first difference, and builds a new snapshot only when the
+ * set changed.
  */
 import { windowOf } from "../../internal/dom-node";
 

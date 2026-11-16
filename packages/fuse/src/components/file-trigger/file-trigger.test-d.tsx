@@ -46,7 +46,7 @@ test("the element takes FileUpload's picker props and the Button look, and forwa
       Attach files
     </FileTrigger>
   );
-  // @ts-expect-error capture is user | environment
+  // @ts-expect-error capture takes only user or environment
   const _badCapture = <FileTrigger capture="front">Take photo</FileTrigger>;
   // @ts-expect-error size takes only the label sizes (LabelButtonSize), not the square icon sizes
   const _iconSize = <FileTrigger size="icon">Attach files</FileTrigger>;

@@ -4,7 +4,7 @@ import { typographyFragments } from "./typography-fragments";
 
 describe("typographyFragments", () => {
   it.each([
-    // Each colour variant maps onto its role token.
+    // Each color variant maps onto its role token.
     [{ variant: "default" }, "text-inherit"],
     [{ variant: "foreground" }, "text-foreground"],
     [{ variant: "primary" }, "text-primary"],

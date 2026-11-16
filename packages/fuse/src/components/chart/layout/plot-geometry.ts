@@ -14,7 +14,7 @@ import type { SlotWindow } from "./slot-window";
  * @param xScale - The Root's x scale.
  * @returns The fraction from 0 to 1.
  */
-export function slotCentre(window: SlotWindow, slot: number, xScale: "band" | "point"): number {
+export function slotCenter(window: SlotWindow, slot: number, xScale: "band" | "point"): number {
   const count = window.last - window.first + 1;
   const offset = slot - window.first;
   if (xScale === "band") return (offset + 0.5) / count;

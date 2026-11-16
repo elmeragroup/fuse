@@ -154,7 +154,7 @@ export function usePredictedEvents({
 
     registerIntent(registration);
     return () => {
-      // `release` disconnects too; naming the observer here keeps its owner in plain sight.
+      // `release` disconnects too. Disconnecting here as well shows which cleanup ends the observer.
       viewport.disconnect();
       release();
     };

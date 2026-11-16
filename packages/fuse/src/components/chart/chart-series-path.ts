@@ -17,7 +17,7 @@ import { useCommitMotion, useMotionMark } from "./chart-motion-mark";
 import type { MotionWriter, WriterLook } from "./chart-motion-mark";
 import { seriesPaintOf, stackedScaleError } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
-import { centreAlong, pathAxes, placePath, seriesPathKind, slotStep } from "./chart-path-draw";
+import { centerAlong, pathAxes, placePath, seriesPathKind, slotStep } from "./chart-path-draw";
 import type { Counted, PathDraw, PathLook, PathMemory } from "./chart-path-draw";
 import type { ChartPaths, PathKind as RouteKind } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
@@ -205,7 +205,7 @@ export type SeriesPathState = PathMark & {
  *   the numbers per vertex, `LINE_STRIDE` or `AREA_STRIDE`, and how a stroked path reads its width.
  * @returns The state the part draws from.
  * @throws {ChartCompositionError} `step-curve-needs-cells` for a step curve under a point scale, and
- *   `scale-colour-on-stack` for a scale color on a stacked series.
+ *   `scale-color-on-stack` for a scale color on a stacked series.
  */
 export function useSeriesPath(
   part: string,
@@ -277,7 +277,7 @@ export function useSeriesPath(
     () =>
       frame === null || path === null
         ? []
-        : pathValues(path.vertices, stride, centreAlong(frame, xScale), (value) => valueAt(frame, value)),
+        : pathValues(path.vertices, stride, centerAlong(frame, xScale), (value) => valueAt(frame, value)),
     [frame, path, xScale, stride]
   );
   const axes = useMemo(() => pathAxes(context.orientation, stride), [context.orientation, stride]);

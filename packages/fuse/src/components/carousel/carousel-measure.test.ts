@@ -59,7 +59,7 @@ type Setup = {
 };
 
 /**
- * Measure a fake border-box viewport, 400×200 without borders, scrolled 30px and 1200×800 to
+ * Measures a fake border-box viewport, 400×200 without borders, scrolled 30px and 1200×800 to
  * scroll unless `setup` says otherwise, whose slides snap to their start.
  */
 function measured(setup: Setup) {
@@ -102,7 +102,8 @@ function measured(setup: Setup) {
     const slide: Fake = {
       isConnected: true,
       getClientRects: () => (painted === undefined ? [] : [painted]),
-      // `DOCUMENT_POSITION_FOLLOWING` for a slide made after this one, `PRECEDING` otherwise.
+      // Reports `DOCUMENT_POSITION_FOLLOWING` for a slide made after this one, and
+      // `DOCUMENT_POSITION_PRECEDING` otherwise.
       compareDocumentPosition: (other) => ((order.get(other) ?? 0) > (order.get(slide) ?? 0) ? 4 : 2),
     };
     order.set(slide, slides.length);

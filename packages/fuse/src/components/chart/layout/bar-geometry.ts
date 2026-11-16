@@ -1,8 +1,8 @@
 import type { ChartBarVariant } from "../chart-types";
 /**
- * Bar geometry after CONTRACT sections 8.12 and 8.15. The model's extents become cells in value
- * space, and `plot-frame.ts` projects a cell into the measured plot. A stack's inner segment ends
- * `--chart-bar-seam` short of the next one at its far end, so the surface shows between segments.
+ * Bar geometry. The model's extents become cells in value space, and `plot-frame.ts` projects a
+ * cell into the measured plot. A stack's inner segment ends `--chart-bar-seam` short of the next
+ * one at its far end, so the surface shows between segments.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { ownSlot, ownSpan } from "./coarse-slots";
@@ -259,7 +259,7 @@ export function projectedEnds(
   const base = valueAt(frame, negative ? high : low);
   const tip = valueAt(frame, negative ? low : high);
   if (tip !== base || low === high) return [base, tip];
-  // Up a vertical frame and right across a horizontal one is positive.
+  // The positive direction is up in a vertical frame and right in a horizontal one.
   const outward = (frame.orientation === "vertical" ? -1 : 1) * (negative ? -1 : 1);
   return [base, base + outward * apart(base)];
 }
@@ -560,15 +560,15 @@ export function introStep(
   count: number
 ): number {
   const last = count - 1;
-  const centre = last / 2;
+  const center = last / 2;
   switch (intro) {
     case "left":
       return position;
     case "right":
       return last - position;
     case "center":
-      return Math.abs(position - centre);
+      return Math.abs(position - center);
     case "edges":
-      return centre - Math.abs(position - centre);
+      return center - Math.abs(position - center);
   }
 }

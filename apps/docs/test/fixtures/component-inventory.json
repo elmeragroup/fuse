@@ -1163,7 +1163,7 @@
       "pie-chart-share-labels.tsx",
       "pie-chart-donut.tsx",
       "pie-chart-active-slice.tsx",
-      "pie-chart-centre-share.tsx",
+      "pie-chart-center-share.tsx",
       "pie-chart-pad-angle.tsx",
       "pie-chart-rounded.tsx",
       "pie-chart-semicircle.tsx",

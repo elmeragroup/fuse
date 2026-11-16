@@ -1,5 +1,5 @@
-// Unit under test: the datum selectors of layout/datum.ts. Oracle: CONTRACT section 8.10's rules,
-// with each picked slot list written by hand from the values below.
+// Unit under test: the datum selectors of layout/datum.ts. Oracle: each picked slot list,
+// written by hand from the values below.
 import { describe, expect, it } from "vitest";
 
 import { keywordSlots, listedSlots } from "./datum";

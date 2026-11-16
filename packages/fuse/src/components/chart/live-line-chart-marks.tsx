@@ -229,7 +229,7 @@ export function LiveLineChartBadge({ className, style }: LiveLineChartBadgeProps
   useLiveFrame(context, plot, (frame, geometry) => {
     const node = pill.current;
     if (node === null || frame.tip === null) return;
-    // The pill centres on the live dot's height by a translation, so a frame lays nothing out.
+    // The pill centers on the live dot's height by a translation, so a frame lays nothing out.
     writeStyle(node, "translate", `0 calc(${livePixel(liveY(geometry, frame.tip))}px - 50%)`);
   });
   const { tip } = useShownFeed(context);

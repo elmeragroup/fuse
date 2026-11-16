@@ -1,9 +1,9 @@
 /**
- * Unit under test: `slotStart`, `nextSlotStart` and the `formatSlot` error. Oracle: slot starts worked out by hand
- * from the EU summer-time rule, where Oslo is UTC+2 from the last Sunday of March at 01:00 UTC to
- * the last Sunday of October at 01:00 UTC and UTC+1 otherwise, ISO 8601 weeks that start on Monday,
- * and the error the contract names. The labels of these slots run in every engine as the shared
- * judges in `fixtures/judges.ts`.
+ * Unit under test: `slotStart`, `nextSlotStart` and `formatSlot`. Oracle: slot starts worked out
+ * by hand from the EU summer-time rule, where Oslo is UTC+2 from the last Sunday of March at
+ * 01:00 UTC to the last Sunday of October at 01:00 UTC and UTC+1 otherwise, ISO 8601 weeks that
+ * start on Monday, and a label written by hand. The labels of these slots run in every engine as
+ * the shared judges in `fixtures/judges.ts`.
  */
 import { describe, expect, it } from "vitest";
 
@@ -71,7 +71,7 @@ describe("slotStart in Europe/Oslo", () => {
 });
 
 describe("formatSlot with the time-seconds preset", () => {
-  it("prints the slot's start to the second in fi-FI's dotted Hms (F1)", () => {
+  it("prints the slot's start to the second in fi-FI's dotted Hms", () => {
     const label: FormattedText = formatSlot(
       "fi-FI",
       OSLO,

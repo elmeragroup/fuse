@@ -1,4 +1,4 @@
-// CONTRACT section 9.4's key maps, the Escape rule and the modifier rule, in Chromium.
+// The chart's key maps, the Escape rule and the modifier rule, in Chromium.
 // Every expected option name, position and set size is written by hand from the committed
 // Elhub rows and the hand-written month-switch fixture, never read from Fuse.
 import { virtual } from "@guidepup/virtual-screen-reader";
@@ -237,7 +237,7 @@ describe("the Escape rule and key safety", () => {
 });
 
 describe("keys per task", () => {
-  it("reaches S06's most consuming hour in six keys", async () => {
+  it("reaches a normal day's most consuming hour in six keys", async () => {
     // Chartability heuristic 38. Hand-written from the committed Elhub rows: 19:00 holds the day's
     // highest household reading, 1.8034 kWh per meter, beside 0.9273 for cabins. Tab enters, End
     // reaches 23:00 and four ArrowLefts step back to 19:00.

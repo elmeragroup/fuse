@@ -1,5 +1,5 @@
 /**
- * The DOM readers the pie browser suites share. Slices, the centre and the labels are aria-hidden
+ * The DOM readers the pie browser suites share. Slices, the center and the labels are aria-hidden
  * plot output, so their slots are the only locators.
  */
 import { page } from "vitest/browser";
@@ -27,15 +27,15 @@ export function activeSlice(host: HTMLElement): number | null {
 }
 
 /**
- * The text a centre part shows, as the formatter wrote it: each digit reel's digit and every other
+ * The text a center part shows, as the formatter wrote it: each digit reel's digit and every other
  * character as it is, then the unit after a no-break space.
  *
  * @param part - The part, such as `pie-chart-center-value`.
  * @param host - The rendered chart's host.
  * @returns The shown text, empty for an empty part.
  */
-export function centreText(host: HTMLElement, part: string): string {
-  // The centre is aria-hidden plot output, read by its slot.
+export function centerText(host: HTMLElement, part: string): string {
+  // The center is aria-hidden plot output, read by its slot.
   const element = host.querySelector(`[data-slot="${part}"]`);
   if (element === null) throw new Error(`no ${part}`);
   const digits = element.querySelector('[data-part="digits"]');
@@ -54,7 +54,7 @@ export function centreText(host: HTMLElement, part: string): string {
   return before ? `${unit.textContent}\u00a0${number}` : `${number}\u00a0${unit.textContent}`;
 }
 
-/** A point in the dial's units, from the centre, as client pixels over the pie's SVG. */
+/** A point in the dial's units, from the center, as client pixels over the pie's SVG. */
 export function clientPoint(svg: SVGSVGElement, x: number, y: number): readonly [number, number] {
   const matrix = svg.getScreenCTM();
   if (matrix === null) throw new Error("no screen transform");

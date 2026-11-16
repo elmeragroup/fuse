@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 function transitionStyleCount() {
-  // Disable-transition injects a role-less <style>; count by its text.
+  // The transition lock injects a <style> with no role, so the test counts it by its text.
   return [...document.head.querySelectorAll("style")].filter((style) =>
     style.textContent.includes("transition:none")
   ).length;
@@ -26,7 +26,7 @@ describe("browser adapter transition suppression", () => {
     platform.root.write("light", { nonce: "csp" });
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(transitionStyleCount()).toBe(1);
-    // The injected transition lock is a <style> with nonce, no role.
+    // The injected transition lock is a <style> with a nonce and no role.
     const injected = [...document.head.querySelectorAll("style")].find((style) =>
       style.textContent.includes("transition:none")
     );

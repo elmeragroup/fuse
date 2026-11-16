@@ -70,7 +70,7 @@ describe("read", () => {
   });
 
   // Chromium 153 gives a pasted clipboard image, and a File added to a constructed
-  // DataTransfer, a null entry but a real file (`.scratch/file-drop-zone/probes-t2/probe-entry-null.mjs`).
+  // DataTransfer, a null entry but a real file.
   it("reads an item with a null entry but a file as a file, as Chromium lists a pasted image", () => {
     const pasted: ReadableItem = {
       kind: "file",

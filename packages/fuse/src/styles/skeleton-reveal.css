@@ -15,7 +15,7 @@
    which is opacity and stays on under reduced motion. The rules sit in the components layer, so
    their `!important` outranks an important utility on the content, which sits in a later layer. */
 @layer components {
-  /* The glyphs' fill, not `color`, so a border or icon drawn in `currentColor` keeps its colour. */
+  /* The glyphs' fill, not `color`, so a border or icon drawn in `currentColor` keeps its color. */
   [data-slot="skeleton-reveal-ghost"],
   [data-slot="skeleton-reveal-ghost"] * {
     -webkit-text-fill-color: transparent !important;

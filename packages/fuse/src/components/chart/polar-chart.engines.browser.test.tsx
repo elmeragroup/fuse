@@ -3,10 +3,10 @@ import { useEffect } from "react";
 // The polar Roots' spoken phrases and hydration, in Chromium and WebKit, whose Intl data each
 // write the percent and number text. The key sequence through each family runs in Chromium alone,
 // in polar-chart-keyboard.browser.test.tsx. Units under test: PieChart.Root, RadialChart.Root,
-// RadarChart.Root, ClockChart.Root and GaugeChart.Root. Oracles, written by hand: CONTRACT section
-// 9.4's option grammar in Norwegian Bokmål, with S11's drafted words and layer 03's spoken percent
-// literal, in vsr's own phrase grammar, role, name, state, position and set size joined by ", ";
-// section 9.10's status words; and D18's first paint, where the server sends every mark hidden
+// RadarChart.Root, ClockChart.Root and GaugeChart.Root. Oracles, written by hand: the option
+// grammar in Norwegian Bokmål, with the drafted words and the spoken percent literal, in vsr's
+// own phrase grammar, role, name, state, position and set size joined by ", "; the status words;
+// and the first paint, where the server sends every mark hidden
 // and a hydrated chart in view shows them, with no recoverable error; and a gauge's rest, worked
 // by hand from its reading.
 import { virtual } from "@guidepup/virtual-screen-reader";
@@ -31,7 +31,7 @@ afterEach(async () => {
   await virtual.stop();
 });
 
-describe("the polar options' spoken phrases (section 9.4)", () => {
+describe("the polar options' spoken phrases", () => {
   it("speaks a pie's slices with their shares, the folded Other slice with its count, and wraps", async () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
@@ -109,9 +109,6 @@ describe("the polar options' spoken phrases (section 9.4)", () => {
   });
 });
 
-// The key sequence on each family: Tab in, an arrow, End and Home, PageDown and PageUp on the clock,
-// and Escape. Oracle: section 9.4's option grammar with each option's own value, worked by hand from
-// the rows: the clock's PageDown moves one label unit, six hours, from 01 to 07.
 /** Calls `onCommit` from a passive effect, once the commit that hydrates the marker has run. */
 function CommitMarker({ onCommit }: { readonly onCommit: (() => void) | undefined }): null {
   useEffect(() => {
@@ -139,7 +136,7 @@ function Fixture({ onHydrated }: { readonly onHydrated?: () => void }) {
   );
 }
 
-describe("hydration (D18)", () => {
+describe("hydration", () => {
   it("sends the figure, its slices, its description and its table from the server, and draws once hydrated in view", async () => {
     const html = renderToString(<Fixture />);
     expect(html).toContain("Kakediagram med 4\u00a0deler, totalt 100.");
@@ -171,7 +168,7 @@ describe("hydration (D18)", () => {
     }
   });
 
-  it("sends a radial chart's rings, tracks and centre from the server, and hydrates them as they are", async () => {
+  it("sends a radial chart's rings, tracks and center from the server, and hydrates them as they are", async () => {
     function Rings({ onHydrated }: { readonly onHydrated?: () => void }) {
       return (
         <LocaleProvider locale="nb-NO">
@@ -212,9 +209,9 @@ describe("hydration (D18)", () => {
     }
   });
 
-  it("sends a gauge at rest with its meter, lit notches, needle and centre from the server, and hydrates it as it is", async () => {
-    // 3,9 of 0–5 kWh: 0.78 of the 270° sweep, the needle at −135° + 210.6° = 75.6°, and
-    // round(40 · 0.78) = 31 lit notches. The meter's text is the value's spoken form, whose number
+  it("sends a gauge at rest with its meter, lit notches, needle and center from the server, and hydrates it as it is", async () => {
+    // 3,9 of 0 to 5 kWh is 0.78 of the 270° sweep, the needle at −135° + 210.6° = 75.6°, and
+    // round(40 times 0.78) = 31 lit notches. The meter's text is the value's spoken form, whose number
     // each engine's Intl writes.
     function Gauge({ onHydrated }: { readonly onHydrated?: () => void }) {
       return (

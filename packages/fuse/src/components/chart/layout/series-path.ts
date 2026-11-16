@@ -1,15 +1,15 @@
 /**
- * The vertices a Line or an Area draws for one series, in data units, after CONTRACT sections 8.6,
- * 8.7 and 8.12. Every slot of the effective window is a vertex, so a path keeps one vertex per slot
- * key across updates and a reading that appears grows out of the line it joins. A slot with no
- * reading still holds a value, interpolated from its neighbors, which only a tween reads; the
- * vertex's state keeps it out of the drawn path. Above `DECIMATE_ABOVE` slots the window keeps, for
- * each pixel column, the M4 slots of every boundary its stack draws, shared by every member, and
- * both slots of every change of state, quality, projection or stack side, so a gap, a dash and a
- * stack's peaks draw as the full window does.
+ * The vertices a Line or an Area draws for one series, in data units. Every slot of the effective
+ * window is a vertex, so a path keeps one vertex per slot key across updates and a reading that
+ * appears grows out of the line it joins. A slot with no reading still holds a value, interpolated
+ * from its neighbors, which only a tween reads; the vertex's state keeps it out of the drawn path.
+ * Above `DECIMATE_ABOVE` slots the window keeps, for each pixel column, the M4 slots of every
+ * boundary its stack draws, shared by every member, and both slots of every change of state,
+ * quality, projection or stack side, so a gap, a dash and a stack's peaks draw as the full window
+ * does.
  */
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
-import { ownCentre, ownSpan, ownWindowFirsts } from "./coarse-slots";
+import { ownCenter, ownSpan, ownWindowFirsts } from "./coarse-slots";
 import { DECIMATE_ABOVE, m4Indexes } from "./decimate";
 import type { PathSlots } from "./path-motion";
 import type { ReadingQuality } from "./readings";
@@ -239,10 +239,10 @@ function drawnSlots(
   const members = stack === undefined ? [series] : model.series.filter(({ key }) => stack.keys.includes(key));
   const kept = new Set([first, last]);
   for (const member of members) {
-    // Both ends `endsOf` gives each slot, null where it holds no reading, and what each vertex
-    // draws as besides where, in one pass. A look is one number for the state, the quality, the
-    // side, as `sideOf` gives it, and the projection, so two slots draw alike exactly when their
-    // looks match. A slot past the readings draws as pending.
+    // One pass computes both ends that `endsOf` gives each slot, null where the slot holds no
+    // reading, and each vertex's look. A look is one number for the state, the quality, the side,
+    // as `sideOf` gives it, and the projection, so two slots draw alike exactly when their looks
+    // match. A slot past the readings draws as pending.
     const tops: (number | null)[] = [];
     // The bases stay unlisted while every base is one value, the common line on zero.
     let bases: (number | null)[] | undefined;
@@ -309,7 +309,7 @@ export function seriesPath(
     return { vertices: [], keys: [], ids: [], positions: [], window: { keys: [], ids: [] } };
   }
   // A coarse series draws one vertex per own slot, at the slot's middle, keyed by its first Root slot.
-  // A vertex per own slot: every slot, or each coarse slot's first.
+  // For a series that is not coarse, every slot is its own slot.
   const own = ownWindowFirsts(series, window);
   const slots = drawnSlots(model, series, own, resolution);
   const ends = endsOf(series, slots);
@@ -319,7 +319,7 @@ export function seriesPath(
     const reading = series.readings[slot];
     return {
       slot,
-      position: ownCentre(series, window, slot),
+      position: ownCenter(series, window, slot),
       top: tops[index] ?? 0,
       // A series with no reading at all fills nothing.
       base: bases[index] ?? 0,

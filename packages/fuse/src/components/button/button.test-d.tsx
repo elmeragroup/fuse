@@ -62,8 +62,8 @@ test("icon props require an icon size and an accessible name", () => {
 });
 
 test("a wrapper omits children from the label props without collapsing the union", () => {
-  // The reason the types are exported: `Omit<ButtonProps, …>` is not distributive, so it
-  // merges the two arms and lets an icon size through without its name.
+  // The types are exported because `Omit<ButtonProps, …>` is not distributive. It merges the two
+  // arms and lets an icon size through without its name.
   type Collapsed = Omit<ButtonProps, "children">;
   ({ size: "icon" }) satisfies Collapsed;
 
@@ -73,7 +73,7 @@ test("a wrapper omits children from the label props without collapsing the union
   const _iconWrapper: LoadingButtonProps = { label: "Save", size: "icon" };
 
   function LoadingButton({ label, isLoading, ...props }: LoadingButtonProps) {
-    // The rest spreads back onto Button: a label arm stays a label arm.
+    // The rest spreads back onto Button, so a label arm stays a label arm.
     return (
       <Button {...props} isPending={isLoading}>
         {label}

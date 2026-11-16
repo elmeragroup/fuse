@@ -241,15 +241,15 @@ function glideKeyframes(
   });
   const total = lengths.reduce((sum, length) => sum + length, 0);
   if (total === 0) return straight;
-  let travelled = 0;
+  let traveled = 0;
   return turns.map((turn, index) => {
-    travelled += lengths[index] ?? 0;
+    traveled += lengths[index] ?? 0;
     return {
       transform: translate({
         x: from.x + (turn.left - start.left) / scale,
         y: from.y + (turn.bottom - start.bottom) / scale,
       }),
-      offset: travelled / total,
+      offset: traveled / total,
     };
   });
 }

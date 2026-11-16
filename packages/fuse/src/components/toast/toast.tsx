@@ -227,7 +227,7 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
       manager.close(id);
     },
     // Base UI's promiseToast forces `type: "success" | "error"` over the state's own
-    // type, so the lifecycle runs over the wrapped add/update, which derive priority.
+    // type, so the lifecycle runs over the wrapped `add` and `update`, which derive priority.
     promise: (promiseValue, options) => {
       const loadingId =
         options.loading === undefined
@@ -282,10 +282,10 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
 export function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
   const { toasts, add, update, close } = ToastPrimitive.useToastManager<Data>();
   // Base UI rebuilds its manager object whenever `toasts` changes, but the store's
-  // add/update/close keep their identity. Keying the wrappers on those functions keeps
+  // `add`, `update` and `close` keep their identity. Keying the wrappers on those functions keeps
   // ours stable too, so an effect that lists `add` does not re-run after every toast.
   const methods = useMemo(
-    // SAFETY: these are the primitive store's methods, typed over the caller's `Data`;
+    // SAFETY: these are the Base UI store's methods, typed over the caller's `Data`;
     // wrapManagerMethods forwards custom `data` unchanged, so widening it to `object` is sound.
     () => wrapManagerMethods({ add, update, close } as PrimitiveManager),
     [add, update, close]
@@ -411,7 +411,7 @@ export function createToastManager<Data extends object = object>(): CreateToastM
  * store write schedules the timer a toast is missing.
  */
 function ToastManagerBridge({ connect }: { connect: ConnectToastStore }): null {
-  // `add` / `update` / `close` are the store's own bound methods and keep their identity
+  // `add`, `update` and `close` are the store's own bound methods and keep their identity
   // across toast changes, so the bridge connects once per store.
   const { add, update, close } = ToastPrimitive.useToastManager();
   useEffect(() => connect({ add, update, close }), [connect, add, update, close]);

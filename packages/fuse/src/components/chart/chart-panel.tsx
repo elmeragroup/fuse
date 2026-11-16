@@ -7,7 +7,7 @@ import { assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-contex
 import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
-import { colourFamilyError } from "./chart-paint";
+import { colorFamilyError } from "./chart-paint";
 import { usePanelPlot } from "./chart-plot";
 import { ChartLayoutContext, ChartPlotContext, PlotReadsContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
@@ -104,8 +104,8 @@ export function ChartPanel({
     );
   }
   for (const key of series) assertKnownKey("Chart.Panel", context.config, key);
-  const colourRule = colourFamilyError("Chart.Panel", context.config, series);
-  if (colourRule !== null) throw colourRule;
+  const colorRule = colorFamilyError("Chart.Panel", context.config, series);
+  if (colorRule !== null) throw colorRule;
   const stackRule = splitStackError(context.config, series);
   if (stackRule !== null) throw stackRule;
   // An inline array that names the same items is no change, so a parent's re-render never moves the
@@ -121,8 +121,8 @@ export function ChartPanel({
   const y = useMemo(() => layoutDomain({ ...model, stackOffset }, input), [model, stackOffset, input]);
   // The first commit under each update decides whether the update moves this Panel's domain. An
   // insertion effect runs in the commit, before any layout effect, so every mark of the commit
-  // reads every committed Panel's decision before it places, and a render that never commits, as a
-  // suspended one, decides nothing. The update the Panel mounts under moves nothing.
+  // reads every committed Panel's decision before it places, and a render that never commits, such as
+  // a suspended one, decides nothing. The update the Panel mounts under moves nothing.
   const { update } = context;
   const decided = useRef(update);
   useInsertionEffect(() => {

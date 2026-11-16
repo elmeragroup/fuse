@@ -1,6 +1,6 @@
 "use client";
 
-// The bar: one Base UI Toolbar, so the whole bar is one Tab stop with arrow-key roving. Each chip
+// The bar is one Base UI Toolbar, so the whole bar is one Tab stop with arrow-key roving. Each chip
 // is a Toolbar.Group of Toolbar.Buttons. State and wiring sit on the Base UI part, and the Fuse
 // Button is only its `render` element.
 
@@ -277,9 +277,10 @@ export function DataTableFilterChip({
       aria-label={meta.format("chip", { field: chip.field.label })}
       className={mergeClassName(className, slots.chip())}
       onKeyDown={chain((event: KeyboardEvent<HTMLDivElement>) => {
-        // Only keys from the chip's own segments. A portalled Select popup bubbles its keys
-        // through the React tree too. A chip the Bar or its own `disabled` disables, and a disabled
-        // segment, keep the key, by the `data-disabled` state Base UI resolves for each.
+        // Delete and Backspace remove the chip only from its own segments, since a portaled Select
+        // popup bubbles its keys through the React tree too. A chip that the Bar or its own
+        // `disabled` disables stays, and so does a chip whose focused segment is disabled. Both
+        // checks read the `data-disabled` state Base UI resolves.
         if (
           (event.key === "Delete" || event.key === "Backspace") &&
           isNode(event.target) &&

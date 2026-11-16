@@ -46,8 +46,8 @@ test("parts take the public API: no locale, no as prop", () => {
 
   // @ts-expect-error locale is provider-only
   const _noLocale = <Breadcrumb.Root locale="nb-NO" />;
-  // @ts-expect-error polymorphism is never an as prop
+  // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Breadcrumb.Link as="button" />;
-  // @ts-expect-error Ellipsis owns its children
+  // @ts-expect-error Ellipsis takes no children
   const _ellipsisChildren = <Breadcrumb.Ellipsis>nope</Breadcrumb.Ellipsis>;
 });

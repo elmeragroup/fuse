@@ -177,7 +177,7 @@ describe("Frame", () => {
               </Collapsible.Trigger>
             </Frame.Header>
             <Collapsible.Content>
-              <Frame.Panel>Initialise the meter reading run.</Frame.Panel>
+              <Frame.Panel>Initialize the meter reading run.</Frame.Panel>
             </Collapsible.Content>
           </Collapsible.Root>
         </Frame.Root>
@@ -210,7 +210,7 @@ describe("Frame", () => {
     await userEvent.keyboard("{Enter}");
     await vi.waitFor(() => {
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
-      expect(page.getByText("Initialise the meter reading run.").query()).toBeNull();
+      expect(page.getByText("Initialize the meter reading run.").query()).toBeNull();
     });
   });
 });

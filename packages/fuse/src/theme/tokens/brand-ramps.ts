@@ -141,9 +141,9 @@ export const BRAND_RAMP_PAINTS = brandRampRecord(() => ["surface", "ink", "line"
 
 /** How a ramp token's description names its ramp. */
 const RAMP_SCALE_DESCRIPTIONS = {
-  neutral: "brand neutral ramp, a grey tinted with the brand hue",
-  "1": "brand palette 1, the brand colour",
-  "2": "brand palette 2, the second colour of a two-colour brand, or an alias of palette 1 in a single-colour brand",
+  neutral: "brand neutral ramp, a gray tinted with the brand hue",
+  "1": "brand palette 1, the brand color",
+  "2": "brand palette 2, the second color of a two-color brand, or an alias of palette 1 in a single-color brand",
 } as const satisfies Record<RampScale, string>;
 
 /** The ramp tokens' entries in the contract's `TOKEN_DESCRIPTIONS`. */
@@ -276,13 +276,13 @@ export function brandRampTokens(sources: RampSources): BrandRampTokens {
 }
 
 /** An untinted gray. */
-const GREY: RampTint = { _tag: "tint", hue: 0, chroma: 0 };
+const GRAY: RampTint = { _tag: "tint", hue: 0, chroma: 0 };
 
 /**
  * The untinted ramps the root declares, so a scope without a brand reads a gray at every step of
  * every scale. They share the lightness table with every brand's ramps.
  */
-export const GREY_RAMP_TOKENS: BrandRampTokens = brandRampRecord((_scale, step) => rampTone(GREY, step));
+export const GRAY_RAMP_TOKENS: BrandRampTokens = brandRampRecord((_scale, step) => rampTone(GRAY, step));
 
 /**
  * A `var()` of one ramp step, the value a role takes to point at it.

@@ -156,8 +156,8 @@ export function ItemRoot({
       itemRootProps({ variant, size, className: cn(groupClassName, className) }),
       inGroup && render === undefined ? { role: "listitem" } : undefined,
       props,
-      // Only a `render` row (a link or button) activates; a plain row may hold its own controls,
-      // whose bubbled clicks the guard would cancel.
+      // Only a `render` row, such as a link or button, activates. A plain row may hold its own
+      // controls, whose bubbled clicks the guard would cancel.
       render === undefined ? undefined : ariaDisabledGuard
     ),
     render,

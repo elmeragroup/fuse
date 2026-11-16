@@ -66,7 +66,8 @@ export function LiveLineChartTable({
   // The shown page formats once per page, reading or format change, so the clock formats nothing.
   const rows = useMemo(
     () =>
-      // Newest first: the page's first row is the reading `from` places back from the latest.
+      // Rows run newest first, so the page's first row is the reading `from` places back from
+      // the latest.
       points
         .slice(Math.max(0, span.end - to), span.end - from)
         .reverse()

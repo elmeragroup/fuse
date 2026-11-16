@@ -82,7 +82,7 @@ describe("useIsMobile", () => {
   });
 
   it("queries the breakpoint in rem, as md: does, so both move with the browser's font size", () => {
-    // Pass-through spy: matchMedia still answers, the spy only observes the query string. The
+    // The spy passes calls through. matchMedia still answers, and the spy only observes the query. The
     // breakpoint table above holds at the default 16px font size, where 48rem and 768px agree.
     const queries: string[] = [];
     const matchMedia = window.matchMedia.bind(window);

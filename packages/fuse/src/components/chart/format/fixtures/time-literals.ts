@@ -16,9 +16,9 @@ export type TimeCase = LiteralCase & {
 
 /**
  * Time literals written by hand. The calendar names follow CLDR 48 `ca-gregorian`, and the spoken
- * clock words are drafted dictionary entries awaiting sign-off. The month and
- * year boundary cases read the offset from the EU summer-time rule: UTC+1 in winter and UTC+2 in
- * summer for Oslo and Stockholm, one hour more for Helsinki.
+ * clock words are the chart dictionary's entries. The month and year boundary cases read the
+ * offset from the EU summer-time rule: UTC+1 in winter and UTC+2 in summer for Oslo and
+ * Stockholm, one hour more for Helsinki.
  */
 export const TIME_CASES: readonly TimeCase[] = [
   {
@@ -62,7 +62,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's screen-reader judges: the second 02:00 hour of
+    // Written by hand from CLDR 48 for the screen-reader judges. It is the second 02:00 hour of
     // the Oslo fall-back day, in the hour-range preset, with CLDR's long standard-time zone names.
     name: "second repeated hour",
     zone: "Europe/Oslo",
@@ -105,7 +105,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // Written by hand from CLDR 48 for the spoken arrays. 1 October 2025 is a Wednesday,
     // and Oslo keeps summer time until 26 October.
     name: "S07 missing day date",
     zone: "Europe/Oslo",
@@ -127,7 +127,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // Written by hand from CLDR 48 for the spoken arrays. 1 October 2025 is a Wednesday,
     // and Oslo keeps summer time until 26 October.
     name: "S07 corrected day date",
     zone: "Europe/Oslo",
@@ -149,7 +149,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // Written by hand from CLDR 48 for the spoken arrays. 1 October 2025 is a Wednesday,
     // and Oslo keeps summer time until 26 October.
     name: "S07 estimated day date",
     zone: "Europe/Oslo",
@@ -171,7 +171,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // Written by hand from CLDR 48 for the spoken arrays. 1 October 2025 is a Wednesday,
     // and Oslo keeps summer time until 26 October.
     name: "S07 pending day date",
     zone: "Europe/Oslo",
@@ -193,7 +193,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48 for layer 05's spoken arrays. 1 October 2025 is a Wednesday,
+    // Written by hand from CLDR 48 for the spoken arrays. 1 October 2025 is a Wednesday,
     // and Oslo keeps summer time until 26 October.
     name: "S14 last day date",
     zone: "Europe/Oslo",
@@ -215,7 +215,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // Written by hand from CLDR 48: the date that heads S06's description.
+    // Written by hand from CLDR 48. It is the date that heads a day's description.
     name: "S06 day date",
     zone: "Europe/Oslo",
     start: "2026-10-15T22:00:00Z",
@@ -371,7 +371,7 @@ export const TIME_CASES: readonly TimeCase[] = [
     },
   },
   {
-    // F1: CLDR 48's Hms with the two-digit hour of TIME-CONVENTIONS rule 2, written by hand.
+    // CLDR 48's Hms with a two-digit hour, written by hand.
     name: "second sample",
     zone: "Europe/Oslo",
     start: "2026-10-17T11:42:04Z",
@@ -930,10 +930,9 @@ export type DatedSlotCase = {
 };
 
 /**
- * Slot labels on domains of more than one local date in Oslo, after CONTRACT section 9.4's date
- * rule, written by hand. The dates follow CLDR 48's long weekday, numeric day and long month,
- * with the year after them, the clock ranges are the hour-range literals above, and the joiner is
- * the drafted dictionary's `, `. Every space inside a formatted half is U+00A0.
+ * Slot labels on domains of more than one local date in Oslo, written by hand. The dates follow
+ * CLDR 48's long weekday, numeric day and long month, with the year after them. The clock ranges
+ * are the hour-range literals above, and the joiner is the dictionary's `, `. Every space inside a formatted half is U+00A0.
  */
 export const DATED_SLOT_CASES: readonly DatedSlotCase[] = [
   {

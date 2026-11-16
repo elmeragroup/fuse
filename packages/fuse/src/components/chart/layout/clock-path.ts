@@ -277,14 +277,14 @@ function runPoints(values: readonly number[], run: Run, curve: ChartCurve, pick:
     const [start, end, base, tip] = slotAt(values, slot);
     if ((start + end) / 2 + turn < previous) turn += 360;
     const radius = pick === "tip" ? tip : base;
-    const centre = (start + end) / 2 + turn;
-    angles.push(centre);
+    const center = (start + end) / 2 + turn;
+    angles.push(center);
     edges.push([start + turn, end + turn]);
-    previous = centre;
+    previous = center;
     if (curve === "step-after" || curve === "step-before") {
       // A cell step runs each reading across its whole slot.
       points.push({ angle: start + turn, radius }, { angle: end + turn, radius });
-    } else points.push({ angle: centre, radius });
+    } else points.push({ angle: center, radius });
   }
   return { points, angles, edges };
 }
@@ -447,7 +447,7 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
  * The angle ranges a run dashes or hatches: each segment that touches a marked slot, and each
  * bridge, folded into the angles its curve samples and merged. A curve that steps draws each reading
  * across its own slot, so its marked range is that slot, from its start to its end, and its bridge
- * runs from one reading's end to the next one's start, as section 8.7 defines it. Any other curve
+ * runs from one reading's end to the next one's start. Any other curve
  * draws a reading as a vertex, so its range runs between the vertices beside it. A closed run's
  * first and last readings meet across midnight, so a range that reaches past one end of the sampled
  * turn continues at the other, and overlapping ranges, as two adjacent marked readings give, merge

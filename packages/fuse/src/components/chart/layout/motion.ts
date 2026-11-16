@@ -1,8 +1,7 @@
 /**
  * The chart motion tokens. The rAF tween of `chart-motion.ts` moves marks on them, and `chart.css`
  * mirrors the duration and the curve for the opacity fade of a mark that an update adds. A change
- * here changes `--chart-update` and `--chart-ease` there too. The values follow
- * `.scratch/charts-v1/reviews/motion-decision.md`.
+ * here changes `--chart-update` and `--chart-ease` there too.
  */
 import { cubicBezier } from "./ease";
 import type { BezierCurve } from "./ease";

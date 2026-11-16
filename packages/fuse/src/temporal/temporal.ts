@@ -1,10 +1,10 @@
-// The one door to Temporal for Fuse's date components. Fuse never installs Temporal on its own:
+// The only access to Temporal for Fuse's date components. Fuse never installs Temporal on its own:
 // a host imports `@elmeragroup/fuse/temporal-polyfill` once, which installs the polyfill where the
 // engine lacks Temporal and sets the install marker. The accessor reads `globalThis` at call
 // time, not import time, so a host may import the subpath after Fuse's modules have loaded, and a
 // test may remove Temporal between calls.
 
-// The theme validator owns Fuse's one `process.env.NODE_ENV` read, which lint allows nowhere else.
+// The theme validator makes Fuse's only `process.env.NODE_ENV` read, which lint allows nowhere else.
 import { isThemeDevelopment } from "../theme/validate-theme";
 import { hostTemporal, TEMPORAL_INSTALL_MARKER } from "./install-marker";
 
@@ -34,7 +34,7 @@ export function temporal(): typeof Temporal {
   if (runtime === undefined) {
     throw new TypeError(TEMPORAL_MISSING_MESSAGE);
   }
-  // The marker check first: `isThemeDevelopment` reads `process.env` on every call.
+  // The marker check runs first, because `isThemeDevelopment` reads `process.env` on every call.
   if (!warnedMarkerMissing && !(TEMPORAL_INSTALL_MARKER in globalThis) && isThemeDevelopment()) {
     warnedMarkerMissing = true;
     console.warn(TEMPORAL_MARKER_MISSING_MESSAGE);

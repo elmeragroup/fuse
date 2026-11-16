@@ -93,8 +93,8 @@ async function openTitle({ node, role, title }: (typeof MODALS)[number]): Promis
 }
 
 describe("modal title type", () => {
-  // Unit under test: the computed type of each modal's title. Oracle: the issue's contract, Tailwind's
-  // `text-xl` (1.25rem on a 1.75rem line) at both densities, above the comfortable control and
+  // Unit under test: the computed type of each modal's title. Oracle: Tailwind's `text-xl`, 1.25rem
+  // on a 1.75rem line, at both densities, above the comfortable control and
   // label text that `DENSITY_METRICS` defines.
   const themes = [
     // fkas sets its headings in Neo Sans; guen's heading font is the sans body font.

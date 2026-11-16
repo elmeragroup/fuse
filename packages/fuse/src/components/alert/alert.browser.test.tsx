@@ -10,7 +10,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { HOSTS, centreY, hostCss } from "../../../test/first-line";
+import { HOSTS, centerY, hostCss } from "../../../test/first-line";
 import { MUTED, PANEL, describePartPaint } from "../../../test/surface-paint";
 import type { PartCase } from "../../../test/surface-paint";
 import {
@@ -75,7 +75,7 @@ function actionContrast(action: HTMLElement, root: HTMLElement): number {
   return getOrThrow(Wcag.contrastRatio(computedSrgb(getComputedStyle(action).color), fill));
 }
 
-/** Let the action's color transition settle, so computed colors are the hover end state. */
+/** Lets the action's color transition settle, so computed colors are the hover end state. */
 async function settled(element: HTMLElement): Promise<void> {
   await Promise.all(element.getAnimations().map((animation) => animation.finished));
 }
@@ -251,7 +251,7 @@ describe("Alert", () => {
     expect(root.getBoundingClientRect().height).toBe(closedHeight);
   });
 
-  it.each(HOSTS)("keeps the action button centred on the row beside a description, in a %s host", (host) => {
+  it.each(HOSTS)("keeps the action button centered on the row beside a description, in a %s host", (host) => {
     for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(
@@ -265,7 +265,7 @@ describe("Alert", () => {
           </Alert.Root>
         </div>
       );
-      const offset = centreY(roleNamed("button", "Retry")) - centreY(alertNamed("default"));
+      const offset = centerY(roleNamed("button", "Retry")) - centerY(alertNamed("default"));
       expect(Math.abs(offset), density).toBeLessThanOrEqual(0.5);
       unmount();
     }
@@ -354,8 +354,8 @@ describe("Alert", () => {
   });
 });
 
-// The fill the default Alert, its icon and its action paint, at rest and on hover, the text that
-// travels with it and the surface it states (see `surface-paint.tsx`).
+// The fill that the default Alert, its icon and its action paint at rest and on hover, the text
+// on that fill, and the surface the fill states; see `surface-paint.tsx`.
 /** The default Alert with its action, whose button paints on the Alert's panel. */
 function ActionAlert(): ReactElement {
   return (
@@ -365,7 +365,7 @@ function ActionAlert(): ReactElement {
   );
 }
 
-/** The consumer's Alert.Icon, the last icon in the Alert: Alert.Root's own icon comes first. */
+/** The consumer's Alert.Icon, the last icon in the Alert. Alert.Root's own icon comes first. */
 function consumerAlertIcon(): Element {
   // DOM audit: Alert.Icon is aria-hidden, so its slot is the only locator.
   const icon = [...page.getByRole("alert").element().querySelectorAll('[data-slot="alert-icon"]')].at(-1);

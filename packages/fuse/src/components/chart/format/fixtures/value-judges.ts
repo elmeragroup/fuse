@@ -1,6 +1,6 @@
 /**
  * The value judges. Each pairs Fuse's value labels with the literals in `value-literals.ts`, which
- * are written by hand from CLDR 48 and from the drafted chart words. The public cases run through
+ * are written by hand from CLDR 48 and from the chart dictionary. The public cases run through
  * `formatChartValue`, as a figure beside a chart prints them.
  */
 import { formatChartValue } from "../../chart-format";

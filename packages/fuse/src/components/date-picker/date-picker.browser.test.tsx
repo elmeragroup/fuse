@@ -454,8 +454,8 @@ describe("DatePicker.TimeInput", () => {
     }
 
     // The held time is a wall time: 09:30 on November 11 in the picker's zone and kind at the pick.
-    // The popup time names the zone it forms in, today's (October 15's) name for it, and a plain
-    // date-time names none.
+    // The popup time names the zone it forms in, with today's name for it, October 15's, and a
+    // plain date-time names none.
     it.each([
       {
         change: "zone to New York",
@@ -492,7 +492,7 @@ describe("DatePicker.TimeInput", () => {
   });
 
   describe("the popup time on October 25, 2026 in Oslo, whose 02:00–03:00 comes twice", () => {
-    // From the popup time 02:30:–– (seconds empty) on October 25, each gesture edits the time; the
+    // From the popup time 02:30 with empty seconds on October 25, each gesture edits the time; the
     // seconds then filled commit it. Expected values worked out by hand from Oslo's rules: the
     // clocks go back at 03:00+02:00 to 02:00+01:00, so the hour after 02:30 summer time is 02:30
     // winter time, and October 25 at 23:30 is winter time.
@@ -569,7 +569,7 @@ describe("DatePicker.TimeInput", () => {
 
       // A time-only input takes only the wall time of ISO text; the clipboard's date, zone and
       // offset are dropped. 02:30:15 on October 25 resolves as typed 02:30:15 does: to the earlier,
-      // summer-time instant of the repeated hour (Temporal's "compatible"), +02:00. On March 29,
+      // summer-time instant of the repeated hour, +02:00, which is Temporal's "compatible". On March 29,
       // the clipboard's date, 02:30 falls in the spring-forward gap and would resolve to 03:30.
       // The clipboard's zone is dropped with its date: zoned or not, the text names 02:30:15.
       it.each([
@@ -713,9 +713,9 @@ describe("DatePicker.TimeInput", () => {
   });
 
   describe("a day picked over a time, on October 25, 2026 in Oslo, whose 02:00–03:00 comes twice", () => {
-    // React Aria moves a picked day under the time it held with `ZonedDateTime.set`: a wall clock
-    // that changes resolves as typed (the earlier, summer-time instant of a repeated hour), and one
-    // that does not keeps the value as it is.
+    // React Aria moves a picked day under the time it held with `ZonedDateTime.set`. A wall clock
+    // that changes resolves as typed, to the earlier, summer-time instant of a repeated hour. One
+    // that does not change keeps the value as it is.
     const winter = "2026-10-25T02:30:00+01:00[Europe/Oslo]";
 
     async function pickOver(value: string): Promise<void> {
@@ -812,8 +812,8 @@ describe("DatePicker.TimeInput", () => {
       );
     }
 
-    // A cleared picker keeps the kind its value named, its zone too, whatever `timeZone` says
-    // (`resolveValueKind`), so the popup time forms in New York, as the picker's own input does.
+    // A cleared picker keeps the kind its value named, its zone too, whatever `timeZone` says, in
+    // `resolveValueKind`, so the popup time forms in New York, as the picker's own input does.
     it("forms a time typed after the parent clears a New York value in the picker's kind, every digit kept", async () => {
       const parent = parentHandle<Temporal.ZonedDateTime | null>();
       renderThemed(withLocale("en-US", <Changing parent={parent} />));

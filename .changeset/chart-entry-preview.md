@@ -44,7 +44,7 @@ under either offset, in six looks. A missing reading leaves a gap, or a dashed b
 `missing: "connect"`, a lone reading draws a dot, and the segments of estimated readings and the
 tail from `projectedFrom` draw dashed on a line and hatched on an area. A scale colour paints the
 value through a gradient along the value axis, so a stacked line or area, or one under
-`stackOffset="expand"`, throws `scale-colour-on-stack`. A second `Line`, `Area` or `Bar` on the same
+`stackOffset="expand"`, throws `scale-color-on-stack`. A second `Line`, `Area` or `Bar` on the same
 `dataKey` throws `series-drawn-twice`. `Dots`, `ActiveDot` and `Marker` with a `ValueLabel` sit on
 the line's vertices, and `Glow`, `Reveal` and Root's `data-intro` wipe work on lines and areas. On a
 data update a line tweens its vertices, slides when the window moves by whole slots, pairs by

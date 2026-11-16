@@ -1,7 +1,6 @@
 // Unit under test: slotLabel's date lead on a domain of more than one date, with the date joiner of
 // format/words.ts in each locale. Oracle: DATED_SLOT_CASES in fixtures/time-literals.ts, written by
-// hand from CLDR 48's dates, the hour-range literals and the drafted joiner. It sits under format/
-// so the mutation run's format suite reaches the joiner.
+// hand from CLDR 48's dates, the hour-range literals and the drafted joiner.
 import { describe, expect, it } from "vitest";
 
 import { slotLabel } from "../chart-text";

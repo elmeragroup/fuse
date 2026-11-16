@@ -14,10 +14,10 @@ test("parts take the public props, Text render, and no polymorphic as prop", () 
   const _vertical = <ButtonGroup.Root orientation="vertical" />;
   const _ref = <ButtonGroup.Root ref={null} />;
 
-  // @ts-expect-error orientation is horizontal | vertical only
+  // @ts-expect-error orientation is `"horizontal"` or `"vertical"` only
   const _badOrientation = <ButtonGroup.Root orientation="responsive" />;
-  // @ts-expect-error polymorphism is never an as prop
+  // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <ButtonGroup.Root as="section" />;
-  // @ts-expect-error Text polymorphism is render, not as
+  // @ts-expect-error Text changes its element through `render`, not `as`
   const _noTextAs = <ButtonGroup.Text as="span" />;
 });

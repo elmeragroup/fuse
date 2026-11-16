@@ -24,7 +24,7 @@ import { pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
 import { radarDomain, radarRadius, radarVertices, spokeAngle, spokeAt } from "./layout/radar";
 
-/** The most series a radar compares, CONTRACT section 8.4's cap. */
+/** The most series a radar compares. */
 export const RADAR_SERIES_CAP = 4;
 
 /** What a radar model reads from its Root. */
@@ -110,11 +110,11 @@ export function radarModel(input: RadarInput): PolarModel {
     page: null,
     optionName: (index, focus, order) => optionName(context, index, focus, order),
     pick: (point, pixels) => {
-      // Distance from the centre changes nothing, as R6 says.
+      // The pointer's angle alone picks the spoke, whatever its distance from the center.
       if (count === 0) return null;
       const spoke = spokeAt(pointerAngle(point.x, point.y), count);
-      // The nearest series' vertex on the spoke, keeping the held series unless another is clearly
-      // nearer.
+      // The nearest series' vertex on the spoke. The held series stays unless another lies nearer
+      // by more than 0.06 of the outer radius.
       const gaps = vertices.map((series) => {
         const vertex = series[spoke] ?? null;
         return vertex === null ? null : Math.hypot(vertex.x - point.x, vertex.y - point.y);

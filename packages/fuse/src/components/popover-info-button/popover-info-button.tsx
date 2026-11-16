@@ -19,9 +19,9 @@ export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",
     content: "text-sm w-auto",
-    // One flex item for the popup's column, so a sentence with a bold word or a link flows as one
-    // paragraph. Zeroes its blocks' own block margins and steps consecutive blocks by the small
-    // surface tier; the selectors live in fuse.css.
+    // The body is one flex item in the popup's column, so a sentence with a bold word or a link
+    // flows as one paragraph. It zeroes its blocks' own block margins and spaces consecutive
+    // blocks by `--surface-gap-sm`. The selectors live in fuse.css.
     body: "rich-text-block:my-0 rich-text-gap:mt-(--surface-gap-sm)",
   },
   variants: {
@@ -158,9 +158,9 @@ export function PopoverInfoButton({
     ref,
     ...wiring
   } = other;
-  // SAFETY: PopoverInfoButtonProps is a distributive Omit of ButtonProps. Reassembling
-  // the icon/label union after destructuring is a TypeScript limitation; the runtime
-  // props are the Button's presentation surface plus the owned aria-label.
+  // SAFETY: PopoverInfoButtonProps is a distributive Omit of ButtonProps. TypeScript cannot
+  // reassemble the icon and label union after destructuring. The runtime props are the
+  // Button's presentation props plus the `aria-label` this component sets.
   const trigger = (
     <Button
       {...(definedProps({
@@ -193,8 +193,8 @@ export function PopoverInfoButton({
       <PopoverTrigger {...definedProps({ ...wiring, nativeButton, tabIndex })} render={trigger}>
         <Info aria-hidden="true" className={icon()} />
       </PopoverTrigger>
-      {/* Base UI names the dialog only through a mounted `Popover.Title` (`aria-labelledby`).
-          `aria-label` is the fallback: labelledby still wins when a Title is present. */}
+      {/* Base UI names the dialog only through `aria-labelledby` on a mounted `Popover.Title`.
+          `aria-label` is the fallback, and `aria-labelledby` still wins when a Title is present. */}
       <PopoverContent
         side="right"
         sideOffset={8}

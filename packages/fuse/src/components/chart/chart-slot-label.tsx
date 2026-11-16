@@ -14,7 +14,7 @@ import { springTiming } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, XFormat } from "./chart-types";
 import { CHART_SPRINGS } from "./layout/motion";
-import { alongLength, centreOf } from "./layout/plot-frame";
+import { alongLength, centerOf } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 
 /**
@@ -147,13 +147,13 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
     // The pill keeps inside the plot's length, as the tick labels keep inside the axis.
     const half = width / 2 + known.padding;
     const length = alongLength(frame);
-    const centre = Math.min(Math.max(centreOf(frame, position, xScale), half), Math.max(half, length - half));
+    const center = Math.min(Math.max(centerOf(frame, position, xScale), half), Math.max(half, length - half));
     const rider = node.firstElementChild;
-    if (rider instanceof HTMLElement) writeStyle(rider, "translate", `${String(centre)}px 0`);
+    if (rider instanceof HTMLElement) writeStyle(rider, "translate", `${String(center)}px 0`);
     for (const { node: tick, box } of known.ticks) {
       const covered =
-        box.left < centre + half &&
-        centre - half < box.right &&
+        box.left < center + half &&
+        center - half < box.right &&
         box.top < known.bottom &&
         known.top < box.bottom;
       writeAttribute(tick, "data-covered", covered ? "" : null);
@@ -321,7 +321,7 @@ function measureLabel(node: HTMLElement, rolling: Rolling | null): Measured | nu
     node.querySelector<HTMLElement>('[data-part="pill"]') ??
     node.querySelector<HTMLElement>('[data-part="part"]');
   const scale = { x: clientScale(node).x, y: pill === null ? 1 : clientScale(pill).y };
-  // A box drawn at no size, as under scale(0), says nothing about layout pixels, so nothing is kept
+  // A box drawn at no size, as under `scale(0)`, says nothing about layout pixels, so nothing is kept
   // and a later paint measures again.
   if (!(scale.x > 0 && Number.isFinite(scale.x) && scale.y > 0 && Number.isFinite(scale.y))) return null;
   const parts = [...node.querySelectorAll('[data-part="part"]')];

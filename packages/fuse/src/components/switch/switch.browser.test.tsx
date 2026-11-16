@@ -120,7 +120,7 @@ describe("Switch", () => {
   it.each(["light", "dark"] as const)(
     "outlines the unchecked switch at 3:1 on the page and cards, and keeps the checked thumb at 3:1 on its fill, in %s themes",
     (scheme) => {
-      // Stamp before mounting: a scheme flip under a mounted switch runs its colour transition.
+      // Stamp before mounting: a scheme flip under a mounted switch runs its color transition.
       document.documentElement.setAttribute("data-theme", scheme);
       renderThemed(
         <>
@@ -213,7 +213,7 @@ describe("Switch", () => {
   it.each([
     ["on its own", ""],
     // A zero-weight child rule, as the docs stage and Fuse's own `:where()` defaults write one.
-    ["under a parent that centres its children's content", "[:where(&>*)]:justify-center"],
+    ["under a parent that centers its children's content", "[:where(&>*)]:justify-center"],
   ])("rests the thumb inside the track at both ends, %s", (_, parent) => {
     renderThemed(
       <div className={parent}>

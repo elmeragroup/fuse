@@ -1,5 +1,5 @@
 /**
- * Stacks of series that share a `stack` id, as CONTRACT section 8.2 and section 8.15 define them.
+ * Stacks of series that share a `stack` id.
  * d3-shape's diverging offset places each slot's positive parts upward from 0 and its negative
  * parts downward, in series order, and `stackSeries` computes it in one pass. The expand offset
  * divides each slot by the sum of its parts' magnitudes first, so a slot with both signs keeps them

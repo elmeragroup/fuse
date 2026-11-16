@@ -75,7 +75,7 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
   const { locale } = useLocale();
   const radius = radarRadius(radar.domain, 1);
   // Values stay clear of the spoke labels the axis shows past the rim, of the series' edges and
-  // dots, and off the centre, along whichever of 12 and 6 o'clock leaves them more room. Each width
+  // dots, and off the center, along whichever of 12 and 6 o'clock leaves them more room. Each width
   // is the label's bound, the widest any common sans draws it, since the page picks the font.
   const spokes = spokeLabelFit(radar);
   const values = radar.ticks.map((tick) => ({

@@ -206,13 +206,13 @@ export function SeriesPaths({
   sub,
   variant,
   paint,
-  emphasised,
+  emphasized,
   prefix,
   entering,
 }: SeriesDraw & {
   /** The look the series draws, "gradient" or the default look in the path form. */
   readonly variant: ChartBarVariant;
-  readonly emphasised: ReadonlySet<number>;
+  readonly emphasized: ReadonlySet<number>;
 }): ReactElement {
   const { motion, update, model, now, fade } = context;
   const { box } = frame;
@@ -223,8 +223,8 @@ export function SeriesPaths({
   // The snapped zero line, where the entrance grows from and the list gradient ends.
   const zero = snapY(box, valueAt(frame, 0));
   const columns = useMemo(
-    () => layoutColumns({ model, update }, series, frame, metrics, sub, paint, emphasised),
-    [model, update, series, frame, metrics, sub, paint, emphasised]
+    () => layoutColumns({ model, update }, series, frame, metrics, sub, paint, emphasized),
+    [model, update, series, frame, metrics, sub, paint, emphasized]
   );
   const { topology, fills } = columns;
   const listFill = paint.stops === undefined ? undefined : `url(#${prefix}-list)`;

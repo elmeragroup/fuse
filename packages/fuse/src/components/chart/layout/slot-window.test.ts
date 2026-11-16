@@ -5,7 +5,7 @@ import { nearestSeries } from "./nearest-series";
 import { effectiveWindow, keepSlot, stepSlot } from "./slot-window";
 import { placeCategoryRows, placeTimeRows, slotX } from "./x-domain";
 
-// The month-switch fixture of CONTRACT section 8.12, written by hand: October 2025 daily rows in
+// The month-switch fixture, written by hand: October 2025 daily rows in
 // Oslo, first through the 30th, then a reload that adds the 31st.
 const october = slots.day["Europe/Oslo"]["2025-10"].utc_start.map((start) => new Date(start));
 const september = slots.day["Europe/Oslo"]["2025-09"].utc_start.map((start) => new Date(start));

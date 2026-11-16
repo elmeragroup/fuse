@@ -28,8 +28,8 @@ function renderMeter(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number]
 
 /**
  * The status glyph exposed as `img` with this exact name, or `null`. Role queries skip
- * `aria-hidden` subtrees, so a hidden glyph reads as absent. `roleNamed` can't serve here:
- * the glyph is an `SVGElement`, not an `HTMLElement`.
+ * `aria-hidden` subtrees, so a hidden glyph reads as absent. `roleNamed` does not fit here,
+ * because the glyph is an `SVGElement`, not an `HTMLElement`.
  */
 function statusIcon(name: string): Element | null {
   return page.getByRole("img", { name, exact: true }).query();
@@ -113,7 +113,7 @@ describe("Meter", () => {
     expect(document.activeElement).not.toBe(meter);
   });
 
-  it("transitions only the fill's width and colour, never every property", () => {
+  it("transitions only the fill's width and color, never every property", () => {
     renderMeter(<Meter label="Upload" value={40} />);
     const fill = slot("meter-bar-fill", roleNamed("meter", "Upload"));
     expect(getComputedStyle(fill).transitionProperty).toBe("width, background-color");

@@ -25,7 +25,7 @@ test("Root takes the page controlled or not, and only the two orientations", () 
     <Carousel.Root aria-label="Offers" index={2} onIndexChange={(_index, _details) => undefined} />
   );
   const _uncontrolled = <Carousel.Root aria-label="Offers" defaultIndex={1} orientation="vertical" />;
-  // @ts-expect-error orientation is horizontal | vertical
+  // @ts-expect-error orientation is horizontal or vertical
   const _diagonal = <Carousel.Root aria-label="Offers" orientation="diagonal" />;
   expectTypeOf<CarouselOrientation>().toEqualTypeOf<"horizontal" | "vertical">();
   expectTypeOf<Parameters<NonNullable<CarouselRootProps["onIndexChange"]>>>().toEqualTypeOf<

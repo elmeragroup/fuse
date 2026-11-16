@@ -1,9 +1,9 @@
 /**
  * Unit under test: RangeCalendar's Root over Calendar's parts in Chromium, through roles, names
- * and data attributes. Oracles: React Aria RangeCalendar's behavior (keyboard anchoring and its one-day
- * focus step, Escape, range-end names), React Aria's `useRangeCalendarState` and
- * `useRangeCalendar` rules (swap, narrowing around the anchor, commit on blur and outside press)
- * worked out by hand, and printed 2026 calendars. Every scenario runs under a clock frozen at
+ * and data attributes. Oracles: React Aria RangeCalendar's behavior for keyboard anchoring and its
+ * one-day focus step, Escape and range-end names; the rules of React Aria's `useRangeCalendarState`
+ * and `useRangeCalendar` for the swap, narrowing around the anchor, and commit on blur and outside
+ * press, worked out by hand; and printed 2026 calendars. Every scenario runs under a clock frozen at
  * local noon on June 15, 2030, outside every month the scenarios show.
  */
 import { useState } from "react";
@@ -528,7 +528,7 @@ describe("date props past the types", () => {
         aria-label="Stay"
         defaultValue={{
           start: Temporal.PlainDate.from("2026-10-05"),
-          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          // @ts-expect-error -- text reaches the prop from plain JavaScript or a server component
           end: "2026-10-09",
         }}
       />

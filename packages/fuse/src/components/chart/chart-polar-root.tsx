@@ -4,9 +4,9 @@
  * The polar Root kernel: what PieChart, RadialChart and RadarChart share under their own model.
  * It owns the store, the follower registry, the motion loop and its entrance, the selection, the
  * highlight and the warnings, and renders the figure: the description, the instructions, the
- * aspect-locked cell with its listbox, the parts and the status region, in CONTRACT section 9.2's
- * order. A family hands it a `PolarModel`, which carries the family's geometry, words, pick, table
- * and readout, so the kernel never reads a family's data.
+ * aspect-locked cell with its listbox, the parts and the status region, in that order. A family
+ * hands it a `PolarModel`, which carries the family's geometry, words, pick, table and readout, so
+ * the kernel never reads a family's data.
  *
  * First paint: with JavaScript on, every polar mark stays hidden behind the tracks and grid
  * until the chart comes into view and its entrance starts, which writes `data-drawn` on the

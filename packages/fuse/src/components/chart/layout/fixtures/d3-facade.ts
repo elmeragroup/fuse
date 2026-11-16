@@ -186,7 +186,7 @@ function pair(values: Iterable<unknown>, name: string): [number, number] {
   if (typeof b !== "number" && !(b instanceof Date) && typeof b !== "string")
     unsupported(`${name} of ${typeof b}`);
   const numbers: [number, number] = [Number(a), Number(b)];
-  if (typeof a === "string" && Number.isNaN(numbers[0])) unsupported(`${name} of colour strings`);
+  if (typeof a === "string" && Number.isNaN(numbers[0])) unsupported(`${name} of color strings`);
   return numbers;
 }
 

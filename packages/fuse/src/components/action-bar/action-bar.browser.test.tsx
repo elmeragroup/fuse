@@ -256,7 +256,7 @@ describe("ActionBar", () => {
     expect(roleNamed("toolbar", bar).textContent).toBe(many);
   });
 
-  it("floats centred at offset px above the bottom of its positioned container", async () => {
+  it("floats centered at offset px above the bottom of its positioned container", async () => {
     const OFFSET = 72;
     renderEnglish(<Selection offset={OFFSET} />);
     await check("Order 1");

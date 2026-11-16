@@ -166,7 +166,7 @@ describe("PhoneEditor.edit and paste", () => {
   );
 
   describe("national trunk prefix", () => {
-    // The issue's per-key expectations for a Swedish mobile number typed with its trunk 0.
+    // Issue #194's per-key expectations for a Swedish mobile number typed with its trunk 0.
     const asTyped = [
       "0",
       "07",

@@ -36,8 +36,8 @@ export const actionBarVariants = tv({
       toolbar.root(),
       "shadow-lg ease-out pointer-events-auto max-w-full opacity-100 transition-opacity duration-150",
       "data-ending-style:opacity-0 data-starting-style:opacity-0",
-      // Movement sits under no-preference, as the central reduced-motion rule asks: that rule only
-      // drops `translate` from the transition, so a translated end state would still jump.
+      // The movement runs only under `motion-safe`, as the central reduced-motion rule asks. That
+      // rule drops only `translate` from the transition, so a translated end state would still jump.
       "motion-safe:transition-[opacity,translate] motion-safe:data-ending-style:translate-y-1.5 motion-safe:data-starting-style:translate-y-1.5"
     ),
     count: "text-xs font-medium px-2 whitespace-nowrap tabular-nums",

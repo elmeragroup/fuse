@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { roundShares } from "./shares";
 
-describe("section 8.13 shares, written by hand", () => {
+describe("shares, written by hand", () => {
   it("rounds three equal thirds to 34, 33 and 33", () => {
     expect(roundShares([1, 1, 1], 0)).toEqual([34, 33, 33]);
   });

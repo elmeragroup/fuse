@@ -25,7 +25,7 @@ const HOST_OUTLINE_WIDTH = "3px";
 
 describe("Button", () => {
   // Each button meets a click, Enter and Space. Disabled and pending block all three; a visually
-  // disabled button looks off but stays fully activatable, as its JSDoc promises.
+  // disabled button looks off but still activates on all three, as its JSDoc says.
   it.each([
     ["an enabled", {}, 3],
     ["a disabled", { disabled: true }, 0],
@@ -125,7 +125,7 @@ describe("Button", () => {
       expect(document.activeElement).toBe(button);
 
       rerender(<Fixture pending />);
-      // The same element: no native `disabled`, so focus never fell to <body>.
+      // It is the same element, with no native `disabled`, so focus never fell to `<body>`.
       expect(document.activeElement).toBe(button);
       expect(button.hasAttribute("disabled")).toBe(false);
       expect(button.tabIndex).toBe(0);

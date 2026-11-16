@@ -1,5 +1,5 @@
 /**
- * The per-key color property of CONTRACT section 11, and the role helpers every chart family reads
+ * The per-key color property, and the role helpers every chart family reads
  * a config color through. Fuse never writes `--chart-color-<key>`. Each mark reads it with the
  * config role as the fallback, so a consumer's property on Root wins.
  */
@@ -22,7 +22,7 @@ export function isRoleList(color: ChartColor): color is Extract<ChartColor, read
  * @returns `true` for a threshold.
  */
 export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a color arrives as a role string, a role list or a threshold object
   return typeof color === "object" && !isRoleList(color);
 }
 

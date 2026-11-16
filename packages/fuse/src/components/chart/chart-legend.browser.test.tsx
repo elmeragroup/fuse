@@ -1,5 +1,5 @@
 // The legend toggles' target size, name and pressed cue, in Chromium. The
-// expectations come from CONTRACT section 9.9 and AGENTS.md's 24 px floor.
+// target size expectations come from AGENTS.md's 24 px floor.
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -57,7 +57,7 @@ describe("legend toggles", () => {
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-selected")).toBe(false);
   });
 
-  it("draws a 1 px outline on the pressed toggle, which survives forced colours", async () => {
+  it("draws a 1 px outline on the pressed toggle, which survives forced colors", async () => {
     legend();
     const toggle = page.getByRole("button", { name: "Hytte" }).element();
     await userEvent.click(toggle);
@@ -105,7 +105,7 @@ describe("a LegendValue that falls back to now", () => {
   });
 
   it("prints nothing when now falls after the window", () => {
-    // 8 October is in the data but outside the 1–5 October window.
+    // 8 October is in the data but outside the 1 to 5 October window.
     expect(valueAt(new Date(Date.UTC(2026, 9, 8, 10)))).toBe("");
   });
 });

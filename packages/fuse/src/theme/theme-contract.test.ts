@@ -293,7 +293,7 @@ describe("theme contract", () => {
   });
 
   it("declares no font in any theme rule", () => {
-    // The owner ruling: themes name no fonts, and an app sets --font-sans and --font-heading.
+    // Themes name no fonts, and an app sets --font-sans and --font-heading.
     const declared = rules.flatMap((rule) =>
       rule.declarations
         .filter((entry) => entry.name.startsWith("font"))
@@ -468,8 +468,8 @@ describe("theme contract", () => {
   });
 
   it("builds standalone CSS without Preflight", () => {
-    // The wrapper's source set — `source(none)` and the single dist `@source` — is
-    // asserted once, in `styles/standalone-css.test.ts`. This test owns the one rule
+    // `styles/standalone-css.test.ts` asserts the wrapper's source set, `source(none)` and the
+    // single dist `@source`, once. This test owns the one rule
     // that belongs to the token contract: a library never resets the host page.
     const wrapper = readFileSync(
       join(dirname(fileURLToPath(import.meta.url)), "../../scripts/standalone.css"),
@@ -603,7 +603,7 @@ describe("ngfi identity", () => {
 });
 
 describe("fkse identity", () => {
-  // The oracle is the Alias/Surface/On Surface Variant colour in the Telinet Figma file
+  // The oracle is the Alias/Surface/On Surface Variant color in the Telinet Figma file
   // gzLEvCCAiwRqzoEPMBesdx, the role `feature-foreground` maps onto. The role points at brand
   // palette 2, which passes through the green unchanged.
   it("paints the branded light feature foreground in the Telinet green", () => {
@@ -648,7 +648,7 @@ describe("derived roles", () => {
 describe("branded identity layer roles", () => {
   const rules = THEME_RULES;
 
-  it("sets the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the branded identity", () => {
+  it("sets the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the gray divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the branded identity", () => {
     const branded = {
       "card-border": "oklch(0 0 0 / 0)",
       "card-section-divider": "var(--background)",
@@ -689,13 +689,13 @@ describe("branded identity layer roles", () => {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
       }
     }
-    // Neutral themes and the root keep the border-coloured card edge, Tailwind's 5% black card
-    // shadow, the 1px border hairline,
-    // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
-    // those edges, the muted disabled row striped in black at 2% with foreground text, the
-    // muted pressed toggle with foreground text, the regular selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px,
-    // the 500-weight h1 at 24px, h2 at 18px and h3 at 16px with snug 1.375 line heights, 33,
-    // 24.75 and 22px.
+    // Neutral themes and the root keep the border-colored card edge, Tailwind's 5% black card
+    // shadow, the 1px border hairline, the border-colored selection row edge, the primary
+    // checked-row edge, dividers that follow those edges, the muted disabled row striped in black
+    // at 2% with foreground text, the muted pressed toggle with foreground text, the regular
+    // selection row title, the relaxed 1.625 paragraph line heights at 14, 16 and 18px, and the
+    // 500-weight h1 at 24px, h2 at 18px and h3 at 16px with snug 1.375 line heights, 33, 24.75 and
+    // 22px.
     for (const selector of [":root", '[data-theme-identity="neutral"]']) {
       expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "card-section-divider"), selector).toBe("var(--border)");

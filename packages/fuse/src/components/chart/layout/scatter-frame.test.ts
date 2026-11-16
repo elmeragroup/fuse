@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  dotCentre,
+  dotCenter,
   dotDiameter,
   frameX,
   frameY,
@@ -40,22 +40,22 @@ describe("the scatter projection", () => {
 });
 
 describe("the dot snapping", () => {
-  // Unit under test: dotDiameter and dotCentre. Oracle: device pixels counted by hand. A dot whose
-  // diameter is an even count of device pixels centres on a pixel edge, an odd one on a pixel's
+  // Unit under test: dotDiameter and dotCenter. Oracle: device pixels counted by hand. A dot whose
+  // diameter is an even count of device pixels centers on a pixel edge, an odd one on a pixel's
   // middle, so its edges fall on whole pixels.
   const plot = frame(200, 140, [-2, 18], [20_000, 160_000]);
 
-  it("centres an 8 px dot on the pixel edge and a 5 px dot on the pixel's middle at 1x", () => {
-    expect(dotCentre(plot, 2, 90_000, 8)).toEqual({ x: 40, y: 70 });
-    expect(dotCentre(plot, 2, 90_000, 5)).toEqual({ x: 40.5, y: 70.5 });
+  it("centers an 8 px dot on the pixel edge and a 5 px dot on the pixel's middle at 1x", () => {
+    expect(dotCenter(plot, 2, 90_000, 8)).toEqual({ x: 40, y: 70 });
+    expect(dotCenter(plot, 2, 90_000, 5)).toEqual({ x: 40.5, y: 70.5 });
   });
 
   it("counts device pixels at 2x, where a 5 px dot is 10 device pixels across", () => {
     const retina = frame(200, 140, [-2, 18], [20_000, 160_000], { dpr: 2 });
     expect(dotDiameter(retina.box, 5)).toBe(5);
-    expect(dotCentre(retina, 2, 90_000, 5)).toEqual({ x: 40, y: 70 });
+    expect(dotCenter(retina, 2, 90_000, 5)).toEqual({ x: 40, y: 70 });
     // 2.15 lies at 41.5 px, device pixel 83, an edge at 2x.
-    expect(dotCentre(retina, 2.15, 90_000, 5).x).toBe(41.5);
+    expect(dotCenter(retina, 2.15, 90_000, 5).x).toBe(41.5);
   });
 
   it("rounds a diameter to whole device pixels at 1.5x", () => {
@@ -67,9 +67,9 @@ describe("the dot snapping", () => {
     // The plot starts at 10.6 CSS px, drawn from device pixel 11. x = 40 lands at page 50.6,
     // device pixel 51, which is 40 pixels from the layer's origin.
     const shifted = frame(200, 140, [-2, 18], [20_000, 160_000], { left: 10.6, top: 3.4 });
-    expect(dotCentre(shifted, 2, 90_000, 8)).toEqual({ x: 40, y: 70 });
+    expect(dotCenter(shifted, 2, 90_000, 8)).toEqual({ x: 40, y: 70 });
     // x = 2.015 lands at 40.15, page 50.75, device pixel 51 too.
-    expect(dotCentre(shifted, 2.015, 90_000, 8).x).toBe(40);
+    expect(dotCenter(shifted, 2.015, 90_000, 8).x).toBe(40);
   });
 });
 
@@ -94,7 +94,7 @@ describe("the scatter paths", () => {
   });
 
   it("steps after each point along x", () => {
-    // step-after holds each y until the next x: (0,140) → (40,140) → (40,70) → (200,70) → (200,0).
+    // step-after holds each y until the next x: (0,140), (40,140), (40,70), (200,70), then (200,0).
     const xs = Float64Array.of(-2, 2, 18);
     const ys = Float64Array.of(20_000, 90_000, 160_000);
     expect(linePath(plot, xs, ys, "step-after")).toBe("M0,140L40,140L40,70L200,70L200,0");

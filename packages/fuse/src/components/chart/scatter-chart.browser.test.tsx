@@ -147,9 +147,9 @@ describe("interaction", () => {
   type InteractiveRow = { readonly t: number; readonly kwh: number; readonly s: string };
 
   /**
-   * The walk, by x, then y, then series in config order: now(−2, 20\u00a0000), normal(−2, 20\u00a0000),
-   * last(1, 140\u00a0000), now(2, 90\u00a0000), last(2, 100\u00a0000), normal(18, 160\u00a0000). The extents nice to
-   * [−2, 18] and [20\u00a0000, 160\u00a0000].
+   * The walk, by x, then y, then series in config order: now(−2, 20\u00a0000),
+   * normal(−2, 20\u00a0000), last(1, 140\u00a0000), now(2, 90\u00a0000), last(2, 100\u00a0000),
+   * normal(18, 160\u00a0000). The extents nice to [−2, 18] and [20\u00a0000, 160\u00a0000].
    */
   const INTERACTIVE_ROWS: readonly InteractiveRow[] = [
     { t: 2, kwh: 90_000, s: "now" },
@@ -509,7 +509,7 @@ describe("interaction", () => {
       await userEvent.click(surface, { position: { x: 199, y: 1 } });
       await expect.poll(tooltipText).toBe(`Forbruk 2026Temperatur18Forbruk160${NBSP}000`);
       rerender(<InteractiveScatter data={[...THREE, { t: 28, kwh: 160_000, s: "now" }]} />);
-      // The pinned ring rides the glide to its new place.
+      // The pinned ring moves with the domain transition to its new place.
       await expect.poll(() => ring()?.[0]).toBe("133");
       await userEvent.click(surface, { position: { x: 199, y: 1 } });
       await expect.poll(tooltipText).toBe(`Forbruk 2026Temperatur28Forbruk160${NBSP}000`);
@@ -519,7 +519,10 @@ describe("interaction", () => {
 
   describe("a pin across a data update", () => {
     const NBSP = " ";
-    /** A is now(−2, 20 000) at (0, 140) and now(18, 160 000) at (200, 0), B is last(8, 90 000) at (100, 70). */
+    /**
+     * Series A's points, now(−2, 20 000) at (0, 140) and now(18, 160 000) at (200, 0). Series B
+     * has one point, last(8, 90 000) at (100, 70).
+     */
     const A = [
       { t: -2, kwh: 20_000, s: "now" },
       { t: 18, kwh: 160_000, s: "now" },
@@ -613,7 +616,10 @@ describe("interaction", () => {
 
   describe("a click that moves a pin onto the option's point", () => {
     const NBSP = "\u00a0";
-    /** now(−2, 20 000) at (0, 140), the walk's first point, where the option lies, now(8, 90 000) at (100, 70) and now(18, 160 000) at (200, 0). */
+    /**
+     * Three points: now(−2, 20 000) at (0, 140), the walk's first point, where the option lies,
+     * now(8, 90 000) at (100, 70) and now(18, 160 000) at (200, 0).
+     */
     const SPREAD = [
       { t: -2, kwh: 20_000, s: "now" },
       { t: 8, kwh: 90_000, s: "now" },

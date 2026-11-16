@@ -22,10 +22,10 @@ import {
   alongLength,
   cellRun,
   pointAlong,
-  slotCentreAt,
+  slotCenterAt,
   snapAcross,
   snapAlong,
-  strokeCentre,
+  strokeCenter,
 } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
@@ -69,12 +69,12 @@ export function placeOf(look: PathLook): PathPlacement {
     orientation: frame.orientation,
     curve: look.curve,
     along: (at) => pointAlong(frame, at, look.xScale),
-    run: (centre, cells) => {
-      const [start, end] = cellRun(frame, centre, cells);
-      return [strokeCentre(frame, start, width), strokeCentre(frame, end, width)];
+    run: (center, cells) => {
+      const [start, end] = cellRun(frame, center, cells);
+      return [strokeCenter(frame, start, width), strokeCenter(frame, end, width)];
     },
-    across: (at) => strokeCentre(frame, snapAcross(frame, at), width),
-    edge: (at) => strokeCentre(frame, snapAlong(frame, at), width),
+    across: (at) => strokeCenter(frame, snapAcross(frame, at), width),
+    edge: (at) => strokeCenter(frame, snapAlong(frame, at), width),
     digits: null,
   };
 }
@@ -452,7 +452,7 @@ export function pathStep<S extends Counted, T>(
  * @returns The distance in CSS pixels.
  */
 export function slotStep(frame: PlotFrame, xScale: "band" | "point"): number {
-  return slotCentreAt(frame, 1, xScale) - slotCentreAt(frame, 0, xScale);
+  return slotCenterAt(frame, 1, xScale) - slotCenterAt(frame, 0, xScale);
 }
 
 /**
@@ -462,8 +462,8 @@ export function slotStep(frame: PlotFrame, xScale: "band" | "point"): number {
  * @param xScale - Root's x scale.
  * @returns The function.
  */
-export function centreAlong(frame: PlotFrame, xScale: "band" | "point"): (position: number) => number {
-  return (position) => slotCentreAt(frame, position, xScale);
+export function centerAlong(frame: PlotFrame, xScale: "band" | "point"): (position: number) => number {
+  return (position) => slotCenterAt(frame, position, xScale);
 }
 
 /** What a path mark places in a commit, or null before the plot is measured. */

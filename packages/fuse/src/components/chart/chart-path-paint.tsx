@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The paint of a Line or an Area, after CONTRACT section 8.9. A role paints the series' own color.
+ * The paint of a Line or an Area. A role paints the series' own color.
  * A role list is decorative and runs along the slot axis. A scale or a threshold follows the value:
  * one `userSpaceOnUse` gradient along the value axis with hard stops at the bin edges or at the
  * threshold, so the stroke and the fill take the step of the value they pass, and a riser crosses

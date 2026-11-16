@@ -160,7 +160,7 @@ describe("pressed face", () => {
     );
 
     it("follows a host override of the pressed pair", async () => {
-      // Unit under test: the `toggle-pressed` utilities. Oracle: literal colours the host sets on
+      // Unit under test: the `toggle-pressed` utilities. Oracle: literal colors the host sets on
       // a neutral scope, which no theme declares.
       renderThemed(
         <div

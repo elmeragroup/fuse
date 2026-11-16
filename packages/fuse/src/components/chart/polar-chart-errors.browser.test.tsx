@@ -1,7 +1,7 @@
 // The polar data and composition rules in a development build. Units under test: the polar
 // Roots, GaugeChart's Root and Skeleton, and a shared part inside them. Each case renders to a
-// string and expects the thrown error's name and rule, written by hand from CONTRACT section 8.1's
-// table and S10's polar rows.
+// string and expects the thrown error's name and rule, written by hand from the polar data and
+// composition rules.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -274,7 +274,7 @@ describe("the polar rules in development", () => {
         }}>
         <ClockChart.Line dataKey="kwh" />
       </ClockChart.Root>,
-      composition("scale-colour-on-stack"),
+      composition("scale-color-on-stack"),
     ],
     [
       "a clock ValueLabel outside its Marker",

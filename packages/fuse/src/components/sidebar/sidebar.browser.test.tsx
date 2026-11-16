@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
+import { expectActivationCanceled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { withLocale } from "../../../test/locale-matrix";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -607,7 +607,7 @@ describe("aria-disabled rows", () => {
         expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).not.toBeNull();
       });
 
-      await expectActivationCancelled(link, clicks);
+      await expectActivationCanceled(link, clicks);
     });
 
     it("neither follows a MenuSubButton link nor runs its onClick", async () => {
@@ -630,12 +630,12 @@ describe("aria-disabled rows", () => {
         </Frame>
       );
 
-      await expectActivationCancelled(roleNamed("link", "Invoices"), clicks);
+      await expectActivationCanceled(roleNamed("link", "Invoices"), clicks);
     });
 
     // A middle-click fires `auxclick`, not `click`, and a link opens in a new tab as that event's
     // default action. The window listener runs after the row's own handler, records whether the
-    // row cancelled it, then cancels it itself so an unguarded row opens no tab.
+    // row canceled it, then cancels it itself so an unguarded row opens no tab.
     for (const { name, ariaDisabled, prevented, auxClicks } of [
       {
         name: "cancels a middle-click on a link row, so it opens no new tab and skips onAuxClick",
@@ -690,7 +690,7 @@ describe("aria-disabled rows", () => {
         </Frame>
       );
 
-      await expectActivationCancelled(roleNamed("button", "Archive"), clicks);
+      await expectActivationCanceled(roleNamed("button", "Archive"), clicks);
     });
 
     it("activates the same rows once aria-disabled is false", async () => {

@@ -154,8 +154,8 @@ describe("NumberField", () => {
     await userEvent.click(page.getByRole("button", { name: "Increase Quantity", exact: true }));
 
     // The step reports upward, but the parent did not accept it. An uncontrolled field
-    // would have painted its own "0" here; the DOM staying empty is the controlled
-    // contract, and the external set below proves the parent can still drive the input.
+    // would have painted its own "0" here. A controlled field leaves the DOM empty, and
+    // the external set below proves the parent can still drive the input.
     expect(events).toEqual([0]);
     await expect.element(input).toHaveValue("");
 
@@ -389,8 +389,8 @@ describe("NumberField onValueCommitted", () => {
 
 describe("form reset", () => {
   /**
-   * Replaces the field's text. `userEvent.fill` cannot be used on the first focus: base-ui moves
-   * the caret to the end in `onFocus`, so `select()` before typing is what makes this deterministic.
+   * Replaces the field's text. `userEvent.fill` cannot be used on the first focus, because base-ui
+   * moves the caret to the end in `onFocus`. Calling `select()` before typing makes this deterministic.
    */
   async function replaceValue(fieldName: string, text: string): Promise<void> {
     const input = inputNamed(fieldName);
@@ -402,7 +402,7 @@ describe("form reset", () => {
   const quantity = () => page.getByRole("textbox", { name: "Quantity", exact: true });
 
   /**
-   * The reset listener's plumbing (button vs programmatic path, cancel, unmount) is proved in
+   * The reset listener's button and programmatic paths, cancel and unmount are proved in
    * `use-form-reset.browser.test.tsx`. NumberField remounts its base-ui root on reset, so these
    * cases prove the remount restores the committed value and never moves focus.
    */
@@ -436,7 +436,7 @@ describe("form reset", () => {
     expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
     expect(new FormData(formNamed("Quantity form")).get("quantity")).toBe("5");
 
-    // The committed value must reset too, not just the painted text.
+    // The committed value must reset as well as the painted text.
     await userEvent.click(roleNamed("button", "Increase Quantity"));
     expect(inputNamed("Quantity")).toHaveProperty("value", "6");
   });

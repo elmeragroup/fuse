@@ -32,7 +32,7 @@ test("FileRejection narrows on reason to a file or a name", () => {
 
 test("Root takes only the documented capture values", () => {
   const _root = <FileUpload.Root accept="image/*,.pdf" multiple directory capture="user" disabled />;
-  // @ts-expect-error capture is user | environment
+  // @ts-expect-error capture takes only user or environment
   const _badCapture = <FileUpload.Root capture="front" />;
 });
 

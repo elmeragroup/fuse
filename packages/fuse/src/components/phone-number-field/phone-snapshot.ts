@@ -356,7 +356,8 @@ export function readInternationalIn(
 /**
  * A value read in `country`, the country it names, as {@link receiveValue} reads it there, from
  * a parse of its `+` form: its national number unless `international` keeps the digits as
- * written. No parse when `reading` is that parse.
+ * written. No parse when `reading` is that parse, unless the national number behind the calling
+ * code is another input than the value's, as a trunk 0 after the calling code makes it.
  *
  * @param value - The controlled value.
  * @param country - The country the value names.

@@ -1,8 +1,7 @@
 /**
- * X-axis tick candidates, as CONTRACT section 8.11 defines them. Candidates sit on whole wall-clock
- * units, and `tick-fit.ts` picks the stride each width bucket shows. After the interval's own
- * strides come the strides of coarser calendar units, so a year of hours can fall back to month
- * starts.
+ * X-axis tick candidates. Candidates sit on whole wall-clock units, and `tick-fit.ts` picks the
+ * stride each width bucket shows. After the interval's own strides come the strides of coarser
+ * calendar units, so a year of hours can fall back to month starts.
  */
 import { wallTimes } from "../format/time-format";
 import type { Interval } from "../format/time-format";

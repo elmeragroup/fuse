@@ -8,8 +8,8 @@ import { AspectRatio } from "./aspect-ratio";
 describe("AspectRatio", () => {
   beforeAll(async () => {
     // A Tailwind-source consumer's own utility. It goes first in the head, so where it ties with a
-    // shipped ratio class the shipped rule wins: only a ratio class dropped from the element lets
-    // the consumer's ratio apply.
+    // shipped ratio class the shipped rule wins. The consumer's ratio applies only once the element
+    // drops its ratio class.
     const style = document.createElement("style");
     style.textContent = await consumerCss('@import "tailwindcss/utilities.css" source(none);', [
       "aspect-[7/5]",

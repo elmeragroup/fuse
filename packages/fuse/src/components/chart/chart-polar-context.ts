@@ -65,9 +65,12 @@ export type PolarModel = {
    * the clock's, whose PageUp and PageDown move one label unit.
    */
   readonly instructions: "polar" | "cartesian" | "clock";
-  /** The listbox's orientation, "vertical" for pie and radial and "horizontal" for radar, per section 9.3. */
+  /** The listbox's orientation, "vertical" for pie and radial and "horizontal" for radar. */
   readonly orientation: "horizontal" | "vertical";
-  /** Whether the arrows wrap past the last option: a pie's and a radar's do, a radial chart's rings do not. */
+  /**
+   * Whether the arrows wrap past the last option. A pie's and a radar's do, and a radial chart's
+   * rings do not.
+   */
   readonly wrap: boolean;
   /** How many series the Up and Down focus cycles through after "all series", 0 for none. */
   readonly series: number;
@@ -98,7 +101,10 @@ export type PolarModel = {
       readonly scale: number;
       readonly dpr: number;
       readonly painted?: PaintedAngles | undefined;
-      /** The series the pointer holds, which a series pick keeps unless another is clearly nearer. */
+      /**
+       * The series the pointer holds, which a series pick keeps unless another is nearer by more
+       * than 0.06 of the outer radius.
+       */
       readonly near?: number | null | undefined;
       /** Whether the held series stays while it has a reading, as it does a moment after it changes. */
       readonly nearFirm?: boolean | undefined;
@@ -125,8 +131,8 @@ export type PolarModel = {
  * center prints, a radar's spokes and series, or a clock's slots and series.
  */
 export type PolarDrawing =
-  | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
-  | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly centre: CentreModel }
+  | { readonly kind: "pie"; readonly pie: PieDrawing; readonly center: CenterModel }
+  | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly center: CenterModel }
   | { readonly kind: "radar"; readonly radar: RadarDrawing }
   | { readonly kind: "clock"; readonly clock: ClockDrawing };
 
@@ -135,7 +141,10 @@ export type ClockSeries = {
   readonly key: string;
   /** The series' place among the config keys, which focus, selection and highlight name. */
   readonly index: number;
-  /** The series paint: a role, a role list's first stop, a scale's middle step or a threshold's lower side. */
+  /**
+   * The series paint: a role, a role list's first stop, a scale's middle step or a threshold's
+   * lower side.
+   */
   readonly paint: string;
   /** A role list's stops from the tip to the base. */
   readonly stops: readonly string[] | undefined;
@@ -244,8 +253,8 @@ export type RadarDrawing = {
   readonly format: ValueFormat;
 };
 
-/** The numbers a center prints, per item and with nothing active, per CONTRACT section 8.13. */
-export type CentreModel = {
+/** The numbers a center prints, per item and with nothing active. */
+export type CenterModel = {
   /** An item's visible label from config, Other's for the folded slice, or null past the items. */
   readonly label: (index: number) => string | null;
   /** An item's reading, its sign kept, or null for a missing one. */
@@ -464,8 +473,8 @@ export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
  * @param model - The Root's model.
  * @returns The center's numbers, or null under a family with no center.
  */
-export function centreOf(model: PolarModel): CentreModel | null {
-  return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.centre : null;
+export function centerOf(model: PolarModel): CenterModel | null {
+  return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.center : null;
 }
 
 /**

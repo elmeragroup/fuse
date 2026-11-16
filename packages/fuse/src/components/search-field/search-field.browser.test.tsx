@@ -152,7 +152,7 @@ describe("SearchField", () => {
   // Oracle: React Aria's useSearchField handles Enter and Escape through useKeyboard, which skips
   // a repeat (`allowRepeats` false), and createKeyboardShortcutHandler matches a shortcut only with
   // its exact modifiers, so `Enter` and `Escape` match only without Alt, Control, Meta or Shift.
-  // The PR contract adds that with onSubmit set, no Enter submits the form natively.
+  // With onSubmit set, no Enter submits the form natively either.
   it.each([
     ["a held Enter's repeat", { key: "Enter", repeat: true }, true],
     ["Meta+Enter", { key: "Enter", metaKey: true }, true],

@@ -1,11 +1,12 @@
 /**
  * Unit under test: DateField and the DateInput parts in Chromium, through roles, names, the
- * keyboard and forms. Oracles: React Aria's DateField behavior (segment names and order, typing 03152008,
- * Backspace, the group's name and slot, the bound copy, mixed-kind bounds, time segments), React
- * Aria's `useDateSegment`/`IncompleteDate` editing rules worked out by hand for the keys and
- * locales the harness does not cover, and Base UI's Form and Field contracts (errors by name, focus
- * on the first invalid control, `onFormSubmit` values). Every scenario runs under a clock frozen at
- * local noon on June 15, 2030, so an arrow key on an empty segment reads that day.
+ * keyboard and forms. Oracles: React Aria's DateField behavior, the editing rules of React Aria's
+ * `useDateSegment` and `IncompleteDate` worked out by hand, and Base UI's Form and Field contracts.
+ * React Aria's behavior covers segment names and order, typing 03152008, Backspace, the group's
+ * name and slot, the bound copy, mixed-kind bounds and time segments. The editing rules cover the
+ * keys and locales the harness does not. The Form and Field contracts cover errors by name, focus
+ * on the first invalid control and `onFormSubmit` values. Every scenario runs under a clock frozen
+ * at local noon on June 15, 2030, so an arrow key on an empty segment reads that day.
  */
 import { useState } from "react";
 import type { ReactElement } from "react";
@@ -46,7 +47,7 @@ function committed() {
 
 /** Every segment's visible text, literals left out, in DOM order. */
 function segmentTexts(): string[] {
-  // Segments are not one role (spinbutton, textbox, hidden literal), and their slot and
+  // Segments are not one role: spinbutton, textbox or a hidden literal. Their slot and
   // `data-type` are the part's public contract.
   return [...document.querySelectorAll('[data-slot="date-input-segment"]:not([data-type="literal"])')].map(
     (element) => element.textContent
@@ -169,7 +170,7 @@ describe("DateField keys", () => {
     await userEvent.click(spin("day, Start date"));
 
     await userEvent.keyboard("{PageUp}");
-    // React Aria lets a day run to 31 in any month; Oct 28 + 7 wraps past 31 to 4.
+    // React Aria lets a day run to 31 in any month, so October 28 plus 7 wraps past 31 to 4.
     await expect.element(committed()).toHaveTextContent("2026-10-04");
     await userEvent.keyboard("{End}");
     await expect.element(committed()).toHaveTextContent("2026-10-31");
@@ -187,7 +188,7 @@ describe("DateField keys", () => {
     renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("month, Start date"));
 
-    // "1" may still become 10–12, so focus stays; "3" would make 13, so it restarts at 3 and moves.
+    // "1" may still become 10 to 12, so focus stays; "3" would make 13, so it restarts at 3 and moves.
     await userEvent.keyboard("1");
     await expect
       .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
@@ -851,7 +852,7 @@ describe("date props past the types", () => {
       <DateField
         label="Starts"
         granularity="minute"
-        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        // @ts-expect-error -- ISO text past the types, from plain JavaScript or a serialized Temporal value
         defaultValue="2026-10-05T09:30"
       />
     );

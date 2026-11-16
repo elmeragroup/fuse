@@ -345,7 +345,7 @@ describe("DataTableFilter composition", () => {
     }
   }
 
-  it("keeps a disabled chip on Delete once focus lands on its span Remove after a neighbour goes", async () => {
+  it("keeps a disabled chip on Delete once focus lands on its span Remove after a neighbor goes", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -466,7 +466,7 @@ describe("menu", () => {
         "Draft1",
         "Pending2",
         "Overdue1",
-        "Cancelled0",
+        "Canceled0",
       ]);
       expect(roleNamed("menuitemcheckbox", "Paid").getAttribute("aria-checked")).toBe("true");
       expect(page.getByRole("separator").elements()).toHaveLength(1);

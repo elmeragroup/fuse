@@ -81,7 +81,7 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
       return radius < clock.inner - 1e-9 || radius > 1 + 1e-9 ? [] : [{ tick, radius }];
     });
     // Values stay clear of the angle labels the axis shows past the rim, of the marks at rest, and
-    // of the centre text in the hole, along whichever of 12 and 6 o'clock leaves them more room.
+    // of the center text in the hole, along whichever of 12 and 6 o'clock leaves them more room.
     // Each width is the label's bound, the widest any common sans draws it, since the page picks
     // the font.
     const values = kept.map(({ tick, radius }) => ({

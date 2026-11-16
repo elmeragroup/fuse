@@ -19,8 +19,8 @@ test("TextareaProps is the native textarea surface plus the field size, with no 
 
   // @ts-expect-error the field size has no lg; the min-h floor is not a control size
   const _noLarge = <Textarea size="lg" />;
-  // @ts-expect-error the box is not variant-axed
+  // @ts-expect-error the box has no variant axis
   const _noVariant = <Textarea variant="ghost" />;
-  // @ts-expect-error Textarea takes the native element only — no useRender polymorphism
+  // @ts-expect-error Textarea takes the native element only, with no useRender polymorphism
   const _noRender = <Textarea render={<input />} />;
 });

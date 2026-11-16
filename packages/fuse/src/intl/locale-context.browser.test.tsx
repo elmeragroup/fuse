@@ -6,7 +6,7 @@ import { LocaleProvider, useLocale } from "./locale-context";
 
 function LocaleProbe() {
   try {
-    // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
+    // oxlint-disable-next-line react-hooks/rules-of-hooks -- the probe tests the provider's synchronous throw
     const { locale } = useLocale();
     return <span>{locale}</span>;
   } catch (error) {

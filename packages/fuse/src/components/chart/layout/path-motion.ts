@@ -1,11 +1,10 @@
 /**
- * How a path reaches new data, after `.scratch/charts-v1/reviews/motion-decision.md` and ticket
- * 06's F10. Root's loop moves every path on one clock. This module only decides the mode, from the
- * window's slots and never from the vertices a decimated path happens to draw. `pathStep` in
- * `chart-path-draw.ts` then lays out each vertex's route for that mode. Slot keys come from
- * `pairSlotKeys`, which keeps a slot's key across updates and pairs slots by position when an
- * update shares no slot at the same interval. The four modes read off the keys and the slot
- * identities alone.
+ * How a path reaches new data. Root's loop moves every path on one clock. This module only decides
+ * the mode, from the window's slots and never from the vertices a decimated path happens to draw.
+ * `pathStep` in `chart-path-draw.ts` then lays out each vertex's route for that mode. Slot keys
+ * come from `pairSlotKeys`, which keeps a slot's key across updates and pairs slots by position
+ * when an update shares no slot at the same interval. The four modes read off the keys and the
+ * slot identities alone.
  *
  * 1. When the window holds the same keys, each vertex tweens from its old place to its new one.
  * 2. When the window shifts by whole slots, keeps its length and shares a slot, as an append that

@@ -180,7 +180,7 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
       value: {
         kind: "option",
         operator: "isAnyOf",
-        values: ["pending", "paid", "overdue", "draft", "cancelled"],
+        values: ["pending", "paid", "overdue", "draft", "canceled"],
       },
     };
     await expect.poll(columnFilters).toEqual(

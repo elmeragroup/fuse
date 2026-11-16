@@ -1,8 +1,9 @@
-// Unit under test: formatValueRun, the split a polar centre lays out: the number large and the text
-// around it small. Oracle, written by hand from Norwegian and English formats: nb-NO groups
+// Unit under test: formatValueRun, the split a polar center lays out, with the number large and the
+// text around it small. Oracle, written by hand from Norwegian and English formats: nb-NO groups
 // thousands with a no-break space and writes a unit after one, en-US writes a currency code before
-// the number, scientific notation writes its exponent with an E, a forced sign leads the number unless a currency stands between them,
-// and nb-NO's compact form writes "mill." after a no-break space.
+// the number, scientific notation writes its exponent with an E, a forced sign leads the number
+// unless a currency stands between them, and nb-NO's compact form writes "mill." after a no-break
+// space.
 import { describe, expect, it } from "vitest";
 
 import type { SupportedLocale } from "../../../intl/locale-context";

@@ -119,7 +119,7 @@ function snapped(snap: AxisSnap, edge: number, at: number): number {
  * @param diameter - The dot's diameter, as `dotDiameter` rounds it.
  * @returns The center in CSS pixels from the plot's top left.
  */
-export function dotCentre(frame: ScatterFrame, x: number, y: number, diameter: number): PlotPoint {
+export function dotCenter(frame: ScatterFrame, x: number, y: number, diameter: number): PlotPoint {
   const { box } = frame;
   return {
     x: snapped(axisSnap(box, box.left, diameter), box.left, frameX(frame, x)),
@@ -266,7 +266,7 @@ export function referenceInDomains(
   const dy = form.to[1] - fy;
   let enter = 0;
   let leave = 1;
-  // Each edge as p · t ≤ q: left, right, bottom, top.
+  // Each edge is an inequality p · t ≤ q, in the order left, right, bottom, top.
   for (const [p, q] of [
     [-dx, fx - x0],
     [dx, x1 - fx],

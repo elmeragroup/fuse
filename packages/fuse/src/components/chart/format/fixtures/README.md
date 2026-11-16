@@ -12,17 +12,17 @@ oxfmt skips the JSON files, so their bytes stay as fetched or generated.
 
 ## Slot labels
 
-`slots.json` holds the expected slot lists and labels for Europe/Oslo, Europe/Stockholm and Europe/Helsinki in nb-NO, sv-SE, fi-FI and en-US. The charts v1 ground truth generated them with Python's `zoneinfo` module, the IANA tz database 2026c and the Unicode CLDR 48.0.0 JSON. Its `TIME-CONVENTIONS.md` defines every field and label rule.
+`slots.json` holds the expected slot lists and labels for Europe/Oslo, Europe/Stockholm and Europe/Helsinki in nb-NO, sv-SE, fi-FI and en-US. A zoneinfo oracle outside this repository generated them with Python's `zoneinfo` module, the IANA tz database 2026c and the Unicode CLDR 48.0.0 JSON.
 
-`trim-slots.py` copies the fields the tests read, and computes nothing. Run it with the ground truth's `time/` folder as its argument.
+`trim-slots.py` copies the fields the tests read, and computes nothing. Run it with the oracle's `time/` folder as its argument.
 
 ```sh
-python3 -I trim-slots.py <ground-truth>/time
+python3 -I trim-slots.py <oracle>/time
 ```
 
 It keeps the hourly, quarter-hour, daily, monthly and ISO week files, and merges the two golden-day files into the hourly and quarter-hour days. The script stops if a day in both files differs. Each day is a set of columns. A repeated slot's long zone names, which the spoken text uses, sit under `long_name` by slot index, and every other slot has none.
 
-The ISO week words are drafts that await the owner's sign-off, as `meta.week_labels_status` says. Regenerate the file if the words change.
+Regenerate the file if the ISO week words change.
 
 ## Slot starts
 
@@ -38,14 +38,14 @@ The data comes from the IANA tz database 2025c, through the PyPI `tzdata` packag
 ```sh
 /usr/bin/python3 -m venv ~/.cache/fuse-slot-starts
 ~/.cache/fuse-slot-starts/bin/pip install tzdata==2025.3
-PYTHONTZPATH= ~/.cache/fuse-slot-starts/bin/python3 -I slot_starts.py <ground-truth>/time
+PYTHONTZPATH= ~/.cache/fuse-slot-starts/bin/python3 -I slot_starts.py <oracle>/time
 ```
 
-The optional argument is the ground truth's `time/` folder, which holds the Oslo golden day the script checks itself against. Without it the script skips that check and says so. It refuses to run against any other tz database release, and it leaves the JSON unchanged when one of its self-checks fails. Never edit the JSON by hand. Regenerate it.
+The optional argument is the oracle's `time/` folder, which holds the Oslo golden day the script checks itself against. Without it the script skips that check and says so. It refuses to run against any other tz database release, and it leaves the JSON unchanged when one of its self-checks fails. Never edit the JSON by hand. Regenerate it.
 
 ## Price day
 
-The price day holds invented values in the shape of the elprisetjustnu.se API, because the real day-ahead prices may not be committed. `.scratch/charts-v1/tools/l05-oracles/write_price_days.py` in the charts v1 run wrote it from hourly values typed by hand plus a fixed offset per quarter. Only its slot starts come from the zone rules.
+The price day holds invented values in the shape of the elprisetjustnu.se API, because the real day-ahead prices may not be committed. It was written from hourly values typed by hand plus a fixed offset per quarter. Only its slot starts come from the zone rules.
 
 | File                                       | What it holds                                                                                                                                                 |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -55,7 +55,7 @@ The tests place each row by its `time_start` plus the interval and never read `t
 
 ## Elhub data
 
-The Elhub files come from the Elhub Energy Data API, https://api.elhub.no, licensed under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. The charts v1 run froze the responses on 2026-10-17 and 2026-10-18, and the scripts in `.scratch/charts-v1/tools/l05-oracles/` trimmed them.
+The Elhub files come from the Elhub Energy Data API, https://api.elhub.no, licensed under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. The responses were frozen on 2026-10-17 and 2026-10-18 and trimmed.
 
 | File                                              | Dataset                          | What it holds                                                                                  |
 | ------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -71,11 +71,11 @@ The Elhub files come from the Elhub Energy Data API, https://api.elhub.no, licen
 
 The day files keep the API's rows unchanged, with the fields `startTime`, `endTime`, `priceArea`, the group, `quantityKwh` and `meteringPointCount`. Elhub ends every row correctly, so the tests use them to cross-check the slot lists. The year file is computed. Each value is one hour's `quantityKwh` over its `meteringPointCount`, the mean per household meter, rounded to 4 decimals. It starts at `2025-09-30T22:00:00Z` and steps one hour per value, and it holds one 25-hour and one 23-hour day.
 
-The group, daily and monthly files are computed too, by `trim_elhub_demos.py`, and the bar demos hold copies of them. The group file keeps each hour's `quantityKwh` per group in MWh. The daily and monthly files sum each hour's `quantityKwh` over its `meteringPointCount` per Oslo day or month. A daily total keeps 2 decimals, and the day's highest hour keeps 4 decimals with its `peakStart`. The group file keeps 3 decimals and a monthly total keeps 2, so each holds at least two more decimals than the demo prints. The script stops unless every day holds 23, 24 or 25 hours one hour apart.
+The group, daily and monthly files are computed too, and the bar demos hold copies of them. The group file keeps each hour's `quantityKwh` per group in MWh. The daily and monthly files sum each hour's `quantityKwh` over its `meteringPointCount` per Oslo day or month. A daily total keeps 2 decimals, and the day's highest hour keeps 4 decimals with its `peakStart`. The group file keeps 3 decimals and a monthly total keeps 2, so each holds at least two more decimals than the demo prints. Every day holds 23, 24 or 25 hours one hour apart.
 
-The per-area day file came from the API on 2026-11-05, trimmed by a scratch script in the L8 run. Each row sums one area's and group's 24 hourly `quantityKwh` and averages their `meteringPointCount`, which the radar's index divides.
+The per-area day file came from the API on 2026-11-05. Each row sums one area's and group's 24 hourly `quantityKwh` and averages their `meteringPointCount`, which the radar's index divides.
 
-`.scratch/charts-v1/tools/l07-oracles/trim_elhub_s12.py` writes September 2025's daily file and the two-month hourly file, in the shapes of the files above, for the composed month switch and its Sparklines. `trim_s19_prosumer.py` beside it derives the prosumer day, because Elhub serves no household prosumer series. It scales NO1 solar production so the day's highest quarter is a 5 kW household peak, as energy per quarter, and takes each hour's household consumption per meter less its quarters' solar energy as import above zero or export below it. Before it derives anything, it checks Elhub's own roll-up, each solar hour against the sum of its four quarters within 0.1 % or 1 kWh. The file names itself as derived.
+September 2025's daily file and the two-month hourly file, in the shapes of the files above, serve the composed month switch and its Sparklines. The prosumer day is derived, because Elhub serves no household prosumer series. NO1 solar production is scaled so the day's highest quarter is a 5 kW household peak, as energy per quarter, and each hour's household consumption per meter less its quarters' solar energy is the import above zero or the export below it. Before the derivation, Elhub's own roll-up was checked, each solar hour against the sum of its four quarters within 0.1 % or 1 kWh. The file names itself as derived.
 
 ## Attribution
 

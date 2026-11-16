@@ -9,7 +9,7 @@ import {
 export const TOKEN_NAMES = [
   "background",
   "foreground",
-  // The container roles: card, popover, dialog and panel. `--surface` is the colour of the fill an
+  // The container roles: card, popover, dialog and panel. `--surface` is the color of the fill an
   // element sits on; chart cut-outs read it, falling back to `background`. Beside it the container
   // states `--surface-muted-foreground`, the muted text paired with that fill, which the text on a
   // chart's chips reads. The `fuse/container-surface` lint rule holds every container that paints
@@ -652,7 +652,7 @@ export const TOKEN_DESCRIPTIONS = {
     "Hairline borders, separators and dividers, such as the edges of Popover, Table and Kbd and the Separator line.",
   input:
     "The border of text fields, Select, NumberField and Toggle, and the fill of a disabled field at reduced alpha. Light input can fall under 3:1 on the page, so selection controls draw their edge in muted-foreground.",
-  ring: "The focus ring, a neutral grey that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
+  ring: "The focus ring, a neutral gray that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
   "card-border":
     "The edge of a Card and a card Accordion item. Neutral themes draw it in border, and branded themes make it transparent.",
   "card-section-divider":
@@ -715,7 +715,7 @@ export const TOKEN_DESCRIPTIONS = {
   "chart-6-foreground": "The text color of a direct chart label on chart-6.",
   "chart-7-foreground": "The text color of a direct chart label on chart-7.",
   "chart-8-foreground": "The text color of a direct chart label on chart-8.",
-  "chart-other": "The grey of the series a chart folds together past its eight categorical slots.",
+  "chart-other": "The gray of the series a chart folds together past its eight categorical slots.",
   "chart-other-foreground": "The text color of a direct chart label on chart-other.",
   "chart-seq-1":
     "Step 1 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
@@ -732,23 +732,23 @@ export const TOKEN_DESCRIPTIONS = {
   "chart-seq-7":
     "Step 7 of the sequential chart ramp, which encodes magnitude in one hue. Step 1 is the least.",
   "chart-diverging-1":
-    "Step 1 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 1 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-2":
-    "Step 2 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 2 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-3":
-    "Step 3 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 3 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-4":
-    "Step 4 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 4 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-5":
-    "Step 5 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 5 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-6":
-    "Step 6 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 6 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-diverging-7":
-    "Step 7 of the diverging chart scale for values that cross zero. Step 4 is the grey midpoint at zero.",
+    "Step 7 of the diverging chart scale for values that cross zero. Step 4 is the gray midpoint at zero.",
   "chart-sentiment-positive":
-    "The chart color of a value that favours the reader, such as a low price. It never encodes the sign of a value.",
+    "The chart color of a value that favors the reader, such as a low price. It never encodes the sign of a value.",
   "chart-sentiment-negative":
-    "The chart color of a value that is unfavourable to the reader, such as a high price. It never encodes the sign of a value.",
+    "The chart color of a value that is unfavorable to the reader, such as a high price. It never encodes the sign of a value.",
   "sh-identifier": "The color of identifiers in the syntax highlighting of Code.",
   "sh-keyword": "The color of keywords in the syntax highlighting of Code.",
   "sh-string": "The color of strings in the syntax highlighting of Code.",

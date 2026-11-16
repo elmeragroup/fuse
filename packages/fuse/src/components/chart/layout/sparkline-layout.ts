@@ -1,10 +1,10 @@
 /**
- * The Sparkline's geometry and its range sentence, after CONTRACT sections 6, 8.9 and 9.10 and
- * ticket 06's F4. A Sparkline draws on the server at no known size, so a line or an area lives in
- * a viewBox of equal cells that the svg stretches to its box, and its strokes keep their width on
- * screen. Bars, the rules, the dots and the hover regions place by percentages of the box, which
- * read the same in the stretched viewBox and in the bars' unstretched box. Every value sits in its
- * own cell, so a step curve keeps the last run, as on a chart.
+ * The Sparkline's geometry and its range sentence. A Sparkline draws on the server at no known
+ * size, so a line or an area lives in a viewBox of equal cells that the svg stretches to its box,
+ * and its strokes keep their width on screen. Bars, the rules, the dots and the hover regions place
+ * by percentages of the box, which read the same in the stretched viewBox and in the bars'
+ * unstretched box. Every value sits in its own cell, so a step curve keeps the last run, as on a
+ * chart.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
 import type { ChartCurve } from "../chart-types";
@@ -140,7 +140,7 @@ export type SparklineInput = {
 /**
  * The value domain: the data's extent with the reference, and with 0 for an area or bars, which
  * encode length from it. A flat extent widens by a tenth of its value either way, or to −1 and 1
- * at 0, after section 8.2, so a flat line sits mid-box.
+ * at 0, so a flat line sits mid-box.
  */
 function domainOf(values: readonly number[], input: SparklineInput): readonly [number, number] {
   const reach = [...values, ...(input.reference === undefined ? [] : [input.reference])];
@@ -265,7 +265,7 @@ export function sparklineLayout(input: SparklineInput): SparklineLayout {
     orientation: "vertical",
     curve: input.curve,
     along: (at) => at,
-    run: (centre) => [centre - SPARKLINE_CELL / 2, centre + SPARKLINE_CELL / 2],
+    run: (center) => [center - SPARKLINE_CELL / 2, center + SPARKLINE_CELL / 2],
     edge: (at) => at,
     across: (at) => at,
     lone: "cap",

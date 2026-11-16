@@ -22,7 +22,6 @@ function splitNames(entries: readonly SplitEntry[], accept: string | undefined, 
   return { accepted: accepted.map((each) => each.name), rejected: rejected.map(rejectionName) };
 }
 
-// Expectations follow SPEC "Split".
 describe("split", () => {
   it("keeps the input order in both lists", () => {
     const entries = [

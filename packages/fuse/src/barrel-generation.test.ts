@@ -33,7 +33,7 @@ function scratchPackage(files: Record<string, string>): string {
   return packageRoot;
 }
 
-/** A scratch package generation must refuse, and the message naming the fault. */
+/** A scratch package that generation must refuse, and the message that names the fault. */
 type RefusedPackage = {
   name: string;
   files: Record<string, string>;

@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
  * Unit under test: the `@elmeragroup/fuse/temporal-polyfill` entry in an engine without Temporal.
  * Every engine the browser projects run ships Temporal natively, so nothing else exercises the
  * polyfill in a page: `test/temporal-polyfill-stage.ts` removes the engine's Temporal, then loads
- * the entry. Oracle: ISO 8601 date arithmetic and the entry's contract (install where Temporal is
- * missing, set the marker), written out by hand.
+ * the entry. Oracle: ISO 8601 date arithmetic and the entry's contract, written out by hand. The
+ * entry installs Temporal where it is missing and sets the marker.
  */
 import { getOrThrow } from "@elmeragroup/color/result";
 

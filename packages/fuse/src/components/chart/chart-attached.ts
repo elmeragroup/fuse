@@ -21,8 +21,8 @@ import type { PathKind } from "./chart-paths";
 import type { ChartFrame } from "./chart-plot";
 import { geometryOf } from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
-import { ownCentre, ownSlot } from "./layout/coarse-slots";
-import { pointAlong, slotCentreAt, snapAcross, valueAt } from "./layout/plot-frame";
+import { ownCenter, ownSlot } from "./layout/coarse-slots";
+import { pointAlong, slotCenterAt, snapAcross, valueAt } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 import type { SlotWindow } from "./layout/slot-window";
 
@@ -64,7 +64,7 @@ export function restingPoint(
   const { window, xScale } = place;
   const value = pointValue(series, slot);
   if (window === null || value === null) return null;
-  return [slotCentreAt(frame, ownCentre(series, window, slot), xScale), valueAt(frame, value)];
+  return [slotCenterAt(frame, ownCenter(series, window, slot), xScale), valueAt(frame, value)];
 }
 
 /**
@@ -77,7 +77,7 @@ export function restingPoint(
  * @param across - The unsnapped coordinate along the value axis.
  * @returns The center as SVG `cx` and `cy`.
  */
-export function pointCentre(
+export function pointCenter(
   frame: PlotFrame,
   xScale: "band" | "point",
   along: number,
@@ -165,7 +165,7 @@ export function attachJoin(
   const owned = slots.map((slot) => ownSlot(series, slot)[0]);
   const marks = owned.map((slot) => ({
     key: context.update.keys[slot] ?? String(slot),
-    position: ownCentre(series, window, slot),
+    position: ownCenter(series, window, slot),
   }));
   const kind = followedKind(context, series, prefer);
   if (kind === undefined) return undefined;

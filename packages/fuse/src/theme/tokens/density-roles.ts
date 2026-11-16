@@ -153,8 +153,8 @@ export const PART_DENSITY = {
   "carousel-indicator": "fixed",
   "carousel-status": "label",
 
-  // CONTRACT section 10. Each chart layer declares the slots it writes, in the change that writes
-  // them. Chart text reads 12 px on a 16 px line at both densities, so text slots are fixed.
+  // Each chart layer declares the slots it writes, in the change that writes them. Chart text
+  // reads 12 px on a 16 px line at both densities, so the text slots are fixed.
   chart: "layout",
   "chart-frame": "layout",
   "chart-panel": "layout",

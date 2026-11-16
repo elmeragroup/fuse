@@ -4,7 +4,7 @@
  * each facade turns the test's radians into degrees on the way in and back on the way out, and the
  * replay compares numbers within a relative 1e-12 for that round trip. Fuse has no accessor API, so
  * a getter or an accessor function throws, and the test lists each such case by line. A value Fuse
- * draws no arc for, which section 8.2 rules, throws too.
+ * draws no arc for throws too.
  */
 /* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-unknown-returns, anti-slop/no-runtime-typeof, anti-slop/no-unsafe-dictionary-type, anti-slop/require-safety-comment-for-type-assertion -- this module mirrors d3-shape's untyped chainable API so d3's own test source runs unchanged, and each method takes whatever the upstream test passes */
 import { arcCentroid, arcPath } from "../arc-path";

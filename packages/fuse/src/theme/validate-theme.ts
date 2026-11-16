@@ -24,7 +24,7 @@ function pinnedSegmentWarning(brand: BrandCode, segment: ThemeSegment): string {
 
 type ParsedThemeAxes = ({ ok: true } & ThemeAxes) | { ok: false; reason: "not-object" | "unknown-axes" };
 
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- untyped CMS/env input is parsed here before pin/diagnostics
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- untyped CMS or environment input is parsed here, before the pin check and diagnostics
 function parseThemeObject(input: unknown): ParsedThemeAxes {
   if (input === null || Array.isArray(input) || Object(input) !== input) {
     return { ok: false, reason: "not-object" };
@@ -37,11 +37,12 @@ function parseThemeObject(input: unknown): ParsedThemeAxes {
 }
 
 function resolvePinnedSegment(brand: BrandCode, segment: ThemeSegment): ThemeSegment {
-  // BRANDS.segments entries are unique, so result !== segment exactly when pinned.
+  // The entries of `BRANDS[brand].segments` are unique, so the result differs from `segment` exactly
+  // when the brand pins another segment.
   return brandAllowsSegment(brand, segment) ? segment : BRANDS[brand].segments[0];
 }
 
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- env-free pin-table parse over unknown
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- parses unknown input against the pin table, without the environment checks
 export function coerceTheme(input: unknown): ThemeInput | null {
   const parsed = parseThemeObject(input);
   if (!parsed.ok) {
@@ -56,7 +57,7 @@ export function coerceTheme(input: unknown): ThemeInput | null {
   } as ThemeInput;
 }
 
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- the theme prop is typed but validated at its runtime boundary anyway
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- the theme prop is typed, and this function still validates it at its runtime boundary
 export function validateTheme(input: unknown): ThemeInput {
   const parsed = parseThemeObject(input);
   if (!parsed.ok) {

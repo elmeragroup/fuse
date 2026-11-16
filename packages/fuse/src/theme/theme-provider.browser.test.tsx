@@ -28,7 +28,7 @@ afterEach(() => {
 
 function ThemeProbe() {
   try {
-    // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
+    // oxlint-disable-next-line react-hooks/rules-of-hooks -- the probe catches useTheme's synchronous missing-provider error
     const theme = useTheme();
     return (
       <span>

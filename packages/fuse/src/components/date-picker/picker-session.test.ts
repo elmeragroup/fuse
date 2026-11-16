@@ -1,5 +1,5 @@
 /*
- * Unit under test: the picker edit session's transitions (`picker-session.ts`). Expectations are
+ * Unit under test: the picker edit session's transitions, in `picker-session.ts`. Expectations are
  * written out: which selection is held, for which basis, and the reset generation.
  */
 import { describe, expect, it } from "vitest";

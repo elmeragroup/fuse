@@ -80,7 +80,7 @@ describe("density CSS", () => {
 
   it("reaches both stylesheet distribution modes", () => {
     // This package inherits the root `test` task, which names `@elmeragroup/fuse#build`
-    // directly, so both sheets are task-graph-guaranteed. A missing artifact is the
+    // directly, so the task graph guarantees both sheets. A missing artifact is the
     // failure, not a reason to skip.
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     expect(existsSync(packedRawCssPath), packedRawCssPath).toBe(true);
@@ -95,7 +95,10 @@ describe("density CSS", () => {
   });
 });
 
-/** The `fuse.css` rule a density's demo-stage block re-scopes: dense lives on `:root` beside other metrics. */
+/**
+ * The `fuse.css` rule a density's demo-stage block re-scopes. The dense rule is on `:root`, beside
+ * other metrics.
+ */
 function libraryDensityRule(density: Density): CssDeclaration[] {
   return fuseCssRule(DENSITY_SELECTORS[density]).filter(isDensityMetric);
 }

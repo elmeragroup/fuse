@@ -97,10 +97,10 @@ describe("Sparkline", () => {
 
   it("fades an area to nothing at the zero line, whichever readings draw fill", async () => {
     // [-4, null, 2, 4] spans [-4, 4], so 0 sits halfway down the 32 px box, at row 16. Only 2 and
-    // 4 draw fill, between the third and fourth cells' centres, 187.5 to 262.5 px across. At 255 px
+    // 4 draw fill, between the third and fourth cells' centers, 187.5 to 262.5 px across. At 255 px
     // the line runs within 2 px of the top, so rows 4 and 14 show the fill alone, and row 28, below
     // zero with no fill, shows the page. The mask clears linearly from the top of the box to the
-    // zero line, under a 0.3 fill, so a row's centre y paints at 0.3 × (1 - y / 16): 0.216 at row
+    // zero line, under a 0.3 fill, so a row's center y paints at 0.3 × (1 - y / 16): 0.216 at row
     // 4 and 0.028 at row 14, within the 8-bit rounding of the screenshot.
     await emulateReducedMotion("reduce");
     renderThemed(

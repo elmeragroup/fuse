@@ -1,8 +1,7 @@
 /**
  * The radar's layout: the radius domain, where each spoke and vertex sits, the zero polygon, the
- * per-edge quadrilaterals an Area fills, and the spoke and series a pointer picks. CONTRACT section
- * 8.4 gives the domain and the negatives: the radius is a value axis, the center is the domain's
- * minimum, and a fill always encodes distance from 0.
+ * per-edge quadrilaterals an Area fills, and the spoke and series a pointer picks. The radius is a
+ * value axis, the center is the domain's minimum, and a fill always encodes distance from 0.
  */
 import { linearScale, scaleTicks } from "./linear-scale";
 import { polarPoint, turnOf } from "./polar-angle";

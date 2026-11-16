@@ -40,8 +40,8 @@ describe("the scatter domains", () => {
   // hand. The x axis aims for 10 ticks and the y axis for 5, and neither keeps 0 unless asked.
   it("nices the energy-temperature reference to −2..18 °C and 20 000..160 000 kWh", () => {
     // x spans −1 to 17.4: 18.4 / 10 = 1.84, between √2 and √10, so the step is 2 and the ends
-    // widen to −2 and 18. y spans 36 500 to 153 000: 116 500 / 5 = 23 300, 2.33 × 10⁴, so the
-    // step is 20 000 and the ends widen to 20 000 and 160 000. Neither domain reaches 0.
+    // widen to −2 and 18. y spans 36,500 to 153,000: 116,500 / 5 = 23,300, 2.33 × 10⁴, so the
+    // step is 20,000 and the ends widen to 20,000 and 160,000. Neither domain reaches 0.
     const scatter = model(
       [
         { t: -1, v: 152_000, s: "normal" },
@@ -59,8 +59,8 @@ describe("the scatter domains", () => {
   });
 
   it("reaches every xInclude and yInclude value", () => {
-    // x spans 5 to 10 and must reach 0: 10 / 10 = 1, so the step is 1 over 0..10. y spans 3 to 4
-    // and must reach 0: 4 / 5 = 0.8, 8 tenths, over √50, so the step is 1 over 0..4.
+    // x spans 5 to 10 and must reach 0: 10 / 10 = 1, so the step is 1 over 0 to 10. y spans 3 to 4
+    // and must reach 0: 4 / 5 = 0.8, 8 tenths, over √50, so the step is 1 over 0 to 4.
     const scatter = model(
       [
         { t: 5, v: 3, s: "a" },
@@ -251,7 +251,7 @@ describe("the scatter data rules", () => {
 
 describe("the walk across a data update", () => {
   // Unit under test: carryWalk, the one transition of the active point, the keyboard's place, the
-  // dismissed point and the series focus. Oracle: the review's scenarios and the identity rule, under
+  // dismissed point and the series focus. Oracle: hand-built scenarios and the identity rule, under
   // which a point keeps its series, x and y, and a repeated point its rank among its twins, worked
   // by hand on small models.
   const before = model(
@@ -265,7 +265,7 @@ describe("the walk across a data update", () => {
   );
 
   it("gives a focus on a series that loses every point back to all series, at a point that exists", () => {
-    // The review's crash: b keeps its config entry but loses its rows. The place falls back to
+    // b keeps its config entry but loses its rows. The place falls back to
     // the walk's first point, a(0, 0), and the focus to all series.
     const after = model([{ t: 0, v: 0, s: "a" }], ["a", "b"]);
     const place = idAt(before, "b", 3, 3);

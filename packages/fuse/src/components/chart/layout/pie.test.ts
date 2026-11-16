@@ -1,8 +1,7 @@
 // The pie's layout. Unit under test: foldPie, pieAngles, floorSlices, sliceAt and gaugeFill.
-// Oracles: d3-shape 3.2.0's own pie tests, frozen in fixtures/d3/d3-shape/pie.json by
-// .scratch/polar-charts/tools/trim_polar_cases.py, replayed through a facade that sorts as d3 does
-// and turns radians into Fuse's degrees; CONTRACT section 8.2's degenerate rows and section 8.4's
-// fold fixtures, written by hand; D24's rim floor, one device pixel of rim between a slice's seams;
+// Oracles: d3-shape 3.2.0's own pie tests, frozen in fixtures/d3/d3-shape/pie.json and replayed
+// through a facade that sorts as d3 does and turns radians into Fuse's degrees; degenerate rows and
+// fold fixtures, written by hand; the rim floor, one device pixel of rim between a slice's seams;
 // and a brute-force raster pick over wedge polygons, which shares no code with the arithmetic pick.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -25,7 +24,7 @@ describe("d3-shape's own pie tests", () => {
     expect(outcomes.filter(({ outcome }) => outcome.kind === "pass")).toHaveLength(13);
   });
 
-  it("leaves the zero and negative rows to section 8.2, which filters them first", () => {
+  it("leaves the zero and negative rows to the filter that runs first", () => {
     const filtered = outcomes.flatMap(({ line, outcome }) =>
       outcome.kind === "unsupported" && outcome.reason.includes("no arc") ? [line] : []
     );
@@ -38,7 +37,7 @@ describe("d3-shape's own pie tests", () => {
   });
 });
 
-describe("section 8.2's degenerate rows, written by hand", () => {
+describe("degenerate rows, written by hand", () => {
   it("draws only the positive row of [1, 0, −1], as d3 draws it over the filtered list", () => {
     // pie.json line 47 gives the row of 1 the whole turn, 0 to 2π, and each other row no width.
     expect(pieAngles([1, 0, -1], FULL, 0)).toEqual([{ start: 0, end: 360, pad: 0 }, null, null]);
@@ -80,7 +79,7 @@ describe("section 8.2's degenerate rows, written by hand", () => {
   });
 });
 
-describe("section 8.4's fold, written by hand", () => {
+describe("the fold, written by hand", () => {
   const rows = (values: readonly (number | null)[], roles: Record<number, PieRow["role"]> = {}): PieRow[] =>
     values.map((value, index) => ({ key: `k${String(index)}`, value, role: roles[index] ?? "own" }));
 
@@ -129,7 +128,7 @@ describe("section 8.4's fold, written by hand", () => {
     });
   });
 
-  it("weighs Other by its readings above 0, apart from its signed value (Q2)", () => {
+  it("weighs Other by its readings above 0, apart from its signed value", () => {
     // 2 and −2 fold together: their value sums to 0, and Other still draws the 2.
     expect(foldPie(rows([100, 90, 80, 70, 60, 2, -2]), 6).at(-1)).toEqual({
       key: OTHER_KEY,
@@ -143,7 +142,7 @@ describe("section 8.4's fold, written by hand", () => {
 describe("the pick, written by hand", () => {
   const quarters = pieAngles([1, 1, 1, 1], FULL, 0);
 
-  it("picks the slice that holds 0° at a full pie's exact centre", () => {
+  it("picks the slice that holds 0° at a full pie's exact center", () => {
     expect(sliceAt(pointerAngle(0, 0), quarters, FULL)).toBe(0);
   });
 
@@ -156,7 +155,7 @@ describe("the pick, written by hand", () => {
     expect(sliceAt(angle, quarters, FULL)).toBe(slice);
   });
 
-  it("picks nothing at a 90 to 270 sweep's exact centre", () => {
+  it("picks nothing at a 90 to 270 sweep's exact center", () => {
     const sweep = sweepOf(90, 270);
     expect(sliceAt(pointerAngle(0, 0), pieAngles([1, 1], sweep, 0), sweep)).toBeNull();
   });
@@ -183,12 +182,12 @@ describe("gaugeFill, written by hand", () => {
   });
 });
 
-/** The rim one device pixel past a seam takes, in degrees, D24's floor stated directly. */
+/** The rim one device pixel past a seam takes, in degrees. */
 function leastAngle(radius: number, dpr: number, seam: number): number {
   return ((seam + 1 / dpr) / radius) * (180 / Math.PI);
 }
 
-describe("D24's rim floor, written by hand", () => {
+describe("the rim floor, written by hand", () => {
   it("widens two slivers to a device pixel each and takes the angle from the widest slice", () => {
     const least = leastAngle(100, 1, 0);
     const slices = floorSlices(pieAngles([1000, 1, 1], FULL, 0), FULL, { radius: 100, dpr: 1, seam: 0 });
@@ -351,7 +350,10 @@ function inside(x: number, y: number, points: readonly (readonly [number, number
   return hit;
 }
 
-/** The slice a raster point's wedge holds, null for none, or "edge" within a degree of a wedge edge. */
+/**
+ * The slice a raster point's wedge holds, `null` for none, or `"edge"` less than one degree from a
+ * wedge edge.
+ */
 function rasterPick(x: number, y: number, wedges: readonly Wedge[]): number | null | "edge" {
   const degrees = (Math.atan2(x, -y) * 180) / Math.PI;
   for (const { from, to } of wedges) {

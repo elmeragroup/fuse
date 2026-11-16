@@ -240,7 +240,7 @@ export function RangeCalendarRoot({
     const shared = initialSharedState(initial?.start ?? null, { bounds, visibleMonths });
     const { focused } = shared;
     let { visible } = shared;
-    // A range too long for the centred view opens on its first month, as React Aria aligns it.
+    // A range too long for the centered view opens on its first month, as React Aria aligns it.
     if (initial !== null && focused !== null && visible !== null && !showsDay(visible, initial.end)) {
       visible = startAlignedMonths(focused, visibleMonths, bounds);
     }

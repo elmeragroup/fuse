@@ -13,7 +13,7 @@ import { valueFloor } from "./value-floor";
 export type ClockCycle = "day" | "week" | "year";
 
 /** One slot's angles in degrees: where it starts, where it ends and where its vertex sits. */
-export type SlotAngles = { readonly start: number; readonly end: number; readonly centre: number };
+export type SlotAngles = { readonly start: number; readonly end: number; readonly center: number };
 
 /**
  * The angles of slot i of n. Slot i spans `[360·i/n, 360·(i+1)/n)` clockwise from 12 o'clock, and its
@@ -25,7 +25,7 @@ export type SlotAngles = { readonly start: number; readonly end: number; readonl
  */
 export function slotAngles(index: number, count: number): SlotAngles {
   const step = 360 / count;
-  return { start: step * index, end: step * (index + 1), centre: step * (index + 0.5) };
+  return { start: step * index, end: step * (index + 1), center: step * (index + 0.5) };
 }
 
 /**

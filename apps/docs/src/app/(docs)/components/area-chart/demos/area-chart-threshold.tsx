@@ -19,7 +19,7 @@ const prices = [...KNOWN, ...FORECAST_BLOCKS.flatMap((price) => [price, price, p
 /** One row per hour from 00:00 in Oslo on 4 November 2026, which is UTC+1. */
 const hours = prices.map((price, index) => ({ hour: new Date(Date.UTC(2026, 10, 3, 23 + index)), price }));
 
-/** The week's average, which splits the colours and draws the reference line. */
+/** The week's average, which splits the colors and draws the reference line. */
 const average = prices.reduce((sum, price) => sum + price, 0) / prices.length;
 
 const format = { preset: "unit-price", currency: "NOK", vat: "included" } as const;
@@ -37,8 +37,8 @@ const config = {
 } as const satisfies ChartConfig;
 
 /**
- * A threshold colour paints the price above the week's average in one role and below it in
- * another. The line and the fill change colour where they cross the dashed average, and the legend
+ * A threshold color paints the price above the week's average in one role and below it in
+ * another. The line and the fill change color where they cross the dashed average, and the legend
  * names both sides.
  */
 export function AreaChartThreshold() {

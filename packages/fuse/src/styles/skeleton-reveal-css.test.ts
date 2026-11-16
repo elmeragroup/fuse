@@ -1,6 +1,6 @@
 /**
  * Unit under test: how `skeleton-reveal.css`, a private sheet `fuse.css` imports, reaches both
- * ways of consuming Fuse's styles. Oracle: the sheet's own two load-bearing rules, the ghost's
+ * ways of consuming Fuse's styles. Oracle: two rules of the sheet itself, the ghost's
  * transparent glyphs and the first-paint cover over media, each of which must arrive in the
  * components layer of a Tailwind-source consumer build and in the shipped standalone stylesheet.
  */

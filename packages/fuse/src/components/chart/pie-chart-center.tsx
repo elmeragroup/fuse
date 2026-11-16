@@ -1,20 +1,20 @@
 "use client";
 
 /**
- * The text in a pie's or radial chart's hole, as CONTRACT section 8.13 defines it. The Center lays
- * its parts in the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
- * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll.
- * The Center is plot output, hidden from readers, who read the same numbers from the options.
- * Every part that follows the active item reads it here, through `useActiveIndex`, so it renders
- * when the active item changes and never on a pointer move within one, and inside a closing tooltip
- * it keeps the item the popup held.
+ * The text in a pie's or radial chart's hole. The Center lays its parts in the square inscribed in
+ * the hole, and a CenterLabel is a text line among them. The numbers are parts of their own, in
+ * `pie-chart-center-value`, so a route that names none ships no digit roll. The Center is plot
+ * output, hidden from readers, who read the same numbers from the options. Every part that follows
+ * the active item reads it here, through `useActiveIndex`, so it renders when the active item
+ * changes and never on a pointer move within one, and inside a closing tooltip it keeps the item
+ * the popup held.
  */
 import type { ReactElement, ReactNode } from "react";
 
 import { useActiveIndex } from "./chart-active-point";
-import { useCentreFit } from "./chart-centre-fit";
-import { centreOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
-import type { CentreModel } from "./chart-polar-context";
+import { useCenterFit } from "./chart-center-fit";
+import { centerOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
+import type { CenterModel } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 
 /**
@@ -58,7 +58,7 @@ export type PieChartCenterNameProps = ChartLayerProps & {
 };
 
 /** The center's numbers, null under a family with no center, and the active item. */
-type CentreItem = { readonly centre: CentreModel | null; readonly active: number | null };
+type CenterItem = { readonly center: CenterModel | null; readonly active: number | null };
 
 /**
  * The center's numbers and the active slice's or ring's index, or null while nothing is active. Inside
@@ -67,15 +67,15 @@ type CentreItem = { readonly centre: CentreModel | null; readonly active: number
  * @param part - The part, which a misplaced use names.
  * @returns The center and the active index.
  */
-export function useCentreItem(part: string): CentreItem {
+export function useCenterItem(part: string): CenterItem {
   const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
-  const centre = centreOf(model);
-  // The centre follows the store wherever it sits, over every item, and a closing tooltip's held one.
+  const center = centerOf(model);
+  // The center follows the store wherever it sits, over every item, and a closing tooltip's held one.
   const active = useActiveIndex(
     { store: kernel.store, window: model.count > 0 ? { first: 0, last: model.count - 1 } : null },
     true
   );
-  return { centre, active };
+  return { center, active };
 }
 
 /**
@@ -89,11 +89,11 @@ export function useCentreItem(part: string): CentreItem {
  */
 export function PieChartCenter({ children, className, style }: PieChartCenterProps): ReactElement {
   const { model, box } = usePolarContext("PieChart.Center", ["pie", "radial"]);
-  const fitted = useCentreFit();
+  const fitted = useCenterFit();
   const hole = pieDrawingOf(model)?.innerRadius ?? radialDrawingOf(model)?.innerRadius;
   if (hole === undefined) return <></>;
-  // A pie with no hole lays its centre in the square inscribed in half the radius. The square
-  // keeps to the sweep's box, so a semicircle's centre sits above its flat edge.
+  // A pie with no hole lays its center in the square inscribed in half the radius. The square
+  // keeps to the sweep's box, so a semicircle's center sits above its flat edge.
   const half = (Math.SQRT2 * (hole > 0 ? hole : 0.5)) / 2;
   const left = Math.max(-half, box.left);
   const right = Math.min(half, box.right);
@@ -151,8 +151,8 @@ export function PieChartCenterLabel({ children, className, style }: PieChartCent
  * @beta
  */
 export function PieChartCenterName({ children, className, style }: PieChartCenterNameProps): ReactElement {
-  const { centre, active } = useCentreItem("PieChart.CenterName");
-  const name = centre === null || active === null ? null : centre.label(active);
+  const { center, active } = useCenterItem("PieChart.CenterName");
+  const name = center === null || active === null ? null : center.label(active);
   return (
     <span data-slot="pie-chart-center-name" className={className} style={style}>
       {name ?? children}

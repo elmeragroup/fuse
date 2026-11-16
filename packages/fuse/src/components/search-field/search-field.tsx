@@ -205,7 +205,7 @@ export function SearchField({
     onChange?.(next);
   }
 
-  // Text typed (or autofilled) before hydration is proposed as an edit.
+  // Text typed or autofilled before hydration is proposed as an edit.
   useEarlyInputValue(inputRef, currentValue, isReadOnly || isDisabled ? null : commit);
 
   function clear(): void {

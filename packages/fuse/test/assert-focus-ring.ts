@@ -6,9 +6,9 @@ import type { RingLayer } from "./assert-invalid-ring";
 import { computedColor, ringLayers, settleTransitions } from "./assert-invalid-ring";
 
 /**
- * The colour the element's `ring-ring` resolves to: its `--ring` role, or the element's own
- * text colour, Tailwind's `currentcolor` fallback, where no theme declares the role. Probes are
- * child elements, which an <input> cannot hold, so the colour resolves at the parent, which
+ * The color the element's `ring-ring` resolves to: its `--ring` role, or the element's own
+ * text color, Tailwind's `currentcolor` fallback, where no theme declares the role. Probes are
+ * child elements, which an <input> cannot hold, so the color resolves at the parent, which
  * sits in the same theme scope.
  */
 function ringRoleColor(element: HTMLElement): string {
@@ -61,7 +61,7 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
 
 /**
  * Ring-presence/absence probes for hosts that are already the active element
- * (a portalled popup that received initial keyboard focus). Keeps the Tailwind
+ * (a portaled popup that received initial keyboard focus). Keeps the Tailwind
  * ring fingerprint inside this helper. `expectFocusRing` asserts the ring a focused valid
  * control paints, one outer 2px ring, flush with no offset layer, in the theme's `--ring` role
  * at that element, and fails with a layer diff.

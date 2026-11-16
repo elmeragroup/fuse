@@ -41,10 +41,9 @@ export const focusRing = tv({
 });
 
 /**
- * The self-target focus ring, resolved once at module scope and imported by every
- * consumer. Seventeen components used to hoist `focusRing({ target: "self" }).root()`
- * into a private module constant of their own; none does now, so the adapter is
- * evaluated once per process rather than once per module.
+ * The self-target focus ring, resolved once at module scope. Components import it instead of
+ * calling `focusRing({ target: "self" }).root()` themselves, so the adapter runs once per process
+ * rather than once per module.
  */
 export const selfFocusRingClass = focusRing({ target: "self" }).root();
 

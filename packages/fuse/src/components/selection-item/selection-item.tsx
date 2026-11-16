@@ -27,9 +27,9 @@ const outlineItemClass = itemVariants({ variant: "outline" });
 // control through this row's own label, so a checked row nested in a SubSection does not count. The
 // dividers key on an adjacent selection row, not on first or last child, so a lone shell beside a
 // Field.Description or Field.Error draws no line. A row with a row after it takes the divider on
-// its bottom edge, which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a
-// checked row's whole-box edge (0,3,1). A checked row takes the checked divider on each edge it
-// shares with a row, which outranks that box (0,4,1). Every other edge keeps the row's own.
+// its bottom edge, which outranks the shell's resting edge, at specificity 0,2,0 over 0,1,0, and
+// yields to a checked row's whole-box edge at 0,3,1. A checked row takes the checked divider on
+// each edge it shares with a row, which outranks that box at 0,4,1. Every other edge keeps the row's own.
 const connectedStackClass = cn(
   "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
   "[&:has(+[data-selection-item])]:border-b-selection-divider has-[>label>[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider has-[>label>[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
@@ -56,7 +56,7 @@ const subSectionBandClass = cn(
 // while the row is disabled.
 const selectableBandClass = cn("cursor-pointer", "selection-row-disabled-part:cursor-not-allowed");
 
-// The row's first line, which the control and Actions centre on: one line of the label text
+// The row's first line, which the control and Actions center on: one line of the label text
 // `--label-text` at `--label-leading` for a plain-text row, which inherits the shell's label type,
 // or one line of SelectionItem.Title, `--label-text` at `leading-snug`, once the label row holds
 // one. The shell owns it as `--selection-first-line`, so both parts read one value. The title
@@ -65,9 +65,9 @@ const firstLineClass = cn(
   "[--selection-first-line:var(--label-leading)] has-[>label_[data-slot=selection-item-title]]:[--selection-first-line:calc(var(--label-text)*var(--leading-snug))]"
 );
 
-// The row's fill, its text and its surface travel together, each fill stated as `--surface` and
+// The row's fill, its text and its surface change together, each fill stated as `--surface` and
 // `--surface-muted-foreground` beside it: `card-foreground` on the resting `card`, `foreground` on
-// the checked `muted`, and on the disabled fill (`disabledShellClass`)
+// the checked `muted`, and on the disabled fill, `disabledShellClass`,
 // `--selection-disabled-foreground`, the foreground on neutral `muted` and the muted foreground on
 // branded `card`. The disabled hatch is an image over that fill, so a chart's cut-outs take the
 // fill beneath it. The text arms set only `--item-foreground`, which the outline Item's one plain
@@ -118,8 +118,8 @@ function selectFromSubSection(event: MouseEvent<HTMLDivElement>): void {
   }
   // The label's control is the hidden input. Clicking it toggles without dispatching another
   // click through the row, so ancestors and `onClick` see this one click only. Focusing it
-  // moves focus to the visible control, as a click on the label row does, so the keyboard
-  // carries on from the chosen row.
+  // moves focus to the visible control, as a click on the label row does, so keyboard
+  // navigation continues from the chosen row.
   const label = event.currentTarget.querySelector(":scope > label");
   const control = label instanceof HTMLLabelElement ? label.control : null;
   control?.click();
@@ -385,7 +385,7 @@ export function SelectionItemShell({
   const controlAtEnd = controlPosition === "end";
 
   const rowCellClass = cn("self-start pt-3.5", hasSubSection ? null : "pb-3.5");
-  // The slot's content box is one first line of the row tall and centres the control in it, so
+  // The slot's content box is one first line of the row tall and centers the control in it, so
   // the control sits on the first line at either density. Its height replaces icon media's
   // Item.Title line, which is 14px type, for SelectionItem.Description and the public
   // Item.Description alike.
@@ -421,8 +421,8 @@ export function SelectionItemShell({
         ...(isSubSectionSelectable
           ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
           : null),
-        // Stamped directly: Field.Item's `disabled` prop would disable the control through
-        // FieldItemContext.
+        // The row writes the attribute itself, because Field.Item's `disabled` prop would
+        // disable the control through FieldItemContext.
         ...(isDisabled ? { "data-disabled": "" } : null),
       })}
       data-slot={dataSlot}

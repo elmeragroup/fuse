@@ -40,7 +40,7 @@ export function shownIn(image: SVGSVGElement, selector: string): SVGGraphicsElem
 }
 
 /**
- * Where an element's centre sits in a Sparkline, as a share of the image's width and height.
+ * Where an element's center sits in a Sparkline, as a share of the image's width and height.
  *
  * @param image - The Sparkline's svg.
  * @param element - A mark inside it.
@@ -83,7 +83,7 @@ export function settleStylesheet(): void {
 }
 
 /**
- * The colours of an element's screenshot at one column and several rows, in CSS pixels.
+ * The colors of an element's screenshot at one column and several rows, in CSS pixels.
  *
  * @param element - The element to shoot.
  * @param column - The column, in CSS pixels from its left edge.

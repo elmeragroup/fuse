@@ -275,7 +275,7 @@ describe("SelectionItem", () => {
     await settled(shell);
     expect(checkboxNamed("Bundle").getAttribute("aria-checked")).toBe("false");
     expect(checkboxNamed("Router").getAttribute("aria-checked")).toBe("true");
-    // Oracle sanity: a checked repaint would change each colour asserted below.
+    // Oracle sanity: a checked repaint would change each color asserted below.
     expect(cssVarColor(shell, "--primary")).not.toBe(cssVarColor(shell, "--border"));
     expect(cssVarColor(shell, "--muted")).not.toBe(cssVarColor(shell, "--card"));
     const style = getComputedStyle(shell);
@@ -585,7 +585,7 @@ describe("SelectionItem role tokens", () => {
           </SelectionItem.Shell>
         </Field.Root>
       );
-      // A host colour for the disabled label text, which no theme or page colour produces.
+      // A host color for the disabled label text, which no theme or page color produces.
       renderThemed(
         <div style={{ "--selection-disabled-foreground": "#ff0000" }}>
           {row("Native control", <input type="checkbox" disabled />)}
@@ -630,9 +630,9 @@ describe("SelectionItem role tokens", () => {
         }
         const title = getComputedStyle(headingNamed(name)).color;
         if (disabled) {
-          expect(title, `${name} title colour`).toBe("rgb(255, 0, 0)");
+          expect(title, `${name} title color`).toBe("rgb(255, 0, 0)");
         } else {
-          expect(title, `${name} title colour`).not.toBe("rgb(255, 0, 0)");
+          expect(title, `${name} title color`).not.toBe("rgb(255, 0, 0)");
         }
         const cursor = disabled ? "not-allowed" : "pointer";
         expect(getComputedStyle(label).cursor, `${name} label`).toBe(cursor);
@@ -691,7 +691,7 @@ describe("SelectionItem role tokens", () => {
 });
 
 // The fill a selection row paints in each state, the text that travels with it, in its title and
-// its SubSection, and the surface it states (see `surface-paint.tsx`).
+// its SubSection, and the surface it states; see `surface-paint.tsx`.
 function PlanRow(props: { className?: string; isDisabled?: boolean }): ReactElement {
   return (
     <CheckboxItem value="fixed" {...props}>

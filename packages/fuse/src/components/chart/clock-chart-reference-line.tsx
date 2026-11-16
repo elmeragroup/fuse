@@ -100,7 +100,7 @@ export function ClockChartReferenceLine({
   if (props.y !== undefined) {
     const radius = clock.radius(props.y);
     // A value outside the radius domain draws nothing. It reads the value domain, since the
-    // area-true scale clamps a value below it to a dial with no hole's centre.
+    // area-true scale clamps a value below it to a dial with no hole's center.
     const [min, max] = clock.domain;
     // A ring of radius 0, the minimum on a dial with no hole, has nothing to mark.
     drawn = props.y >= min && props.y <= max && radius > 0;

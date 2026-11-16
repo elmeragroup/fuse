@@ -1,8 +1,7 @@
-// The Table, Empty and Skeleton judges in Chromium. Oracles: CONTRACT section
-// 9.6's disclosure and pagination rules and section 9.12's table row, E13's hourly year, whose ISO
-// weeks run from the week of 29 September 2025 to the week of 28 September 2026 and whose fall-back
-// week from 20 to 26 October holds 7 × 24 + 1 = 169 hours, and section 8.13's empty state, all
-// written by hand.
+// The Table, Empty and Skeleton judges in Chromium. Oracles, all written by hand: the disclosure,
+// pagination and table-row rules; an hourly year whose ISO weeks run from the week of 29 September
+// 2025 to the week of 28 September 2026 and whose fall-back week from 20 to 26 October holds
+// 7 × 24 + 1 = 169 hours; and the empty state.
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -97,7 +96,7 @@ describe("the hourly year's pages", () => {
   });
 
   it("announces the spoken week, not the visible abbreviation", async () => {
-    // jc7: CONTRACT section 9.7 has status messages read the spoken field, and the judge's
+    // Status messages read the spoken field, and the judge's
     // hand-written en-US list gives "Page 2 of 53 · week 41" where the pagination shows W41. The
     // spoken period joins the word to its number with a no-break space.
     const { host } = renderThemed(yearChart("en-US"));
@@ -108,7 +107,7 @@ describe("the hourly year's pages", () => {
   });
 
   it("gives the shown table a Tab stop, so a keyboard can scroll it at 390 px", async () => {
-    // js13: the table scrolls sideways in its container at narrow widths, and axe's
+    // The table scrolls sideways in its container at narrow widths, and axe's
     // scrollable-region-focusable needs a focusable element inside that container.
     const { host } = renderThemed(<div style={{ width: 390 }}>{yearChart()}</div>);
     const table = page.getByRole("table").element();

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useLocale } from "../../intl/locale-context";
-import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
+import { colorFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { clockModel } from "./chart-polar-clock";
 import type { PolarIssue } from "./chart-polar-context";
 import { PolarRoot } from "./chart-polar-root";
@@ -224,11 +224,11 @@ export function ClockChartRoot<
   const steadyPeriod = useSteady(period, sameList);
   // An inline xFormat object that names the same options is no change either.
   const steadyFormat = useSteady(xFormat, sameShallow);
-  const colourError = useMemo(
-    () => colourFamilyError("ClockChart.Root", steadyConfig, Object.keys(steadyConfig)),
+  const colorError = useMemo(
+    () => colorFamilyError("ClockChart.Root", steadyConfig, Object.keys(steadyConfig)),
     [steadyConfig]
   );
-  if (colourError !== null) throw colourError;
+  if (colorError !== null) throw colorError;
   const name = "aria-label" in figure ? figure["aria-label"] : undefined;
   const nowInstant = now === undefined ? undefined : instantOf(now);
   // The cycle that holds `now`, else the first row's, from its local start to the next cycle's.

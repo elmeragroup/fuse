@@ -139,14 +139,14 @@ export function Button({
       data-slot="button"
       data-size={size}
       data-pending={isPending || undefined}
-      // Present only while an indicator renders: the recipe's icon swap keys off it, so a
+      // Present only while an indicator renders. The recipe's icon swap selects on it, so a
       // `null` indicator hides nothing.
       data-pending-indicator={showsIndicator || undefined}
       disabled={disabled || isPending}
       // A pending button stays in the focus order and announces busy: Base UI then drops the
       // native `disabled`, stamps `aria-disabled` and `data-disabled` and still cancels click
       // and keyboard activation. Both keys are omitted, not undefined, when not pending, so a
-      // consumer's own `focusableWhenDisabled` for a plain `disabled` button flows through the
+      // consumer's own `focusableWhenDisabled` for a plain `disabled` button passes through the
       // later {...definedProps(props)} spread, where an explicit value also wins while pending.
       {...definedProps({
         focusableWhenDisabled: isPending || undefined,
@@ -174,7 +174,7 @@ export function Button({
         // Decorative: the state is announced through aria-busy and the label. The slot is a
         // leading icon, so the icon edge tightens the start inset as for any inline-start child,
         // and the recipe hides the button's own leading and bare SVG children while it shows. A
-        // consumer's node rides in the same slot, so it gets the same place and the same
+        // consumer's node renders in the same slot, so it gets the same place and the same
         // aria-hidden; only the default spinner animates. `null` never reaches this branch, so
         // the coalescing only fills in `undefined`.
         // It renders after the children and `order-first` moves it to the leading edge, so React

@@ -20,7 +20,7 @@ export function resetHashAroundEach(): void {
  * @param row - The element announced `aria-disabled="true"`.
  * @param clicks - The names the row's `onClick` pushes.
  */
-export async function expectActivationCancelled(row: HTMLElement, clicks: readonly string[]): Promise<void> {
+export async function expectActivationCanceled(row: HTMLElement, clicks: readonly string[]): Promise<void> {
   // Playwright refuses to click an `aria-disabled` element; `force` skips that check so the
   // click reaches the row the way a user's pointer does.
   await userEvent.click(row, { force: true });

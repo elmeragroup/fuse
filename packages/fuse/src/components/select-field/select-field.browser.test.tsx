@@ -37,7 +37,7 @@ function Plan(props: Partial<SelectFieldProps<string>>) {
 }
 
 /**
- * The issue's hand-composed select, the oracle for what SelectField must reproduce: Field.Root
+ * A hand-composed select, the oracle for what SelectField must reproduce: Field.Root
  * around the Select parts.
  */
 function HandComposedPlan({

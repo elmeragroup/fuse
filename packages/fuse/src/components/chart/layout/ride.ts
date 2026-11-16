@@ -408,8 +408,8 @@ export function rideKeyframes(from: number, course: RideCourse, peak = 1): RideK
   const forward = from < end;
   const [low, high] = forward ? [from, end] : [end, from];
   const stacked = (along: number, at: number) => Math.abs(along - at) <= STACKED;
-  // Only the vertices of the glide's own span, from its start through rest to the overshoot's far
-  // end, and the stacks at its ends. A glide from below rest crosses them in the run's order, and
+  // The span holds only the vertices of the glide's own span, from its start through rest to the
+  // overshoot's far end, and the stacks at its ends. A glide from below rest crosses them in the run's order, and
   // one from above in reverse.
   const span = course.within(Math.min(low, 0) - 2 * STACKED, Math.max(high, 0) + 2 * STACKED);
   const ordered = forward ? span : span.toReversed();

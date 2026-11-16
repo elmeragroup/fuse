@@ -104,7 +104,7 @@ export function nearestIndex(scale: BandScale, position: number): number {
   const [first, second] = scale.starts;
   // A scale of one slot or none has nothing to pick between.
   if (first === undefined || second === undefined) return 0;
-  // A reversed range runs the starts downward, and the signed step keeps the arithmetic one rule.
+  // A reversed range runs the starts downward. A signed step lets one formula cover both directions.
   const signedStep = second - first;
   const raw = Math.floor((position - first - scale.bandwidth / 2) / signedStep + 0.5);
   return Math.max(0, Math.min(count - 1, raw));

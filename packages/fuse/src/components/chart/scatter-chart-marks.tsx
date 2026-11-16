@@ -7,7 +7,7 @@ import { writeAttribute, writeStyle } from "./chart-dom";
 import { useIntro } from "./chart-store";
 import type { ChartLayerProps } from "./chart-types";
 import { assertKnownKey } from "./layout/errors";
-import { dotCentre, dotDiameter, linePath, pointsPath } from "./layout/scatter-frame";
+import { dotCenter, dotDiameter, linePath, pointsPath } from "./layout/scatter-frame";
 import type { ScatterCurve, ScatterFrame } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
 import type { ScatterSeries } from "./layout/scatter-model";
@@ -109,7 +109,7 @@ function useScatterSeries(part: string, dataKey: string): SeriesSetup {
 
 /**
  * One series' points, drawn as one path of round dots. A data update redraws the path in place, so
- * 100 000 points stay one element per series, and the points sweep in with the entrance. The layer
+ * 100,000 points stay one element per series, and the points sweep in with the entrance. The layer
  * clips at the plot, past it by a dot's radius, so a point the domains glide toward stays inside
  * the chart until they reach it.
  *
@@ -220,9 +220,9 @@ export function ScatterChartActiveDot({
       const point = pointOf(model, active);
       const diameter = dotOf(marks.of(point.key));
       const radius = variant === "ring" ? Math.max(diameter / 2 + RING_GAP, VERTEX_RADIUS) : VERTEX_RADIUS;
-      const centre = dotCentre(frame, point.x, point.y, diameter);
-      circle.setAttribute("cx", String(centre.x));
-      circle.setAttribute("cy", String(centre.y));
+      const center = dotCenter(frame, point.x, point.y, diameter);
+      circle.setAttribute("cx", String(center.x));
+      circle.setAttribute("cy", String(center.y));
       circle.setAttribute("r", String(radius));
       writeAttribute(svg, "data-series", point.seriesIndex);
       writeStyle(svg, "--chart-series", String(point.seriesIndex));

@@ -24,7 +24,7 @@ import { Dialog } from "../dialog";
 import type { AttachmentRootProps } from "./attachment";
 import { Attachment } from "./index";
 
-/** A 4×3 picture, so a square or ratio frame shows it was the frame, not the image, that sized it. */
+/** A 4 by 3 picture, so a square or ratio frame shows it was the frame, not the image, that sized it. */
 const PICTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'/%3E";
 
 /** Chromium's computed value for a transparent text fill. */

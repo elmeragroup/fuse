@@ -1,4 +1,4 @@
-// Coarse series in Chromium, after ticket svg-3's checks. Unit under test: a series whose interval
+// Coarse series in Chromium. Unit under test: a series whose interval
 // is coarser than Root's, from its own slots to the drawn steps, bars, emphasis and time state.
 // Oracle: pixels worked out by hand on quarter-hour grids, where an hour covers 4 quarters.
 import type { ReactNode } from "react";
@@ -57,7 +57,7 @@ describe("coarse series on a quarter-hour grid", () => {
     );
   }
 
-  it("emphasises the hour an explicit quarter names, and marks two quarters of one hour once (W6, Q1-5)", async () => {
+  it("emphasizes the hour an explicit quarter names, and marks two quarters of one hour once", async () => {
     // 00:15 lies in hour 0, which draws one bar from quarter 0, so that bar takes the emphasis.
     // The Marker's 00:15 and 00:30 both fall in hour 0, so it draws one dot.
     const { host } = renderThemed(

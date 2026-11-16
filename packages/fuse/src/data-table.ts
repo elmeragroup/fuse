@@ -1,8 +1,8 @@
-// Source entry facade for `@elmeragroup/fuse/data-table`. Pure re-export file:
-// explicit named re-exports only — no `export *`, no local declarations, no directives.
-// The exports/barrel generators discover this file; never hand-edit package.json#exports
-// or src/index.ts. Subpath-only: it imports the optional `@tanstack/react-table` peer, so the
-// root barrel leaves it out (OPTIONAL_PEER_ENTRIES in scripts/entries.ts). No public recipe.
+// This file is the source entry for `@elmeragroup/fuse/data-table`. It contains only explicit named
+// re-exports, with no `export *`, local declarations or directives. The exports and barrel generators read
+// this file, so change `package.json#exports` and `src/index.ts` only through them. It is a subpath only: it
+// imports the optional `@tanstack/react-table` peer, so the root barrel leaves it out, as
+// `OPTIONAL_PEER_ENTRIES` in `scripts/entries.ts` lists. It exports no public recipe.
 export { DataTable } from "./components/data-table";
 export { createFuseTableHook } from "./components/data-table/create-fuse-table-hook";
 export type {

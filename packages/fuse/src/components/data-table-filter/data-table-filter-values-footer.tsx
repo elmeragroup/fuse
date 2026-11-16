@@ -1,6 +1,6 @@
 "use client";
 
-// The values footer: Select all, Clear all and Done under a value list. Both value lists provide
+// The values footer holds Select all, Clear all and Done under a value list. Both value lists provide
 // the same context, the add menu's value submenu and the chip's option editor, so one consumer
 // footer serves both and a part never learns whether a Menu or a Combobox holds it. Picks apply
 // live, so the footer holds no draft and offers no Cancel.
@@ -169,7 +169,7 @@ export function DataTableFilterDone({
   ...props
 }: DataTableFilterValuesActionProps): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.Done");
-  // Only for the composition error: Done closes whichever overlay holds its list.
+  // The call is only for the composition error, since Done closes whichever overlay holds its list.
   useValueList("DataTableFilter.Done");
   return (
     <Button

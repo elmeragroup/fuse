@@ -108,19 +108,19 @@ function barParts(
       return { body: rect, cap: join(along, [cap, CAP], orientation) };
     }
     case "blocks": {
-      // Whole squares only, at least one, from the base, so the far end sits on a square's edge. The
-      // column never runs wider than its bar.
+      // The column holds whole squares, at least one, counted from the base, so the far end sits on a
+      // square's edge. The column is never wider than its bar.
       const width = Math.min(size, BLOCK, Math.max(BLOCK_GAP, size - BLOCK_GAP));
       const blocks = Math.max(
         BLOCK,
         Math.floor(length / (BLOCK + BLOCK_GAP)) * (BLOCK + BLOCK_GAP) - BLOCK_GAP
       );
-      const centre = start + (size - width) / 2;
+      const center = start + (size - width) / 2;
       const base = atStart ? from + length : from;
       return {
-        body: join([centre, width], atStart ? [base - blocks, blocks] : [base, blocks], orientation),
+        body: join([center, width], atStart ? [base - blocks, blocks] : [base, blocks], orientation),
         track: join(
-          [centre, width],
+          [center, width],
           atStart ? [0, base] : [base, Math.max(0, plotLength - base)],
           orientation
         ),

@@ -1,9 +1,7 @@
 /**
- * Negative type cases of CONTRACT.md section 14, including the 30 negative cases of the contract's
- * revision check. The TypeScript checker is the oracle. Each `@ts-expect-error` line must fail,
- * and an unused one fails the file.
- * Each case fits on one formatted line, because a directive covers only the line below it, so the
- * data and configs are hoisted. The misspelt custom-property case lives in
+ * Negative type cases for the chart props. The TypeScript checker is the oracle. Each
+ * `@ts-expect-error` line must fail, and an unused one fails the file. Each case fits on one formatted line, because a directive covers only the line below it, so the
+ * data and configs are hoisted. The misspelled custom-property case lives in
  * `test/packed-consumer/chart-types/`, because the workspace's csstype augmentation accepts every
  * `--*` property.
  */
@@ -99,7 +97,7 @@ test("functions never pass where Flight needs data", () => {
   void (<Chart.Root {...daily} config={formatFunction} />);
   // @ts-expect-error a function as valueFormat
   void (<PieChart.Root {...pie} config={browserConfig} valueFormat={fn} />);
-  // @ts-expect-error a function as a colour
+  // @ts-expect-error a function as a color
   void (<Chart.Root {...daily} config={colorFunction} />);
   // @ts-expect-error a function as emphasis
   void (<Chart.Bar dataKey="kwh" emphasis={() => 14} />);
@@ -224,7 +222,7 @@ test("keys and values follow the data", () => {
   void (<Chart.Root {...daily} config={kwh} selectedKey="nope" />);
   // @ts-expect-error a category range on a time axis
   void (<Chart.Root {...daily} config={kwh} defaultXRange={["jan", "feb"]} />);
-  // @ts-expect-error under `as const` a misspelt qualityKey fails the Root check
+  // @ts-expect-error under `as const` a misspelled qualityKey fails the Root check
   void (<Chart.Root {...daily} config={typo} />);
   // @ts-expect-error a literal category union needs one entry per category
   void (<PieChart.Root {...pie} config={oneCategory} />);
@@ -234,13 +232,13 @@ test("keys and values follow the data", () => {
   void (<PieChart.Root {...pie} config={pieStack} />);
   // @ts-expect-error a scale bins values, which means nothing for one value per category
   void (<PieChart.Root {...pie} config={pieScale} />);
-  // @ts-expect-error sentiment means favourable, never a category
+  // @ts-expect-error sentiment means favorable, never a category
   void (<PieChart.Root {...pie} config={pieSentiment} />);
   // @ts-expect-error stack is a type error in a radar config
   void (<RadarChart.Root {...radar} config={radarStack} />);
   // @ts-expect-error interval is a type error in a radar config
   void (<RadarChart.Root {...radar} config={radarInterval} />);
-  // @ts-expect-error a radar colour is a role or a role list
+  // @ts-expect-error a radar color is a role or a role list
   void (<RadarChart.Root {...radar} config={radarScale} />);
   // @ts-expect-error max and maxKey together
   void (<RadialChart.Root {...budget} maxKey="budget" max={3} />);
@@ -264,13 +262,13 @@ test("keys and values follow the data", () => {
 test("string props take only their vocabulary", () => {
   const red = { kwh: { label: "k", color: "red" } } as const;
   const cssVar = { kwh: { label: "k", color: "var(--chart-1)" } } as const;
-  // @ts-expect-error a literal colour string
+  // @ts-expect-error a literal color string
   void (<Chart.Root {...daily} config={red} />);
-  // @ts-expect-error a CSS colour string
+  // @ts-expect-error a CSS color string
   void (<Chart.Root {...daily} config={cssVar} />);
   // @ts-expect-error an unknown curve
   void (<Chart.Line dataKey="kwh" curve="smooth" />);
-  // @ts-expect-error the catalogue's misspelt bar variant
+  // @ts-expect-error the catalog's misspelled bar variant
   void (<Chart.Root {...daily} config={{ kwh: { label: "k", color: "chart-1", barVariant: "stripped" } }} />);
   // @ts-expect-error the bar's look lives in its series' config, not on the Bar
   void (<Chart.Bar dataKey="kwh" variant="striped" />);
@@ -377,7 +375,7 @@ test("a crosshair fades only at named ends, and a SlotLabel takes only an x form
   expectTypeOf([sideways, valued]).toBeArray();
 });
 
-test("a threshold colour is cartesian config with a number and two roles", () => {
+test("a threshold color is cartesian config with a number and two roles", () => {
   const above = { color: "chart-sentiment-negative", label: "Over" } as const;
   const below = { color: "chart-sentiment-positive", label: "Under" } as const;
   const split = { threshold: 0.65, below, above } as const;
@@ -395,9 +393,9 @@ test("a threshold colour is cartesian config with a number and two roles", () =>
   void (<RadialChart.Root {...budget} config={ringSplit} maxKey="budget" />);
   // @ts-expect-error a radar series takes no threshold
   void (<RadarChart.Root {...radar} config={radarSplit} />);
-  // @ts-expect-error a side's colour is a role, never a CSS colour
+  // @ts-expect-error a side's color is a role, never a CSS color
   const css: ChartColor = { threshold: 1, below: { color: "red", label: "Under" }, above };
-  // @ts-expect-error a side's colour is one role, never a scale
+  // @ts-expect-error a side's color is one role, never a scale
   const scaled: ChartColor = { threshold: 1, below: { color: "chart-seq", label: "Under" }, above };
   // @ts-expect-error the threshold is a number the app passes, never a keyword
   const keyword: ChartColor = { threshold: "mean", below, above };
@@ -414,21 +412,21 @@ test("a threshold colour is cartesian config with a number and two roles", () =>
   const ringUnion = { kwh: { label: "K", color: enabled ? split : "chart-1" } } as const;
   const annotated: ChartSeriesConfig = { label: "A", color: "chart-1" };
   const pieAnnotated = { chrome: annotated, safari: { label: "S", color: "chart-2" } } as const;
-  // @ts-expect-error a radar colour union that may be a threshold
+  // @ts-expect-error a radar color union that may be a threshold
   void (<RadarChart.Root {...radar} config={radarUnion} />);
-  // @ts-expect-error a radar colour union that may be a scale
+  // @ts-expect-error a radar color union that may be a scale
   void (<RadarChart.Root {...radar} config={radarScaleUnion} />);
   // @ts-expect-error a radar entry annotated as ChartSeriesConfig may hold a threshold
   void (<RadarChart.Root {...radar} config={{ a: annotated }} />);
-  // @ts-expect-error a pie colour union that may be a threshold
+  // @ts-expect-error a pie color union that may be a threshold
   void (<PieChart.Root {...pie} config={pieUnion} />);
   // @ts-expect-error a pie entry annotated as ChartSeriesConfig may hold a threshold
   void (<PieChart.Root {...pie} config={pieAnnotated} />);
-  // @ts-expect-error a radial colour union that may be a threshold
+  // @ts-expect-error a radial color union that may be a threshold
   void (<RadialChart.Root {...budget} config={ringUnion} maxKey="budget" />);
   // @ts-expect-error a radial entry annotated as ChartSeriesConfig may hold a threshold
   void (<RadialChart.Root {...budget} config={{ kwh: annotated }} maxKey="budget" />);
-  // Each case passes once its violation goes: a union of roles and role lists, and a plain role.
+  // Each case passes once its violation goes, as a union of roles and role lists and as a plain role.
   const pair = ["chart-2", "chart-3"] as const;
   const radarRoles = { a: { label: "A", color: enabled ? "chart-1" : pair } } as const;
   const pieRoles = {

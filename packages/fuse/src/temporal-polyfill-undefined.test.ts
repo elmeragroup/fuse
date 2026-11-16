@@ -1,8 +1,8 @@
 /**
  * Unit under test: the `@elmeragroup/fuse/temporal-polyfill` entry where a host removed Temporal
  * by setting `globalThis.Temporal` to `undefined`, which leaves the property in place. Oracle: the
- * entry's contract (install where no Temporal is there) and ISO 8601 date arithmetic, written out
- * by hand.
+ * entry's contract, which installs Temporal where none is there, and ISO 8601 date arithmetic,
+ * written out by hand.
  */
 import { describe, expect, it } from "vitest";
 

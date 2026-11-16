@@ -1,9 +1,8 @@
 /**
  * Runs d3's own test assertions against Fuse's layouts. The JSON files beside this module are the
- * upstream d3 tests, extracted with their hand-written expected values and frozen in the charts
- * ground truth. `.scratch/charts-v1/tools/l05-oracles/trim_d3_cases.py` copies them here. Each case
- * replays its upstream expression against bindings the caller supplies, so a d3-shaped facade over
- * a Fuse function meets d3's expectations unchanged.
+ * upstream d3 tests, extracted with their hand-written expected values. Each case replays its
+ * upstream expression against bindings the caller supplies, so a d3-shaped facade over a Fuse
+ * function meets d3's expectations unchanged.
  */
 /* oxlint-disable anti-slop/no-known-value-widening, anti-slop/no-reflect-get, anti-slop/no-unknown-parameters, anti-slop/no-unknown-returns, anti-slop/no-unsafe-dictionary-type, anti-slop/no-runtime-typeof, typescript/no-implied-eval, typescript/no-unsafe-call -- this module replays d3's own test source, whose expressions and expected values are untyped JSON by nature, so it handles unknown values throughout */
 
@@ -199,7 +198,7 @@ export function runD3Case(
     if (testCase.call && holdsDate(testCase.call)) {
       // `new Date(1990, 0, 1)` in the source reads the process's zone, but upstream evaluated it
       // under TZ=America/Los_Angeles. The call chain keeps the instants upstream built, so it
-      // replays the case alike in every zone.
+      // replays the case the same way in every zone.
       actual = evaluate(chainSource(testCase.call, own));
     } else {
       try {

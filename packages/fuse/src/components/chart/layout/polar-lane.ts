@@ -28,7 +28,7 @@ export type LaneSide = "right" | "left" | "bottom" | "top";
  * The dial in client pixels: its center, its outer radius, and how far below the center its drawing
  * ends, the radius for a full dial and 0 for a semicircle on its flat edge.
  */
-export type LaneDial = { readonly centre: LanePoint; readonly radius: number; readonly bottom?: number };
+export type LaneDial = { readonly center: LanePoint; readonly radius: number; readonly bottom?: number };
 
 /**
  * Where a popup rests: the lane it takes, its box there, the widest it may be in that lane, and the
@@ -73,7 +73,7 @@ export function laneSide(angle: number, current: "right" | "left" | null): "righ
  * @returns The popup's vertical center, in client pixels.
  */
 export function laneY(angle: number, dial: LaneDial, height: number, bounds: LaneBox): number {
-  const y = dial.centre.y - dial.radius * Math.cos((angle * Math.PI) / 180);
+  const y = dial.center.y - dial.radius * Math.cos((angle * Math.PI) / 180);
   const low = bounds.top + height / 2;
   const high = bounds.bottom - height / 2;
   return high < low ? (low + high) / 2 : Math.min(high, Math.max(low, y));
@@ -204,7 +204,7 @@ export function laneRest(input: LaneInput): LaneRest {
     title,
     keep,
   } = input;
-  const { centre, radius } = dial;
+  const { center, radius } = dial;
   const { height } = size;
   /** A box's vertical bounds cut to the viewport; the horizontal cut follows it. */
   const visible = (box: LaneBox): LaneBox => ({
@@ -212,8 +212,8 @@ export function laneRest(input: LaneInput): LaneRest {
     top: Math.max(box.top, viewportTop),
     bottom: Math.min(box.bottom, viewportBottom),
   });
-  const right = Math.max(centre.x + radius, labels?.right ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
-  const left = Math.min(centre.x - radius, labels?.left ?? Number.POSITIVE_INFINITY) - LANE_GAP;
+  const right = Math.max(center.x + radius, labels?.right ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
+  const left = Math.min(center.x - radius, labels?.left ?? Number.POSITIVE_INFINITY) - LANE_GAP;
   // Across, every lane stays inside the figure cut to the visible area's sides, as `visible` cuts
   // it down. A side lane's span runs from its inner edge, one gap past the rim and the labels, to
   // the figure's outer side, both cut there, so a pan that hides the inner edge moves the popup's
@@ -261,7 +261,7 @@ export function laneRest(input: LaneInput): LaneRest {
   const spread = wide.right - wide.left >= LANE_MIN ? wide : { left: viewportLeft, right: viewportRight };
   const room = Math.max(0, spread.right - spread.left);
   const width = laneWidth(room, content, room);
-  const x = Math.min(spread.right - width, Math.max(spread.left, centre.x - width / 2));
+  const x = Math.min(spread.right - width, Math.max(spread.left, center.x - width / 2));
   const across = (lane: "bottom" | "top", top: number): Candidate => ({
     lane: {
       side: lane,
@@ -272,11 +272,11 @@ export function laneRest(input: LaneInput): LaneRest {
     span: lane === "bottom" ? { top, bottom: viewportBottom } : { top: viewportTop, bottom: top + height },
   });
   const rim =
-    Math.max(centre.y + (dial.bottom ?? radius), labels?.bottom ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
+    Math.max(center.y + (dial.bottom ?? radius), labels?.bottom ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
   const clear = controls === null ? rim : Math.max(rim, controls.bottom + LANE_GAP);
   const ceiling =
     Math.min(
-      centre.y - radius,
+      center.y - radius,
       labels?.top ?? Number.POSITIVE_INFINITY,
       controls?.top ?? Number.POSITIVE_INFINITY,
       title?.top ?? Number.POSITIVE_INFINITY

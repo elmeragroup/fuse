@@ -1,10 +1,10 @@
 // The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius, wedgePad,
-// columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: D11's equal slots, where
-// slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t);
-// D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, kept while the
-// rim arc leaves at least one device pixel of wedge, (2π·R/n − gap)·dpr ≥ 1; and D24's floor, one device pixel along the radius away
-// from the zero ring, settled for a stack by floor-settle.ts's rule that the span reaching farthest
-// out wins.
+// columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: equal slots, where slot i
+// of n spans [360·i/n, 360·(i+1)/n); the radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t); a
+// constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, kept while the rim
+// arc leaves at least one device pixel of wedge, (2π·R/n − gap)·dpr ≥ 1; and the floor, one device
+// pixel along the radius away from the zero ring, settled for a stack by floor-settle.ts's rule
+// that the span reaching farthest out wins.
 import { describe, expect, it } from "vitest";
 
 import {
@@ -18,13 +18,13 @@ import {
 } from "./clock";
 import { settleFloors } from "./floor-settle";
 
-describe("slot angles (D11)", () => {
+describe("slot angles", () => {
   it("gives every slot of a 25-hour day an equal 14.4°", () => {
-    expect(slotAngles(7, 25)).toEqual({ start: 100.8, end: 115.2, centre: 108 });
+    expect(slotAngles(7, 25)).toEqual({ start: 100.8, end: 115.2, center: 108 });
   });
 
   it("puts slot 0 at 12 o'clock", () => {
-    expect(slotAngles(0, 24)).toEqual({ start: 0, end: 15, centre: 7.5 });
+    expect(slotAngles(0, 24)).toEqual({ start: 0, end: 15, center: 7.5 });
   });
 
   it("points Now at the share of its slot that has passed", () => {
@@ -33,7 +33,7 @@ describe("slot angles (D11)", () => {
   });
 });
 
-describe("the radius (D13)", () => {
+describe("the radius", () => {
   const radii = { inner: 30, outer: 100, domain: [0, 1] } as const;
 
   it("keeps area true under the radial scale", () => {
@@ -49,7 +49,7 @@ describe("the radius (D13)", () => {
   });
 });
 
-describe("the wedge pad (D14)", () => {
+describe("the wedge pad", () => {
   it("cuts a 2 px gap at every radius", () => {
     const { padAngle, padRadius } = wedgePad(24, 100, 2, 2);
     expect(padRadius).toBe(100);
@@ -62,7 +62,7 @@ describe("the wedge pad (D14)", () => {
   });
 
   // The week dial: 168 hours, a 98 px rim. Its rim arc is 2π·98/168 = 3.665 px, so a 2 px gap leaves
-  // 1.665 px of wedge there, while its 30 px hole's arc is only 1.122 px: each wedge tapers to the hole.
+  // 1.665 px of wedge there, while its 30 px hole's arc is only 1.122 px. Each wedge tapers to the hole.
   it("keeps the week dial's gap at 1×, where the rim leaves 1.665 device pixels of wedge", () => {
     const { padAngle, padRadius } = wedgePad(168, 98, 2, 1);
     expect(padRadius).toBe(98);
@@ -89,7 +89,7 @@ describe("the wedge pad (D14)", () => {
   });
 });
 
-describe("the column floor (D24)", () => {
+describe("the column floor", () => {
   const axis = columnAxis(100, 1);
 
   it("keeps one device pixel outward for a sliver above the zero ring", () => {

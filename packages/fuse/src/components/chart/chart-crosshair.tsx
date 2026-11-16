@@ -111,7 +111,7 @@ export function ChartCrosshair({
     const svg = layer.current;
     if (svg === null) return;
     // Only a step glides, and only the line. Root repaints with a commit on a resize, a change of
-    // look and a change of the reader's motion preference, which all place the line at once.
+    // look and a change of the user's motion preference, which all place the line at once.
     if (look !== "line" || cause !== "step" || from === null || motion.snaps()) {
       snapGlide(svg);
       return;

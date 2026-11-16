@@ -39,8 +39,8 @@ export const BROWSER_FLOOR_EQUIVALENCES: readonly FloorEquivalence[] = [
 const PREFIXED =
   "The prefixed declaration before it carries the feature in the engines below its unprefixed release.";
 const PRINT =
-  "Print only: Chrome before 136 reads only -webkit-print-color-adjust, so it may print the mark in economy colours until #634 adds the prefix.";
-const FORCED_COLORS = "Forced colours only: Safari has no forced-colours mode to opt out of.";
+  "Print only: Chrome before 136 reads only -webkit-print-color-adjust, so it may print the mark in economy colors until #634 adds the prefix.";
+const FORCED_COLORS = "Forced colors only: Safari has no forced-colors mode to opt out of.";
 const TEXT_WRAP = "Below the floor the text wraps greedily, as text-wrap: wrap does.";
 const OVERSCROLL =
   "Below Chrome 144 and in Safari the property does not hold a container whose content fits, which is always at its scroll boundary, so a scroll there, as in a short Command or Combobox list, can move the page behind it.";
@@ -606,7 +606,7 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     ],
     fallback: { kind: "none" },
     reason:
-      "Below the floor the angle labels centre on their line box instead of their cap height, a few pixels off.",
+      "Below the floor the angle labels center on their line box instead of their cap height, a few pixels off.",
   },
   {
     sheet: "chart.css",

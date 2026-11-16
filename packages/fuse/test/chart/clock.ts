@@ -35,7 +35,7 @@ export function wedgeRadii(d: string): (readonly [number, number])[] {
     .map((wedge) => {
       const radii = [...wedge.matchAll(/A(-?[\d.]+),/gu)].map((match) => Number(match[1]));
       const outer = Math.max(...radii);
-      // A wedge from the centre draws one arc and a line to the centre.
+      // A wedge from the center draws one arc and a line to the center.
       const inner = radii.length > 1 ? Math.min(...radii) : 0;
       return [inner, outer] as const;
     });

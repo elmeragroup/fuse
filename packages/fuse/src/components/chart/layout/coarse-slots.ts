@@ -1,5 +1,5 @@
 /**
- * Per-series resolution, as CONTRACT section 8.8 defines it. Root's `interval` is the x grid, and
+ * Per-series resolution. Root's `interval` is the x grid, and
  * a series may take a coarser interval that nests in it. A coarse slot covers every Root slot whose
  * start lies inside it, counted by instants in the zone, so an hour covers 4 quarters on every day,
  * daylight saving days included, and a day covers 23, 24 or 25 hours. Fuse never aggregates. A
@@ -144,7 +144,7 @@ export function ownSpan(
  * @param slot - A Root slot.
  * @returns The middle's place, a fraction for a coarse slot of an even count.
  */
-export function ownCentre(
+export function ownCenter(
   series: SeriesModel,
   window: { readonly first: number; readonly last: number },
   slot: number

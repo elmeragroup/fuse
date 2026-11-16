@@ -8,7 +8,7 @@ import { definedProps } from "../../internal/defined-props";
 import { isNode } from "../../internal/dom-node";
 import { DateInputRoot } from "../date-field/date-input";
 import type { DateInputRootProps, DateInputValue } from "../date-field/date-input";
-import { DateInputNeighbourContext } from "../date-field/date-input-neighbours";
+import { DateInputNeighborContext } from "../date-field/date-input-neighbors";
 import type { KindFromValue } from "../date-field/date-kind-props";
 import { datePickerVariants } from "./date-picker-variants";
 import { stateClassName } from "./picker-class-name";
@@ -90,7 +90,7 @@ export function PickerDateInput({
 
   return (
     // The picker's inputs are one run of segments for focus: a range's start moves on to its end.
-    <DateInputNeighbourContext value={shell.adjacentInput}>
+    <DateInputNeighborContext value={shell.adjacentInput}>
       <DateInputRoot<KindFromValue, DateInputValue>
         {...definedProps(props)}
         ref={mergedRef}
@@ -125,6 +125,6 @@ export function PickerDateInput({
           </div>
         )}
       />
-    </DateInputNeighbourContext>
+    </DateInputNeighborContext>
   );
 }

@@ -3,7 +3,7 @@
 // Chart.Background repeats one small tile over the plot and fades it out toward the plot's edges.
 // A pattern clips each tile at its edges, so a shape that crosses an edge is drawn whole by every
 // tile it reaches. A straight line runs edge to edge, the wave runs past both edges, and a ring on
-// a corner sits on all four corners, so neighbouring tiles join with no seam.
+// a corner sits on all four corners, so neighboring tiles join with no seam.
 
 import type { ReactElement } from "react";
 
@@ -122,7 +122,7 @@ function PatternTile({
         </pattern>
       );
     case "overlapping-circles":
-      // Rings on a square lattice 11.3 px apart, each 15 px across, so neighbours cross in lenses.
+      // Rings on a square lattice 11.3 px apart, each 15 px across, so neighbors cross in lenses.
       // A corner ring is a quarter in each of the four tiles that share the corner.
       return (
         <pattern id={id} width="16" height="16" patternUnits="userSpaceOnUse">

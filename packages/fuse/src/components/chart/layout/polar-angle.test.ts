@@ -1,15 +1,14 @@
-// The polar angle convention. Unit under test: pointerAngle, angleInSweep, sweepOf, polarPoint and
-// sweepBox. Oracles: CONTRACT section 8.5's frame, d3-shape 3.2.0's lineRadial vector for the same
-// frame, ticket 08's Q8 cases, and the sweep boxes of
-// ticket 08's plot-cell judge, worked by hand for a 200 px cell: 200 by 200 for a circle, 200 by 100
-// for −90 to 90, 200 by 150 for −120 to 120 and 200 by 170.71 for −135 to 135, the same for any
-// whole number of turns.
+// The polar angle convention, degrees clockwise from 12 o'clock. Unit under test: pointerAngle,
+// angleInSweep, sweepOf, polarPoint and sweepBox. Oracles: d3-shape 3.2.0's lineRadial test points
+// for the same frame, hand-picked angle cases, and sweep boxes worked by hand for a 200 px cell:
+// 200 by 200 for a circle, 200 by 100 for −90 to 90, 200 by 150 for −120 to 120 and 200 by 170.71
+// for −135 to 135, the same for any whole number of turns.
 import { describe, expect, it } from "vitest";
 
 import { angleInSweep, pointerAngle, polarPoint, sweepBox, sweepOf } from "./polar-angle";
 
 describe("pointerAngle", () => {
-  it("reads 0 at the exact centre, where atan2(0, −0) would read 180", () => {
+  it("reads 0 at the exact center, where atan2(0, −0) would read 180", () => {
     expect(Math.atan2(0, -0)).toBe(Math.PI);
     expect(pointerAngle(0, 0)).toBe(0);
   });
@@ -54,7 +53,7 @@ describe("angleInSweep", () => {
     expect(angleInSweep(359, sweep)).toBe(359);
   });
 
-  it("holds nothing past a 90 to 270 sweep, where the exact centre's 0 lies outside", () => {
+  it("holds nothing past a 90 to 270 sweep, where the exact center's 0 lies outside", () => {
     expect(angleInSweep(pointerAngle(0, 0), sweepOf(90, 270))).toBeNull();
   });
 });
@@ -71,7 +70,7 @@ describe("the frame", () => {
   it("places a vertex in d3's radial frame at any angle, as d3-shape's own lineRadial test expects", () => {
     // d3-shape 3.2.0's test "lineRadial() returns a default radial line shape", line 12: the points
     // [2 rad, 3] and [4 rad, 5] draw at (2.727892, 1.248441) and (−3.784012, 3.268218). Every radar
-    // and clock vertex goes through polarPoint, so the vector replays here, in degrees.
+    // and clock vertex goes through polarPoint, so the same points replay here, in degrees.
     const degrees = (radians: number) => (radians * 180) / Math.PI;
     const a = polarPoint(degrees(2), 3);
     const b = polarPoint(degrees(4), 5);
@@ -101,7 +100,7 @@ describe("sweepBox", () => {
     expect(h).toBeCloseTo(height, 2);
   });
 
-  it("sets the top semicircle's flat edge at the centre's line, at the bottom", () => {
+  it("sets the top semicircle's flat edge at the center's line, at the bottom", () => {
     expect(sweepBox(sweepOf(-90, 90))).toEqual({ left: -1, top: -1, right: 1, bottom: 0 });
   });
 
@@ -111,8 +110,8 @@ describe("sweepBox", () => {
   });
 
   it("returns for a start far past where a float counts single degrees", () => {
-    // Above 2^53 a quarter turn's count no longer steps by one, which the walk from the raw start
-    // never left; the walk from the start brought into one turn takes at most five steps.
+    // Above 2^53 a count of quarter turns no longer steps by one, so a walk from the raw start
+    // would never end. The walk from the start brought into one turn takes at most five steps.
     const box = sweepBox(sweepOf(1e300, 1e300 + 270));
     expect([box.left, box.top, box.right, box.bottom].every(Number.isFinite)).toBe(true);
   });

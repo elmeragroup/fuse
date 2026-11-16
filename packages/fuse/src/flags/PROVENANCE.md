@@ -1,8 +1,8 @@
 # Flag asset provenance
 
-- Source: https://github.com/yammadev/flag-icons (MIT, copyright Yefferson)
-- Commit: `a3d5adcf4fe650536d7694ca6d93c607ebf16c4e`
-- Selection: exactly the 249 two-letter country SVGs (765286 raw bytes). Subdivision/collection artwork is not copied.
+- Source: https://github.com/yammadev/flag-icons, MIT licensed, copyright Yefferson.
+- Commit: `a3d5adcf4fe650536d7694ca6d93c607ebf16c4e`.
+- Selection: the 249 two-letter country SVGs, 765286 raw bytes in all. No subdivision or collection artwork is copied.
 - Aggregate ceiling: 800 KiB.
 
 ## SHA-256

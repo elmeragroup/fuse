@@ -7,7 +7,7 @@ import { TextField } from "./text-field";
 
 describe("TextField", () => {
   it("forwards the numeric filter to the inner input, so digits reach onChange and maxLength counts digits", async () => {
-    // Input owns the filter and its own suite covers each path; this pins the forwarding.
+    // Input applies the filter and its own suite covers each path. This test checks the forwarding.
     const onChange = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     renderThemed(

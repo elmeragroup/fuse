@@ -186,7 +186,7 @@ export function ScatterChartRoot<
   const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   const steadyX = useSteady(xInclude, sameItems);
   const steadyY = useSteady(yInclude, sameItems);
-  // The model reads the keys alone, so a label, colour, format or icon change keeps it.
+  // The model reads the keys alone, so a label, color, format or icon change keeps it.
   const keys = useSteady(Object.keys(config), sameItems);
   const model = useMemo(
     () =>

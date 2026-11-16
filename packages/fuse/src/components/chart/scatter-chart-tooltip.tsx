@@ -12,7 +12,7 @@ import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow }
 import type { ChartDomProps, ChartLayerProps, ValueFormat } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
-import { dotCentre } from "./layout/scatter-frame";
+import { dotCenter } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
 import type { ScatterModel } from "./layout/scatter-model";
 import { ROOF_GAP } from "./layout/tooltip-place";
@@ -137,7 +137,7 @@ export function ScatterChartTooltip({
   const anchor = useMemo(() => {
     if (placed === null || frame === null) return null;
     const point = pointOf(model, placed);
-    const centre = dotCentre(frame, point.x, point.y, diameter);
+    const center = dotCenter(frame, point.x, point.y, diameter);
     // The anchor spans the point and the gap above it, so the popup rests clear of the point.
     const reach = diameter / 2 + ROOF_GAP;
     return {
@@ -148,8 +148,8 @@ export function ScatterChartTooltip({
         const scaleX = box.width === 0 ? 1 : surface.width / box.width;
         const scaleY = box.height === 0 ? 1 : surface.height / box.height;
         return new DOMRect(
-          surface.left + centre.x * scaleX,
-          surface.top + (centre.y - reach) * scaleY,
+          surface.left + center.x * scaleX,
+          surface.top + (center.y - reach) * scaleY,
           0,
           2 * reach * scaleY
         );

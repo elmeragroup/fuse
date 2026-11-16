@@ -45,8 +45,8 @@ export function crossfade(
     }
   }
   outgoing.append(copy);
-  // A strong ease-out, with a 2 px blur on the outgoing copy, bridges the two shapes into one
-  // perceived change.
+  // A strong ease-out, with a 2 px blur on the outgoing copy, makes the two shapes read as one
+  // change.
   const timing = { duration: CHART_CROSSFADE_MS, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
   const out = copy.animate(
     [

@@ -1,6 +1,6 @@
 /**
  * Unit under test: SparklineHover's glide, over the Sparkline's markup and chart.css. Oracles: the
- * image's own box, worked by hand. Three values own a third of its width each, centered at a sixth,
+ * image's own box, worked by hand. Each of the three values takes a third of its width, centered at a sixth,
  * a half and five sixths; [2, 6, 4] spans [2, 6], so 6 sits at the top edge and 4 halfway down.
  * Hovering the first value, then the third, moves the one crosshair from a sixth to five sixths of
  * the width and the dot from the bottom edge to halfway down. A line's band runs from the box's left
@@ -264,7 +264,7 @@ describe("SparklineHover", () => {
   });
 
   it("keeps a bar glide at its share of the box when the box resizes mid-glide, and lands on the hovered value", async () => {
-    // At 150 px the third value's centre is still five sixths of the way across, and the pointer
+    // At 150 px the third value's center is still five sixths of the way across, and the pointer
     // still rests on it. The glide moves in shares of the box, so a glide held a tenth of its way
     // in shows the crosshair at the same share of the narrower image, where one in pixels would
     // show it two thirds of 300 px to the left of its rest, half a box further left, and it ends on

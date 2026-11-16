@@ -116,7 +116,7 @@ export function LiveLineChartTooltip({
       if (node === null) return;
       const at = readoutOf(frame, geometry, context.store);
       if (at === null) return;
-      // The popup centres on the crosshair and keeps inside the plot, its container, and zooms
+      // The popup centers on the crosshair and keeps inside the plot, its container, and zooms
       // from the crosshair's x at its bottom edge. Both are its own properties, so no descendant
       // restyles as it moves.
       const x = `${livePixel(at.x)}px`;
@@ -138,8 +138,8 @@ export function LiveLineChartTooltip({
           ref={popup}
           data-slot="chart-tooltip"
           data-variant={variant}
-          // A pointer opens it as an anchored popup below its anchor opens, fading in and dropping
-          // into place on data-open, and a key opens it at once, as keyboard actions never animate.
+          // A pointer opens it the way an anchored popup below its anchor opens, fading in and dropping
+          // into place on `data-open`. A key opens it at once, because keyboard actions never animate.
           data-open={openedBy === "keyboard" ? undefined : ""}
           data-side="bottom"
           className={tooltipPopupClass(variant, className)}

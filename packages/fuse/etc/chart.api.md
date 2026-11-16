@@ -526,7 +526,7 @@ export type ChartPolarFieldCheck<TConfig> = string extends keyof TConfig ? unkno
     } : TConfig[K] extends {
         color: ChartPolarColor;
     } ? unknown : {
-        readonly "PieChart and RadialChart colours are categorical or sequential roles, chart-other, or lists of them": never;
+        readonly "PieChart and RadialChart colors are categorical or sequential roles, chart-other, or lists of them": never;
     }; };
 
 // @beta
@@ -555,7 +555,7 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig ? unkno
     } : TConfig[K] extends {
         color: ChartRole | readonly [ChartRole, ChartRole, ...ChartRole[]];
     } ? unknown : {
-        readonly "RadarChart colours are roles or role lists, never a scale or a threshold": never;
+        readonly "RadarChart colors are roles or role lists, never a scale or a threshold": never;
     }; };
 
 // @beta
@@ -664,7 +664,7 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig ? unk
     } : TConfig[K] extends {
         color: ChartRole;
     } ? unknown : {
-        readonly "ScatterChart colours are single roles, never a scale, a role list or a threshold": never;
+        readonly "ScatterChart colors are single roles, never a scale, a role list or a threshold": never;
     }; };
 
 // @beta

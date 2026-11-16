@@ -18,7 +18,7 @@ import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser
 
 type SignupValues = { email: string; phone: string };
 
-/** The issue's fixture: an email TextField and the phone field in one Form. */
+/** An email TextField and the phone field in one Form. */
 function Signup({
   errors,
   onFormSubmit,

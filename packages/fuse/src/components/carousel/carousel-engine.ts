@@ -42,9 +42,9 @@
  *   page only at its end, from a fresh measurement, so a re-snap never publishes a page read from
  *   stale geometry. The one exception is the engine's own scroll, a page change or a placement:
  *   when it ends where its page was, while the slides moved under it, the engine puts its own
- *   page back where the layout now has it, as Firefox may not re-snap it (`flush`). Every scroll
- *   frame still updates the slides in view. Notifying the Root that the user acted, which stops
- *   rotation, is separate: any user input does it, scroll or not.
+ *   page back where the layout now has it, in `flush`. Every scroll frame still updates the
+ *   slides in view. Notifying the Root that the user acted, which stops rotation, is separate:
+ *   any user input does it, scroll or not.
  * - Ends. A scroll ends at `scrollend`, or, without it, after a quiet spell with no scroll event.
  *   What a scroll is owed, its settle, is kept apart from the one timer that counts out its spell.
  *   Nothing ends while input is held, as a finger at rest mid-drag sends no scroll events: new
@@ -329,7 +329,7 @@ export function createCarouselEngine(
     } else {
       unsteadyReadings += 1;
     }
-    // Forgotten, so the box coming back reads as a resize.
+    // The sizes are forgotten, so a box that comes back reads as a resize.
     sizes.clear();
     if (retry === "next frame" && retryFrame === null && view !== null) {
       // A transform changes no box size, so no observer reports the scale growing back or resting.
@@ -386,7 +386,8 @@ export function createCarouselEngine(
       return unusable("next frame", "unsteady");
     }
     const { slides, numbers, geometry, port, rtl } = result;
-    // Usable: the layout, and the sizes the resize observer compares against, are now this one's.
+    // The reading is usable, so the layout and the sizes the resize observer compares against are
+    // now this one's.
     const restore = applied !== null && (vanished || (layout !== null && layout.rtl !== rtl));
     unmeasured = false;
     vanished = false;
@@ -533,12 +534,9 @@ export function createCarouselEngine(
    * Whether the engine's own scroll ended where its page was in the layout it was measured
    * against, while this measurement has the slides elsewhere. The layout moved under that scroll,
    * so the position it left no longer shows the page the engine itself scrolled to, and the engine
-   * puts the page back. CSS Scroll Snap 1 § 6.2 has the browser re-snap to the slide it was snapped to,
-   * which Chromium and WebKit do, so their scroll ends on the page's new position. Firefox does
-   * not re-snap the slide of a jump whose layout changes in the same task, before the jump's
-   * scroll is processed, as when an ancestor sets a spacing variable as the carousel mounts: it
-   * leaves the viewport where the jump put it, on another slide's snap position or between two.
-   * Any other scroll, a script's, a focus scroll or the user's, keeps the page it ends on.
+   * puts the page back. A browser that re-snaps to the slide it was snapped to, as CSS Scroll
+   * Snap 1 § 6.2 asks, ends the scroll on the page's new position instead. Any other scroll, a
+   * script's, a focus scroll or the user's, keeps the page it ends on.
    */
   function strandedUnderOwnScroll(): boolean {
     return (

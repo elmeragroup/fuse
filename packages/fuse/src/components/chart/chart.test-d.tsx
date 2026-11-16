@@ -1,7 +1,7 @@
 /**
- * Positive type cases of CONTRACT.md section 14, ported from the contract's revision check. The
- * TypeScript checker is the oracle, and each case compiles with no cast. `package-check-chart-types.ts` runs this file against
- * the packed `.d.ts` under TypeScript 7.0.2 and 5.9.3, with and without `exactOptionalPropertyTypes`.
+ * Positive type cases of the chart API. The TypeScript checker is the oracle, and each case
+ * compiles with no cast. `package-check-chart-types.ts` runs this file against the packed `.d.ts`
+ * under TypeScript 7.0.2 and 5.9.3, with and without `exactOptionalPropertyTypes`.
  */
 import type { ReactElement } from "react";
 
@@ -48,7 +48,7 @@ const browsers = [
 ] as const;
 const spokes = [{ cat: "Hus", a: 1, b: -2 }];
 
-test("the S15 Forbruk og pris composition compiles with no cast", () => {
+test("the Forbruk og pris composition compiles with no cast", () => {
   type Day = { day: Date; kwh: number | null; kwhQuality: ChartQuality | null; price: number | null };
   const config = {
     kwh: {
@@ -287,7 +287,7 @@ test("config keys stay literal, so callbacks report the key union and instants r
   expectTypeOf(charts).toExtend<ReactElement>();
 });
 
-test("a bill's centre names its active part, and its default names a config key", () => {
+test("a bill's center names its active part, and its default names a config key", () => {
   const bill = [
     { part: "energi", kr: 640 },
     { part: "nettleie", kr: 360 },

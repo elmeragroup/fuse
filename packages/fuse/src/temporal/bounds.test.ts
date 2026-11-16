@@ -81,13 +81,13 @@ describe("checkBounds", () => {
     });
 
     it("moves a bound in a spring-forward gap to the later instant", () => {
-      // Oslo skips 02:00–03:00 on 2026-03-29, so 02:30 reads as 03:30+02:00.
+      // Oslo skips 02:00 to 03:00 on 2026-03-29, so 02:30 reads as 03:30+02:00.
       expect(check("2026-03-29T03:00+02:00[Europe/Oslo]", { min: "2026-03-29T02:30" })).toBe("underflow");
       expect(check("2026-03-29T03:30+02:00[Europe/Oslo]", { min: "2026-03-29T02:30" })).toBe("within");
     });
 
     it("reads a bound in a fall-back overlap as the earlier instant", () => {
-      // Oslo repeats 02:00–03:00 on 2026-10-25: first at +02:00, then at +01:00.
+      // Oslo repeats 02:00 to 03:00 on 2026-10-25: first at +02:00, then at +01:00.
       expect(check("2026-10-25T02:30+02:00[Europe/Oslo]", { max: "2026-10-25T02:30" })).toBe("within");
       expect(check("2026-10-25T02:30+01:00[Europe/Oslo]", { max: "2026-10-25T02:30" })).toBe("overflow");
     });

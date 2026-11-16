@@ -99,7 +99,7 @@ describe("DataTableFilter draft ownership", () => {
     return counted;
   }
 
-  // A press on a disabled Remove or Clear is a press on nothing that acts: it dismisses the popover
+  // A press on a disabled Remove or Clear is a press on nothing that acts. It dismisses the popover
   // as any outside press does, which applies the typed text in one write, and every filter stays.
   // The same text after a press on another chip's field name, which does nothing, is the oracle.
   const DISMISSED = [

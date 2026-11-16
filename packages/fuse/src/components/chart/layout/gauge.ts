@@ -159,7 +159,7 @@ export function notchLayout(sweep: Sweep, count: number, pixels: DialPixels): No
   const dpr = pixels.dpr > 0 ? pixels.dpr : 1;
   const gapPixels = Math.max(1, Math.round(NOTCH_GAP_PX * dpr)) / dpr;
   const gap = inner > 0 && count > 1 ? toDegrees(gapPixels / inner) : 0;
-  // A full turn closes on itself, so its last notch has a gap before the first one too: it holds as
+  // A full turn closes on itself, so its last notch has a gap before the first one too. It holds as
   // many gaps as notches, where an open sweep holds one gap fewer.
   const gaps = isFullTurn(sweep) ? count : count - 1;
   // A dial too small for its gaps keeps a sliver of each notch rather than none.
@@ -176,7 +176,7 @@ export function notchLayout(sweep: Sweep, count: number, pixels: DialPixels): No
  * @param index - The notch, 0 at the start.
  * @returns Degrees from the sweep's start.
  */
-export function notchCentre(layout: NotchLayout, index: number): number {
+export function notchCenter(layout: NotchLayout, index: number): number {
   return layout.width / 2 + index * layout.step;
 }
 

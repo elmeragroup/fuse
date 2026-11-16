@@ -211,7 +211,7 @@ describe("Input numeric filter", () => {
     await expect.element(email).toHaveValue("912345");
   });
 
-  it("leaves an insertion another listener cancelled alone", () => {
+  it("leaves an insertion another listener canceled alone", () => {
     const changes = vi.fn<(value: string) => void>();
     renderThemed(
       <Input
@@ -241,7 +241,7 @@ describe("Input numeric filter", () => {
     expect(pin).toHaveProperty("value", "12");
     expect(changes).not.toHaveBeenCalled();
 
-    // The same run, not cancelled, takes the filtered path.
+    // The same run, not canceled, takes the filtered path.
     pin.dispatchEvent(mixedRun());
     expect(pin).toHaveProperty("value", "1234");
     expect(changes).toHaveBeenLastCalledWith("1234");

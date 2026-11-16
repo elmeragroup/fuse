@@ -1,12 +1,14 @@
 // A gauge's geometry. Unit under test: gaugeOffset, gaugePlace, litMarks, notchLayout,
-// rulerSpacing, rulerTicks, rangeOffsets, dotRings, reached and bandPath. Oracles, written by hand: a 270° sweep reads 3.9 of 0–5 kWh at
-// 0.78 · 270 = 210.6°; 40 notches light round(40 · 0.78) = 31, and any reading above `min` lights
-// one; a 2 px gap at the notches' inner edge, 0.84 of a 100 px radius, spans 2 / 84 rad; and the
-// round ruler steps of 0–5 kWh (1 kWh, minors of 0.2), 0–300 øre (50, minors of 10) and 0–100 %
-// (20, minors of 5), and 0–11 kW (1, after the steps of 2 that leave a remainder); and Dots' rings 0.07 apart from 0.76 in, whose dots sit near 0.07 apart along
-// a 270° arc: 0.76 · 3π/2 / 0.07 ≈ 51.2 gaps, so 52 dots, and 0.69 · 3π/2 / 0.07 ≈ 46.4, so 47; and
-// a full turn, which closes on itself: 40 notches and 40 gaps at 9° a pair, and no mark on max; and
-// a band at a rim of 120 CSS px at 1 device pixel each, which keeps 1/120 rad of arc.
+// rulerSpacing, rulerTicks, rangeOffsets, dotRings, reached and bandPath. Oracles, written by hand:
+// a 270° sweep reads 3.9 of 0 to 5 kWh at 0.78 · 270 = 210.6°; 40 notches light
+// round(40 · 0.78) = 31, and any reading above `min` lights one; a 2 px gap at the notches' inner
+// edge, 0.84 of a 100 px radius, spans 2 / 84 rad; the round ruler steps of 0 to 5 kWh (1 kWh,
+// minors of 0.2), 0 to 300 øre (50, minors of 10), 0 to 100 % (20, minors of 5), and 0 to 11 kW
+// (1, after the steps of 2 that leave a remainder); Dots' rings 0.07 apart from 0.76 in, whose dots
+// sit near 0.07 apart along a 270° arc: 0.76 · 3π/2 / 0.07 ≈ 51.2 gaps, so 52 dots, and
+// 0.69 · 3π/2 / 0.07 ≈ 46.4, so 47; a full turn, which closes on itself: 40 notches and 40 gaps at
+// 9° a pair, and no mark on max; and a band at a rim of 120 CSS px at 1 device pixel each, which
+// keeps 1/120 rad of arc.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +17,7 @@ import {
   dotRings,
   gaugeOffset,
   gaugePlace,
-  notchCentre,
+  notchCenter,
   notchLayout,
   rangeOffsets,
   reached,
@@ -43,7 +45,7 @@ describe("gaugeOffset and gaugePlace", () => {
   });
 
   it("reads a domain that starts above 0 from its own minimum", () => {
-    // 60 øre on a 20–120 øre dial sits 40 % of the way along.
+    // 60 øre on a 20 to 120 øre dial sits 40 % of the way along.
     expect(gaugeOffset({ min: 20, max: 120 }, GAUGE, 60)).toBeCloseTo(108, 12);
   });
 });
@@ -80,7 +82,7 @@ describe("notchLayout", () => {
     expect(layout.step - layout.width).toBeCloseTo(gap, 12);
     expect(layout.width).toBeCloseTo((270 - 39 * gap) / 40, 12);
     // The last notch ends on the sweep's end.
-    expect(notchCentre(layout, 39) + layout.width / 2).toBeCloseTo(270, 12);
+    expect(notchCenter(layout, 39) + layout.width / 2).toBeCloseTo(270, 12);
     expect(layout.corner).toBeCloseTo(0.015, 12);
   });
 
@@ -100,8 +102,8 @@ describe("a full turn", () => {
     const layout = notchLayout(TURN, 40, { scale: 100, dpr: 1 });
     // 40 gaps share the turn with 40 notches, so a notch and a gap make up 9°.
     expect(layout.step).toBeCloseTo(9, 12);
-    const lastEnd = notchCentre(layout, 39) + layout.width / 2;
-    const firstStart = notchCentre(layout, 0) - layout.width / 2 + 360;
+    const lastEnd = notchCenter(layout, 39) + layout.width / 2;
+    const firstStart = notchCenter(layout, 0) - layout.width / 2 + 360;
     expect(firstStart - lastEnd).toBeCloseTo(layout.step - layout.width, 12);
   });
 
@@ -119,9 +121,9 @@ describe("rulerSpacing and rulerTicks", () => {
     expect(rulerSpacing(KWH)).toEqual({ ticks: 25, majorEvery: 5 });
     expect(rulerSpacing({ min: 0, max: 300 })).toEqual({ ticks: 30, majorEvery: 5 });
     expect(rulerSpacing({ min: 0, max: 100 })).toEqual({ ticks: 20, majorEvery: 4 });
-    // 0–11 kW takes no step of 2, but takes one of 1 kW for 11 majors.
+    // 0 to 11 kW takes no step of 2, but takes one of 1 kW for 11 majors.
     expect(rulerSpacing({ min: 0, max: 11 })).toEqual({ ticks: 55, majorEvery: 5 });
-    // 0–7.3 has no round step that divides it.
+    // 0 to 7.3 has no round step that divides it.
     expect(rulerSpacing({ min: 0, max: 7.3 })).toEqual({ ticks: 20, majorEvery: 5 });
   });
 

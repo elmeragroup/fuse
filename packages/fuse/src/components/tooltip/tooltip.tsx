@@ -51,8 +51,8 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
   const generatedId = useId();
   const [mountedId, setMountedId] = useState<string | null>(null);
   const description = useMemo(() => ({ generatedId, mountedId, setMountedId }), [generatedId, mountedId]);
-  // Base-ui puts per-tooltip delay on a scoped Provider. The nested group is
-  // intentional: this tooltip opts out of the outer Provider's skip-delay hand-off.
+  // Base UI sets a per-tooltip delay through a scoped Provider. The nested group takes this tooltip
+  // out of the outer Provider's group, so moving to it from another tooltip never skips its delay.
   const root = (
     <TooltipDescriptionContext.Provider value={description}>
       <TooltipPrimitive.Root {...props} />

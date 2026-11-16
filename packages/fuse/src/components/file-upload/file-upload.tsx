@@ -121,9 +121,10 @@ export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "ch
      * Called with the files and folders that did not pass, with the reason for each: `"type"` for a
      * file that fails `accept`, `"count"` for each passing file when a Root without `multiple`
      * gets more than one, `"directory"` for a folder while `directory` is off, and `"unreadable"`
-     * for a file in a dropped folder that the browser could not read. For one pick, drop or paste,
-     * it runs right after `onSelect`, in the same task. Show the rejections in words, such as in
-     * an `Alert`, which announces itself.
+     * for a file in a dropped folder that the browser could not read. A pick, drop or paste in which
+     * every file fails calls it without `onSelect`. When both run for one pick, drop or paste,
+     * `onSelect` runs first and this runs right after, in the same task. Show the rejections in
+     * words, such as in an `Alert`, which announces itself.
      */
     onReject?: (rejections: FileRejection[]) => void;
   };
@@ -387,7 +388,7 @@ export function FileUploadRoot({
   );
 
   // Paste listens on the Root's document, because Firefox targets `<body>` for a paste while a
-  // button has focus. `beforepaste` is cancelled so Safari enables its Paste menu item. Only the
+  // button has focus. `beforepaste` is canceled so Safari enables its Paste menu item. Only the
   // Root nearest to the focused element takes the paste, so nested Roots never both take it.
   useEffect(() => {
     if (disabled || element === null) {
@@ -455,8 +456,8 @@ export function FileUploadRoot({
     ]
   );
 
-  // A callback ref, so the write follows the posting input's every mount and remount (a name
-  // appearing mounts it, a new `render` element remounts it empty) as well as every `files` change.
+  // A callback ref, so the write follows every `files` change and every mount and remount of the
+  // posting input. A name that appears mounts it, and a new `render` element remounts it empty.
   const writePosted = useCallback(
     (input: HTMLInputElement | null) => {
       if (input !== null) {
@@ -511,9 +512,9 @@ export function FileUploadRoot({
                 onClick={(event) => event.stopPropagation()}
               />
               {postingInputShown ? (
-                // Visually hidden, not `hidden`, so a native submit can stop at it: the browser
-                // focuses an invalid control, and it hands that focus to the first enabled Trigger. It stays out
-                // of the accessibility tree and the tab order. A disabled Root posts nothing and is
+                // Visually hidden, not `hidden`, so a native submit can stop at it. The browser
+                // focuses an invalid control, and the input hands that focus to the first enabled
+                // Trigger. It stays out of the accessibility tree and the tab order. A disabled Root posts nothing and is
                 // never validated, as a disabled native control is.
                 <input
                   ref={postingInputRef}

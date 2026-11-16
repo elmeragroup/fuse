@@ -19,10 +19,7 @@ export type DateInputFocusDirection = "next" | "previous";
  * @param direction - Which way focus is moving.
  * @returns The neighbor's Root element, or `null`.
  */
-export type DateInputNeighbour = (
-  root: HTMLElement,
-  direction: DateInputFocusDirection
-) => HTMLElement | null;
+export type DateInputNeighbor = (root: HTMLElement, direction: DateInputFocusDirection) => HTMLElement | null;
 
 /** The neighbor lookup of the control around a DateInput; none outside such a control. */
-export const DateInputNeighbourContext = createContext<DateInputNeighbour | undefined>(undefined);
+export const DateInputNeighborContext = createContext<DateInputNeighbor | undefined>(undefined);

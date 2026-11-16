@@ -1,10 +1,9 @@
 /**
- * Root's one animation loop, after `.scratch/charts-v1/reviews/motion-decision.md`. A mark hands
- * its final numbers to `place` in a layout effect, before the browser paints, and the loop writes
- * them to the DOM, at once or frame by frame. A tween rewinds the mark to what it last drew and walks it to
- * the target in requestAnimationFrame, writing attributes straight to the DOM, so React commits
- * nothing while marks move. A second update during a tween starts from the drawn numbers, so the
- * mark continues without a jump.
+ * Root's one animation loop. A mark hands its final numbers to `place` in a layout effect, before
+ * the browser paints, and the loop writes them to the DOM, at once or frame by frame. A tween
+ * rewinds the mark to what it last drew and moves it to the target in requestAnimationFrame,
+ * writing attributes straight to the DOM, so React commits nothing while marks move. A second
+ * update during a tween starts from the drawn numbers, so the mark continues without a jump.
  */
 import { cubicBezier } from "./layout/ease";
 import { momentumSpring, spanAround, springAt, springProgress } from "./layout/momentum";
@@ -600,7 +599,7 @@ export function createChartMotion(
       if (joined.leads.length === 1 && only !== undefined && !("clock" in only.lead)) {
         mark.drawn = read(only.lead, sources[0]);
       } else {
-        // Appended one by one, as a lead's run can hold more numbers than a call takes arguments.
+        // The numbers go in one by one, as a lead's run can hold more numbers than a call takes arguments.
         const drawn: number[] = [];
         joined.leads.forEach(({ lead, own }, index) => {
           const source = sources[index];

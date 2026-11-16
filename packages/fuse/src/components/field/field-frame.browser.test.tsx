@@ -152,10 +152,10 @@ function verticalGap(upper: Element, lower: Element): number {
   return lower.getBoundingClientRect().top - upper.getBoundingClientRect().bottom;
 }
 
-/** The group primitive, whose top edge is where the first option starts. */
+/** The options group, whose top edge is where the first option starts. */
 function optionsIn(root: Element): Element {
-  // The options box is the group primitive's layout container, which has no
-  // role of its own once the fieldset owns the group name, so it is reached by its slot.
+  // The options box is the group's layout container, which has no role of its own once the
+  // fieldset carries the group name, so the test reaches it by its slot.
   const options = root.querySelector("[data-slot=checkbox-group], [data-slot=radio-group]");
   if (options === null) {
     throw new Error("expected a checkbox-group or radio-group");

@@ -1,8 +1,8 @@
 // A calendar Root's state, outside React: one value per Root that its parts read through
 // `useSyncExternalStore`, each part through a selector that returns a primitive, or one state field
-// by reference, as `visible` is read. A day button
-// re-renders only when its own answer changes, so moving focus in a three-month view renders the
-// two days it leaves and reaches, not the ~126 a context update would.
+// by reference, as `visible` is read. A day button re-renders only when its own answer changes, so
+// moving focus in a three-month view renders the two days it leaves and reaches, not the 126 or so
+// a context update would.
 //
 // The server and every hydrating part read the store's initial state, never the live one: a part
 // whose Suspense boundary hydrates after the Root's effects ran (today read, a view opened) must

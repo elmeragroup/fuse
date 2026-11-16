@@ -136,7 +136,7 @@ describe("AlertDialog", () => {
     const dialog = await openConfirm();
     const backdrop = overlayBackdropOf(dialog);
 
-    // The corner sits clear of the centred popup, so the pointer lands on the backdrop.
+    // The corner sits clear of the centered popup, so the pointer lands on the backdrop.
     await userEvent.click(backdrop, { position: { x: 2, y: 2 } });
     expect(onOpenChange.mock.calls.map(([open]) => open)).toEqual([true]);
     expect(dialog.hasAttribute("data-open")).toBe(true);

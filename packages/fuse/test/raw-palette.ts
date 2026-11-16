@@ -2,7 +2,7 @@
  * The canonical raw-palette guard. Recipes must resolve to role tokens only — a literal
  * Tailwind palette color (`bg-zinc-*`, `text-red-*`, …) on a component recipe is a
  * retokenization defect. Every suite that asserts "no raw palette" shares this one
- * pattern so the colour list cannot fork per component.
+ * pattern so the color list cannot fork per component.
  *
  * The deliberate exceptions, such as the overlay scrim's allowlisted `bg-black/10`,
  * live behind named constants and are asserted where they are owned.

@@ -57,8 +57,8 @@ const RANGE_PRESET = { hour: "hour-range", "quarter-hour": "time-range" } as con
 
 /**
  * The oracle writes long zone names and `month_year` with U+0020, which canonical spacing writes as
- * U+00A0, as TIME-CONVENTIONS.md tells a canonical judge to map. This module writes the mapping out
- * so that Fuse's own `canonicalSpaces` never judges itself.
+ * U+00A0. This module writes the mapping out so that Fuse's own `canonicalSpaces` never judges
+ * itself.
  */
 const oracleSpaces = (text: string): string => text.replaceAll(" ", "\u00a0");
 
@@ -100,7 +100,7 @@ export function slotJudgements(): Judgement[] {
 
 /**
  * Daily, monthly and ISO week labels against the oracle. The oracle keeps U+0020 in `month_year`,
- * so the expectation maps it to U+00A0, as TIME-CONVENTIONS.md tells a canonical judge to.
+ * so the expectation maps it to U+00A0.
  */
 export function calendarJudgements(): Judgement[] {
   const periods = (
@@ -121,7 +121,7 @@ export function calendarJudgements(): Judgement[] {
         )
       )
     );
-  // Every day of the daily file, labelled with the week preset, against Python's isocalendar().
+  // Every day of the daily file, labeled with the week preset, against Python's isocalendar().
   const dayWeeks = ZONES.flatMap((zone) =>
     Object.entries(FIXTURE.day[zone]).map(([month, list]) => ({
       name: `week of each day ${zone} ${month}`,

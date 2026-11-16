@@ -1,4 +1,4 @@
-// The Sparkline's layout and range sentence, after ticket 06's F4. Unit under test:
+// The Sparkline's layout and range sentence. Unit under test:
 // sparklineLayout, emphasisIndex and sparklineSentence. Oracles: hand-written domains and paths in
 // the 10-unit cells of a 100-unit-high viewBox, hand-worked percentages of the box for the bars,
 // rules, dots and hover regions, and spoken slot labels copied from the pattern of
@@ -52,7 +52,7 @@ describe("sparklineLayout", () => {
     expect(layout.stroke).toBe("M5,100L15,50");
   });
 
-  it("draws an area's lone readings as round caps on its edge beside its empty fill (B2-1)", () => {
+  it("draws an area's lone readings as round caps on its edge beside its empty fill", () => {
     // [10, null, 20] over [0, 20]: 10 sits mid-box in the first cell and 20 at the top of the third.
     const layout = paths({ ...base, variant: "area", data: [10, null, 20] });
     expect([layout.fill, layout.stroke]).toEqual(["", "M5,50ZM25,0Z"]);
@@ -70,7 +70,7 @@ describe("sparklineLayout", () => {
     expect(paths({ ...base, data: [2, 6, 4] }).dot).toBeNull();
   });
 
-  it("gives each reading its cell and a band from the centre before it to the centre after it", () => {
+  it("gives each reading its cell and a band from the center before it to the center after it", () => {
     // Three cells a third of the box wide. The end bands reach a tenth past the box.
     const layout = paths({ ...base, data: [2, 6, 4] });
     expect(layout.readings.map(({ index, x, y, cell, band }) => ({ index, x, y, cell, band }))).toEqual([
@@ -86,7 +86,7 @@ describe("sparklineLayout", () => {
     // Unit: each reading's segment. Oracle: the full line, whose commands inside a reading's band,
     // from the reading before to the one after, the segment must repeat, so the highlight lies on
     // the line it re-strokes. Every curve but the natural spline joins its readings from the
-    // neighbours either side of a span, so its segment repeats them exactly. The natural spline
+    // neighbors either side of a span, so its segment repeats them exactly. The natural spline
     // shapes each span from every reading, so it may differ by under a pixel of a 2rem box, 32 px
     // over the viewBox's 100 units.
     const tolerance = {
@@ -147,7 +147,7 @@ describe("sparklineLayout", () => {
 
   it("places bars by percentages of an unstretched box, a negative one hanging from 0", () => {
     // [2, -2] spans [-2, 2], so 0 sits mid-box. Each cell is half the box, and its bar three
-    // quarters of the cell, centred.
+    // quarters of the cell, centered.
     const layout = bars({ ...base, variant: "bar", data: [2, -2] });
     expect(layout).not.toHaveProperty("viewBox");
     expect(layout.zero).toBe(50);

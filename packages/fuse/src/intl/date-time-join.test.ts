@@ -1,7 +1,7 @@
 /**
  * Unit under test: `formatDateTime`, alone and through the public `formatChartSlot`, and
- * `formatDateTimeToParts`. Oracle:
- * labels written by hand from CLDR 48, the same ones the engine judges hold.
+ * `formatDateTimeToParts`. Oracle: labels written by hand from CLDR 48, the same ones the engine
+ * judges hold.
  *
  * Node 26's ICU prints CLDR 48's own date-time join, so in Node a helper that handed the join back
  * to Intl would print the right text by luck. WebKit's older CLDR joins differently, and printed

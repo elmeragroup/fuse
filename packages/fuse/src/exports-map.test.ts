@@ -17,11 +17,11 @@ import { parseFacadeValueExports } from "../scripts/parse-facade";
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * Reviewed public surface of every discovered JS entry, in discovery order.
+ * Reviewed public exports of every discovered JS entry, in discovery order.
  * A new entry, a changed value export, or a move into or out of the root barrel
  * must be decided here. The root barrel's names are the union of the
  * `inRootBarrel` rows. The icons row omits its names because the tracked roster
- * snapshot in `src/icons/__snapshots__/roster.json` owns them.
+ * snapshot in `src/icons/__snapshots__/roster.json` lists them.
  */
 type EntrySurface = {
   readonly inRootBarrel: boolean;
