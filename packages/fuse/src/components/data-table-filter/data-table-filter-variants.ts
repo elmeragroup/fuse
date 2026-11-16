@@ -73,10 +73,10 @@ export const dataTableFilterVariants = tv({
      * surface. The add menu and each value submenu: the menu shell at one fixed width, so typing
      * never resizes it sideways. The list scrolls inside. Its height follows the results and snaps
      * on a keystroke. On the editor step the shell takes the editor's own width and a taller cap,
-     * and the step change between the field list and an editor morphs both through
-     * `transition-[height,width]`.
+     * and the step change between the field list and an editor morphs both, through the
+     * transitions the overlay's resizing popup class gives the shell.
      */
-    menu: "ease-out box-border flex max-h-[min(24rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-hidden transition-[height,width] duration-100 data-[step=editor]:max-h-[min(32rem,var(--available-height))] data-[step=editor]:w-max",
+    menu: "ease-out box-border flex max-h-[min(24rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-hidden data-[step=editor]:max-h-[min(32rem,var(--available-height))] data-[step=editor]:w-max",
     /** layout. A menu list, which scrolls inside the popup, never the page. */
     list: "-mx-(--surface-pad-sm) mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--surface-pad-sm) [&_[role=group][hidden]]:hidden",
     /**
@@ -132,7 +132,7 @@ export const dataTableFilterVariants = tv({
      * shell's padded corner.
      */
     content:
-      "ease-out relative! bottom-auto! flex h-[var(--popup-height,auto)] max-h-[min(32rem,var(--available-height))] w-[var(--popup-width,max-content)] max-w-(--available-width) flex-col overflow-clip p-0 transition-[height,width] [--shell-inner:max(0px,--theme(--radius-md)-0.25rem)] motion-reduce:h-auto motion-reduce:w-max",
+      "ease-out relative! bottom-auto! flex h-[var(--popup-height,auto)] max-h-[min(32rem,var(--available-height))] w-[var(--popup-width,max-content)] max-w-(--available-width) flex-col overflow-clip p-0 [--shell-inner:max(0px,--theme(--radius-md)-0.25rem)] motion-reduce:h-auto motion-reduce:w-max",
     /** The positioner glides between chips on a trigger change. */
     positioner: "ease-out transition-[top,left] duration-100",
     /**

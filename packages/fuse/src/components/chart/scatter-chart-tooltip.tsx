@@ -189,7 +189,7 @@ export function ScatterChartTooltip({
             data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
-            className={tooltipPopupClass(variant, className)}
+            className={tooltipPopupClass(variant, "overlay", className)}
             style={style}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse") return;

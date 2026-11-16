@@ -22,7 +22,7 @@ import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayPositionerClass, overlayResizingPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { SelectRoot } from "../select/select";
 import {
@@ -154,7 +154,7 @@ export function DataTableFilterValueContent({
             className={mergeClassName(
               className,
               selfFocusRingClass,
-              overlayTimedPopupClass,
+              overlayResizingPopupClass,
               popoverShellClass,
               slots.content()
             )}

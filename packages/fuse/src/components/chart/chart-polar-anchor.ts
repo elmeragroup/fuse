@@ -76,6 +76,43 @@ function popupOf(positioner: HTMLElement | null): HTMLElement | null {
   return positioner?.querySelector<HTMLElement>('[data-slot="chart-tooltip"]') ?? null;
 }
 
+/**
+ * Applies a write to the popup's inline opacity at once. The helper reads the computed `opacity` to
+ * flush the style change. It then cancels any running CSS `opacity` transition, including an exit
+ * already heading to 0, so the next frame shows the written value. The popup's other transitions keep running, and the next change, such as the release of
+ * the inline value, transitions from the value written. Canceling the transition, instead of
+ * overriding the transition properties inline, keeps clear of the reduced-motion rule, which forces
+ * them with `!important`.
+ */
+function atOnce(popup: HTMLElement, write: () => void): void {
+  write();
+  // Reading the computed opacity flushes the style change and starts any transition it causes.
+  void getComputedStyle(popup).opacity;
+  for (const running of popup.getAnimations())
+    if (running instanceof CSSTransition && running.transitionProperty === "opacity") running.cancel();
+}
+
+/**
+ * Hands a lane fade that a close interrupts over to the popup's CSS exit, so the exit runs from the
+ * opacity the fade reached. Chromium starts no transition when a script cancels an animation in the
+ * same style change as the close, and canceling the fade first jumps the popup to full opacity. So
+ * the helper writes the fade's value inline at once, and clearing it lets the overlay's opacity
+ * transition run from there to the close's 0. In WebKit, a value written while its transition runs
+ * would transition from full opacity, and the exit would start there. A popup still in its placement
+ * hold was never shown, so it keeps the hold's inline 0.
+ */
+function handOver(fade: Animation, popup: HTMLElement | null): void {
+  if (popup === null || fade.playState !== "running" || popup.style.opacity !== "") {
+    fade.cancel();
+    return;
+  }
+  atOnce(popup, () => {
+    fade.commitStyles();
+    fade.cancel();
+  });
+  writeStyle(popup, "opacity", null);
+}
+
 /** One canvas the label measures share, made on first use. */
 let measuring: CanvasRenderingContext2D | null | undefined;
 
@@ -531,28 +568,11 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
   const placing = useRef<number | null>(null);
-  /** The popup and the opacity it showed when its item closed, read before the close commits. */
-  const closing = useRef<{ readonly popup: HTMLElement; readonly opacity: number } | null>(null);
   /**
    * The lane fade that runs, which a close, a new open or the next fade cancels: a script animation
    * composites above the popup's CSS exit and its hold, so it would run out its 120 ms over either.
    */
   const fade = useRef<Animation | null>(null);
-  // The popup's exit keyframes set only their end, so they start from its own opacity. A popup that
-  // closes mid-entrance would start its fade-out from full opacity; the opacity on screen when the
-  // store loses its item, before React commits the close, is written inline in the close instead.
-  useLayoutEffect(() => {
-    let last = kernel.store.get().active;
-    return kernel.store.subscribe(() => {
-      const now = kernel.store.get().active;
-      if (last !== null && now === null) {
-        const popup = popupOf(positioner.current);
-        closing.current =
-          popup?.style.opacity === "" ? { popup, opacity: Number(getComputedStyle(popup).opacity) } : null;
-      }
-      last = now;
-    });
-  }, [kernel.store, positioner]);
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
@@ -582,16 +602,13 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   }, [positioner, dialOf]);
   useLayoutEffect(() => {
     // A closing popup keeps its place, its width and its lane while it fades out, from the opacity it
-    // reached. The next open's hold overwrites that with 0, and its release clears it.
+    // reached. The overlay's opacity transition retargets from wherever an entrance has got to, so a
+    // close mid-entrance fades out from there on its own.
     if (angle === null) {
       before.current = null;
-      // The store read before the close includes the fade's value, so the exit runs from there.
-      fade.current?.cancel();
+      const running = fade.current;
       fade.current = null;
-      const reached = closing.current;
-      closing.current = null;
-      if (reached !== null && reached.opacity < 1)
-        writeStyle(reached.popup, "opacity", String(reached.opacity));
+      if (running !== null) handOver(running, popupOf(positioner.current));
       return;
     }
     // A change of lane fades the popup in where it rests, instead of carrying it across the dial, and
@@ -671,7 +688,9 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       if (placing.current !== null) cancelAnimationFrame(placing.current);
       fade.current?.cancel();
       fade.current = null;
-      writeStyle(popup, "opacity", "0");
+      // The hold writes 0 at once, so a reopen during the exit never carries a visible popup to its
+      // new lane. The release then fades it in through the overlay's opacity transition.
+      atOnce(popup, () => writeStyle(popup, "opacity", "0"));
       writeStyle(popup, "pointer-events", "none");
       let frames = 0;
       let survived = 0;

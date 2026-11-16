@@ -152,23 +152,48 @@ const overlayPopupVariants = tv({
     /** The popup edge: the `md` elevation rung plus the hairline ring. */
     edge: "shadow-md ring-1 ring-foreground/10",
     /**
-     * The anchored half of the popup motion: the transform origin Base UI publishes and
-     * the per-side slide-in. Only a popup that a trigger anchors takes it, through
-     * {@link overlayPopupMotionClass}.
+     * The anchored half of the popup motion: the transform origin Base UI publishes, and a 2-unit
+     * slide in from the side the trigger sits on. Only `data-starting-style` sets a slide offset, so a
+     * close after the entry finishes fades and zooms in place. Only a popup that a trigger
+     * anchors takes it, through {@link overlayPopupMotionClass}. That class composes it after the
+     * `zoom` slot, so its transition list, which adds `translate` to the pair's, wins the class
+     * merge. The slide and that list sit under `motion-safe:`, as the central reduced-motion rule in
+     * `styles/fuse.css` asks.
      */
     anchor:
-      "origin-(--transform-origin) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      "origin-(--transform-origin) motion-safe:transition-[opacity,scale,translate] motion-safe:data-starting-style:data-[side=bottom]:-translate-y-2 motion-safe:data-starting-style:data-[side=inline-end]:-translate-x-2 motion-safe:data-starting-style:data-[side=inline-start]:translate-x-2 motion-safe:data-starting-style:data-[side=left]:translate-x-2 motion-safe:data-starting-style:data-[side=right]:-translate-x-2 motion-safe:data-starting-style:data-[side=top]:translate-y-2",
     /**
-     * The fade and zoom pair on `data-open` and `data-closed` that the anchored popups and the
-     * modals share. Anchored popups take it with {@link overlayPopupMotionClass}, modals
-     * with {@link overlayModalPopupClass}.
+     * The opacity fade that {@link overlayPopupMotionClass}, {@link overlayModalPopupClass} and
+     * {@link overlayBackdropMotionClass} share. Base UI's `data-starting-style` and
+     * `data-ending-style` hold the part at 0, and a CSS transition eases it to rest and back. A
+     * transition starts from its current value, so a close during the open, or an open during the
+     * close, reverses instead of restarting. Base UI unmounts a closing part once its transitions
+     * finish. The list holds opacity alone at one duration, so under reduced motion the fade keeps
+     * its own timing. The backdrop takes the fade alone, through {@link overlayBackdropMotionClass},
+     * and the popups take it with `zoom`.
      */
-    fadeZoom:
-      "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+    fade: "transition-opacity ease-[ease] data-ending-style:opacity-0 data-starting-style:opacity-0",
     /**
-     * The shared popup timing rung. {@link overlayTimedPopupClass} folds it in for the four
-     * timed anchored popups, and {@link overlayModalPopupClass} folds it in for the modals.
-     * Tooltip ships motion untimed.
+     * The zoom from and to 95% that the anchored popups and the modals add to the fade, and the
+     * transition list that adds `scale` to it. Both sit under `motion-safe:`, so a reduced-motion
+     * user sees the fade alone. Anchored popups take the pair with {@link overlayPopupMotionClass},
+     * modals with {@link overlayModalPopupClass}.
+     */
+    zoom: "motion-safe:transition-[opacity,scale] motion-safe:data-ending-style:scale-95 motion-safe:data-starting-style:scale-95",
+    /**
+     * The anchored popup's transition list with `height` and `width` added, for a timed anchored
+     * popup that also morphs its size. {@link overlayResizingPopupClass} composes it after the
+     * `anchor` slot, so it replaces that slot's list in the class merge. It spells out the `anchor`
+     * list again because the Tailwind scanner only emits a class written literally. Change the two
+     * together. It sits under `motion-safe:` with the rest, so a reduced-motion user sees the size
+     * snap.
+     */
+    resize: "motion-safe:transition-[opacity,scale,translate,height,width]",
+    /**
+     * The shared popup timing rung. {@link overlayTimedPopupClass} folds it in for the timed
+     * anchored popups, {@link overlayModalPopupClass} for the modals and
+     * {@link overlayBackdropMotionClass} for the backdrop. Tooltip ships motion untimed, on
+     * Tailwind's default 150ms transition duration.
      */
     duration: "duration-100",
   },
@@ -184,21 +209,32 @@ export const overlayPositionerClass = overlayPopupSlots.positioner();
 export const overlayPopupFillClass = overlayPopupSlots.fill();
 export const overlayModalFillClass = overlayPopupSlots.modalFill();
 const overlayPopupEdgeClass = overlayPopupSlots.edge();
-const overlayPopupFadeZoomClass = overlayPopupSlots.fadeZoom();
+const overlayPopupFadeZoomClass = cn(overlayPopupSlots.fade(), overlayPopupSlots.zoom());
 const overlayPopupDurationClass = overlayPopupSlots.duration();
 
 /**
- * The open and close motion every anchored popup animates with: the anchor slot's transform origin
- * and per-side slide-in, and the fade and zoom pair. It leaves out the timing rung, because the four
- * timed anchored popups compose {@link overlayTimedPopupClass} and Tooltip ships the set untimed.
+ * The open and close transitions every anchored popup moves with: the fade and zoom pair, then the
+ * anchor slot's transform origin, per-side slide-in and the transition list that adds `translate`.
+ * It leaves out the timing rung, because the timed anchored popups compose
+ * {@link overlayTimedPopupClass} and Tooltip ships the set untimed.
+ *
+ * A later `motion-safe:transition-*` class replaces this set's motion-safe transition list in the
+ * class merge. A popup that transitions more properties takes a composite from this module that
+ * extends the list, such as {@link overlayResizingPopupClass}, instead of restating it.
  */
-export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPopupFadeZoomClass);
+export const overlayPopupMotionClass = cn(overlayPopupFadeZoomClass, overlayPopupSlots.anchor());
+
+/**
+ * The backdrop's motion, which is the shared fade at the popup timing rung. Dialog's scrim fades in
+ * with its popup and reverses with it.
+ */
+export const overlayBackdropMotionClass = cn(overlayPopupSlots.fade(), overlayPopupDurationClass);
 
 /**
  * The fill, the edge and the `md` radius rung, which make the whole surface of a popup on the
  * popover role. Dialog and `Command.Content` take it through {@link overlayModalPopupClass} and
  * raise the radius to `rounded-xl` in their shells, and Dialog then swaps the fill for
- * {@link overlayModalFillClass}. The four timed anchored popups, Popover, Select, Combobox and
+ * {@link overlayModalFillClass}. The timed anchored popups, Popover, Select, Combobox and
  * DropdownMenu, take it through {@link overlayTimedPopupClass}, and Select raises the radius to
  * `rounded-lg`. Each still overrides a rung through the extra `cn` argument instead of restating the
  * fill and ring.
@@ -215,11 +251,11 @@ export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPop
 export const overlayPopupSurfaceClass = cn(overlayPopupFillClass, overlayPopupEdgeClass, "rounded-md");
 
 /**
- * The surface, the motion and the duration, which the four timed anchored popups, Popover, Select,
+ * The surface, the motion and the duration, which the timed anchored popups, Popover, Select,
  * Combobox and DropdownMenu, compose instead of restating the three parts. Tooltip keeps
  * {@link overlayPopupMotionClass} untimed, and Dialog and `Command.Content` take
  * {@link overlayModalPopupClass}. None of them is a timed anchored popup, which is why the recipe
- * splits into the `fill`, `edge`, `anchor`, `fadeZoom` and `duration` slots.
+ * splits into the `fill`, `edge`, `fade`, `zoom`, `anchor` and `duration` slots.
  */
 export const overlayTimedPopupClass = cn(
   overlayPopupSurfaceClass,
@@ -228,8 +264,15 @@ export const overlayTimedPopupClass = cn(
 );
 
 /**
+ * The timed popup class for an anchored popup that also morphs its size, as the data table filter's
+ * menu and value popover do between steps. It is {@link overlayTimedPopupClass} with `height` and
+ * `width` added to the open and close transitions, under `motion-safe:` with the rest.
+ */
+export const overlayResizingPopupClass = cn(overlayTimedPopupClass, overlayPopupSlots.resize());
+
+/**
  * The face of the two modals, Dialog and `Command.Content`. It is the surface with the `lg`
- * elevation rung, the fade and zoom pair with its timing rung, {@link overlayLayer} and the self
+ * elevation rung, the fade and zoom transitions with their timing rung, {@link overlayLayer} and the self
  * focus ring. No trigger anchors a modal, so it leaves out the transform origin and the per-side
  * slide-ins of {@link overlayPopupMotionClass}. Each modal composes it first and passes its shell
  * and layout as later `cn` arguments, so the shell's `rounded-xl` overrides the surface's

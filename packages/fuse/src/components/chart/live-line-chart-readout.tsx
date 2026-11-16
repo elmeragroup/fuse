@@ -142,7 +142,7 @@ export function LiveLineChartTooltip({
           // into place on `data-open`. A key opens it at once, because keyboard actions never animate.
           data-open={openedBy === "keyboard" ? undefined : ""}
           data-side="bottom"
-          className={tooltipPopupClass(variant, className)}
+          className={tooltipPopupClass(variant, "entrance", className)}
           style={style}>
           <div data-slot="chart-tooltip-label">{liveTimeText(text, point.time, "full").text}</div>
           <div data-slot="chart-tooltip-items">

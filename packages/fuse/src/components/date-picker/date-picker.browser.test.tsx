@@ -21,7 +21,7 @@ import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
 import type { ParentHandle } from "../../../test/parent-handle";
 import { popupFocusRestored } from "../../../test/popup-focus";
-import { waitForPopupSettled } from "../../../test/popup-settled";
+import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
@@ -467,7 +467,7 @@ describe("DatePicker.TimeInput", () => {
         />
       )
     );
-    await waitForPopupSettled();
+    await waitForPopupFocus(await waitForPopupSettled());
     // Focus moves to the input without a press, which would close the popup.
     roleNamed("spinbutton", "hour, Starts").focus();
     await userEvent.keyboard("{ArrowUp}");
@@ -1484,7 +1484,7 @@ describe("DatePicker presets", () => {
 
     it("re-applies a checked preset by a pointer press after Space re-applied it", async () => {
       renderThemed(withLocale("en-US", <Rules paneKey="Payday" />));
-      await waitForPopupSettled();
+      await waitForPopupFocus(await waitForPopupSettled());
       roleNamed("radio", "Payday").focus();
       await userEvent.keyboard(" ");
       await userEvent.click(roleNamed("button", "Tuesday, October 13, 2026"));
@@ -1499,7 +1499,7 @@ describe("DatePicker presets", () => {
 
     it("applies a preset by Enter, unchecked or already checked", async () => {
       renderThemed(withLocale("en-US", <Rules />));
-      await waitForPopupSettled();
+      await waitForPopupFocus(await waitForPopupSettled());
       roleNamed("radio", "Halloween").focus();
       await userEvent.keyboard("{Enter}");
       await expect.poll(checkedPresets).toEqual(["Halloween"]);

@@ -66,21 +66,20 @@ export function tooltipInput(input: string | null): "touch" | undefined {
 }
 
 /**
- * The popup's classes: Fuse's overlay surface, shell and motion, then the chart popup's own look in
- * the variant, then the consumer's.
+ * The popup's classes: Fuse's overlay surface and shell, then the chart popup's own look in the
+ * variant and its motion, then the consumer's.
  *
  * @param variant - The popup's surface.
+ * @param motion - How the popup opens, as the recipe's `motion` axis describes.
  * @param className - The consumer's classes.
  * @returns The class list.
  */
-export function tooltipPopupClass(variant: "default" | "frosted", className: string | undefined): string {
-  return cn(
-    overlayPopupSurfaceClass,
-    tooltipShellClass,
-    overlayPopupMotionClass,
-    tooltipPopup({ variant }),
-    className
-  );
+export function tooltipPopupClass(
+  variant: "default" | "frosted",
+  motion: "overlay" | "entrance",
+  className: string | undefined
+): string {
+  return cn(overlayPopupSurfaceClass, tooltipShellClass, tooltipPopup({ variant, motion }), className);
 }
 
 /**
@@ -97,6 +96,15 @@ export function viewportSize(): PlaceSize {
  * through a translucent popover fill and blurs it. It sits on the utilities layer with the overlay
  * fill it replaces, so the class merge drops the opaque fill. A translucent fill keeps the surface
  * beneath it, so frosted glass also drops the popover `--surface` the overlay fill states.
+ *
+ * The `motion` axis sets how the popup opens:
+ *
+ * - `"overlay"` is for a Base UI popup. It takes Fuse's overlay transitions, which reverse when the
+ *   popup opens or closes partway through.
+ * - `"entrance"` is for the live readout, which mounts open and unmounts at once, so it has no close to
+ *   interrupt. It fades, zooms and drops in on mount, on `data-open`, as a keyframe animation. The
+ *   readout writes its own `translate` and `transform-origin` every frame and the keyframes move
+ *   `transform`, so the readout keeps pace with the crosshair while it enters.
  */
 const tooltipPopup = tv({
   // The chart popup has an 8 px radius and 8 px of block padding. It is never taller than the room
@@ -107,6 +115,11 @@ const tooltipPopup = tv({
       default: "",
       frosted:
         "supports-backdrop-filter:backdrop-blur-md bg-popover/70 [--surface-muted-foreground:inherit] [--surface:inherit]",
+    },
+    motion: {
+      overlay: overlayPopupMotionClass,
+      entrance:
+        "data-[side=bottom]:slide-in-from-top-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
     },
   },
 });

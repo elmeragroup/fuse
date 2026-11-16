@@ -171,7 +171,7 @@ function insetBox(style: CSSStyleDeclaration, side: CornerSide): InsetBox {
 
 /**
  * How much larger than its layout box `element` is drawn in the world: below 1 while an
- * ancestor's transform shrinks it, as a popup's opening keyframes do. Its box on screen holds
+ * ancestor's scale shrinks it, as a popup's opening zoom does. Its box on screen holds
  * both that transform and the camera's zoom.
  */
 function drawnScale(element: Element, rect: DOMRect, zoom: number): number {

@@ -8,6 +8,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
+import { waitForPopupSettled } from "../../../test/popup-settled";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Command } from "./index";
 
@@ -406,11 +407,14 @@ function ResetOnOpenPalette(): ReactElement {
 }
 
 /**
- * Opens the palette with `reopen` while its close animation runs. The close ends when the popup's
- * animations finish, so they are paused at their first moment, in the microtask after the commit
- * that marks the popup ending, before any frame can advance them. Paused at `animationstart`, a
- * runner that stalls longer than the animation between its start and that event's dispatch would
- * already have finished it, so the reopening would land after the close.
+ * Opens the palette with `reopen` while its close animation runs. The helper first waits for Base UI
+ * to remove `data-starting-style` and for the opening transitions to finish. A close starts from the
+ * popup's current opacity and scale, so a close before the opening has advanced has no change to
+ * animate and ends at once. The close ends when the popup's animations finish, so the helper pauses them
+ * at their first moment. It does so in the microtask after the commit that marks the popup ending,
+ * before any frame can advance them. A pause at `transitionstart` would come too late on a runner
+ * that stalls longer than the animation before that event fires, and the reopening would land after
+ * the close.
  */
 async function interruptClose(reopen: () => Promise<void> | void): Promise<void> {
   const closing = roleNamed("dialog", "Command palette");
@@ -425,6 +429,7 @@ async function interruptClose(reopen: () => Promise<void> | void): Promise<void>
     });
     observer.observe(closing, { attributes: true, attributeFilter: ["data-ending-style"] });
   });
+  await waitForPopupSettled();
   await userEvent.keyboard("{Escape}");
   const animations = await held;
   // The close waits on an animation the pause holds, so it cannot end before the reopening.

@@ -3,6 +3,7 @@ import { dialogShellClass } from "../../styles/inner-corner/dialog";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
+  overlayBackdropMotionClass,
   overlayFooterClass,
   overlayLayer,
   overlayModalFillClass,
@@ -40,9 +41,9 @@ export const dialogContentVariants = tv({
  * `@elmeragroup/fuse/dialog`, and the workspace-only recipe catalog re-exports it for the Figma
  * component sync.
  *
- * - `overlay` is the scrim over the viewport, fading in and out with the popup on the overlay
- *   layer. `backdropBlur` takes the shared scrim's blur axis, so Dialog and Sheet drop the same
- *   class.
+ * - `overlay` is the scrim over the viewport on the overlay layer. It fades in and out with the
+ *   popup's fade and timing, and reverses with it when the dialog is opened or closed mid-fade.
+ *   `backdropBlur` takes the shared scrim's blur axis, so Dialog and Sheet drop the same class.
  * - `header` stacks the title and description 8px apart.
  * - `footer` is the shared overlay footer: actions stacked, reversed, then in an end-aligned row
  *   from `sm`.
@@ -52,10 +53,7 @@ export const dialogContentVariants = tv({
  */
 export const dialogVariants = tv({
   slots: {
-    overlay: [
-      "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-      overlayLayer,
-    ],
+    overlay: [overlayBackdropMotionClass, "fixed inset-0 isolate", overlayLayer],
     header: "flex flex-col gap-2",
     footer: overlayFooterClass,
     title: overlayTitleClass,
