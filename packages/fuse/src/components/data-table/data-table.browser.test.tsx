@@ -1201,12 +1201,12 @@ describe("DataTable column resizing", () => {
     expect(sortings).toEqual([[{ id: "subject", desc: false }]]);
   });
 
-  // Oracle: a key chord with Alt, Control or Meta belongs to the browser, as in the Calendar's matching test.
+  // Oracle: a key chord with Alt, Control or Meta belongs to the browser, as in the Calendar's matching
+  // test. One case per modifier: the handle checks them before it reads the key.
   it.each([
     ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
     ["Control+Arrow Right", { key: "ArrowRight", ctrlKey: true }],
     ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
-    ["Control+Home", { key: "Home", ctrlKey: true }],
   ] as const)("leaves %s to the browser: no resize, no preventDefault", async (_keys, init) => {
     const { sizings } = await renderTickets();
     const subject = handle("Subject");
@@ -1217,12 +1217,10 @@ describe("DataTable column resizing", () => {
     expect(sizings).toEqual([]);
   });
 
-  // Oracle: CSS clipping, which the header cells of the same table already apply.
-  it.each([
-    ["registered", () => <ResizableTicketTable />],
-    ["plain-parts", () => <PlainResizableTicketTable />],
-  ] as const)("clips a %s body cell wider than its column with an ellipsis", async (_parts, render) => {
-    renderInEnglish(render());
+  // Oracle: CSS clipping, which the header cells of the same table already apply. `table.Content`
+  // renders the same `<colgroup>` through the same header rows, so the plain parts cover it too.
+  it("clips a plain-parts body cell wider than its column with an ellipsis", async () => {
+    renderInEnglish(<PlainResizableTicketTable />);
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
     handle("Status").focus();
     await userEvent.keyboard("{Home}");

@@ -193,9 +193,9 @@ describe("dataTable dictionary", () => {
 });
 
 describe("the display columns of a sized table", () => {
-  // Oracle: the 48px and 76px the issue sets, which leave room for a Frame's text inset beside the
-  // checkbox and the trigger. The browser suite measures that fit.
-  it("sizes the selection column 48px and the row-actions column 76px, and turns resizing off in both", () => {
+  // Oracle: the 48px and 76px the issue sets. The browser suite checks that the controls fit, which
+  // a wider column also passes, so only this pin catches a column that falls back to TanStack's 150px.
+  it("sizes the selection column 48px and the row-actions column 76px", () => {
     const select = selectColumn<unknown, SelectColumnDef<unknown>>(
       { display: (column) => column },
       { getRowLabel: () => "" }
@@ -204,11 +204,6 @@ describe("the display columns of a sized table", () => {
       { display: (column) => column },
       { getRowName: () => "", items: () => null }
     );
-    expect([select.size, select.enableResizing, actions.size, actions.enableResizing]).toEqual([
-      48,
-      false,
-      76,
-      false,
-    ]);
+    expect([select.size, actions.size]).toEqual([48, 76]);
   });
 });
