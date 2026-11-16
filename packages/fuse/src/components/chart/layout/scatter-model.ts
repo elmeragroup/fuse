@@ -42,9 +42,26 @@ export type ScatterSeries = {
   readonly rows: Uint32Array;
 };
 
+/** The data rules only the scatter model reports. */
+export type ScatterDataRule = "non-finite-x" | "non-finite-y" | "unknown-series";
+
+/**
+ * What each scatter data rule says after the part, ending with the production fallback. The
+ * messages live beside the rules rather than in `DATA_MESSAGES`, so a cartesian route ships none
+ * of them.
+ */
+export const SCATTER_DATA_MESSAGES = {
+  "non-finite-x":
+    "received an x cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
+  "non-finite-y":
+    "received a y cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
+  "unknown-series":
+    "received a series cell that names no config key. Add the value to config, or pass one of its keys. Production skips the row.",
+} as const satisfies { readonly [R in ScatterDataRule]: string };
+
 /** A row the model skipped, with the column that broke the rule. */
 export type ScatterIssue = {
-  readonly rule: "non-finite-x" | "non-finite-y" | "unknown-series";
+  readonly rule: ScatterDataRule;
   readonly row: number;
   /** The column the rule is about. */
   readonly subject: string;

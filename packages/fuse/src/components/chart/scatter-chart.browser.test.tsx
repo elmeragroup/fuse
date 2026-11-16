@@ -15,7 +15,7 @@ import { CaughtError, caughtError } from "../../../test/caught-error";
 import { popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { ChartConfig } from "./chart-types";
+import type { ChartConfig, ChartStyle } from "./chart-types";
 import "./chart.css";
 import { ScatterChart } from "./scatter-chart-namespace";
 
@@ -39,9 +39,12 @@ const ROWS: readonly Row[] = [
 /** A scatter chart with no axes, so its plot is the whole 200 by 140 px frame, and no entrance. */
 function Scatter({
   data = ROWS,
+  style,
   children,
 }: {
   readonly data?: readonly Row[];
+  /** Root's custom properties beside the plot height. */
+  readonly style?: ChartStyle;
   readonly children: ReactNode;
 }): ReactNode {
   return (
@@ -59,7 +62,7 @@ function Scatter({
           yLabel="Forbruk"
           data-intro="none"
           aria-label="Forbruk mot temperatur"
-          style={{ "--chart-plot-height": "140px" }}>
+          style={{ "--chart-plot-height": "140px", ...style }}>
           {children}
         </ScatterChart.Root>
       </div>
@@ -107,6 +110,35 @@ describe("ScatterChart Root", () => {
     expect(caughtError().name).toBe("ChartDataError");
     expect(caughtError().message).toContain('Row 6 of "t"');
   });
+
+  // Oracle: the documented `--chart-quiet-opacity` default, 0.45, and the value a consumer sets on Root.
+  it.each<{ readonly style: ChartStyle; readonly opacity: string }>([
+    { style: {}, opacity: "0.45" },
+    { style: { "--chart-quiet-opacity": 0.3 }, opacity: "0.3" },
+  ])(
+    "paints quiet points and their swatch at --chart-quiet-opacity, $opacity",
+    async ({ style, opacity }) => {
+      const { host } = renderThemed(
+        <Scatter style={style}>
+          <ScatterChart.Points dataKey="normal" variant="quiet" />
+          <ScatterChart.Legend>
+            <ScatterChart.LegendItem dataKey="normal" />
+          </ScatterChart.Legend>
+        </Scatter>
+      );
+      await expect
+        .poll(() => {
+          // The points and the swatch are aria-hidden decoration, so their slots are the only locators.
+          const points = host.querySelector('[data-slot="chart-points-path"]');
+          const swatch = host.querySelector('[data-slot="chart-swatch"][data-look="quiet"]');
+          return {
+            points: points === null ? null : getComputedStyle(points).strokeOpacity,
+            swatch: swatch === null ? null : getComputedStyle(swatch).opacity,
+          };
+        })
+        .toEqual({ points: opacity, swatch: opacity });
+    }
+  );
 
   it("skips a row with a null x or y quietly", async () => {
     const { host } = renderThemed(

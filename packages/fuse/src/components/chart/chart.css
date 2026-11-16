@@ -3945,20 +3945,22 @@
   }
 
   [data-slot="chart-points"][data-variant="quiet"] [data-slot="chart-points-path"] {
-    stroke-opacity: 0.45;
+    stroke-opacity: var(--chart-quiet-opacity);
   }
 
   /*
     A scatter's ring circles the active point and leaves it showing, so its hole is empty. It is
-    no ring fill: --chart-ring-fill is a radial ring's stroke over its band (#451 item 4).
+    no ring fill: --chart-ring-fill is a radial ring's stroke over its band (#451 item 4). Its quiet
+    points and their legend swatches share one opacity, which a consumer may set on Root.
   */
   [data-slot="chart"][data-chart="scatter"] {
     --_ring-hole: none;
+    --chart-quiet-opacity: 0.45;
   }
 
   /* A legend swatch wears the quiet look its series' points or line draw in. */
   [data-slot="chart-swatch"][data-look="quiet"] {
-    opacity: 0.45;
+    opacity: var(--chart-quiet-opacity);
   }
 
   [data-slot="chart-active-dot"] {

@@ -29,10 +29,10 @@ import type {
 import { CHART_STRINGS } from "./format/chart-strings";
 import { createDomainGlide } from "./layout/domain-glide";
 import type { ScatterDomains } from "./layout/domain-glide";
-import { ChartDataError, dataMessage, isChartDevelopment, issueGroups, issueKey } from "./layout/errors";
+import { ChartDataError, isChartDevelopment, issueGroups, issueKey, issueMessage } from "./layout/errors";
 import { sameItems } from "./layout/same-items";
-import { buildScatterModel } from "./layout/scatter-model";
-import type { ScatterModel } from "./layout/scatter-model";
+import { SCATTER_DATA_MESSAGES, buildScatterModel } from "./layout/scatter-model";
+import type { ScatterIssue, ScatterModel } from "./layout/scatter-model";
 import { createScatterMarks } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { createScatterStore } from "./scatter-chart-store";
@@ -132,6 +132,11 @@ const GLIDE_LIMIT = 5_000;
 /** A scatter issue names its own row, so no slot maps to one. */
 const NO_SLOT_ROWS: readonly number[] = [];
 
+/** What a scatter issue says after the part, through its rule's message in `SCATTER_DATA_MESSAGES`. */
+function scatterMessage(issue: ScatterIssue, count?: number): string {
+  return issueMessage(SCATTER_DATA_MESSAGES[issue.rule], issue, NO_SLOT_ROWS, count);
+}
+
 /** The model Root draws and whether the data update that brought it glides the domains to fit. */
 type TakenModel = { readonly model: ScatterModel; readonly glides: boolean };
 
@@ -203,7 +208,7 @@ export function ScatterChartRoot<
   );
   const firstIssue = model.issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("ScatterChart.Root", firstIssue.rule, dataMessage(firstIssue, NO_SLOT_ROWS));
+    throw new ChartDataError("ScatterChart.Root", firstIssue.rule, scatterMessage(firstIssue));
   }
   const warned = useRef(new Set<string>());
   useEffect(() => {
@@ -211,7 +216,7 @@ export function ScatterChartRoot<
       const key = issueKey(rule, subject);
       if (warned.current.has(key)) continue;
       warned.current.add(key);
-      console.warn(`ScatterChart.Root ${dataMessage(first, NO_SLOT_ROWS, count)}`);
+      console.warn(`ScatterChart.Root ${scatterMessage(first, count)}`);
     }
   }, [model.issues]);
 

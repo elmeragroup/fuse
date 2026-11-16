@@ -9,6 +9,7 @@ import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-ta
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
+import { POINT_WORDS } from "./format/point-words";
 import { useLiveRoot, useShownFeed } from "./live-line-chart-context";
 import { latestWindow, liveName, liveTimeText, liveValueText } from "./live-line-chart-text";
 
@@ -96,7 +97,8 @@ export function LiveLineChartTable({
       className={className}
       style={style}
       caption={
-        caption ?? [context.name, countOf(text.locale, count, strings.points)].filter(Boolean).join(", ")
+        caption ??
+        [context.name, countOf(text.locale, count, POINT_WORDS[text.locale])].filter(Boolean).join(", ")
       }
       head={
         <>

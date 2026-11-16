@@ -758,6 +758,7 @@ export type ChartStyleVars = {
     "--chart-crosshair-width"?: string;
     "--chart-area-opacity"?: number | string;
     "--chart-hover-dim"?: number | string;
+    "--chart-quiet-opacity"?: number | string;
     "--chart-ring-fill"?: number | string;
     "--chart-slice-seam"?: string;
     "--chart-slice-pop"?: string;

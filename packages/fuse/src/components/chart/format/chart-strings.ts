@@ -1,6 +1,7 @@
 /**
  * The chart dictionary, in four locales. An explicit prop replaces its string verbatim. The module
- * calls no hook, so a server component reads it too.
+ * calls no hook, so a server component reads it too. The polar and scatter families keep their own
+ * words in `polar-strings.ts` and `scatter-strings.ts`.
  */
 import type { Inflected } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
@@ -79,16 +80,6 @@ export type ChartStrings = {
   readonly descriptionProjection: (label: string, from: string) => string;
   /** The interval's slot words, counted. */
   readonly slots: { readonly [I in Interval | "category"]: Inflected };
-  /** A scatter chart's point word, counted. */
-  readonly points: Inflected;
-  /** A scatter series' sentence: its label, its point count and its x and y ranges. */
-  readonly scatterSeries: (label: string, count: string, x: string, y: string) => string;
-  /** The x values' name in a scatter readout when Root has no `xLabel`. */
-  readonly xValue: string;
-  /** The y values' name in a scatter readout when Root has no `yLabel`. */
-  readonly yValue: string;
-  /** The series column's header in a scatter table. */
-  readonly seriesHeader: string;
   /** The keyboard instructions of a live line chart. */
   readonly instructionsLive: string;
   /** The value's name in a live line chart's readout when Root has no `label`. */
@@ -162,11 +153,6 @@ const NB_NO: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
-  points: { one: "punkt", other: "punkter" },
-  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
-  xValue: "x-verdi",
-  yValue: "y-verdi",
-  seriesHeader: "Serie",
   instructionsLive: "Bruk venstre og høyre pil for å gå mellom målingene, og End for å gå til den siste.",
   liveValue: "Verdi",
   liveLatest: (value, at) => `Siste verdi ${value} ${at}.`,
@@ -237,11 +223,6 @@ const SV_SE: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
-  points: { one: "punkt", other: "punkter" },
-  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
-  xValue: "x-värde",
-  yValue: "y-värde",
-  seriesHeader: "Serie",
   instructionsLive:
     "Använd vänster- och högerpil för att gå mellan mätningarna, och End för att gå till den senaste.",
   liveValue: "Värde",
@@ -313,11 +294,6 @@ const FI_FI: ChartStrings = {
     year: { one: "vuosi", other: "vuotta" },
     category: { one: "luokka", other: "luokkaa" },
   },
-  points: { one: "piste", other: "pistettä" },
-  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
-  xValue: "x-arvo",
-  yValue: "y-arvo",
-  seriesHeader: "Sarja",
   instructionsLive:
     "Siirry mittausten välillä vasemmalla ja oikealla nuolella ja viimeisimpään End-näppäimellä.",
   liveValue: "Arvo",
@@ -389,11 +365,6 @@ const EN_US: ChartStrings = {
     year: { one: "year", other: "years" },
     category: { one: "category", other: "categories" },
   },
-  points: { one: "point", other: "points" },
-  scatterSeries: (label, count, x, y) => `${label}: ${count}, ${x}, ${y}.`,
-  xValue: "x value",
-  yValue: "y value",
-  seriesHeader: "Series",
   instructionsLive: "Use the left and right arrows to move between readings, and End to go to the latest.",
   liveValue: "Value",
   liveLatest: (value, at) => `Latest value ${value} ${at}.`,
