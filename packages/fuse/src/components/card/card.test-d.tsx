@@ -54,3 +54,11 @@ test("cardVariants is public and slotted with direction and size axes, and parts
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Card.Root as="section" />;
 });
+
+test("Card.Root and its div parts take a div ref, so a hook's ref callback attaches to the card", () => {
+  const ref = (_element: HTMLDivElement | null) => undefined;
+  const _root = <Card.Root ref={ref} />;
+  const _content = <Card.Content ref={ref} />;
+  // @ts-expect-error the ref is the card's div, not another element
+  const _wrongElement = <Card.Root ref={(_element: HTMLButtonElement | null) => undefined} />;
+});
