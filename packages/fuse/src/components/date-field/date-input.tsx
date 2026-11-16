@@ -19,6 +19,7 @@ import { draftOf, editableSegments, placeholderValue } from "./date-draft";
 import { dayPeriodNames, fieldSegments, resolveHourCycle } from "./date-field-format";
 import type { FieldFormat } from "./date-field-format";
 import { readFieldText } from "./date-field-text";
+import { DateInputBoundaryContext } from "./date-input-boundary";
 import { DateInputRootContext } from "./date-input-context";
 import type { DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
@@ -114,6 +115,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const strings = useLocalizedStrings(dateFieldStrings);
   const ios = useIsIOS();
   const neighbor = use(DateInputNeighborContext);
+  const boundary = use(DateInputBoundaryContext);
   const inputScope = use(DateInputScopeContext);
   const scope = inputScope.units;
   const controlled = valueProp !== undefined;
@@ -254,6 +256,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     rules,
     onValueChange,
     neighbor,
+    boundary,
     rootRef,
     defaultValue: parsedDefault,
     field,

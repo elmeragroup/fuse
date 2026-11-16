@@ -24,6 +24,7 @@ import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { createCalendarStore } from "../calendar/calendar-store";
 import type { CalendarStore } from "../calendar/calendar-store";
 import type { EditableSegmentType } from "./date-draft";
+import type { DateInputBoundary } from "./date-input-boundary";
 import type { DateInputValueChangeEventDetails } from "./date-input-change-details";
 import type { DateInputActions } from "./date-input-context";
 import type { DateInputField } from "./date-input-field";
@@ -116,6 +117,8 @@ export type SessionActionsOptions<T extends DateInputValue> = {
   readonly onValueChange: ((value: T | null, details: DateInputValueChangeEventDetails) => void) | undefined;
   /** Returns the surrounding control's adjacent input, for focus past the first or last segment. */
   readonly neighbor: DateInputNeighbor | undefined;
+  /** The surrounding control's widened focus boundary, if any; see `date-input-boundary.ts`. */
+  readonly boundary: DateInputBoundary | undefined;
   /** The Root element. */
   readonly rootRef: RefObject<HTMLElement | null>;
   /** The input's own value a native form reset restores. */
@@ -160,7 +163,7 @@ export function useSessionActions<T extends DateInputValue>(
   store: CalendarStore<SessionState>,
   options: SessionActionsOptions<T>
 ): SessionActions {
-  const { basis, settings, rootRef, defaultValue, field } = options;
+  const { basis, settings, boundary, rootRef, defaultValue, field } = options;
   const { revalidate } = field;
 
   // A new committed value, hour cycle or set of segments drops any draft typed over the old ones,
@@ -259,11 +262,41 @@ export function useSessionActions<T extends DateInputValue>(
     [store, run, rootRef]
   );
 
+  // Leaving the group confirms what the user typed, then the Field validates it.
+  const endSession = useCallback(
+    (event: Event): void => {
+      run(confirm(store.get(), eventProps.current.settings), event, undefined);
+      eventProps.current.field.blurred(store.get().edited);
+    },
+    [store, run]
+  );
+  // Whether focus left the group for a node inside the surrounding control's boundary, so the blur
+  // waits for the control's `leave`.
+  const away = useRef(false);
+  useLayoutEffect(
+    () =>
+      boundary?.register({
+        element: () => rootRef.current,
+        leave(event) {
+          if (away.current) {
+            away.current = false;
+            endSession(event);
+          }
+        },
+      }),
+    [boundary, rootRef, endSession]
+  );
+
   // Focus that enters the group starts a session. Focus that leaves it confirms what the user typed
-  // before the Field validates it. Focus that moves between the group's segments does neither.
+  // before the Field validates it. Focus that moves between the group's segments, or to or from a
+  // node inside the control's boundary, does neither.
   const rootHandlers: SessionRootHandlers = {
     onFocus(event) {
       if (staysInside(event)) {
+        return;
+      }
+      if (away.current) {
+        away.current = false;
         return;
       }
       store.set(focusEntered(store.get()));
@@ -273,8 +306,12 @@ export function useSessionActions<T extends DateInputValue>(
       if (staysInside(event)) {
         return;
       }
-      run(confirm(store.get(), eventProps.current.settings), event.nativeEvent, undefined);
-      field.blurred(store.get().edited);
+      const next = event.relatedTarget;
+      if (isNode(next) && eventProps.current.boundary?.contains(next) === true) {
+        away.current = true;
+        return;
+      }
+      endSession(event.nativeEvent);
     },
     onPaste(event) {
       event.preventDefault();

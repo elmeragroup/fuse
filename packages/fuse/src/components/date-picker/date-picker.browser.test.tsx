@@ -1511,6 +1511,34 @@ describe("DatePicker focus boundary", () => {
       expect(leaves).toBe(leavesAfterTab);
     }
   );
+
+  it("validates a draft once focus leaves the popup and shows a wrapper only real blurs", async () => {
+    const focused: EventTarget[] = [];
+    const blurred: EventTarget[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <div onFocus={(event) => focused.push(event.target)} onBlur={(event) => blurred.push(event.target)}>
+            <DatePickerField label="Start date" />
+          </div>
+          <button type="button">After</button>
+        </>
+      )
+    );
+    const month = roleNamed("spinbutton", "month, Start date");
+    await userEvent.click(month);
+    await userEvent.keyboard("10{Alt>}{ArrowDown}{/Alt}");
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await expect.poll(() => page.getByRole("dialog").element().contains(document.activeElement)).toBe(true);
+    expect(page.getByText(/The field is incomplete/u).query()).toBeNull();
+
+    await userEvent.click(roleNamed("button", "After"));
+    await expect.element(page.getByText(/The field is incomplete/u)).toBeVisible();
+    // Every blur the wrapper sees is of the element that last took focus inside it.
+    expect(focused[0]).toBe(month);
+    expect(blurred).toEqual(focused);
+  });
 });
 
 describe("DatePicker composition", () => {

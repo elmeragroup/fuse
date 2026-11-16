@@ -2,23 +2,16 @@
 
 // A picker's focus boundary: its inputs and its popup are one place for focus. Two jobs live here,
 // each its own hook: where focus returns when the popup closes (`usePickerOpener`), and when focus
-// leaves the picker (`usePickerFocusBoundary`), which defers an input's blur while focus is in the
-// popup and reports the leave to the Root.
+// leaves the picker (`usePickerFocusBoundary`), which ends the blur an input defers while focus is
+// in the popup and reports the leave to the Root.
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { FocusEvent, RefObject } from "react";
 
 import { documentOrder, isElement, isHTMLElement, isNode, rootNodeChain } from "../../internal/dom-node";
+import type { DateInputBoundary, DateInputBoundaryMember } from "../date-field/date-input-boundary";
 import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
 import type { PickerOpenRequest } from "./picker-change-details";
-
-/** One input's focus boundary inside a picker. */
-export type PickerInputBoundary = {
-  /** The input's element. */
-  readonly element: () => HTMLElement | null;
-  /** Delivers the input's deferred blur, if one is pending, toward `next`. */
-  readonly flush: (next: Element | null) => void;
-};
 
 /**
  * Whether focus lands on one of Base UI's focus guards: the tabbable spans a non-modal popup
@@ -42,24 +35,6 @@ function isFocusLeavingPicker(event: FocusEvent<HTMLElement>, popup: HTMLElement
     return !isFocusGuard(next) && !event.currentTarget.contains(next) && popup?.contains(next) !== true;
   }
   return !(isElement(event.target) && event.target.closest('[data-slot="date-picker-popup"]') !== null);
-}
-
-/**
- * The `focusout` events an input dispatches to deliver its deferred blur to DateInput. They are the
- * input's validation, not focus leaving the picker, so the Root's boundary ignores them: the one
- * real blur that moved focus already told it.
- */
-const internalFocusouts = new WeakSet<Event>();
-
-/**
- * Marks a `focusout` as an input's deferred validation delivery.
- *
- * @param event - The event about to be dispatched.
- * @returns The event.
- */
-export function markInternalFocusout<E extends Event>(event: E): E {
-  internalFocusouts.add(event);
-  return event;
 }
 
 /** What `usePickerOpener` gives a Root. */
@@ -112,12 +87,8 @@ export function usePickerOpener(containsInput: (node: Node) => boolean, open: bo
 
 /** What `usePickerFocusBoundary` gives a Root. */
 export type PickerFocusBoundary = {
-  /**
-   * Registers an input's focus boundary and returns its unregistration. Focus moving from the input
-   * into the popup is no blur of the input; `flush` hands the input its deferred blur once focus
-   * lands outside it and the popup.
-   */
-  readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
+  /** The inputs' focus boundary. It contains the popup, and each input registers with it. */
+  readonly inputBoundary: DateInputBoundary;
   /** Whether a node is inside one of the registered inputs. */
   readonly containsInput: (node: Node) => boolean;
   /** The registered input beside an input's element in document order, which focus crosses to. */
@@ -130,53 +101,61 @@ export type PickerFocusBoundary = {
 
 /**
  * When focus leaves the picker. An input whose focus moves into the popup defers its blur, and so
- * its Field validation. The Root delivers it once focus lands anywhere outside that input and the
- * popup, such as the trigger, another input or out of the picker, and calls `onFocusLeave` when focus
- * leaves the group and the popup together. Focus passing through one of Base UI's focus guards is
- * neither: where it lands next decides.
+ * its Field validation; see `date-input-boundary.ts`. The Root calls the input's `leave` once focus
+ * lands anywhere outside that input and the popup, such as the trigger, another input or out of the
+ * picker. It calls `onFocusLeave` when focus leaves the group and the popup together. Focus that
+ * passes through one of Base UI's focus guards triggers neither call. The hook waits for the next
+ * focus target before calling `leave` or `onFocusLeave`.
  *
  * @param popupRef - The popup element.
  * @param onFocusLeave - The Root's `onFocusLeave`, called with the `blur` that started the leave.
- * @returns The registration and the Root's handlers.
+ * @returns The inputs' boundary and the Root's handlers.
  */
 export function usePickerFocusBoundary(
   popupRef: RefObject<HTMLElement | null>,
   onFocusLeave: ((event: FocusEvent<Element>) => void) | undefined
 ): PickerFocusBoundary {
-  const boundaries = useRef(new Set<PickerInputBoundary>());
+  const inputs = useRef(new Set<DateInputBoundaryMember>());
   const handled = useRef(new WeakSet<Event>());
   const containsInput = useCallback(
-    (node: Node) => [...boundaries.current].some((boundary) => boundary.element()?.contains(node) === true),
+    (node: Node) => [...inputs.current].some((input) => input.element()?.contains(node) === true),
     []
   );
   const adjacentInput = useCallback<DateInputNeighbor>((element, direction) => {
-    const elements = [...boundaries.current]
-      .flatMap((boundary) => {
-        const input = boundary.element();
-        return input === null ? [] : [input];
+    const elements = [...inputs.current]
+      .flatMap((input) => {
+        const root = input.element();
+        return root === null ? [] : [root];
       })
       .sort(documentOrder);
     const index = elements.indexOf(element);
     return index < 0 ? null : (elements[index + (direction === "next" ? 1 : -1)] ?? null);
   }, []);
-  const registerInputBoundary = useCallback((boundary: PickerInputBoundary) => {
-    boundaries.current.add(boundary);
+  const inPopup = useCallback((node: Node) => popupRef.current?.contains(node) === true, [popupRef]);
+  const register = useCallback((input: DateInputBoundaryMember) => {
+    inputs.current.add(input);
     return () => {
-      boundaries.current.delete(boundary);
+      inputs.current.delete(input);
     };
   }, []);
-  const flushOutside = useCallback(
-    (next: Element | null) => {
-      if (next !== null && (isFocusGuard(next) || popupRef.current?.contains(next) === true)) {
+  const inputBoundary = useMemo(
+    (): DateInputBoundary => ({ contains: inPopup, register }),
+    [inPopup, register]
+  );
+  // Runs the deferred blur of each input that focus has landed outside of, and passes the event that
+  // moved focus there.
+  const leaveOutside = useCallback(
+    (next: Element | null, event: Event) => {
+      if (next !== null && (isFocusGuard(next) || inPopup(next))) {
         return;
       }
-      for (const boundary of boundaries.current) {
-        if (next === null || boundary.element()?.contains(next) !== true) {
-          boundary.flush(next);
+      for (const input of inputs.current) {
+        if (next === null || input.element()?.contains(next) !== true) {
+          input.leave(event);
         }
       }
     },
-    [popupRef]
+    [inPopup]
   );
   // Focus on a guard is in transit: where it lands next decides. Base UI may unmount the guard with
   // the popup before it blurs, so the landing is read from the next `focusin`; a blur the Root sees
@@ -187,15 +166,16 @@ export function usePickerFocusBoundary(
   useEffect(() => () => settleTransit.current?.(), []);
   function awaitTransit(event: FocusEvent<HTMLElement>): void {
     const root = event.currentTarget;
-    const landed = (target: EventTarget | null): void => {
+    const landed = (focus: Event): void => {
+      const { target } = focus;
       if (isNode(target) && isFocusGuard(target)) {
         return;
       }
       settle();
-      if (isNode(target) && (root.contains(target) || popupRef.current?.contains(target) === true)) {
+      if (isNode(target) && (root.contains(target) || inPopup(target))) {
         return;
       }
-      flushOutside(isElement(target) ? target : null);
+      leaveOutside(isElement(target) ? target : null, focus);
       onFocusLeave?.(event);
     };
     // A listener on a root node sees a focus inside a shadow root it hosts as a focus on the host,
@@ -206,7 +186,7 @@ export function usePickerFocusBoundary(
         if (innerHost !== undefined && focus.composedPath().includes(innerHost)) {
           return;
         }
-        landed(focus.target);
+        landed(focus);
       };
       boundary.addEventListener("focusin", listener, true);
       return () => boundary.removeEventListener("focusin", listener, true);
@@ -220,19 +200,19 @@ export function usePickerFocusBoundary(
     settleTransit.current = settle;
   }
   return {
-    registerInputBoundary,
+    inputBoundary,
     containsInput,
     adjacentInput,
     onFocus(event) {
       settleTransit.current?.();
       if (isElement(event.target)) {
-        flushOutside(event.target);
+        leaveOutside(event.target, event.nativeEvent);
       }
     },
     onBlur(event) {
       // A popup portaled into a container inside the app's root reaches React through both
       // containers' listeners, so one native blur can arrive twice; it counts once.
-      if (internalFocusouts.has(event.nativeEvent) || handled.current.has(event.nativeEvent)) {
+      if (handled.current.has(event.nativeEvent)) {
         return;
       }
       handled.current.add(event.nativeEvent);
@@ -244,11 +224,11 @@ export function usePickerFocusBoundary(
         return;
       }
       if (isElement(next) && !event.currentTarget.contains(next)) {
-        flushOutside(next);
+        leaveOutside(next, event.nativeEvent);
       }
       if (onFocusLeave !== undefined && isFocusLeavingPicker(event, popupRef.current)) {
         if (!isNode(next)) {
-          flushOutside(null);
+          leaveOutside(null, event.nativeEvent);
         }
         onFocusLeave(event);
       }

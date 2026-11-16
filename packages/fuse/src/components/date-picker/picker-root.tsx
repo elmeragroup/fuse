@@ -255,7 +255,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const triggerId = useId();
   const popupRef = useRef<HTMLDivElement>(null);
   const focus = usePickerFocusBoundary(popupRef, props.onFocusLeave);
-  const { registerInputBoundary, containsInput, adjacentInput } = focus;
+  const { inputBoundary, containsInput, adjacentInput } = focus;
   const { withOpener, openerRef } = usePickerOpener(containsInput, open);
   const requestOpen = useMemo(() => withOpener(session.requestOpen), [withOpener, session.requestOpen]);
 
@@ -336,7 +336,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       registerPresets,
       readPreset,
       range,
-      registerInputBoundary,
+      inputBoundary,
       containsInput,
       adjacentInput,
       openerRef,
@@ -355,7 +355,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       registerPresets,
       readPreset,
       range,
-      registerInputBoundary,
+      inputBoundary,
       containsInput,
       adjacentInput,
       openerRef,
