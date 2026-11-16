@@ -2,8 +2,7 @@
  * The filter's DOM focus algorithms, which read and move focus by what the browser reports, in
  * shadow roots and same-origin frames too. The Root decides when they run.
  */
-import { activeElementFrom, hasFocus } from "../../internal/active-element";
-import { containsAcrossShadowRoots } from "../../internal/dom-node";
+import { hasFocus } from "../../internal/active-element";
 
 const FOCUSABLE = "input:not([type=hidden]), button, [tabindex]:not([tabindex='-1'])";
 
@@ -20,35 +19,6 @@ export function resolveFocusTarget(scope: HTMLElement): HTMLElement | null {
     : scope.querySelector<HTMLElement>("[data-dtf-initial-focus]");
   const start = marked ?? scope;
   return start.matches(FOCUSABLE) ? start : start.querySelector<HTMLElement>(FOCUSABLE);
-}
-
-/**
- * Whether focus left a closing overlay for somewhere else. Base UI leaves focus alone in that
- * case only for a boolean `finalFocus`. A function counts as explicit and always wins, in
- * `FloatingFocusManager.tsx`, so each overlay's `finalFocus` asks this first. A press on a
- * chip's Value with the menu open, or on the Trigger with the popover open, moves focus into the
- * other overlay, and the closing one must not pull it back. The Root passes the elements it
- * registered, so another Root's overlay never counts as this one's.
- *
- * @param popup - The closing overlay's popup.
- * @param owned - The elements that count as the overlay: its popup, its own nested popups, and
- *   any ghost chip, whose segments unmount.
- * @returns Whether focus moved elsewhere.
- */
-export function focusMovedElsewhere(popup: HTMLElement | null, owned: Iterable<Element>): boolean {
-  if (popup === null) {
-    return false;
-  }
-  const active = activeElementFrom(popup);
-  if (active === null || active === active.ownerDocument.body) {
-    return false;
-  }
-  for (const element of owned) {
-    if (containsAcrossShadowRoots(element, active)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 /**

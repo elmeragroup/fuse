@@ -19,6 +19,7 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
+import { finalFocusUnlessMoved } from "../../internal/final-focus";
 import { cn } from "../../styles/cn";
 import { menuPopupShellClass } from "../../styles/inner-corner/menu";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -267,7 +268,13 @@ export function DataTableFilterContent({
               aria-label={meta.format("addFilter")}
               // Focus returns to the Trigger, Base UI's default, unless it already moved to the value
               // popover.
-              finalFocus={() => !meta.focusLeft("menu", popupRef.current)}
+              finalFocus={() =>
+                finalFocusUnlessMoved(
+                  popupRef.current,
+                  (active) => meta.ownsFocus("menu", active),
+                  () => true
+                )
+              }
               className={mergeClassName(
                 className,
                 selfFocusRingClass,

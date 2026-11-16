@@ -22,6 +22,7 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { containsAcrossShadowRoots } from "../../internal/dom-node";
 import { useLocale } from "../../intl/locale-context";
 import {
   DataTableFilterContext,
@@ -41,7 +42,7 @@ import type { FilterTableSource } from "./data-table-filter-source";
 import { createFacetReader } from "./filter-facets";
 import type { AnyFilterFacets, FilterFacets, FilterFieldMap } from "./filter-fields";
 import { firstOperator } from "./filter-fields";
-import { focusEdge, focusMovedElsewhere } from "./filter-focus";
+import { focusEdge } from "./filter-focus";
 import type {
   DataTableFilterEntry,
   DataTableFilterState,
@@ -682,14 +683,16 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       hasValueContent: () => valueContentRegistered.current,
       neighborOf,
       focusChipEdge: (chip, edge) => focusTarget({ chip, edge }),
-      focusLeft: (kind, popup) =>
-        focusMovedElsewhere(popup, [
-          ...overlays.current[kind],
-          ...chips.flatMap((chip) => {
-            const element = chip.ghost ? chipElement(chip.id) : null;
-            return element === null ? [] : [element];
-          }),
-        ]),
+      // The Root counts only the elements it registered, so another Root's overlay never counts
+      // as this one's.
+      ownsFocus: (kind, active) => {
+        const holds = (element: Element | null) =>
+          element !== null && containsAcrossShadowRoots(element, active);
+        return (
+          [...overlays.current[kind]].some(holds) ||
+          chips.some((chip) => chip.ghost && holds(chipElement(chip.id)))
+        );
+      },
     },
   };
 

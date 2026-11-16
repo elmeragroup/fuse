@@ -11,6 +11,7 @@ import { useStableCallback } from "../../hooks/use-stable-callback";
 import { activeElementFrom } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
 import { containsAcrossShadowRoots, isHTMLElement } from "../../internal/dom-node";
+import { finalFocusUnlessMoved } from "../../internal/final-focus";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayTitleClass } from "../overlay/overlay-classes";
@@ -183,16 +184,12 @@ export function ListDetailRoot({
     },
   }));
   // The list item that last held focus, or else the list, whose first tabbable item the Sheet then
-  // focuses. Focus the user moved out of the Sheet elsewhere stays where it went: a function
-  // `finalFocus` skips Base UI's own check for that, as `focusMovedElsewhere` in
-  // `data-table-filter/filter-focus.ts` works around too; #612 tracks a shared helper.
-  const returnToList = useStableCallback((): HTMLElement | boolean => {
-    const active = list.current === null ? null : activeElementFrom(list.current);
-    if (active !== null && active !== active.ownerDocument.body && !focusInDetail()) {
-      return false;
-    }
-    return listFocus.current?.isConnected === true ? listFocus.current : (list.current ?? true);
-  });
+  // focuses. Focus in the detail counts by React focus tracking, so its portaled popups do too.
+  const returnToList = useStableCallback((): HTMLElement | boolean =>
+    finalFocusUnlessMoved(list.current, focusInDetail, () =>
+      listFocus.current?.isConnected === true ? listFocus.current : (list.current ?? true)
+    )
+  );
   // The layout the container query last gave, unset until the client first reads it.
   const queried = useRef<ListDetailLayout | undefined>(undefined);
   const styled = listDetailVariants({ split, settled: read !== undefined });
