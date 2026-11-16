@@ -1,12 +1,11 @@
 "use client";
 
-import { Children, Fragment, isValidElement, useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
 import type { useRender } from "@base-ui/react/use-render";
 
 import { useStableCallback } from "../../hooks/use-stable-callback";
-import { isRenderableNode } from "../../internal/is-renderable-node";
 import { checkBounds } from "../../temporal/bounds";
 import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
@@ -52,11 +51,6 @@ import type {
   RangeHeldReason,
   RangePart,
 } from "./date-range-picker-context";
-import {
-  DateRangePickerDescription,
-  DateRangePickerError,
-  DateRangePickerLabel,
-} from "./date-range-picker-parts";
 import {
   awaitsTime,
   clearTime,
@@ -248,44 +242,6 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
 /** The Root its prop errors name. */
 const OWNER = "DateRangePicker.Root";
 
-/** Which of the Label, Description and Error a Root renders, and whether the Error has its own text. */
-type RangePartScan = {
-  readonly label: boolean;
-  readonly description: boolean;
-  readonly error: boolean;
-  readonly errorText: boolean;
-};
-
-/**
- * Which parts a Root's children render, read during render from the element tree the Root is given,
- * so the server writes the same names and descriptions as the client. The scan looks only through
- * host elements and fragments, which render their children as given. A component decides what it
- * renders, and a `Show` with `when={false}` renders nothing, so the scan stops at every component,
- * nested Roots included. A part inside one registers after mount instead.
- */
-function scanRangeParts(children: ReactNode): RangePartScan {
-  const found = { label: false, description: false, error: false, errorText: false };
-  const visit = (node: ReactNode): void => {
-    Children.forEach(node, (child) => {
-      if (!isValidElement<{ children?: ReactNode }>(child)) {
-        return;
-      }
-      if (child.type === DateRangePickerLabel) found.label = true;
-      if (child.type === DateRangePickerDescription) found.description = true;
-      if (child.type === DateRangePickerError) {
-        found.error = true;
-        found.errorText ||= isRenderableNode(child.props.children);
-      }
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- React's element type is a tag name for a host element; that is the contract the scan reads.
-      if (typeof child.type === "string" || child.type === Fragment) {
-        visit(child.props.children);
-      }
-    });
-  };
-  visit(children);
-  return found;
-}
-
 /** Whether the end comes before the start, compared as the bounds compare. */
 function isReversed(ends: Ends): boolean {
   return (
@@ -419,9 +375,10 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     end: NO_MESSAGES,
   });
   const [inputInvalid, setInputInvalid] = useState({ start: false, end: false });
-  // Which of the Label, Description and Error render: read from the children during render, so the
-  // server writes whole names and descriptions; a part out of the scan's sight registers on mount.
-  const scanned = scanRangeParts(children);
+  // The Root tracks which of the Label, Description and Error render. The Label and Description
+  // register on mount, wherever they sit, and the Error registers while it shows, as DatePicker's
+  // Field parts do. The server writes no reference to a part, and the first client render matches
+  // it, so hydration succeeds. The names and descriptions follow on mount.
   const [registered, setRegistered] = useState<ReadonlySet<RangePart>>(() => new Set());
   const registerPart = useCallback((part: RangePart) => {
     setRegistered((current) => (current.has(part) ? current : new Set(current).add(part)));
@@ -439,10 +396,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
 
   const invalid = invalidProp || inputInvalid.start || inputInvalid.end;
   const messages = useMemo(() => [...new Set([...messagesOf.start, ...messagesOf.end])], [messagesOf]);
-  const hasLabel = scanned.label || registered.has("label");
-  const hasDescription = scanned.description || registered.has("description");
-  const errorShown =
-    (scanned.error && invalid && (scanned.errorText || messages.length > 0)) || registered.has("error");
+  const hasLabel = registered.has("label");
 
   const baseId = useId();
   const labelId = `${baseId}-label`;
@@ -450,7 +404,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   const errorId = `${baseId}-error`;
   const nameId = `${baseId}-name`;
   const describedBy =
-    [hasDescription ? descriptionId : undefined, errorShown ? errorId : undefined]
+    [registered.has("description") ? descriptionId : undefined, registered.has("error") ? errorId : undefined]
       .filter((id) => id !== undefined)
       .join(" ") || undefined;
 

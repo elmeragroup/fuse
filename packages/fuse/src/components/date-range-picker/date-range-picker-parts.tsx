@@ -46,8 +46,8 @@ export type DateRangePickerLabelProps = LabelElementProps & {
    */
   children?: LabelElementProps["children"];
   /**
-   * The label's own id. The names point at a span inside the label, so an `id` here, or on the
-   * `render` element, keeps them whole, on the server too.
+   * The label's own id. The names point at a span inside the label once the label mounts, so an
+   * `id` here, or on the `render` element, keeps them whole.
    */
   id?: LabelElementProps["id"];
 };
@@ -147,6 +147,7 @@ export function DateRangePickerError({
   const content = own ?? (root.messages.length > 0 ? root.messages.join(" ") : null);
   const shown = root.invalid && content !== null;
   const { registerPart } = root;
+  // The Root tracks mounted parts through registration. The Error registers only while shown.
   useLayoutEffect(() => (shown ? registerPart("error") : undefined), [shown, registerPart]);
   const element = useRender({
     defaultTagName: "div",

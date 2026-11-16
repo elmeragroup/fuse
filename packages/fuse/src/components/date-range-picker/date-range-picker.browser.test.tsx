@@ -1241,42 +1241,45 @@ describe("DateRangePicker naming", () => {
     expect(roleNamed("spinbutton", "month, End Date, Period")).toHaveAccessibleDescription(/Rejected/u);
   });
 
-  it("writes whole names and descriptions in server output", () => {
-    const host = document.createElement("div");
-    host.innerHTML = renderToString(
-      withLocale(
-        "en-US",
-        <DateRangePickerField
-          label="Period"
-          description="Nights at the cabin"
-          isInvalid
-          errorMessage="Rejected"
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-        />
-      )
+  /** A Label that a consumer component renders, which a scan of the Root's children cannot find. */
+  function MyLabel({ children }: { readonly children: string }): ReactElement {
+    return <DateRangePicker.Label>{children}</DateRangePicker.Label>;
+  }
+
+  /** A Root whose Label is the one given, beside an inline Description and an inline Error. */
+  function Labeled({ label }: { readonly label: ReactElement }): ReactElement {
+    return withLocale(
+      "en-US",
+      <DateRangePicker.Root
+        invalid
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}>
+        {label}
+        <DateRangePicker.Group>
+          <DateRangePicker.StartInput />
+          <DateRangePicker.EndInput />
+          <DateRangePicker.Trigger />
+        </DateRangePicker.Group>
+        <DateRangePicker.Error>Rejected</DateRangePicker.Error>
+        <DateRangePicker.Description>Nights at the cabin</DateRangePicker.Description>
+      </DateRangePicker.Root>
     );
-    const text = (ids: string | null): string =>
-      (ids ?? "")
-        .split(" ")
-        .filter((id) => id !== "")
-        .map((id) => {
-          const target = host.querySelector(`[id="${id}"]`);
-          if (target === null) throw new Error(`${id} names no element in the server output`);
-          return target.textContent;
-        })
-        .join(" ");
-    const group = host.querySelector('[role="group"]');
-    expect(text(group?.getAttribute("aria-labelledby") ?? null)).toBe("Period");
-    expect(text(group?.getAttribute("aria-describedby") ?? null)).toBe("Nights at the cabin Rejected");
+  }
+
+  it("writes the same server output for a Label a component wraps as for one inline", () => {
+    // Oracle: the parts register on mount, wherever they sit, as DatePicker's Field parts do. The
+    // server therefore writes no reference to any of them, and where the Label sits changes nothing.
+    const wrapped = renderToString(<Labeled label={<MyLabel>Period</MyLabel>} />);
+    const inline = renderToString(<Labeled label={<DateRangePicker.Label>Period</DateRangePicker.Label>} />);
+    expect(wrapped).toBe(inline);
     // Server HTML in a detached host has no accessibility tree to locate by role.
-    const trigger = host.querySelector('[data-slot="date-picker-trigger"]');
-    expect(trigger?.getAttribute("aria-label")).toBe("Calendar");
-    expect(text(trigger?.getAttribute("aria-labelledby") ?? null)).toBe(" Period");
-    const month = host.querySelector('[role="spinbutton"]');
-    expect(text(month?.getAttribute("aria-describedby") ?? null)).toContain("Nights at the cabin Rejected");
+    const host = document.createElement("div");
+    host.innerHTML = wrapped;
+    const group = host.querySelector('[role="group"]');
+    expect(group?.getAttribute("aria-labelledby")).toBeNull();
+    expect(group?.getAttribute("aria-describedby")).toBeNull();
   });
 });
 

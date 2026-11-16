@@ -334,7 +334,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label's own id. The names point at a span inside the label, so an `id` here, or on the `render` element, keeps them whole, on the server too.",
+          "description": "The label's own id. The names point at a span inside the label once the label mounts, so an `id` here, or on the `render` element, keeps them whole.",
           "required": false
         },
         {
