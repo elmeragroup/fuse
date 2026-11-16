@@ -1,0 +1,78 @@
+---
+lede: >
+  Preview, so names and props can change until Fuse's first stable release. A run of popups that
+  point at parts of a page one step at a time, with checklists, tips and a dimmed guided mode.
+---
+
+import { TourDemo } from "./demos/tour-demo";
+import { TourGuided } from "./demos/tour-guided";
+import { TourChecklist } from "./demos/tour-checklist";
+import { TourBeacon } from "./demos/tour-beacon";
+import { TourHtmlTarget } from "./demos/tour-html-target";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("tour");
+
+<ComponentIntro slug="tour" />
+
+<DefaultDemo slug="tour" file="tour-demo.tsx">
+  <TourDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Tour, defineTour, useTour } from "@elmeragroup/fuse/tour";
+
+const welcome = defineTour({ id: "welcome", steps: ["usage", "price"] });
+
+<Tour.Provider>
+  <Tour.Target tour={welcome} step="usage" title="Usage this month">412 kWh</Tour.Target>
+  <Tour.Target tour={welcome} step="price" title="Your price">1.42 kr per kWh</Tour.Target>
+  <Tour.Popup tour={welcome}>
+    <Tour.Header>
+      <Tour.Progress />
+      <Tour.Close />
+    </Tour.Header>
+    <Tour.Title />
+    <Tour.Description />
+    <Tour.Footer>
+      <Tour.Skip />
+      <Tour.Prev />
+      <Tour.Next />
+    </Tour.Footer>
+  </Tour.Popup>
+</Tour.Provider>
+```
+
+## Composition
+
+<Prose>
+
+`defineTour` lists a tour's steps, and a Server Component may import the definition. `Tour.Provider` wraps the app once and keeps every tour's records. Each step's element registers where it renders: `Tour.Target`, `useTourStep` on a component's own element, or a `data-tour-step` attribute in plain HTML. `Tour.Popup` shows the step on screen, wherever it sits under the Provider, and the parts inside it read that step. `useTour` starts a tour from a control, and `useAutoStartTour` starts it on its own.
+
+</Prose>
+
+## Examples
+
+<Demo slug="tour" id="guided" title="Guided" level={3} file="tour-guided.tsx">
+  <TourGuided />
+</Demo>
+
+<Demo slug="tour" id="checklist" title="Checklist" level={3} file="tour-checklist.tsx">
+  <TourChecklist />
+</Demo>
+
+<Demo slug="tour" id="beacon" title="Beacon" level={3} file="tour-beacon.tsx">
+  <TourBeacon />
+</Demo>
+
+<Demo slug="tour" id="html-target" title="HTML target" level={3} file="tour-html-target.tsx">
+  <TourHtmlTarget />
+</Demo>
+
+<ApiReference slug="tour" />
+
+<ComponentTokens slug="tour" />

@@ -110,6 +110,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
   ["sparkline", ["Sparkline", "SparklineHover"]],
+  ["tour", ["Tour", "useTour", "useAutoStartTour", "useTourStep", "useTourStepDone"]],
 ]);
 
 /**
@@ -132,11 +133,19 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
 ]);
 
 /**
- * The module the API extractor reads for the chart entry's pages. `@elmeragroup/internal` cannot
- * model an ES module namespace's type, so it reads the plain objects of
- * `packages/fuse/test/chart/api-facade.ts`, which hold the same parts under the same keys.
+ * The module the API extractor reads for an entry that exports ES module namespaces, by entry slug.
+ * `@elmeragroup/internal` cannot model an ES module namespace's type, so it reads the plain objects
+ * of `packages/fuse/test/<entry>/api-facade.ts`, which hold the same parts under the same keys.
  */
-const CHART_API_FACADE = path.join(fuseSrc, "..", "test", "chart", "api-facade.ts");
+const API_FACADES = new Map<string, string>(
+  ["chart", "tour"].map((entry) => [entry, path.join(fuseSrc, "..", "test", entry, "api-facade.ts")])
+);
+
+/**
+ * Pages whose implementation file is not named after the slug. The tour's parts live in several
+ * modules, and `Tour.Popup` is the one a page's source link opens.
+ */
+const IMPLEMENTATION_SOURCES = new Map([["tour", "tour-popup"]]);
 
 function apiExportNamesFor(slug: string): readonly string[] {
   return EXTRA_API_EXPORT_NAMES.get(slug) ?? [pascalCase(slug)];
@@ -178,7 +187,7 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
     slug,
     entry: `@elmeragroup/fuse/${entrySlug}`,
     entryFile,
-    apiEntryFile: shared?.entry === "chart" ? CHART_API_FACADE : entryFile,
+    apiEntryFile: API_FACADES.get(entrySlug) ?? entryFile,
     exportNames: apiExportNamesFor(slug),
     apiFile: path.join(routeDir, componentApiFileName(slug, slug)),
   };
@@ -186,7 +195,10 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
     pageFile: path.join(routeDir, "page.mdx"),
     title: displayName(slug),
     apis: [own, ...(EXTRA_API_ENTRIES.get(slug) ?? []).map((extra) => resolveExtraApi(slug, extra))],
-    sourceFile: path.join(componentDir, `${shared?.source ?? entrySlug}.tsx`),
+    sourceFile: path.join(
+      componentDir,
+      `${shared?.source ?? IMPLEMENTATION_SOURCES.get(slug) ?? entrySlug}.tsx`
+    ),
     componentDir,
     demosDir: path.join(routeDir, "demos"),
   };
