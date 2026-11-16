@@ -253,13 +253,13 @@ const requestFailed = Effect.fnUntraced(function* (
     onSome: (text) => `${response.status} (${text})`,
   });
   return yield* new FigmaRequestFailed({
-    message: `Could not ${operation}: Figma answered ${answer}.${statusHint(response.status, decision)}`,
+    message: `Could not ${operation}: Figma answered ${answer}.${statusHint(operation, response.status, decision)}`,
     operation,
     status: response.status,
   });
 });
 
-function statusHint(status: number, decision: RetryDecision): string {
+function statusHint(operation: FigmaOperation, status: number, decision: RetryDecision): string {
   switch (status) {
     case 401:
       return " Check that FIGMA_TOKEN is a valid personal access token.";
@@ -271,6 +271,12 @@ function statusHint(status: number, decision: RetryDecision): string {
       return decision._tag === "WaitTooLong"
         ? ` Figma asked the sync to wait ${Duration.toSeconds(decision.wait)} seconds before the next request, longer than the ${Duration.toSeconds(MAX_RETRY_AFTER)} seconds it waits; try again later.`
         : " Figma is still rate limiting after several retries; try again later.";
+    case 500:
+      // Seen on 2026-11-16: a new file answered even a one-collection write with this 500 until a
+      // plugin session created and deleted a collection in it; then it took the whole first sync.
+      return operation === "write variables"
+        ? " A new file can refuse every REST variable write until an editor session has made one. Open it in Figma, create a variable collection, delete it, then sync again."
+        : "";
     default:
       return "";
   }

@@ -76,6 +76,8 @@ pnpm --filter @elmeragroup/fuse-figma figma:sync    # apply the plan
 
 `--file-key <key>` overrides `FIGMA_FILE_KEY`, and a branch key targets a Figma branch. `figma --help` lists every flag.
 
+A new file can refuse every REST variable write until Figma itself has made one. Each write then fails with `500 (Error updating file, please try again later)`, even one that creates a single collection, while reads and `check` work. Before the first sync, open the file in Figma, create a variable collection and delete it. The sync prints these steps with a write's 500 and does not retry the write.
+
 `check` exits 2 when the file differs from the tokens and 1 when it cannot run, for example when the token has expired, so a CI job can tell the two apart. It groups the plan by collection and kind of change. A group of up to 10 changes lists each variable and mode, and a larger group prints its count.
 
 The token travels in the `X-Figma-Token` header. The sync masks that header on the trace spans Effect's HTTP client records, and a failed request keeps only its method and URL.
