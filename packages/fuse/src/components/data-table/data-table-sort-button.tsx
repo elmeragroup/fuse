@@ -11,7 +11,7 @@ import type { ButtonProps } from "../button/button";
 import type { SortColumnSource } from "./data-table-source";
 import { dataTableVariants } from "./data-table-variants";
 
-const { sortButton, sortIcon } = dataTableVariants();
+const { sortButton, sortIcon, sortLabel } = dataTableVariants();
 
 /** Props for `DataTable.SortButton`. */
 export type DataTableSortButtonProps = Omit<ButtonProps, "children" | "onClick" | "size" | "aria-label"> & {
@@ -25,7 +25,8 @@ const SORT_ICONS = { asc: CaretUp, desc: CaretDown, none: CaretUpDown } as const
 
 /**
  * A column header's sort toggle. It is a ghost button with the label and a direction icon, and it
- * calls the column's sorting handler. A column that cannot sort renders the plain label. The `<th>` owns
+ * calls the column's sorting handler. It is never wider than its header cell, and cuts its label
+ * short with an ellipsis. A column that cannot sort renders the plain label. The `<th>` owns
  * `aria-sort`, which `DataTable.Header` sets, so the button does not repeat it.
  */
 export function DataTableSortButton({
@@ -48,7 +49,7 @@ export function DataTableSortButton({
       className={cn(sortButton(), className)}
       onClick={toggle}
       {...props}>
-      {children}
+      <span className={sortLabel()}>{children}</span>
       <Icon aria-hidden="true" data-icon="inline-end" className={sortIcon()} />
     </Button>
   );

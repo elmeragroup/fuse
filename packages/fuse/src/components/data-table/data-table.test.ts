@@ -146,11 +146,19 @@ describe("dataTable dictionary", () => {
     "fi-FI": ["Toiminnot", "Toiminnot: Kontorstol"],
   } as const;
 
-  it("owns the same rows in all four locales and interpolates the page status and the row name", () => {
+  const RESIZE = {
+    "nb-NO": ["Endre bredden på kolonnen Status", "120 piksler"],
+    "sv-SE": ["Ändra bredden på kolumnen Status", "120 pixlar"],
+    "en-US": ["Resize Status column", "120 pixels"],
+    "fi-FI": ["Muuta sarakkeen Status leveyttä", "120 pikseliä"],
+  } as const;
+
+  it("owns the same rows in all four locales and interpolates the page status, the row name and the column width", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(dataTableStrings.getStringsForLocale(locale)).toSorted(), locale).toEqual([
         "actions",
         "actionsFor",
+        "columnWidth",
         "columns",
         "goToFirstPage",
         "goToLastPage",
@@ -159,6 +167,7 @@ describe("dataTable dictionary", () => {
         "noResults",
         "page",
         "pageOf",
+        "resizeColumn",
         "rowsPerPage",
         "selectAllOnPage",
       ]);
@@ -168,6 +177,13 @@ describe("dataTable dictionary", () => {
         [formatter.format("actions"), formatter.format("actionsFor", { name: "Kontorstol" })],
         locale
       ).toEqual(ACTIONS[locale]);
+      expect(
+        [
+          formatter.format("resizeColumn", { name: "Status" }),
+          formatter.format("columnWidth", { width: "120" }),
+        ],
+        locale
+      ).toEqual(RESIZE[locale]);
     }
   });
 });

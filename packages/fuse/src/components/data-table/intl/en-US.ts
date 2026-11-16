@@ -14,4 +14,6 @@ export const enUS = {
   selectAllOnPage: "Select all rows on this page",
   actions: "Actions",
   actionsFor: (vars: Variables) => `Actions for ${String(vars?.name)}`,
+  resizeColumn: (vars: Variables) => `Resize ${String(vars?.name)} column`,
+  columnWidth: (vars: Variables) => `${String(vars?.width)} pixels`,
 };

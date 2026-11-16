@@ -1,6 +1,6 @@
 ---
 lede: >
-  Accessible TanStack Table v9 tables on Fuse Table, with pagination, sorting, column visibility, selection and locale-formatted cells. The app keeps its features and state.
+  Accessible TanStack Table v9 tables on Fuse Table, with pagination, sorting, column visibility, column resizing, selection and locale-formatted cells. The app keeps its features and state.
 ---
 
 import { DataTableDemo } from "./demos/data-table-demo";
@@ -8,6 +8,7 @@ import { DataTablePagination } from "./demos/data-table-pagination";
 import { DataTableServerPaged } from "./demos/data-table-server-paged";
 import { DataTableSorting } from "./demos/data-table-sorting";
 import { DataTableColumnVisibility } from "./demos/data-table-column-visibility";
+import { DataTableColumnResizing } from "./demos/data-table-column-resizing";
 import { DataTableRowSelection } from "./demos/data-table-row-selection";
 import { DataTableRowPress } from "./demos/data-table-row-press";
 import { DataTableRowActions } from "./demos/data-table-row-actions";
@@ -77,6 +78,15 @@ Install `@tanstack/react-table` 9.2 or later beside Fuse. `createFuseTableHook` 
   level={3}
   file="data-table-column-visibility.tsx">
   <DataTableColumnVisibility />
+</Demo>
+
+<Demo
+  slug="data-table"
+  id="column-resizing"
+  title="Column resizing"
+  level={3}
+  file="data-table-column-resizing.tsx">
+  <DataTableColumnResizing />
 </Demo>
 
 <Demo

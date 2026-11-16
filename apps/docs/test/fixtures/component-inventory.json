@@ -616,6 +616,7 @@
       "data-table-server-paged.tsx",
       "data-table-sorting.tsx",
       "data-table-column-visibility.tsx",
+      "data-table-column-resizing.tsx",
       "data-table-row-selection.tsx",
       "data-table-row-press.tsx",
       "data-table-row-actions.tsx",

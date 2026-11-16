@@ -13,6 +13,7 @@ import {
 } from "./data-table-cells";
 import { DataTableColumnToggle } from "./data-table-column-toggle";
 import { DataTablePagination } from "./data-table-pagination";
+import { DataTableResizeHandle } from "./data-table-resize-handle";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { DataTableSelectAll, DataTableSelectRow } from "./data-table-selection";
 import { DataTableSortButton } from "./data-table-sort-button";
@@ -24,6 +25,7 @@ export const DataTable = {
   Row: DataTableRow,
   Pagination: DataTablePagination,
   SortButton: DataTableSortButton,
+  ResizeHandle: DataTableResizeHandle,
   ColumnToggle: DataTableColumnToggle,
   SelectAll: DataTableSelectAll,
   SelectRow: DataTableSelectRow,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
@@ -9,6 +9,7 @@ import { pressesRegion } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
+import { HeadNameContext } from "./data-table-resize-handle";
 import type {
   CellRenderSource,
   CellSource,
@@ -23,7 +24,7 @@ import type {
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
-const { emptyCell, head, skeleton, row: rowClass } = dataTableVariants();
+const { emptyCell, head, skeleton, row: rowClass, sizedColumn, sizedTable } = dataTableVariants();
 
 /** The cell type a row's `getAllCells()` returns. */
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
@@ -36,7 +37,46 @@ function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | 
   return sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none";
 }
 
-/** Header rows over any header renderer. */
+/** One column of a sized table, its id and its width in px. */
+type ColumnWidth = { readonly id: string; readonly size: number };
+
+/**
+ * The column widths of a table with `columnSizingFeature`, or `undefined` without it or without a
+ * visible column. The last header group holds one header per visible leaf column, in display
+ * order, and only a header says whether the table is sized, so a table that shows no column keeps
+ * the normal layout.
+ */
+function columnLayout(
+  headerGroups: ReadonlyArray<HeaderGroupSource>
+): ReadonlyArray<ColumnWidth> | undefined {
+  const leaves = headerGroups.at(-1)?.headers;
+  if (leaves === undefined || leaves.length === 0) {
+    return undefined;
+  }
+  const columns: ColumnWidth[] = [];
+  for (const header of leaves) {
+    if (header.getSize === undefined) {
+      return undefined;
+    }
+    columns.push({ id: header.column.id, size: header.getSize() });
+  }
+  return columns;
+}
+
+/**
+ * A header cell of a sized table. A `DataTable.ResizeHandle` inside it names it after the column,
+ * through `HeadNameContext`.
+ */
+function SizedHead({ children, ...props }: ComponentProps<"th">): ReactElement {
+  const [name, setName] = useState<string | undefined>(undefined);
+  return (
+    <Table.Head {...definedProps({ "aria-label": name })} {...props}>
+      <HeadNameContext.Provider value={setName}>{children}</HeadNameContext.Provider>
+    </Table.Head>
+  );
+}
+
+/** Header rows over any header renderer, after the `<colgroup>` of a sized table. */
 function HeaderRows<TGroup extends HeaderGroupSource>({
   headerGroups,
   renderHeader,
@@ -45,25 +85,47 @@ function HeaderRows<TGroup extends HeaderGroupSource>({
   headerGroups: ReadonlyArray<TGroup>;
   renderHeader: (header: HeaderOf<TGroup>) => ReactNode;
 }): ReactElement {
-  return (
+  const layout = columnLayout(headerGroups);
+  const thead = (
     <Table.Header data-slot="data-table-header" {...props}>
       {headerGroups.map((group) => (
         <Table.Row key={group.id}>
           {group.headers.map((header) => {
+            const Head = layout === undefined ? Table.Head : SizedHead;
             const sort = ariaSort(header.column);
             return (
-              <Table.Head
+              <Head
                 key={header.id}
                 colSpan={header.colSpan}
-                className={head()}
+                className={head({ sized: layout !== undefined })}
                 {...definedProps({ "aria-sort": sort })}>
                 {header.isPlaceholder ? null : renderHeader(header)}
-              </Table.Head>
+              </Head>
             );
           })}
         </Table.Row>
       ))}
     </Table.Header>
+  );
+  // An unsized table returns the `<thead>` alone, so its `useId` values stay as they were.
+  if (layout === undefined) {
+    return thead;
+  }
+  return (
+    <>
+      <colgroup>
+        {layout.map((column) => (
+          // `DataTable.ResizeHandle` finds its column's `<col>` by `data-column-id` to preview a drag.
+          <col
+            key={column.id}
+            data-column-id={column.id}
+            className={sizedColumn()}
+            style={{ "--_data-table-column": `${String(column.size)}px` }}
+          />
+        ))}
+      </colgroup>
+      {thead}
+    </>
   );
 }
 
@@ -195,6 +257,7 @@ export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { re
   empty,
   renderHeader,
   renderRow,
+  className,
   ...props
 }: Omit<ComponentProps<"table">, "children"> &
   BodyState & {
@@ -202,9 +265,16 @@ export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { re
     renderHeader: (header: HeaderOf<TGroup>) => ReactNode;
     renderRow: (row: TRow) => ReactNode;
   }): ReactElement {
+  const headerGroups = table.getHeaderGroups();
+  const layout = columnLayout(headerGroups);
   return (
-    <Table.Root {...definedProps({ "aria-busy": loading === true || undefined })} {...props}>
-      <HeaderRows headerGroups={table.getHeaderGroups()} renderHeader={renderHeader} />
+    <Table.Root
+      {...definedProps({
+        "aria-busy": loading === true || undefined,
+        className: layout === undefined ? className : cn(sizedTable(), className),
+      })}
+      {...props}>
+      <HeaderRows headerGroups={headerGroups} renderHeader={renderHeader} />
       <BodyRows table={table} loading={loading} empty={empty} renderRow={renderRow} />
     </Table.Root>
   );
@@ -212,14 +282,20 @@ export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { re
 
 /** Props for `DataTable.Header`. */
 export type DataTableHeaderProps<TGroup extends HeaderGroupSource> = ComponentProps<"thead"> & {
-  /** The table whose header groups render, typically from `useTable`. */
+  /**
+   * The table whose header groups render, typically from `useTable`. With `columnSizingFeature`
+   * the header renders a `<colgroup>` of the column widths before the `<thead>`. Give the
+   * `Table.Root` around it `className="w-0 table-fixed"`, as `DataTable.Content` does, so the table
+   * is as wide as its columns and a resize drag changes only the dragged column.
+   */
   table: HeaderGroupsSource<TGroup> & HeaderRenderSource<HeaderOf<TGroup>>;
 };
 
 /**
  * Every header group of a table as `<thead>` rows. Each `<th>` takes the header's `colSpan`,
  * renders nothing for a placeholder, and carries `aria-sort` only when its column can sort. The
- * value is `ascending`, `descending` or `none`.
+ * value is `ascending`, `descending` or `none`. A sized table's header cells position
+ * `DataTable.ResizeHandle`.
  *
  * @template TGroup - The header group type of the table's `getHeaderGroups()`.
  */
@@ -274,7 +350,11 @@ export type DataTableContentProps<
   TCell extends CellSource = CellOf<TRow>,
 > = Omit<ComponentProps<"table">, "children"> &
   BodyState & {
-    /** The table to render, typically from `useTable`. */
+    /**
+     * The table to render, typically from `useTable`. With `columnSizingFeature` each column is
+     * as wide as its `size` in px, the table is as wide as its columns together, and a cell clips
+     * content wider than its column. A table wider than its container scrolls sideways.
+     */
     table: HeaderGroupsSource<TGroup> &
       HeaderRenderSource<HeaderOf<TGroup>> &
       RowsSource<TRow> &

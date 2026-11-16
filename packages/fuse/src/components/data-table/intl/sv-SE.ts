@@ -14,4 +14,6 @@ export const svSE = {
   selectAllOnPage: "Markera alla rader på den här sidan",
   actions: "Åtgärder",
   actionsFor: (vars: Variables) => `Åtgärder för ${String(vars?.name)}`,
+  resizeColumn: (vars: Variables) => `Ändra bredden på kolumnen ${String(vars?.name)}`,
+  columnWidth: (vars: Variables) => `${String(vars?.width)} pixlar`,
 };

@@ -44,7 +44,7 @@
           "type": "HeaderGroupsSource<TGroup> & HeaderRenderSource<HeaderOf<TGroup>> & RowsSource<TRow> & CellRenderSource<TCell>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The table to render, typically from `useTable`.",
+          "description": "The table to render, typically from `useTable`. With `columnSizingFeature` each column is as wide as its `size` in px, the table is as wide as its columns together, and a cell clips content wider than its column. A table wider than its container scrolls sideways.",
           "required": true
         }
       ]
@@ -64,7 +64,7 @@
           "type": "HeaderGroupsSource<TGroup> & HeaderRenderSource<HeaderOf<TGroup>>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The table whose header groups render, typically from `useTable`.",
+          "description": "The table whose header groups render, typically from `useTable`. With `columnSizingFeature` the header renders a `<colgroup>` of the column widths before the `<thead>`. Give the `Table.Root` around it `className=\"w-0 table-fixed\"`, as `DataTable.Content` does, so the table is as wide as its columns and a resize drag changes only the dragged column.",
           "required": true
         }
       ]
@@ -416,6 +416,35 @@
             "secondary",
             "success"
           ]
+        }
+      ]
+    },
+    {
+      "name": "DataTable.ResizeHandle",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-resize-handle.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 265,
+      "props": [
+        {
+          "name": "columnName",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column's name as its header shows it, such as `\"Status\"`. Fuse builds the handle's localized accessible name from it, such as \"Resize Status column\", so no two handles share a name. Inside `DataTable.Header` or `DataTable.Content` it also names the header cell, which would otherwise take the handle's width into its name. Give a header cell that Fuse does not render an `aria-label` with the column's name.",
+          "required": true
+        },
+        {
+          "name": "header",
+          "origin": "declared",
+          "type": "ResizeHeaderSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The header whose column the handle resizes, from a table with `columnSizingFeature` and `columnResizingFeature`. A header that groups other headers gets no handle. Resize its leaf columns instead.",
+          "required": true
         }
       ]
     },

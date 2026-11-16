@@ -14,4 +14,6 @@ export const fiFI = {
   selectAllOnPage: "Valitse kaikki tämän sivun rivit",
   actions: "Toiminnot",
   actionsFor: (vars: Variables) => `Toiminnot: ${String(vars?.name)}`,
+  resizeColumn: (vars: Variables) => `Muuta sarakkeen ${String(vars?.name)} leveyttä`,
+  columnWidth: (vars: Variables) => `${String(vars?.width)} pikseliä`,
 };

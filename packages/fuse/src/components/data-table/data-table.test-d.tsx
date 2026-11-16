@@ -6,6 +6,8 @@ import type { ReactElement } from "react";
  * feature-conditional registered part must be absent from the types when its feature is.
  */
 import {
+  columnResizingFeature,
+  columnSizingFeature,
   columnVisibilityFeature,
   rowPaginationFeature,
   rowSelectionFeature,
@@ -56,6 +58,12 @@ const full = createFuseTableHook({
 });
 
 const bare = createFuseTableHook({ features: coreOnly });
+
+const resizable = createFuseTableHook({
+  features: tableFeatures({ columnSizingFeature, columnResizingFeature, rowSelectionFeature }),
+});
+
+const sizingOnly = createFuseTableHook({ features: tableFeatures({ columnSizingFeature }) });
 
 test("a slice-typed plain part accepts an app table with extra features and rejects one without the feature", () => {
   function WithEveryFeature(): ReactElement {
@@ -325,6 +333,63 @@ test("the sort button is a registered header part only with rowSortingFeature", 
     header: ({ header }) => <header.SortButton>Amount</header.SortButton>,
     cell: ({ cell }) => <cell.NumberCell />,
   });
+});
+
+test("the resize handle is a registered header part only with both sizing features", () => {
+  const resizableColumns = resizable.createAppColumnHelper<Order>();
+  const bareColumns = bare.createAppColumnHelper<Order>();
+  const sizingOnlyColumns = sizingOnly.createAppColumnHelper<Order>();
+
+  resizableColumns.accessor("amount", {
+    header: ({ header }) => <header.ResizeHandle columnName="Amount" />,
+    size: 120,
+  });
+  resizableColumns.accessor("amount", {
+    // @ts-expect-error -- `columnName` is required so every handle has its own name
+    header: ({ header }) => <header.ResizeHandle />,
+  });
+  bareColumns.accessor("amount", {
+    // @ts-expect-error -- ResizeHandle requires columnResizingFeature in `features`
+    header: ({ header }) => <header.ResizeHandle columnName="Amount" />,
+  });
+  sizingOnlyColumns.accessor("amount", {
+    // @ts-expect-error -- ResizeHandle requires columnResizingFeature beside columnSizingFeature
+    header: ({ header }) => <header.ResizeHandle columnName="Amount" />,
+  });
+});
+
+test("the plain resize handle takes a header from a table with both sizing features", () => {
+  function Handles(): ReactElement {
+    const sized = useTable({
+      features: tableFeatures({ columnSizingFeature, columnResizingFeature }),
+      columns: [],
+      data: orders,
+    });
+    const core = useTable({ features: coreOnly, columns: [], data: orders });
+    const [sizedHeader] = sized.getFlatHeaders();
+    const [coreHeader] = core.getFlatHeaders();
+    if (sizedHeader === undefined || coreHeader === undefined) {
+      return <span />;
+    }
+    return (
+      <>
+        <DataTable.ResizeHandle header={sizedHeader} columnName="Amount" />
+        {/* @ts-expect-error -- ResizeHandle reads columnSizingFeature and columnResizingFeature members */}
+        <DataTable.ResizeHandle header={coreHeader} columnName="Amount" />
+      </>
+    );
+  }
+
+  expectTypeOf(Handles).toBeFunction();
+});
+
+test("selectColumn and actionsColumn fit a table with the sizing features", () => {
+  const resizableColumns = resizable.createAppColumnHelper<Order>();
+
+  resizableColumns.columns([
+    selectColumn(resizableColumns, { getRowLabel: (order) => `Select order ${String(order.id)}` }),
+    actionsColumn(resizableColumns, { getRowName: (order) => order.customer, items: () => null }),
+  ]);
 });
 
 test("selectColumn requires rowSelectionFeature and a row label typed from the row data", () => {
