@@ -1,0 +1,93 @@
+name: Set up Playwright
+description: >-
+  Install a set of Playwright browsers and their system packages, both from caches keyed on the
+  Playwright version pnpm resolved. Run it after `pnpm install`.
+
+inputs:
+  browsers:
+    description: >-
+      The browsers to install, space-separated, such as `chromium webkit`. Each set has its own
+      browser and system-package caches.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # The browser download is keyed on the Playwright version pnpm resolved, so a catalog bump
+    # misses once and every other run restores it. An unparsable version fails here rather than
+    # becoming a constant key that restores stale browsers after every bump. The workspace pins one
+    # Playwright in its catalog, so Fuse's resolves the version every package runs.
+    - name: Resolve Playwright version and browser set
+      id: playwright
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: |
+        version="$(pnpm --filter @elmeragroup/fuse exec playwright --version | awk '{print $2}')"
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected playwright --version output: $version"; exit 1; }
+        read -ra browsers <<<"$BROWSERS"
+        for browser in "${browsers[@]}"; do
+          [[ "$browser" =~ ^(chromium|firefox|webkit)$ ]] || { echo "::error::unknown Playwright browser: $browser"; exit 1; }
+        done
+        ((${#browsers[@]} > 0)) || { echo "::error::no Playwright browsers named"; exit 1; }
+        slug="$(IFS=-; echo "${browsers[*]}")"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "browsers=${browsers[*]}" >> "$GITHUB_OUTPUT"
+        echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ steps.playwright.outputs.slug }}-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+    # The browsers' system packages install in their own steps, so either browser cache result
+    # shares the package cache.
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        BROWSERS: ${{ steps.playwright.outputs.browsers }}
+      # Word splitting turns the validated set into one argument per browser.
+      run: pnpm --filter @elmeragroup/fuse exec playwright install $BROWSERS
+
+    # The system packages' .debs are cached too: fetching them from the Ubuntu mirror has
+    # stalled runs for 40 minutes. A set only installs onto the dpkg state it was resolved
+    # against, so the key names the runner image and the browser set as well as the Playwright
+    # version that lists the packages. The image variables come from the runner's environment,
+    # which the `env` context does not include.
+    - name: Resolve runner image
+      id: runner-image
+      shell: bash
+      run: |
+        if [ -z "${ImageOS:-}" ] || [ -z "${ImageVersion:-}" ]; then echo "::error::ImageOS or ImageVersion is unset"; exit 1; fi
+        echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Playwright system packages
+      id: deps-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/playwright-debs
+        key: playwright-debs-${{ steps.playwright.outputs.slug }}-${{ steps.runner-image.outputs.image }}-${{ steps.playwright.outputs.version }}
+
+    # One bounded download on a miss; the script explains the limit. A composite step takes no
+    # `timeout-minutes`, so `timeout` is the backstop over that attempt and the offline install.
+    - name: Install Playwright system dependencies
+      id: playwright-deps
+      shell: bash
+      env:
+        BROWSERS: ${{ steps.playwright.outputs.browsers }}
+        CACHE_HIT: ${{ steps.deps-cache.outputs.cache-hit }}
+        DEBS: ${{ runner.temp }}/playwright-debs
+      run: timeout --kill-after=30s 6m bash .github/scripts/install-playwright-deps.sh
+
+    # The script offers a set only after downloading it on a miss. Any ref saves, so a branch
+    # run restores its own entry. A PR falls back to main's, so it misses only while main has
+    # none for its image.
+    - name: Save Playwright system packages
+      if: steps.playwright-deps.outputs.save == 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/playwright-debs
+        key: ${{ steps.deps-cache.outputs.cache-primary-key }}
