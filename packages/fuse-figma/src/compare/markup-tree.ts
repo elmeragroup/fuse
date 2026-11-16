@@ -55,7 +55,7 @@ function ownedByInstance(
 
 /**
  * The elements inside the measured element whose `class` holds a class with the variant, outside the
- * instance parts, whose markup the inner set's own renderer test owns.
+ * instance parts, whose markup the inner set's own markup check owns.
  *
  * @param instances - The elements of the instance parts the cell renders.
  */

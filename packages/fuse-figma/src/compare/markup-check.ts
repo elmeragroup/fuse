@@ -2,8 +2,8 @@
  * The markup check: what a kit definition says its markup holds, its parts, icons, labels, styles
  * and images, against the markup its renderer gives. `checkMarkup` checks every preview cell of a
  * static set, and `checkMountedMarkup` the markup the
- * compare page mounted for a client cell, as `client-markup.ts` runs it. The suite's header states
- * the rules and their oracle.
+ * compare page mounted for a client cell, as `client-markup.ts` runs it. `kit-markup.test.ts` runs
+ * `checkMarkup` on every static set of the kit.
  *
  * Each check returns its findings as {@link MarkupDiagnostic} values, so the compare CLI records them
  * in its report and loads no test runner. A rendering reports its first difference only: the checks
@@ -453,7 +453,7 @@ function* checkInnerCell(
 }
 
 /**
- * Check an instance part's element, and stop there, since the inner set's own renderer test owns
+ * Check an instance part's element, and stop there, since the inner set's own markup check owns
  * the markup inside it: its `class` holds the inner definition's classes for the inner cell with the
  * classes the outer component passes merged after them by `cn`, in any order, it carries the
  * `data-slot` the inner definition says its root carries in the inner cell, it shows the inner cell
