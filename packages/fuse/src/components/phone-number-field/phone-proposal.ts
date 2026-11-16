@@ -1,11 +1,19 @@
 import type { PhoneCountryCode, PhoneNumberCountry } from "./phone-engine";
-import { carry, hasOwnPrefix, offeredCountry, readAsNumber, readInternationalIn } from "./phone-snapshot";
+import {
+  carry,
+  catalogReplaced,
+  hasOwnPrefix,
+  offeredCountry,
+  readAsNumber,
+  readInternationalIn,
+} from "./phone-snapshot";
 import type { Configuration, Snapshot } from "./phone-snapshot";
 
 /**
  * The fate of a proposal waiting for the parent under new props: whether it waits on, carried
  * into the new configuration, or ends. The editor decides acceptance and the shown country; this
- * module decides only what the props say to a proposal they do not show.
+ * module decides what the props say to a proposal they do not show, and carries a proposal they
+ * show into their configuration.
  */
 
 /** The props a waiting proposal is judged against. */
@@ -18,12 +26,32 @@ export type ProposalProps = {
   readonly configuration: Configuration;
 };
 
+/**
+ * A value that holds a waiting proposal's number without a parse, with a `kind` that sets what an
+ * answer with that value shows. Formatting changes that carry the proposal into a new output keep
+ * this value, so an answer in the form the parent heard still holds the number.
+ */
+export type NumberAnswer =
+  /**
+   * The output the parent heard for the proposal. Since the parent heard it, only changes that keep
+   * the proposal's digits and number, such as formatting changes, have carried the proposal.
+   * Matching this value passes the number check for showing the proposal, as matching the
+   * proposal's current output does. The shown country must also be the proposal's country.
+   */
+  | { readonly kind: "heard"; readonly value: string }
+  /**
+   * A value that holds only the number. It is a countryless form of the parent's own, or an output
+   * the parent heard before a catalog replacement read the proposal again into other digits or
+   * another number. An answer with this value shows what the precedence gives.
+   */
+  | { readonly kind: "number"; readonly value: string };
+
 /** The props a proposal was made under, with the proposal and the value that holds its number. */
 export type ProposalRecord = ProposalProps & {
   /** The proposal waiting for the parent, or `null`. */
   readonly proposal: Snapshot | null;
   /** The value that holds the waiting proposal's number without a parse, or `null`. */
-  readonly numberAnswer: string | null;
+  readonly numberAnswer: NumberAnswer | null;
 };
 
 /** New props, with the countries the editor derives from them. */
@@ -59,7 +87,7 @@ export type WaitingProposal = {
   /** The proposal, read in the new configuration. */
   readonly proposal: Snapshot;
   /** The value that holds its number without a parse, or `null`. */
-  readonly numberAnswer: string | null;
+  readonly numberAnswer: NumberAnswer | null;
 };
 
 /** What new props say to the number of a proposal they do not show. */
@@ -69,22 +97,25 @@ type NumberReply =
   /** The value is as it was, and holds another. */
   | { readonly kind: "unchanged" }
   /**
-   * A new value answers the number alone, in a countryless form of the parent's own, such as the
-   * national digits it stores: `read` is that value read in the proposal's country, the
-   * proposal's number under the new configuration, or `null` for an echo of an output the parent
-   * heard, which holds the number without a parse.
+   * A new `value` that answers the number alone, in a countryless form the parent stores, such as
+   * national digits. `read` is that value read in the proposal's country under the new
+   * configuration, and it matches the proposal's number. `read` is `null` when `value` matches the
+   * proposal's output or `numberAnswer.value`, so no parse is needed.
    */
-  | { readonly kind: "answered"; readonly read: Snapshot | null }
+  | { readonly kind: "answered"; readonly value: string; readonly read: Snapshot | null }
   /** Any other value. */
   | { readonly kind: "contradicted" };
 
 /**
- * Whether `value` holds a waiting proposal's number without a parse: it is the proposal's output,
- * or `numberAnswer`, the output the parent heard before a formatting change carried the proposal,
- * or a countryless form the parent answered with.
+ * Whether `value` holds a waiting proposal's number without a parse. It does when it is the
+ * proposal's output or the value of `numberAnswer`, of either kind.
  */
-function holdsNumber(value: string | undefined, proposal: Snapshot, numberAnswer: string | null): boolean {
-  return value !== undefined && (value === proposal.values.outputValue || value === numberAnswer);
+function holdsNumber(
+  value: string | undefined,
+  proposal: Snapshot,
+  numberAnswer: NumberAnswer | null
+): boolean {
+  return value !== undefined && (value === proposal.values.outputValue || value === numberAnswer?.value);
 }
 
 function countryAnswer(stored: ProposalProps, next: ProposalProps, proposal: Snapshot): CountryAnswer {
@@ -133,9 +164,9 @@ function answerToNumber(
   ) {
     return { kind: "contradicted" };
   }
-  if (holds) return { kind: "answered", read: null };
+  if (holds) return { kind: "answered", value, read: null };
   const read = readAsNumber(value, proposal.country, proposal, configuration);
-  return read ? { kind: "answered", read } : { kind: "contradicted" };
+  return read ? { kind: "answered", value, read } : { kind: "contradicted" };
 }
 
 /**
@@ -166,7 +197,9 @@ function waitsOn(
  * A waiting proposal carried into a new configuration, in its own country. A replaced catalog
  * reads the proposal again with detection, which could move it to a country the user never
  * chose and the parent never heard; read there, it is read again in its own country by its
- * international form, as the editor realigns an accepted number.
+ * international form, as the editor realigns an accepted number. Direct adoption instead carries
+ * the proposal through {@link carryAdopted}, and the editor realigns the result to its country
+ * precedence. These paths can normalize a raw value differently, as #712 tracks.
  */
 function carryProposal(
   from: Configuration,
@@ -180,8 +213,77 @@ function carryProposal(
     : readInternationalIn(proposal, proposal.country, to);
 }
 
+/** Whether `carried`, a proposal carried into new props, keeps the proposal's digits and number. */
+function keepsNumber(proposal: Snapshot, carried: Snapshot): boolean {
+  return carried.digits === proposal.digits && carried.values.number === proposal.values.number;
+}
+
 /**
- * The pending proposal under new props that do not show it, decided once, from its two halves.
+ * A proposal the new props show, carried into their configuration to become the accepted number.
+ * A catalog replacement may read the proposal again. This function first carries the proposal
+ * without a controlled value. It returns that snapshot when `value` is `undefined`. For a
+ * controlled value, it returns that snapshot when the digits and number stay the same and either
+ * the output format changes or the output stays the same. Otherwise it calls {@link carry} with
+ * `value`. The returned snapshot uses the new configuration's output format. `carriedAnswer` also
+ * keeps an existing `"heard"` answer when a no-steer carry keeps the digits and number, so a later
+ * answer can still adopt the proposal's display.
+ *
+ * @param from - The configuration the proposal waited in.
+ * @param to - The new props' configuration.
+ * @param proposal - The proposal the new props show.
+ * @param value - The new props' controlled value, or `undefined`.
+ * @returns The proposal read in `to`.
+ */
+export function carryAdopted(
+  from: Configuration,
+  to: Configuration,
+  proposal: Snapshot,
+  value: string | undefined
+): Snapshot {
+  const kept = carry(from, to, proposal, undefined);
+  const keepsOutput =
+    from.outputFormat !== to.outputFormat || kept.values.outputValue === proposal.values.outputValue;
+  return value === undefined || (keepsNumber(proposal, kept) && keepsOutput)
+    ? kept
+    : carry(from, to, proposal, value);
+}
+
+/**
+ * The value that holds the number of a proposal that waits on under new props, as
+ * {@link answerAfter} gives it. A catalog replacement can read the proposal again into other digits
+ * or another number. The parent never heard that proposal, so an output the parent heard before the
+ * replacement holds only the number afterward.
+ */
+function carriedAnswer(
+  stored: ProposalRecord,
+  next: ProposalProps,
+  proposal: Snapshot,
+  carried: Snapshot,
+  number: NumberReply
+): NumberAnswer | null {
+  const answer = answerAfter(stored.numberAnswer, number);
+  return answer?.kind === "heard" &&
+    !keepsNumber(proposal, carried) &&
+    catalogReplaced(stored.configuration, next.configuration, proposal.country)
+    ? { kind: "number", value: answer.value }
+    : answer;
+}
+
+/**
+ * The value that holds a proposal's number after new props reply to it. Replies other than
+ * `"answered"` keep the stored answer. A parsed countryless answer has kind `"number"`. An unparsed
+ * answer that repeats the stored answer's value keeps its kind, even when that value also matches
+ * the proposal's output. Any other unparsed answer has kind `"heard"`.
+ */
+function answerAfter(stored: NumberAnswer | null, number: NumberReply): NumberAnswer | null {
+  if (number.kind !== "answered") return stored;
+  const { value, read } = number;
+  if (read !== null) return { kind: "number", value };
+  return value === stored?.value ? stored : { kind: "heard", value };
+}
+
+/**
+ * The pending proposal under new props that do not adopt it, decided once, from its two halves.
  *
  * A proposal waits on while exactly one half of it is answered: the parent sets its country and
  * keeps a value that does not hold its number yet, or answers its number in a countryless form of
@@ -192,12 +294,16 @@ function carryProposal(
  * configuration as an answer would: it is no steer of its own. Without a controlled country such a
  * change drops it, as fields always have. Any other props reject it.
  *
+ * Props that show the proposal adopt it and never reach this function, with two exceptions. Props
+ * that release a controlled `value` accept nothing. For props equal to the stored ones, as after an
+ * uncontrolled paste, this function only decides whether the proposal can still show.
+ *
  * A waiting proposal also ends when it can never show: the parent holds its number already, and
  * the value names an offered country other than the proposal's, which wins whatever `countryCode`
  * the parent sets.
  *
  * @param stored - The props the proposal was made under, with the proposal.
- * @param next - The new props, which do not show the proposal.
+ * @param next - The new props, which do not adopt the proposal.
  * @param pending - The stored proposal, as {@link pendingProposal} found it under `next`.
  * @returns The proposal waiting on in the new configuration, or `null` when it ends.
  */
@@ -212,7 +318,7 @@ export function proposalFate(
     number.kind === "answered" && number.read !== null
       ? number.read
       : carryProposal(stored.configuration, next.configuration, pending.proposal, next.value);
-  const answer = number.kind === "answered" ? (next.value ?? null) : stored.numberAnswer;
+  const answer = carriedAnswer(stored, next, pending.proposal, carried, number);
   const blocked =
     holdsNumber(next.value, carried, answer) &&
     next.named !== null &&

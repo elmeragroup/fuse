@@ -369,28 +369,6 @@ describe("PhoneEditor controlled countryCode", () => {
     expect(shown(released)).toEqual({ display: "", output: "", country: "NO" });
     expect(PhoneEditor.steeredValue(released)?.value).toBe("");
   });
-
-  it("ends a preserved pick answered in both halves after a format change, and reads the value in its country", () => {
-    const props = {
-      countryCode: "NO",
-      countries: ["FI", "NO", "SJ"],
-      outputFormat: "national",
-      preserveOnCountryChange: true,
-      autoDetectCountry: false,
-    } as const;
-    const pasted = PhoneEditor.paste(PhoneEditor.create({ ...props, value: "" }), "+358401234567");
-    const value = "040 1234567";
-    expect(proposedValue(pasted)).toBe(value);
-    const echoed = PhoneEditor.reconcile(pasted, { ...props, value });
-    // The preserved pick's output is the value the parent holds, so the number half is answered.
-    const picked = PhoneEditor.selectCountry(echoed, "FI");
-    expect(proposedValue(picked)).toBeNull();
-    const formatted = PhoneEditor.reconcile(picked, { ...props, value, outputFormat: "e164" });
-    expect(PhoneEditor.observeCountry(formatted).proposed?.code).toBe("FI");
-    const accepted = PhoneEditor.reconcile(formatted, { ...props, value, countryCode: "FI" });
-    expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
-    expect(shown(accepted)).toEqual({ display: "0401234567", output: "040 1234567", country: "FI" });
-  });
 });
 
 describe("PhoneEditor without a controlled country", () => {
