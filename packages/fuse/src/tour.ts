@@ -70,6 +70,7 @@ export type {
   TourStepBinding,
 } from "./components/tour/tour-provider";
 export type { TourTargetProps } from "./components/tour/tour-target";
+export type { TourBeaconProps } from "./components/tour/tour-beacon";
 export type { TourPopupProps } from "./components/tour/tour-popup";
 export type {
   TourCloseProps,

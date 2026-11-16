@@ -5,6 +5,7 @@
  */
 export { TourProvider as Provider } from "./tour-provider";
 export { TourTarget as Target } from "./tour-target";
+export { TourBeacon as Beacon } from "./tour-beacon";
 export { TourPopup as Popup } from "./tour-popup";
 export {
   TourHeader as Header,
