@@ -14,6 +14,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
@@ -25,6 +26,7 @@ import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
+import { Calendar } from "../calendar";
 import type { DateInputValue } from "../date-field/date-input";
 import { Field } from "../field";
 import { Form } from "../form/form";
@@ -125,6 +127,65 @@ describe("DatePicker opening and closing", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(document.activeElement).toBe(trigger);
     await expect.element(log()).toHaveTextContent("open:true:trigger-press | open:false:escape-key");
+  });
+
+  it.each([
+    {
+      name: "a calendar whose day buttons render with their own data-slot",
+      popup: (
+        <DatePicker.Popup>
+          <DatePicker.Calendar>
+            <Calendar.Header>
+              <Calendar.DecrementMonth />
+              <Calendar.VisibleRangeHeading />
+              <Calendar.IncrementMonth />
+            </Calendar.Header>
+            <MonthsWithDay day={<Calendar.DayButton render={<button data-slot="start-day" />} />} />
+          </DatePicker.Calendar>
+        </DatePicker.Popup>
+      ),
+    },
+    {
+      name: "a popup whose render element holds the calendar",
+      popup: (
+        <DatePicker.Popup
+          render={
+            <div>
+              <DatePicker.Calendar />
+            </div>
+          }
+        />
+      ),
+    },
+    {
+      name: "a popup that holds a second calendar after the picker's",
+      popup: (
+        <DatePicker.Popup>
+          <DatePicker.Calendar />
+          <Calendar.Root aria-label="Return" defaultValue={Temporal.PlainDate.from("2026-10-20")}>
+            <Calendar.Months />
+          </Calendar.Root>
+        </DatePicker.Popup>
+      ),
+    },
+  ])("moves focus on open to the picker's selected day in $name", async ({ popup }) => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DatePicker.Root aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")}>
+          <DatePicker.Group>
+            <DatePicker.Input />
+            <DatePicker.Trigger />
+          </DatePicker.Group>
+          {popup}
+        </DatePicker.Root>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Start date"));
+
+    await expect
+      .element(page.getByRole("button", { name: "Monday, October 5, 2026 selected", exact: true }))
+      .toHaveFocus();
   });
 
   it("commits a day chosen with Enter and closes with the keyboard reason", async () => {

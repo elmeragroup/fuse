@@ -18,6 +18,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -693,6 +694,30 @@ describe("Calendar focus when the bounds change", () => {
       )
       .toHaveAttribute("tabindex", "0");
     expect(roleNamed("button", "Outside")).toHaveFocus();
+  });
+});
+
+describe("Calendar day buttons a host renders", () => {
+  it("keeps keyboard focus on the day a key moved to when the host remounts day buttons that render with their own data-slot", async () => {
+    /** Day buttons keyed by `generation`, which a host bumps to remount them, as after a data load. */
+    function Delivery({ generation }: { readonly generation: number }): ReactElement {
+      return (
+        <Calendar.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-14")}>
+          <MonthsWithDay
+            day={<Calendar.DayButton key={generation} render={<button data-slot="delivery-day" />} />}
+          />
+        </Calendar.Root>
+      );
+    }
+    const { rerender } = renderThemed(withLocale("en-US", <Delivery generation={0} />));
+    await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{ArrowRight}");
+    const moved = roleNamed("button", "Thursday, October 15, 2026");
+
+    rerender(withLocale("en-US", <Delivery generation={1} />));
+
+    await expect.poll(() => moved.isConnected).toBe(false);
+    await expectFocusOnDay("Thursday, October 15, 2026");
   });
 });
 

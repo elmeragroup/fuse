@@ -303,6 +303,8 @@ export type CalendarActions = {
    * to take focus.
    */
   readonly blurTo: (left: Element, next: Element | null) => void;
+  /** Registers a mounted day's button, which `blurTo` uses to recognize a move between days. */
+  readonly registerDay: CalendarDayRegistration;
   /** Moves focus by a key. */
   readonly move: (move: FocusMove, event: Event, trigger: Element) => void;
   /** Pages the view with a month button. */
@@ -351,6 +353,15 @@ export type CalendarDayContextValue = {
 export const CalendarRootContext = createContext<CalendarRootContextValue | undefined>(undefined);
 export const CalendarMonthContext = createContext<CalendarMonthContextValue | undefined>(undefined);
 export const CalendarDayContext = createContext<CalendarDayContextValue | undefined>(undefined);
+
+/** Registers a mounted day's button and returns its unregistration. */
+export type CalendarDayRegistration = (button: HTMLButtonElement) => () => void;
+
+/**
+ * A container around one or more calendars that moves focus into them, such as a picker's popup.
+ * Every day button of every calendar inside it registers with it.
+ */
+export const CalendarDayRegistryContext = createContext<CalendarDayRegistration | undefined>(undefined);
 
 /**
  * The enclosing calendar Root.
