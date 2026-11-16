@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { FocusEvent, KeyboardEvent, ReactElement } from "react";
+import type { FocusEvent, ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { isElement } from "../../internal/dom-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { temporal } from "../../temporal/temporal";
@@ -366,19 +365,6 @@ export function RangeCalendarRoot({
               {children}
             </>
           ),
-          onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-            // Escape on a day drops a range being chosen and goes no further, so an enclosing
-            // popup stays open; with no range open it passes through.
-            if (
-              event.key === "Escape" &&
-              isElement(event.target) &&
-              event.target.closest("[data-slot=calendar-day-button]") !== null &&
-              store.get().anchor !== null
-            ) {
-              event.stopPropagation();
-              store.set({ ...store.get(), anchor: null });
-            }
-          },
           onBlur(event: FocusEvent<HTMLDivElement>) {
             // Focus moving to another element outside the calendar settles an open range. A blur
             // with no next element (the window losing focus, a press on something that takes no

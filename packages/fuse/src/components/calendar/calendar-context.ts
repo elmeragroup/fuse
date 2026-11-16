@@ -179,6 +179,8 @@ export const DAY_FLAG_STATE_ATTRIBUTES: DayFlagFields<BooleanStateAttribute> = b
  *   own month, not refused by `isDateUnavailable`, in a calendar neither disabled nor read-only.
  * - `hover` takes the pointer entering a day that is not disabled, for a preview that follows
  *   the pointer.
+ * - `cancel` handles Escape on a day. It returns whether it dropped something. The day button stops
+ *   the key only then, so an enclosing popup closes on an Escape that drops nothing.
  *
  * A disabled day, one out of bounds, in a neighboring month or in a disabled calendar, never
  * reaches `select` or `hover`, and the parts drop its flags.
@@ -195,6 +197,12 @@ export type CalendarSelectionOwner = {
   ) => void;
   /** Called when the pointer enters a day that is not disabled. */
   readonly hover: (date: Temporal.PlainDate, event: PointerEvent) => void;
+  /**
+   * Drops what is being chosen, for Escape on a day. It returns `true` when it drops something, and
+   * `false` when nothing is being chosen. RangeCalendar drops an open range's anchor; Calendar has
+   * nothing to drop.
+   */
+  readonly cancel: () => boolean;
   /**
    * The words a day's name starts with, or `""`, as a hook each day button calls once per render like
    * `useDayFlags`. RangeCalendar names its range's ends with the whole range ("Selected Range:
@@ -256,6 +264,7 @@ export function createSelectionOwner<S>(
     multiselectable: model.multiselectable,
     select: model.select,
     hover: model.hover,
+    cancel: model.cancel,
   };
 }
 
