@@ -195,7 +195,7 @@ export type PickerRootOptions = {
    * The Root's session, whose open request the boundary wraps and whose `resetOwner` the inputs
    * register their form reset with.
    */
-  readonly session: Pick<PickerSession<unknown, string>, "open" | "requestOpen" | "resetOwner">;
+  readonly session: Pick<PickerSession<unknown, unknown, string>, "open" | "requestOpen" | "resetOwner">;
   /** The ids that label the picker: its visible label, or `undefined`. */
   readonly labelledBy: string | undefined;
   /** The ids that describe the picker. */
