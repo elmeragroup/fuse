@@ -495,6 +495,7 @@ function namespaceElements(): ReactElement[] {
     ...renderNamespace("Tour", Tour, [
       "Provider",
       "Target",
+      "Beacon",
       "Popup",
       "Header",
       "Progress",

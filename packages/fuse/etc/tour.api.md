@@ -63,6 +63,7 @@ export function serializeTourCookie(records: TourRecords): string;
 
 declare namespace Tour {
     export {
+        TourBeacon as Beacon,
         TourClose as Close,
         TourDescription as Description,
         TourFooter as Footer,
@@ -88,6 +89,16 @@ export const TOUR_STEP_ATTRIBUTE = "data-tour-step";
 
 // @beta
 export const TOUR_STORAGE_KEY = "fuse-tours";
+
+// @beta
+function TourBeacon<S extends string>(input: TourBeaconProps<S>): ReactElement | null;
+
+// @beta
+export type TourBeaconProps<S extends string> = Omit<ComponentProps<"button">, "children"> & {
+    tour: TourDefinition<S>;
+    step?: NoInfer<S>;
+    "aria-label"?: string;
+};
 
 // @beta
 function TourClose(input: TourCloseProps): ReactElement | null;

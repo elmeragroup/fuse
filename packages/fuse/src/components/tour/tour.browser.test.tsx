@@ -3,7 +3,7 @@
 // Escape write a status; an outside press and an error do not), Base UI's labeled dialog contract,
 // the plain-HTML attribute's whole-entry match, and the re-render rule that only the parts whose
 // answer changes render during a run.
-import { Profiler, useLayoutEffect, useState } from "react";
+import { Profiler, createRef, useLayoutEffect, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { createPortal } from "react-dom";
@@ -1166,6 +1166,16 @@ describe("Tour checklist", () => {
       </SetupList>
     );
   }
+  function WithBeacon(): ReactElement {
+    return (
+      <SetupList>
+        <li data-tour-step="setup.meter">Connect your meter</li>
+        <li>
+          <Tour.Beacon tour={setup} step="meter" />
+        </li>
+      </SetupList>
+    );
+  }
   function WithAutoStart(): ReactElement {
     useAutoStartTour(setup, { delayMs: 0 });
     return (
@@ -1181,6 +1191,7 @@ describe("Tour checklist", () => {
     ["Tour.Target", WithTarget],
     ["useTourStep", WithUseTourStep],
     ["useAutoStartTour", WithAutoStart],
+    ["Tour.Beacon", WithBeacon],
   ])(
     "completes a checklist that %s makes known after its covering records arrived, and saves it",
     async (_part, Part) => {
@@ -1245,6 +1256,113 @@ describe("Tour.Ring", () => {
     await userEvent.click(target);
     expect(presses).toEqual(["usage"]);
     await dialogNamed("Usage");
+  });
+});
+
+describe("Tour.Beacon", () => {
+  const tip = defineTour({
+    id: "export-tip",
+    steps: ["export"],
+    content: { export: { title: "Export your data", description: "Download a CSV of your readings." } },
+  });
+
+  function renderBeacon(props: FixtureOptions & { readonly storage: TourStorage }): void {
+    renderThemed(
+      <Tour.Provider {...props}>
+        <Tour.Beacon tour={tip} />
+        <StepPopup tour={tip} />
+      </Tour.Provider>
+    );
+  }
+
+  it("renders nothing until storage answers, then a button that opens the tip and closes it for good", async () => {
+    let answer: (records: TourRecords) => void = () => undefined;
+    const storage = memoryTourStorage();
+    const slow: TourStorage = {
+      read: () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      write: storage.write,
+    };
+    renderBeacon({ storage: slow });
+    expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
+    answer({});
+
+    const beacon = page.getByRole("button", { name: "Show tip" });
+    await expect.element(beacon).toBeVisible();
+    expect(beacon.element()).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(beacon.element());
+    await dialogNamed("Export your data");
+    expect(beacon.element()).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.click(roleNamed("button", "Close"));
+    await expectNoDialog();
+    await vi.waitFor(() => {
+      expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
+    });
+    expect((await recordsOf(storage))["export-tip"]?.status).toBe("dismissed");
+  });
+
+  it("keeps pointing the tip at the beacon when the consumer passes a ref", async () => {
+    const consumerRef = createRef<HTMLButtonElement>();
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Tour.Beacon tour={tip} ref={consumerRef} />
+        <StepPopup tour={tip} />
+      </Tour.Provider>
+    );
+    const beacon = page.getByRole("button", { name: "Show tip" });
+    await expect.element(beacon).toBeVisible();
+    expect(consumerRef.current).toBe(beacon.element());
+    await userEvent.click(beacon.element());
+    await dialogNamed("Export your data");
+  });
+
+  it("renders nothing for a tip the initial records finished, before and after storage answers", async () => {
+    const storage = memoryTourStorage();
+    renderThemed(
+      <Tour.Provider
+        storage={storage}
+        initialRecords={{ "export-tip": { status: "completed", v: 1, at: 1 } }}>
+        <Starter tour={welcome} />
+        <Tour.Beacon tour={tip} />
+      </Tour.Provider>
+    );
+    expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
+    // Another tour leaves "unknown" once storage answers.
+    await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("idle");
+    expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
+  });
+
+  it("keeps the lit hole over the beacon while the dim fades, though the beacon unmounts with the tip", async () => {
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Tour.Beacon tour={tip} />
+        <Tour.Popup tour={tip} modal="trap-focus">
+          <Tour.Spotlight />
+          <Tour.Close />
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Show tip"));
+    const dialog = await dialogNamed("Export your data");
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+    const cutout = cutoutOf();
+    const width = (): string => cutout.style.getPropertyValue("--tour-highlight-w");
+    const lit = width();
+    // Unit under test: the hole while the popup closes. Oracle: the beacon's box, which it lit. Done
+    // completes the tip, and the beacon, the step's element, leaves the page with it.
+    const widths: string[] = [];
+    const observer = new MutationObserver(() => widths.push(width()));
+    observer.observe(cutout, { attributes: true, attributeFilter: ["style"] });
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+    observer.disconnect();
+    expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
+    expect(widths.filter((value) => value !== lit)).toEqual([]);
   });
 });
 

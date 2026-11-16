@@ -22,6 +22,9 @@ const tourOutlineClass = cn("ring-2 ring-primary");
  * - `highlight` places a box over the step's element from the `--tour-highlight-*` properties
  *   `TourHighlight` writes, and takes no pointer.
  * - `ring` is the same outline on the overlay layer, for `Tour.Ring`.
+ * - `beacon` centers `beaconDot`, a 10px primary dot, over `beaconPulse`, a copy that grows and fades
+ *   three times when motion is allowed, so the beacon never moves for longer than WCAG's five
+ *   seconds.
  */
 export const tourVariants = tv({
   slots: {
@@ -44,5 +47,9 @@ export const tourVariants = tv({
     highlight:
       "pointer-events-none fixed top-0 left-0 h-(--tour-highlight-h) w-(--tour-highlight-w) translate-x-(--tour-highlight-x) translate-y-(--tour-highlight-y) rounded-(--tour-highlight-r)",
     ring: [tourOutlineClass, overlayLayer],
+    beacon: "relative",
+    beaconDot: "size-2.5 rounded-full bg-primary",
+    beaconPulse:
+      "absolute inset-0 m-auto size-2.5 rounded-full bg-primary motion-safe:animate-[ping_1s_cubic-bezier(0,0,0.2,1)_3]",
   },
 });

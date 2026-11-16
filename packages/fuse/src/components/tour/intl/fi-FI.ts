@@ -5,6 +5,7 @@ export const fiFI = {
   next: "Seuraava",
   back: "Takaisin",
   done: "Valmis",
+  beacon: "Näytä vinkki",
   skip: "Ohita",
   count: (vars: Variables) => `${String(vars?.current)}/${String(vars?.total)}`,
   announcement: (vars: Variables) => `Vaihe ${String(vars?.current)}/${String(vars?.total)}`,

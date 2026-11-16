@@ -5,7 +5,7 @@ import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
 /**
- * The tour's dictionary: the labels of `Tour.Next`, `Tour.Prev` and `Tour.Skip`, the count
+ * The tour's dictionary: the labels of `Tour.Next`, `Tour.Prev`, `Tour.Skip` and `Tour.Beacon`, the count
  * `Tour.Progress` shows, and the step it announces. `Tour.Close` takes its name from the overlay
  * families' shared `close` row.
  */
