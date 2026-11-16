@@ -8,7 +8,13 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useRender } from "@base-ui/react/use-render";
 
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
+import {
+  chartTakesPress,
+  TOOLTIP_POSITIONER,
+  tooltipInput,
+  tooltipPopupClass,
+  watchOverflow,
+} from "./chart-tooltip-popup";
 import type { ChartDomProps, ChartLayerProps, ValueFormat } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
@@ -164,10 +170,8 @@ export function ScatterChartTooltip({
   // Chart's tooltip rules it. Only that entry holds the point while the pointer crosses the popup,
   // so a scrub that passes over the popup keeps picking the points under it.
   const frozen = useRef(false);
-  // The kind of pointer the reader last used, which the store announces whenever it changes, so
-  // the popup lets taps through to the plot from the first touch, unless it scrolls.
-  const input = useScatterStore(store, (snapshot) => snapshot.input);
-  const touchInput = input === "touch" || input === "pen";
+  // The popup's input mark, which follows the reader's pointer from the first touch.
+  const input = useScatterStore(store, (snapshot) => tooltipInput(snapshot.input));
   // Where a touch the popup took went down, so its lift tells a tap from a scroll.
   const pressed = useRef<{ readonly x: number; readonly y: number } | null>(null);
   return (
@@ -182,7 +186,7 @@ export function ScatterChartTooltip({
           <TooltipPrimitive.Popup
             data-slot="chart-tooltip"
             data-variant={variant}
-            data-input={touchInput ? "touch" : undefined}
+            data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
             className={tooltipPopupClass(variant, className)}

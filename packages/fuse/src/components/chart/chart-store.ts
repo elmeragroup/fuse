@@ -74,6 +74,12 @@ export type ChartSnapshot = {
    * hydrating option hold none, and the word arrives in the update that registration triggers.
    */
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
+  /**
+   * The kind of pointer the user last used over the plot, or `null` before any. `track` writes it
+   * whenever it changes, whether or not the active slot does. So the popup lets taps through to the
+   * plot from the first touch, even one on the slot a mouse already shows.
+   */
+  readonly input: string | null;
 };
 
 /** The store of one Root. */
@@ -96,7 +102,7 @@ export type ChartStore = {
   readonly pointer: () => TrackedPointer | null;
   /**
    * Records the pointer's position over the plot at an event's time stamp, which `pointer` returns
-   * with the speed of its recent moves.
+   * with the speed of its recent moves. It writes `input` when the type changes.
    */
   readonly track: (x: number, y: number, type: string, time: number) => void;
   /** Whether the plot's parts may draw, which `openDrawing` sets once. */
@@ -113,6 +119,7 @@ const INITIAL: ChartSnapshot = {
   frozen: false,
   announcement: { text: "", count: 0 },
   emphasis: {},
+  input: null,
 };
 
 /**
@@ -135,6 +142,7 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
     pointer: () => last,
     track(x, y, type, time) {
       last = trackPointer(last, x, y, type, time);
+      if (type !== state.input) this.set({ input: type });
     },
     get: () => state,
     set(patch) {
