@@ -46,6 +46,35 @@ describe("parse", () => {
   });
 });
 
+describe("parseTranslucent", () => {
+  it("reads eight-digit hex with the fourth byte as the alpha, in either case", () => {
+    const read = (input: string) => {
+      const result = Hex.parseTranslucent(input);
+      return result._tag === "ok" ? channels(result.value) : result.error.message;
+    };
+    // 0x0d is 13 and 0x80 is 128, out of 255.
+    expect(read("#0000000d")).toEqual([0, 0, 0, 13 / 255]);
+    expect(read("#FF000080")).toEqual([1, 0, 0, 128 / 255]);
+  });
+
+  it("refuses six digits, shorthand and other lengths", () => {
+    for (const input of ["#5c6773", "#f808", "#ff0000800", "#gggggggg", "ff000080"]) {
+      expect(Hex.parseTranslucent(input)._tag === "err", input).toBe(true);
+    }
+  });
+
+  it("reads back every translucent color format writes", () => {
+    const byteValue = fc.integer({ min: 0, max: 255 }).map((value) => value / 255);
+    fc.assert(
+      fc.property(byteValue, byteValue, byteValue, fc.integer({ min: 0, max: 254 }), (r, g, b, alpha) => {
+        const color = getOrThrow(Srgb.make({ r, g, b, alpha: alpha / 255 }));
+        const read = Hex.parseTranslucent(Hex.format(color));
+        expect(read._tag === "ok" && channels(read.value)).toEqual(channels(color));
+      })
+    );
+  });
+});
+
 describe("formatOpaque", () => {
   it("writes uppercase #RRGGBB, rounding each channel to the nearest of 256 steps, and leaves the alpha out", () => {
     expect(

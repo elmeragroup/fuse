@@ -5,11 +5,15 @@
  */
 import { Effect, Result } from "effect";
 
+import type { CaptureUnreadable } from "../capture/capture-format";
+import { keptCapture } from "../capture/captures";
+import { manifestDefinition } from "../capture/manifest";
 import { fuseVariableSet } from "../fuse-variable-set";
 import { KIT_BODY_FAMILY } from "../kit-fonts";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder } from "./component-builder";
+import type { SetSource } from "./component-builder";
 import { definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
@@ -177,10 +181,11 @@ function modeViews(
  */
 function mapSets(
   registry: readonly KitEntry[],
-  context: Parameters<typeof buildSetsInOrder>[1]
+  context: Parameters<typeof buildSetsInOrder>[1],
+  source: (entry: KitEntry) => SetSource
 ): Result.Result<ReturnType<typeof buildSetsInOrder<KitEntry>>, KitUnmappable> {
   try {
-    return Result.succeed(buildSetsInOrder(registry, context));
+    return Result.succeed(buildSetsInOrder(registry, context, source));
   } catch (thrown) {
     if (thrown instanceof KitUnmappable) {
       return Result.fail(thrown);
@@ -189,10 +194,42 @@ function mapSets(
   }
 }
 
+/**
+ * Which cascade builds the kit's sets: `switched` reads each set its kit entry switches to the
+ * capture from its capture and every other set from its recipe, and `recipe` reads every set from
+ * its recipe, as the differential oracle compares.
+ */
+export type KitEngine = "switched" | "recipe";
+
+/** What builds an entry's set under an engine, or `CaptureUnreadable` for a kept capture the schema rejects. */
+function setSource(
+  entry: KitEntry,
+  engine: KitEngine
+): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
+  const { manifest } = entry;
+  if (engine === "recipe" || manifest === undefined) {
+    return Result.succeed({ definition: entry.definition, capture: undefined });
+  }
+  const capture = keptCapture(manifest.key);
+  if (capture === undefined) {
+    return Result.fail(
+      new KitUnmappable({
+        message: `${manifest.name} is switched to its capture, and captures/${manifest.key}.json does not exist; run figma:capture`,
+      })
+    );
+  }
+  return Result.map(capture, (read) => ({ definition: manifestDefinition(manifest), capture: read }));
+}
+
 const buildSets = Effect.fnUntraced(function* (
   { variables, modes }: KitVariables,
-  registry: readonly KitEntry[]
+  registry: readonly KitEntry[],
+  engine: KitEngine = "switched"
 ) {
+  const sources = new Map<KitEntry, SetSource>();
+  for (const entry of registry) {
+    sources.set(entry, yield* Effect.fromResult(setSource(entry, engine)));
+  }
   const classes = new Set(registry.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = yield* compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
@@ -201,7 +238,11 @@ const buildSets = Effect.fnUntraced(function* (
   const borderColor = yield* Effect.fromResult(baseBorderColor(compiled));
   const base: readonly OuterDeclaration[] = [{ className: "fuse.css base layer", ...borderColor }];
   const mapped = yield* Effect.fromResult(
-    mapSets(registry, { compiled, variables, page: PAGE, base, modes })
+    mapSets(
+      registry,
+      { compiled, variables, page: PAGE, base, modes },
+      (entry) => sources.get(entry) ?? { definition: entry.definition, capture: undefined }
+    )
   );
   const sets: readonly KitComponentSet[] = mapped.map(([{ page }, set]) => ({
     ...set,
@@ -217,8 +258,8 @@ const buildSets = Effect.fnUntraced(function* (
  *   classes it read and the font styles its text uses. The Effect fails with `KitUnmappable`,
  *   `KitSourceInvalid` or `KitToolFailed`, as {@link buildKit} does.
  */
-export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
-  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
+export const buildComponentSets = Effect.fn("buildComponentSets")(function* (engine: KitEngine = "switched") {
+  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT, engine);
 });
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */

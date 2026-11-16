@@ -5,13 +5,18 @@
  * table with what became of it. `component-spec.ts` holds the definition types this module reads.
  */
 
+import { Result } from "effect";
+
+import { CaptureSetCascade } from "../capture/capture-cascade";
+import type { SetCapture } from "../capture/capture-format";
+import { keptCapture } from "../capture/captures";
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
 import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import { SetCascade } from "./cascade";
-import type { LayerStyle } from "./cascade";
+import type { BoxCascade, LayerStyle } from "./cascade";
 import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
 import { definitionClasses, matrixCells, previewWidthIn, variantKey } from "./component-spec";
@@ -43,24 +48,37 @@ import { PaintedInstances } from "./stacking";
 import { makeStateTable } from "./state-table";
 
 /**
+ * What a set builds from: the definition the mapping walks, and the capture its cascade reads, or
+ * undefined for the recipe cascade.
+ */
+export type SetSource = {
+  readonly definition: ComponentDefinition;
+  readonly capture: SetCapture | undefined;
+};
+
+/**
  * Build the component sets of a list of definitions in its order, each with the sets before it at
  * hand, so a set builds after the sets its instance parts show.
  *
  * @template Entry - What the list holds for each set, its definition among it.
  * @param entries - The definitions, each set after the sets it holds instances of.
  * @param context - The compiled utilities and the synced variables.
+ * @param source - What builds an entry's set: its definition and the recipe cascade, or the
+ *   definition its manifest gives and its capture. The recipe by default.
  * @returns Each entry with its built set, in the list's order.
  * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
  *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
  */
 export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
   entries: readonly Entry[],
-  context: BuildContext
+  context: BuildContext,
+  source: (entry: Entry) => SetSource = (entry) => ({ definition: entry.definition, capture: undefined })
 ): readonly (readonly [Entry, BuiltComponent])[] {
   checkInstanceOrder(entries.map(({ definition }) => definition));
   const built = new Map<string, InnerSet>();
   return entries.map((entry) => {
-    const set = buildComponentSet(entry.definition, context, built);
+    const { definition, capture } = source(entry);
+    const set = buildComponentSet(definition, context, built, capture);
     built.set(entry.definition.key, set.componentSet);
     return [entry, set] as const;
   });
@@ -72,13 +90,16 @@ export function buildSetsInOrder<Entry extends { readonly definition: ComponentD
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
  * @param inner - The sets built before this one, by key, which its instance parts show.
+ * @param capture - The set's capture, which the set's cascade reads in place of the definition's
+ *   classes, or undefined for the recipe cascade.
  * @returns The component set, its coverage and the font styles its text uses.
  * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
 export function buildComponentSet(
   definition: ComponentDefinition,
   context: BuildContext,
-  inner: ReadonlyMap<string, InnerSet> = new Map()
+  inner: ReadonlyMap<string, InnerSet> = new Map(),
+  capture?: SetCapture
 ): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
@@ -102,7 +123,7 @@ export function buildComponentSet(
       context.compiled.rulesByClass
     );
   }
-  const cascade = new SetCascade(makeStateTable(definition), context, record);
+  const cascade = setCascade(definition, context, record, capture);
   const instances = new InstanceParts(context, inner, record);
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
   const variants = cells.map((cell): VariantSpec => {
@@ -119,12 +140,7 @@ export function buildComponentSet(
     };
     const scope: MapScope =
       definition.viewport === undefined ? plain : { ...plain, viewport: definition.viewport };
-    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
-      declarations: definition.inheritedFor?.(cell) ?? [],
-      ancestors: definition.ancestorsFor?.(cell) ?? [],
-      defaults: definition.elementDefaults ?? [],
-      inline: definition.styleFor?.(cell) ?? [],
-    });
+    const rootCascade = cellCascade.root(definition, cell);
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
@@ -196,6 +212,68 @@ export function buildComponentSet(
     componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
+  };
+}
+
+/** The cascade of one cell, as the builder drives it, from the recipe or from the capture. */
+type CellEngine = {
+  readonly root: (definition: ComponentDefinition, cell: Cell) => BoxCascade;
+  readonly backdrop: () => LayerStyle | undefined;
+  readonly settle: () => void;
+};
+
+/** The cascade of a set's cells, as the builder drives it, and what records its logs once they cascaded. */
+type SetEngine = { readonly cell: (cell: Cell) => CellEngine; readonly finish: () => void };
+
+/** The cascade of a set's cells, from the definition's classes or from the set's capture. */
+function setCascade(
+  definition: ComponentDefinition,
+  context: BuildContext,
+  record: (row: Omit<CoverageRow, "component">) => void,
+  capture: SetCapture | undefined
+): SetEngine {
+  if (capture !== undefined) {
+    const captured = new CaptureSetCascade(capture, definition, context, record, (key) => {
+      const kept = keptCapture(key);
+      return kept === undefined || Result.isFailure(kept) ? undefined : kept.success;
+    });
+    return {
+      cell: (cell) => {
+        const cascade = captured.cell(cell);
+        return {
+          root: (root) => cascade.root(root.slot),
+          backdrop: () => cascade.backdrop(),
+          settle: () => {
+            cascade.settle();
+          },
+        };
+      },
+      finish: () => {
+        captured.finish();
+      },
+    };
+  }
+  const recipe = new SetCascade(makeStateTable(definition), context, record);
+  return {
+    cell: (cell) => {
+      const cascade = recipe.cell(cell);
+      return {
+        root: (root, shown) =>
+          cascade.root(root.classesFor(shown), root.slot, {
+            declarations: root.inheritedFor?.(shown) ?? [],
+            ancestors: root.ancestorsFor?.(shown) ?? [],
+            defaults: root.elementDefaults ?? [],
+            inline: root.styleFor?.(shown) ?? [],
+          }),
+        backdrop: () => cascade.backdrop(),
+        settle: () => {
+          cascade.settle();
+        },
+      };
+    },
+    finish: () => {
+      recipe.finish();
+    },
   };
 }
 

@@ -1,0 +1,145 @@
+{
+  "set": "input",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[input/*].root.shadows[0].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes `shadow-xs`'s color as `#0000000d`, 13/255 alpha, which the browser paints; the recipe build read the source's `rgb(0 0 0 / 0.05)`."
+    },
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `opacity: .5` for `50%` or `var(--a, var(--b))` for `var(--a,var(--b))`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "file:*",
+        "detail": "the button of a file input, which the kit does not draw"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A `file:` class styles a file input's button, which no cell renders; the capture lists the class once."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "group/field",
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "className": "[&>.sr-only]:w-auto"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture lists the class once, as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "detail": "the Field lays out its label, control and messages, which the set does not draw"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture passes down only what the Field root around an invalid input inherits, and lists none of its layout, which the set does not draw."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's child rule wins the input's width over its own `w-full` by source order; the recipe build dropped it by hand."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "As above: the winning width, the same 100% of the preview width."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, input"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written `<input>` default, which the capture reads from the browser's own style sheet."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for `<input>`, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight on `<input>`: its `color: inherit` now carries the text color, and its resets drop."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer on `<input>` and on its placeholder, which the recipe build did not model."
+    }
+  ]
+}

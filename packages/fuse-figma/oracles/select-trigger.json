@@ -1,0 +1,142 @@
+{
+  "set": "select-trigger",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "[&>.sr-only]:w-auto"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture lists the class once, as winning nothing."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "detail": "the Field lays out its label, control and messages, which the set does not draw"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture passes down only what a Field root around the root inherits, and lists none of its layout, which the set does not draw."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's child rule sets its child's width by source order; the recipe build dropped it by hand."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "As above: the width the Field root's child rule wins."
+    },
+    {
+      "kind": "field",
+      "path": "variants[select-trigger/*].root.shadows[0].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes `shadow-xs`'s color as `#0000000d`, 13/255 alpha, which the browser paints; the recipe build read the source's `rgb(0 0 0 / 0.05)`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "select-none",
+        "property": "-webkit-user-select"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The shipped `styles.css` writes only `user-select: none`, whose row drops as before."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted",
+        "outcome": "unmapped"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build could not tell what the variant means and left it unmapped; the browser shows no cell matches it, and the capture lists the class as winning nothing."
+    }
+  ]
+}

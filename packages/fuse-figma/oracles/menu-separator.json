@@ -1,0 +1,68 @@
+{
+  "set": "menu-separator",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written element default, which the capture reads from the browser's own style sheet."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "pointer-events-none",
+        "property": "pointer-events"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The class the Select family passes its separator, which the capture reads on the element; it drops, as pointer rules do."
+    }
+  ]
+}

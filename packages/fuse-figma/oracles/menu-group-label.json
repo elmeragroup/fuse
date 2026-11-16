@@ -1,0 +1,102 @@
+{
+  "set": "menu-group-label",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell of the box shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written element default, which the capture reads from the browser's own style sheet."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the * around the root sets its own, so the root does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What an element of the markup around the root sets that the root sets itself, which the capture lists as the recipe build listed the page's."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition named the Select popup and group around the root by their classes, and the recipe build listed each of their declarations. The capture passes down only what they inherit, and the Select popup set draws the rest."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "dropdown-menu-*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "As above, for the Dropdown menu popup and group around a Dropdown label."
+    }
+  ]
+}

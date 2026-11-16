@@ -4,6 +4,7 @@
  * Tailwind's own variables are substituted, or it stays unmapped.
  */
 import * as CssColor from "@elmeragroup/color/css-color";
+import * as Hex from "@elmeragroup/color/hex";
 import * as Srgb from "@elmeragroup/color/srgb";
 
 import type { CoverageRow } from "./coverage";
@@ -889,11 +890,26 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
 /**
  * Parse a color literal through `@elmeragroup/color` as sRGB. Tailwind's theme writes black and
  * white as the shorthand `#000` and `#fff`, which the shared parser refuses, so the reader spells a
- * shorthand out to the six digits it takes.
+ * shorthand out to the six digits it takes. Fuse's built `styles.css` writes a translucent literal in
+ * eight digits, as `shadow-xs`'s `#0000000d`, or four, as `transparent`'s `#0000`, which the reader
+ * spells out to eight for the hex parser for translucent colors.
  *
  * @returns The color, or undefined for a value that is no color literal the parser reads.
  */
 function parseLiteral(value: string): Srgb.Srgb | undefined {
+  // A shorthand with alpha, as the build writes `transparent` as `#0000`, spells out to eight digits.
+  const translucentShorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
+  const translucent =
+    translucentShorthand === null
+      ? value
+      : `#${translucentShorthand
+          .slice(1)
+          .map((digit) => digit.repeat(2))
+          .join("")}`;
+  if (/^#[0-9a-f]{8}$/i.test(translucent)) {
+    const parsed = Hex.parseTranslucent(translucent);
+    return parsed._tag === "err" ? undefined : parsed.value;
+  }
   const shorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
   const parsed = CssColor.parse(
     shorthand === null

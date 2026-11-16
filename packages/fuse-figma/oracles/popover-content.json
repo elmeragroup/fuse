@@ -1,0 +1,11 @@
+{
+  "set": "popover-content",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[popover-content/*]*.overrides",
+      "verdict": "old-was-wrong",
+      "reason": "This set still builds from its recipe, and its Input instance now shows the capture-built Input, whose shadow paints the shipped `#0000000d` at 13/255 alpha. The recipe cascade in place reads 0.05, so the instance overrides the shadow until this set switches too."
+    }
+  ]
+}

@@ -19,6 +19,7 @@
  */
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -159,6 +160,18 @@ export const BUTTON: ComponentDefinition = {
   },
   iconsFor: buttonIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
+};
+
+/** The Button's manifest, which the capture-backed build reads with `captures/button.json`. */
+export const BUTTON_MANIFEST: SetManifest = {
+  key: "button",
+  name: "Button",
+  slot: "button",
+  axes: BUTTON.axes,
+  columnAxis: "state",
+  label: BUTTON.label,
+  iconsFor: buttonIcons,
+  swapProperties: BUTTON.swapProperties,
 };
 
 /** The square sizes, as `<Button size="icon">` renders them around a lone icon. */

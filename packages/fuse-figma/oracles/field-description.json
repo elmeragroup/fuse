@@ -1,0 +1,134 @@
+{
+  "set": "field-description",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "group/field",
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "className": "[&>.sr-only]:w-auto"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture lists the class once, as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "detail": "the Field lays out its label, control and messages, which the set does not draw"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The capture passes down only what the Field root around the description inherits, and lists none of its layout, which the set does not draw."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's child rule sets the description's width; the recipe build dropped it by hand."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "As above: the winning width, 100% of the preview width."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "field-description",
+        "outcome": "dropped"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition's hand-listed arms for a description among other Field parts, which the capture lists once per class, or reads where it applies, as `last:mt-0`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "field-description",
+        "className": "last:mt-0"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The description is its Field root's last child in the capture, so `last:mt-0` applies and drops as the margin of a root that sits alone."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for `<p>`, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, p"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written `<p>` default, which the capture reads from the browser."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows. The capture lists the class once, under `no rule of the class wins`."
+    }
+  ]
+}

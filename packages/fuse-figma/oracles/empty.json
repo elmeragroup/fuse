@@ -1,0 +1,31 @@
+{
+  "set": "empty",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[empty/*]*.overrides",
+      "verdict": "old-was-wrong",
+      "reason": "This set still builds from its recipe, and its Button instances now show the capture-built Button, whose label centers as the browser centers a `<button>`'s text and whose shadow paints the shipped `#0000000d`. The recipe cascade in place reads neither, so the instances override them until this set switches too."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "empty",
+        "className": "text-center",
+        "outcome": "literal"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "Empty's `text-center` reaches its Button instances, whose capture-built variants center their label already, so the class now repeats what they draw."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "empty",
+        "className": "text-center",
+        "detail": "the instance's variant button/*"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "As above."
+    }
+  ]
+}

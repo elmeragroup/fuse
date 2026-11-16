@@ -1,0 +1,11 @@
+{
+  "set": "dialog-content",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[dialog-content/*]*.overrides",
+      "verdict": "old-was-wrong",
+      "reason": "This set still builds from its recipe, and its Button instances now show the capture-built Button, whose label centers as the browser centers a `<button>`'s text and whose shadow paints the shipped `#0000000d`. The recipe cascade in place reads neither, so the instances override them until this set switches too."
+    }
+  ]
+}

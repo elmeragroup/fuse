@@ -17,11 +17,17 @@
  */
 import { fieldFrameVariants, fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
-import { FIELD_DESCRIPTION, FIELD_ERROR } from "./field-text-kit";
+import {
+  FIELD_DESCRIPTION,
+  FIELD_DESCRIPTION_MANIFEST,
+  FIELD_ERROR,
+  FIELD_ERROR_MANIFEST,
+} from "./field-text-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
-import { LABEL } from "./label-kit";
+import { LABEL, LABEL_MANIFEST } from "./label-kit";
 import { always } from "./popup-facts";
 
 const frame = fieldFrameVariants();
@@ -191,3 +197,66 @@ export const FIELD_FRAME_SET: Pick<
   iconsFor: () => [],
   swapProperties: [],
 };
+
+/**
+ * A field frame's label row as a manifest names it, at its place below the Field root, holding the
+ * label at rest or disabled and the label of an invalid Field, which Base UI stamps `data-invalid`.
+ *
+ * @param label - The label's text.
+ * @param place - The row's place, such as `field/0`.
+ * @returns The row.
+ */
+export function frameLabelRowManifest(label: string, place: string): PartManifest {
+  const labelOf = (invalid: boolean): InstanceManifest => ({
+    kind: "instance",
+    key: invalid ? "label-invalid" : "label",
+    of: LABEL_MANIFEST,
+    cell: (outer) => ({ state: outer.state === "disabled" ? "disabled" : "rest" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn: (cell) => isInvalid(cell) === invalid,
+    exposed: true,
+  });
+  return {
+    key: "label-row",
+    slot: undefined,
+    place,
+    shownIn: always,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [labelOf(false), labelOf(true)],
+  };
+}
+
+/**
+ * A field frame's error and its descriptions as a manifest names them: the error in an invalid cell,
+ * and one description per state Base UI stamps on it.
+ *
+ * @param error - The error's text.
+ * @param description - The description's text.
+ * @returns The error, then the descriptions.
+ */
+export function frameMessagesManifest(error: string, description: string): readonly InstanceManifest[] {
+  const descriptionOf = (stamp: DescriptionStamp): InstanceManifest => ({
+    kind: "instance",
+    key: stamp === "none" ? "description" : `description-${stamp}`,
+    of: FIELD_DESCRIPTION_MANIFEST,
+    cell: () => ({ state: "rest" }),
+    properties: () => ({ text: { Text: description } }),
+    shownIn: (cell) => stampOf(cell) === stamp,
+    exposed: true,
+  });
+  return [
+    {
+      kind: "instance",
+      key: "error",
+      of: FIELD_ERROR_MANIFEST,
+      cell: () => ({ state: "invalid" }),
+      properties: () => ({ text: { Text: error } }),
+      shownIn: isInvalid,
+      exposed: true,
+    },
+    descriptionOf("none"),
+    descriptionOf("disabled"),
+    descriptionOf("invalid"),
+  ];
+}

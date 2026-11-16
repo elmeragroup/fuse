@@ -1,0 +1,122 @@
+{
+  "set": "alert",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell of the box shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the row as a link, which an Alert never renders*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition's hand-listed `[a]:` arms, which the capture lists once per class as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a second Item.Content after this one*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A hand-listed composition arm, which the capture lists once per class as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "item-description",
+        "className": "rich-text-*",
+        "outcome": "dropped"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The rich-text arms of the description, which the capture lists once per class as winning nothing."
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "set": "select-item",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell of the box shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the * around the root sets its own, so the root does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What an element of the markup around the root sets that the root sets itself, which the capture lists as the recipe build listed the page's."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition named the Select popup around the row by its classes, and the recipe build listed each of its declarations. The capture passes down only what it inherits, and the Select popup set draws the rest."
+    },
+    {
+      "kind": "field",
+      "path": "variants[select-item/*].root.children[indicator].itemSpacing.value",
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the row's `*:[span]:last:gap-2` reaches the indicator, its last `<span>`, which the recipe build omitted by hand. The indicator holds one Check, so the spacing draws nothing either way."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "indicator",
+        "className": "*"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The indicator's own `flex items-center` lose to the row's `*:[span]:last:` arms, which set the same values later in the style sheet; the capture reads the winners."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "select-item",
+        "className": "*:[span]:last:*"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The row's `*:[span]:last:` arms, which win the indicator's layout in the browser."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "select-content",
+        "outcome": "dropped",
+        "detail": "the root sets its own, so it does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What the Select popup around the row sets that the row sets itself, which the capture lists as the recipe build listed the page's."
+    }
+  ]
+}

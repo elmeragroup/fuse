@@ -43,15 +43,16 @@ export function allPartsOf(box: BoxDefinition): readonly (PartDefinition | Insta
 }
 
 /**
- * The `data-slot` a definition's root element carries in a cell: its `slot`, unless `element` names
- * the element, which carries the slot `elementSlot` gives the cell, or none.
+ * The `data-slot` a definition's root element carries in a cell: the slot `elementSlot` gives the
+ * cell, as a family stamps its own on a shared Menu separator, else its `slot`, unless `element`
+ * names the element, which then carries none.
  *
  * @param definition - A component.
  * @param cell - One of its cells.
  * @returns The slot, or undefined for a root element that carries none.
  */
 export function rootSlotOf(definition: ComponentDefinition, cell: Cell): string | undefined {
-  return definition.element === undefined ? definition.slot : definition.elementSlot?.(cell);
+  return definition.elementSlot?.(cell) ?? (definition.element === undefined ? definition.slot : undefined);
 }
 
 /**

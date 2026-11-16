@@ -1,0 +1,192 @@
+{
+  "set": "select-popup",
+  "entries": [
+    {
+      "kind": "row-value",
+      "match": {},
+      "verdict": "fix-in-new",
+      "reason": "The same declaration as the shipped, minified `styles.css` writes it, such as `.25rem` for `0.25rem` or `opacity: .5` for `50%`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell of the box shows. The capture lists the class once, under `no rule of the class wins`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, which the root does not inherit."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written element default, which the capture reads from the browser's own style sheet."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "field",
+      "path": "variants[select-popup/*].root.shadows[*].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the popup shadow's color as `#0000001a`, 26/255 alpha, which the browser paints; the recipe build read the source's 0.1."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-content",
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-*-style` on a transition*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The transition frames' arms, which the capture lists once per class as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-content",
+        "className": "motion-safe:*",
+        "outcome": "unmapped"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build could not read `motion-safe`; the capture renders with motion allowed, so the transition winner drops as every animation does, and the frame arms win nothing."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "select-content",
+        "className": "motion-safe:transition-[opacity,scale,translate]"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above: the transition that wins with motion allowed, which drops."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-content",
+        "outcome": "dropped",
+        "detail": "Figma components do not animate"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The plain transition classes lose to the `motion-safe:` transition in the browser, so the capture lists them as winning nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-content",
+        "className": "w-(--anchor-width)"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build modelled the anchor width Base UI publishes as the popup's 144px; the capture reads the 111px the trigger measures, and `min-w-36` resolves the popup to the same 144px."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "select-content",
+        "className": "w-(--anchor-width)"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "Base UI's positioner, which publishes the trigger's width"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above: the hand-modelled anchor width."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "div",
+        "className": "inline style"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What Base UI's positioner publishes on its `style`, as the browser laid the popup out; only the anchor width reaches a declaration the popup reads."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "select-content",
+        "className": "min-w-36"
+      },
+      "verdict": "fix-in-new",
+      "reason": "With the measured 111px anchor width, the popup's minimum now sets its 144px, where the recipe build's 144px anchor made it redundant."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "select-content",
+        "className": "min-w-36"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "menu-separator",
+        "className": "pointer-events-none"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The class the popup passes its separator is the separator's own in its kept capture, so the separator set's coverage lists it."
+    }
+  ]
+}

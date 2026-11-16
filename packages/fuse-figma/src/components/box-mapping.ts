@@ -34,7 +34,7 @@ import {
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import type { BoxCascade, Feed, LayerStyle, SpecField } from "./cascade";
+import type { BoxCascade, Feed, LayerStyle, PartElement, SpecField } from "./cascade";
 import type {
   BoxDefinition,
   BuildContext,
@@ -943,11 +943,7 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         cascade: cascade.part(
           child.classesFor(cell),
           name,
-          {
-            key: child.key,
-            slot: child.slot,
-            tag: child.slot === undefined ? child.element?.tag : child.tag,
-          },
+          elementOf(child),
           {
             inline: child.styleFor?.(cell) ?? [],
             defaults: child.elementDefaults ?? [],
@@ -956,6 +952,19 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         ),
       };
     });
+}
+
+/**
+ * What finds a frame part's element: its key, its `data-slot` or the tag a direct-child selector
+ * reaches it by, and its place, where a capture-backed build finds a part without a `data-slot`.
+ */
+function elementOf(child: PartDefinition): PartElement {
+  const element: PartElement = {
+    key: child.key,
+    slot: child.slot,
+    tag: child.slot === undefined ? child.element?.tag : child.tag,
+  };
+  return child.place === undefined ? element : { ...element, place: child.place };
 }
 
 /**
