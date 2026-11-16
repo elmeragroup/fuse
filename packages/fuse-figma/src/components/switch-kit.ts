@@ -20,6 +20,7 @@
  */
 import { switchVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -76,5 +77,18 @@ export const SWITCH: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [THUMB],
+  swapProperties: [],
+};
+
+/** The switch's manifest, which the capture-backed build reads with `captures/switch.json`. */
+export const SWITCH_MANIFEST: SetManifest = {
+  key: "switch",
+  name: "Switch",
+  slot: "switch",
+  axes: SWITCH.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [{ key: "thumb", slot: "switch-thumb", shownIn: () => true, label: undefined, iconsFor: () => [] }],
   swapProperties: [],
 };

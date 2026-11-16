@@ -19,6 +19,7 @@
  */
 import { checkboxVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 
@@ -73,5 +74,26 @@ export const CHECKBOX: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [INDICATOR],
+  swapProperties: [],
+};
+
+/** The checkbox's manifest, which the capture-backed build reads with `captures/checkbox.json`. */
+export const CHECKBOX_MANIFEST: SetManifest = {
+  key: "checkbox",
+  name: "Checkbox",
+  slot: "checkbox",
+  axes: CHECKBOX.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "indicator",
+      slot: "checkbox-indicator",
+      shownIn: (cell) => checked(cell) || mixed(cell),
+      label: undefined,
+      iconsFor: (cell) => [mixed(cell) ? MINUS : CHECK],
+    },
+  ],
   swapProperties: [],
 };

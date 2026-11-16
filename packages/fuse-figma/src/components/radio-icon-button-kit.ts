@@ -15,6 +15,7 @@
  */
 import { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BASE_UI_CHECKED_FACTS, swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -75,4 +76,16 @@ export const RADIO_ICON_BUTTON: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [ICON],
   swapProperties: swapProperties([ICON]),
+};
+
+/** The radio icon button's manifest, which the capture-backed build reads with `captures/radio-icon-button.json`. */
+export const RADIO_ICON_BUTTON_MANIFEST: SetManifest = {
+  key: "radio-icon-button",
+  name: "Radio icon button",
+  slot: "radio-icon-button",
+  axes: RADIO_ICON_BUTTON.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [ICON],
+  swapProperties: RADIO_ICON_BUTTON.swapProperties,
 };

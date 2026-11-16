@@ -12,6 +12,7 @@ import avatarGroup from "../../captures/avatar-group.json" with { type: "json" }
 import avatar from "../../captures/avatar.json" with { type: "json" };
 import badge from "../../captures/badge.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
+import checkbox from "../../captures/checkbox.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
 import comboboxItem from "../../captures/combobox-item.json" with { type: "json" };
 import comboboxOpen from "../../captures/combobox-open.json" with { type: "json" };
@@ -33,6 +34,7 @@ import fieldDescription from "../../captures/field-description.json" with { type
 import fieldError from "../../captures/field-error.json" with { type: "json" };
 import fieldLegend from "../../captures/field-legend.json" with { type: "json" };
 import fieldTitle from "../../captures/field-title.json" with { type: "json" };
+import fileUploadDropzone from "../../captures/file-upload-dropzone.json" with { type: "json" };
 import iconButton from "../../captures/icon-button.json" with { type: "json" };
 import iconToggle from "../../captures/icon-toggle.json" with { type: "json" };
 import inputGroup from "../../captures/input-group.json" with { type: "json" };
@@ -47,13 +49,22 @@ import menuSeparator from "../../captures/menu-separator.json" with { type: "jso
 import meter from "../../captures/meter.json" with { type: "json" };
 import popoverContent from "../../captures/popover-content.json" with { type: "json" };
 import popoverOpen from "../../captures/popover-open.json" with { type: "json" };
+import radioGroup from "../../captures/radio-group.json" with { type: "json" };
+import radioIconButton from "../../captures/radio-icon-button.json" with { type: "json" };
+import radioRow from "../../captures/radio-row.json" with { type: "json" };
+import radio from "../../captures/radio.json" with { type: "json" };
+import selectField from "../../captures/select-field.json" with { type: "json" };
 import selectItem from "../../captures/select-item.json" with { type: "json" };
 import selectOpen from "../../captures/select-open.json" with { type: "json" };
 import selectPopup from "../../captures/select-popup.json" with { type: "json" };
 import selectTrigger from "../../captures/select-trigger.json" with { type: "json" };
 import separator from "../../captures/separator.json" with { type: "json" };
 import skeleton from "../../captures/skeleton.json" with { type: "json" };
+import switchCapture from "../../captures/switch.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
+import textareaField from "../../captures/textarea-field.json" with { type: "json" };
+import textarea from "../../captures/textarea.json" with { type: "json" };
+import toggleGroup from "../../captures/toggle-group.json" with { type: "json" };
 import toggle from "../../captures/toggle.json" with { type: "json" };
 import tooltipContent from "../../captures/tooltip-content.json" with { type: "json" };
 import tooltipOpen from "../../captures/tooltip-open.json" with { type: "json" };
@@ -114,6 +125,17 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["confirm-button", confirmButton],
   ["toggle", toggle],
   ["icon-toggle", iconToggle],
+  ["radio-icon-button", radioIconButton],
+  ["radio", radio],
+  ["checkbox", checkbox],
+  ["switch", switchCapture],
+  ["toggle-group", toggleGroup],
+  ["radio-row", radioRow],
+  ["radio-group", radioGroup],
+  ["textarea", textarea],
+  ["textarea-field", textareaField],
+  ["select-field", selectField],
+  ["file-upload-dropzone", fileUploadDropzone],
 ]);
 
 /**

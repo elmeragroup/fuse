@@ -207,6 +207,11 @@
       "reason": "Chromium's default style sheet clips an `<img>`'s content, as avatar.json classifies."
     },
     {
+      "pattern": "File upload dropzone / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
       "pattern": "*: lay out * variants in * columns and * rows",
       "verdict": "fix-in-new",
       "reason": "Plan lays a set's variants out again once one of the changes above resizes a variant."

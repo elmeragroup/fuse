@@ -25,11 +25,20 @@ import {
   selectionGroupOrientationVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import { FIELD_FRAME_DISABLED, FIELD_FRAME_SET, frameDescriptions, frameError } from "./field-frame-kit";
-import { FIELD_LEGEND } from "./field-text-kit";
+import {
+  FIELD_FRAME_DISABLED,
+  FIELD_FRAME_SET,
+  frameDescriptions,
+  frameError,
+  frameDescriptionsManifest,
+  frameErrorManifest,
+} from "./field-frame-kit";
+import { FIELD_LEGEND, FIELD_LEGEND_MANIFEST } from "./field-text-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always, never } from "./popup-facts";
-import { RADIO_FIELDSET_FACTS, RADIO_ROW } from "./radio-row-kit";
+import { RADIO_FIELDSET_FACTS, RADIO_ROW, RADIO_ROW_MANIFEST } from "./radio-row-kit";
 
 /** The legend: the docs Basic demo's. */
 export const RADIO_GROUP_LEGEND = "Contract";
@@ -90,18 +99,25 @@ const LEGEND_ROW: PartDefinition = {
   ],
 };
 
+/**
+ * A row's cell: a vertical group stretches its rows across its width and a horizontal one hugs
+ * them, the first checked, in the group's state.
+ */
+function rowCell(index: number, outer: Cell): Cell {
+  return {
+    width: orientationFor(outer) === "vertical" ? "fill" : "hug",
+    checked: index === 0 ? "on" : "off",
+    state: outer.state ?? "rest",
+  };
+}
+
 /** A row, a `Radio row` instance in the group's state, the first checked. */
 function row(label: string, index: number): InstanceDefinition {
   return {
     kind: "instance",
     key: `row-${index + 1}`,
     of: RADIO_ROW,
-    // A vertical group stretches its rows across its width, and a horizontal one hugs them.
-    cell: (outer) => ({
-      width: orientationFor(outer) === "vertical" ? "fill" : "hug",
-      checked: index === 0 ? "on" : "off",
-      state: outer.state ?? "rest",
-    }),
+    cell: (outer) => rowCell(index, outer),
     properties: () => ({ text: { Label: label } }),
     shownIn: always,
     exposed: true,
@@ -159,4 +175,74 @@ export const RADIO_GROUP: ComponentDefinition = {
     ...RADIO_FIELDSET_FACTS,
   ]),
   parts: [FIELD_SET],
+};
+
+/** A row as the group's manifest names it, as {@link row} draws it. */
+function rowManifest(label: string, index: number): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `row-${index + 1}`,
+    of: RADIO_ROW_MANIFEST,
+    cell: (outer) => rowCell(index, outer),
+    properties: () => ({ text: { Label: label } }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/**
+ * The radio group's manifest, which the capture-backed build reads with `captures/radio-group.json`:
+ * the fieldset around the legend row, the descriptions, the group primitive and the error.
+ */
+export const RADIO_GROUP_MANIFEST: SetManifest = {
+  key: "radio-group",
+  name: "Radio group",
+  slot: "field",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: RADIO_GROUP.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "field-set",
+      slot: "field-set",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "legend-row",
+          slot: undefined,
+          place: "field-set/0",
+          shownIn: always,
+          label: undefined,
+          iconsFor: () => [],
+          parts: [
+            {
+              kind: "instance",
+              key: "legend",
+              of: FIELD_LEGEND_MANIFEST,
+              cell: () => ({ variant: "label" }),
+              properties: () => ({ text: { Text: RADIO_GROUP_LEGEND } }),
+              shownIn: always,
+              exposed: true,
+            },
+          ],
+        },
+        // The descriptions sit under the legend, and the error after the group.
+        ...frameDescriptionsManifest(RADIO_GROUP_DESCRIPTION),
+        {
+          key: "group",
+          slot: "radio-group",
+          shownIn: always,
+          label: undefined,
+          iconsFor: () => [],
+          parts: RADIO_GROUP_OPTIONS.map(rowManifest),
+        },
+        frameErrorManifest(RADIO_GROUP_ERROR),
+      ],
+    },
+  ],
+  swapProperties: [],
 };

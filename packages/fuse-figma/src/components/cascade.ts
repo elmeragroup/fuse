@@ -913,6 +913,12 @@ export type BoxCascade = {
    */
   readonly elementChildren?: number | undefined;
   /**
+   * The tag of the box's element, where the cascade read the element itself, as a capture does: a
+   * form control's tag says where the browser places its text. Undefined for the recipe cascade,
+   * whose label definitions name their placement.
+   */
+  readonly elementTag?: string | undefined;
+  /**
    * What a capture measured of the box's element, as reasons the mapping reads in place of a
    * definition's measurements: its text, or its wrapping row's items, on one line under its
    * `max-width`; its content under its `max-height`; and whether it is, or holds, the widest row of
@@ -1423,6 +1429,13 @@ export class LayerStyle {
     const owner = source.layer === this.#layer.id ? this.#layer : this.#ledger.around(source.layer);
     owner?.marks.set(property, { outcome, detail });
     this.#layer.inPlace?.fed(source, feed);
+  }
+
+  /** The longhands the layer sets itself, as its cascade split them, in its order. */
+  ownProperties(): readonly string[] {
+    return [...this.#layer.style].flatMap(([property, entry]) =>
+      entry.source.layer === this.#layer.id ? [property] : []
+    );
   }
 
   /**
@@ -1962,7 +1975,8 @@ function wrappingLonghands(
 
 /**
  * `color: currentcolor` computes to the color the element inherits, as `text-current` keeps its
- * parent's text color. The entry keeps the class as its source and reads the inherited color's
+ * parent's text color. CSS keywords match ASCII case-insensitively, and the shipped CSS a capture
+ * reads writes `currentColor`. The entry keeps the class as its source and reads the inherited color's
  * declarations, so the class lands in the coverage table with what it resolved to.
  *
  * @returns The inherited color under the class, or undefined for any other declaration or when
@@ -1970,7 +1984,11 @@ function wrappingLonghands(
  */
 function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): StyleEntry | undefined {
   const parent = inherited.get("color");
-  if (source.property !== "color" || normalizeCss(source.value) !== "currentcolor" || parent === undefined) {
+  if (
+    source.property !== "color" ||
+    normalizeCss(source.value).toLowerCase() !== "currentcolor" ||
+    parent === undefined
+  ) {
     return undefined;
   }
   return { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };

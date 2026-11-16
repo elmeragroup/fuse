@@ -1,0 +1,1286 @@
+{
+  "format": "fuse-kit-capture",
+  "version": 3,
+  "set": "select-field",
+  "environment": {"chromium":"153.0.8010.12","theme":"neutral fkas private light dense","locale":"en-US"},
+  "page": [
+    {
+      "tag": "html",
+      "attributes": {"data-density":"dense","data-theme":"light","lang":"en"},
+      "classes": [],
+      "text": "",
+      "declarations": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53],
+      "initial": [],
+      "pseudo": {},
+      "variables": {"--border":{"_tag":"theme"}},
+      "unmatched": [],
+      "children": []
+    },
+    {
+      "tag": "body",
+      "attributes": {"data-theme-brand":"fkas","data-theme-identity":"neutral","data-theme-segment":"private"},
+      "classes": [],
+      "text": "",
+      "declarations": [54,2,4,5,6,55,56,57,58,59,60,61],
+      "initial": [],
+      "pseudo": {},
+      "variables": {"--border":{"_tag":"theme"},"--font-sans":{"_tag":"element","up":0},"--foreground":{"_tag":"theme"}},
+      "unmatched": [],
+      "children": []
+    },
+    {
+      "tag": "div",
+      "attributes": {},
+      "classes": [],
+      "text": "",
+      "declarations": [62,63,2,3,4,5,6],
+      "initial": [],
+      "pseudo": {},
+      "variables": {"--border":{"_tag":"theme"}},
+      "unmatched": [],
+      "children": []
+    }
+  ],
+  "declarations": [
+    {"property":"display","value":"block","important":false,"longhands":["display"],"source":"user-agent","layer":"","selector":"html","className":"user agent","owner":0},
+    {"property":"view-transition-name","value":"root","important":false,"longhands":["view-transition-name"],"source":"user-agent","layer":"","selector":":root","className":"user agent","owner":0},
+    {"property":"box-sizing","value":"border-box","important":false,"longhands":["box-sizing"],"source":"preflight","layer":"base","selector":"*","className":"tailwind preflight","owner":0},
+    {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-right","margin-bottom","margin-left"],"source":"preflight","layer":"base","selector":"*","className":"tailwind preflight","owner":0},
+    {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"preflight","layer":"base","selector":"*","className":"tailwind preflight","owner":0},
+    {"property":"border","value":"0 solid","important":false,"longhands":["border-top-style","border-top-width","border-right-style","border-right-width","border-bottom-style","border-bottom-width","border-left-style","border-left-width","border-image-source","border-image-slice","border-image-width","border-image-outset","border-image-repeat"],"source":"preflight","layer":"base","selector":"*","className":"tailwind preflight","owner":0},
+    {"property":"border-color","value":"var(--border, currentcolor)","important":false,"longhands":["border-top-color","border-right-color","border-bottom-color","border-left-color"],"source":"fuse","layer":"base","selector":":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))","className":"fuse.css base layer","owner":0},
+    {"property":"line-height","value":"1.5","important":false,"longhands":["line-height"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"-webkit-text-size-adjust","value":"100%","important":false,"longhands":["text-size-adjust"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"tab-size","value":"4","important":false,"longhands":["tab-size"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"font-family","value":"--theme(\n    --default-font-family,\n    -apple-system,\n    BlinkMacSystemFont,\n    'Segoe UI',\n    Roboto,\n    'Helvetica Neue',\n    'Noto Sans',\n    Arial,\n    sans-serif,\n    'Apple Color Emoji',\n    'Segoe UI Emoji',\n    'Segoe UI Symbol',\n    'Noto Color Emoji'\n  )","important":false,"longhands":["font-family"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"font-feature-settings","value":"--theme(--default-font-feature-settings, normal)","important":false,"longhands":["font-feature-settings"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"font-variation-settings","value":"--theme(--default-font-variation-settings, normal)","important":false,"longhands":["font-variation-settings"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"-webkit-tap-highlight-color","value":"transparent","important":false,"longhands":["-webkit-tap-highlight-color"],"source":"preflight","layer":"base","selector":"html","className":"tailwind preflight","owner":0},
+    {"property":"--font-mono","value":"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace","important":false,"longhands":["--font-mono"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-h-xs","value":"1.5rem","important":false,"longhands":["--control-h-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-h-sm","value":"2rem","important":false,"longhands":["--control-h-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-h-md","value":"2.25rem","important":false,"longhands":["--control-h-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-h-lg","value":"2.5rem","important":false,"longhands":["--control-h-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-xs","value":".5rem","important":false,"longhands":["--control-px-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-sm","value":".625rem","important":false,"longhands":["--control-px-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-md","value":".625rem","important":false,"longhands":["--control-px-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-lg","value":".625rem","important":false,"longhands":["--control-px-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-icon-xs","value":".375rem","important":false,"longhands":["--control-px-icon-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-icon-sm","value":".375rem","important":false,"longhands":["--control-px-icon-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-icon-md","value":".5rem","important":false,"longhands":["--control-px-icon-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-icon-lg","value":".5rem","important":false,"longhands":["--control-px-icon-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-xs","value":".5rem","important":false,"longhands":["--control-px-button-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-sm","value":".625rem","important":false,"longhands":["--control-px-button-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-md","value":".625rem","important":false,"longhands":["--control-px-button-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-lg","value":".625rem","important":false,"longhands":["--control-px-button-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-icon-xs","value":".375rem","important":false,"longhands":["--control-px-button-icon-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-icon-sm","value":".375rem","important":false,"longhands":["--control-px-button-icon-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-icon-md","value":".5rem","important":false,"longhands":["--control-px-button-icon-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-px-button-icon-lg","value":".5rem","important":false,"longhands":["--control-px-button-icon-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-gap-xs","value":".25rem","important":false,"longhands":["--control-gap-xs"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-gap-sm","value":".25rem","important":false,"longhands":["--control-gap-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-gap-md","value":".375rem","important":false,"longhands":["--control-gap-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-gap-lg","value":".375rem","important":false,"longhands":["--control-gap-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-text","value":".875rem","important":false,"longhands":["--control-text"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--control-leading","value":"1.25rem","important":false,"longhands":["--control-leading"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--row-h","value":"2rem","important":false,"longhands":["--row-h"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--row-h-header","value":"2.5rem","important":false,"longhands":["--row-h-header"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--row-px","value":".5rem","important":false,"longhands":["--row-px"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--row-py","value":".375rem","important":false,"longhands":["--row-py"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--label-text","value":".875rem","important":false,"longhands":["--label-text"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--label-leading","value":"1.25rem","important":false,"longhands":["--label-leading"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-pad-sm","value":".25rem","important":false,"longhands":["--surface-pad-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-pad-md","value":".75rem","important":false,"longhands":["--surface-pad-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-pad-lg","value":"1rem","important":false,"longhands":["--surface-pad-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-gap-sm","value":".5rem","important":false,"longhands":["--surface-gap-sm"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-gap-md","value":".75rem","important":false,"longhands":["--surface-gap-md"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-gap-lg","value":"1rem","important":false,"longhands":["--surface-gap-lg"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"--surface-gap-xl","value":"1.5rem","important":false,"longhands":["--surface-gap-xl"],"source":"fuse","layer":"","selector":":root","className":"fuse.css base layer","owner":0},
+    {"property":"display","value":"block","important":false,"longhands":["display"],"source":"user-agent","layer":"","selector":"body","className":"user agent","owner":0},
+    {"property":"--inner-corner","value":"initial","important":false,"longhands":["--inner-corner"],"source":"fuse","layer":"utilities","selector":":where([data-theme-identity], [data-theme-brand], [data-theme-segment])","className":"fuse.css base layer","owner":0},
+    {"property":"--font-sans","value":"Roboto,ui-sans-serif,system-ui,sans-serif","important":false,"longhands":["--font-sans"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"--font-heading","value":"var(--font-sans)","important":false,"longhands":["--font-heading"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-right","margin-bottom","margin-left"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"font-family","value":"var(--font-sans)","important":false,"longhands":["font-family"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"color","value":"var(--foreground)","important":false,"longhands":["color"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"-webkit-font-smoothing","value":"antialiased","important":false,"longhands":["-webkit-font-smoothing"],"source":"page","layer":"","selector":"body","className":"host page","owner":0},
+    {"property":"display","value":"block","important":false,"longhands":["display"],"source":"user-agent","layer":"","selector":"div","className":"user agent","owner":0},
+    {"property":"unicode-bidi","value":"isolate","important":false,"longhands":["unicode-bidi"],"source":"user-agent","layer":"","selector":"div","className":"user agent","owner":0},
+    {"property":"cursor","value":"default","important":false,"longhands":["cursor"],"source":"user-agent","layer":"","selector":"label","className":"user agent","owner":0},
+    {"property":"border","value":"0 solid","important":false,"longhands":["border-image-source","border-image-slice","border-image-width","border-image-outset","border-image-repeat"],"source":"preflight","layer":"base","selector":"*","className":"tailwind preflight","owner":0},
+    {"property":"box-sizing","value":"border-box","important":false,"longhands":["box-sizing"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"border-style","value":"solid","important":false,"longhands":["border-top-style","border-right-style","border-bottom-style","border-left-style"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"border-width","value":"0","important":false,"longhands":["border-top-width","border-right-width","border-bottom-width","border-left-width"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-right","margin-bottom","margin-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"display","value":"flex","important":false,"longhands":["display"],"source":"fuse","layer":"","selector":".flex","className":"flex","owner":0},
+    {"property":"width","value":"fit-content","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".w-fit","className":"w-fit","owner":0},
+    {"property":"gap","value":".5rem","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-2","className":"gap-2","owner":0},
+    {"property":"font-size","value":"var(--label-text)","important":false,"longhands":["font-size"],"source":"fuse","layer":"","selector":".text-\\(length\\:--label-text\\)","className":"text-(length:--label-text)","owner":0},
+    {"property":"--tw-leading","value":"var(--label-leading)","important":false,"longhands":["--tw-leading"],"source":"fuse","layer":"","selector":".leading-\\(--label-leading\\)","className":"leading-(--label-leading)","owner":0},
+    {"property":"line-height","value":"var(--label-leading)","important":false,"longhands":["line-height"],"source":"fuse","layer":"","selector":".leading-\\(--label-leading\\)","className":"leading-(--label-leading)","owner":0},
+    {"property":"--tw-font-weight","value":"var(--font-weight-medium)","important":false,"longhands":["--tw-font-weight"],"source":"fuse","layer":"","selector":".font-medium","className":"font-medium","owner":0},
+    {"property":"font-weight","value":"var(--font-weight-medium)","important":false,"longhands":["font-weight"],"source":"fuse","layer":"","selector":".font-medium","className":"font-medium","owner":0},
+    {"property":"align-items","value":"center","important":false,"longhands":["align-items"],"source":"fuse","layer":"","selector":".items-center","className":"items-center","owner":0},
+    {"property":"justify-content","value":"space-between","important":false,"longhands":["justify-content"],"source":"fuse","layer":"","selector":".justify-between","className":"justify-between","owner":0},
+    {"property":"width","value":"100%","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".\\[\\&\\>\\:where\\(\\:not\\(\\[data-slot\\=checkbox\\]\\,\\[data-slot\\=switch\\]\\)\\)\\]\\:w-full > :where(:not([data-slot=\"checkbox\"], [data-slot=\"switch\"]))","className":"[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","owner":1},
+    {"property":"flex","value":"1","important":false,"longhands":["flex-grow","flex-shrink","flex-basis"],"source":"fuse","layer":"","selector":".flex-1","className":"flex-1","owner":0},
+    {"property":"text-align","value":"left","important":false,"longhands":["text-align"],"source":"fuse","layer":"","selector":".text-left","className":"text-left","owner":0},
+    {"property":"-webkit-line-clamp","value":"1","important":false,"longhands":["-webkit-line-clamp"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:line-clamp-1 > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:line-clamp-1","owner":1},
+    {"property":"-webkit-box-orient","value":"vertical","important":false,"longhands":["-webkit-box-orient"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:line-clamp-1 > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:line-clamp-1","owner":1},
+    {"property":"overflow","value":"hidden","important":false,"longhands":["overflow-x","overflow-y"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:line-clamp-1 > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:line-clamp-1","owner":1},
+    {"property":"display","value":"flex","important":false,"longhands":["display"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:flex > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:flex","owner":1},
+    {"property":"align-items","value":"center","important":false,"longhands":["align-items"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:items-center > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:items-center","owner":1},
+    {"property":"gap","value":".375rem","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":":is(.\\*\\:data-\\[slot\\=select-value\\]\\:gap-1\\.5 > *)[data-slot=\"select-value\"]","className":"*:data-[slot=select-value]:gap-1.5","owner":1},
+    {"property":"overflow-x","value":"hidden","important":false,"longhands":["overflow-x"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
+    {"property":"overflow-y","value":"hidden","important":false,"longhands":["overflow-y"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
+    {"property":"overflow-clip-margin","value":"content-box","important":false,"longhands":["overflow-clip-margin"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
+    {"property":"display","value":"block","important":false,"longhands":["display"],"source":"preflight","layer":"base","selector":"svg","className":"tailwind preflight","owner":0},
+    {"property":"vertical-align","value":"middle","important":false,"longhands":["vertical-align"],"source":"preflight","layer":"base","selector":"svg","className":"tailwind preflight","owner":0},
+    {"property":"width","value":"1rem","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".size-4","className":"size-4","owner":0},
+    {"property":"height","value":"1rem","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".size-4","className":"size-4","owner":0},
+    {"property":"color","value":"var(--muted-foreground)","important":false,"longhands":["color"],"source":"fuse","layer":"","selector":".text-muted-foreground","className":"text-muted-foreground","owner":0},
+    {"property":"transition-property","value":"transform, translate, scale, rotate","important":false,"longhands":["transition-property"],"source":"fuse","layer":"","selector":".transition-transform","className":"transition-transform","owner":0},
+    {"property":"--tw-duration","value":".2s","important":false,"longhands":["--tw-duration"],"source":"fuse","layer":"","selector":".duration-200","className":"duration-200","owner":0},
+    {"property":"transition-duration","value":".2s","important":false,"longhands":["transition-duration"],"source":"fuse","layer":"","selector":".duration-200","className":"duration-200","owner":0},
+    {"property":"--tw-ease","value":"var(--ease-in-out)","important":false,"longhands":["--tw-ease"],"source":"fuse","layer":"","selector":".ease-in-out","className":"ease-in-out","owner":0},
+    {"property":"transition-timing-function","value":"var(--ease-in-out)","important":false,"longhands":["transition-timing-function"],"source":"fuse","layer":"","selector":".ease-in-out","className":"ease-in-out","owner":0},
+    {"property":"pointer-events","value":"none","important":false,"longhands":["pointer-events"],"source":"fuse","layer":"","selector":".\\[\\&_svg\\]\\:pointer-events-none svg","className":"[&_svg]:pointer-events-none","owner":1},
+    {"property":"flex-shrink","value":"0","important":false,"longhands":["flex-shrink"],"source":"fuse","layer":"","selector":".\\[\\&_svg\\]\\:shrink-0 svg","className":"[&_svg]:shrink-0","owner":1},
+    {"property":"text-rendering","value":"auto","important":false,"longhands":["text-rendering"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"word-spacing","value":"normal","important":false,"longhands":["word-spacing"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"text-transform","value":"none","important":false,"longhands":["text-transform"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"text-indent","value":"0px","important":false,"longhands":["text-indent"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"text-shadow","value":"none","important":false,"longhands":["text-shadow"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"text-align","value":"center","important":false,"longhands":["text-align"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"cursor","value":"default","important":false,"longhands":["cursor"],"source":"user-agent","layer":"","selector":"button","className":"user agent","owner":0},
+    {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-bottom"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"font","value":"inherit","important":false,"longhands":["font-style","font-variant-ligatures","font-variant-caps","font-variant-numeric","font-variant-east-asian","font-variant-alternates","font-variant-position","font-variant-emoji","font-weight","font-stretch","font-family","font-optical-sizing","font-size-adjust","font-kerning","font-language-override"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"font-feature-settings","value":"inherit","important":false,"longhands":["font-feature-settings"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"font-variation-settings","value":"inherit","important":false,"longhands":["font-variation-settings"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"letter-spacing","value":"inherit","important":false,"longhands":["letter-spacing"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"opacity","value":"1","important":false,"longhands":["opacity"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"appearance","value":"button","important":false,"longhands":["appearance"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"box-sizing","value":"border-box","important":false,"longhands":["box-sizing"],"source":"fuse","layer":"","selector":".box-border","className":"box-border","owner":0},
+    {"property":"height","value":"var(--control-h-md)","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".h-\\(--control-h-md\\)","className":"h-(--control-h-md)","owner":0},
+    {"property":"gap","value":"var(--control-gap-md)","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-\\(--control-gap-md\\)","className":"gap-(--control-gap-md)","owner":0},
+    {"property":"border-radius","value":"var(--field-corner)","important":false,"longhands":["border-top-left-radius","border-top-right-radius","border-bottom-right-radius","border-bottom-left-radius"],"source":"fuse","layer":"","selector":".rounded-\\(--field-corner\\)","className":"rounded-(--field-corner)","owner":0},
+    {"property":"border-style","value":"var(--tw-border-style)","important":false,"longhands":["border-top-style","border-right-style","border-bottom-style","border-left-style"],"source":"fuse","layer":"","selector":".border","className":"border","owner":0},
+    {"property":"border-width","value":"1px","important":false,"longhands":["border-top-width","border-right-width","border-bottom-width","border-left-width"],"source":"fuse","layer":"","selector":".border","className":"border","owner":0},
+    {"property":"border-color","value":"var(--input)","important":false,"longhands":["border-top-color","border-right-color","border-bottom-color","border-left-color"],"source":"fuse","layer":"","selector":".border-input","className":"border-input","owner":0},
+    {"property":"background-color","value":"var(--card)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-card","className":"bg-card","owner":0},
+    {"property":"padding-inline","value":"var(--control-px-md)","important":false,"longhands":["padding-left","padding-right"],"source":"fuse","layer":"","selector":".px-\\(--control-px-md\\)","className":"px-(--control-px-md)","owner":0},
+    {"property":"font-size","value":"var(--control-text)","important":false,"longhands":["font-size"],"source":"fuse","layer":"","selector":".text-\\(length\\:--control-text\\)","className":"text-(length:--control-text)","owner":0},
+    {"property":"--tw-leading","value":"var(--control-leading)","important":false,"longhands":["--tw-leading"],"source":"fuse","layer":"","selector":".leading-\\(--control-leading\\)","className":"leading-(--control-leading)","owner":0},
+    {"property":"line-height","value":"var(--control-leading)","important":false,"longhands":["line-height"],"source":"fuse","layer":"","selector":".leading-\\(--control-leading\\)","className":"leading-(--control-leading)","owner":0},
+    {"property":"white-space","value":"nowrap","important":false,"longhands":["white-space-collapse","text-wrap-mode"],"source":"fuse","layer":"","selector":".whitespace-nowrap","className":"whitespace-nowrap","owner":0},
+    {"property":"--tw-shadow","value":"0 1px 2px 0 var(--tw-shadow-color, #0000000d)","important":false,"longhands":["--tw-shadow"],"source":"fuse","layer":"","selector":".shadow-xs","className":"shadow-xs","owner":0},
+    {"property":"box-shadow","value":"var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)","important":false,"longhands":["box-shadow"],"source":"fuse","layer":"","selector":".shadow-xs","className":"shadow-xs","owner":0},
+    {"property":"transition-property","value":"color, border-color, box-shadow","important":false,"longhands":["transition-property"],"source":"fuse","layer":"","selector":".transition-\\[color\\,border-color\\,box-shadow\\]","className":"transition-[color,border-color,box-shadow]","owner":0},
+    {"property":"transition-timing-function","value":"var(--tw-ease, var(--default-transition-timing-function))","important":false,"longhands":["transition-timing-function"],"source":"fuse","layer":"","selector":".transition-\\[color\\,border-color\\,box-shadow\\]","className":"transition-[color,border-color,box-shadow]","owner":0},
+    {"property":"transition-duration","value":"var(--tw-duration, var(--default-transition-duration))","important":false,"longhands":["transition-duration"],"source":"fuse","layer":"","selector":".transition-\\[color\\,border-color\\,box-shadow\\]","className":"transition-[color,border-color,box-shadow]","owner":0},
+    {"property":"--tw-outline-style","value":"none","important":false,"longhands":["--tw-outline-style"],"source":"fuse","layer":"","selector":".outline-none","className":"outline-none","owner":0},
+    {"property":"outline-style","value":"none","important":false,"longhands":["outline-style"],"source":"fuse","layer":"","selector":".outline-none","className":"outline-none","owner":0},
+    {"property":"user-select","value":"none","important":false,"longhands":["user-select"],"source":"fuse","layer":"","selector":".select-none","className":"select-none","owner":0},
+    {"property":"--field-corner","value":"clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))","important":false,"longhands":["--field-corner"],"source":"fuse","layer":"","selector":".\\[--field-corner\\:clamp\\(var\\(--radius\\)-1000\\*var\\(--radius-step\\,0px\\)\\,var\\(--radius-field\\,var\\(--radius\\)\\)\\,var\\(--radius\\)\\+1000\\*var\\(--radius-step\\,0px\\)\\)\\]","className":"[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","owner":0},
+    {"property":"--inner-corner","value":"var(--shell-inner)","important":false,"longhands":["--inner-corner"],"source":"fuse","layer":"","selector":".\\[--inner-corner\\:var\\(--shell-inner\\)\\]","className":"[--inner-corner:var(--shell-inner)]","owner":0},
+    {"property":"--shell-corner","value":"initial","important":false,"longhands":["--shell-corner"],"source":"fuse","layer":"","selector":".\\[--shell-corner\\:initial\\]","className":"[--shell-corner:initial]","owner":0},
+    {"property":"--shell-inner","value":"max(0px, var(--field-corner) - 1px)","important":false,"longhands":["--shell-inner"],"source":"fuse","layer":"","selector":".\\[--shell-inner\\:max\\(0px\\,var\\(--field-corner\\)-1px\\)\\]","className":"[--shell-inner:max(0px,var(--field-corner)-1px)]","owner":0},
+    {"property":"color","value":"var(--muted-foreground)","important":false,"longhands":["color"],"source":"fuse","layer":"","selector":".data-placeholder\\:text-muted-foreground[data-placeholder]","className":"data-placeholder:text-muted-foreground","owner":0},
+    {"property":"text-rendering","value":"auto","important":false,"longhands":["text-rendering"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"word-spacing","value":"normal","important":false,"longhands":["word-spacing"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"text-transform","value":"none","important":false,"longhands":["text-transform"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"text-indent","value":"0px","important":false,"longhands":["text-indent"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"text-shadow","value":"none","important":false,"longhands":["text-shadow"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"display","value":"inline-block","important":false,"longhands":["display"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"text-align","value":"start","important":false,"longhands":["text-align"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"appearance","value":"auto","important":false,"longhands":["appearance"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"cursor","value":"text","important":false,"longhands":["cursor"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"-webkit-rtl-ordering","value":"logical","important":false,"longhands":["-webkit-rtl-ordering"],"source":"user-agent","layer":"","selector":"input","className":"user agent","owner":0},
+    {"property":"font","value":"inherit","important":false,"longhands":["font-style","font-variant-ligatures","font-variant-caps","font-variant-numeric","font-variant-east-asian","font-variant-alternates","font-variant-position","font-variant-emoji","font-weight","font-stretch","font-size","line-height","font-family","font-optical-sizing","font-size-adjust","font-kerning","font-language-override"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"font-feature-settings","value":"inherit","important":false,"longhands":["font-feature-settings"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"font-variation-settings","value":"inherit","important":false,"longhands":["font-variation-settings"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"letter-spacing","value":"inherit","important":false,"longhands":["letter-spacing"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"color","value":"inherit","important":false,"longhands":["color"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"border-radius","value":"0","important":false,"longhands":["border-top-left-radius","border-top-right-radius","border-bottom-right-radius","border-bottom-left-radius"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"background-color","value":"transparent","important":false,"longhands":["background-color"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"opacity","value":"1","important":false,"longhands":["opacity"],"source":"preflight","layer":"base","selector":"input","className":"tailwind preflight","owner":0},
+    {"property":"clip-path","value":"inset(50%)","important":false,"longhands":["clip-path"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"white-space","value":"nowrap","important":false,"longhands":["white-space-collapse","text-wrap-mode"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"border","value":"0","important":false,"longhands":["border-top-color","border-top-style","border-top-width","border-right-color","border-right-style","border-right-width","border-bottom-color","border-bottom-style","border-bottom-width","border-left-color","border-left-style","border-left-width","border-image-source","border-image-slice","border-image-width","border-image-outset","border-image-repeat"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"width","value":"1px","important":false,"longhands":["width"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"height","value":"1px","important":false,"longhands":["height"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-right","margin-bottom","margin-left"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"position","value":"fixed","important":false,"longhands":["position"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"top","value":"0","important":false,"longhands":["top"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"left","value":"0","important":false,"longhands":["left"],"source":"inline","layer":"","selector":"","className":"inline style","owner":0},
+    {"property":"overflow-x","value":"clip","important":true,"longhands":["overflow-x"],"source":"user-agent","layer":"","selector":"input:not([type=\"range\" i], [type=\"checkbox\" i], [type=\"radio\" i])","className":"user agent","owner":0},
+    {"property":"overflow-y","value":"clip","important":true,"longhands":["overflow-y"],"source":"user-agent","layer":"","selector":"input:not([type=\"range\" i], [type=\"checkbox\" i], [type=\"radio\" i])","className":"user agent","owner":0},
+    {"property":"overflow-clip-margin","value":"0px","important":true,"longhands":["overflow-clip-margin"],"source":"user-agent","layer":"","selector":"input:not([type=\"range\" i], [type=\"checkbox\" i], [type=\"radio\" i])","className":"user agent","owner":0},
+    {"property":"display","value":"block","important":false,"longhands":["display"],"source":"user-agent","layer":"","selector":"p","className":"user agent","owner":0},
+    {"property":"unicode-bidi","value":"isolate","important":false,"longhands":["unicode-bidi"],"source":"user-agent","layer":"","selector":"p","className":"user agent","owner":0},
+    {"property":"margin","value":"0","important":false,"longhands":["margin-right","margin-bottom","margin-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
+    {"property":"--tw-font-weight","value":"var(--font-weight-normal)","important":false,"longhands":["--tw-font-weight"],"source":"fuse","layer":"","selector":".font-normal","className":"font-normal","owner":0},
+    {"property":"font-weight","value":"var(--font-weight-normal)","important":false,"longhands":["font-weight"],"source":"fuse","layer":"","selector":".font-normal","className":"font-normal","owner":0},
+    {"property":"text-wrap","value":"pretty","important":false,"longhands":["text-wrap-mode","text-wrap-style"],"source":"fuse","layer":"","selector":".text-pretty","className":"text-pretty","owner":0},
+    {"property":"margin-top","value":"0","important":false,"longhands":["margin-top"],"source":"fuse","layer":"","selector":".last\\:mt-0:last-child","className":"last:mt-0","owner":0},
+    {"property":"width","value":"100%","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".w-full","className":"w-full","owner":0},
+    {"property":"flex-direction","value":"column","important":false,"longhands":["flex-direction"],"source":"fuse","layer":"","selector":".flex-col","className":"flex-col","owner":0},
+    {"property":"gap","value":".25rem","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-1","className":"gap-1","owner":0},
+    {"property":"color","value":"inherit","important":false,"longhands":["color"],"source":"preflight","layer":"base","selector":"button","className":"tailwind preflight","owner":0},
+    {"property":"outline-color","value":"-webkit-focus-ring-color","important":false,"longhands":["outline-color"],"source":"user-agent","layer":"","selector":":focus-visible","className":"user agent","owner":0},
+    {"property":"outline-width","value":"1px","important":false,"longhands":["outline-width"],"source":"user-agent","layer":"","selector":":focus-visible","className":"user agent","owner":0},
+    {"property":"--tw-ring-shadow","value":"var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)","important":false,"longhands":["--tw-ring-shadow"],"source":"fuse","layer":"","selector":".focus-visible\\:ring-2:focus-visible","className":"focus-visible:ring-2","owner":0},
+    {"property":"box-shadow","value":"var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)","important":false,"longhands":["box-shadow"],"source":"fuse","layer":"","selector":".focus-visible\\:ring-2:focus-visible","className":"focus-visible:ring-2","owner":0},
+    {"property":"--tw-ring-color","value":"var(--ring)","important":false,"longhands":["--tw-ring-color"],"source":"fuse","layer":"","selector":".focus-visible\\:ring-ring:focus-visible","className":"focus-visible:ring-ring","owner":0},
+    {"property":"--tw-outline-style","value":"none","important":false,"longhands":["--tw-outline-style"],"source":"fuse","layer":"","selector":".focus-visible\\:outline-hidden:focus-visible","className":"focus-visible:outline-hidden","owner":0},
+    {"property":"outline-style","value":"none","important":false,"longhands":["outline-style"],"source":"fuse","layer":"","selector":".focus-visible\\:outline-hidden:focus-visible","className":"focus-visible:outline-hidden","owner":0},
+    {"property":"opacity","value":".5","important":false,"longhands":["opacity"],"source":"fuse","layer":"","selector":".group-data-disabled\\/field\\:opacity-50:is(:is(:where(.group\\/field):where([data-disabled=\"true\"]), :where(.group\\/field):where([data-disabled]:not([data-disabled=\"false\"]))) *)","className":"group-data-disabled/field:opacity-50","owner":0},
+    {"property":"cursor","value":"not-allowed","important":false,"longhands":["cursor"],"source":"fuse","layer":"","selector":".disabled\\:cursor-not-allowed:disabled","className":"disabled:cursor-not-allowed","owner":0},
+    {"property":"opacity","value":".5","important":false,"longhands":["opacity"],"source":"fuse","layer":"","selector":".disabled\\:opacity-50:disabled","className":"disabled:opacity-50","owner":0},
+    {"property":"cursor","value":"default","important":false,"longhands":["cursor"],"source":"user-agent","layer":"","selector":"input:disabled","className":"user agent","owner":0},
+    {"property":"border-color","value":"var(--error)","important":false,"longhands":["border-top-color","border-right-color","border-bottom-color","border-left-color"],"source":"fuse","layer":"","selector":".data-invalid\\:border-error[data-invalid]","className":"data-invalid:border-error","owner":0},
+    {"property":"--tw-ring-shadow","value":"var(--tw-ring-inset, ) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)","important":false,"longhands":["--tw-ring-shadow"],"source":"fuse","layer":"","selector":".data-invalid\\:ring-3[data-invalid]","className":"data-invalid:ring-3","owner":0},
+    {"property":"box-shadow","value":"var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)","important":false,"longhands":["box-shadow"],"source":"fuse","layer":"","selector":".data-invalid\\:ring-3[data-invalid]","className":"data-invalid:ring-3","owner":0},
+    {"property":"--tw-ring-color","value":"color-mix(in oklab, var(--error) 20%, transparent)","important":false,"longhands":["--tw-ring-color"],"source":"fuse","layer":"","selector":".data-invalid\\:ring-error\\/20[data-invalid]","className":"data-invalid:ring-error/20","owner":0},
+    {"property":"color","value":"var(--error)","important":false,"longhands":["color"],"source":"fuse","layer":"","selector":".text-error","className":"text-error","owner":0},
+    {"property":"color","value":"var(--error)","important":false,"longhands":["color"],"source":"fuse","layer":"","selector":".data-invalid\\:text-error[data-invalid]","className":"data-invalid:text-error","owner":0}
+  ],
+  "cells": [
+    {
+    "key": "select-field/state=rest,content=placeholder",
+    "cell": {"state":"rest","content":"placeholder"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-placeholder":"","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,65,69,112,113,114,115,116,117,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,81,144],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"unset"},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-placeholder":"","data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Choose a plan",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","id":"base-ui-3","tabindex":"-1","value":""},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=rest,content=value",
+    "cell": {"state":"rest","content":"value"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,65,69,112,113,114,115,116,186,117,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,81],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"unset"},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","data-placeholder:text-muted-foreground","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Pro",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","id":"base-ui-3","tabindex":"-1","value":"pro"},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=focus,content=placeholder",
+    "cell": {"state":"focus","content":"placeholder"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-placeholder":"","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,187,188,65,69,112,113,114,115,116,117,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,134,135,136,139,140,141,142,143,81,189,190,191,192,193,144],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,193],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-placeholder":"","data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Choose a plan",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","id":"base-ui-3","tabindex":"-1","value":""},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=focus,content=value",
+    "cell": {"state":"focus","content":"value"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,187,188,65,69,112,113,114,115,116,186,117,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,134,135,136,139,140,141,142,143,81,189,190,191,192,193],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,193],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","data-placeholder:text-muted-foreground","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Pro",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","id":"base-ui-3","tabindex":"-1","value":"pro"},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=disabled,content=placeholder",
+    "cell": {"state":"disabled","content":"placeholder"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-disabled":"","data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-disabled":"","data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78,194],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-disabled":"","data-placeholder":"","data-size":"default","data-slot":"select-trigger","disabled":"","id":"base-ui-2","role":"combobox","tabindex":"-1","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,65,69,112,113,114,115,116,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,81,195,196,144],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"unset"},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-placeholder":"","data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Choose a plan",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","disabled":"","id":"base-ui-3","tabindex":"-1","value":""},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,154,197,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-disabled":"","data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=disabled,content=value",
+    "cell": {"state":"disabled","content":"value"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-disabled":"","data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"}},
+          "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-disabled":"","data-field-heading":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78,194],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","data-disabled":"","data-size":"default","data-slot":"select-trigger","disabled":"","id":"base-ui-2","role":"combobox","tabindex":"-1","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,65,69,112,113,114,115,116,186,118,119,71,120,79,80,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,81,195,196],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--input":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"unset"},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-placeholder:text-muted-foreground","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Pro",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","disabled":"","id":"base-ui-3","tabindex":"-1","value":"pro"},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,154,197,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-disabled":"","data-slot":"field-description","id":"base-ui-4"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=invalid,content=placeholder",
+    "cell": {"state":"invalid","content":"placeholder"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-invalid":"","data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185,203],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"}},
+          "unmatched": ["[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-invalid":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","aria-invalid":"true","data-invalid":"","data-placeholder":"","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,65,69,112,113,114,115,116,117,118,119,71,120,79,80,121,122,123,124,126,127,128,129,130,131,132,134,135,136,137,138,139,140,141,142,143,81,198,199,200,201,144],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--error":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-placeholder":"","data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Choose a plan",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","aria-invalid":"true","id":"base-ui-3","tabindex":"-1","value":""},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "div",
+              "attributes": {"data-invalid":"","data-slot":"field-error","id":"base-ui-4","role":"alert"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-error"],
+              "text": "Choose a plan to continue.",
+              "textIndex": 0,
+              "declarations": [62,63,65,6,66,67,68,69,70,74,75,76,179,180,202,81],
+              "initial": [65,68,69,70,180],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5}},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-invalid":"","data-slot":"field-description","id":"base-ui-5"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+    {
+    "key": "select-field/state=invalid,content=value",
+    "cell": {"state":"invalid","content":"value"},
+    "roots": [
+      {
+        "around": [
+          {
+            "tag": "div",
+            "attributes": {},
+            "classes": [],
+            "text": "",
+            "declarations": [62,63,2,3,4,5,6],
+            "initial": [],
+            "pseudo": {},
+            "variables": {"--border":{"_tag":"theme"}},
+            "unmatched": [],
+            "children": []
+          }
+        ],
+        "root": {
+          "tag": "div",
+          "attributes": {"data-invalid":"","data-orientation":"vertical","data-slot":"field"},
+          "classes": ["group/field","w-full","data-invalid:text-error","[&>.sr-only]:w-auto","[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full","group","flex","flex-col","gap-1"],
+          "text": "",
+          "declarations": [63,65,6,66,67,68,69,70,71,183,184,185,203],
+          "initial": [65,68,69,70],
+          "pseudo": {},
+          "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"}},
+          "unmatched": ["[&>.sr-only]:w-auto"],
+          "measured": {"containerWidth":384},
+          "children": [
+            {
+              "tag": "div",
+              "attributes": {},
+              "classes": ["flex","items-center","justify-between"],
+              "text": "",
+              "declarations": [63,2,3,4,5,6,71,79,80,81],
+              "initial": [3,4],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"}},
+              "unmatched": [],
+              "children": [
+                {
+                  "tag": "label",
+                  "attributes": {"data-field-heading":"","data-invalid":"","data-slot":"field-label","for":"base-ui-2","id":"base-ui-1"},
+                  "classes": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","group/field-label","peer/field-label","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","text-(length:--label-text)","leading-(--label-leading)","font-medium","flex","w-fit","gap-2","group-data-disabled/field:opacity-50"],
+                  "text": "Plan",
+                  "textIndex": 0,
+                  "declarations": [64,65,6,66,67,68,69,70,71,72,73,74,75,76,77,78],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":6},"--label-text":{"_tag":"element","up":6}},
+                  "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "button",
+              "attributes": {"aria-expanded":"false","aria-haspopup":"listbox","aria-invalid":"true","data-invalid":"","data-size":"default","data-slot":"select-trigger","id":"base-ui-2","role":"combobox","tabindex":"0","type":"button"},
+              "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","shadow-xs","box-border","rounded-(--field-corner)","[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]","[--shell-inner:max(0px,var(--field-corner)-1px)]","[--shell-corner:initial]","[--inner-corner:var(--shell-inner)]","border","border-input","bg-card","transition-[color,border-color,box-shadow]","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-md)","gap-(--control-gap-md)","px-(--control-px-md)","text-(length:--control-text)","leading-(--control-leading)","group/select-trigger","flex","items-center","justify-between","whitespace-nowrap","outline-none","select-none","data-placeholder:text-muted-foreground","*:data-[slot=select-value]:line-clamp-1","*:data-[slot=select-value]:flex","*:data-[slot=select-value]:items-center","*:data-[slot=select-value]:gap-1.5","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","w-full"],
+              "text": "",
+              "declarations": [105,106,107,108,109,110,111,65,69,112,113,114,115,116,186,117,118,119,71,120,79,80,121,122,123,124,126,127,128,129,130,131,132,134,135,136,137,138,139,140,141,142,143,81,198,199,200,201],
+              "initial": [105,106,107,108,109,65,69,112,114,115,116,117,134,135,136,138],
+              "pseudo": {},
+              "variables": {"--card":{"_tag":"theme"},"--control-gap-md":{"_tag":"element","up":5},"--control-h-md":{"_tag":"element","up":5},"--control-leading":{"_tag":"element","up":5},"--control-px-md":{"_tag":"element","up":5},"--control-text":{"_tag":"element","up":5},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--error":{"_tag":"theme"},"--field-corner":{"_tag":"element","up":0},"--radius":{"_tag":"theme"},"--radius-field":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
+              "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","data-placeholder:text-muted-foreground","[&_svg:not([class*='size-'])]:size-4"],
+              "children": [
+                {
+                  "tag": "span",
+                  "attributes": {"data-slot":"select-value"},
+                  "classes": ["flex","flex-1","text-left"],
+                  "text": "Pro",
+                  "textIndex": 0,
+                  "declarations": [65,6,66,67,68,69,70,82,83,84,85,86,87,88,89],
+                  "initial": [65,68,69,70],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"}},
+                  "unmatched": [],
+                  "children": []
+                },
+                {
+                  "tag": "svg",
+                  "attributes": {"aria-hidden":"true","fill":"currentColor","focusable":"false","height":"1em","viewBox":"0 0 256 256","width":"1em","xmlns":"http://www.w3.org/2000/svg"},
+                  "classes": ["ease-in-out","pointer-events-none","size-4","text-muted-foreground","transition-transform","duration-200","group-data-[popup-open]/select-trigger:rotate-180"],
+                  "text": "▼",
+                  "textIndex": 0,
+                  "declarations": [90,91,92,2,3,4,5,6,93,94,95,96,97,98,99,100,101,102,103,104],
+                  "initial": [3,4,98,100,102],
+                  "pseudo": {},
+                  "variables": {"--border":{"_tag":"theme"},"--ease-in-out":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
+                  "unmatched": ["group-data-[popup-open]/select-trigger:rotate-180"],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "tag": "input",
+              "attributes": {"aria-hidden":"true","aria-invalid":"true","id":"base-ui-3","tabindex":"-1","value":"pro"},
+              "classes": [],
+              "text": "",
+              "declarations": [145,146,147,148,149,150,151,152,153,154,2,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175],
+              "initial": [145,146,147,148,149,151,154,156,157,158,160,161,162,166,169,175],
+              "pseudo": {},
+              "variables": {},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "div",
+              "attributes": {"data-invalid":"","data-slot":"field-error","id":"base-ui-4","role":"alert"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-error"],
+              "text": "Choose a plan to continue.",
+              "textIndex": 0,
+              "declarations": [62,63,65,6,66,67,68,69,70,74,75,76,179,180,202,81],
+              "initial": [65,68,69,70,180],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5}},
+              "unmatched": [],
+              "children": []
+            },
+            {
+              "tag": "p",
+              "attributes": {"data-invalid":"","data-slot":"field-description","id":"base-ui-5"},
+              "classes": ["text-(length:--label-text)","leading-(--label-leading)","font-normal","text-left","text-muted-foreground","group-has-data-horizontal/field:text-balance","last:mt-0","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5","text-pretty"],
+              "text": "You can change plan later.",
+              "textIndex": 0,
+              "declarations": [176,177,65,6,66,67,68,178,70,83,74,75,76,179,180,181,97,81,182],
+              "initial": [65,68,178,70,180,182],
+              "pseudo": {},
+              "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
+              "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
+              "children": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+  ]
+}

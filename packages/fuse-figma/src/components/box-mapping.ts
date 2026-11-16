@@ -43,6 +43,7 @@ import type {
   InstanceDefinition,
   LabelDefinition,
   PartDefinition,
+  TextPlacement,
 } from "./component-spec";
 import {
   describeNumber,
@@ -322,6 +323,23 @@ function labelWith(label: LabelDefinition, text: PropertyValues["text"]): LabelD
   return characters === undefined || label.textProperty === undefined ? label : { ...label, characters };
 }
 
+/**
+ * Where the browser places a form control's text, as HTML's rendering of form controls says: an
+ * `<input>` on one line at the start of its content box, centred down it, and a `<textarea>` from its
+ * top left, wrapped at its content box's width.
+ */
+const CONTROL_PLACEMENTS: ReadonlyMap<string, TextPlacement> = new Map([
+  ["input", { horizontal: "start", vertical: "center", lines: "single" }],
+  ["textarea", { horizontal: "start", vertical: "top", lines: "wrap" }],
+]);
+
+/** A label with the placement its box's element gives it, where the label names none and the box is a form control. */
+function withControlPlacement(label: LabelDefinition, tag: string | undefined): LabelDefinition {
+  const placement =
+    label.placement === undefined && tag !== undefined ? CONTROL_PLACEMENTS.get(tag) : undefined;
+  return placement === undefined ? label : { ...label, placement };
+}
+
 /** An icon slot showing the icon an INSTANCE_SWAP value picks for its property, where one does. */
 function slotWith(slot: IconSlot, swap: PropertyValues["swap"]): IconSlot {
   const icon = slot.swapProperty === undefined ? undefined : swap[slot.swapProperty];
@@ -365,7 +383,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       reader.feed(field)
     );
 
-  const label = box.label?.shownIn(cell) === true ? labelWith(box.label, scope.values.text) : undefined;
+  const label =
+    box.label?.shownIn(cell) === true
+      ? withControlPlacement(labelWith(box.label, scope.values.text), cascade.elementTag)
+      : undefined;
   const inside = sizingInside(box, cell, cascade.path, label);
   const boxSizing = literalLayout(["border-box"], "strokes count in the auto layout");
   // Strokes inside the box's lengths leave its layers the room inside them.

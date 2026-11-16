@@ -436,7 +436,9 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
  * hugs its width, with no `maxWidth` of its own and nothing bounding the width CSS gives its box, sets
  * each line at its max-content width, where every word fits, so the declaration drops. Any other text
  * can set a line narrower than a word, so it stays unmapped. Every label reads it, so a box with no
- * text of its own that passes it down settles with what its texts make of it.
+ * text of its own that passes it down settles with what its texts make of it. A text of fixed or
+ * filling width under `break-word` or `anywhere`, as a `<textarea>`'s default style sets, breaks a
+ * word wider than its line, as a Figma text box of that width wraps one, so it maps.
  *
  * @param holder - The box the label sits in.
  * @param layout - The label's sizing and the width it wraps at.
@@ -444,23 +446,32 @@ export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelSco
 function readOverflowWrap(holder: Holder, layout: LabelLayout): void {
   const fits =
     layout.sizing.horizontal.kind === "hug" && layout.maxWidth === undefined && hugsUncapped(holder);
+  const setWidth = layout.sizing.horizontal.kind === "fixed" || layout.sizing.horizontal.kind === "fill";
   holder.style.read(
     "overflow-wrap",
     (value) => value,
-    (): CoverageNote =>
+    (value): CoverageNote =>
       fits
         ? {
             outcome: "dropped",
             detail:
               "the text hugs its width and nothing bounds the width CSS gives it, so no line is narrower than a word, and no word overflows to break",
           }
-        : {
-            outcome: "unmapped",
-            detail: "the text can set a line narrower than a word, and the builder measures no word",
-          },
+        : setWidth && BREAKS_WORDS.has(normalizeCss(value))
+          ? {
+              outcome: "literal",
+              detail: "the text breaks a word wider than its line, as a Figma text of that width wraps it",
+            }
+          : {
+              outcome: "unmapped",
+              detail: "the text can set a line narrower than a word, and the builder measures no word",
+            },
     []
   );
 }
+
+/** The `overflow-wrap` values that break a word wider than its line (CSS Text 3 §5.5). */
+const BREAKS_WORDS: ReadonlySet<string> = new Set(["break-word", "anywhere"]);
 
 /** What became of a line height, for the coverage table. */
 function describeLineHeight(spec: LineHeightSpec): CoverageNote {
@@ -561,7 +572,8 @@ const NATIVE_LINES = {
  *   own text declarations shape nothing, so they drop.
  * - `wrap`, as a `<textarea>` wraps its value: lines that break at the content box's width, so the
  *   label fills the width with its height following its lines. A `<textarea>` honours its own
- *   `white-space`, so only `normal` maps, and every other value stays unmapped, as do
+ *   `white-space`, so only `normal` and the browser's default `pre-wrap` map, which keeps the
+ *   characters as written, as a Figma text draws them, and every other value stays unmapped, as do
  *   `text-overflow` and `-webkit-line-clamp`, which this reader leaves unread.
  *
  * @param variant - The variant's key, for the error.
@@ -588,7 +600,7 @@ function readNativeLines(
     );
     holder.style.read(
       "white-space-collapse",
-      (written) => (normalizeCss(written) === "collapse" ? written : undefined),
+      (written) => (["collapse", "preserve"].includes(normalizeCss(written)) ? written : undefined),
       () => ({ outcome: "dropped", detail: "the label draws the value's characters as written" }),
       []
     );

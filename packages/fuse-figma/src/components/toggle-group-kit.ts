@@ -17,9 +17,10 @@
  */
 import { toggleGroupVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition } from "./component-spec";
 import { always, never } from "./popup-facts";
-import { TOGGLE } from "./toggle-kit";
+import { TOGGLE, TOGGLE_MANIFEST } from "./toggle-kit";
 
 /** The group's items: the docs Multiple demo's labels, and whether each starts pressed. */
 export const TOGGLE_GROUP_ITEMS = [
@@ -58,6 +59,17 @@ function itemFacts(index: number): ReadonlyMap<string, (cell: Cell) => boolean> 
   ]);
 }
 
+/** An item's Toggle cell: the group's variant and size, at rest, pressed as the item starts, with no icon. */
+function itemCell(entry: (typeof TOGGLE_GROUP_ITEMS)[number], outer: Cell): Cell {
+  return {
+    variant: outer.variant ?? "default",
+    size: outer.size ?? "default",
+    state: "rest",
+    pressed: entry.pressed ? "on" : "off",
+    icon: "none",
+  };
+}
+
 /** One item, a `Toggle` of the group's variant and size, as `<ToggleGroup.Item value>label</ToggleGroup.Item>`. */
 function item(entry: (typeof TOGGLE_GROUP_ITEMS)[number], index: number): InstanceDefinition {
   return {
@@ -65,13 +77,7 @@ function item(entry: (typeof TOGGLE_GROUP_ITEMS)[number], index: number): Instan
     key: entry.key,
     of: TOGGLE,
     slot: "toggle-group-item",
-    cell: (outer: Cell) => ({
-      variant: outer.variant ?? "default",
-      size: outer.size ?? "default",
-      state: "rest",
-      pressed: entry.pressed ? "on" : "off",
-      icon: "none",
-    }),
+    cell: (outer: Cell) => itemCell(entry, outer),
     classesFor: () => slots.item(),
     facts: itemFacts(index),
     properties: () => ({ text: { Label: entry.label } }),
@@ -108,5 +114,32 @@ export const TOGGLE_GROUP: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: TOGGLE_GROUP_ITEMS.map(item),
+  swapProperties: [],
+};
+
+/** An item as the group's manifest names it, as {@link item} draws it. */
+function itemManifest(entry: (typeof TOGGLE_GROUP_ITEMS)[number]): InstanceManifest {
+  return {
+    kind: "instance",
+    key: entry.key,
+    of: TOGGLE_MANIFEST,
+    slot: "toggle-group-item",
+    cell: (outer) => itemCell(entry, outer),
+    properties: () => ({ text: { Label: entry.label } }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/** The group's manifest, which the capture-backed build reads with `captures/toggle-group.json`. */
+export const TOGGLE_GROUP_MANIFEST: SetManifest = {
+  key: "toggle-group",
+  name: "Toggle group",
+  slot: "toggle-group",
+  axes: TOGGLE_GROUP.axes,
+  columnAxis: "size",
+  label: undefined,
+  iconsFor: () => [],
+  parts: TOGGLE_GROUP_ITEMS.map(itemManifest),
   swapProperties: [],
 };

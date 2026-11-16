@@ -21,6 +21,7 @@
  */
 import { radioVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
 
@@ -68,5 +69,39 @@ export const RADIO: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [INDICATOR],
+  swapProperties: [],
+};
+
+/**
+ * The radio's manifest, which the capture-backed build reads with `captures/radio.json`: the
+ * indicator, and the dot at its first place, which carries no `data-slot`.
+ */
+export const RADIO_MANIFEST: SetManifest = {
+  key: "radio",
+  name: "Radio",
+  slot: "radio-group-item",
+  axes: RADIO.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "indicator",
+      slot: "radio-group-indicator",
+      shownIn: checked,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "dot",
+          slot: undefined,
+          place: "radio-group-indicator/0",
+          shownIn: () => true,
+          label: undefined,
+          iconsFor: () => [],
+        },
+      ],
+    },
+  ],
   swapProperties: [],
 };

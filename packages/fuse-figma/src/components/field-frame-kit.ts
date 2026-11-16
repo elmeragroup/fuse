@@ -204,9 +204,14 @@ export const FIELD_FRAME_SET: Pick<
  *
  * @param label - The label's text.
  * @param place - The row's place, such as `field/0`.
+ * @param after - The parts the row holds after the label, as Textarea field's counter.
  * @returns The row.
  */
-export function frameLabelRowManifest(label: string, place: string): PartManifest {
+export function frameLabelRowManifest(
+  label: string,
+  place: string,
+  after: readonly PartManifest[] = []
+): PartManifest {
   const labelOf = (invalid: boolean): InstanceManifest => ({
     kind: "instance",
     key: invalid ? "label-invalid" : "label",
@@ -223,19 +228,35 @@ export function frameLabelRowManifest(label: string, place: string): PartManifes
     shownIn: always,
     label: undefined,
     iconsFor: () => [],
-    parts: [labelOf(false), labelOf(true)],
+    parts: [labelOf(false), labelOf(true), ...after],
   };
 }
 
 /**
- * A field frame's error and its descriptions as a manifest names them: the error in an invalid cell,
- * and one description per state Base UI stamps on it.
+ * A field frame's error as a manifest names it, shown in an invalid cell.
  *
  * @param error - The error's text.
- * @param description - The description's text.
- * @returns The error, then the descriptions.
+ * @returns The error.
  */
-export function frameMessagesManifest(error: string, description: string): readonly InstanceManifest[] {
+export function frameErrorManifest(error: string): InstanceManifest {
+  return {
+    kind: "instance",
+    key: "error",
+    of: FIELD_ERROR_MANIFEST,
+    cell: () => ({ state: "invalid" }),
+    properties: () => ({ text: { Text: error } }),
+    shownIn: isInvalid,
+    exposed: true,
+  };
+}
+
+/**
+ * A field frame's descriptions as a manifest names them, one per state Base UI stamps on it.
+ *
+ * @param description - The description's text.
+ * @returns The descriptions, one of which each cell shows.
+ */
+export function frameDescriptionsManifest(description: string): readonly InstanceManifest[] {
   const descriptionOf = (stamp: DescriptionStamp): InstanceManifest => ({
     kind: "instance",
     key: stamp === "none" ? "description" : `description-${stamp}`,
@@ -245,18 +266,16 @@ export function frameMessagesManifest(error: string, description: string): reado
     shownIn: (cell) => stampOf(cell) === stamp,
     exposed: true,
   });
-  return [
-    {
-      kind: "instance",
-      key: "error",
-      of: FIELD_ERROR_MANIFEST,
-      cell: () => ({ state: "invalid" }),
-      properties: () => ({ text: { Text: error } }),
-      shownIn: isInvalid,
-      exposed: true,
-    },
-    descriptionOf("none"),
-    descriptionOf("disabled"),
-    descriptionOf("invalid"),
-  ];
+  return [descriptionOf("none"), descriptionOf("disabled"), descriptionOf("invalid")];
+}
+
+/**
+ * A field frame's error and its descriptions as a manifest names them, after its control.
+ *
+ * @param error - The error's text.
+ * @param description - The description's text.
+ * @returns The error, then the descriptions.
+ */
+export function frameMessagesManifest(error: string, description: string): readonly InstanceManifest[] {
+  return [frameErrorManifest(error), ...frameDescriptionsManifest(description)];
 }

@@ -217,6 +217,15 @@
       },
       "verdict": "old-was-wrong",
       "reason": "The recipe build reads no `motion-safe:` variant, so it leaves #707's motion classes unmapped; the capture reads the winners of the media query and drops them as motion."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the `::before` pseudo-element paints nothing*"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The close Button's `hit-area-1`, which the browser draws as a `::before` with empty content and no fill, border or shadow. It only widens what a pointer reaches, so the kit draws nothing for it. The capture listed no row for it before it read pseudo-elements."
     }
   ]
 }

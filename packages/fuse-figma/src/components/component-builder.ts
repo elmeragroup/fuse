@@ -7,7 +7,12 @@
 
 import { Result } from "effect";
 
-import { anchoredPlacement, CaptureSetCascade, castsShadowOrClips } from "../capture/capture-cascade";
+import {
+  anchoredPlacement,
+  CaptureSetCascade,
+  castsShadowOrClips,
+  partsThatScaleIn,
+} from "../capture/capture-cascade";
 import type { OpenPlacement } from "../capture/capture-cascade";
 import type { SetCapture } from "../capture/capture-format";
 import { keptCapture } from "../capture/captures";
@@ -144,7 +149,11 @@ export function buildComponentSet(
   // browser.
   const unclippedRoot = captured !== undefined && !castsShadowOrClips(captured.capture);
   const instances = new InstanceParts(context, inner, record);
-  const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
+  // A capture-backed set names no classes, so its capture says which parts win a `scale`.
+  const scaling =
+    captured === undefined
+      ? partsThatScale(partsOf(definition), cells, context.compiled)
+      : partsThatScaleIn(captured.capture, definition.parts ?? []);
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
     const plain: MapScope = {
