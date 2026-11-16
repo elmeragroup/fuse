@@ -20,7 +20,7 @@ function message(symbol: string): string {
 
 describe("the chart API report's forgotten-export filter", () => {
   it("reads every namespace part from the committed report", () => {
-    const parts = namespaceParts(readFileSync(join(packageRoot, "etc/chart.api.md"), "utf8"));
+    const parts = namespaceParts(readFileSync(join(packageRoot, "etc/chart.api.md"), "utf8"), "chart");
     // Chart's 44 parts and Chart.SlotLabel, then the pie, radial and radar parts of their own, and
     // each family's Tooltip and Table. The pie's twelve include CenterName.
     expect(parts).toHaveLength(45 + 12 + 3 + 10 + 6);
@@ -50,10 +50,10 @@ describe("the chart API report's forgotten-export filter", () => {
       "};",
       "```",
     ].join("\n");
-    const parts = namespaceParts(report);
+    const parts = namespaceParts(report, "chart");
     expect(parts).toEqual(["ChartBar", "ChartRoot"]);
     // A private helper a props type or another namespace names fails by name.
-    expect(leakedSymbols(["ChartRoot", "internalContext", "chartStore"], parts)).toEqual([
+    expect(leakedSymbols(["ChartRoot", "internalContext", "chartStore"], parts, "chart")).toEqual([
       "chartStore",
       "internalContext",
     ]);
@@ -66,16 +66,25 @@ describe("the chart API report's forgotten-export filter", () => {
 
   it("names every flagged symbol that is not a part component", () => {
     const flagged = ["ChartBar", "ChartStoreState", "PieChartRoot", "useChartContext", "ChartStoreState"];
-    expect(leakedSymbols(flagged, ["ChartBar", "PieChartRoot"])).toEqual([
+    expect(leakedSymbols(flagged, ["ChartBar", "PieChartRoot"], "chart")).toEqual([
       "ChartStoreState",
       "useChartContext",
     ]);
-    expect(leakedSymbols(["ChartBar", "PieChartRoot"], ["ChartBar", "PieChartRoot"])).toEqual([]);
+    expect(leakedSymbols(["ChartBar", "PieChartRoot"], ["ChartBar", "PieChartRoot"], "chart")).toEqual([]);
   });
 
-  it("lets the radar cap's two counting helpers stay out of the entry, and nothing else", () => {
-    expect(leakedSymbols(["ChartHasFiveKeys", "ChartWithoutOne", "ChartStoreState"], [])).toEqual([
+  it("lets the radar cap's two counting helpers stay out of the chart entry, and out of no other", () => {
+    expect(leakedSymbols(["ChartHasFiveKeys", "ChartWithoutOne", "ChartStoreState"], [], "chart")).toEqual([
       "ChartStoreState",
     ]);
+    expect(leakedSymbols(["ChartHasFiveKeys"], [], "tour")).toEqual(["ChartHasFiveKeys"]);
+  });
+
+  it("reads every Tour part from the committed tour report", () => {
+    const parts = namespaceParts(readFileSync(join(packageRoot, "etc/tour.api.md"), "utf8"), "tour");
+    // Provider, Target, Popup, Header, Progress, Close, Title, Description, Footer, Skip, Prev, Next.
+    expect(parts).toHaveLength(12);
+    expect(parts).toContain("TourPopup");
+    expect(parts).not.toContain("Tour");
   });
 });

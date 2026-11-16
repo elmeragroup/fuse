@@ -7,10 +7,16 @@ import { isThemeDevelopment } from "../../theme/validate-theme";
 /**
  * Where a step shows its popup. `"target"` anchors the popup to the step's element. `"center"`
  * shows it in the middle of the viewport with no element, for a welcome or a wrap-up.
+ *
+ * @beta
  */
 export type TourStepPlacement = "target" | "center";
 
-/** A step's words in its definition, for a step with no component to carry them. */
+/**
+ * A step's words in its definition, for a step with no component to carry them.
+ *
+ * @beta
+ */
 export type TourDefinitionStep = {
   /** The step's title. */
   readonly title: string;
@@ -24,6 +30,8 @@ export type TourDefinitionStep = {
  * A tour: its id, version and ordered steps. Create it with `defineTour`.
  *
  * @template S - The step ids, as a union.
+ *
+ * @beta
  */
 export type TourDefinition<S extends string = string> = {
   /** The tour's id, unique among the tours under one `Tour.Provider`. */
@@ -47,6 +55,8 @@ export const DEFAULT_TARGET_TIMEOUT_MS = 1000;
  * Input for `defineTour`.
  *
  * @template S - The step ids, as a union.
+ *
+ * @beta
  */
 export type TourDefinitionInput<S extends string> = {
   /** The tour's id, unique among the tours under one `Tour.Provider`. */
@@ -80,6 +90,8 @@ export type TourDefinitionInput<S extends string> = {
  * @template S - The step ids, inferred from `steps`.
  * @param input - The tour's id, steps and options.
  * @returns The definition.
+ *
+ * @beta
  */
 export function defineTour<const S extends string>(input: TourDefinitionInput<S>): TourDefinition<S> {
   const steps = [...new Set(input.steps)];
@@ -103,6 +115,8 @@ export function defineTour<const S extends string>(input: TourDefinitionInput<S>
  * @param tourId - The tour's id.
  * @param stepId - The step's id.
  * @returns The key.
+ *
+ * @beta
  */
 export function tourStepKey(tourId: string, stepId: string): string {
   return `${tourId}.${stepId}`;

@@ -80,7 +80,7 @@
     // report that run wrote instead of replaying logs over older contents.
     "api:report": {
       "dependsOn": ["build"],
-      "outputs": ["etc/chart.api.md"]
+      "outputs": ["etc/*.api.md"]
     },
     "dev": {
       "dependsOn": ["^build"],

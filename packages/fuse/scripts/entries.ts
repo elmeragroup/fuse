@@ -69,6 +69,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle",
   "toggle-group",
   "tooltip",
+  "tour",
   // plop:component-entry
   "action-bar",
   "carousel",
@@ -103,7 +104,7 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  * Shipped entries that stay out of the root barrel until Fuse's first stable release, when each
  * moves into it.
  */
-export const PREVIEW_ENTRIES = ["chart"] as const;
+export const PREVIEW_ENTRIES = ["chart", "tour"] as const;
 
 /**
  * Opt-in entries a consumer imports bare for what they install, not for exports. Each source file

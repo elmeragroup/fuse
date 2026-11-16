@@ -6,10 +6,18 @@
 // objects through `Object.fromEntries`, which defines own properties, so a stored tour id such as
 // `"__proto__"` stays a key and never reaches a prototype.
 
-/** How a tour ended for good: the user finished it or turned it down. */
+/**
+ * How a tour ended for good: the user finished it or turned it down.
+ *
+ * @beta
+ */
 export type TourStatus = "completed" | "dismissed";
 
-/** What the tour remembers about one tour for one user. */
+/**
+ * What the tour remembers about one tour for one user.
+ *
+ * @beta
+ */
 export type TourRecord = {
   /** How the tour ended for good, when it has. */
   readonly status?: TourStatus;
@@ -23,7 +31,11 @@ export type TourRecord = {
   readonly at: number;
 };
 
-/** Every tour's record, keyed by tour id. */
+/**
+ * Every tour's record, keyed by tour id.
+ *
+ * @beta
+ */
 export type TourRecords = { readonly [tourId: string]: TourRecord };
 
 /** The records of no tour. */
@@ -94,6 +106,8 @@ function parseRecord(value: unknown): TourRecord | null {
  *
  * @param value - The data to parse.
  * @returns The records; empty when `value` is not an object.
+ *
+ * @beta
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- the parse boundary over stored JSON
 export function parseTourRecords(value: unknown): TourRecords {
@@ -147,6 +161,8 @@ function winner(current: TourRecord, incoming: TourRecord): TourRecord {
  * @param incoming - The records to merge in.
  * @returns The merged records. It is `current` itself when no incoming record wins, and it keeps
  *   every record that did not change by reference.
+ *
+ * @beta
  */
 export function mergeTourRecords(current: TourRecords, incoming: TourRecords): TourRecords {
   let changed = false;
@@ -162,7 +178,11 @@ export function mergeTourRecords(current: TourRecords, incoming: TourRecords): T
   return changed ? Object.fromEntries(merged) : current;
 }
 
-/** The cookie name the tour helpers use by default. */
+/**
+ * The cookie name the tour helpers use by default.
+ *
+ * @beta
+ */
 export const TOUR_COOKIE_NAME = "fuse-tours";
 
 /**
@@ -172,6 +192,8 @@ export const TOUR_COOKIE_NAME = "fuse-tours";
  *
  * @param records - The records to carry.
  * @returns The cookie value.
+ *
+ * @beta
  */
 export function serializeTourCookie(records: TourRecords): string {
   const finished: [string, TourRecord][] = [];
@@ -189,6 +211,8 @@ export function serializeTourCookie(records: TourRecords): string {
  *
  * @param value - The cookie's value, or `undefined` when the request has no tour cookie.
  * @returns The records; empty when the value is missing or unreadable.
+ *
+ * @beta
  */
 export function parseTourCookie(value: string | null | undefined): TourRecords {
   if (value === null || value === undefined || value === "") {

@@ -9,15 +9,19 @@
 // - Every transition returns the same `shown`, `pending`, `records` and per-tour record objects
 //   when it did not change them, so a part that selects one by reference renders only when it
 //   changes, and the session writes storage only for a record whose reference changed.
-// - Only a deliberate act writes a status: Done on the shown last step, Skip, Close and Escape.
-//   An outside press or an error snoozes the tour for the page. Running out of steps whose element
-//   exists, and a run another tab finished, write nothing.
+// - Only a deliberate act writes a status: Done on the shown last step, Skip, Close, Escape and
+//   `dismissTour`. An outside press or an error snoozes the tour for the page. Running out of steps
+//   whose element exists, and a run another tab finished, write nothing.
 
 import type { TourDefinition } from "./tour-definition";
 import { mergeTourRecords, NO_TOUR_RECORDS } from "./tour-records";
 import type { TourRecord, TourRecords, TourStatus } from "./tour-records";
 
-/** Who started a run: the user, through a control, or `useAutoStartTour`. */
+/**
+ * Who started a run: the user, through a control, or `useAutoStartTour`.
+ *
+ * @beta
+ */
 export type TourOrigin = "user" | "auto";
 
 /** The step on screen. */
@@ -65,6 +69,8 @@ export type TourSessionState = {
  * - `no-targets`: no remaining step in the run's direction had an element.
  * - `synced`: another tab or device finished the tour while it auto-ran here.
  * - `error`: a part or a consumer callback threw.
+ *
+ * @beta
  */
 export type TourEndReason =
   | "completed"
@@ -88,7 +94,11 @@ export type TourEnding = {
   readonly status: TourStatus | null;
 };
 
-/** A record a transition changed, which the session writes to storage. */
+/**
+ * A record a transition changed, which the session writes to storage.
+ *
+ * @beta
+ */
 export type TourRecordChange = {
   /** The tour's id. */
   readonly tourId: string;
@@ -114,10 +124,16 @@ export type TourTransition = {
  * - `active`: the tour is running.
  * - `completed`, `dismissed`: the tour's record has that status.
  * - `snoozed`: an outside press or an error ended the tour on this page.
+ *
+ * @beta
  */
 export type TourState = "unknown" | "idle" | "active" | TourStatus | "snoozed";
 
-/** Why a start was refused. */
+/**
+ * Why a start was refused.
+ *
+ * @beta
+ */
 export type TourStartRefusal = "busy" | "not-ready" | "finished" | "snoozed" | "cooldown" | "no-steps";
 
 /** A start's result. */
@@ -529,6 +545,35 @@ export function endTour(
   return {
     state: withRecord(stopped, definition.id, record),
     ended,
+    changed: { tourId: definition.id, record },
+  };
+}
+
+/**
+ * Turns a tour down for good, as Skip does. A run of the tour ends as `skip-press`; with no run, the
+ * tour's record takes the `dismissed` status. A tour that already has a status keeps it.
+ *
+ * @param state - The session.
+ * @param definition - The tour.
+ * @param now - The current time, in milliseconds since the epoch.
+ * @returns The transition.
+ */
+export function dismissTour(
+  state: TourSessionState,
+  definition: TourDefinition,
+  now: number
+): TourTransition {
+  if (tourRunStep(state)?.tourId === definition.id) {
+    return endTour(state, definition, "skip-press", now);
+  }
+  const held = state.records[definition.id];
+  if (held?.status !== undefined) {
+    return unchanged(state);
+  }
+  const record: TourRecord = { ...held, v: held?.v ?? definition.version, status: "dismissed", at: now };
+  return {
+    state: withRecord(state, definition.id, record),
+    ended: null,
     changed: { tourId: definition.id, record },
   };
 }

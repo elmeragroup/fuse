@@ -400,6 +400,10 @@
     "./tooltip": {
       "types": "./src/tooltip.ts",
       "import": "./src/tooltip.ts"
+    },
+    "./tour": {
+      "types": "./src/tour.ts",
+      "import": "./src/tour.ts"
     }
   },
   "publishConfig": {

@@ -1,0 +1,869 @@
+// Unit under test: the tour's React layer, from `Tour.Provider` through `Tour.Popup` and its parts,
+// against a real page. Oracles: the plan's Persistence rules (Done on the last step, Skip, Close and
+// Escape write a status; an outside press and an error do not), Base UI's labeled dialog contract,
+// the plain-HTML attribute's whole-entry match, and the re-render rule that only the parts whose
+// answer changes render during a run.
+import { Profiler, useLayoutEffect, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
+
+import { createPortal } from "react-dom";
+import { renderToString } from "react-dom/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
+
+import "../../../dist/styles.css";
+import { withLocale } from "../../../test/locale-matrix";
+import { renderThemed as renderThemedTree, roleNamed } from "../../../test/themed-browser-render";
+import { Button } from "../button/button";
+import { Tooltip } from "../tooltip";
+import type { TourEvent } from "./tour-controller";
+import { defineTour } from "./tour-definition";
+import type { TourDefinition } from "./tour-definition";
+import type { TourError } from "./tour-error";
+import { Tour } from "./tour-namespace";
+import { useAutoStartTour, useTour, useTourStep } from "./tour-provider";
+import type { TourRecords } from "./tour-records";
+import { localTourStorage, memoryTourStorage, remoteTourStorage } from "./tour-storage";
+import type { TourStorage } from "./tour-storage";
+
+const welcome = defineTour({
+  id: "welcome",
+  steps: ["intro", "usage", "price"],
+  targetTimeoutMs: 100,
+  content: { intro: { title: "Welcome", description: "A short look around.", placement: "center" } },
+});
+
+function Starter({ tour, label = "Take the tour" }: { tour: TourDefinition; label?: string }): ReactElement {
+  const handle = useTour(tour);
+  return (
+    <>
+      <Button variant="outline" onClick={() => handle.start()}>
+        {label}
+      </Button>
+      <output aria-label={`${tour.id} state`}>{handle.state}</output>
+    </>
+  );
+}
+
+function PriceButton(): ReactElement {
+  const { ref } = useTourStep(welcome, "price", { title: "Price", description: "What you pay per kWh." });
+  return (
+    <button type="button" ref={ref}>
+      Price
+    </button>
+  );
+}
+
+function StepPopup({ tour, children }: { tour: TourDefinition; children?: ReactNode }): ReactElement {
+  return (
+    <Tour.Popup tour={tour}>
+      <Tour.Header>
+        <Tour.Progress />
+        <Tour.Close />
+      </Tour.Header>
+      <Tour.Title>{children}</Tour.Title>
+      <Tour.Description />
+      <Tour.Footer>
+        <Tour.Skip />
+        <Tour.Prev />
+        <Tour.Next />
+      </Tour.Footer>
+    </Tour.Popup>
+  );
+}
+
+type FixtureOptions = {
+  readonly storage?: TourStorage;
+  readonly onEvent?: (event: TourEvent) => void;
+  readonly onError?: (error: TourError) => void;
+  readonly initialRecords?: TourRecords;
+  readonly children?: ReactNode;
+};
+
+function renderWelcome({ storage = memoryTourStorage(), children, ...props }: FixtureOptions = {}) {
+  renderThemed(
+    <Tour.Provider storage={storage} {...props}>
+      <Starter tour={welcome} />
+      <Tour.Target tour={welcome} step="usage" title="Usage" description="Your usage this month.">
+        Usage card
+      </Tour.Target>
+      <PriceButton />
+      <StepPopup tour={welcome} />
+      {children}
+    </Tour.Provider>
+  );
+  return storage;
+}
+
+async function dialogNamed(name: string): Promise<HTMLElement> {
+  await expect.element(page.getByRole("dialog", { name })).toBeVisible();
+  return roleNamed("dialog", name);
+}
+
+async function expectNoDialog(): Promise<void> {
+  await vi.waitFor(() => {
+    expect(page.getByRole("dialog").query()).toBeNull();
+  });
+}
+
+async function recordsOf(storage: TourStorage): Promise<TourRecords> {
+  return storage.read();
+}
+
+afterEach(() => {
+  localStorage.clear();
+});
+
+function renderThemed(node: ReactNode, options: { readonly strictMode?: boolean } = {}): void {
+  renderThemedTree(withLocale("en-US", node), options);
+}
+
+describe("Tour run", () => {
+  it("shows each step as a dialog named by its title, and completes on Done", async () => {
+    const events: TourEvent[] = [];
+    const storage = renderWelcome({ onEvent: (event) => events.push(event) });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+
+    const intro = await dialogNamed("Welcome");
+    expect(intro).toHaveAccessibleDescription("A short look around.");
+    expect(page.getByText("Step 1 of 3").element()).toHaveAttribute("aria-live", "polite");
+
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    expect(page.getByText("Usage card").element()).toHaveAttribute("data-active", "");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+
+    expect((await recordsOf(storage)).welcome?.status).toBe("completed");
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "completed", status: "completed" });
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("completed");
+  });
+
+  it("moves between steps with the Arrow keys while focus is in the popup", async () => {
+    renderWelcome();
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    roleNamed("button", "Next").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await dialogNamed("Usage");
+    await userEvent.keyboard("{ArrowLeft}");
+    await dialogNamed("Welcome");
+  });
+
+  it("leaves the last step on screen on the forward Arrow key, which writes no status", async () => {
+    const storage = renderWelcome();
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    roleNamed("button", "Next").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await dialogNamed("Usage");
+    await userEvent.keyboard("{ArrowRight}");
+    await dialogNamed("Price");
+    // Only Done, Skip, Close and Escape write a status. A held Arrow key must not finish the tour.
+    await userEvent.keyboard("{ArrowRight}");
+    await userEvent.keyboard("{Shift}");
+    await dialogNamed("Price");
+    expect((await recordsOf(storage)).welcome?.status).toBeUndefined();
+  });
+
+  it("leaves the Arrow keys to a text input in a same-origin frame", async () => {
+    const frame = document.createElement("iframe");
+    document.body.append(frame);
+    try {
+      const frameDocument = frame.contentDocument;
+      // SAFETY: a same-origin frame's window has this window's globals, from its own realm.
+      const frameWindow = frame.contentWindow as (Window & typeof globalThis) | null;
+      if (frameDocument === null || frameWindow === null) {
+        throw new Error("expected a same-origin frame");
+      }
+      renderThemed(
+        <Tour.Provider storage={memoryTourStorage()}>
+          <Starter tour={welcome} />
+          {createPortal(
+            <Tour.Popup tour={welcome} initialFocus={false} container={frameDocument.body}>
+              <Tour.Title />
+              <input aria-label="Note" />
+            </Tour.Popup>,
+            frameDocument.body
+          )}
+        </Tour.Provider>
+      );
+      await userEvent.click(roleNamed("button", "Take the tour"));
+      await vi.waitFor(() => {
+        expect(frameDocument.querySelector("[role=dialog]")).not.toBeNull();
+      });
+      const note = frameDocument.querySelector("input[aria-label=Note]");
+      if (note === null) {
+        throw new Error("expected the input in the frame");
+      }
+      // The premise: this window's constructors miss the frame's nodes, as they do on a real page.
+      expect(note instanceof HTMLElement).toBe(false);
+      // Unit under test: the popup's Arrow-key step. Oracle: a text input keeps its own Arrow keys,
+      // which is what the page's own realm does for the same element.
+      const arrow = new frameWindow.KeyboardEvent("keydown", {
+        key: "ArrowRight",
+        bubbles: true,
+        cancelable: true,
+      });
+      note.dispatchEvent(arrow);
+      expect(arrow.defaultPrevented).toBe(false);
+    } finally {
+      frame.remove();
+    }
+  });
+
+  it("writes dismissed on Escape, and keeps the coachmark open through an outside press", async () => {
+    const storage = renderWelcome();
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+
+    await userEvent.click(page.getByText("Usage card").element());
+    await dialogNamed("Welcome");
+
+    await userEvent.keyboard("{Escape}");
+    await expectNoDialog();
+    expect((await recordsOf(storage)).welcome?.status).toBe("dismissed");
+  });
+
+  it("leaves the run going when an Escape outside the popup closes a hovered tooltip, and ends it on the next", async () => {
+    const storage = memoryTourStorage();
+    renderThemed(
+      <Tour.Provider storage={storage}>
+        <Starter tour={welcome} />
+        <Tooltip.Provider delay={0}>
+          <Tooltip.Root>
+            <Tooltip.Trigger>Hint</Tooltip.Trigger>
+            <Tooltip.Content>Add to library</Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+        <Tour.Popup tour={welcome} initialFocus={false}>
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.hover(roleNamed("button", "Hint"));
+    await expect.element(page.getByRole("tooltip", { name: "Add to library", exact: true })).toBeVisible();
+    // The tooltip takes the first Escape, as Base UI marks a keydown that closes an overlay handled.
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("tooltip").query()).toBeNull();
+    });
+    await userEvent.keyboard("{Shift}");
+    await dialogNamed("Welcome");
+    expect((await recordsOf(storage)).welcome?.status).toBeUndefined();
+    await userEvent.keyboard("{Escape}");
+    await expectNoDialog();
+    expect((await recordsOf(storage)).welcome?.status).toBe("dismissed");
+  });
+
+  it("does nothing on Enter on a visually disabled Prev at the first step or Skip at the last", async () => {
+    const storage = renderWelcome();
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+
+    const prev = roleNamed("button", "Back");
+    expect(prev).toHaveAttribute("aria-disabled", "true");
+    prev.focus();
+    await userEvent.keyboard("{Enter}");
+    await dialogNamed("Welcome");
+
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    const skip = roleNamed("button", "Skip");
+    expect(skip).toHaveAttribute("aria-disabled", "true");
+    skip.focus();
+    await userEvent.keyboard("{Enter}");
+    await dialogNamed("Price");
+    expect((await recordsOf(storage)).welcome?.status).toBeUndefined();
+  });
+
+  it("moves focus into the popup by default", async () => {
+    renderWelcome();
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    const dialog = await dialogNamed("Welcome");
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+  });
+
+  it("leaves focus on the page with initialFocus={false}", async () => {
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Tour.Popup tour={welcome} initialFocus={false}>
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    const starter = roleNamed("button", "Take the tour");
+    await userEvent.click(starter);
+    await dialogNamed("Welcome");
+    expect(document.activeElement).toBe(starter);
+  });
+
+  it("returns focus to the control that started the run when it ends", async () => {
+    renderWelcome();
+    const starter = roleNamed("button", "Take the tour");
+    await userEvent.click(starter);
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Close"));
+    await expectNoDialog();
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(starter);
+    });
+  });
+
+  it("runs and auto-starts under Strict Mode's second effect cycle", async () => {
+    function AutoStart(): ReactElement {
+      useAutoStartTour(welcome, { delayMs: 0 });
+      return <></>;
+    }
+    const events: TourEvent[] = [];
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()} onEvent={(event) => events.push(event)}>
+        <AutoStart />
+        <Starter tour={welcome} />
+        <Tour.Target tour={welcome} step="usage" title="Usage">
+          Usage card
+        </Tour.Target>
+        <PriceButton />
+        <StepPopup tour={welcome} />
+      </Tour.Provider>,
+      { strictMode: true }
+    );
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+    expect(events.filter((event) => event.type === "start")).toHaveLength(1);
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "completed" });
+  });
+
+  it("keeps a dismiss() that onEvent calls for the start event", async () => {
+    let dismiss = (): void => undefined;
+    function Grab({ grab }: { readonly grab: (next: () => void) => void }): null {
+      const tour = useTour(welcome);
+      useLayoutEffect(() => {
+        grab(tour.dismiss);
+      }, [grab, tour.dismiss]);
+      return null;
+    }
+    const storage = renderWelcome({
+      onEvent: (event) => {
+        if (event.type === "start") {
+          dismiss();
+        }
+      },
+      children: (
+        <Grab
+          grab={(next) => {
+            dismiss = next;
+          }}
+        />
+      ),
+    });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("dismissed");
+    expect(page.getByRole("dialog").query()).toBeNull();
+    await vi.waitFor(async () => {
+      expect((await recordsOf(storage)).welcome?.status).toBe("dismissed");
+    });
+  });
+});
+
+describe("Tour targets", () => {
+  it("skips a step whose element never appears, and ends as no-targets with no status when none remain", async () => {
+    const sparse = defineTour({
+      id: "sparse",
+      steps: ["here", "gone", "also-gone"],
+      targetTimeoutMs: 50,
+      content: { here: { title: "Here" } },
+    });
+    const events: TourEvent[] = [];
+    const storage = memoryTourStorage();
+    renderThemed(
+      <Tour.Provider storage={storage} onEvent={(event) => events.push(event)}>
+        <Starter tour={sparse} />
+        <div data-tour-step="sparse.here">Here</div>
+        <StepPopup tour={sparse} />
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Here");
+    await userEvent.click(roleNamed("button", "Next"));
+    await expectNoDialog();
+
+    expect(events.filter((event) => event.type === "skip").map((event) => event.stepId)).toEqual([
+      "gone",
+      "also-gone",
+    ]);
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "no-targets", status: null });
+    expect((await recordsOf(storage)).sparse?.status).toBeUndefined();
+  });
+
+  it("finds a plain-HTML target by a whole `data-tour-step` entry, and escapes the key", async () => {
+    const quoted = defineTour({
+      id: 'say"hi"',
+      steps: ["step-1"],
+      content: { "step-1": { title: "Quoted" } },
+    });
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={quoted} />
+        <div data-tour-step={'say"hi".step-10'} style={{ marginBlock: 120 }}>
+          Longer key
+        </div>
+        <div data-tour-step={'other.step say"hi".step-1'}>Whole entry</div>
+        <Tour.Popup tour={quoted} side="bottom" sideOffset={8}>
+          <Tour.Title />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    const dialog = await dialogNamed("Quoted");
+    const target = page.getByText("Whole entry").element();
+    // Unit under test: which element the popup anchors to. Oracle: the whole-entry element's box with
+    // the requested bottom side and 8px offset; the longer key sits 120px away.
+    await vi.waitFor(() => {
+      expect(dialog.getBoundingClientRect().top).toBeCloseTo(target.getBoundingClientRect().bottom + 8, 0);
+    });
+  });
+
+  it("re-reads a shown Target's words when they change", async () => {
+    function Renaming(): ReactElement {
+      const [title, setTitle] = useState("Usage");
+      return (
+        <>
+          <Button variant="outline" onClick={() => setTitle("Consumption")}>
+            Rename
+          </Button>
+          <Tour.Target tour={welcome} step="usage" title={title}>
+            Usage card
+          </Tour.Target>
+        </>
+      );
+    }
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Renaming />
+        <StepPopup tour={welcome} />
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    await userEvent.click(roleNamed("button", "Rename"));
+    await dialogNamed("Consumption");
+  });
+
+  it("falls back to an earlier registration's words when the newer one unmounts", async () => {
+    function Newer(): ReactElement {
+      useTourStep(welcome, "usage", { title: "Usage, newest" });
+      return <></>;
+    }
+    function Toggle(): ReactElement {
+      const [shown, setShown] = useState(true);
+      return (
+        <>
+          <Button variant="outline" onClick={() => setShown(false)}>
+            Drop the newer words
+          </Button>
+          {shown ? <Newer /> : null}
+        </>
+      );
+    }
+    renderWelcome({ children: <Toggle /> });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage, newest");
+    roleNamed("button", "Drop the newer words").focus();
+    await userEvent.keyboard("{Enter}");
+    await dialogNamed("Usage");
+  });
+});
+
+describe("Tour never throws", () => {
+  it("ends the run as error when a part throws, writes no status, and leaves the page rendering", async () => {
+    function Throwing(): ReactElement {
+      throw new Error("broken words");
+    }
+    const errors: TourError[] = [];
+    const events: TourEvent[] = [];
+    const storage = memoryTourStorage();
+    renderThemed(
+      <Tour.Provider
+        storage={storage}
+        onError={(error) => errors.push(error)}
+        onEvent={(event) => events.push(event)}>
+        <Starter tour={welcome} />
+        <StepPopup tour={welcome}>
+          <Throwing />
+        </StepPopup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await vi.waitFor(() => {
+      expect(events.at(-1)).toMatchObject({ type: "end", reason: "error", status: null });
+    });
+    expect(errors.map((error) => error.source)).toContain("part");
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(roleNamed("button", "Take the tour")).toBeVisible();
+    expect((await recordsOf(storage)).welcome?.status).toBeUndefined();
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("snoozed");
+  });
+
+  it("falls back to memory when storage throws, reports storage-error, and still runs and records the tour", async () => {
+    const broken: TourStorage = {
+      read: () => {
+        throw new Error("quota");
+      },
+      write: () => Promise.reject(new Error("offline")),
+    };
+    const events: TourEvent[] = [];
+    renderWelcome({ storage: broken, onEvent: (event) => events.push(event), onError: () => undefined });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Close"));
+    await expectNoDialog();
+    // Memory took over after the failed read, so the broken write is never called.
+    expect(events.filter((event) => event.type === "storage-error").map((event) => event.operation)).toEqual([
+      "read",
+    ]);
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("dismissed");
+  });
+
+  it("reports a failed write and keeps the run going", async () => {
+    const offline: TourStorage = { read: () => ({}), write: () => Promise.reject(new Error("offline")) };
+    const events: TourEvent[] = [];
+    renderWelcome({ storage: offline, onEvent: (event) => events.push(event), onError: () => undefined });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await vi.waitFor(() => {
+      expect(
+        events.filter((event) => event.type === "storage-error").map((event) => event.operation)
+      ).toEqual(["write"]);
+    });
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+  });
+
+  it("renders no tour outside a Provider and warns once", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    renderThemed(
+      <>
+        <Starter tour={welcome} />
+        <StepPopup tour={welcome} />
+      </>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("unknown");
+    // The only observable behavior of the missing Provider is the development warning.
+    expect(
+      warn.mock.calls.filter(([message]) => String(message).includes("outside Tour.Provider"))
+    ).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it("renders nothing for a Tour.Close outside a Tour.Popup, on the server and the client", async () => {
+    const tree = (
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Tour.Close />
+      </Tour.Provider>
+    );
+    expect(renderToString(withLocale("en-US", tree))).not.toContain("<button aria-label");
+    renderThemed(tree);
+    await expect.element(page.getByRole("button", { name: "Take the tour" })).toBeVisible();
+    expect(page.getByRole("button", { name: "Close" }).query()).toBeNull();
+  });
+
+  it("drops notifications from a storage that failed and was replaced by memory", async () => {
+    let notify = (_records: TourRecords): void => undefined;
+    const failing: TourStorage = {
+      read: () => Promise.reject(new Error("offline")),
+      write: () => undefined,
+      subscribe: (listener) => {
+        notify = listener;
+        return () => {
+          notify = () => undefined;
+        };
+      },
+    };
+    renderWelcome({ storage: failing, onError: () => undefined });
+    await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("idle");
+    notify({ welcome: { status: "completed", v: 1, at: 5 } });
+    // A round trip to the page lets React render any change the notification made.
+    await userEvent.keyboard("{Shift}");
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("idle");
+  });
+
+  it("lands remote saves in the order of the transitions that made them", async () => {
+    const backend = new Map<string, TourRecords[string]>();
+    const held: (() => void)[] = [];
+    const storage = remoteTourStorage({
+      load: () => Promise.resolve({}),
+      save: (change) =>
+        new Promise<void>((resolve) => {
+          held.push(() => {
+            backend.set(change.tourId, change.record);
+            resolve();
+          });
+        }),
+    });
+    renderWelcome({ storage });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+    // The backend answers the newest pending save first, as a slow network can.
+    await vi.waitFor(async () => {
+      held.pop()?.();
+      await Promise.resolve();
+      expect(held).toHaveLength(0);
+      expect(backend.get("welcome")?.status).toBe("completed");
+    });
+  });
+
+  it("keeps the first step of a run that a skip callback restarts", async () => {
+    const pair = defineTour({
+      id: "pair",
+      steps: ["a", "b"],
+      targetTimeoutMs: 50,
+      content: { a: { title: "Step A" }, b: { title: "Step B" } },
+    });
+    let restart = (): void => undefined;
+    function Grab({ grab }: { readonly grab: (next: () => void) => void }): null {
+      const tour = useTour(pair);
+      useLayoutEffect(() => {
+        grab(() => {
+          tour.dismiss();
+          tour.start();
+        });
+      }, [grab, tour]);
+      return null;
+    }
+    const added = document.createElement("div");
+    added.textContent = "Step A's element";
+    added.setAttribute("data-tour-step", "pair.a");
+    let restarted = false;
+    renderThemed(
+      <Tour.Provider
+        storage={memoryTourStorage()}
+        onEvent={(event) => {
+          if (event.type === "skip" && !restarted) {
+            restarted = true;
+            document.body.append(added);
+            restart();
+          }
+        }}>
+        <Grab
+          grab={(next) => {
+            restart = next;
+          }}
+        />
+        <Starter tour={pair} />
+        <div data-tour-step="pair.b">Step B's element</div>
+        <Tour.Popup tour={pair}>
+          <Tour.Title />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Step A");
+    added.remove();
+  });
+
+  it("counts a write that fails before the first read as storage having answered, and keeps auto-start going", async () => {
+    const other = defineTour({
+      id: "other",
+      steps: ["only"],
+      content: { only: { title: "Other tour", placement: "center" } },
+    });
+    function AutoStart(): ReactElement {
+      useAutoStartTour(other, { delayMs: 0 });
+      return <></>;
+    }
+    const offline: TourStorage = {
+      read: () => new Promise<TourRecords>(() => undefined),
+      write: () => Promise.reject(new Error("offline")),
+    };
+    renderWelcome({
+      storage: offline,
+      onError: () => undefined,
+      children: (
+        <>
+          <AutoStart />
+          <StepPopup tour={other} />
+        </>
+      ),
+    });
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Close"));
+    await dialogNamed("Other tour");
+  });
+});
+
+describe("Tour storage and auto start", () => {
+  it("auto-starts the highest priority due tour, and never a tour the initial records finished", async () => {
+    const finished = defineTour({
+      id: "finished",
+      steps: ["only"],
+      priority: 9,
+      content: { only: { title: "Finished", placement: "center" } },
+    });
+    const minor = defineTour({
+      id: "minor",
+      steps: ["only"],
+      content: { only: { title: "Minor", placement: "center" } },
+    });
+    const major = defineTour({
+      id: "major",
+      steps: ["only"],
+      priority: 2,
+      content: { only: { title: "Major", placement: "center" } },
+    });
+    function AutoStart(): ReactElement {
+      useAutoStartTour(finished, { delayMs: 0 });
+      useAutoStartTour(minor, { delayMs: 0 });
+      useAutoStartTour(major, { delayMs: 0 });
+      return <></>;
+    }
+    renderThemed(
+      <Tour.Provider
+        storage={memoryTourStorage()}
+        initialRecords={{ finished: { status: "dismissed", v: 1, at: 0 } }}>
+        <AutoStart />
+        <StepPopup tour={finished} />
+        <StepPopup tour={minor} />
+        <StepPopup tour={major} />
+      </Tour.Provider>
+    );
+    await dialogNamed("Major");
+    expect(page.getByRole("dialog", { name: "Finished" }).query()).toBeNull();
+  });
+
+  it("auto-starts a tour once per mount, so a run that finds no targets does not start again", async () => {
+    const absent = defineTour({ id: "absent", steps: ["nowhere"], targetTimeoutMs: 30 });
+    function AutoStart(): ReactElement {
+      useAutoStartTour(absent, { delayMs: 0 });
+      return <></>;
+    }
+    const events: TourEvent[] = [];
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()} onEvent={(event) => events.push(event)}>
+        <AutoStart />
+        <Starter tour={absent} />
+      </Tour.Provider>
+    );
+    await vi.waitFor(() => {
+      expect(events.some((event) => event.type === "end")).toBe(true);
+    });
+    // A second run would have started in the task that ended the first, and would still be waiting.
+    await vi.waitFor(() => {
+      expect(roleNamed("status", "absent state")).toHaveTextContent("idle");
+    });
+    expect(events.filter((event) => event.type === "start")).toHaveLength(1);
+  });
+
+  it("keeps another tab's records when localTourStorage writes, and ends an auto run another tab finished", async () => {
+    localStorage.setItem("fuse-tours", JSON.stringify({ billing: { status: "completed", v: 1, at: 1 } }));
+    function AutoStart(): ReactElement {
+      useAutoStartTour(welcome, { delayMs: 0 });
+      return <></>;
+    }
+    const events: TourEvent[] = [];
+    renderWelcome({
+      storage: localTourStorage(),
+      onEvent: (event) => events.push(event),
+      children: <AutoStart />,
+    });
+    await dialogNamed("Welcome");
+    await vi.waitFor(() => {
+      expect(JSON.parse(localStorage.getItem("fuse-tours") ?? "{}")).toMatchObject({
+        billing: { status: "completed" },
+        welcome: { step: "intro" },
+      });
+    });
+
+    const elsewhere = JSON.stringify({ welcome: { status: "dismissed", v: 1, at: Date.now() } });
+    window.dispatchEvent(new StorageEvent("storage", { key: "fuse-tours", newValue: elsewhere }));
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "synced", status: null });
+  });
+});
+
+describe("Tour re-renders", () => {
+  it("renders an unrelated child once, a Target as it becomes and stops being shown, and another tour's Popup only on step changes", async () => {
+    const commits = { unrelated: 0, target: 0, otherPopup: 0 };
+    const other = defineTour({ id: "other", steps: ["only"] });
+    const events: TourEvent[] = [];
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()} onEvent={(event) => events.push(event)}>
+        <Profiler
+          id="unrelated"
+          onRender={() => {
+            commits.unrelated += 1;
+          }}>
+          <p>Unrelated</p>
+        </Profiler>
+        <Starter tour={welcome} />
+        <Tour.Target
+          tour={welcome}
+          step="usage"
+          title="Usage"
+          render={(props) => {
+            commits.target += 1;
+            return <div {...props} />;
+          }}>
+          Usage card
+        </Tour.Target>
+        <PriceButton />
+        <StepPopup tour={welcome} />
+        <Profiler
+          id="other"
+          onRender={() => {
+            commits.otherPopup += 1;
+          }}>
+          <StepPopup tour={other} />
+        </Profiler>
+      </Tour.Provider>
+    );
+    const mounted = { ...commits };
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+
+    expect(commits.unrelated - mounted.unrelated).toBe(0);
+    // It became the shown step, then stopped being it.
+    expect(commits.target - mounted.target).toBe(2);
+    // Three steps showed and the run ended: four changes of the shown step.
+    const shownChanges = events.filter((event) => event.type === "show" || event.type === "end").length;
+    expect(shownChanges).toBe(4);
+    expect(commits.otherPopup - mounted.otherPopup).toBe(shownChanges);
+  });
+});

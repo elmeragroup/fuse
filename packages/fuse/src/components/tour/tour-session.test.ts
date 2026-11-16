@@ -10,6 +10,7 @@ import { defineTour } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
 import {
   bumpTourContent,
+  dismissTour,
   endTour,
   failTourStorage,
   initialTourSession,
@@ -123,6 +124,15 @@ describe("ending a run", () => {
     expect(previousTourStep(first, welcome).state).toBe(first);
     const resolving = nextTourStep(first, welcome, 20).state;
     expect(nextTourStep(resolving, welcome, 21).state).toBe(resolving);
+  });
+});
+
+describe("dismissing a tour", () => {
+  it("writes the dismissed status with no run, ends a running one as skip-press, and keeps a finished status", () => {
+    const idle = dismissTour(ready(), welcome, 7);
+    expect(idle.changed).toEqual({ tourId: "welcome", record: { v: 2, status: "dismissed", at: 7 } });
+    expect(dismissTour(shownAt(welcome, "usage"), welcome, 8).ended?.reason).toBe("skip-press");
+    expect(dismissTour(idle.state, welcome, 9).state).toBe(idle.state);
   });
 });
 

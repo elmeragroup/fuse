@@ -65,6 +65,7 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
+import { Tour } from "@elmeragroup/fuse/tour";
 
 import { renderFlight } from "./rsc-flight-server.ts";
 
@@ -491,6 +492,20 @@ function namespaceElements(): ReactElement[] {
     ...renderNamespace("ToggleGroup", ToggleGroup, ["Root", "Item"]),
     ...renderNamespace("Toolbar", Toolbar, ["Root", "Button", "Link", "Input", "Group", "Separator"]),
     ...renderNamespace("Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]),
+    ...renderNamespace("Tour", Tour, [
+      "Provider",
+      "Target",
+      "Popup",
+      "Header",
+      "Progress",
+      "Close",
+      "Title",
+      "Description",
+      "Footer",
+      "Skip",
+      "Prev",
+      "Next",
+    ]),
   ];
 }
 
