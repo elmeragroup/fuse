@@ -22,9 +22,18 @@
  */
 import { cn, dialogVariants, overlayCornerCloseClass } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON, ICON_BUTTON } from "./button-kit";
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST, ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
 import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import { DIALOG_CONTENT_SET, dialogDescription, dialogFooter, dialogTitle } from "./dialog-frame-kit";
+import {
+  DIALOG_CONTENT_SET,
+  dialogDescription,
+  dialogDescriptionManifest,
+  dialogFooter,
+  dialogFooterManifest,
+  dialogTitle,
+  dialogTitleManifest,
+} from "./dialog-frame-kit";
 import {
   BASIC_COPY,
   CORNER_CLOSE_LABEL,
@@ -131,6 +140,93 @@ export const DIALOG_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "content",
       of: DIALOG_CONTENT,
+      cell: () => ({ content: "basic" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** One action of the footer as a manifest names it, as {@link footerAction} draws it. */
+function footerActionManifest(
+  content: "basic" | "footer-close",
+  action: DialogCopy["actions"][number],
+  slot: "dialog-close" | undefined
+): InstanceManifest {
+  const key = action.label.toLowerCase().replaceAll(" ", "-");
+  const own: InstanceManifest = {
+    kind: "instance",
+    key: `${content}-${key}`,
+    of: BUTTON_MANIFEST,
+    cell: () => ({ variant: action.variant, size: "default", state: "rest", icon: "none" }),
+    properties: () => ({ text: { Label: action.label } }),
+    shownIn: (cell) => cell.content === content,
+    exposed: true,
+  };
+  return slot === undefined ? own : { ...own, slot };
+}
+
+/** The popup's manifest, which the capture-backed build reads with `captures/dialog-content.json`. */
+export const DIALOG_CONTENT_MANIFEST: SetManifest = {
+  key: "dialog-content",
+  name: "Dialog content",
+  slot: "dialog-content",
+  axes: DIALOG_CONTENT.axes,
+  columnAxis: "content",
+  viewport: DIALOG_VIEWPORT,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "header",
+      slot: "dialog-header",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        dialogTitleManifest((cell) => dialogCopy(cell.content).title),
+        dialogDescriptionManifest((cell) => dialogCopy(cell.content).description),
+      ],
+    },
+    dialogFooterManifest([
+      footerActionManifest("basic", CANCEL, "dialog-close"),
+      footerActionManifest("basic", MOVE, undefined),
+      footerActionManifest("footer-close", CANCEL_CONTRACT, undefined),
+      footerActionManifest("footer-close", CLOSE, undefined),
+    ]),
+    {
+      kind: "instance",
+      key: "close",
+      of: ICON_BUTTON_MANIFEST,
+      slot: "dialog-close",
+      cell: () => ({ variant: "ghost", size: "icon-sm", state: "rest" }),
+      properties: () => ({ swap: { Icon: "X" } }),
+      shownIn: always,
+      exposed: true,
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Dialog's manifest, which the capture-backed build reads with `captures/dialog-open.json`:
+ * the Backdrop and the popup over it, in the viewport the popup is fixed in.
+ */
+export const DIALOG_OPEN_MANIFEST: SetManifest = {
+  key: "dialog-open",
+  name: "Dialog (open)",
+  slot: "dialog-open",
+  axes: DIALOG_OPEN.axes,
+  columnAxis: "placement",
+  viewport: DIALOG_VIEWPORT,
+  union: ["dialog-overlay", "dialog-content"],
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "content",
+      of: DIALOG_CONTENT_MANIFEST,
       cell: () => ({ content: "basic" }),
       shownIn: always,
     },

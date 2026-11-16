@@ -24,6 +24,7 @@
  */
 import { cn, fieldFrameVariants, fieldVariants, textFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { showsPlaceholder } from "./field-box-kit";
@@ -33,8 +34,11 @@ import {
   frameDescriptions,
   frameError,
   frameLabelRow,
+  frameLabelRowManifest,
+  frameMessagesManifest,
 } from "./field-frame-kit";
-import { INPUT } from "./input-kit";
+import { INPUT, INPUT_MANIFEST } from "./input-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The label: the docs Basic demo's. */
@@ -114,4 +118,54 @@ export const TEXT_FIELD: ComponentDefinition = {
   },
   facts: new Map([["placeholder", showsPlaceholder]]),
   parts: [frameLabelRow(TEXT_FIELD_LABEL, frame.labelRow()), CONTENT],
+};
+
+/**
+ * The Text field's manifest, which the capture-backed build reads with `captures/text-field.json`:
+ * the label row, then the content column, which holds the input's container and the messages.
+ */
+export const TEXT_FIELD_MANIFEST: SetManifest = {
+  key: "text-field",
+  name: "Text field",
+  slot: "field",
+  statePart: "input",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: TEXT_FIELD.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+  parts: [
+    frameLabelRowManifest(TEXT_FIELD_LABEL, "field/0"),
+    {
+      key: "content",
+      slot: undefined,
+      place: "field/1",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "input-container",
+          slot: undefined,
+          place: "field/1/0",
+          shownIn: always,
+          label: undefined,
+          iconsFor: () => [],
+          parts: [
+            {
+              kind: "instance",
+              key: "input",
+              of: INPUT_MANIFEST,
+              cell: (outer) => ({ content: outer.content ?? "placeholder", state: outer.state ?? "rest" }),
+              properties: () => ({ text: { Text: TEXT_FIELD_PLACEHOLDER } }),
+              shownIn: always,
+              exposed: true,
+            },
+          ],
+        },
+        ...frameMessagesManifest(TEXT_FIELD_ERROR, TEXT_FIELD_DESCRIPTION),
+      ],
+    },
+  ],
 };

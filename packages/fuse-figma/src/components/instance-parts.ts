@@ -255,7 +255,9 @@ export class InstanceParts {
         passed: merged.filter((className) => given.has(className)).join(" "),
       },
       of.slot,
-      { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag },
+      part.after === undefined
+        ? { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag, set: of.key }
+        : { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag, set: of.key, after: part.after },
       of.elementDefaults ?? [],
       { meaningOf: record.meaningOf, cell, logs: record.logs, inPlace, passed: record.passed }
     );
@@ -287,7 +289,7 @@ export class InstanceParts {
       name: part.of.slot,
       ...mapBox(part.of, cascade, scope, room),
       // The inner root clips in place as its own set draws it.
-      clips: part.of.rootOverflow !== "visible",
+      clips: variant.root.clips,
     };
     const diff = diffInstance(root, variant.root);
     visit.diffs.push(diff);
@@ -361,11 +363,17 @@ export class InstanceParts {
     if (known !== undefined) {
       return known;
     }
+    // Made on its first read: a capture-backed inner root reads no variant, and its manifest names
+    // none of what a state table needs.
+    let table: StateTable | undefined;
     const made: PartRecord = {
-      meaningOf:
-        part.facts === undefined
-          ? makeStateTable(part.of)
-          : withInPlaceFacts(part.of, part.facts, part.stamps),
+      meaningOf: (variant) => {
+        table ??=
+          part.facts === undefined
+            ? makeStateTable(part.of)
+            : withInPlaceFacts(part.of, part.facts, part.stamps);
+        return table(variant);
+      },
       logs: new CascadeLogs(),
       passed: { origin: { record: this.#emit }, logs: new CascadeLogs() },
       scaling: partsThatScale(

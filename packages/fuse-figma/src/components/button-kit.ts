@@ -19,6 +19,7 @@
  */
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -164,6 +165,18 @@ export const BUTTON: ComponentDefinition = {
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
 
+/** The Button's manifest, which the capture-backed build reads with `captures/button.json`. */
+export const BUTTON_MANIFEST: SetManifest = {
+  key: "button",
+  name: "Button",
+  slot: "button",
+  axes: BUTTON.axes,
+  columnAxis: "state",
+  label: BUTTON.label,
+  iconsFor: buttonIcons,
+  swapProperties: BUTTON.swapProperties,
+};
+
 /** The square sizes, as `<Button size="icon">` renders them around a lone icon. */
 export const ICON_BUTTON: ComponentDefinition = {
   key: "icon-button",
@@ -181,4 +194,16 @@ export const ICON_BUTTON: ComponentDefinition = {
   // hides the icon while the spinner shows, so the kit draws the spinner alone.
   iconsFor: (cell) => (cell.state === "pending" ? [ONLY_ICON, SPINNER] : [ONLY_ICON]),
   swapProperties: swapProperties([ONLY_ICON]),
+};
+
+/** The Icon button's manifest, which the capture-backed build reads with `captures/icon-button.json`. */
+export const ICON_BUTTON_MANIFEST: SetManifest = {
+  key: "icon-button",
+  name: "Icon button",
+  slot: "button",
+  axes: ICON_BUTTON.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: ICON_BUTTON.iconsFor,
+  swapProperties: ICON_BUTTON.swapProperties,
 };

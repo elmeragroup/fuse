@@ -304,6 +304,13 @@ export type PartDefinition = BoxDefinition & {
    * meaning; the build stops on either. Undefined for a part that carries only the set's facts.
    */
   readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
+  /**
+   * Where a capture-backed build finds a part without a `data-slot`: the element-ordinal path from
+   * the nearest element above it with a `data-slot`, such as `field/1/0` for the first child of the
+   * Field root's second child. Undefined for a part with a `data-slot`, or one the recipe cascade
+   * builds.
+   */
+  readonly place?: string;
 } & (
     | {
         /** The part's `data-slot`, which names its layer. */

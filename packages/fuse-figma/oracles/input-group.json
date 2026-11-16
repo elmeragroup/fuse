@@ -1,0 +1,632 @@
+{
+  "set": "input-group",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[*].root.shadows[*].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.children[control].clips",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content (`overflow: clip`), which the recipe build never modelled; the control's frame now clips its text as the browser does."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-disabled=true]]:cursor-not-allowed",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-disabled=true]]:opacity-50",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-end]]:h-auto",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-end]]:flex-col",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-start]]:h-auto",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-start]]:flex-col",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>textarea]:h-auto",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-end]]:[&>input]:pt-3",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group",
+        "className": "has-[>[data-align=block-start]]:[&>input]:pb-3",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-invalid:focus-visible:ring-error/20",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-invalid:focus-visible:ring-offset-error",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:text-sm",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:font-medium",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:inline-flex",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:h-7",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:border-0",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:bg-transparent",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "file:text-foreground",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "[&[readonly]:not(:disabled)]:bg-transparent",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-invalid:focus-visible:ring-0",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-invalid:focus-visible:ring-offset-0",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-disabled:cursor-not-allowed",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-control",
+        "className": "aria-disabled:opacity-100",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-addon",
+        "className": "has-[>kbd]:not-has-[>button]:mr-[-0.15rem]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-addon",
+        "className": "has-[>kbd]:not-has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md)+0.15rem)]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-addon",
+        "className": "[&>kbd]:rounded-inner",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-addon",
+        "className": "has-[>button]:-ml-1",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "input-group-addon",
+        "className": "has-[>kbd]:not-has-[>button]:ml-[-0.15rem]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "button",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-icon-md)",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "button",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-icon-md)",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "button",
+        "className": "group-has-data-[slot=combobox-clear]/input-group:hidden",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a block addon below the control, which neither Combobox nor Command renders"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a block addon above the control, which neither Combobox nor Command renders"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a textarea in the group, which neither Combobox nor Command renders"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a kbd in an addon, which neither Combobox nor Command renders"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a static frame has no selection"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a visually hidden child of the Field, which no cell holds"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the Field stretches the group to its width, which the group's own `w-full` already takes"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "field",
+        "className": "[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
+        "property": "width",
+        "outcome": "literal"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "In the browser the Field root's child rule sets its child's width; the recipe build dropped it by hand."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "Icon"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The classes the composite passes the caret's glyph, which the capture reads in place on the element; the instance draws the same CaretUp swap and color as before."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows, under the definition's hand-written facts. The capture lists the class once: unmapped where no rule written for it matched any cell, or dropped where a transition explains it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "As above, for a class whose variant no cell of the box shows."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "*, which * draw*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition modelled the popup or list around the row by its classes, and the recipe build listed each of their declarations. The capture reads the real elements around the root and passes down only what they inherit; the popup's own set lists its classes."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the * around the root sets its own, so the root does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build named the element around the root by the classes it modelled; the capture names it by its `data-slot` or tag, and lists the same inherited declaration there."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the instance's variant * draws the same, so the class repeats it"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The same inherited declaration, which the capture names by the element that sets it, the host page's body."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, or whose rules matched and lost, found by the browser instead of listed by hand."
+    }
+  ]
+}

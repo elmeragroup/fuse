@@ -1,0 +1,44 @@
+# What fuse-figma's `test:capture` capture check reads, as git pathspecs, one per line. The merge
+# workflow's figma-capture job captures only when one of these changed since its base
+# (.github/scripts/figma-compare-affected.sh with INPUTS naming this file).
+# test/merge-task-graph.test.mjs checks that every package the task's turbo graph builds is listed.
+# Its unit tests and the plugin's fake-file Plan differential run in the job, so they count.
+
+# fuse-figma's sources and scripts
+packages/fuse-figma
+:(exclude)packages/fuse-figma/README.md
+:(exclude)packages/fuse-figma/test
+
+# The Fuse build the cells render, its build scripts, and the sources the kit reads directly
+packages/fuse/src
+:(exclude,glob)packages/fuse/src/**/*.test.*
+:(exclude,glob)packages/fuse/src/**/__snapshots__/**
+packages/fuse/scripts
+packages/fuse/package.json
+packages/fuse/tsconfig.json
+packages/fuse/tsdown.config.ts
+
+# The color package, which Fuse's theme and the kit import from source
+packages/color/src
+:(exclude,glob)packages/color/src/**/*.test.*
+packages/color/package.json
+
+# The TypeScript config the builds extend
+tooling/typescript
+
+# Dependencies and the task graph
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+patches
+turbo.json
+
+# The job and its setup
+.github/workflows/merge.yml
+.github/actions/setup-playwright
+.github/scripts/install-playwright-deps.sh
+.github/scripts/figma-compare-affected.sh
+.github/figma-capture-inputs.txt
+
+# The API references whose placement defaults the anchored manifests name
+:(glob)apps/docs/src/app/(docs)/components/*/api.json

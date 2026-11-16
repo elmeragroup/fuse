@@ -11,7 +11,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Jobs without their own grant (checks, browser, figma-compare) run dependency code on every PR
+# Jobs without their own grant (checks, browser, figma-compare, figma-capture) run dependency code on every PR
 # and push, so their token is read-only. The release and version jobs declare their own
 # permissions, which replace this default for those jobs.
 permissions:
@@ -274,6 +274,85 @@ jobs:
             packages/fuse-figma/.cache/figma-compare/self-check/cells/
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Prune turbo cache
+        id: prune-turbo-cache
+        if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+
+  # fuse-figma's capture check (packages/fuse-figma/README.md, "Building sets from a browser
+  # capture"): it captures every capture-backed set again in Chromium and fails where a capture
+  # differs from its kept file, then runs the perturbation probe, the differential oracle and the
+  # fake-file Plan differential. It skips its setup when nothing it reads changed
+  # (.github/figma-capture-inputs.txt), as the figma-compare job does. It guards the Figma kit's
+  # tooling, not the published package, so publishing and deploys do not wait on it.
+  figma-capture:
+    runs-on: ubuntu-latest
+    # A hang guard: setup and a cold capture take minutes.
+    timeout-minutes: 20
+    env:
+      # Per-attempt keys, restored by prefix, as in the browser job.
+      TURBO_CACHE_KEY: turbo-figma-capture-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Decide whether the capture check's inputs changed
+        id: affected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          INPUTS: .github/figma-capture-inputs.txt
+        run: bash .github/scripts/figma-compare-affected.sh
+
+      - name: Setup pnpm
+        if: steps.affected.outputs.run == 'true'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node
+        if: steps.affected.outputs.run == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        if: steps.affected.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile --no-runtime
+
+      - name: Set up Playwright
+        if: steps.affected.outputs.run == 'true'
+        uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+
+      - name: Restore turbo cache
+        if: ${{ steps.affected.outputs.run == 'true' && github.ref != 'refs/heads/main' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+          restore-keys: |
+            turbo-figma-capture-${{ github.sha }}-
+            turbo-figma-capture-
+
+      # The log names each set whose capture drifted, each contradiction the probe found, and each
+      # difference or Plan line no oracle entry classifies.
+      - name: turbo capture check
+        id: turbo-gate
+        if: steps.affected.outputs.run == 'true'
+        run: pnpm exec turbo run test:capture
+        env:
+          TURBO_RUN_SUMMARY: "true"
 
       - name: Prune turbo cache
         id: prune-turbo-cache

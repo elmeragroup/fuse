@@ -39,16 +39,8 @@ export type FixedAt = "centre" | { readonly top: number };
  * @param at - Where the composite draws it.
  */
 export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
-  const translate = translateShares(style);
-  const [across, down = 0] = translate;
-  const centredAcross = evaluatePercentage(style.resolved("left") ?? "") === 0.5 && across === -0.5;
-  const placed =
-    !style.has("right") &&
-    !style.has("bottom") &&
-    centredAcross &&
-    (at === "centre"
-      ? evaluatePercentage(style.resolved("top") ?? "") === 0.5 && down === -0.5 && translate.length === 2
-      : down === 0);
+  const own = fixedAtOf(style, undefined);
+  const placed = own !== undefined && (at === "centre" ? own === "centre" : own !== "centre");
   const detail =
     at === "centre"
       ? "Base UI fixes the popup at the viewport's centre, which the composite, as large as that viewport, draws by centring the popup"
@@ -75,6 +67,70 @@ export function placeCentredFixed(style: LayerStyle, at: FixedAt): void {
     }),
     []
   );
+}
+
+/**
+ * Where a box fixed in a viewport sits, read from its own place: centred, as Dialog's `fixed top-1/2
+ * left-1/2 -translate-x-1/2 -translate-y-1/2` puts its popup, or a length below the top and centred
+ * across, as Command's `fixed top-[max(--spacing(4),12dvh)] left-1/2 -translate-x-1/2` puts its
+ * palette. Undefined for any other place, or a box that is not fixed.
+ *
+ * @param style - The box's style.
+ * @param viewport - The viewport its `dvh` and `dvw` lengths read, or undefined, where the length
+ *   below the top reads as undefined unless it is plain.
+ * @returns Where it sits, with the length below the top in pixels, undefined where it does not read.
+ */
+export function fixedAtOf(
+  style: LayerStyle,
+  viewport: Viewport | undefined
+): "centre" | { readonly top: number | undefined } | undefined {
+  if (normalizeCss(style.raw("position") ?? "") !== "fixed" || style.has("right") || style.has("bottom")) {
+    return undefined;
+  }
+  const translate = translateShares(style);
+  const [across, down = 0] = translate;
+  if (evaluatePercentage(style.resolved("left") ?? "") !== 0.5 || across !== -0.5) {
+    return undefined;
+  }
+  if (evaluatePercentage(style.resolved("top") ?? "") === 0.5 && down === -0.5 && translate.length === 2) {
+    return "centre";
+  }
+  return down === 0 ? { top: evaluateLength(inViewport(style.resolved("top") ?? "", viewport)) } : undefined;
+}
+
+/**
+ * The layout a modal composite's root, the Backdrop over the viewport, gives its popup, as the
+ * popup's own fixed place says: a flex box centring it on both axes, or a column that centres it
+ * across and pads its top by the popup's distance below the viewport's top. Undefined for a popup
+ * fixed anywhere else, which the composite cannot draw where CSS puts it.
+ *
+ * @param popup - The popup's style.
+ * @param viewport - The viewport both are fixed in.
+ * @returns The root's layout declarations, or undefined.
+ */
+export function modalLayout(
+  popup: LayerStyle,
+  viewport: Viewport
+): readonly { readonly property: string; readonly value: string }[] | undefined {
+  const at = fixedAtOf(popup, viewport);
+  if (at === undefined) {
+    return undefined;
+  }
+  if (at === "centre") {
+    return [
+      { property: "display", value: "flex" },
+      { property: "align-items", value: "center" },
+      { property: "justify-content", value: "center" },
+    ];
+  }
+  return at.top === undefined
+    ? undefined
+    : [
+        { property: "display", value: "flex" },
+        { property: "flex-direction", value: "column" },
+        { property: "align-items", value: "center" },
+        { property: "padding-top", value: `${String(at.top)}px` },
+      ];
 }
 
 /**

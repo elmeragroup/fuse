@@ -9,6 +9,7 @@
  */
 import { dialogContentVariants, dialogVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { OPEN_FACTS, always } from "./popup-facts";
@@ -94,6 +95,55 @@ export function dialogFooter(parts: readonly (PartDefinition | InstanceDefinitio
     slot: "dialog-footer",
     shownIn: always,
     classesFor: () => dialog.footer(),
+    label: undefined,
+    iconsFor: () => [],
+    parts,
+  };
+}
+
+/**
+ * The title as a manifest names it: Base UI's `<h2>`, holding a cell's copy.
+ *
+ * @param charactersFor - The cell's title copy.
+ * @returns The part.
+ */
+export function dialogTitleManifest(charactersFor: (cell: Cell) => string): PartManifest {
+  return {
+    key: "title",
+    slot: "dialog-title",
+    shownIn: always,
+    label: { key: "text", name: "text", charactersFor, shownIn: always },
+    iconsFor: () => [],
+  };
+}
+
+/**
+ * The description as a manifest names it: Base UI's `<p>`, holding a cell's copy.
+ *
+ * @param charactersFor - The cell's description copy.
+ * @returns The part.
+ */
+export function dialogDescriptionManifest(charactersFor: (cell: Cell) => string): PartManifest {
+  return {
+    key: "description",
+    slot: "dialog-description",
+    shownIn: always,
+    label: { key: "text", name: "text", charactersFor, shownIn: always },
+    iconsFor: () => [],
+  };
+}
+
+/**
+ * The footer as a manifest names it, holding its parts.
+ *
+ * @param parts - The footer's parts, in DOM order.
+ * @returns The part.
+ */
+export function dialogFooterManifest(parts: readonly (PartManifest | InstanceManifest)[]): PartManifest {
+  return {
+    key: "footer",
+    slot: "dialog-footer",
+    shownIn: always,
     label: undefined,
     iconsFor: () => [],
     parts,

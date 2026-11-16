@@ -5,13 +5,19 @@
  * table with what became of it. `component-spec.ts` holds the definition types this module reads.
  */
 
+import { Result } from "effect";
+
+import { anchoredPlacement, CaptureSetCascade, castsShadowOrClips } from "../capture/capture-cascade";
+import type { OpenPlacement } from "../capture/capture-cascade";
+import type { SetCapture } from "../capture/capture-format";
+import { keptCapture } from "../capture/captures";
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
 import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import { SetCascade } from "./cascade";
-import type { LayerStyle } from "./cascade";
+import type { BoxCascade, LayerStyle } from "./cascade";
 import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
 import { definitionClasses, matrixCells, previewWidthIn, variantKey } from "./component-spec";
@@ -25,7 +31,14 @@ import type {
 } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { normalizeCss } from "./css-values";
-import { allPartsOf, framePartsOf, instancePartsOf, partsOf, renderedSlots } from "./definition-parts";
+import {
+  allPartsOf,
+  framePartsOf,
+  instancePartsOf,
+  instanceRootSlotOf,
+  partsOf,
+  renderedSlots,
+} from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
@@ -43,24 +56,44 @@ import { PaintedInstances } from "./stacking";
 import { makeStateTable } from "./state-table";
 
 /**
+ * What a set builds from: the definition the mapping walks, and the capture its cascade reads, or
+ * undefined for the recipe cascade.
+ */
+export type SetSource = {
+  readonly definition: ComponentDefinition;
+  readonly capture: SetCapture | undefined;
+  /** How an open composite places its cells' roots, as its manifest names it; undefined otherwise. */
+  readonly open?: OpenPlacement;
+};
+
+/**
  * Build the component sets of a list of definitions in its order, each with the sets before it at
  * hand, so a set builds after the sets its instance parts show.
  *
  * @template Entry - What the list holds for each set, its definition among it.
  * @param entries - The definitions, each set after the sets it holds instances of.
  * @param context - The compiled utilities and the synced variables.
+ * @param source - What builds an entry's set: its definition and the recipe cascade, or the
+ *   definition its manifest gives and its capture. The recipe by default.
  * @returns Each entry with its built set, in the list's order.
  * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
  *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
  */
 export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
   entries: readonly Entry[],
-  context: BuildContext
+  context: BuildContext,
+  source: (entry: Entry) => SetSource = (entry) => ({ definition: entry.definition, capture: undefined })
 ): readonly (readonly [Entry, BuiltComponent])[] {
   checkInstanceOrder(entries.map(({ definition }) => definition));
   const built = new Map<string, InnerSet>();
   return entries.map((entry) => {
-    const set = buildComponentSet(entry.definition, context, built);
+    const { definition, capture, open } = source(entry);
+    const set = buildComponentSet(
+      definition,
+      context,
+      built,
+      capture === undefined ? undefined : { capture, open }
+    );
     built.set(entry.definition.key, set.componentSet);
     return [entry, set] as const;
   });
@@ -72,13 +105,16 @@ export function buildSetsInOrder<Entry extends { readonly definition: ComponentD
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
  * @param inner - The sets built before this one, by key, which its instance parts show.
+ * @param capture - The set's capture, which the set's cascade reads in place of the definition's
+ *   classes, or undefined for the recipe cascade.
  * @returns The component set, its coverage and the font styles its text uses.
  * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
 export function buildComponentSet(
   definition: ComponentDefinition,
   context: BuildContext,
-  inner: ReadonlyMap<string, InnerSet> = new Map()
+  inner: ReadonlyMap<string, InnerSet> = new Map(),
+  captured?: { readonly capture: SetCapture; readonly open: OpenPlacement | undefined }
 ): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
@@ -102,7 +138,11 @@ export function buildComponentSet(
       context.compiled.rulesByClass
     );
   }
-  const cascade = new SetCascade(makeStateTable(definition), context, record);
+  const cascade = setCascade(definition, context, record, captured, inner);
+  // A capture-backed root clips only where some cell's root casts a shadow, whose spread Figma draws
+  // only from a clipping frame, or CSS clips it; else its layers' rings show past its edge, as in the
+  // browser.
+  const unclippedRoot = captured !== undefined && !castsShadowOrClips(captured.capture);
   const instances = new InstanceParts(context, inner, record);
   const scaling = partsThatScale(partsOf(definition), cells, context.compiled);
   const variants = cells.map((cell): VariantSpec => {
@@ -119,12 +159,7 @@ export function buildComponentSet(
     };
     const scope: MapScope =
       definition.viewport === undefined ? plain : { ...plain, viewport: definition.viewport };
-    const rootCascade = cellCascade.root(definition.classesFor(cell), definition.slot, {
-      declarations: definition.inheritedFor?.(cell) ?? [],
-      ancestors: definition.ancestorsFor?.(cell) ?? [],
-      defaults: definition.elementDefaults ?? [],
-      inline: definition.styleFor?.(cell) ?? [],
-    });
+    const rootCascade = cellCascade.root(definition, cell);
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
@@ -145,10 +180,11 @@ export function buildComponentSet(
         message: `${definition.name}: a root that leaves its layers unclipped must cast no shadow, and ${variantKey(definition, cell)} casts one`,
       });
     }
+    const unclipped = definition.rootOverflow === "visible" || unclippedRoot;
     const root: ComponentRootSpec = {
       name: definition.slot,
       ...mapped,
-      clips: definition.rootOverflow !== "visible",
+      clips: !unclipped,
     };
     placeRoot(rootCascade.style, room, context.variables, root.children, definition.viewport);
     if (root.clips && !clipsInCss(rootCascade.style)) {
@@ -196,6 +232,82 @@ export function buildComponentSet(
     componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
+  };
+}
+
+/** The cascade of one cell, as the builder drives it, from the recipe or from the capture. */
+type CellEngine = {
+  readonly root: (definition: ComponentDefinition, cell: Cell) => BoxCascade;
+  readonly backdrop: () => LayerStyle | undefined;
+  readonly settle: () => void;
+};
+
+/** The cascade of a set's cells, as the builder drives it, and what records its logs once they cascaded. */
+type SetEngine = { readonly cell: (cell: Cell) => CellEngine; readonly finish: () => void };
+
+/** The cascade of a set's cells, from the definition's classes or from the set's capture. */
+function setCascade(
+  definition: ComponentDefinition,
+  context: BuildContext,
+  record: (row: Omit<CoverageRow, "component">) => void,
+  source: { readonly capture: SetCapture; readonly open: OpenPlacement | undefined } | undefined,
+  inner: ReadonlyMap<string, InnerSet>
+): SetEngine {
+  if (source !== undefined) {
+    const { capture, open } = source;
+    const captured = new CaptureSetCascade({
+      capture,
+      definition,
+      context,
+      record,
+      captureOf: (key) => {
+        const kept = keptCapture(key);
+        return kept === undefined || Result.isFailure(kept) ? undefined : kept.success;
+      },
+      open,
+      anchorWidth: (cell) =>
+        open?._tag === "anchored"
+          ? anchorWidth(definition, capture, cell, inner)
+          : // A popup set alone has no anchor of its own: its sample's anchor fills the host it renders in.
+            sampleAnchorWidth(definition, cell),
+    });
+    return {
+      cell: (cell) => {
+        const cascade = captured.cell(cell);
+        return {
+          root: (root) => cascade.root(root.slot),
+          backdrop: () => cascade.backdrop(),
+          settle: () => {
+            cascade.settle();
+          },
+        };
+      },
+      finish: () => {
+        captured.finish();
+      },
+    };
+  }
+  const recipe = new SetCascade(makeStateTable(definition), context, record);
+  return {
+    cell: (cell) => {
+      const cascade = recipe.cell(cell);
+      return {
+        root: (root, shown) =>
+          cascade.root(root.classesFor(shown), root.slot, {
+            declarations: root.inheritedFor?.(shown) ?? [],
+            ancestors: root.ancestorsFor?.(shown) ?? [],
+            defaults: root.elementDefaults ?? [],
+            inline: root.styleFor?.(shown) ?? [],
+          }),
+        backdrop: () => cascade.backdrop(),
+        settle: () => {
+          cascade.settle();
+        },
+      };
+    },
+    finish: () => {
+      recipe.finish();
+    },
   };
 }
 
@@ -343,4 +455,83 @@ function labelsOf(
     ...(box.label === undefined ? [] : [{ box: name, label: box.label }]),
     ...framePartsOf(box).flatMap((part) => labelsOf(part, partName(part))),
   ];
+}
+
+/**
+ * The width that stands for Base UI's `--anchor-width` in an anchored composite's cell: the anchor's
+ * width as the build maps it, for any anchor. An anchor that fills the composite across, as the
+ * placement rule stretches a block-level one, is as wide as the composite's host. An anchor whose
+ * own set fixes its width is that width. An anchor that hugs its text, as a Select trigger does,
+ * has a width only its text sets, which the spec does not hold, so this is undefined and the cascade
+ * draws the popup at its own `min-width`. Base UI makes the popup `max(anchor, minimum)`, so that
+ * holds for an anchor narrower than the minimum only; the popup's width never follows its rows, as
+ * the perturbation probe measures.
+ */
+function anchorWidth(
+  definition: ComponentDefinition,
+  capture: SetCapture,
+  cell: Cell,
+  inner: ReadonlyMap<string, InnerSet>
+): string | undefined {
+  const captured = capture.cells.find((each) => each.key === variantKey(definition, cell));
+  if (captured === undefined) {
+    return undefined;
+  }
+  const placement = anchoredPlacement(captured, 0, capture.declarations);
+  const host = previewWidthIn(definition, cell);
+  if (placement.anchorFills) {
+    return host === undefined ? undefined : `${String(host)}px`;
+  }
+  const slot = placement.anchor.root.attributes["data-slot"];
+  for (const part of definition.parts ?? []) {
+    if (!("kind" in part) || !part.shownIn(cell)) {
+      continue;
+    }
+    const innerCell = part.cell(cell);
+    if (instanceRootSlotOf(part, innerCell) !== slot) {
+      continue;
+    }
+    const variant = inner
+      .get(part.of.key)
+      ?.variants.find((each) => each.key === variantKey(part.of, innerCell));
+    const width = variant?.root.sizing.horizontal;
+    return width?.kind === "fixed" && width.length.kind === "literal"
+      ? `${String(width.length.value)}px`
+      : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * The width of a popup set's sample anchor, which fills the host the sample renders in, where the
+ * set names the host's width; undefined otherwise, for an anchor that hugs its text, as a Select
+ * trigger does, which the cascade draws as {@link anchorWidth} says.
+ */
+function sampleAnchorWidth(definition: ComponentDefinition, cell: Cell): string | undefined {
+  const width = previewWidthIn(definition, cell);
+  return width === undefined ? undefined : `${String(width)}px`;
+}
+
+/**
+ * An anchored composite's definition with its instance parts in the order its placement rule draws
+ * them: the popup first on the `top` and `left` sides, the anchor first otherwise, as
+ * {@link anchoredPlacement} orders the roots its first cell measures.
+ *
+ * @param definition - The composite's definition, as its manifest gives it.
+ * @param capture - Its capture.
+ * @returns The definition with its parts in drawn order.
+ */
+export function inPlacementOrder(definition: ComponentDefinition, capture: SetCapture): ComponentDefinition {
+  const [first] = capture.cells;
+  const parts = definition.parts ?? [];
+  if (first === undefined) {
+    return definition;
+  }
+  const slots = anchoredPlacement(first, 0, capture.declarations).roots.map(
+    ({ root }) => root.attributes["data-slot"]
+  );
+  const [cell] = matrixCells(definition.axes);
+  const rank = (part: (typeof parts)[number]): number =>
+    "kind" in part && cell !== undefined ? slots.indexOf(instanceRootSlotOf(part, part.cell(cell))) : -1;
+  return { ...definition, parts: parts.toSorted((left, right) => rank(left) - rank(right)) };
 }

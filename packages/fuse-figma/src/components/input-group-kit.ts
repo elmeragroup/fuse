@@ -36,7 +36,8 @@ import {
   inputClass,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import { ICON_BUTTON } from "./button-kit";
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
+import { ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
 import type {
   Cell,
   ComponentDefinition,
@@ -246,5 +247,78 @@ export const INPUT_GROUP: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [CONTROL, LEADING, TRAILING],
+  swapProperties: [],
+};
+
+/** A caret Icon button of the trailing addon as a manifest names it, as {@link caret} draws it. */
+function caretManifest(invalid: boolean, open: boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: ["caret", ...(open ? ["open"] : []), ...(invalid ? ["invalid"] : [])].join("-"),
+    of: ICON_BUTTON_MANIFEST,
+    cell: buttonCell,
+    slot: "input-group-button",
+    properties: () => ({ swap: { Icon: "CaretDown" } }),
+    shownIn: (cell) =>
+      cell.form === (open ? "caret open" : "caret") && (cell.state === "invalid") === invalid,
+  };
+}
+
+/** The Input group's manifest, which the capture-backed build reads with `captures/input-group.json`. */
+export const INPUT_GROUP_MANIFEST: SetManifest = {
+  key: "input-group",
+  name: "Input group",
+  slot: "input-group",
+  statePart: "input-group-control",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: INPUT_GROUP.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "control",
+      slot: "input-group-control",
+      shownIn: always,
+      label: {
+        key: "text",
+        name: "text",
+        characters: INPUT_GROUP_TEXT,
+        textProperty: "Text",
+        shownIn: always,
+        textAttribute: () => "placeholder",
+      },
+      iconsFor: () => [],
+    },
+    {
+      key: "addon-start",
+      slot: "input-group-addon",
+      shownIn: (cell) => cell.form === "search",
+      label: undefined,
+      iconsFor: () => [SEARCH_ICON],
+    },
+    {
+      key: "addon-end",
+      slot: "input-group-addon",
+      shownIn: trails,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        caretManifest(false, false),
+        caretManifest(true, false),
+        caretManifest(false, true),
+        caretManifest(true, true),
+        {
+          kind: "instance",
+          key: "clear",
+          of: ICON_BUTTON_MANIFEST,
+          cell: buttonCell,
+          slot: "combobox-clear",
+          properties: () => ({ swap: { Icon: "X" } }),
+          shownIn: (cell) => cell.form === "clear",
+        },
+      ],
+    },
+  ],
   swapProperties: [],
 };

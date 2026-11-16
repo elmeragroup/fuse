@@ -5,13 +5,25 @@
  */
 import { Effect, Result } from "effect";
 
+import type { OpenPlacement } from "../capture/capture-cascade";
+import type { CaptureUnreadable, SetCapture } from "../capture/capture-format";
+import { keptCapture } from "../capture/captures";
+import { manifestDefinition } from "../capture/manifest";
+import type { SetManifest } from "../capture/manifest";
 import { fuseVariableSet } from "../fuse-variable-set";
 import { KIT_BODY_FAMILY } from "../kit-fonts";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
-import { buildSetsInOrder } from "./component-builder";
+import { buildSetsInOrder, inPlacementOrder } from "./component-builder";
+import type { SetSource } from "./component-builder";
 import { definitionClasses, variantKey } from "./component-spec";
-import type { BuiltComponent, OuterDeclaration } from "./component-spec";
+import type {
+  BuiltComponent,
+  ComponentDefinition,
+  InstanceDefinition,
+  OuterDeclaration,
+  PartDefinition,
+} from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
@@ -177,10 +189,11 @@ function modeViews(
  */
 function mapSets(
   registry: readonly KitEntry[],
-  context: Parameters<typeof buildSetsInOrder>[1]
+  context: Parameters<typeof buildSetsInOrder>[1],
+  source: (entry: KitEntry) => SetSource
 ): Result.Result<ReturnType<typeof buildSetsInOrder<KitEntry>>, KitUnmappable> {
   try {
-    return Result.succeed(buildSetsInOrder(registry, context));
+    return Result.succeed(buildSetsInOrder(registry, context, source));
   } catch (thrown) {
     if (thrown instanceof KitUnmappable) {
       return Result.fail(thrown);
@@ -189,10 +202,126 @@ function mapSets(
   }
 }
 
+/**
+ * Which cascade builds the kit's sets: `switched` reads each set its kit entry switches to the
+ * capture from its capture and every other set from its recipe, and `recipe` reads every set from
+ * its recipe, as the differential oracle compares.
+ */
+export type KitEngine = "switched" | "recipe";
+
+/** What builds an entry's set under an engine, or `CaptureUnreadable` for a kept capture the schema rejects. */
+function setSource(
+  entry: KitEntry,
+  engine: KitEngine
+): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
+  const { manifest } = entry;
+  if (engine === "recipe" || manifest === undefined) {
+    return Result.succeed({ definition: entry.definition, capture: undefined });
+  }
+  const capture = keptCapture(manifest.key);
+  if (capture === undefined) {
+    return Result.fail(
+      new KitUnmappable({
+        message: `${manifest.name} is switched to its capture, and captures/${manifest.key}.json does not exist; run figma:capture`,
+      })
+    );
+  }
+  return Result.flatMap(capture, (read) =>
+    Result.map(openPlacement(manifest), (open): SetSource => {
+      const definition = positionedByBaseUi(withMeasuredHost(manifestDefinition(manifest), read), read);
+      const source: SetSource = {
+        definition: open?._tag === "anchored" ? inPlacementOrder(definition, read) : definition,
+        capture: read,
+      };
+      return open === undefined ? source : { ...source, open };
+    })
+  );
+}
+
+/**
+ * A capture-backed definition whose manifest names no host width, with the width the capture
+ * measured around its root in each cell, where the root fills it and CSS, not the root's text, sets
+ * it: a popup's `min-w-36` for a Select row, or the Input group a Combobox popup is as wide as.
+ */
+function withMeasuredHost(definition: ComponentDefinition, capture: SetCapture): ComponentDefinition {
+  if (definition.previewWidth !== undefined || definition.previewWidthFor !== undefined) {
+    return definition;
+  }
+  const widths = new Map(
+    capture.cells.flatMap((cell) => {
+      const width = cell.roots.length === 1 ? cell.roots[0].root.measured?.containerWidth : undefined;
+      return width === undefined ? [] : [[cell.key, width] as const];
+    })
+  );
+  return widths.size === 0
+    ? definition
+    : { ...definition, previewWidthFor: (cell) => widths.get(variantKey(definition, cell)) };
+}
+
+/**
+ * A capture-backed definition whose root Base UI's positioner places, as every cell's one root
+ * carrying its `data-side` says: the positioner is an absolute box with the popup's border box, so
+ * it is the containing block of the popup's absolute parts, such as a Tooltip's arrow.
+ */
+function positionedByBaseUi(definition: ComponentDefinition, capture: SetCapture): ComponentDefinition {
+  const placed = capture.cells.every(
+    ({ roots }) => roots.length === 1 && roots[0].root.attributes["data-side"] !== undefined
+  );
+  const own = placed
+    ? { ...definition, positionedBy: "Base UI's positioner, an absolute box with the popup's size" }
+    : definition;
+  return own.parts === undefined ? own : { ...own, parts: own.parts.map(withInnerPositioners) };
+}
+
+/** A part whose instance parts' inner definitions say what places their roots, as their captures show. */
+function withInnerPositioners(
+  part: PartDefinition | InstanceDefinition
+): PartDefinition | InstanceDefinition {
+  if (!("kind" in part)) {
+    return part.parts === undefined ? part : { ...part, parts: part.parts.map(withInnerPositioners) };
+  }
+  const inner = keptCapture(part.of.key);
+  return inner === undefined || Result.isFailure(inner)
+    ? part
+    : { ...part, of: positionedByBaseUi(part.of, inner.success) };
+}
+
+/**
+ * How an open composite's manifest places its cells' roots: anchored where it names its popup's
+ * `sideOffset`, modal where it names the viewport its Backdrop covers, or undefined for a set whose
+ * cells measure one root.
+ */
+function openPlacement(manifest: SetManifest): Result.Result<OpenPlacement | undefined, KitUnmappable> {
+  if (manifest.union === undefined) {
+    return Result.succeed(undefined);
+  }
+  if (manifest.sideOffset !== undefined) {
+    return manifest.alignItemWithTrigger === true
+      ? Result.fail(
+          new KitUnmappable({
+            message: `${manifest.name} opens its popup over its anchor, which the kit does not draw; its manifest must name alignItemWithTrigger false`,
+          })
+        )
+      : Result.succeed({ _tag: "anchored", sideOffset: manifest.sideOffset });
+  }
+  return manifest.viewport === undefined
+    ? Result.fail(
+        new KitUnmappable({
+          message: `${manifest.name} measures ${manifest.union.join(" and ")}, and its manifest names neither an anchored popup's sideOffset nor a modal popup's viewport`,
+        })
+      )
+    : Result.succeed({ _tag: "modal", viewport: manifest.viewport });
+}
+
 const buildSets = Effect.fnUntraced(function* (
   { variables, modes }: KitVariables,
-  registry: readonly KitEntry[]
+  registry: readonly KitEntry[],
+  engine: KitEngine = "switched"
 ) {
+  const sources = new Map<KitEntry, SetSource>();
+  for (const entry of registry) {
+    sources.set(entry, yield* Effect.fromResult(setSource(entry, engine)));
+  }
   const classes = new Set(registry.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = yield* compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
@@ -201,7 +330,11 @@ const buildSets = Effect.fnUntraced(function* (
   const borderColor = yield* Effect.fromResult(baseBorderColor(compiled));
   const base: readonly OuterDeclaration[] = [{ className: "fuse.css base layer", ...borderColor }];
   const mapped = yield* Effect.fromResult(
-    mapSets(registry, { compiled, variables, page: PAGE, base, modes })
+    mapSets(
+      registry,
+      { compiled, variables, page: PAGE, base, modes },
+      (entry) => sources.get(entry) ?? { definition: entry.definition, capture: undefined }
+    )
   );
   const sets: readonly KitComponentSet[] = mapped.map(([{ page }, set]) => ({
     ...set,
@@ -217,8 +350,8 @@ const buildSets = Effect.fnUntraced(function* (
  *   classes it read and the font styles its text uses. The Effect fails with `KitUnmappable`,
  *   `KitSourceInvalid` or `KitToolFailed`, as {@link buildKit} does.
  */
-export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
-  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
+export const buildComponentSets = Effect.fn("buildComponentSets")(function* (engine: KitEngine = "switched") {
+  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT, engine);
 });
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
@@ -239,10 +372,13 @@ export type BuiltKit = {
  *   `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview pins,
  *   and with `KitToolFailed` where Tailwind, rolldown or the temporary directory fails.
  */
-export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
+export const buildKit = Effect.fn("buildKit")(function* (
+  registry: readonly KitEntry[] = KIT,
+  engine: KitEngine = "switched"
+) {
   const kitVariableSet = yield* Effect.fromResult(kitVariables());
   const { collections, variables } = kitVariableSet;
-  const built = yield* buildSets(kitVariableSet, registry);
+  const built = yield* buildSets(kitVariableSet, registry, engine);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     return yield* new KitSourceInvalid({ message: "the variable set has no foreground for the icon glyphs" });
@@ -403,7 +539,7 @@ function extremes(
  */
 const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["\u21E7", "\u2318"] };
 
-const OUTCOME_ORDER: readonly CoverageOutcome[] = ["unmapped", "dropped", "bound", "literal"];
+const OUTCOME_ORDER: readonly CoverageOutcome[] = ["unmapped", "unshown", "dropped", "bound", "literal"];
 
 /**
  * Render the coverage as a Markdown report: the count per outcome, then one table per outcome.

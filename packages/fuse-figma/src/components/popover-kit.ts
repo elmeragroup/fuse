@@ -19,11 +19,12 @@
  */
 import { fieldVariants, popoverVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
+import type { PartManifest, SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
-import { INPUT } from "./input-kit";
+import { INPUT, INPUT_MANIFEST } from "./input-kit";
 import { LABEL_OMITTED_COMPOSITIONS } from "./label-kit";
 import {
   POPOVER_DESCRIPTION_TEXT,
@@ -200,6 +201,129 @@ export const POPOVER_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "content",
       of: POPOVER_CONTENT,
+      cell: () => ({ content: "basic" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A labelled Field of the popup as its manifest names it: the label's frame, then the input's instance. */
+function fieldManifest(label: string): PartManifest {
+  const key = label.toLowerCase();
+  return {
+    key: `field-${key}`,
+    slot: "field",
+    shownIn: always,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [
+      {
+        key: `label-${key}`,
+        slot: "field-label",
+        shownIn: always,
+        label: {
+          key: "label",
+          name: "label",
+          characters: label,
+          textProperty: `${label} label`,
+          shownIn: always,
+        },
+        iconsFor: () => [],
+      },
+      {
+        kind: "instance",
+        key: `input-${key}`,
+        of: INPUT_MANIFEST,
+        cell: () => ({ content: "value", state: "rest" }),
+        properties: () => ({ text: { Text: "" } }),
+        shownIn: always,
+        exposed: true,
+      },
+    ],
+  };
+}
+
+/** The popup's manifest, which the capture-backed build reads with `captures/popover-content.json`. */
+export const POPOVER_CONTENT_MANIFEST: SetManifest = {
+  key: "popover-content",
+  name: "Popover content",
+  slot: "popover-content",
+  axes: POPOVER_CONTENT.axes,
+  columnAxis: "content",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "header",
+      slot: "popover-header",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "title",
+          slot: "popover-title",
+          shownIn: always,
+          label: {
+            key: "text",
+            name: "text",
+            characters: POPOVER_TITLE_TEXT,
+            textProperty: "Title",
+            shownIn: always,
+          },
+          iconsFor: () => [],
+        },
+        {
+          key: "description",
+          slot: "popover-description",
+          shownIn: always,
+          label: {
+            key: "text",
+            name: "text",
+            characters: POPOVER_DESCRIPTION_TEXT,
+            textProperty: "Description",
+            shownIn: always,
+          },
+          iconsFor: () => [],
+        },
+      ],
+    },
+    ...POPOVER_FIELD_LABELS.map(fieldManifest),
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Popover's manifest, which the capture-backed build reads with `captures/popover-open.json`:
+ * the trigger Button, which `Popover.Trigger` stamps with its own slot, and the popup, and
+ * `Popover.Content`'s `sideOffset` as the docs' API reference gives it.
+ */
+export const POPOVER_OPEN_MANIFEST: SetManifest = {
+  key: "popover-open",
+  name: "Popover (open)",
+  slot: "popover-open",
+  axes: POPOVER_OPEN.axes,
+  columnAxis: "placement",
+  union: ["popover-trigger", "popover-content"],
+  sideOffset: 4,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "trigger",
+      of: BUTTON_MANIFEST,
+      cell: () => ({ variant: "outline", size: "default", state: "rest", icon: "none" }),
+      properties: () => ({ text: { Label: POPOVER_TRIGGER_TEXT } }),
+      slot: "popover-trigger",
+      shownIn: always,
+      exposed: true,
+    },
+    {
+      kind: "instance",
+      key: "content",
+      of: POPOVER_CONTENT_MANIFEST,
       cell: () => ({ content: "basic" }),
       shownIn: always,
     },

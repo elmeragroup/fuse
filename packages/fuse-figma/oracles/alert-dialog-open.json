@@ -1,0 +1,112 @@
+{
+  "set": "alert-dialog-open",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "flex"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The open composite's hand-written layout classes, which the shared placement rule now draws from Base UI's `data-side`, `data-align` and `sideOffset`, or from the modal popup's fixed place."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "items-*"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "justify-center"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "the modal popup's fixed placement"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The modal rule: the Backdrop lays out its popup where the popup's own fixed place puts it, centred, or a length below the top and centred across, through `fixed-placement.ts`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "*-open",
+        "className": "*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class the recipe definition wrote on the composite's root, its scrim or its column, which the capture reads on the real Backdrop or draws through the placement rule."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "inline style"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What Base UI writes on an element's `style`: the positioner's anchor width as the anchor's, and a popup's arrow placed on the anchor's centre."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-starting-style` and `data-ending-style` only while the element enters or leaves"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The enter and exit styles #707 gave the popup, its fade, scale and slide. Base UI sets these attributes only while the popup enters or leaves, and the capture reads it at rest."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "unmapped",
+        "detail": "*the definition neither models nor omits `motion-safe`"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The recipe build reads no `motion-safe:` variant, so it leaves #707's motion classes unmapped; the capture reads the winners of the media query and drops them as motion."
+    }
+  ]
+}

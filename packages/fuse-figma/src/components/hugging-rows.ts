@@ -132,12 +132,14 @@ export function rowRoom(inside: Room, across: SizeSpec | undefined, minimum: Num
  * @param part - A frame or an instance part.
  * @param cell - The cell of the set the part belongs to.
  * @param room - The room the part's box gives it.
+ * @param measured - Whether a capture measured the part's element as the widest row.
  * @returns The minimum, or undefined.
  */
 export function namedMinimum(
   part: PartDefinition | InstanceDefinition,
   cell: Cell,
-  room: Room
+  room: Room,
+  measured: boolean
 ): NumberSpec | undefined {
-  return part.setsWidth?.(cell) === true ? room.rowMinimum : undefined;
+  return part.setsWidth?.(cell) === true || measured ? room.rowMinimum : undefined;
 }

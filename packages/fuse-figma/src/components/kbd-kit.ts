@@ -1,3 +1,5 @@
+import { kbdVariants } from "@elmeragroup/fuse/recipe-catalog";
+
 /**
  * Kbd, as two component sets on one page.
  *
@@ -13,8 +15,7 @@
  *   Its `*:data-[slot=kbd]:rounded-[inherit]` gives each cap the group's `rounded-sm`, the cap's own
  *   corner, so each instance draws its variant as it is.
  */
-import { kbdVariants } from "@elmeragroup/fuse/recipe-catalog";
-
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, InstanceDefinition } from "./component-spec";
 
@@ -103,5 +104,49 @@ export const KBD_GROUP: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [capOf("modifier", KBD_GROUP_MODIFIER), capOf("key", KBD_LABEL)],
+  swapProperties: [],
+};
+
+/** The cap's manifest, which the capture-backed build reads with `captures/kbd.json`. */
+export const KBD_MANIFEST: SetManifest = {
+  key: "kbd",
+  name: "Kbd",
+  slot: "kbd",
+  axes: KBD.axes,
+  columnAxis: "content",
+  label: {
+    key: "label",
+    name: "label",
+    characters: KBD_LABEL,
+    textProperty: "Label",
+    shownIn: (cell) => !holdsIcon(cell),
+  },
+  iconsFor: KBD.iconsFor,
+  swapProperties: KBD.swapProperties,
+};
+
+/** A text cap in the group as a manifest names it, as {@link capOf} draws it. */
+function capManifest(key: string, label: string): InstanceManifest {
+  return {
+    kind: "instance",
+    key,
+    of: KBD_MANIFEST,
+    cell: () => ({ content: "text" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn: () => true,
+    exposed: true,
+  };
+}
+
+/** The group's manifest, which the capture-backed build reads with `captures/kbd-group.json`. */
+export const KBD_GROUP_MANIFEST: SetManifest = {
+  key: "kbd-group",
+  name: "Kbd group",
+  slot: "kbd-group",
+  axes: KBD_GROUP.axes,
+  columnAxis: "keys",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [capManifest("modifier", KBD_GROUP_MODIFIER), capManifest("key", KBD_LABEL)],
   swapProperties: [],
 };

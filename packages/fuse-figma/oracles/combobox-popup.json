@@ -1,0 +1,302 @@
+{
+  "set": "combobox-popup",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[*].root*.sizing.horizontal.length.value",
+      "verdict": "old-was-wrong",
+      "reason": "The popup is as wide as its anchor, the 384px Input group, as Base UI publishes `--anchor-width: 384px` on this Fuse build (probe: the popup's box is 384\u00d7136); the recipe build modelled the anchor as the 346px `<input>`."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.shadows[*].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "has-[>[data-slot=input-group]]:pt-1.5",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:mx-1",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:h-(--control-h-sm)",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:w-[calc(100%---spacing(2))]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:border-input/30",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:bg-input/30",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "\\*:data-[slot=input-group]:shadow-none",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a Figma frame that clips draws no scrollbar"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the part holds nothing in this cell, paints nothing and pads nothing down its column, so CSS draws it 0 tall, while Figma keeps an auto-layout frame with no children at its last height (PE4)"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "combobox-content",
+        "className": "w-(--anchor-width)",
+        "property": "width",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The popup's width reads the anchor's width the capture resolves: `0px` where the anchor hugs its text, so the popup's own minimum sets it, or the 384px host the Input group anchor fills."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "w-(--anchor-width)",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build read a hand-modelled anchor width. The capture resolves the anchor's width from the sample: the popup's own minimum where the anchor hugs its text, as the Select trigger does, or the host the anchor fills, as the Input group does."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "As above, for a class whose variant no cell of the box shows."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "*, which * draw*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition modelled the popup or list around the row by its classes, and the recipe build listed each of their declarations. The capture reads the real elements around the root and passes down only what they inherit; the popup's own set lists its classes."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written element default, which the capture reads from the browser's own style sheet, under its own name."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "Base UI's positioner, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build modelled the anchor width Base UI publishes by hand; the capture reads the positioner's `--anchor-width`, as the anchor's width, under the positioner's inline style."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "it is no more than the fixed width, so it never widens the box"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The anchor's width as the capture resolves it, under the positioner's inline style."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "inline style"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What Base UI writes on an element's `style`: the positioner's anchor width as the anchor's, and a popup's arrow placed on the anchor's centre."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, or whose rules matched and lost, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-starting-style` and `data-ending-style` only while the element enters or leaves"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The enter and exit styles #707 gave the popup, its fade, scale and slide. Base UI sets these attributes only while the popup enters or leaves, and the capture reads it at rest."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Figma components do not animate"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The `motion-safe:` transition #707 gave the popup, with its duration and easing, which the capture's browser applies because it allows motion. Figma components do not animate."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-*-style` on a transition's * frame, and the kit draws the component at rest"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build's rows for the same enter and exit styles, one per declaration; the capture lists each class once."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Figma components do not animate"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build listed `transition-opacity`'s declarations; the capture reads the `motion-safe:` transition that wins them."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "unmapped",
+        "detail": "*the definition neither models nor omits `motion-safe`"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The recipe build reads no `motion-safe:` variant, so it leaves #707's motion classes unmapped; the capture reads the winners of the media query and drops them as motion."
+    }
+  ]
+}

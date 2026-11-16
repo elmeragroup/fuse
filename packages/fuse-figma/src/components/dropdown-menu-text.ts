@@ -28,14 +28,11 @@ export const DROPDOWN_MENU_RADIO_TEXT = "Status bar";
 export const DROPDOWN_ROW_CELL_WIDTH = 160;
 
 /**
- * One child of a docs demo's Dropdown menu popup, as the demo writes it. `widest` marks the row the
- * browser draws wider than every other row, at both densities, which sets the popup's width past its
- * minimum (see `dropdown-popup-kit.ts`).
+ * One child of a docs demo's Dropdown menu popup, as the demo writes it.
  */
 export type DropdownDemoNode =
   | {
       readonly kind: "item";
-      readonly widest?: true;
       readonly label: string;
       readonly shortcut?: string;
       readonly icon?: "User" | "Trash";
@@ -43,8 +40,8 @@ export type DropdownDemoNode =
       readonly disabled?: true;
       readonly destructive?: true;
     }
-  | { readonly kind: "checkbox"; readonly label: string; readonly checked: boolean; readonly widest?: true }
-  | { readonly kind: "radio"; readonly label: string; readonly value: string; readonly widest?: true }
+  | { readonly kind: "checkbox"; readonly label: string; readonly checked: boolean }
+  | { readonly kind: "radio"; readonly label: string; readonly value: string }
   | { readonly kind: "sub-trigger"; readonly label: string }
   | { readonly kind: "label"; readonly label: string; readonly inset?: true }
   | { readonly kind: "separator" }
@@ -63,7 +60,7 @@ export const DROPDOWN_POPUPS = {
         { kind: "label", label: "Account" },
         { kind: "item", label: "Profile", shortcut: "⇧⌘P" },
         { kind: "item", label: "Billing", shortcut: "⌘B" },
-        { kind: "item", label: "Keyboard shortcuts", shortcut: "⌘K", widest: true },
+        { kind: "item", label: "Keyboard shortcuts", shortcut: "⌘K" },
       ],
     },
     { kind: "separator" },
@@ -75,7 +72,7 @@ export const DROPDOWN_POPUPS = {
       children: [
         { kind: "label", label: "Editor" },
         { kind: "checkbox", label: "Show toolbar", checked: true },
-        { kind: "checkbox", label: "Show minimap", checked: false, widest: true },
+        { kind: "checkbox", label: "Show minimap", checked: false },
       ],
     },
   ],
@@ -86,7 +83,7 @@ export const DROPDOWN_POPUPS = {
       children: [
         { kind: "label", label: "Visible panel" },
         { kind: "radio", label: "Status bar", value: "status" },
-        { kind: "radio", label: "Activity bar", value: "activity", widest: true },
+        { kind: "radio", label: "Activity bar", value: "activity" },
         { kind: "radio", label: "Panel", value: "panel" },
       ],
     },
@@ -96,7 +93,7 @@ export const DROPDOWN_POPUPS = {
       kind: "group",
       children: [
         { kind: "label", label: "Account", inset: true },
-        { kind: "item", label: "Profile", icon: "User", inset: true, widest: true },
+        { kind: "item", label: "Profile", icon: "User", inset: true },
         { kind: "item", label: "Billing", inset: true, disabled: true },
       ],
     },
@@ -105,7 +102,7 @@ export const DROPDOWN_POPUPS = {
   ],
   submenu: [
     { kind: "item", label: "New tab" },
-    { kind: "item", label: "New window", widest: true },
+    { kind: "item", label: "New window" },
     { kind: "separator" },
     { kind: "sub-trigger", label: "Share" },
   ],
@@ -115,7 +112,7 @@ export const DROPDOWN_POPUPS = {
 export const DROPDOWN_SUBMENU: readonly DropdownDemoNode[] = [
   { kind: "item", label: "Email link" },
   { kind: "item", label: "Copy link" },
-  { kind: "item", label: "Messages", widest: true },
+  { kind: "item", label: "Messages" },
 ];
 
 /** The docs demos' trigger text. */

@@ -1,0 +1,11 @@
+{
+  "set": "select-field",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[*].overrides",
+      "verdict": "old-was-wrong",
+      "reason": "This set builds from its recipe still, and its instances show capture-built inner sets now, so the overrides that carry the inner sets' own classified differences change with them: a Button's label centred as the browser centres a `<button>`'s text, a shadow in the shipped hex alpha."
+    }
+  ]
+}

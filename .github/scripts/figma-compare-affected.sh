@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Decides whether the figma-compare job renders: writes `run=true` or `run=false` to
+# Decides whether a fuse-figma Chromium job renders: writes `run=true` or `run=false` to
 # GITHUB_OUTPUT. It renders on a manual dispatch, when there is no base to compare with, and when
-# a path in .github/figma-compare-inputs.txt changed between BASE_SHA and HEAD. BASE_SHA is a
+# a path in INPUTS changed between BASE_SHA and HEAD. INPUTS is the job's pathspec file,
+# .github/figma-compare-inputs.txt by default. BASE_SHA is a
 # pull request's base commit or the commit a push to main started from. A base this checkout
 # lacks is fetched alone; a base that cannot be fetched, such as one a force push dropped,
 # renders rather than guesses.
 : "${GITHUB_OUTPUT:?Set GITHUB_OUTPUT}"
 event="${EVENT_NAME:-}"
 base="${BASE_SHA:-}"
+inputs="${INPUTS:-.github/figma-compare-inputs.txt}"
 
 decide() {
   echo "run=$1" >>"$GITHUB_OUTPUT"
@@ -27,11 +29,11 @@ pathspecs=()
 while IFS= read -r line; do
   [[ -z "$line" || "$line" == \#* ]] && continue
   pathspecs+=("$line")
-done <.github/figma-compare-inputs.txt
+done <"$inputs"
 
 changed="$(git diff --name-only "$base" HEAD -- "${pathspecs[@]}")"
 if [[ -z "$changed" ]]; then
-  decide false "Nothing the self-check reads changed since $base, so the job skips the render."
+  decide false "Nothing the job reads changed since $base, so it skips the render."
 fi
-decide true "The self-check's inputs changed since $base:
+decide true "The job's inputs changed since $base:
 $changed"

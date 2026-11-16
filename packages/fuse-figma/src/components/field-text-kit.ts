@@ -23,6 +23,7 @@
  */
 import { fieldLegendVariants, fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, LabelDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH } from "./field-box-kit";
@@ -163,3 +164,27 @@ export const FIELD_TITLE: ComponentDefinition = {
   ),
   label: text(FIELD_TITLE_TEXT),
 };
+
+/**
+ * A text part's manifest: its key, name, slot, matrix and text, as its definition names them, at the
+ * field box's preview width, which the description and the error both take.
+ */
+function textManifest(definition: ComponentDefinition): SetManifest {
+  return {
+    key: definition.key,
+    name: definition.name,
+    slot: definition.slot,
+    previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+    axes: definition.axes,
+    columnAxis: definition.columnAxis,
+    label: definition.label,
+    iconsFor: () => [],
+    swapProperties: [],
+  };
+}
+
+/** The description's manifest, which the capture-backed build reads with `captures/field-description.json`. */
+export const FIELD_DESCRIPTION_MANIFEST: SetManifest = textManifest(FIELD_DESCRIPTION);
+
+/** The error's manifest, which the capture-backed build reads with `captures/field-error.json`. */
+export const FIELD_ERROR_MANIFEST: SetManifest = textManifest(FIELD_ERROR);

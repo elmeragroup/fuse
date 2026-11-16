@@ -22,6 +22,7 @@
  */
 import { commandListShellClass, commandVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import {
   COMMAND_GROUPS,
   COMMAND_ITEM_TEXT,
@@ -39,7 +40,7 @@ import type {
   PartDefinition,
 } from "./component-spec";
 import { DIV_BLOCK } from "./element-defaults";
-import { KBD_GROUP } from "./kbd-kit";
+import { KBD_GROUP, KBD_GROUP_MANIFEST } from "./kbd-kit";
 import { menuGroupPart, menuRowPart } from "./menu-kit";
 import { always, never } from "./popup-facts";
 
@@ -184,5 +185,43 @@ export const COMMAND_LIST: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: COMMAND_GROUPS.map(groupOf),
+  swapProperties: [],
+};
+
+/** The row's shortcut as a manifest names it, as {@link shortcutOf} draws it. */
+function shortcutManifest(highlighted: boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: highlighted ? "shortcut-highlighted" : "shortcut",
+    of: KBD_GROUP_MANIFEST,
+    cell: () => ({ keys: "2" }),
+    slot: "command-shortcut",
+    shownIn: (cell) => cell.trailing === "shortcut" && (cell.state === "highlighted") === highlighted,
+    after: "label",
+    exposed: true,
+  };
+}
+
+/** The row's manifest, which the capture-backed build reads with `captures/command-item.json`. */
+export const COMMAND_ITEM_MANIFEST: SetManifest = {
+  key: "command-item",
+  name: "Command item",
+  slot: "command-item",
+  elementSlot: (cell) => (cell.trailing === "caret" ? "command-page-trigger" : "command-item"),
+  axes: COMMAND_ITEM.axes,
+  columnAxis: "state",
+  previewWidth: COMMAND_ROW_CELL_WIDTH,
+  label: {
+    key: "label",
+    name: "label",
+    characters: COMMAND_ITEM_TEXT,
+    textProperty: "Label",
+    shownIn: always,
+  },
+  iconsFor: (cell: Cell) => {
+    const { classes: _classes, ...caret } = CARET;
+    return cell.trailing === "caret" ? [caret] : [];
+  },
+  parts: [shortcutManifest(false), shortcutManifest(true)],
   swapProperties: [],
 };

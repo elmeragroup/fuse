@@ -1,0 +1,29 @@
+{
+  "set": "empty",
+  "entries": [
+    {
+      "kind": "field",
+      "path": "variants[*].overrides",
+      "verdict": "old-was-wrong",
+      "reason": "This set builds from its recipe still, and its instances show capture-built inner sets now, so the overrides that carry the inner sets' own classified differences change with them: a Button's label centred as the browser centres a `<button>`'s text, a shadow in the shipped hex alpha."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "empty",
+        "className": "text-center"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "Empty's `text-center` reaches its Button instances, whose capture-built variants centre their label already, so the class now repeats what they draw."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the instance's variant * draws the same, so the class repeats it"
+      },
+      "verdict": "fix-in-new",
+      "reason": "An inherited declaration the instance's own variant draws already, now named by the element that sets it."
+    }
+  ]
+}

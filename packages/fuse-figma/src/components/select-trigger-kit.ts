@@ -31,6 +31,7 @@
  */
 import { cn, selectTriggerVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import {
   FIELD_ROOT,
@@ -99,17 +100,19 @@ const VALUE: PartDefinition = {
 };
 
 /** The caret `Select.Icon` renders, CaretDown with its own classes, fixed, so no swap property picks it. */
+/** The caret at the trigger's end, as the markup draws it. */
+const CARET: IconSlot = {
+  key: "caret",
+  name: "Caret",
+  side: "end",
+  direct: true,
+  dataIcon: undefined,
+  icon: "CaretDown",
+  swapProperty: undefined,
+};
+
 function caret(cell: Cell): IconSlot {
-  return {
-    key: "caret",
-    name: "Caret",
-    side: "end",
-    direct: true,
-    dataIcon: undefined,
-    icon: "CaretDown",
-    swapProperty: undefined,
-    classes: slotsFor(cell).caret(),
-  };
+  return { ...CARET, classes: slotsFor(cell).caret() };
 }
 
 /**
@@ -161,5 +164,20 @@ export const SELECT_TRIGGER: ComponentDefinition = {
   label: undefined,
   iconsFor: (cell) => [caret(cell)],
   parts: [VALUE],
+  swapProperties: [],
+};
+
+/** The trigger's manifest, which the capture-backed build reads with `captures/select-trigger.json`. */
+export const SELECT_TRIGGER_MANIFEST: SetManifest = {
+  key: "select-trigger",
+  name: "Select trigger",
+  slot: "select-trigger",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  addedAxes: new Set(["width"]),
+  axes: SELECT_TRIGGER.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [CARET],
+  parts: [{ key: "value", slot: "select-value", shownIn: always, label: VALUE.label, iconsFor: () => [] }],
   swapProperties: [],
 };

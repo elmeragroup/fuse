@@ -24,8 +24,9 @@
  */
 import { alertDialogVariants, cn, dialogVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import { CANCEL_LABEL, ALERT_DIALOG_VIEWPORT, alertDialogCopy } from "./alert-dialog-text";
-import { BUTTON } from "./button-kit";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import type {
   Cell,
   ComponentDefinition,
@@ -33,7 +34,15 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { DIALOG_CONTENT_SET, dialogDescription, dialogFooter, dialogTitle } from "./dialog-frame-kit";
+import {
+  DIALOG_CONTENT_SET,
+  dialogDescription,
+  dialogDescriptionManifest,
+  dialogFooter,
+  dialogFooterManifest,
+  dialogTitle,
+  dialogTitleManifest,
+} from "./dialog-frame-kit";
 import { OPEN_FACTS, always, never } from "./popup-facts";
 
 const dialog = dialogVariants();
@@ -155,6 +164,93 @@ export const ALERT_DIALOG_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "content",
       of: ALERT_DIALOG_CONTENT,
+      cell: () => ({ variant: "destructive" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The ghost small Cancel as a manifest names it. */
+const CANCEL_MANIFEST: InstanceManifest = {
+  kind: "instance",
+  key: "cancel",
+  of: BUTTON_MANIFEST,
+  cell: () => ({ variant: "ghost", size: "sm", state: "rest", icon: "none" }),
+  properties: () => ({ text: { Label: CANCEL_LABEL } }),
+  shownIn: always,
+  exposed: true,
+};
+
+/** The small action Button as a manifest names it. */
+const ACTION_MANIFEST: InstanceManifest = {
+  kind: "instance",
+  key: "action",
+  of: BUTTON_MANIFEST,
+  cell: ACTION.cell,
+  properties: (outer) => ({ text: { Label: alertDialogCopy(outer.variant).action } }),
+  shownIn: always,
+  exposed: true,
+};
+
+/** The popup's manifest, which the capture-backed build reads with `captures/alert-dialog-content.json`. */
+export const ALERT_DIALOG_CONTENT_MANIFEST: SetManifest = {
+  key: "alert-dialog-content",
+  name: "Alert dialog content",
+  slot: "dialog-content",
+  axes: ALERT_DIALOG_CONTENT.axes,
+  columnAxis: "variant",
+  viewport: ALERT_DIALOG_VIEWPORT,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "header",
+      slot: "dialog-header",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        dialogTitleManifest((cell) => alertDialogCopy(cell.variant).title),
+        {
+          key: "title-line",
+          slot: undefined,
+          place: "dialog-header/1",
+          shownIn: always,
+          label: undefined,
+          iconsFor: (cell) => {
+            const { classes: _classes, ...icon } = titleIcon(cell);
+            return [icon];
+          },
+        },
+      ],
+    },
+    dialogDescriptionManifest((cell) => alertDialogCopy(cell.variant).description),
+    dialogFooterManifest([CANCEL_MANIFEST, ACTION_MANIFEST]),
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Alert dialog's manifest, which the capture-backed build reads with
+ * `captures/alert-dialog-open.json`: the Backdrop and the popup over it, in the viewport the popup is
+ * fixed in.
+ */
+export const ALERT_DIALOG_OPEN_MANIFEST: SetManifest = {
+  key: "alert-dialog-open",
+  name: "Alert dialog (open)",
+  slot: "alert-dialog-open",
+  axes: ALERT_DIALOG_OPEN.axes,
+  columnAxis: "placement",
+  viewport: ALERT_DIALOG_VIEWPORT,
+  union: ["dialog-overlay", "dialog-content"],
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "content",
+      of: ALERT_DIALOG_CONTENT_MANIFEST,
       cell: () => ({ variant: "destructive" }),
       shownIn: always,
     },

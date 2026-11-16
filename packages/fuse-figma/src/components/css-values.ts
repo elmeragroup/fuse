@@ -4,6 +4,7 @@
  * Tailwind's own variables are substituted, or it stays unmapped.
  */
 import * as CssColor from "@elmeragroup/color/css-color";
+import * as Hex from "@elmeragroup/color/hex";
 import * as Srgb from "@elmeragroup/color/srgb";
 
 import type { CoverageRow } from "./coverage";
@@ -135,6 +136,91 @@ export function normalizeCss(value: string): string {
     .replaceAll(/\(\s+/g, "(")
     .replaceAll(/\s+\)/g, ")")
     .replaceAll(/\s*,\s*/g, ",");
+}
+
+/** The length units a zero needs none of (CSS Values 4 §5.1). */
+const LENGTH_UNITS: ReadonlySet<string> = new Set([
+  "px",
+  "rem",
+  "em",
+  "ex",
+  "ch",
+  "lh",
+  "rlh",
+  "vw",
+  "vh",
+  "vmin",
+  "vmax",
+  "dvw",
+  "dvh",
+  "svw",
+  "svh",
+  "lvw",
+  "lvh",
+  "cm",
+  "mm",
+  "in",
+  "pt",
+  "pc",
+  "q",
+]);
+
+/** A number with its unit, not inside an identifier or a hex color. */
+const DIMENSION = /(?<![\w#-])(-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)(?![\w-])/gi;
+
+/**
+ * A value spelled one way for each meaning its notation can take: whitespace as
+ * {@link normalizeCss} collapses it, each number in its shortest decimal form, each time in seconds,
+ * and each zero length without its unit. So `0.25rem` and `.25rem`, `200ms` and `.2s`, and `0px` and
+ * `0` spell alike, as a minifier rewrites them. Units stay apart otherwise, so `1px` and `1rem` do not.
+ *
+ * @param value - A CSS value.
+ * @returns The value in its canonical spelling.
+ */
+export function canonicalCss(value: string): string {
+  return normalizeCss(value).replaceAll(DIMENSION, (_whole, number: string, unit: string) => {
+    const amount = Number(number);
+    const lower = unit.toLowerCase();
+    if (lower === "ms") {
+      return `${String(amount / 1000)}s`;
+    }
+    if (amount === 0 && LENGTH_UNITS.has(lower)) {
+      return "0";
+    }
+    return `${String(amount)}${lower}`;
+  });
+}
+
+/** No synced variables, which a comparison of two literal values reads. */
+const NO_VARIABLES = makeVariableIndex([]);
+
+/**
+ * Whether two values of a property mean the same: they spell alike in {@link canonicalCss}, or both
+ * evaluate to the same length, as `calc(0.25rem * 4)` and `1rem` do, or percentage, as
+ * `calc(1 / 2 * 100%)` and `50%` do, or to the same color, as
+ * `transparent` and `#0000` do, or, for `opacity`, to the same share, as `50%` and `.5` do (CSS
+ * Color 4 §4.2).
+ *
+ * @param property - The property both values set.
+ * @param left - One value.
+ * @param right - The other.
+ * @returns True where the values mean the same.
+ */
+export function sameCssValue(property: string, left: string, right: string): boolean {
+  if (canonicalCss(left) === canonicalCss(right)) {
+    return true;
+  }
+  const same = <Value>(read: (value: string) => Value | undefined): boolean => {
+    const [one, other] = [read(left), read(right)];
+    return one !== undefined && other !== undefined && JSON.stringify(one) === JSON.stringify(other);
+  };
+  const share = (value: string): number | undefined => evaluatePercentage(value) ?? evaluateNumber(value);
+  return (
+    same(evaluateLength) ||
+    same(evaluatePercentage) ||
+    same((value) => readColor(value, NO_VARIABLES)) ||
+    (property === "opacity" && same(share))
+  );
 }
 
 type VarCall = { readonly name: string; readonly fallback: string | undefined };
@@ -889,11 +975,26 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
 /**
  * Parse a color literal through `@elmeragroup/color` as sRGB. Tailwind's theme writes black and
  * white as the shorthand `#000` and `#fff`, which the shared parser refuses, so the reader spells a
- * shorthand out to the six digits it takes.
+ * shorthand out to the six digits it takes. Fuse's built `styles.css` writes a translucent literal in
+ * eight digits, as `shadow-xs`'s `#0000000d`, or four, as `transparent`'s `#0000`, which the reader
+ * spells out to eight for the hex parser for translucent colors.
  *
  * @returns The color, or undefined for a value that is no color literal the parser reads.
  */
 function parseLiteral(value: string): Srgb.Srgb | undefined {
+  // A shorthand with alpha, as the build writes `transparent` as `#0000`, spells out to eight digits.
+  const translucentShorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
+  const translucent =
+    translucentShorthand === null
+      ? value
+      : `#${translucentShorthand
+          .slice(1)
+          .map((digit) => digit.repeat(2))
+          .join("")}`;
+  if (/^#[0-9a-f]{8}$/i.test(translucent)) {
+    const parsed = Hex.parseTranslucent(translucent);
+    return parsed._tag === "err" ? undefined : parsed.value;
+  }
   const shorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
   const parsed = CssColor.parse(
     shorthand === null

@@ -13,12 +13,28 @@
  */
 import { inputVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { ComponentDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type { ComponentDefinition, LabelDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 
 /** The text every cell shows, the default of the `Text` property: the docs' basic placeholder. */
 export const INPUT_TEXT = "name@example.com";
+
+/** The input's text, which an `<input>` holds in its `placeholder` or its `value`. */
+const INPUT_LABEL: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: INPUT_TEXT,
+  textProperty: "Text",
+  shownIn: () => true,
+  placement: { horizontal: "start", vertical: "center", lines: "single" },
+  textAttribute: (cell) => (showsPlaceholder(cell) ? "placeholder" : "value"),
+};
+
+/** The input's text as its manifest names it, without its placement, which the build derives for a control. */
+const { placement: _placement, ...INPUT_LABEL_MANIFEST } = INPUT_LABEL;
 
 /**
  * An input, as `<Input placeholder>` or `<Input defaultValue>`, with `readOnly` or `disabled`, or
@@ -36,13 +52,18 @@ export const INPUT: ComponentDefinition = {
   // validity from.
   ancestorsFor: (cell) => (cell.state === "invalid" ? [FIELD_ROOT] : []),
   omittedPseudoElements: new Map([["file", "the button of a file input, which the kit does not draw"]]),
-  label: {
-    key: "text",
-    name: "text",
-    characters: INPUT_TEXT,
-    textProperty: "Text",
-    shownIn: () => true,
-    placement: { horizontal: "start", vertical: "center", lines: "single" },
-    textAttribute: (cell) => (showsPlaceholder(cell) ? "placeholder" : "value"),
-  },
+  label: INPUT_LABEL,
+};
+
+/** The input's manifest, which the capture-backed build reads with `captures/input.json`. */
+export const INPUT_MANIFEST: SetManifest = {
+  key: "input",
+  name: "Input",
+  slot: "input",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: INPUT.axes,
+  columnAxis: INPUT.columnAxis,
+  label: INPUT_LABEL_MANIFEST,
+  iconsFor: () => [],
+  swapProperties: [],
 };
