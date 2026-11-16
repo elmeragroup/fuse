@@ -10,7 +10,7 @@
  * Usage: SOURCE_COMMIT=<sha> RECORD_TAG=<tag or empty> GH_TOKEN=<token> node find-release.ts
  */
 
-import { NodeHttpClient, NodeServices } from "@effect/platform-node";
+import { NodeCrypto, NodeHttpClient, NodeServices } from "@effect/platform-node";
 import { Config, Effect, Layer, Option, Schema } from "effect";
 
 import * as GitChangelog from "./git-changelog.ts";
@@ -60,7 +60,9 @@ runStep(
   main.pipe(
     Effect.provide(
       Layer.mergeAll(GitHubReleases.layer, GitChangelog.layer).pipe(
-        Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeHttpClient.layerUndici))
+        Layer.provideMerge(
+          Layer.mergeAll(NodeServices.layer, NodeCrypto.layerSecureRandom, NodeHttpClient.layerUndici)
+        )
       )
     )
   )

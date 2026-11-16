@@ -59,7 +59,7 @@ export async function pendingTimeout(): Promise<void> {
 export async function wait(ms: number): Promise<void> {
   const start = performance.now();
   do await nextFrames(1);
-  // oxlint-disable-next-line fuse/no-wall-clock -- wait(ms) is the one real-time wait, and fuse/no-fixed-delay reports each call that sets its delay; it reads performance.now(), the clock event timeStamps share, so a hold timed on those events has run out
+  // oxlint-disable-next-line tests/no-wall-clock -- wait(ms) is the one real-time wait, and tests/no-fixed-delay reports each call that sets its delay; it reads performance.now(), the clock event timeStamps share, so a hold timed on those events has run out
   while (performance.now() - start < ms);
 }
 

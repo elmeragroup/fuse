@@ -1,7 +1,7 @@
 import type { Rule } from "@oxlint/plugins";
 
 import { firstViolation } from "../quantify.ts";
-import { evaluate, targetOf } from "../resolve.ts";
+import { calleeName, evaluate } from "../resolve.ts";
 import type { Alt } from "../resolve.ts";
 
 /** A React hook's name: `use`, or `use` followed by a capital. */
@@ -31,8 +31,8 @@ export const noHookCalls: Rule = {
     return {
       CallExpression(node) {
         const hookName = (callee: Alt): string | undefined => {
-          const last = targetOf(callee)?.path.at(-1);
-          return last !== undefined && HOOK.test(last) ? last : undefined;
+          const name = calleeName(callee);
+          return name !== undefined && HOOK.test(name) ? name : undefined;
         };
         // Any alternative that is a hook is a hook call; the message names the first.
         const name = firstViolation(evaluate(context, node.callee), hookName);

@@ -6,9 +6,9 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 3.0.2
-  "@effect/platform-node": 4.0.6
-  "@effect/vitest": 4.0.6
-  "@elmeragroup/internal": 0.2.0-canary.20
+  "@effect/platform-node": 4.1.3
+  "@effect/vitest": 4.1.3
+  "@elmeragroup/internal": 0.2.0-canary.22
   "@arethetypeswrong/core": 0.18.5
   # The axe pass of the docs route smoke test. 4.14.0 is past the minimum
   # release age, so it needs no exclude entry.
@@ -60,7 +60,7 @@ catalog:
   # come from these releases. Both are past the minimum release age.
   d3-array: 3.2.4
   d3-shape: 3.2.0
-  effect: 4.0.6
+  effect: 4.1.3
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
@@ -108,7 +108,7 @@ catalog:
   tsdown: 0.23.2
   # tsrs runs every type-check, the Fuse type tests, Fuse's declaration emit and the type-aware
   # lint rules (through its tsrs-lint launcher). typescript 7.1 provides the JS API.
-  tsrs: 0.21.0-ts7.1.0-beta
+  tsrs: 0.25.0-ts7.1.0-beta
   turbo: 2.10.12
   tw-animate-css: 1.4.0
   typescript: 7.1.0-beta
@@ -121,7 +121,7 @@ autoInstallPeers: true
 overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
-  "@effect/platform-node-shared": 4.0.6
+  "@effect/platform-node-shared": 4.1.3
 
 allowBuilds:
   "@parcel/watcher": true
@@ -129,17 +129,5 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
-  - effect@4.0.6
   # Canary line of the in-house tooling package; each bump names the exact version.
-  - "@elmeragroup/internal@0.2.0-canary.20"
-  # tsrs 0.21 (TypeScript 7.1 beta) is the version this internal canary depends on. The frozen
-  # install checks every lockfile entry, including the optional platform binaries. Drop these
-  # entries once the versions age past the guard on 2026-11-06T20:26Z.
-  - tsrs@0.21.0-ts7.1.0-beta
-  - "@tsrs/darwin-arm64@0.21.0-ts7.1.0-beta"
-  - "@tsrs/darwin-x64@0.21.0-ts7.1.0-beta"
-  - "@tsrs/linux-arm64-gnu@0.21.0-ts7.1.0-beta"
-  - "@tsrs/linux-arm64-musl@0.21.0-ts7.1.0-beta"
-  - "@tsrs/linux-x64-gnu@0.21.0-ts7.1.0-beta"
-  - "@tsrs/linux-x64-musl@0.21.0-ts7.1.0-beta"
-  - "@tsrs/win32-x64@0.21.0-ts7.1.0-beta"
+  - "@elmeragroup/internal@0.2.0-canary.22"

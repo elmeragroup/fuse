@@ -2,14 +2,13 @@ import type { Context, ESTree, Scope, Variable } from "@oxlint/plugins";
 
 import { moduleExportName, propertyKeyName } from "./ast-names.ts";
 import { descendants, functionNameOf, isFunction, unwrap } from "./ast-walk.ts";
-import { allAgree } from "./quantify.ts";
 import { staticText } from "./static-text.ts";
 
 /**
- * An abstract evaluator for the test-file rules: every value an expression may hold, read off the
- * file alone. Rules reach every value they judge (a callee, a receiver, a path, an options object,
- * a delay, an expected class, a measurement, a walk) through `evaluate` or `calleeTargets`, every
- * key through `memberName` or `propertyKeyName`, and judge the alternatives through `quantify.ts`.
+ * An abstract evaluator: every value an expression may hold, read off the file alone. Rules reach
+ * every value they judge (a hook's callee, an imported module) through `evaluate`, a callee's name
+ * through `calleeName`, every key through `memberName` or `propertyKeyName`, and judge the
+ * alternatives through `quantify.ts`.
  *
  * `evaluate` returns alternatives (`Alt`), at most 64; more is `unknown`. Every compound operation
  * maps over the cartesian product of its operands' alternatives through `product`, the one way
@@ -37,7 +36,7 @@ import { staticText } from "./static-text.ts";
  * 7. An import to its module and imported name, and a dynamic `import()` of a string to that
  *    module's namespace, whose members step 4 reads.
  * 8. A global name to itself, whatever local binding holds it (`const later = setTimeout` is
- *    `setTimeout`), and a member of `globalThis`, `window` or `self` to the global it names.
+ *    `setTimeout`).
  * 9. A condition (`c ? a : b`) or a logical expression (`a || b`, `a ?? b`, `a && b`) to the
  *    alternatives of both operands.
  * 10. Primitive operations with JavaScript semantics on typed primitive alternatives (string,
@@ -52,19 +51,15 @@ import { staticText } from "./static-text.ts";
  * onto that path is `unknown`, so a self-referencing binding stops, and a call back into a function
  * whose returns are being read is `opaque` (the call itself). Within one file an expression is
  * evaluated once: its alternatives are kept for every later read unless its walk cut a cycle, since
- * only a cut makes a result depend on the path that reached it. A parameter evaluates to itself
- * (`parameter`), a `for…of` or `for…in` binding to its iterable (`loop`), a call the evaluator does
- * not follow to itself (`opaque`), and anything else the list does not name to `opaque`. An
- * alternative reached through a property read (steps 3 and 4) is marked `narrowed`; one reached
- * through a name (a binding in steps 2 and 3, a property of a named value, a return in steps 5 and
- * 6, or a step-10 result with a named operand) is marked `named`.
+ * only a cut makes a result depend on the path that reached it. A parameter, a `for…of` or
+ * `for…in` binding, a regular expression, a call the evaluator does not follow, and anything else
+ * the list does not name is `opaque`: a value that exists but is not known, whose members step 4
+ * still reads as `member`s. `unknown` is what the evaluator gave up on, and every member of it is
+ * `unknown` too.
  */
 
 /** The callee names that run a callback in the page and hand back what it returns. */
-export const EVALUATES: ReadonlySet<string> = new Set(["evaluate", "evaluateHandle", "$eval", "$$eval"]);
-
-/** The global objects a global can be read off without changing what it names. */
-const GLOBAL_OBJECTS = new Set(["globalThis", "window", "self"]);
+const EVALUATES: ReadonlySet<string> = new Set(["evaluate", "evaluateHandle", "$eval", "$$eval"]);
 
 /** How many alternatives one evaluation keeps before it gives up as `unknown`. */
 const MAX_ALTERNATIVES = 64;
@@ -95,29 +90,22 @@ const STRING_METHODS = new Map<string, (text: string) => string>([
   ["toUpperCase", (text) => text.toUpperCase()],
 ]);
 
-/** A property an object literal alternative sets: its key, its value and the property node. */
-type PropertyEntry = {
-  readonly _tag: "property";
-  readonly key: string;
-  readonly value: ESTree.Node;
-  readonly property: ESTree.ObjectProperty;
-};
+/** A property an object literal alternative sets: its key and its value. */
+type PropertyEntry = { readonly _tag: "property"; readonly key: string; readonly value: ESTree.Node };
 
 /** One entry of an object literal alternative, in source order. */
 type Entry = PropertyEntry | { readonly _tag: "unopened-spread" };
 
-/** What one alternative is. */
-type AltBody =
+/** One value an expression may hold. */
+export type Alt =
   | { readonly kind: "string"; readonly value: string }
   | { readonly kind: "number"; readonly value: number }
   | { readonly kind: "boolean"; readonly value: boolean }
   | { readonly kind: "null" }
   | { readonly kind: "undefined" }
-  | { readonly kind: "regex"; readonly pattern: string; readonly flags: string }
-  | { readonly kind: "object"; readonly node: ESTree.Node; readonly entries: ReadonlyArray<Entry> }
+  | { readonly kind: "object"; readonly entries: ReadonlyArray<Entry> }
   | {
       readonly kind: "array";
-      readonly node: ESTree.Node;
       readonly elements: ReadonlyArray<ESTree.Node | null>;
       readonly complete: boolean;
     }
@@ -125,31 +113,8 @@ type AltBody =
   | { readonly kind: "global"; readonly name: string }
   | { readonly kind: "import"; readonly source: string; readonly imported: string }
   | { readonly kind: "member"; readonly object: Alt; readonly key: string }
-  | { readonly kind: "parameter"; readonly fn: ESTree.Node; readonly index: number }
-  | { readonly kind: "loop"; readonly iterable: ESTree.Node }
-  | { readonly kind: "opaque"; readonly node: ESTree.Node }
+  | { readonly kind: "opaque" }
   | { readonly kind: "unknown" };
-
-/**
- * One value an expression may hold: what it is, whether a property read reached it (`narrowed`),
- * and whether a name reached it (`named`): a binding, a property of a named value, a call's
- * return, or a primitive operation on a named operand.
- */
-export type Alt = AltBody & { readonly narrowed: boolean; readonly named: boolean };
-
-/** A callee as the module that exports it and the names read off it. */
-export type CalleeTarget = {
-  /** The module it is imported from, or `undefined` for a global or a local value. */
-  readonly module: string | undefined;
-  /**
-   * The names after the module: `["setTimeout"]` for `timers.setTimeout` off `node:timers`. A
-   * receiver the evaluator cannot name is `*`, so `createRequire(url).resolve` is `["*", "resolve"]`.
-   */
-  readonly path: ReadonlyArray<string>;
-};
-
-/** The bindings and nodes a walk is inside right now. */
-export type ActivePath = ReadonlySet<ESTree.Node | Variable>;
 
 /** One file's evaluations, shared by every rule that lints it. */
 type Memo = {
@@ -174,28 +139,11 @@ const ARITHMETIC = new Map<string, (left: number, right: number) => number>([
   ["%", (left, right) => left % right],
 ]);
 
-/** An alternative reached neither through a property read nor through a name. */
-function plain(body: AltBody): Alt {
-  return { ...body, narrowed: false, named: false };
-}
+/** A value the evaluator gave up on. */
+const UNKNOWN: Alt = { kind: "unknown" };
 
-/** Alternatives reached through a name. */
-function named(values: ReadonlyArray<Alt>): Alt[] {
-  return values.map((value) => ({ ...value, named: true }));
-}
-
-const UNKNOWN: Alt = plain({ kind: "unknown" });
-
-/**
- * The active path with one more step, or `undefined` when the walk is already inside that step.
- *
- * @param path - The walk's active path.
- * @param step - The binding or node the walk is about to enter.
- * @returns The longer path, or `undefined` for a cycle.
- */
-export function enter(path: ActivePath, step: ESTree.Node | Variable): ActivePath | undefined {
-  return path.has(step) ? undefined : new Set([...path, step]);
-}
+/** A value that exists but that the evaluator does not know. */
+const OPAQUE: Alt = { kind: "opaque" };
 
 /**
  * Alternatives from several sources side by side (a condition's arms, a function's returns),
@@ -220,7 +168,7 @@ function alternatives(...lists: ReadonlyArray<ReadonlyArray<Alt>>): Alt[] {
  * @param overflow - The result past the cap.
  * @returns The operation's alternatives.
  */
-export function product<T, R>(
+function product<T, R>(
   operands: ReadonlyArray<ReadonlyArray<T>>,
   operation: (combination: ReadonlyArray<T>) => ReadonlyArray<R>,
   overflow: R
@@ -255,18 +203,17 @@ export function memberName(member: ESTree.Node): string | undefined {
     : undefined;
 }
 
+/** Any identifier node: a reference, a binding, a label or a name. */
+type Identifier = Extract<ESTree.Node, { readonly type: "Identifier" }>;
+
 /**
- * The variable an identifier reads, through the scopes around it. A JSX tag such as `<InlineMenu />`
- * reads the component binding of its name; a lowercase tag such as `<button>` is an intrinsic
- * element and reads none.
+ * The variable an identifier reads, through the scopes around it.
  *
  * @param context - The rule context.
- * @param identifier - An identifier reference or a JSX tag name.
- * @returns The variable, or `undefined` for a global or an intrinsic tag.
+ * @param identifier - An identifier reference.
+ * @returns The variable, or `undefined` for a global.
  */
-export function variableOf(context: Context, identifier: ESTree.Node): Variable | undefined {
-  if (identifier.type !== "Identifier" && identifier.type !== "JSXIdentifier") return undefined;
-  if (identifier.type === "JSXIdentifier" && /^[a-z]/u.test(identifier.name)) return undefined;
+function variableOf(context: Context, identifier: Identifier): Variable | undefined {
   for (
     let scope: Scope | null = context.sourceCode.getScope(identifier);
     scope !== null;
@@ -286,7 +233,7 @@ export function variableOf(context: Context, identifier: ESTree.Node): Variable 
  * @param fn - A function node.
  * @returns The returned expressions.
  */
-export function returnedValues(context: Context, fn: ESTree.Node): ESTree.Node[] {
+function returnedValues(context: Context, fn: ESTree.Node): ESTree.Node[] {
   if (!isFunction(fn)) return [];
   const cached = RETURNS.get(fn);
   if (cached !== undefined) return cached;
@@ -342,19 +289,15 @@ function primitiveOf(alternative: Alt): ReadonlyArray<{ readonly value: Primitiv
   }
 }
 
-/** An alternative for a primitive JavaScript value, named when an operand it comes from was. */
-function fromPrimitive(value: Primitive, from: ReadonlyArray<Alt> = []): Alt {
-  const isNamed = from.some((operand) => operand.named);
-  const body = (): AltBody => {
-    if (value === null) return { kind: "null" };
-    if (value === undefined) return { kind: "undefined" };
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a computed primitive carries no other tag than its JavaScript type
-    if (typeof value === "string") return { kind: "string", value };
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a computed primitive carries no other tag than its JavaScript type
-    if (typeof value === "number") return { kind: "number", value };
-    return { kind: "boolean", value };
-  };
-  return { ...body(), narrowed: false, named: isNamed };
+/** An alternative for a primitive JavaScript value. */
+function fromPrimitive(value: Primitive): Alt {
+  if (value === null) return { kind: "null" };
+  if (value === undefined) return { kind: "undefined" };
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a computed primitive carries no other tag than its JavaScript type
+  if (typeof value === "string") return { kind: "string", value };
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a computed primitive carries no other tag than its JavaScript type
+  if (typeof value === "number") return { kind: "number", value };
+  return { kind: "boolean", value };
 }
 
 /** The values of a combination when every alternative in it is a typed primitive. */
@@ -366,7 +309,6 @@ function primitives(combination: ReadonlyArray<Alt>): Primitive[] | undefined {
 /** The evaluator for one walk: the rule context fixed, the file's memo shared, its own active path. */
 function evaluator(context: Context, memo: Memo) {
   const active = new Set<ESTree.Node | Variable>();
-  const opaque = (node: ESTree.Node): Alt[] => [plain({ kind: "opaque", node })];
 
   /** Run one step with it on the active path; a step already on it is a cycle, cut to `unknown`. */
   const step = (at: ESTree.Node | Variable, run: () => Alt[]): Alt[] => {
@@ -380,36 +322,30 @@ function evaluator(context: Context, memo: Memo) {
     return values;
   };
 
-  /** A property's values, reached through a read off a container: named when the container is. */
-  const narrow = (values: ReadonlyArray<Alt>, container: Alt): Alt[] =>
-    values.map((value) => ({ ...value, narrowed: true, named: value.named || container.named }));
-
   /** An object literal's entries, one list per combination of its spreads' alternatives. */
   const objectAlternatives = (node: ESTree.ObjectExpression): Alt[] => {
     const parts: Array<ReadonlyArray<Alt>> = node.properties.map((property): ReadonlyArray<Alt> => {
       if (property.type === "SpreadElement") return evaluateNode(property.argument);
       const key = propertyKeyName(property);
       return [
-        plain({
+        {
           kind: "object",
-          node: property,
           entries:
             key === undefined
               ? [{ _tag: "unopened-spread" }]
-              : [{ _tag: "property", key, value: property.value, property }],
-        }),
+              : [{ _tag: "property", key, value: property.value }],
+        },
       ];
     });
     return combine(parts, (combination) => [
-      plain({
+      {
         kind: "object",
-        node,
         entries: combination.flatMap((part): Entry[] => {
           if (part.kind === "object") return [...part.entries];
           // Spreading `null` or `undefined` sets nothing.
           return part.kind === "null" || part.kind === "undefined" ? [] : [{ _tag: "unopened-spread" }];
         }),
-      }),
+      },
     ]);
   };
 
@@ -418,16 +354,16 @@ function evaluator(context: Context, memo: Memo) {
     const parts: Array<ReadonlyArray<Alt>> = node.elements.map((element): ReadonlyArray<Alt> =>
       element?.type === "SpreadElement"
         ? evaluateNode(element.argument)
-        : [plain({ kind: "array", node, elements: [element], complete: true })]
+        : [{ kind: "array", elements: [element], complete: true }]
     );
     return combine(parts, (combination) => {
       const elements: Array<ESTree.Node | null> = [];
       for (const part of combination) {
-        if (part.kind !== "array") return [plain({ kind: "array", node, elements, complete: false })];
+        if (part.kind !== "array") return [{ kind: "array", elements, complete: false }];
         elements.push(...part.elements);
-        if (!part.complete) return [plain({ kind: "array", node, elements, complete: false })];
+        if (!part.complete) return [{ kind: "array", elements, complete: false }];
       }
-      return [plain({ kind: "array", node, elements, complete: true })];
+      return [{ kind: "array", elements, complete: true }];
     });
   };
 
@@ -437,34 +373,30 @@ function evaluator(context: Context, memo: Memo) {
       case "object": {
         const entry = entryFor(container, key);
         if (entry === "unknown") return [UNKNOWN];
-        return entry === undefined
-          ? [plain({ kind: "undefined" })]
-          : narrow(evaluateNode(entry.value), container);
+        return entry === undefined ? [{ kind: "undefined" }] : evaluateNode(entry.value);
       }
       case "array": {
         const index = Number(key);
-        if (!Number.isInteger(index)) return [plain({ kind: "member", object: container, key })];
+        if (!Number.isInteger(index)) return [{ kind: "member", object: container, key }];
         if (index >= container.elements.length)
-          return container.complete ? [plain({ kind: "undefined" })] : [UNKNOWN];
+          return container.complete ? [{ kind: "undefined" }] : [UNKNOWN];
         const element = container.elements[index];
-        return element === null || element === undefined
-          ? [plain({ kind: "undefined" })]
-          : narrow(evaluateNode(element), container);
+        return element === null || element === undefined ? [{ kind: "undefined" }] : evaluateNode(element);
       }
       case "import":
         return container.imported === "*"
-          ? [plain({ kind: "import", source: container.source, imported: key })]
-          : [plain({ kind: "member", object: container, key })];
+          ? [{ kind: "import", source: container.source, imported: key }]
+          : [{ kind: "member", object: container, key }];
       case "unknown":
         return [UNKNOWN];
       default:
-        return [plain({ kind: "member", object: container, key })];
+        return [{ kind: "member", object: container, key }];
     }
   };
 
   /** Every value a function returns, each evaluated, with the function on the active path. */
   const returnsOf = (fn: ESTree.Node): Alt[] =>
-    step(fn, () => named(alternatives(...returnedValues(context, fn).map((value) => evaluateNode(value)))));
+    step(fn, () => alternatives(...returnedValues(context, fn).map((value) => evaluateNode(value))));
 
   /** One callee alternative called with the call's arguments (steps 5, 6 and 10). */
   const callOne = (call: ESTree.CallExpression, callee: Alt): Alt[] => {
@@ -472,11 +404,11 @@ function evaluator(context: Context, memo: Memo) {
       // Checked here, not by `step`, so a memoized value of the callee cannot turn the cut `unknown`.
       if (active.has(callee.fn)) {
         memo.cuts += 1;
-        return opaque(call);
+        return [OPAQUE];
       }
       return returnsOf(callee.fn);
     }
-    if (callee.kind !== "member") return opaque(call);
+    if (callee.kind !== "member") return [OPAQUE];
     const receiver = callee.object;
     if (EVALUATES.has(callee.key)) {
       const callbacks = combine(
@@ -488,43 +420,42 @@ function evaluator(context: Context, memo: Memo) {
           ...callbacks.map((callback) => (callback.kind === "function" ? returnsOf(callback.fn) : [UNKNOWN]))
         );
       }
-      return opaque(call);
+      return [OPAQUE];
     }
     const map = STRING_METHODS.get(callee.key);
-    if (map !== undefined && receiver.kind === "string")
-      return [fromPrimitive(map(receiver.value), [receiver])];
+    if (map !== undefined && receiver.kind === "string") return [fromPrimitive(map(receiver.value))];
     if (callee.key === "concat" && receiver.kind === "string") {
       return combine(
         call.arguments.map((argument) => evaluateNode(argument)),
         (combination) => {
           const values = primitives(combination);
           return values === undefined
-            ? opaque(call)
-            : [fromPrimitive(receiver.value.concat(...values.map(String)), [receiver, ...combination])];
+            ? [OPAQUE]
+            : [fromPrimitive(receiver.value.concat(...values.map(String)))];
         }
       );
     }
     if (callee.key === "join" && receiver.kind === "array") {
-      if (!receiver.complete) return opaque(call);
+      if (!receiver.complete) return [OPAQUE];
       const [separator] = call.arguments;
       return combine(
         [
           separator === undefined ? [fromPrimitive(",")] : evaluateNode(separator),
           ...receiver.elements.map((element) =>
-            element === null ? [plain({ kind: "undefined" })] : evaluateNode(element)
+            element === null ? [fromPrimitive(undefined)] : evaluateNode(element)
           ),
         ],
         ([glue, ...items]) => {
           const values = primitives(items);
-          if (glue?.kind !== "string" || values === undefined) return opaque(call);
+          if (glue?.kind !== "string" || values === undefined) return [OPAQUE];
           const text = values
             .map((value) => (value === null || value === undefined ? "" : String(value)))
             .join(glue.value);
-          return [fromPrimitive(text, [glue, ...items])];
+          return [fromPrimitive(text)];
         }
       );
     }
-    return opaque(call);
+    return [OPAQUE];
   };
 
   /** A template literal's values (step 10). */
@@ -533,29 +464,29 @@ function evaluator(context: Context, memo: Memo) {
       node.expressions.map((part) => evaluateNode(part)),
       (combination) => {
         const values = primitives(combination);
-        if (values === undefined) return opaque(node);
+        if (values === undefined) return [OPAQUE];
         let text = "";
         node.quasis.forEach((quasi, index) => {
           text += staticText(quasi);
           if (index < values.length) text += String(values[index]);
         });
-        return [fromPrimitive(text, combination)];
+        return [fromPrimitive(text)];
       }
     );
 
   /** A binary operation's values (step 10). */
   const binaryOf = (node: ESTree.BinaryExpression | ESTree.PrivateInExpression): Alt[] => {
     const arithmetic = ARITHMETIC.get(node.operator);
-    if (node.left.type === "PrivateIdentifier" || arithmetic === undefined) return opaque(node);
+    if (node.left.type === "PrivateIdentifier" || arithmetic === undefined) return [OPAQUE];
     return combine([evaluateNode(node.left), evaluateNode(node.right)], (combination) => {
       const values = primitives(combination);
-      if (values === undefined) return opaque(node);
+      if (values === undefined) return [OPAQUE];
       const [left, right] = values;
       // oxlint-disable-next-line anti-slop/no-runtime-typeof -- step 10's `+` converts to strings exactly when a side is a string
       if (node.operator === "+" && (typeof left === "string" || typeof right === "string")) {
-        return [fromPrimitive(String(left) + String(right), combination)];
+        return [fromPrimitive(String(left) + String(right))];
       }
-      return [fromPrimitive(arithmetic(Number(left), Number(right)), combination)];
+      return [fromPrimitive(arithmetic(Number(left), Number(right)))];
     });
   };
 
@@ -568,18 +499,13 @@ function evaluator(context: Context, memo: Memo) {
         const declaration = def.parent;
         const imported = importedName(def.node);
         return declaration?.type === "ImportDeclaration" && imported !== undefined
-          ? [plain({ kind: "import", source: declaration.source.value, imported })]
+          ? [{ kind: "import", source: declaration.source.value, imported }]
           : [UNKNOWN];
       }
-      case "Parameter": {
-        const params = isFunction(def.node) ? def.node.params : [];
-        const index = params.findIndex(
-          (param) => param === def.name || (param.type === "AssignmentPattern" && param.left === def.name)
-        );
-        return [plain({ kind: "parameter", fn: def.node, index })];
-      }
+      case "Parameter":
+        return [OPAQUE];
       case "FunctionName":
-        return [plain({ kind: "function", fn: def.node })];
+        return [{ kind: "function", fn: def.node }];
       case "Variable":
         break;
       default:
@@ -590,12 +516,10 @@ function evaluator(context: Context, memo: Memo) {
     if (variable.references.some((reference) => reference.isWrite() && !reference.init)) return [UNKNOWN];
     if (declarator.init === null) {
       const loop = declarator.parent.parent;
-      return loop?.type === "ForOfStatement" || loop?.type === "ForInStatement"
-        ? [plain({ kind: "loop", iterable: loop.right })]
-        : [UNKNOWN];
+      return loop?.type === "ForOfStatement" || loop?.type === "ForInStatement" ? [OPAQUE] : [UNKNOWN];
     }
     if (declarator.id.type === "Identifier") {
-      const values = named(evaluateNode(declarator.init));
+      const values = evaluateNode(declarator.init);
       if (!isMutated(variable)) return values;
       // A mutated literal keeps its identity, but nothing it holds is known.
       return values.map((value): Alt => {
@@ -612,7 +536,7 @@ function evaluator(context: Context, memo: Memo) {
       if (target !== def.name) continue;
       const key = propertyKeyName(property);
       if (key === undefined) return [UNKNOWN];
-      return combine([named(evaluateNode(init))], ([container]) =>
+      return combine([evaluateNode(init)], ([container]) =>
         container === undefined ? [UNKNOWN] : memberOf(container, key)
       );
     }
@@ -625,28 +549,26 @@ function evaluator(context: Context, memo: Memo) {
     const variable = variableOf(context, identifier);
     // An environment global (the config's `env` or `globals`) has a variable with no definition.
     if (variable === undefined || variable.defs.length === 0)
-      return [plain({ kind: "global", name: identifier.name })];
+      return [{ kind: "global", name: identifier.name }];
     return step(variable, () => definitionOf(variable));
   };
 
   /** Every value one unwrapped expression may hold, the expression already on the active path. */
   const expressionOf = (expression: ESTree.Node): Alt[] => {
-    if (isFunction(expression)) return [plain({ kind: "function", fn: expression })];
+    if (isFunction(expression)) return [{ kind: "function", fn: expression }];
     switch (expression.type) {
       case "Literal": {
-        if ("regex" in expression) {
-          return [plain({ kind: "regex", pattern: expression.regex.pattern, flags: expression.regex.flags })];
-        }
+        if ("regex" in expression) return [OPAQUE];
         const value = expression.value;
         // oxlint-disable-next-line anti-slop/no-runtime-typeof -- ESTree tags every literal kind `Literal`; the value's type is the only tag a bigint literal has
-        if (typeof value === "bigint") return opaque(expression);
+        if (typeof value === "bigint") return [OPAQUE];
         return [fromPrimitive(value)];
       }
       case "Identifier":
         return bindingOf(expression);
       case "MemberExpression": {
         const key = memberName(expression);
-        if (key === undefined) return opaque(expression);
+        if (key === undefined) return [OPAQUE];
         return combine([evaluateNode(expression.object)], ([container]) =>
           container === undefined ? [UNKNOWN] : memberOf(container, key)
         );
@@ -661,9 +583,7 @@ function evaluator(context: Context, memo: Memo) {
         return alternatives(evaluateNode(expression.left), evaluateNode(expression.right));
       case "ImportExpression":
         return combine([evaluateNode(expression.source)], ([source]) =>
-          source?.kind === "string"
-            ? [plain({ kind: "import", source: source.value, imported: "*" })]
-            : opaque(expression)
+          source?.kind === "string" ? [{ kind: "import", source: source.value, imported: "*" }] : [OPAQUE]
         );
       case "ObjectExpression":
         return objectAlternatives(expression);
@@ -674,12 +594,12 @@ function evaluator(context: Context, memo: Memo) {
       case "BinaryExpression":
         return binaryOf(expression);
       case "UnaryExpression":
-        if (expression.operator !== "-") return opaque(expression);
+        if (expression.operator !== "-") return [OPAQUE];
         return combine([evaluateNode(expression.argument)], ([operand]) =>
-          operand?.kind === "number" ? [fromPrimitive(-operand.value, [operand])] : opaque(expression)
+          operand?.kind === "number" ? [fromPrimitive(-operand.value)] : [OPAQUE]
         );
       default:
-        return opaque(expression);
+        return [OPAQUE];
     }
   };
 
@@ -724,7 +644,7 @@ export function evaluate(context: Context, node: ESTree.Node): Alt[] {
  * @param key - The property key.
  * @returns The setting property, `"unknown"`, or `undefined`.
  */
-export function entryFor(object: Alt, key: string): PropertyEntry | "unknown" | undefined {
+function entryFor(object: Alt, key: string): PropertyEntry | "unknown" | undefined {
   if (object.kind !== "object") return "unknown";
   for (const entry of [...object.entries].toReversed()) {
     if (entry._tag === "unopened-spread") return "unknown";
@@ -733,100 +653,30 @@ export function entryFor(object: Alt, key: string): PropertyEntry | "unknown" | 
   return undefined;
 }
 
-/** A target with one more name read off it; a name off a global object is that global. */
-function append(base: CalleeTarget, key: string): CalleeTarget {
-  const [only, ...rest] = base.path;
-  if (base.module === undefined && rest.length === 0 && only !== undefined && GLOBAL_OBJECTS.has(only)) {
-    return { module: undefined, path: [key] };
-  }
-  return { module: base.module, path: [...base.path, key] };
-}
-
 /**
- * The function one alternative names, as the module that exports it and the names read off it:
- * a global, an import, a named local function, or a key read off any of those; a key read off a
- * value with no name is read off `*`.
+ * The name one callee alternative calls by: an import's export name, a global's name, a named
+ * local function's name, or the key a member reads (`React.useId` is `useId`, whatever it is read
+ * off).
  *
  * @param alternative - An alternative of a callee.
- * @returns The target, or `undefined` for an alternative that names no function.
+ * @returns The name, or `undefined` for a namespace or default import, an anonymous function, or
+ *   any alternative that names no function.
  */
-export function targetOf(alternative: Alt): CalleeTarget | undefined {
+export function calleeName(alternative: Alt): string | undefined {
   switch (alternative.kind) {
     case "import":
       return alternative.imported === "*" || alternative.imported === "default"
-        ? { module: alternative.source, path: [] }
-        : { module: alternative.source, path: [alternative.imported] };
+        ? undefined
+        : alternative.imported;
     case "global":
-      return { module: undefined, path: [alternative.name] };
+      return alternative.name;
     case "function": {
       const name = functionNameOf(alternative.fn);
-      return name?.type === "Identifier" ? { module: undefined, path: [name.name] } : undefined;
+      return name?.type === "Identifier" ? name.name : undefined;
     }
     case "member":
-      return append(targetOf(alternative.object) ?? { module: undefined, path: ["*"] }, alternative.key);
+      return alternative.key;
     default:
       return undefined;
   }
-}
-
-/**
- * The target of every alternative a callee may hold, in order: one entry per alternative, with
- * `undefined` for an alternative that names no function, so a rule can tell whether every
- * alternative is the same API.
- *
- * @param context - The rule context.
- * @param callee - A call's callee, or any expression that names a function.
- * @returns One target, or `undefined`, per alternative.
- */
-export function calleeTargets(context: Context, callee: ESTree.Node): Array<CalleeTarget | undefined> {
-  return evaluate(context, callee).map(targetOf);
-}
-
-/**
- * The API each alternative of a callee names in full, module left off, such as
- * `vi.useFakeTimers`: one entry per alternative, `undefined` for one that names no function.
- *
- * @param context - The rule context.
- * @param callee - A call's callee.
- * @returns One API, or `undefined`, per alternative.
- */
-export function calleeApis(context: Context, callee: ESTree.Node): Array<string | undefined> {
-  return calleeTargets(context, callee).map((target) => target?.path.join("."));
-}
-
-/**
- * Whether a callee is one API in every alternative, such as `Math.abs` or `JSON.parse`.
- *
- * @param context - The rule context.
- * @param callee - A call's callee.
- * @param api - The API's dotted name, module left off.
- * @returns Whether every alternative names that API.
- */
-export function isApi(context: Context, callee: ESTree.Node, api: string): boolean {
-  return allAgree(calleeApis(context, callee)) === api;
-}
-
-/**
- * The dotted names a callee's alternatives have, module left off, one per alternative that names a
- * function: `["vi.useFakeTimers"]`.
- *
- * @param context - The rule context.
- * @param callee - A call's callee.
- * @returns The names.
- */
-export function calleeNames(context: Context, callee: ESTree.Node): string[] {
-  return calleeTargets(context, callee).flatMap((target) =>
-    target === undefined ? [] : [target.path.join(".")]
-  );
-}
-
-/**
- * The strings an expression may be: the value of each alternative that is a string. A consumer
- * that needs every alternative to be a string quantifies the alternatives itself.
- *
- * @param alternatives - An expression's alternatives.
- * @returns The string values.
- */
-export function stringValues(alternatives: ReadonlyArray<Alt>): string[] {
-  return alternatives.flatMap((alternative) => (alternative.kind === "string" ? [alternative.value] : []));
 }

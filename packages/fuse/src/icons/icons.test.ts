@@ -54,7 +54,7 @@ describe("Phosphor adapters", () => {
   });
 
   it("keeps generated modules and the facade in lock-step with the roster", () => {
-    // oxlint-disable-next-line fuse/no-source-reading-tests -- the committed facade must match the roster
+    // oxlint-disable-next-line tests/no-source-reading-tests -- the committed facade must match the roster
     expect(readFileSync(join(packageRoot, "src/icons.ts"), "utf8")).toBe(
       generatedFacadeSource(PHOSPHOR_ICON_NAMES)
     );
@@ -66,7 +66,7 @@ describe("Phosphor adapters", () => {
 
     for (const name of PHOSPHOR_ICON_NAMES) {
       const path = join(generatedDir, `${iconModuleSlug(name)}.ts`);
-      // oxlint-disable-next-line fuse/no-source-reading-tests -- a committed adapter must match a fresh one
+      // oxlint-disable-next-line tests/no-source-reading-tests -- a committed adapter must match a fresh one
       expect(readFileSync(path, "utf8"), name).toBe(generatedAdapterSource(name));
     }
   });
