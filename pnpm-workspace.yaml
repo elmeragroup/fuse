@@ -76,7 +76,7 @@ catalog:
   # The browser-floor gate's shorthand table, at the release css-tree 3.2.1 already resolves.
   mdn-data: 2.27.1
   micromark-extension-gfm-strikethrough: 2.1.0
-  next: 16.4.2
+  next: 16.4.5
   # Types and rule helpers for the repo-local oxlint plugin. Pinned to the oxlint release.
   "@oxlint/plugins": 1.89.0
   oxc-parser: 0.148.0
