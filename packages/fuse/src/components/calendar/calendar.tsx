@@ -12,12 +12,13 @@ import { createChangeEventDetails } from "./calendar-change-details";
 import type { CalendarValueChangeEventDetails, CalendarValueChangeReason } from "./calendar-change-details";
 import { CalendarRootContext, createSelectionOwner, dayFlags, NO_DAY_FLAGS } from "./calendar-context";
 import type { CalendarRootContextValue, CalendarSharedState } from "./calendar-context";
-import { dayValidationError } from "./calendar-dates";
+import { dayValidationError, openView } from "./calendar-dates";
 import { useCalendarBounds, useCalendarSettings, useDayProp, useVisibleMonthCount } from "./calendar-input";
 import type { CalendarViewProps } from "./calendar-input";
 import { createCalendarStore, useCalendarSelector } from "./calendar-store";
 import { calendarVariants } from "./calendar-variants";
 import { initialSharedState, useCalendarNavigation } from "./use-calendar-navigation";
+import { useViewFollowsValue } from "./use-view-follows-value";
 
 const styles = calendarVariants();
 
@@ -143,7 +144,8 @@ export function CalendarRoot({
 
   const [store] = useState(() => {
     const initial = controlled ? value : defaultDay;
-    return createCalendarStore<CalendarState>({ ...initialSharedState(initial, settings), value: initial });
+    const view = initial === null ? null : openView(initial, visibleMonths, bounds);
+    return createCalendarStore<CalendarState>({ ...initialSharedState(view), value: initial });
   });
 
   // A controlled value reaches the store before paint. Focus and the view stay where they are, as
@@ -165,6 +167,15 @@ export function CalendarRoot({
 
   const rootRef = useRef<HTMLDivElement>(null);
   const { actions } = useCalendarNavigation(store, settings, timeZone, onVisibleRangeChange, rootRef);
+  // In a picker, the view follows the value. A standalone calendar's view stays, as above.
+  useViewFollowsValue(
+    store,
+    (current) => {
+      const day = current.value ?? current.today;
+      return day === null ? null : { days: [day], kept: current, view: openView(day, visibleMonths, bounds) };
+    },
+    rootRef
+  );
   // Calendar's selection owner: one day, `selected` on it and `invalid` when it fails validation.
   // It has no preview, so the pointer selects nothing. The parts pass `select` only a day the
   // user may select.

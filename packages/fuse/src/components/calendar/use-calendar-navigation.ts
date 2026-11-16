@@ -2,7 +2,8 @@
 
 // The part of a calendar Root that every selection model shares: today from the clock, the view
 // kept in step with `visibleMonths` and the bounds, and moving focus and the view by keyboard and
-// month button. A Root adds only how a day is selected.
+// month button. A Root adds how a day is selected and, in a picker, where its value puts the view,
+// in `use-view-follows-value.ts`.
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { RefObject } from "react";
@@ -15,7 +16,7 @@ import { createChangeEventDetails } from "./calendar-change-details";
 import type { CalendarChangeEventDetails } from "./calendar-change-details";
 import type { CalendarActions, CalendarSettings, CalendarSharedState } from "./calendar-context";
 import { canPage, clampDay, monthsShowing, movedDay, openView, pageTarget, showsDay } from "./calendar-dates";
-import type { DayBounds } from "./calendar-dates";
+import type { DayBounds, OpenedView } from "./calendar-dates";
 import type { CalendarStore } from "./calendar-store";
 
 /** The gestures that change the visible months. */
@@ -35,22 +36,21 @@ export type CalendarVisibleRangeChangeHandler = (
 ) => void;
 
 /**
- * The shared state a Root starts from, before the clock is read: focus on the clamped day it is
- * given and the view centered on it, or nothing to show yet when it has no day.
+ * The shared state a Root starts from, before it reads the clock. It is the focus and view where its
+ * value or default value opens them, or nothing to show yet when the Root starts empty.
  *
- * @param focused - The value or default value's day, or `null` when the Root starts empty.
- * @param settings - The Root's bounds and month count.
+ * @param view - Where the value opens the Root, from `openView` or `openRangeView`, or `null` when
+ *   the Root starts empty.
  * @returns The state.
  */
-export function initialSharedState(
-  focused: Temporal.PlainDate | null,
-  settings: Pick<CalendarSettings, "bounds" | "visibleMonths">
-): CalendarSharedState {
-  const view =
-    focused === null
-      ? { focused: null, visible: null }
-      : openView(focused, settings.visibleMonths, settings.bounds);
-  return { ...view, today: null, focusRequest: false, gridFocused: false, paged: false };
+export function initialSharedState(view: OpenedView | null): CalendarSharedState {
+  return {
+    ...(view ?? { focused: null, visible: null }),
+    today: null,
+    focusRequest: false,
+    gridFocused: false,
+    paged: false,
+  };
 }
 
 /**
@@ -67,6 +67,18 @@ function focusedElement(ownerDocument: Document): Element {
  */
 function stillHeld(root: HTMLElement, active: Element): boolean {
   return active === root.ownerDocument.body || containsAcrossShadowRoots(root, active);
+}
+
+/**
+ * Whether a day has keyboard focus that is still the calendar's. A change of the focused day
+ * then moves DOM focus to the new day, which keeps it inside the calendar.
+ *
+ * @param state - The Root's state.
+ * @param root - The Root's element, or `null` before it mounts.
+ * @returns Whether focus follows the focused day.
+ */
+export function holdsDayFocus(state: CalendarSharedState, root: HTMLElement | null): boolean {
+  return state.gridFocused && (root === null || stillHeld(root, focusedElement(root.ownerDocument)));
 }
 
 /** The milliseconds from now until `day` ends in `timeZone`. */
@@ -187,9 +199,7 @@ export function useCalendarNavigation<S extends CalendarSharedState>(
     if (visible === state.visible && !moved) {
       return;
     }
-    const root = rootRef.current;
-    const heldFocus =
-      state.gridFocused && (root === null || stillHeld(root, focusedElement(root.ownerDocument)));
+    const heldFocus = holdsDayFocus(state, rootRef.current);
     store.set({ ...state, focused, visible, focusRequest: heldFocus && (state.focusRequest || moved) });
   }, [store, bounds, visibleMonths, rootRef]);
 

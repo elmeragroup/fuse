@@ -5,7 +5,7 @@
  * preset radios follow React Aria's DatePicker.
  * Expectations are literals: ISO values, accessible names, reasons.
  */
-import { useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -15,6 +15,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
 import type { ParentHandle } from "../../../test/parent-handle";
@@ -53,6 +54,9 @@ async function pickDay(name: string): Promise<void> {
   roleNamed("button", name).focus();
   await userEvent.keyboard("{Enter}");
 }
+
+/** Today for the tests that pin it: September 15, 2026, away from every day they name. */
+const AWAY_TODAY = "2026-09-15T12:00:00";
 
 function segmentTexts(): string[] {
   return page
@@ -170,6 +174,29 @@ describe("DatePicker opening and closing", () => {
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(document.activeElement).not.toBe(year);
+  });
+
+  it("shows the month of a value the parent sets while the open calendar has focus, and keeps focus on its day", async () => {
+    freezeToday(AWAY_TODAY);
+    const parent = parentHandle<Temporal.PlainDate>();
+    function Changing(): ReactElement {
+      const [value, setValue] = useState(Temporal.PlainDate.from("2026-10-05"));
+      useEffect(() => {
+        parent.bind(setValue);
+      }, []);
+      return <DatePickerField label="Start date" value={value} onChange={(next) => next && setValue(next)} />;
+    }
+    renderThemed(withLocale("en-US", <Changing />));
+    await userEvent.click(roleNamed("button", "Calendar Start date"));
+    await expect
+      .element(page.getByRole("button", { name: "Monday, October 5, 2026 selected", exact: true }))
+      .toHaveFocus();
+
+    parent.set(Temporal.PlainDate.from("2026-12-24"));
+    await expect.element(page.getByRole("grid", { name: "December 2026", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Thursday, December 24, 2026 selected", exact: true }))
+      .toHaveFocus();
   });
 
   it("disables the trigger of a read-only picker", () => {
@@ -313,6 +340,77 @@ describe("DatePicker.TimeInput", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(log().element().textContent).toBe(`${committed} | open:false:escape-key`);
   });
+
+  const OCTOBER_5_NINE = Temporal.PlainDateTime.from("2026-10-05T09:00");
+  /** A parent that applies each value in a transition, a render after the picker's own update. */
+  function TransitionParent(): ReactElement {
+    const [value, setValue] = useState<Temporal.PlainDateTime | null>(OCTOBER_5_NINE);
+    return <TimedPicker value={value} onValueChange={(next) => startTransition(() => setValue(next))} />;
+  }
+  /**
+   * A parent that passes its value through `useDeferredValue`, a render after the picker's own
+   * update.
+   */
+  function DeferredParent(): ReactElement {
+    const [value, setValue] = useState<Temporal.PlainDateTime | null>(OCTOBER_5_NINE);
+    return <TimedPicker value={useDeferredValue(value)} onValueChange={setValue} />;
+  }
+  function TimedPicker(props: DatePickerRootProps<Temporal.PlainDateTime>): ReactElement {
+    return (
+      <DatePicker.Root aria-label="Starts" granularity="minute" hourCycle={24} {...props}>
+        <DatePicker.Group>
+          <DatePicker.Input />
+          <DatePicker.Trigger />
+        </DatePicker.Group>
+        <DatePicker.Popup>
+          <DatePicker.Calendar />
+          <DatePicker.TimeInput />
+        </DatePicker.Popup>
+      </DatePicker.Root>
+    );
+  }
+
+  it("returns a paged calendar to the value's month when the parent changes only its time, not when the popup does", async () => {
+    const parent = parentHandle<Temporal.PlainDateTime>();
+    function Changing(): ReactElement {
+      const [value, setValue] = useState<Temporal.PlainDateTime | null>(OCTOBER_5_NINE);
+      useEffect(() => {
+        parent.bind(setValue);
+      }, []);
+      return <TimedPicker value={value} onValueChange={setValue} />;
+    }
+    renderThemed(withLocale("en-US", <Changing />));
+    await open();
+    await userEvent.keyboard("{PageDown}");
+    await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+
+    // A time edited in the popup leaves the calendar on the month the user paged to.
+    await userEvent.click(timeSegment("hour"));
+    await userEvent.keyboard("10");
+    await expect.poll(segmentTexts).toEqual(["10", "5", "2026", "10", "00", "10", "00"]);
+    await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+
+    parent.set(Temporal.PlainDateTime.from("2026-10-05T11:00"));
+    await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
+  });
+
+  it.each([
+    { name: "startTransition", Parent: TransitionParent },
+    { name: "useDeferredValue", Parent: DeferredParent },
+  ])(
+    "keeps a paged calendar on its month when the parent accepts a popup time through $name",
+    async ({ Parent }) => {
+      renderThemed(withLocale("en-US", <Parent />));
+      await open();
+      await userEvent.keyboard("{PageDown}");
+      await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+
+      await userEvent.click(timeSegment("hour"));
+      await userEvent.keyboard("{ArrowUp}");
+      await expect.poll(segmentTexts).toEqual(["10", "5", "2026", "10", "00", "10", "00"]);
+      await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+    }
+  );
 
   it("keeps every time digit typed for a held day whose offset differs from today's", async () => {
     // Today, October 15, is summer time in Oslo; October 26 is after the clocks go back.
@@ -1406,6 +1504,34 @@ describe("DatePickerField in forms", () => {
 
     await userEvent.click(roleNamed("button", "Reset"));
     await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+  });
+
+  it("opens the open calendar on the value again on a form reset that leaves the value as it was", async () => {
+    freezeToday(AWAY_TODAY);
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <DatePickerField
+            label="Start date"
+            name="start"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          />
+        </form>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Start date"));
+    await expect
+      .element(page.getByRole("button", { name: "Monday, October 5, 2026 selected", exact: true }))
+      .toHaveFocus();
+    await userEvent.keyboard("{PageDown}");
+    await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+
+    formNamed("Booking").reset();
+    await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Monday, October 5, 2026 selected", exact: true }))
+      .toHaveFocus();
   });
 });
 

@@ -4,6 +4,7 @@
 import { createContext, use } from "react";
 
 import type { TemporalValue } from "../../temporal/temporal-value";
+import type { CalendarViewFollow } from "../calendar/use-view-follows-value";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import type {
   PickerCalendarSettings,
@@ -46,9 +47,10 @@ export function rangeKey(ends: Ends): string {
 export type DateRangePickerRootContextValue = {
   readonly ends: Ends;
   readonly calendarRange: { readonly start: Temporal.PlainDate; readonly end: Temporal.PlainDate } | null;
-  readonly calendarKey: string;
   /** The form-reset generation, which each end uses to recognize the commit that renders a reset. */
   readonly generation: number;
+  /** What the calendar's view follows; see `use-view-follows-value.ts`. */
+  readonly viewFollow: CalendarViewFollow;
   readonly endpointLabelledBy: string | undefined;
   readonly inputSettings: PickerInputSettings;
   readonly calendarSettings: PickerCalendarSettings;
