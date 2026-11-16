@@ -281,7 +281,9 @@ export type DataTableHeaderProps<TGroup extends HeaderGroupSource> = ComponentPr
    * The table whose header groups render, typically from `useTable`. With `columnSizingFeature`
    * the header renders a `<colgroup>` of the column widths before the `<thead>`. Give the
    * `Table.Root` around it `className="w-0 table-fixed"`, as `DataTable.Content` does, so the table
-   * is as wide as its columns and a resize drag changes only the dragged column.
+   * is as wide as its columns and a resize drag changes only the dragged column. The `<colgroup>`
+   * also makes the cells of any `<tbody>` after it, such as `DataTable.Body`'s, clip content wider
+   * than their column with an ellipsis.
    */
   table: HeaderGroupsSource<TGroup> & HeaderRenderSource<HeaderOf<TGroup>>;
 };

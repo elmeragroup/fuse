@@ -8,10 +8,14 @@ import { LocalizedStringFormatter } from "@internationalized/string";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { actionsColumn } from "./actions-column";
+import type { ActionsColumnDef } from "./actions-column";
 import { skeletonRowCount } from "./data-table";
 import { cellValueText, formatCurrencyCell, formatDateCell, formatNumberCell } from "./data-table-format";
 import { pageStatus } from "./data-table-pagination-status";
 import { dataTableStrings } from "./intl";
+import { selectColumn } from "./select-column";
+import type { SelectColumnDef } from "./select-column";
 
 const NBSP = "\u00a0";
 
@@ -185,5 +189,26 @@ describe("dataTable dictionary", () => {
         locale
       ).toEqual(RESIZE[locale]);
     }
+  });
+});
+
+describe("the display columns of a sized table", () => {
+  // Oracle: the 48px and 76px the issue sets, which leave room for a Frame's text inset beside the
+  // checkbox and the trigger. The browser suite measures that fit.
+  it("sizes the selection column 48px and the row-actions column 76px, and turns resizing off in both", () => {
+    const select = selectColumn<unknown, SelectColumnDef<unknown>>(
+      { display: (column) => column },
+      { getRowLabel: () => "" }
+    );
+    const actions = actionsColumn<unknown, ActionsColumnDef<unknown>>(
+      { display: (column) => column },
+      { getRowName: () => "", items: () => null }
+    );
+    expect([select.size, select.enableResizing, actions.size, actions.enableResizing]).toEqual([
+      48,
+      false,
+      76,
+      false,
+    ]);
   });
 });

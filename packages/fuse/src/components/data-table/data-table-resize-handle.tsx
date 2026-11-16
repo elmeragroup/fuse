@@ -97,7 +97,8 @@ function clearPreview(session: DragSession): void {
 
 /**
  * The width a key moves the column to, or `undefined` for a key the handle does not handle. End
- * moves only to a maximum the column sets, since TanStack's default is out of reach.
+ * moves only to a maximum the column sets, since TanStack's default is out of reach. Without one it
+ * keeps the width, and the key stays with the handle instead of scrolling the page.
  */
 function keyTarget(key: string, size: number, bounds: Bounds, direction: 1 | -1): number | undefined {
   switch (key) {
@@ -108,7 +109,7 @@ function keyTarget(key: string, size: number, bounds: Bounds, direction: 1 | -1)
     case "Home":
       return bounds.min;
     case "End":
-      return bounds.max < DEFAULT_MAX_SIZE ? bounds.max : undefined;
+      return bounds.max < DEFAULT_MAX_SIZE ? bounds.max : size;
     default:
       return undefined;
   }

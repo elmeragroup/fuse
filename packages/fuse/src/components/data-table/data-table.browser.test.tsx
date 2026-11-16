@@ -40,11 +40,12 @@ import {
 import type { Order } from "../../../test/data-table-fixtures";
 import { withLocale } from "../../../test/locale-matrix";
 import { whilePointerPressed } from "../../../test/pointer-press";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { expectVisuallyHidden } from "../../../test/visually-hidden";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Button } from "../button/button";
 import { DropdownMenu } from "../dropdown-menu";
+import { Frame } from "../frame/frame";
 import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
 import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
@@ -951,16 +952,26 @@ describe("DataTable controlled popups", () => {
 
 describe("DataTable column resizing", () => {
   /**
+   * A recorder for a table's `onSizing` prop.
+   *
+   * @returns Every `columnSizing` state the table commits, in order, and the callback that records them.
+   */
+  function recordSizings() {
+    const sizings: ColumnSizingState[] = [];
+    const onSizing = (sizing: ColumnSizingState): void => {
+      sizings.push(sizing);
+    };
+    return { sizings, onSizing };
+  }
+
+  /**
    * Renders the ticket table and waits for the handles to name their header cells.
    *
    * @param props - The ticket table's `locked` prop.
    * @returns Every `columnSizing` state the table commits, in order, and the render's `rerender`.
    */
   async function renderTickets({ locked = false }: { readonly locked?: boolean } = {}) {
-    const sizings: ColumnSizingState[] = [];
-    const onSizing = (sizing: ColumnSizingState): void => {
-      sizings.push(sizing);
-    };
+    const { sizings, onSizing } = recordSizings();
     const { rerender } = renderInEnglish(<ResizableTicketTable onSizing={onSizing} locked={locked} />);
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
     return { sizings, onSizing, rerender };
@@ -975,10 +986,14 @@ describe("DataTable column resizing", () => {
   }
 
   /**
-   * Presses a handle, moves the pointer `dx` px right, runs `during` with the button held, then
-   * releases.
+   * Presses a handle, moves the pointer to each of `moves`, in px right of the press, runs `during`
+   * with the button held, then releases.
    */
-  async function dragHandle(name: string, dx: number, during?: () => void | Promise<void>): Promise<void> {
+  async function dragHandle(
+    name: string,
+    moves: number | readonly number[],
+    during?: () => void | Promise<void>
+  ): Promise<void> {
     const separator = handle(name);
     const start = separator.getBoundingClientRect();
     const container = separator.closest("[data-slot=table-container]");
@@ -988,12 +1003,14 @@ describe("DataTable column resizing", () => {
     const box = container.getBoundingClientRect();
     await userEvent.hover(separator);
     await whilePointerPressed(async () => {
-      await userEvent.hover(container, {
-        position: {
-          x: start.left + start.width / 2 + dx - box.left,
-          y: start.top + start.height / 2 - box.top,
-        },
-      });
+      for (const dx of [moves].flat()) {
+        await userEvent.hover(container, {
+          position: {
+            x: start.left + start.width / 2 + dx - box.left,
+            y: start.top + start.height / 2 - box.top,
+          },
+        });
+      }
       await during?.();
     });
   }
@@ -1110,27 +1127,9 @@ describe("DataTable column resizing", () => {
     const { sizings } = await renderTickets();
     const subject = handle("Subject");
     const startWidth = widthOf("Subject");
-    const start = subject.getBoundingClientRect();
-    const container = subject.closest("[data-slot=table-container]");
-    if (!(container instanceof HTMLElement)) {
-      throw new Error("expected the table container");
-    }
-    const box = container.getBoundingClientRect();
-    /** Moves the pointer to `dx` px right of where the press started. */
-    const moveBy = (dx: number) =>
-      userEvent.hover(container, {
-        position: {
-          x: start.left + start.width / 2 + dx - box.left,
-          y: start.top + start.height / 2 - box.top,
-        },
-      });
-
     const statusWidth = widthOf("Status");
-    await userEvent.hover(subject);
     const rendersBefore = subjectCellRenders.count;
-    await whilePointerPressed(async () => {
-      await moveBy(-15);
-      await moveBy(-30);
+    await dragHandle("Subject", [-15, -30], () => {
       expect(widthOf("Subject")).toBe(startWidth - 30);
       expect(widthOf("Status")).toBe(statusWidth);
       expect(subject.getAttribute("aria-valuenow")).toBe("130");
@@ -1169,16 +1168,8 @@ describe("DataTable column resizing", () => {
     const subject = handle("Subject");
     const subjectWidth = widthOf("Subject");
     const statusWidth = widthOf("Status");
-    const start = subject.getBoundingClientRect();
 
-    await userEvent.hover(subject);
-    await whilePointerPressed(async () => {
-      await userEvent.hover(columnHeader("Subject"), {
-        position: {
-          x: start.left + start.width / 2 - 30 - columnHeader("Subject").getBoundingClientRect().left,
-          y: 4,
-        },
-      });
+    await dragHandle("Subject", -30, () => {
       expect(widthOf("Subject")).toBe(subjectWidth - 30);
       expect(widthOf("Status")).toBe(statusWidth);
     });
@@ -1255,14 +1246,8 @@ describe("DataTable column resizing", () => {
   // Oracle: ARIA requires `aria-valuemin` at most `aria-valuenow`, and Arrow Left in a left-to-right
   // table narrows a column or leaves it alone.
   it("never widens a column narrower than the handle's minimum on a shrink", async () => {
-    const sizings: ColumnSizingState[] = [];
-    renderInEnglish(
-      <CompactTicketTable
-        onSizing={(sizing) => {
-          sizings.push(sizing);
-        }}
-      />
-    );
+    const { sizings, onSizing } = recordSizings();
+    renderInEnglish(<CompactTicketTable onSizing={onSizing} />);
     await expect.element(page.getByRole("columnheader", { name: "Ticket", exact: true })).toBeInTheDocument();
     const ticket = handle("Ticket");
     const before = widthOf("Ticket");
@@ -1276,13 +1261,15 @@ describe("DataTable column resizing", () => {
     expect(sizings).toEqual([]);
   });
 
-  // Oracle: the fixed sizes give each control room in its own cell, so neither spills into the next column.
-  it("fits the selection checkbox and the row-actions trigger inside their cells", async () => {
+  // Oracle: the cell's own box. A Frame pads a table's first and last cell with its text inset, 25px at
+  // comfortable density, and the fixed sizes leave room for it beside the checkbox and the trigger.
+  it("fits the selection checkbox and the row-actions trigger inside their cells in a Frame", async () => {
+    stampDensity("comfortable");
     renderInEnglish(
-      <>
+      <Frame.Root>
         <ResizableTicketTable />
         <CompactTicketTable />
-      </>
+      </Frame.Root>
     );
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
 
@@ -1395,14 +1382,10 @@ describe("DataTable column resizing", () => {
   // Oracle: in a right-to-left table the handle sits at the column's left edge, so Arrow Left and a
   // leftward drag move it away from the column's start and widen the column.
   it("mirrors its keys and its drag in a right-to-left table", async () => {
-    const sizings: ColumnSizingState[] = [];
+    const { sizings, onSizing } = recordSizings();
     renderInEnglish(
       <div dir="rtl">
-        <ResizableTicketTable
-          onSizing={(sizing) => {
-            sizings.push(sizing);
-          }}
-        />
+        <ResizableTicketTable onSizing={onSizing} />
       </div>
     );
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
@@ -1435,5 +1418,9 @@ describe("DataTable column resizing", () => {
     await userEvent.keyboard("{End}");
     expect(sizings).toHaveLength(2);
     expect(widthOf("Status")).toBe(statusWidth);
+    // The key stays with the handle. Left to the browser, End scrolls the page to its end.
+    const end = new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true });
+    handle("Status").dispatchEvent(end);
+    expect(end.defaultPrevented).toBe(true);
   });
 });
