@@ -7,6 +7,7 @@
 import { dateTimeFormat } from "../../internal/intl-cache";
 import { canonicalSpaces } from "../../intl/canonical-spaces";
 import type { SupportedLocale } from "../../intl/locale-context";
+import { rangeSeparator } from "../../intl/range-separator";
 import { weekdayStyle } from "./weekday-style";
 
 /** The instant at a day's UTC midnight, for `Intl` to format in UTC. */
@@ -70,26 +71,11 @@ export function formatMonth(locale: string, month: Temporal.PlainYearMonth): str
 }
 
 /**
- * How each locale joins the two ends of a range: CLDR's interval fallback pattern, `{0} – {1}` in
- * en-US and `{0}–{1}` in the Nordic locales. Fuse joins the ends itself rather than calling
- * `Intl.DateTimeFormat#formatRange`, whose shortening differs by engine. Firefox writes fi-FI's
- * October to December 2026 as `loka–joulukuu 2026`, and Chromium and WebKit as
- * `lokakuu 2026–joulukuu 2026`. A locale added to `SupportedLocale` fails to compile here until it has a
- * separator.
- */
-const RANGE_SEPARATOR = {
-  "en-US": " – ",
-  "nb-NO": "–",
-  "sv-SE": "–",
-  "fi-FI": "–",
-} as const satisfies Record<SupportedLocale, string>;
-
-/**
  * The visible months as one range, such as `October – December 2026` in en-US, or one month's
  * name when only one shows. It writes the same text in every engine. Each end is the locale's own
  * month name with its year, from `{ month: "long", year: "numeric" }`. A start in the end's year
  * takes the stand-alone month name alone, from `{ month: "long" }`, so the range writes a shared
- * year once. The locale's `RANGE_SEPARATOR` joins the ends. Its spaces are no-break spaces, so a
+ * year once. The locale's `rangeSeparator` joins the ends. Its spaces are no-break spaces, so a
  * server and a browser whose Intl data space a month and year differently still hydrate alike.
  *
  * @param locale - A locale Fuse supports.
@@ -110,7 +96,7 @@ export function formatMonthRange(
     start.year === end.year
       ? dateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(monthStart(start))
       : formatMonth(locale, start);
-  return canonicalSpaces(`${first}${RANGE_SEPARATOR[locale]}${last}`);
+  return canonicalSpaces(`${first}${rangeSeparator(locale)}${last}`);
 }
 
 /**
