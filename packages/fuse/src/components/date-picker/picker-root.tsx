@@ -28,7 +28,7 @@ import type { DatePickerClassName } from "./picker-class-name";
 import { usePickerFocusBoundary, usePickerOpener } from "./picker-focus-boundary";
 import { PICKER_STATE_ATTRIBUTES, PickerPopoverRoot, PickerShellContext } from "./picker-shell";
 import type { PickerShellContextValue, PickerState, PresetRegistration } from "./picker-shell";
-import { kindWitness, useDayUnavailable } from "./picker-value";
+import { useDayUnavailable } from "./picker-value";
 import type { PickerOwner } from "./picker-value";
 import type { PickerSession } from "./use-picker-session";
 
@@ -74,7 +74,10 @@ export type PickerOwnedCalendarProp =
   | "visibleMonths"
   | "pageBehavior";
 
-/** What every Input part of a picker hands its `DateInput.Root` from the Root. */
+/**
+ * The settings every Input part of a picker hands its `DateInput.Root` from the Root. They carry no
+ * zone, since each Input part's kind comes from the picker through `endKind`.
+ */
 export type PickerInputSettings = Pick<
   DateInputRootProps<DateInputValue>,
   | "minValue"
@@ -82,8 +85,6 @@ export type PickerInputSettings = Pick<
   | "isDateUnavailable"
   | "granularity"
   | "hourCycle"
-  | "timeZone"
-  | "defaultValue"
   | "form"
   | "hideTimeZone"
   | "disabled"
@@ -95,7 +96,7 @@ export type PickerInputSettings = Pick<
 /**
  * What a picker's time inputs hand their time-only `DateInput.Root` from the Root: the time
  * options and state, never the bounds, the requirement or a name, which belong to the picker's own
- * input, nor a zone or a default value. Each time input's kind comes from its binding, `endKind`.
+ * input. Each time input's kind comes from its binding, `endKind`.
  */
 export type PickerTimeSettings = Pick<
   PickerInputSettings,
@@ -120,7 +121,6 @@ export type PickerRootSharedProps = {
   readonly granularity: DateGranularity | undefined;
   readonly hourCycle: 12 | 24 | undefined;
   readonly hideTimeZone: boolean;
-  readonly timeZone: string | undefined;
   readonly firstDayOfWeek: CalendarFirstDayOfWeek | undefined;
   readonly visibleMonths: number;
   readonly pageBehavior: CalendarPageBehavior;
@@ -191,8 +191,11 @@ export type PickerRootOptions = {
   readonly rules: DateInputRules;
   /** The kind the picker's values take, from `useValueKind`. */
   readonly kind: ResolvedKind;
-  /** The Root's session, whose open request the boundary wraps. */
-  readonly session: Pick<PickerSession<unknown, string>, "open" | "requestOpen">;
+  /**
+   * The Root's session, whose open request the boundary wraps and whose `resetOwner` the inputs
+   * register their form reset with.
+   */
+  readonly session: Pick<PickerSession<unknown, string>, "open" | "requestOpen" | "resetOwner">;
   /** The ids that label the picker: its visible label, or `undefined`. */
   readonly labelledBy: string | undefined;
   /** The ids that describe the picker. */
@@ -241,17 +244,15 @@ export type PickerRoot = {
 export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const { props, rules, kind, session, labelledBy, describedBy, invalid, range, registerPresets } = options;
   const { readPreset } = options;
-  const { granularity, hourCycle, hideTimeZone, timeZone, firstDayOfWeek, visibleMonths } = props;
+  const { granularity, hourCycle, hideTimeZone, firstDayOfWeek, visibleMonths } = props;
   const { pageBehavior, readOnly, required, form, size, ariaLabel } = props;
   // The parsed bounds, which keep their identity while their printed values hold.
   const { min: minValue, max: maxValue } = rules.bounds;
   const { isDateUnavailable } = rules;
   const dayUnavailable = useDayUnavailable(isDateUnavailable, kind.kind);
-  // `useValueKind` keeps the resolved kind's identity while it holds, so the witness keeps its own.
-  const witness = useMemo(() => kindWitness(kind), [kind]);
   const disabled = useFieldDisabled(props.disabled);
 
-  const { open } = session;
+  const { open, resetOwner } = session;
   const triggerId = useId();
   const popupRef = useRef<HTMLDivElement>(null);
   const focus = usePickerFocusBoundary(popupRef, props.onFocusLeave);
@@ -267,9 +268,6 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
         isDateUnavailable,
         granularity,
         hourCycle,
-        timeZone,
-        // Keeps a kind a value named in an input a reset remounts while the value is empty.
-        defaultValue: witness,
         form,
       }),
       hideTimeZone,
@@ -284,8 +282,6 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       isDateUnavailable,
       granularity,
       hourCycle,
-      timeZone,
-      witness,
       form,
       hideTimeZone,
       disabled,
@@ -300,7 +296,6 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
     (): PickerTimeSettings | null =>
       showsTime
         ? {
-            // No zone or kind witness: each time input's kind is its binding's (`endKind`).
             ...definedProps({ granularity, hourCycle }),
             hideTimeZone,
             disabled,
@@ -340,6 +335,8 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       containsInput,
       adjacentInput,
       openerRef,
+      kind: kind.kind,
+      resetOwner,
     }),
     [
       open,
@@ -359,6 +356,8 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       containsInput,
       adjacentInput,
       openerRef,
+      kind.kind,
+      resetOwner,
     ]
   );
   const state = useMemo(

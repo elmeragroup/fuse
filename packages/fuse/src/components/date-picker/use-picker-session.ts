@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { createCalendarStore } from "../calendar/calendar-store";
+import type { DateInputResetOwner } from "../date-field/date-input-reset";
 import type { DatePickerOpenChangeEventDetails } from "./picker-change-details";
 import type { PickerOpenRequest } from "./picker-change-details";
 import {
@@ -52,7 +53,10 @@ export type PickerSession<V, R extends string> = {
   readonly open: boolean;
   /** The held selection over the current committed value, or `null`. */
   readonly held: PickerHeld<V, R> | null;
-  /** The form-reset generation the parts key what starts over by. */
+  /**
+   * The form-reset generation. The calendars key their view by it so the view starts over, and a
+   * range's end uses it to recognize the commit that renders a reset.
+   */
   readonly generation: number;
   /** Opens or closes the popup as one transaction; see `usePickerSession`. */
   readonly requestOpen: PickerOpenRequest;
@@ -65,6 +69,8 @@ export type PickerSession<V, R extends string> = {
   readonly release: () => void;
   /** A name-less hidden input for the Root to render, which ties the form-reset subscription to its form. */
   readonly resetRef: RefObject<HTMLInputElement | null>;
+  /** The object the Root's inputs register their form reset with; see `date-input-reset.ts`. */
+  readonly resetOwner: DateInputResetOwner;
 };
 
 /**
@@ -78,8 +84,10 @@ export type PickerSession<V, R extends string> = {
  * - A held selection belongs to the committed value it was made over: once that value changes it is
  *   gone for good, so restoring the old value never resurrects it.
  * - A native form reset drops the held selection, bumps `generation` and calls `onReset`. The Root
- *   keys its inputs and calendar by `generation`, so drafts, shown validity and the view start over
- *   even when the value is unchanged.
+ *   keys its calendar by `generation`, so the view starts over even when the value is unchanged.
+ *   In the same task, the reset also resets every input registered with `resetOwner`. Each input
+ *   drops its draft and shown validity and takes the value that `onReset` puts back as the reset's
+ *   own change, which validates nothing.
  *
  * @template V - What the picker holds.
  * @template R - The gestures that make a selection.
@@ -155,9 +163,24 @@ export function usePickerSession<V, R extends string>(
   const release = useCallback(() => store.set(releaseSelection(store.get())), [store]);
 
   const resetRef = useRef<HTMLInputElement>(null);
+  const [inputResets] = useState(() => new Set<() => void>());
+  const resetOwner = useMemo(
+    (): DateInputResetOwner => ({
+      register(reset) {
+        inputResets.add(reset);
+        return () => {
+          inputResets.delete(reset);
+        };
+      },
+    }),
+    [inputResets]
+  );
   useFormReset(resetRef, () => {
     store.set(resetPickerSession(store.get()));
     latest.current.onReset();
+    for (const reset of inputResets) {
+      reset();
+    }
   });
 
   return {
@@ -168,5 +191,6 @@ export function usePickerSession<V, R extends string>(
     hold,
     release,
     resetRef,
+    resetOwner,
   };
 }

@@ -1,12 +1,11 @@
 // The value rules both date pickers share on top of DateInput's and Calendar's: a calendar day in
-// the picker's kind, the calendar's unavailable check, and the kind an input a reset remounts must
-// keep. The kind itself resolves as DateInput's does (`date-field/use-value-kind.ts`).
+// the picker's kind and the calendar's unavailable check. The kind itself resolves as DateInput's
+// does (`date-field/use-value-kind.ts`).
 
 import { useMemo } from "react";
 
-import { referenceDay } from "../../temporal/reference-day";
 import { sameKind, valueKind } from "../../temporal/temporal-value";
-import type { ResolvedKind, TemporalValue, ValueKind } from "../../temporal/temporal-value";
+import type { TemporalValue, ValueKind } from "../../temporal/temporal-value";
 import { boundDay } from "../calendar/calendar-dates";
 import { parseTemporalProp, printedProp } from "../calendar/calendar-input";
 import { placeholderValue } from "../date-field/date-draft";
@@ -178,27 +177,4 @@ export function useDayUnavailable(
         : (day: Temporal.PlainDate) => unavailable(dayInKind(day, kind, null)),
     [unavailable, kind]
   );
-}
-
-/**
- * A value of the picker's kind for an input's `defaultValue` beside its controlled `value`, when a
- * value or default value named that kind. DateInput resolves its kind from its value, then the kind
- * a value named before, then its default value, then its granularity; an input a form reset
- * remounts holds no kind yet, so with an empty value its kind would come from `granularity` and
- * `timeZone` alone, and a zoned picker showing only the day with `granularity="day"` would emit
- * PlainDates, a zoned picker without `timeZone` PlainDateTimes. Handing this witness as
- * `defaultValue` keeps the named kind and zone. A kind `granularity` and `timeZone` made gets no
- * witness: the input takes the same props, makes the same kind, and follows them when they change,
- * as the calendar does. A controlled input never shows its default value.
- *
- * @param resolved - The picker's resolved kind.
- * @returns A value of that kind, a new object each call, or `undefined` for a kind the props made,
- *   and for a PlainDate, the kind an empty input takes anyway.
- */
-export function kindWitness(resolved: ResolvedKind): TemporalValue | undefined {
-  if (!resolved.named || resolved.kind.kind === "PlainDate") {
-    return undefined;
-  }
-  // Any day serves: only the witness's kind and zone are read, and a controlled input never shows it.
-  return placeholderValue(referenceDay(), resolved.kind);
 }

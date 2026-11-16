@@ -113,9 +113,10 @@ export function endDay(draft: EndpointDraft): Temporal.PlainDate | null {
 }
 
 /**
- * The kind an end's popup time input forms values in: the end's value's own, while it holds a
- * value, else the picker's kind now, which a picked day's time and a held time take in `endTime`.
- * The input keeps no kind of its own in `DateInputScope`, so this is its one source.
+ * The kind in which an end's inputs, its Input part and its popup time input, form values. It is
+ * the end's value's own kind while the end has a value, and otherwise the picker's current kind,
+ * which a picked day's time and a held time take in `endTime`. The inputs keep no kind of their
+ * own, as `date-input-kind.ts` describes, so this is their one source.
  *
  * @param draft - The end's draft.
  * @param kind - The picker's kind now.

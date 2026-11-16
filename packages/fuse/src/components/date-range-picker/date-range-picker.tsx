@@ -479,8 +479,9 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       .filter((id) => id !== undefined)
       .join(" ") || undefined;
 
-  // An end's kind is the picker's: the start's, or the end's while the start is empty. The inputs
-  // warn of a kind change, so the picker does not warn again.
+  // The picker's kind is the start's, or the end's while the start is empty. An empty input takes
+  // this kind, and an input with a value takes that value's own kind; see `date-input-kind.ts`. The
+  // picker therefore warns of a kind change.
   const resolvedKind = useValueKind(
     {
       value: kindWitnessOf(draft),
@@ -488,7 +489,8 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       granularity,
       timeZone,
     },
-    OWNER
+    OWNER,
+    { warnOnKindChange: true }
   );
   const { kind } = resolvedKind;
   // A preset's range replaces whatever the inputs or the calendar held.
@@ -510,7 +512,6 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       granularity,
       hourCycle,
       hideTimeZone,
-      timeZone,
       firstDayOfWeek,
       visibleMonths,
       pageBehavior,

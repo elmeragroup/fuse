@@ -222,6 +222,33 @@ describe("DatePicker values", () => {
       );
   });
 
+  it("types a value of its default value's zone into an empty controlled picker that shows only the day", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker
+          aria-label="Starts"
+          granularity="day"
+          value={null}
+          defaultValue={Temporal.ZonedDateTime.from("2026-10-05T14:30[Europe/Oslo]")}
+        />
+      )
+    );
+    expect(segmentTexts()).toEqual(["mm", "dd", "yyyy"]);
+    // The day goes last, so only its last digit completes a value, which the parent declines.
+    await userEvent.click(roleNamed("spinbutton", "year, Starts"));
+    await userEvent.keyboard("2026");
+    await userEvent.click(roleNamed("spinbutton", "month, Starts"));
+    await userEvent.keyboard("10");
+    await userEvent.click(roleNamed("spinbutton", "day, Starts"));
+    await userEvent.keyboard("05");
+
+    // The default value named the kind and zone; the input has no value or default of its own.
+    await expect
+      .element(log())
+      .toHaveTextContent("value:input-change:2026-10-05T00:00:00+02:00[Europe/Oslo]");
+  });
+
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
     expectRenderTypeError(
       'DatePicker.Root minValue: received the string "2026-10-01"',
@@ -1464,6 +1491,32 @@ describe("DatePicker form reset", () => {
     await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy"]);
     await expect.element(page.getByText(/The field is incomplete/u)).not.toBeInTheDocument();
     expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
+  });
+
+  it("stays unflagged when a reset empties a required picker after a failed submit", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form aria-label="Booking" onFormSubmit={() => undefined}>
+          <DatePickerField label="Start date" name="start" isRequired />
+          <button type="submit">Save</button>
+          <button type="reset">Reset</button>
+        </Form>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
+    await userEvent.keyboard("10052026");
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+
+    // The picker empties its value and the input resets its Field in one reset. The emptied value is
+    // therefore the reset's own change, and a Form that failed a submit does not validate it.
+    await userEvent.click(roleNamed("button", "Reset"));
+    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy"]);
+    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
+    await expect
+      .element(page.getByText("Please fill out this field.", { exact: true }))
+      .not.toBeInTheDocument();
   });
 });
 

@@ -3,8 +3,6 @@
 import { createContext, use, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
-import { DEFAULT_VALIDITY_STATE } from "@base-ui/react/internals/field-constants";
-import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { useLabelableContext } from "@base-ui/react/internals/labelable-provider";
 import type { useRender } from "@base-ui/react/use-render";
 
@@ -238,7 +236,6 @@ type DatePickerRootContextValue = {
   /** The day the picker holds: a day picked in an empty picker, else the value's, from `endDay`. */
   readonly calendarDay: Temporal.PlainDate | null;
   readonly calendarKey: string;
-  readonly inputKey: number;
   readonly inputSettings: PickerInputSettings;
   readonly calendarSettings: PickerCalendarSettings;
   readonly timeSettings: PickerTimeSettings | null;
@@ -309,7 +306,6 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
   ...elementProps
 }: DatePickerRootProps<T> & KindProps<P, DatePickerRootProps<DateInputValue>>): ReactElement {
   const labelable = useLabelableContext();
-  const field = useFieldRootContext();
   const controlled = valueProp !== undefined;
   const parsedValue = useTemporalProp(valueProp, OWNER, "value");
   const parsedDefault = useTemporalProp(defaultValue, OWNER, "defaultValue");
@@ -324,8 +320,11 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
   const [viewKey, markPicked] = useCalendarViewKey(iso);
   // Worked out before the session, so a commit it makes while the popup closes reads this render's.
   const rules = usePickerRules(OWNER, minValue, maxValue, unavailable);
-  // The picker's DateInput warns of a kind change, so the picker does not warn again.
-  const resolvedKind = useValueKind({ value, defaultValue: parsedDefault, granularity, timeZone }, OWNER);
+  // The picker's empty input takes this kind, as `date-input-kind.ts` describes, so the picker warns
+  // of a kind change.
+  const resolvedKind = useValueKind({ value, defaultValue: parsedDefault, granularity, timeZone }, OWNER, {
+    warnOnKindChange: true,
+  });
   const { kind } = resolvedKind;
 
   // What a gesture, or the session while the popup closes, reads: this render's, published before
@@ -393,11 +392,6 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
         setOwn(latest.current.parsedDefault);
       }
       presetPanes.valueCommitted();
-      // A reset to the same value revalidates nothing, so the Field's shown validity starts over
-      // here; the input remounts by the session's generation and drops its draft.
-      field.setValidityData((data) => ({ ...data, state: DEFAULT_VALIDITY_STATE, error: "", errors: [] }));
-      field.setTouched(false);
-      field.setDirty(false);
     },
   });
   const { held, generation, hold } = session;
@@ -411,7 +405,6 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       granularity,
       hourCycle,
       hideTimeZone,
-      timeZone,
       firstDayOfWeek,
       visibleMonths,
       pageBehavior,
@@ -512,7 +505,6 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       // Worked out here, so a time value's day, a new object each time, keeps the context.
       calendarDay: endDay(draft),
       calendarKey: `${generation}:${viewKey}`,
-      inputKey: generation,
       inputSettings,
       calendarSettings,
       timeSettings,
@@ -569,8 +561,6 @@ export function DatePickerInput(props: DatePickerInputProps): ReactElement {
   const root = useDatePickerRootContext("DatePicker.Input");
   return (
     <PickerDateInput
-      // A form reset remounts the input, so its draft and shown error start over.
-      key={root.inputKey}
       {...definedProps(props)}
       onInvalidChange={root.reportInputInvalid}
       value={root.value}
@@ -660,13 +650,5 @@ export type DatePickerTimeInputProps = PickerInputPartProps;
  */
 export function DatePickerTimeInput(props: DatePickerTimeInputProps): ReactElement | null {
   const root = useDatePickerRootContext("DatePicker.TimeInput");
-  return (
-    <PickerTimeInput
-      {...props}
-      binding={root.timeBinding}
-      settings={root.timeSettings}
-      label="time"
-      resetKey={root.inputKey}
-    />
-  );
+  return <PickerTimeInput {...props} binding={root.timeBinding} settings={root.timeSettings} label="time" />;
 }

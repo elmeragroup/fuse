@@ -47,7 +47,7 @@ export type DateRangePickerRootContextValue = {
   readonly ends: Ends;
   readonly calendarRange: { readonly start: Temporal.PlainDate; readonly end: Temporal.PlainDate } | null;
   readonly calendarKey: string;
-  /** The form-reset generation, which keys each end's Field and input. */
+  /** The form-reset generation, which each end uses to recognize the commit that renders a reset. */
   readonly generation: number;
   readonly endpointLabelledBy: string | undefined;
   readonly inputSettings: PickerInputSettings;

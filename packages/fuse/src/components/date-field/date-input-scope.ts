@@ -4,17 +4,16 @@
 // date picker's popup edits only the time of the value it holds, as React Spectrum's picker puts a
 // time field under its calendar: the same DateInput, its segments cut to the hour onwards, so the
 // popup's time and the picker's input share every editing rule. No public time-only kind or
-// TimeField comes with it; the picker's `TimeInput` parts are its only callers.
+// TimeField comes with it; the picker's `TimeInput` parts are the only time-only callers.
 //
 // This module is the one owner of the day a time-only input's time sits on: the day its control
-// holds, or, while the control holds none, the stand-in day (`standInDay`). The control also
-// supplies the input's kind: a time-only input edits a value its control owns, so it keeps no
-// kind of its own, and a kind a value it once showed named never outlives that value.
+// holds, or, while the control holds none, the stand-in day (`standInDay`). The kind of the values
+// an input edits is not part of its units. A control supplies the kind separately; see
+// `date-input-kind.ts`.
 
 import { createContext } from "react";
 
 import { referenceDay } from "../../temporal/reference-day";
-import type { ValueKind } from "../../temporal/temporal-value";
 import type { EditableSegmentType } from "./date-draft";
 
 /** The units a DateInput shows: its date and time down to its granularity, or the time alone. */
@@ -36,16 +35,14 @@ export function scopeShows(units: DateInputUnits, unit: EditableSegmentType): bo
 }
 
 /**
- * What the control around a DateInput decides about it. A time-only input edits the time of a
- * value on `day`, the day the control holds: its value's day, or a day picked without a value
- * yet. A time typed for that day forms on it, in the offset the zone has that day. `day` is `null`
- * while the control holds no day, and the time then sits on the stand-in day from `standInDay`.
- * Its values are of `kind`, which the control supplies every render in place of the input's own
- * kind resolution and memory.
+ * The units the control around a DateInput gives it. A time-only input edits the time of a value
+ * on `day`, the day the control holds: its value's day, or a day picked without a value yet. A time
+ * typed for that day forms on it, in the offset the zone has that day. `day` is `null` while the
+ * control holds no day, and the time then sits on the stand-in day from `standInDay`.
  */
 export type DateInputScope =
   | { readonly units: "date-time" }
-  | { readonly units: "time"; readonly day: Temporal.PlainDate | null; readonly kind: ValueKind };
+  | { readonly units: "time"; readonly day: Temporal.PlainDate | null };
 
 /** The scope of a DateInput that no control decides about: every unit, on today's day. */
 export const FULL_SCOPE: DateInputScope = { units: "date-time" };

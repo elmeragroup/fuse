@@ -59,11 +59,12 @@ function subscribe(root: Node, subscriber: Subscriber): () => void {
 /**
  * Subscribes a control to native form reset. The hook is package-private, for uncontrolled field
  * composites and for a control whose DOM a reset empties under a controlled value, such as
- * FileUpload's posted files. It is observable only through those composites, never as a public
- * export. `onReset` is a required `(() => void) | null`. Each caller states the ownership decision
- * explicitly, so omitting the argument is a type error rather than a silent opt-out. The hook holds
- * the latest callback in a ref and publishes it in a layout effect, so a suspended or discarded
- * render cannot clear a committed subscription, and identity changes do not resubscribe.
+ * FileUpload's posted files, or that holds an edit over one, such as DateInput's draft. It is
+ * observable only through those composites, never as a public export. `onReset` is a required
+ * `(() => void) | null`. Each caller states the ownership decision explicitly, so omitting the
+ * argument is a type error rather than a silent opt-out. The hook holds the latest callback in a
+ * ref and publishes it in a layout effect, so a suspended or discarded render cannot clear a
+ * committed subscription, and identity changes do not resubscribe.
  *
  * The native `reset` event bubbles to the control's root with the form as its target. `reset` is
  * not composed, so a document listener never sees a control inside a shadow root. The hook

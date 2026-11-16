@@ -14,6 +14,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
@@ -441,6 +442,82 @@ describe("DateRangePickerField in forms", () => {
     await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
     expect(submits).toBe(0);
   });
+
+  it("lets a native form submit again once a reset puts back a valid range over an end-before-start error", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <DateRangePickerField
+            label="Stay"
+            startName="checkIn"
+            endName="checkOut"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+          />
+          <button type="button">After</button>
+        </form>
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.keyboard("01");
+    await userEvent.click(roleNamed("button", "After"));
+    await expect
+      .element(page.getByText("Start date must be before end date.", { exact: true }))
+      .toBeVisible();
+    expect(formNamed("Booking").checkValidity()).toBe(false);
+
+    formNamed("Booking").reset();
+
+    await expect
+      .element(page.getByText("Start date must be before end date.", { exact: true }))
+      .not.toBeInTheDocument();
+    expect(Object.fromEntries(new FormData(formNamed("Booking")))).toEqual({
+      checkIn: "2026-10-05",
+      checkOut: "2026-10-09",
+    });
+    expect(formNamed("Booking").checkValidity()).toBe(true);
+  });
+
+  it("puts back a reversed default range on reset without showing its end-before-start error", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <DateRangePickerField
+            label="Stay"
+            startName="checkIn"
+            endName="checkOut"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-01"),
+            }}
+          />
+          <button type="button">After</button>
+        </form>
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "day, Start Date, Stay"));
+    await userEvent.keyboard("04");
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.keyboard("31");
+    await userEvent.click(roleNamed("button", "After"));
+    expect(Object.fromEntries(new FormData(formNamed("Booking")))).toEqual({
+      checkIn: "2026-10-04",
+      checkOut: "2026-10-31",
+    });
+
+    formNamed("Booking").reset();
+
+    await expect
+      .poll(() => Object.fromEntries(new FormData(formNamed("Booking"))))
+      .toEqual({ checkIn: "2026-10-05", checkOut: "2026-10-01" });
+    // Wait two frames, by which time a revalidation that the reset's render started would show.
+    await nextFrames(2);
+    expect(page.getByText("Start date must be before end date.", { exact: true }).query()).toBeNull();
+  });
 });
 
 describe("DateRangePicker typing across ends", () => {
@@ -591,6 +668,34 @@ describe("DateRangePicker end in another zone than its start", () => {
     await expect
       .poll(() => values)
       .toEqual(["2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00-04:00[America/New_York]"]);
+  });
+  it("steps a New York end's hour through New York's repeated DST hour beside an Oslo start", async () => {
+    const values: string[] = [];
+    // On November 1, 2026, New York's clocks go back at 02:00, so 01:30 standard time follows 01:30
+    // daylight time. Oslo's clocks moved a week earlier, so Oslo's rules step 01:30 on to 02:30.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-20T08:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from("2026-11-01T01:30-04:00[America/New_York]"),
+          }}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "hour, End Date, Period"));
+    await userEvent.keyboard("{ArrowUp}");
+
+    await expect
+      .poll(() => values)
+      .toEqual(["2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-11-01T01:30:00-05:00[America/New_York]"]);
   });
 });
 
