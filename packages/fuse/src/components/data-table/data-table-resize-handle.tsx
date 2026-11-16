@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import type { ComponentProps, MouseEvent, PointerEvent, ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
@@ -10,6 +10,7 @@ import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { formatNumberCell } from "./data-table-format";
+import { HeadNameContext } from "./data-table-head-name";
 import type { ResizeColumnSource, ResizeHeaderSource } from "./data-table-source";
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
@@ -22,19 +23,8 @@ const { resizeHandle } = dataTableVariants();
  */
 const PREVIEW_WIDTH = "--_data-table-column-preview";
 
-/**
- * Names the header cell around a handle. It is package-private. A header cell's accessible name
- * comes from its content, and a focusable separator inside it joins that name with its value, as
- * "Subject 160 pixels" in Chromium. `DataTable.Header` provides it in each header cell of a sized
- * table, and the handle passes its `columnName`, so the cell keeps its own name.
- */
-export const HeadNameContext = createContext<((name: string | undefined) => void) | undefined>(undefined);
-
 /** The width in px that one arrow key press adds or removes. */
 const KEYBOARD_STEP = 10;
-
-/** TanStack's `minSize` for a column definition that sets none. */
-const DEFAULT_MIN_SIZE = 20;
 
 /** TanStack's `maxSize` for a column definition that sets none. */
 const DEFAULT_MAX_SIZE = Number.MAX_SAFE_INTEGER;
@@ -43,16 +33,24 @@ const DEFAULT_MAX_SIZE = Number.MAX_SAFE_INTEGER;
  * The narrowest width the handle takes a column to. The handle is at least 24px wide and stands
  * 2px inside the header cell's end, so a narrower column would push it past the cell's start, into
  * the neighbor's handle or out of the table. 32px holds that footprint up to a 20px host root,
- * where the handle is 1.5rem, 30px, wide.
+ * where the handle is 1.5rem, 30px, wide. TanStack's default `minSize` of 20 is below it.
  */
 const HANDLE_MIN_SIZE = 32;
 
-/** A column's width bounds in px, as TanStack resolves them, raised to the handle's minimum. */
+/**
+ * A column's width bounds in px, as TanStack resolves them. The minimum is raised to the handle's
+ * minimum, but never above the column's current width, so the range contains the width.
+ */
 type Bounds = { readonly min: number; readonly max: number };
 
-function boundsOf(column: ResizeColumnSource): Bounds {
-  const min = Math.max(column.columnDef.minSize ?? DEFAULT_MIN_SIZE, HANDLE_MIN_SIZE);
-  return { min, max: Math.max(column.columnDef.maxSize ?? DEFAULT_MAX_SIZE, min) };
+/**
+ * The bounds of a column that is `size` px wide. A `maxSize` of `Infinity`, which TanStack reads as
+ * no maximum, becomes TanStack's default maximum, since ARIA needs a finite `aria-valuemax`.
+ */
+function boundsOf(column: ResizeColumnSource, size: number): Bounds {
+  const min = Math.min(Math.max(column.columnDef.minSize ?? HANDLE_MIN_SIZE, HANDLE_MIN_SIZE), size);
+  const max = column.columnDef.maxSize ?? DEFAULT_MAX_SIZE;
+  return { min, max: Math.max(Number.isFinite(max) ? max : DEFAULT_MAX_SIZE, min) };
 }
 
 /**
@@ -144,9 +142,9 @@ export type DataTableResizeHandleProps = Omit<
   /**
    * The column's name as its header shows it, such as `"Status"`. Fuse builds the handle's
    * localized accessible name from it, such as "Resize Status column", so no two handles share a
-   * name. Inside `DataTable.Header` or `DataTable.Content` it also names the header cell, which
-   * would otherwise take the handle's width into its name. Give a header cell that Fuse does not
-   * render an `aria-label` with the column's name.
+   * name. Inside `DataTable.Header` or `DataTable.Content` it also names the header cell once the
+   * handle has mounted, after hydration. Without it the cell's name would include the handle's
+   * width. Give a header cell that Fuse does not render an `aria-label` with the column's name.
    */
   columnName: string;
 };
@@ -196,7 +194,7 @@ function ResizeHandleControl({
   );
 
   const size = column.getSize();
-  const bounds = boundsOf(column);
+  const bounds = boundsOf(column, size);
   const announced = previewSize ?? size;
 
   const commit = (next: number, from: number): void => {
@@ -242,6 +240,8 @@ function ResizeHandleControl({
         event.preventDefault();
         const handle = event.currentTarget;
         handle.setPointerCapture(event.pointerId);
+        // `preventDefault` also cancels the press's focus, which the arrow keys need.
+        handle.focus({ preventScroll: true });
         drag.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
@@ -274,6 +274,10 @@ function ResizeHandleControl({
         endDrag(event, "cancel");
       }}
       onKeyDown={(event) => {
+        // A chord with Alt, Control or Meta is a browser or system shortcut, such as Alt+Arrow Left for Back.
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
         const next = keyTarget(event.key, size, bounds, directionOf(event.currentTarget));
         if (next === undefined) {
           return;
@@ -299,8 +303,8 @@ function ResizeHandleControl({
  * A column header's resize handle, a focusable vertical `separator` at the header cell's
  * inline-end edge. Dragging it previews the width on the page and commits it to `columnSizing` once,
  * on release, so no row renders during the drag. The arrow keys change the width by 10px, and
- * Home and End move it to the column's `minSize` and `maxSize`. The handle takes a column no
- * narrower than 32px, which its own 24px target needs. A double-click resets the column to
+ * Home and End move it to the column's `minSize` and `maxSize`. The handle does not narrow a column
+ * below 32px, which its own 24px target needs. A double-click resets the column to
  * its default width. Its clicks do not reach the header around it. A column that cannot resize
  * renders nothing.
  */

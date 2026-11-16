@@ -23,9 +23,11 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnSizingState, SortingState } from "@tanstack/react-table";
 
+import { actionsColumn } from "../src/components/data-table/actions-column";
 import { createFuseTableHook } from "../src/components/data-table/create-fuse-table-hook";
 import { DataTable } from "../src/components/data-table/index";
 import { selectColumn } from "../src/components/data-table/select-column";
+import { DropdownMenu } from "../src/components/dropdown-menu";
 import { Table } from "../src/components/table/table";
 import { withLocale } from "./locale-matrix";
 import { renderThemed } from "./themed-browser-render";
@@ -193,16 +195,75 @@ const resizableTicketColumns = ticketColumns.columns([
  * A resizable ticket table that keeps `columnSizing` itself, as an app does.
  *
  * @param props - `onSizing`, called with every `columnSizing` state the table commits.
+ * `canResize` sets `enableColumnResizing`, so `false` removes every handle. `locked` reports each
+ * commit through `onSizing` but never stores it, as an app that refuses a resize does.
  * @returns The table.
  */
 export function ResizableTicketTable({
+  onSizing,
+  canResize = true,
+  locked = false,
+}: {
+  readonly onSizing?: (sizing: ColumnSizingState) => void;
+  readonly canResize?: boolean;
+  readonly locked?: boolean;
+}): ReactElement {
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const table = resizable.useAppTable({
+    columns: resizableTicketColumns,
+    data: TICKETS,
+    enableColumnResizing: canResize,
+    state: { columnSizing },
+    onColumnSizingChange: (updater) => {
+      const next = functionalUpdate(updater, columnSizing);
+      onSizing?.(next);
+      if (!locked) {
+        setColumnSizing(next);
+      }
+    },
+  });
+  return (
+    <table.AppTable>
+      <table.Content aria-label="Tickets" />
+    </table.AppTable>
+  );
+}
+
+/**
+ * A resizable Ticket column of 24px, narrower than the handle's 32px minimum but above TanStack's
+ * default `minSize` of 20, and the row-actions column.
+ */
+const compactTicketColumns = ticketColumns.columns([
+  ticketColumns.accessor("id", {
+    header: ({ header }) => (
+      <>
+        Ticket
+        <header.ResizeHandle columnName="Ticket" />
+      </>
+    ),
+    size: 24,
+    cell: ({ cell }) => <cell.NumberCell useGrouping={false} />,
+  }),
+  actionsColumn(ticketColumns, {
+    getRowName: (ticket) => ticket.subject,
+    items: () => <DropdownMenu.Item>Open</DropdownMenu.Item>,
+  }),
+]);
+
+/**
+ * A sized ticket table with a column narrower than the handle's minimum and the row-actions column.
+ *
+ * @param props - `onSizing`, called with every `columnSizing` state the table commits.
+ * @returns The table.
+ */
+export function CompactTicketTable({
   onSizing,
 }: {
   readonly onSizing?: (sizing: ColumnSizingState) => void;
 }): ReactElement {
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const table = resizable.useAppTable({
-    columns: resizableTicketColumns,
+    columns: compactTicketColumns,
     data: TICKETS,
     state: { columnSizing },
     onColumnSizingChange: (updater) => {
@@ -213,7 +274,7 @@ export function ResizableTicketTable({
   });
   return (
     <table.AppTable>
-      <table.Content aria-label="Tickets" />
+      <table.Content aria-label="Compact tickets" />
     </table.AppTable>
   );
 }
@@ -297,7 +358,7 @@ const ASSIGNMENTS: Assignment[] = [
   { id: 2, queue: "Accounts", channel: "Chat" },
 ];
 
-const assignmentColumns = createFuseTableHook({
+const assignmentTable = createFuseTableHook({
   features: tableFeatures({
     columnSizingFeature,
     columnResizingFeature,
@@ -307,14 +368,15 @@ const assignmentColumns = createFuseTableHook({
   }),
   getRowId: (assignment: Assignment) => String(assignment.id),
 });
-const assignmentHelper = assignmentColumns.createAppColumnHelper<Assignment>();
+const assignmentColumns = assignmentTable.createAppColumnHelper<Assignment>();
 
 /**
- * Two resizable columns with TanStack's default bounds, the first in the table: a sortable Queue
- * column of 100px whose label is wider than that, and a Channel column of 150px.
+ * Two resizable columns, the first in the table: a sortable Queue column of 100px with TanStack's
+ * default bounds, whose label is wider than that, and a Channel column of 150px whose `maxSize` is
+ * `Infinity`, which TanStack reads as no maximum.
  */
-const resizableAssignmentColumns = assignmentHelper.columns([
-  assignmentHelper.accessor("queue", {
+const resizableAssignmentColumns = assignmentColumns.columns([
+  assignmentColumns.accessor("queue", {
     header: ({ header }) => (
       <>
         <header.SortButton>Assigned support queue</header.SortButton>
@@ -324,7 +386,7 @@ const resizableAssignmentColumns = assignmentHelper.columns([
     size: 100,
     cell: ({ cell }) => <cell.TextCell />,
   }),
-  assignmentHelper.accessor("channel", {
+  assignmentColumns.accessor("channel", {
     header: ({ header }) => (
       <>
         Channel
@@ -332,18 +394,19 @@ const resizableAssignmentColumns = assignmentHelper.columns([
       </>
     ),
     size: 150,
+    maxSize: Number.POSITIVE_INFINITY,
     cell: ({ cell }) => <cell.TextCell />,
   }),
 ]);
 
 /**
- * A resizable table whose two columns keep TanStack's default bounds, so the handles can take
+ * A resizable table whose two columns keep TanStack's default minimum, so the handles can take
  * them down to their minimum width.
  *
  * @returns The table.
  */
 export function ResizableAssignmentTable(): ReactElement {
-  const table = assignmentColumns.useAppTable({ columns: resizableAssignmentColumns, data: ASSIGNMENTS });
+  const table = assignmentTable.useAppTable({ columns: resizableAssignmentColumns, data: ASSIGNMENTS });
   return (
     <table.AppTable>
       <table.Content aria-label="Assignments" />

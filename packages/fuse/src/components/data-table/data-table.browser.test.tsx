@@ -15,11 +15,13 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef, ColumnSizingState, Row, SortingState } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
-import { cdp, page, userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { axNodes, axProperty } from "../../../test/ax-tree";
 import {
   appColumns,
+  CompactTicketTable,
   features,
   NO_ORDERS,
   ORDERS,
@@ -951,19 +953,17 @@ describe("DataTable column resizing", () => {
   /**
    * Renders the ticket table and waits for the handles to name their header cells.
    *
-   * @returns Every `columnSizing` state the table commits, in order.
+   * @param props - The ticket table's `locked` prop.
+   * @returns Every `columnSizing` state the table commits, in order, and the render's `rerender`.
    */
-  async function renderTickets(): Promise<ColumnSizingState[]> {
+  async function renderTickets({ locked = false }: { readonly locked?: boolean } = {}) {
     const sizings: ColumnSizingState[] = [];
-    renderInEnglish(
-      <ResizableTicketTable
-        onSizing={(sizing) => {
-          sizings.push(sizing);
-        }}
-      />
-    );
+    const onSizing = (sizing: ColumnSizingState): void => {
+      sizings.push(sizing);
+    };
+    const { rerender } = renderInEnglish(<ResizableTicketTable onSizing={onSizing} locked={locked} />);
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
-    return sizings;
+    return { sizings, onSizing, rerender };
   }
 
   function widthOf(name: string): number {
@@ -975,22 +975,60 @@ describe("DataTable column resizing", () => {
   }
 
   /**
-   * The value and maximum Chromium's accessibility tree exposes for a separator, read through the
-   * DevTools protocol from every frame, since the test page renders in an iframe.
+   * Presses a handle, moves the pointer `dx` px right, runs `during` with the button held, then
+   * releases.
    */
-  async function exposedRange(name: string): Promise<{ value: number; max: number }> {
-    const session = cdp();
-    await session.send("Accessibility.enable");
-    const { frameTree } = await session.send("Page.getFrameTree");
-    for (const { frame } of [frameTree, ...(frameTree.childFrames ?? [])]) {
-      const { nodes } = await session.send("Accessibility.getFullAXTree", { frameId: frame.id });
-      const node = nodes.find((each) => each.role?.value === "separator" && each.name?.value === name);
-      if (node !== undefined) {
-        const valuemax = node.properties?.find((each) => each.name === "valuemax");
-        return { value: Number(node.value?.value), max: Number(valuemax?.value.value) };
-      }
+  async function dragHandle(name: string, dx: number, during?: () => void | Promise<void>): Promise<void> {
+    const separator = handle(name);
+    const start = separator.getBoundingClientRect();
+    const container = separator.closest("[data-slot=table-container]");
+    if (!(container instanceof HTMLElement)) {
+      throw new Error("expected the table container");
     }
-    throw new Error(`expected a separator named ${name} in the accessibility tree`);
+    const box = container.getBoundingClientRect();
+    await userEvent.hover(separator);
+    await whilePointerPressed(async () => {
+      await userEvent.hover(container, {
+        position: {
+          x: start.left + start.width / 2 + dx - box.left,
+          y: start.top + start.height / 2 - box.top,
+        },
+      });
+      await during?.();
+    });
+  }
+
+  /**
+   * Listens for the next press on `element`.
+   *
+   * @returns A function that returns the pressing pointer's id once the press has happened.
+   */
+  function nextPointerId(element: HTMLElement): () => number {
+    let id: number | undefined;
+    element.addEventListener(
+      "pointerdown",
+      (event) => {
+        id = event.pointerId;
+      },
+      { once: true }
+    );
+    return () => {
+      if (id === undefined) {
+        throw new Error("expected a press on the element");
+      }
+      return id;
+    };
+  }
+
+  /** The value and maximum Chromium's accessibility tree exposes for a separator. */
+  async function exposedRange(name: string): Promise<{ value: number; max: number }> {
+    const node = (await axNodes()).find(
+      (each) => each.role?.value === "separator" && each.name?.value === name
+    );
+    if (node === undefined) {
+      throw new Error(`expected a separator named ${name} in the accessibility tree`);
+    }
+    return { value: Number(node.value?.value), max: Number(axProperty(node, "valuemax")) };
   }
 
   /** The width a handle announces, which its column must render at. */
@@ -1030,7 +1068,7 @@ describe("DataTable column resizing", () => {
 
   // Oracle: the 10px step from the issue's keyboard model, and the fixture's 120 to 200px bounds.
   it("resizes from the keyboard within the column's bounds, and resets on double-click", async () => {
-    const sizings = await renderTickets();
+    const { sizings } = await renderTickets();
     const subject = handle("Subject");
     subject.focus();
 
@@ -1069,7 +1107,7 @@ describe("DataTable column resizing", () => {
   });
 
   it("previews a pointer drag without rendering a row, commits once on release, and leaves sorting alone", async () => {
-    const sizings = await renderTickets();
+    const { sizings } = await renderTickets();
     const subject = handle("Subject");
     const startWidth = widthOf("Subject");
     const start = subject.getBoundingClientRect();
@@ -1170,5 +1208,232 @@ describe("DataTable column resizing", () => {
 
     await userEvent.click(page.getByText("Subject", { exact: true }));
     expect(sortings).toEqual([[{ id: "subject", desc: false }]]);
+  });
+
+  // Oracle: a key chord with Alt, Control or Meta belongs to the browser, as in the Calendar's matching test.
+  it.each([
+    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
+    ["Control+Arrow Right", { key: "ArrowRight", ctrlKey: true }],
+    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
+    ["Control+Home", { key: "Home", ctrlKey: true }],
+  ] as const)("leaves %s to the browser: no resize, no preventDefault", async (_keys, init) => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    subject.focus();
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    subject.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: CSS clipping, which the header cells of the same table already apply.
+  it.each([
+    ["registered", () => <ResizableTicketTable />],
+    ["plain-parts", () => <PlainResizableTicketTable />],
+  ] as const)("clips a %s body cell wider than its column with an ellipsis", async (_parts, render) => {
+    renderInEnglish(render());
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    handle("Status").focus();
+    await userEvent.keyboard("{Home}");
+
+    const cell = roleNamed("cell", "Waiting");
+    expect(cell.scrollWidth).toBeGreaterThan(cell.clientWidth);
+    expect(getComputedStyle(cell).overflowX).toBe("hidden");
+    expect(getComputedStyle(cell).textOverflow).toBe("ellipsis");
+  });
+
+  // Oracle: ARIA needs a finite `aria-valuemax`, and TanStack reads a `maxSize` of `Infinity` as no
+  // maximum, as it does its default of `Number.MAX_SAFE_INTEGER`.
+  it("announces TanStack's unbounded maximum for a column whose maxSize is Infinity", async () => {
+    renderInEnglish(<ResizableAssignmentTable />);
+    await expect
+      .element(page.getByRole("columnheader", { name: "Channel", exact: true }))
+      .toBeInTheDocument();
+    expect(handle("Channel").getAttribute("aria-valuemax")).toBe(String(Number.MAX_SAFE_INTEGER));
+  });
+
+  // Oracle: ARIA requires `aria-valuemin` at most `aria-valuenow`, and Arrow Left in a left-to-right
+  // table narrows a column or leaves it alone.
+  it("never widens a column narrower than the handle's minimum on a shrink", async () => {
+    const sizings: ColumnSizingState[] = [];
+    renderInEnglish(
+      <CompactTicketTable
+        onSizing={(sizing) => {
+          sizings.push(sizing);
+        }}
+      />
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Ticket", exact: true })).toBeInTheDocument();
+    const ticket = handle("Ticket");
+    const before = widthOf("Ticket");
+    expect(Number(ticket.getAttribute("aria-valuemin"))).toBeLessThanOrEqual(announced(ticket));
+
+    ticket.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(widthOf("Ticket")).toBeLessThanOrEqual(before);
+    await dragHandle("Ticket", -10);
+    expect(widthOf("Ticket")).toBeLessThanOrEqual(before);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: the fixed sizes give each control room in its own cell, so neither spills into the next column.
+  it("fits the selection checkbox and the row-actions trigger inside their cells", async () => {
+    renderInEnglish(
+      <>
+        <ResizableTicketTable />
+        <CompactTicketTable />
+      </>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+
+    for (const control of [
+      roleNamed("checkbox", "Select ticket 101"),
+      roleNamed("button", "Actions for Invoice copy"),
+    ]) {
+      const cell = control.closest("td");
+      if (cell === null) {
+        throw new Error("expected the control's cell");
+      }
+      const inner = control.getBoundingClientRect();
+      const outer = cell.getBoundingClientRect();
+      expect(inner.left).toBeGreaterThanOrEqual(outer.left);
+      expect(inner.right).toBeLessThanOrEqual(outer.right);
+    }
+  });
+
+  // Oracle: stacking order, which `elementFromPoint` reports. A bar at `z-index: 10`, the usual value
+  // for a sticky bar, stays above a table that scrolls beneath it.
+  it("stays beneath a host's sticky bar that its table scrolls under", async () => {
+    renderInEnglish(
+      <div>
+        <header data-testid="bar" style={{ position: "sticky", top: 0, zIndex: 10, height: 80 }} />
+        <ResizableTicketTable />
+        <div style={{ height: 2000 }} />
+      </div>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    const bar = page.getByTestId("bar").element();
+    window.scrollTo(0, 40);
+    const at = handle("Subject").getBoundingClientRect();
+    const hit = document.elementFromPoint(at.left + at.width / 2, at.top + at.height / 2);
+    expect(at.bottom).toBeLessThan(bar.getBoundingClientRect().bottom);
+    expect(hit).toBe(bar);
+  });
+
+  // Oracle: a press focuses a focusable element, so the arrow keys can follow a drag.
+  it("takes focus from a pointer press", async () => {
+    await renderTickets();
+    await userEvent.click(handle("Subject"));
+    expect(document.activeElement).toBe(handle("Subject"));
+  });
+
+  // Oracle: the app's `columnSizing`, which the locked table never changes, so the column keeps the
+  // width it started at.
+  it("shows the width React renders again when the app refuses a released drag", async () => {
+    const { sizings } = await renderTickets({ locked: true });
+    const startWidth = widthOf("Subject");
+
+    await dragHandle("Subject", -30);
+
+    expect(sizings).toEqual([{ subject: 130 }]);
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(handle("Subject").getAttribute("aria-valuenow")).toBe("160");
+  });
+
+  // Oracle: the column's committed width, which a drag that never released never changed.
+  it("drops a drag's preview when resizing is turned off during it", async () => {
+    const { sizings, onSizing, rerender } = await renderTickets();
+    const startWidth = widthOf("Subject");
+
+    await dragHandle("Subject", -20, async () => {
+      rerender(<ResizableTicketTable onSizing={onSizing} canResize={false} />);
+      await expect
+        .element(page.getByRole("separator", { name: "Resize Subject column" }))
+        .not.toBeInTheDocument();
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: a canceled pointer ends its drag without a commit, so the column keeps its committed width.
+  it("ends a drag without committing when the pointer is canceled", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    const startWidth = widthOf("Subject");
+    const pointerId = nextPointerId(subject);
+
+    await dragHandle("Subject", -20, () => {
+      subject.dispatchEvent(new PointerEvent("pointercancel", { pointerId: pointerId(), bubbles: true }));
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: a handle that loses its pointer capture no longer follows the pointer, so its drag ends
+  // without a commit and the column keeps its committed width.
+  it("ends a drag without committing when the handle loses its pointer capture", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    const startWidth = widthOf("Subject");
+    const pointerId = nextPointerId(subject);
+
+    await dragHandle("Subject", -20, async () => {
+      subject.releasePointerCapture(pointerId());
+      // The browser fires `lostpointercapture` before it dispatches the next pointer event.
+      await userEvent.hover(columnHeader("Status"));
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: in a right-to-left table the handle sits at the column's left edge, so Arrow Left and a
+  // leftward drag move it away from the column's start and widen the column.
+  it("mirrors its keys and its drag in a right-to-left table", async () => {
+    const sizings: ColumnSizingState[] = [];
+    renderInEnglish(
+      <div dir="rtl">
+        <ResizableTicketTable
+          onSizing={(sizing) => {
+            sizings.push(sizing);
+          }}
+        />
+      </div>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    const subject = handle("Subject");
+    subject.focus();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    await userEvent.keyboard("{ArrowRight}");
+    await dragHandle("Subject", -20);
+
+    expect(sizings).toEqual([{ subject: 170 }, { subject: 160 }, { subject: 180 }]);
+    expect(widthOf("Subject")).toBe(announced(subject));
+  });
+
+  // Oracle: the fixture's 120 to 200px bounds for Subject, and Status, which sets no `maxSize`.
+  it("stops a drag at the column's bounds, and End does nothing without a maximum", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+
+    await dragHandle("Subject", -60, () => {
+      expect(widthOf("Subject")).toBe(Number(subject.getAttribute("aria-valuemin")));
+    });
+    await dragHandle("Subject", 100, () => {
+      expect(widthOf("Subject")).toBe(Number(subject.getAttribute("aria-valuemax")));
+    });
+    expect(sizings).toEqual([{ subject: 120 }, { subject: 200 }]);
+
+    const statusWidth = widthOf("Status");
+    handle("Status").focus();
+    await userEvent.keyboard("{End}");
+    expect(sizings).toHaveLength(2);
+    expect(widthOf("Status")).toBe(statusWidth);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
@@ -9,7 +9,7 @@ import { pressesRegion } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
-import { HeadNameContext } from "./data-table-resize-handle";
+import { SizedHead } from "./data-table-head-name";
 import type {
   CellRenderSource,
   CellSource,
@@ -24,7 +24,15 @@ import type {
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
-const { emptyCell, head, skeleton, row: rowClass, sizedColumn, sizedTable } = dataTableVariants();
+const {
+  emptyCell,
+  head,
+  skeleton,
+  row: rowClass,
+  sizedColgroup,
+  sizedColumn,
+  sizedTable,
+} = dataTableVariants();
 
 /** The cell type a row's `getAllCells()` returns. */
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
@@ -64,45 +72,34 @@ function columnLayout(
 }
 
 /**
- * A header cell of a sized table. A `DataTable.ResizeHandle` inside it names it after the column,
- * through `HeadNameContext`.
+ * Header rows over any header renderer, after the `<colgroup>` of a sized table. `layout` is the
+ * table's `columnLayout`.
  */
-function SizedHead({ children, ...props }: ComponentProps<"th">): ReactElement {
-  const [name, setName] = useState<string | undefined>(undefined);
-  return (
-    <Table.Head {...definedProps({ "aria-label": name })} {...props}>
-      <HeadNameContext.Provider value={setName}>{children}</HeadNameContext.Provider>
-    </Table.Head>
-  );
-}
-
-/** Header rows over any header renderer, after the `<colgroup>` of a sized table. */
 function HeaderRows<TGroup extends HeaderGroupSource>({
   headerGroups,
+  layout,
   renderHeader,
   ...props
 }: ComponentProps<"thead"> & {
   headerGroups: ReadonlyArray<TGroup>;
+  layout: ReadonlyArray<ColumnWidth> | undefined;
   renderHeader: (header: HeaderOf<TGroup>) => ReactNode;
 }): ReactElement {
-  const layout = columnLayout(headerGroups);
+  const Head = layout === undefined ? Table.Head : SizedHead;
+  const headClass = head({ sized: layout !== undefined });
   const thead = (
     <Table.Header data-slot="data-table-header" {...props}>
       {headerGroups.map((group) => (
         <Table.Row key={group.id}>
-          {group.headers.map((header) => {
-            const Head = layout === undefined ? Table.Head : SizedHead;
-            const sort = ariaSort(header.column);
-            return (
-              <Head
-                key={header.id}
-                colSpan={header.colSpan}
-                className={head({ sized: layout !== undefined })}
-                {...definedProps({ "aria-sort": sort })}>
-                {header.isPlaceholder ? null : renderHeader(header)}
-              </Head>
-            );
-          })}
+          {group.headers.map((header) => (
+            <Head
+              key={header.id}
+              colSpan={header.colSpan}
+              className={headClass}
+              {...definedProps({ "aria-sort": ariaSort(header.column) })}>
+              {header.isPlaceholder ? null : renderHeader(header)}
+            </Head>
+          ))}
         </Table.Row>
       ))}
     </Table.Header>
@@ -113,7 +110,7 @@ function HeaderRows<TGroup extends HeaderGroupSource>({
   }
   return (
     <>
-      <colgroup>
+      <colgroup className={sizedColgroup()}>
         {layout.map((column) => (
           // `DataTable.ResizeHandle` finds its column's `<col>` by `data-column-id` to preview a drag.
           <col
@@ -269,12 +266,10 @@ export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { re
   const layout = columnLayout(headerGroups);
   return (
     <Table.Root
-      {...definedProps({
-        "aria-busy": loading === true || undefined,
-        className: layout === undefined ? className : cn(sizedTable(), className),
-      })}
+      {...definedProps({ "aria-busy": loading === true || undefined })}
+      className={cn(layout !== undefined && sizedTable(), className)}
       {...props}>
-      <HeaderRows headerGroups={headerGroups} renderHeader={renderHeader} />
+      <HeaderRows headerGroups={headerGroups} layout={layout} renderHeader={renderHeader} />
       <BodyRows table={table} loading={loading} empty={empty} renderRow={renderRow} />
     </Table.Root>
   );
@@ -303,9 +298,11 @@ export function DataTableHeader<TGroup extends HeaderGroupSource>({
   table,
   ...props
 }: DataTableHeaderProps<TGroup>): ReactElement {
+  const headerGroups = table.getHeaderGroups();
   return (
     <HeaderRows
-      headerGroups={table.getHeaderGroups()}
+      headerGroups={headerGroups}
+      layout={columnLayout(headerGroups)}
       renderHeader={(header) => <table.FlexRender header={header} />}
       {...props}
     />

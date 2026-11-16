@@ -3,9 +3,10 @@
 // drafted dictionary and vsr's own phrase grammar. No expectation comes from Fuse.
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
-import { cdp, server, userEvent } from "vitest/browser";
+import { server, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { axNodes, axProperty } from "../../../test/ax-tree";
 import { FALL_BACK_HOURS, S06_HOURS } from "../../../test/chart/elhub-rows";
 import type { HourRow } from "../../../test/chart/elhub-rows";
 import phrases from "../../../test/chart/pattern-phrases.json" with { type: "json" };
@@ -168,31 +169,6 @@ describe("the negative control", () => {
 });
 
 describe("the accessibility tree in Chromium", () => {
-  type AxNode = {
-    readonly nodeId: string;
-    readonly parentId?: string;
-    readonly role?: { readonly value?: string };
-    readonly name?: { readonly value?: string };
-    readonly properties?: readonly {
-      readonly name: string;
-      readonly value: { readonly value?: string | number | boolean };
-    }[];
-  };
-  type FrameTree = {
-    readonly frame: { readonly id: string; readonly url: string };
-    readonly childFrames?: readonly FrameTree[];
-  };
-  type AxCdp = {
-    send: ((method: "Page.getFrameTree") => Promise<{ readonly frameTree: FrameTree }>) &
-      ((
-        method: "Accessibility.getFullAXTree",
-        params: { readonly frameId: string }
-      ) => Promise<{ readonly nodes: readonly AxNode[] }>);
-  };
-
-  /** Every frame below the top page, where Vitest runs the test, deepest last. */
-  const frames = (tree: FrameTree): string[] => [tree.frame.id, ...(tree.childFrames ?? []).flatMap(frames)];
-
   it.runIf(server.browser === "chromium")(
     "reports the focused node as an option with its name, inside a horizontal listbox",
     async () => {
@@ -203,18 +179,10 @@ describe("the accessibility tree in Chromium", () => {
       await virtual.press("ArrowRight");
       await virtual.press("ArrowRight");
       await virtual.stop();
-      // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-      const session = cdp() as AxCdp;
-      const { frameTree } = await session.send("Page.getFrameTree");
-      const trees = await Promise.all(
-        frames(frameTree).map((frameId) => session.send("Accessibility.getFullAXTree", { frameId }))
-      );
-      const nodes = trees.flatMap((tree) => tree.nodes);
-      const property = (node: AxNode, name: string): string | number | boolean | undefined =>
-        node.properties?.find((entry) => entry.name === name)?.value.value;
+      const nodes = await axNodes();
       // Each document's web area reports focus too, so the focused element is the other node.
       const focused = nodes.find(
-        (node) => property(node, "focused") === true && node.role?.value !== "RootWebArea"
+        (node) => axProperty(node, "focused") === true && node.role?.value !== "RootWebArea"
       );
       // Hand-written from the third hour of `S06_HOURS`, per meter 1.1781 kWh household and 0.6535 kWh cabin.
       expect(focused?.role?.value).toBe("option");
@@ -224,7 +192,7 @@ describe("the accessibility tree in Chromium", () => {
       // CDP's AX properties carry no position or set size, so the vsr logs above judge them.
       const parent = nodes.find((node) => node.nodeId === focused?.parentId);
       expect(parent?.role?.value).toBe("listbox");
-      expect(property(parent ?? { nodeId: "" }, "orientation")).toBe("horizontal");
+      expect(axProperty(parent ?? { nodeId: "" }, "orientation")).toBe("horizontal");
     }
   );
 });

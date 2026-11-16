@@ -434,7 +434,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The column's name as its header shows it, such as `\"Status\"`. Fuse builds the handle's localized accessible name from it, such as \"Resize Status column\", so no two handles share a name. Inside `DataTable.Header` or `DataTable.Content` it also names the header cell, which would otherwise take the handle's width into its name. Give a header cell that Fuse does not render an `aria-label` with the column's name.",
+          "description": "The column's name as its header shows it, such as `\"Status\"`. Fuse builds the handle's localized accessible name from it, such as \"Resize Status column\", so no two handles share a name. Inside `DataTable.Header` or `DataTable.Content` it also names the header cell once the handle has mounted, after hydration. Without it the cell's name would include the handle's width. Give a header cell that Fuse does not render an `aria-label` with the column's name.",
           "required": true
         },
         {
