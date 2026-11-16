@@ -13,11 +13,11 @@ import { DocsServer } from "./docs-server.ts";
 import type { ReservedDocsServer } from "./docs-server.ts";
 import { holdLock } from "./file-lock.ts";
 import { Gh } from "./gh.ts";
-import type { ShotOptions, Source } from "./options.ts";
+import type { BeforeSource, ShotOptions, Source } from "./options.ts";
 import { diffPngs } from "./pixel-diff.ts";
 import type { PngFile } from "./pixel-diff.ts";
 import { placeShots } from "./pr-body.ts";
-import { planCoordinates, planShots } from "./shot-plan.ts";
+import { planShots } from "./shot-plan.ts";
 import type { Shot, ShotRow } from "./shot-plan.ts";
 import {
   MAX_ATTACHMENTS,
@@ -118,7 +118,7 @@ export const runShots = Effect.fn("runShots")(function* (options: ShotOptions, r
     });
   }
   // Checked from the matrix, before any page opens, so an upload that cannot work costs nothing.
-  const planned = plannedAttachmentCount(planCoordinates(options), options.diff);
+  const planned = plannedAttachmentCount(options);
   if (options.pr !== null && planned > MAX_ATTACHMENTS) {
     return yield* new TooManyAttachments({
       message: `This run would upload ${String(planned)} images, but gh pr edit attaches at most ${String(MAX_ATTACHMENTS)}. Take fewer themes, densities, engines or window sizes per run and split the matrix across runs with different names.`,
@@ -158,20 +158,25 @@ export const runShots = Effect.fn("runShots")(function* (options: ShotOptions, r
   const frame = yield* capture.resolveFrame({ origin: afterOrigin, sourceLabel: afterLabel, options });
   const rows = planShots(options, frame);
 
-  const beforeOrigin = yield* resolve(options.before);
   const beforeLabel = sourceLabel(options.before);
-  const beforeStatus = yield* capture.probe(beforeOrigin, options.route);
-  let before: BeforeOutcome = { _tag: "captured" };
-  if (beforeStatus === 404) {
-    before = { _tag: "not-deployed" };
-    yield* Console.log(`${options.route} answers 404 on ${beforeLabel}; skipping the before shots.`);
-  } else if (beforeStatus >= 400) {
-    return yield* new RouteRefused({
-      message: `${options.route} answered ${String(beforeStatus)} on ${beforeLabel}`,
-      route: options.route,
-      status: beforeStatus,
-    });
-  } else {
+  const before = yield* Effect.gen(function* () {
+    if (options.before._tag === "none") {
+      yield* Console.log("--before none: the change adds what the shots show; skipping the before shots.");
+      return { _tag: "added" } satisfies BeforeOutcome;
+    }
+    const beforeOrigin = yield* resolve(options.before);
+    const beforeStatus = yield* capture.probe(beforeOrigin, options.route);
+    if (beforeStatus === 404) {
+      yield* Console.log(`${options.route} answers 404 on ${beforeLabel}; skipping the before shots.`);
+      return { _tag: "not-deployed" } satisfies BeforeOutcome;
+    }
+    if (beforeStatus >= 400) {
+      return yield* new RouteRefused({
+        message: `${options.route} answered ${String(beforeStatus)} on ${beforeLabel}`,
+        route: options.route,
+        status: beforeStatus,
+      });
+    }
     yield* Console.log(`Capturing before shots from ${beforeLabel}…`);
     yield* capture.capture({
       origin: beforeOrigin,
@@ -180,7 +185,8 @@ export const runShots = Effect.fn("runShots")(function* (options: ShotOptions, r
       shots: rows.map((row) => row.before),
       outDir,
     });
-  }
+    return { _tag: "captured" } satisfies BeforeOutcome;
+  });
 
   yield* Console.log(`Capturing after shots from ${afterLabel}…`);
   yield* capture.capture({
@@ -209,10 +215,11 @@ const diffPairs = Effect.fn("runShots.diffPairs")(function* (
   before: BeforeOutcome,
   outDir: string
 ) {
-  if (options.diff === "off") {
+  // A `--before none` run has nothing to compare, so its table has no Diff column.
+  if (options.diff === "off" || before._tag === "added") {
     return { _tag: "without-diff", rows } satisfies TableRows;
   }
-  if (before._tag === "not-deployed") {
+  if (before._tag !== "captured") {
     return {
       _tag: "with-diff",
       rows: rows.map((row): ComparedRow => ({ row, diff: { _tag: "no-before" } })),
@@ -244,8 +251,15 @@ const diffPairs = Effect.fn("runShots.diffPairs")(function* (
   return { _tag: "with-diff", rows: compared } satisfies TableRows;
 });
 
-function sourceLabel(source: Source): string {
-  return source._tag === "remote" ? source.label : "local checkout";
+function sourceLabel(source: BeforeSource): string {
+  switch (source._tag) {
+    case "remote":
+      return source.label;
+    case "local":
+      return "local checkout";
+    case "none":
+      return "none";
+  }
 }
 
 /** Creates the run directory and clears what an earlier run of the same name left there. */

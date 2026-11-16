@@ -162,6 +162,37 @@ describe("the shots command line", () => {
     })
   );
 
+  it.effect("takes --before none, which leaves the after side as given", () =>
+    Effect.gen(function* () {
+      const parsed = yield* parseArgv([...REQUIRED, "--before", "none"]);
+      assert.deepStrictEqual(parsed.before, { _tag: "none" });
+      assert.deepStrictEqual(parsed.after, { _tag: "local" });
+    })
+  );
+
+  it.effect("exits 2 on --after none, since a run needs after shots", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(runCli([...REQUIRED, "--after", "none"]));
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(Runtime.getErrorExitCode(failure), 2);
+      const printed = [...(yield* TestConsole.logLines), ...(yield* TestConsole.errorLines)]
+        .map(String)
+        .join("\n");
+      assert.include(printed, "only --before takes none");
+    }).pipe(Effect.provide(cliEnvironment))
+  );
+
+  it.effect("names none among the forms when --before does not parse", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(runCli([...REQUIRED, "--before", "staging"]));
+      assert.strictEqual(Runtime.getErrorExitCode(failure), 2);
+      const printed = [...(yield* TestConsole.logLines), ...(yield* TestConsole.errorLines)]
+        .map(String)
+        .join("\n");
+      assert.include(printed, "none, prod, local or an http(s) URL");
+    }).pipe(Effect.provide(cliEnvironment))
+  );
+
   it.effect("exits 2 on a command line that does not parse, without starting anything", () =>
     Effect.gen(function* () {
       const failure = yield* Effect.flip(runCli([...REQUIRED, "--scale", "0"]));

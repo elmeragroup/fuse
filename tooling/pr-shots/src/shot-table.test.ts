@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { shotOptions as options } from "../test/parse-argv.ts";
-import { planCoordinates, planShots } from "./shot-plan.ts";
+import { planShots } from "./shot-plan.ts";
 import {
   attachedFiles,
   formatChange,
@@ -64,6 +64,36 @@ describe("renderTable", () => {
         "| Shot | Before | After |",
         "| --- | --- | --- |",
         `| default-theme · stage-density · light · chromium · 1280x900 | Not deployed on prod | ![After: meter "Usage" in its demo stage on /components/meter, the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window](./after-default-theme-stage-density-light-chromium-1280x900-stage.png) |`,
+        "",
+      ].join("\n")
+    );
+  });
+
+  it("marks the before column when the change adds what the shots show", () => {
+    const run = options([
+      "new-demo",
+      "--route",
+      "/components/line-chart",
+      "--target",
+      "figure:Charging power",
+      "--before",
+      "none",
+    ]);
+    expect(
+      renderTable(
+        run,
+        { _tag: "without-diff", rows: planShots(run, "stage") },
+        { _tag: "added" },
+        "none",
+        "local checkout"
+      )
+    ).toBe(
+      [
+        'Screenshots of figure "Charging power" in its demo stage on `/components/line-chart`. Before: none. After: local checkout. The change adds what these shots show, so there are no before shots.',
+        "",
+        "| Shot | Before | After |",
+        "| --- | --- | --- |",
+        `| default-theme · stage-density · light · chromium · 1280x900 | Added by this change | ![After: figure "Charging power" in its demo stage on /components/line-chart, the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window](./after-default-theme-stage-density-light-chromium-1280x900-stage.png) |`,
         "",
       ].join("\n")
     );
@@ -178,25 +208,28 @@ describe("the Diff column", () => {
 });
 
 describe("plannedAttachmentCount", () => {
+  // 3 themes × 2 densities × 2 engines is 12 coordinates.
+  const matrix = [
+    "matrix",
+    "--route",
+    "/components/button",
+    "--target",
+    "button:Save",
+    "--themes",
+    "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
+    "--densities",
+    "dense,comfortable",
+    "--engines",
+    "chromium,webkit",
+  ];
+
   it("counts a before, an after and a diff per coordinate, or two images without diffs", () => {
-    // 3 themes × 2 densities × 3 engines is 18 coordinates.
-    const coordinates = planCoordinates(
-      options([
-        "matrix",
-        "--route",
-        "/components/button",
-        "--target",
-        "button:Save",
-        "--themes",
-        "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
-        "--densities",
-        "dense,comfortable",
-        "--engines",
-        "chromium,webkit",
-      ])
-    );
-    expect(plannedAttachmentCount(coordinates, "on")).toBe(36);
-    expect(plannedAttachmentCount(coordinates, "off")).toBe(24);
+    expect(plannedAttachmentCount(options(matrix))).toBe(36);
+    expect(plannedAttachmentCount(options([...matrix, "--no-diff"]))).toBe(24);
+  });
+
+  it("counts only the after shot per coordinate for a run with --before none", () => {
+    expect(plannedAttachmentCount(options([...matrix, "--before", "none"]))).toBe(12);
   });
 });
 
@@ -223,10 +256,12 @@ describe("attachedFiles", () => {
       "before-default-theme-comfortable-override-light-chromium-1280x900-stage.png",
       "after-default-theme-comfortable-override-light-chromium-1280x900-stage.png",
     ]);
-    expect(attachedFiles({ _tag: "without-diff", rows }, { _tag: "not-deployed" })).toEqual([
+    const afterOnly = [
       "after-default-theme-dense-override-light-chromium-1280x900-stage.png",
       "after-default-theme-comfortable-override-light-chromium-1280x900-stage.png",
-    ]);
+    ];
+    expect(attachedFiles({ _tag: "without-diff", rows }, { _tag: "not-deployed" })).toEqual(afterOnly);
+    expect(attachedFiles({ _tag: "without-diff", rows }, { _tag: "added" })).toEqual(afterOnly);
   });
 });
 

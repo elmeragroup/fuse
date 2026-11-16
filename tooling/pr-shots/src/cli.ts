@@ -12,6 +12,7 @@ import { Capture } from "./capture.ts";
 import { DocsServer } from "./docs-server.ts";
 import { Gh } from "./gh.ts";
 import {
+  BeforeSourceFromText,
   ClickStepFromText,
   Count,
   Densities,
@@ -131,13 +132,15 @@ const shotFlags = {
     Flag.withDefault("light")
   ),
   before: Flag.String("before").pipe(
-    Flag.withDescription("Where the base comes from: prod, local or a URL. Default: prod."),
+    Flag.withDescription(
+      "Where the base comes from: prod, local or a URL, or none when the change adds what the target names, such as a new demo on a deployed page. none takes no before shots and no diff. Default: prod."
+    ),
     Flag.withMetavar("source"),
-    Flag.withSchema(SourceFromText),
+    Flag.withSchema(BeforeSourceFromText),
     Flag.withDefault(prodSource())
   ),
   after: Flag.String("after").pipe(
-    Flag.withDescription("Where the change comes from: prod, local or a URL. Default: local."),
+    Flag.withDescription("Where the change comes from: prod, local or a URL, never none. Default: local."),
     Flag.withMetavar("source"),
     Flag.withSchema(SourceFromText),
     Flag.withDefault({ _tag: "local" } as const)

@@ -238,6 +238,19 @@ export const Source = Schema.Union([
 /** Where a set of screenshots comes from. */
 export type Source = typeof Source.Type;
 
+/**
+ * Where the "before" shots come from: a source, or none when the change adds what the shots
+ * show, such as a new demo on a page that is already deployed. An after side is always a source.
+ */
+export const BeforeSource = Schema.Union([
+  Source,
+  /** No before shots, since the change adds what the target names. */
+  Schema.TaggedStruct("none", {}),
+]);
+
+/** Where the "before" shots come from, or none. */
+export type BeforeSource = typeof BeforeSource.Type;
+
 /** A list flag's entries: never empty. */
 type NonEmpty<T> = readonly [T, ...T[]];
 
@@ -271,8 +284,8 @@ export type ShotOptions = {
   readonly scale: number;
   /** The color scheme the browser reports. */
   readonly colorScheme: ColorScheme;
-  /** Where the "before" shots come from. */
-  readonly before: Source;
+  /** Where the "before" shots come from, or none when the change adds what they show. */
+  readonly before: BeforeSource;
   /** Where the "after" shots come from. */
   readonly after: Source;
   /** Whether each before/after pair gets a pixel diff. */
@@ -445,8 +458,24 @@ export const Viewports = fromText(Schema.NonEmptyArray(Viewport), (input) => {
   });
 });
 
+/** What `parseSource` accepts, as its failure names it. */
+const SOURCE_FORMS = "prod, local or an http(s) URL";
+
 /** `prod`, `local` or an http(s) URL, of which only the origin is kept. */
-export const SourceFromText = fromText(Source, (input): Result.Result<Source, string> => {
+export const SourceFromText = fromText(Source, (input) =>
+  input === "none"
+    ? Result.fail(`${SOURCE_FORMS}; only --before takes none, since a run needs after shots`)
+    : parseSource(input)
+);
+
+/** `none`, or a source as `SourceFromText` reads it. Its failure names `none` among the forms. */
+export const BeforeSourceFromText = fromText(BeforeSource, (input): Result.Result<BeforeSource, string> =>
+  input === "none"
+    ? Result.succeed({ _tag: "none" })
+    : Result.mapError(parseSource(input), () => `none, ${SOURCE_FORMS}`)
+);
+
+function parseSource(input: string): Result.Result<Source, string> {
   if (input === "local") {
     return Result.succeed({ _tag: "local" });
   }
@@ -455,10 +484,10 @@ export const SourceFromText = fromText(Source, (input): Result.Result<Source, st
   }
   const url = URL.parse(input);
   if (url === null || (url.protocol !== "http:" && url.protocol !== "https:")) {
-    return Result.fail("prod, local or an http(s) URL");
+    return Result.fail(SOURCE_FORMS);
   }
   return Result.succeed({ _tag: "remote", origin: new URL(url.origin), label: url.origin });
-});
+}
 
 /**
  * The prod source, the default for `--before`.

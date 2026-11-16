@@ -4,8 +4,8 @@
 
 import type { ShotOptions } from "./options.ts";
 import type { Size } from "./pixel-diff.ts";
-import { clickWords, densityName, themeName, viewportName } from "./shot-plan.ts";
-import type { Coordinate, Shot, ShotRow } from "./shot-plan.ts";
+import { clickWords, densityName, planCoordinates, themeName, viewportName } from "./shot-plan.ts";
+import type { Shot, ShotRow } from "./shot-plan.ts";
 
 /** Whether the run has "before" shots. */
 export type BeforeOutcome =
@@ -16,6 +16,10 @@ export type BeforeOutcome =
   | {
       /** The before source answered 404, so the component is not deployed there yet. */
       readonly _tag: "not-deployed";
+    }
+  | {
+      /** `--before none`: the change adds what the shots show, so the run took no before shots. */
+      readonly _tag: "added";
     };
 
 /** What the Diff column says about one row. */
@@ -85,15 +89,17 @@ export function renderTable(
   afterLabel: string
 ): string {
   const lead = `${leadSubject(options, table)}${escapeCell(clickWords(options))}. Before: ${beforeLabel}. After: ${afterLabel}.`;
-  const skipped =
-    before._tag === "not-deployed"
-      ? ` The route answered 404 on ${beforeLabel}, so there are no before shots.`
-      : "";
-  const shotCells = (row: ShotRow) => [
-    rowLabel(options, row),
-    before._tag === "captured" ? image(row.before) : `Not deployed on ${beforeLabel}`,
-    image(row.after),
-  ];
+  const skipped = {
+    captured: "",
+    "not-deployed": ` The route answered 404 on ${beforeLabel}, so there are no before shots.`,
+    added: " The change adds what these shots show, so there are no before shots.",
+  }[before._tag];
+  const beforeCell = {
+    captured: (row: ShotRow) => image(row.before),
+    "not-deployed": () => `Not deployed on ${beforeLabel}`,
+    added: () => "Added by this change",
+  }[before._tag];
+  const shotCells = (row: ShotRow) => [rowLabel(options, row), beforeCell(row), image(row.after)];
   const body =
     table._tag === "with-diff"
       ? [
@@ -132,14 +138,15 @@ export function attachedFiles(table: TableRows, before: BeforeOutcome): readonly
 
 /**
  * The most images a run can upload, known from its matrix before any page is opened: a before
- * and an after shot per coordinate, and a diff image per coordinate when diffs are on.
+ * and an after shot per coordinate, and a diff image per coordinate when diffs are on. A run
+ * with `--before none` uploads only its after shots.
  *
- * @param rows - The planned coordinates, or rows.
- * @param diff - Whether the run diffs each pair.
+ * @param options - The parsed run.
  * @returns The count `attachedFiles` reaches when every pair is captured and compared.
  */
-export function plannedAttachmentCount(rows: readonly Coordinate[], diff: "on" | "off"): number {
-  return rows.length * (diff === "on" ? 3 : 2);
+export function plannedAttachmentCount(options: ShotOptions): number {
+  const perCoordinate = options.before._tag === "none" ? 1 : options.diff === "on" ? 3 : 2;
+  return planCoordinates(options).length * perCoordinate;
 }
 
 /**

@@ -40,19 +40,22 @@ To find the role and accessible name, see [Finding the target](#finding-the-targ
 | `--viewports <WxH,...>`      | `1280x900`               | Window sizes in CSS pixels, such as `1280x800,390x844`. Each size is an axis of the matrix, like engines.                                                                                                                                                                                                                                         |
 | `--scale <n>`                | `2`                      | The device scale factor, above 0 and at most 4.                                                                                                                                                                                                                                                                                                   |
 | `--color-scheme light\|dark` | `light`                  | The color scheme the browser reports to the page.                                                                                                                                                                                                                                                                                                 |
-| `--before <source>`          | `prod`                   | Where the base comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                              |
+| `--before <source>`          | `prod`                   | Where the base comes from: `prod`, `local`, a URL, or `none` when the change adds what the target names.                                                                                                                                                                                                                                          |
 | `--after <source>`           | `local`                  | Where the change comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                            |
 | `--threshold <0..1>`         | `0.1`                    | pixelmatch's matching threshold for the diff. Smaller counts fainter changes.                                                                                                                                                                                                                                                                     |
 | `--no-diff`                  | diff on                  | Skips the pixel diff and leaves the Diff column out of the table.                                                                                                                                                                                                                                                                                 |
 | `--pr <n>`                   | none                     | Uploads the shots to pull request `<n>`.                                                                                                                                                                                                                                                                                                          |
 
-A source is one of three things.
+A source is one of four things.
 
 - `prod` is `https://fuse.elmeragroup.no`, which deploys on every merge to main.
 - `local` runs `next dev` for `apps/docs` from this checkout on a free port and stops it when the
   run ends.
 - A URL, such as `http://localhost:3000`, reuses a server that is already running. The run keeps
   only its origin.
+- `none`, for `--before` only, means the change adds what the target names, such as a new demo on
+  a page that is already deployed. The run opens nothing for the before side, takes the after shots
+  alone, and attaches only those. The table marks the before column and has no Diff column.
 
 When the route answers 404 on the before source, the component is not deployed yet. The run says
 so, skips the before shots, and marks the before column in the table.
@@ -120,7 +123,7 @@ no change.
 - When the two images differ in size, the cell gives both sizes and the row has no diff. A size
   change is a finding of its own.
 - A row without a before shot has no diff.
-- `--no-diff` leaves the column out.
+- `--no-diff` and `--before none` leave the column out.
 
 Images are referenced as `./<file>`. gh rewrites each reference to the uploaded asset, so the `gh`
 command runs from the output directory.
@@ -142,9 +145,9 @@ at most two minutes, then gives up. A lock that needs a person to delete a file 
 says which file. Runs on other machines, or in another checkout, are not covered.
 
 `gh pr edit` attaches at most 50 files. Each row adds a before shot, an after shot and, with diffs
-on, a diff image, so the run counts them from the plan before any shot. With `--pr`, a run over 50
-fails at once and asks you to split the matrix across runs with different names. Without `--pr`,
-the run prints a warning beside the command.
+on, a diff image, so the run counts them from the plan before any shot. With `--before none`, a row
+adds only its after shot. With `--pr`, a run over 50 fails at once and asks you to split the matrix
+across runs with different names. Without `--pr`, the run prints a warning beside the command.
 
 ## Examples
 
@@ -160,6 +163,13 @@ A theme matrix in two engines, with each theme at the density the docs site prev
 ```sh
 pnpm shots button-themes --route /components/button --target button:Save \
   --themes neutral-fkas-private,branded-tkas-company,branded-fkse-private --engines chromium,webkit
+```
+
+A new demo on a page prod already serves, shot on the change alone:
+
+```sh
+pnpm shots charging-curve --route /components/line-chart \
+  --target 'figure:Charging power by state of charge' --before none
 ```
 
 ## Finding the target
