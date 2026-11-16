@@ -1,7 +1,11 @@
+import { cn } from "../../styles/cn";
 import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayTimedPopupClass } from "../overlay/overlay-classes";
+
+/** The primary-color ring around a step's element, which every highlight of the element shares. */
+const tourOutlineClass = cn("ring-2 ring-primary");
 
 /**
  * The module-private recipe for the tour popup and its parts.
@@ -13,6 +17,8 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  * - `title` and `description` match Popover's.
  * - `footer` sets Skip at the start and Prev and Next at the end.
  * - `announcement` hides the live region that announces the step.
+ * - `outline` rings a step's lit element in the primary color, so the spotlight's hole reads on any
+ *   page, dark ones included, where the scrim's tint barely shows.
  */
 export const tourVariants = tv({
   slots: {
@@ -31,5 +37,6 @@ export const tourVariants = tv({
     footer: "flex items-center justify-end gap-2",
     skip: "me-auto",
     announcement: "sr-only",
+    outline: tourOutlineClass,
   },
 });

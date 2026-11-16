@@ -73,6 +73,7 @@ declare namespace Tour {
         TourProgress as Progress,
         TourProvider as Provider,
         TourSkip as Skip,
+        TourSpotlight as Spotlight,
         TourTarget as Target,
         TourTitle as Title
     }
@@ -247,6 +248,14 @@ export type TourRecords = {
 
 // @beta
 function TourSkip(input: TourStepButtonProps): ReactElement | null;
+
+// @beta
+function TourSpotlight(input: TourSpotlightProps): ReactElement | null;
+
+// @beta
+export type TourSpotlightProps = {
+    padding?: number;
+};
 
 // @beta
 export type TourStartRefusal = "busy" | "not-ready" | "finished" | "snoozed" | "cooldown" | "no-steps";

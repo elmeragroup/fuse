@@ -82,8 +82,9 @@ describe("the chart API report's forgotten-export filter", () => {
 
   it("reads every Tour part from the committed tour report", () => {
     const parts = namespaceParts(readFileSync(join(packageRoot, "etc/tour.api.md"), "utf8"), "tour");
-    // Provider, Target, Popup, Header, Progress, Close, Title, Description, Footer, Skip, Prev, Next.
-    expect(parts).toHaveLength(12);
+    // Provider, Target, Popup, Header, Progress, Close, Spotlight, Title, Description, Footer, Skip,
+    // Prev, Next.
+    expect(parts).toHaveLength(13);
     expect(parts).toContain("TourPopup");
     expect(parts).not.toContain("Tour");
   });

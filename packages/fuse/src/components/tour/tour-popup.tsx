@@ -9,10 +9,12 @@ import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement } from "../../internal/dom-node";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { isThemeDevelopment } from "../../theme/validate-theme";
-import { useCalendarStateField } from "../calendar/calendar-store";
-import { overlayPositionerClass } from "../overlay/overlay-classes";
+import { createCalendarStore, useCalendarStateField } from "../calendar/calendar-store";
+import type { CalendarStore } from "../calendar/calendar-store";
+import { overlayPositionerClass, overlaySpotlightBackdropClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { TourController } from "./tour-controller";
+import { TourCutout } from "./tour-cutout";
 import { tourStepKey } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
 import { useTourController } from "./tour-provider";
@@ -21,12 +23,22 @@ import { tourVariants } from "./tour-variants";
 
 const slots = tourVariants();
 
+/** The registration-only parts mounted in a popup, which change what the popup renders. */
+export type TourPopupParts = {
+  /** The mounted `Tour.Spotlight`'s padding, or `null` while none is mounted. */
+  readonly spotlight: { readonly padding: number } | null;
+  /** How many `Tour.Close` parts are mounted. */
+  readonly closes: number;
+};
+
 /** What the parts inside a `Tour.Popup` read. */
 type TourPopupContextValue = {
   readonly controller: TourController;
   readonly tour: TourDefinition;
   /** The step on screen, or the last one while the popup closes. */
   readonly view: TourShownStep;
+  /** The parts that register with the popup. */
+  readonly parts: CalendarStore<TourPopupParts>;
 };
 
 const TourPopupContext = createContext<TourPopupContextValue | null>(null);
@@ -152,6 +164,8 @@ export type TourPopupProps = ComponentProps<typeof PopoverPrimitive.Popup> & {
   /**
    * Whether the popup holds focus and blocks the page. Leave it `false` for a coachmark, which
    * keeps the page usable: a press outside the popup and focus leaving it do not end the run.
+   * Pass `"trap-focus"` with a `Tour.Spotlight`, and put a `Tour.Close` in the popup, so Base UI
+   * holds focus in the popup while the dim blocks the page.
    */
   modal?: ComponentProps<typeof PopoverPrimitive.Root>["modal"];
   /**
@@ -221,13 +235,13 @@ function TourPopupRoot({
     setLast(shown);
   }
   const view = shown ?? last;
-  const anchor = useMemo(
-    () => (view === null ? null : stepAnchor(controller.targetOf(view))),
-    [controller, view]
-  );
+  const [parts] = useState(() => createCalendarStore<TourPopupParts>({ spotlight: null, closes: 0 }));
+  const spotlight = useCalendarStateField(parts, "spotlight");
+  const target = view === null ? null : controller.targetOf(view);
+  const anchor = useMemo(() => (view === null ? null : stepAnchor(target)), [view, target]);
   const context = useMemo(
-    () => (view === null ? null : { controller, tour, view }),
-    [controller, tour, view]
+    () => (view === null ? null : { controller, tour, view, parts }),
+    [controller, tour, view, parts]
   );
   const centered = anchor !== null && anchor.contextElement === undefined;
 
@@ -278,9 +292,10 @@ function TourPopupRoot({
           }, 0);
           return;
         }
-        // A press outside the popup and focus leaving it keep the run going, so the page stays usable
-        // around a coachmark.
-        if (reason === "close-press") {
+        // Under a spotlight the backdrop takes every press outside the popup, the lit hole included,
+        // and the press ends the run without a status. Around a coachmark, a press outside the popup
+        // and focus leaving it keep the run going, so the page stays usable.
+        if (reason === "close-press" || (reason === "outside-press" && parts.get().spotlight !== null)) {
           controller.end(tour, reason);
         } else {
           details.cancel();
@@ -288,6 +303,11 @@ function TourPopupRoot({
       }}>
       {context === null ? null : (
         <OverlayPortal portal={PopoverPrimitive.Portal} container={container}>
+          {spotlight === null ? null : (
+            <PopoverPrimitive.Backdrop data-slot="tour-backdrop" className={overlaySpotlightBackdropClass}>
+              <TourCutout element={target} padding={spotlight.padding} />
+            </PopoverPrimitive.Backdrop>
+          )}
           <PopoverPrimitive.Positioner
             align={align}
             alignOffset={alignOffset}

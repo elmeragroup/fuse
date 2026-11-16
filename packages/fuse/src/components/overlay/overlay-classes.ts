@@ -231,6 +231,22 @@ export const overlayPopupMotionClass = cn(overlayPopupFadeZoomClass, overlayPopu
 export const overlayBackdropMotionClass = cn(overlayPopupSlots.fade(), overlayPopupDurationClass);
 
 /**
+ * The lit hole of `Tour.Spotlight`: a fixed box at the step's element, placed by the
+ * `--tour-cutout-*` properties its part writes each frame, whose spread shadow paints the scrim's
+ * tint over the rest of the page. The tint is the scrim's `black/10`, so a spotlight dims as a
+ * modal does. The box takes no pointer, so a press on the hole lands on the backdrop under it.
+ */
+export const overlaySpotlightCutoutClass = cn(
+  "shadow-black/10 pointer-events-none fixed top-0 left-0 h-(--tour-cutout-h) w-(--tour-cutout-w) translate-x-(--tour-cutout-x) translate-y-(--tour-cutout-y) rounded-(--tour-cutout-r) shadow-[0_0_0_100vmax]"
+);
+
+/**
+ * The backdrop under `Tour.Spotlight`'s cutout: a full-page pointer catcher on the overlay layer,
+ * clear itself because the cutout's shadow paints the tint, fading with the shared backdrop motion.
+ */
+export const overlaySpotlightBackdropClass = cn(overlayBackdropMotionClass, "fixed inset-0", overlayLayer);
+
+/**
  * The fill, the edge and the `md` radius rung, which make the whole surface of a popup on the
  * popover role. Dialog and `Command.Content` take it through {@link overlayModalPopupClass} and
  * raise the radius to `rounded-xl` in their shells, and Dialog then swaps the fill for

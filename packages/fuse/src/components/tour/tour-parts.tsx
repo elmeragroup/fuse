@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useLayoutEffect } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
@@ -8,6 +9,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { isThemeDevelopment } from "../../theme/validate-theme";
 import { Button } from "../button/button";
 import { useCalendarStateField } from "../calendar/calendar-store";
 import { OverlayCloseButton } from "../overlay/overlay-close-button";
@@ -83,13 +85,64 @@ export type TourCloseProps = ComponentProps<typeof PopoverPrimitive.Close> & {
  * @beta
  */
 export function TourClose({ label, ...props }: TourCloseProps): ReactElement | null {
+  const popup = useTourPopup();
+  const parts = popup?.parts;
+  useLayoutEffect(() => {
+    if (parts === undefined) {
+      return;
+    }
+    parts.set({ ...parts.get(), closes: parts.get().closes + 1 });
+    return () => {
+      parts.set({ ...parts.get(), closes: parts.get().closes - 1 });
+    };
+  }, [parts]);
   // Base UI's Close throws outside a Popover Root, so the part renders nothing outside a popup.
-  if (useTourPopup() === null) {
+  if (popup === null) {
     return null;
   }
   return (
     <PopoverPrimitive.Close data-slot="tour-close" render={<OverlayCloseButton label={label} />} {...props} />
   );
+}
+
+/**
+ * Props for `Tour.Spotlight`.
+ *
+ * @beta
+ */
+export type TourSpotlightProps = {
+  /** The space the lit hole leaves around the step's element, in pixels. */
+  padding?: number;
+};
+
+/**
+ * Dims the page around the step's element. It renders nothing itself: it makes `Tour.Popup` render a
+ * backdrop with a lit hole over the element, outlined in the primary color so the hole shows on dark
+ * pages too. The backdrop takes every press outside the popup, the
+ * hole included, and such a press ends the run without a status. Pair it with `modal="trap-focus"`
+ * on `Tour.Popup` and a `Tour.Close`, which Base UI needs to hold focus in the popup; a development
+ * build warns when the popup has no `Tour.Close`.
+ *
+ * @beta
+ */
+export function TourSpotlight({ padding = 8 }: TourSpotlightProps): ReactElement | null {
+  const parts = useTourPopup()?.parts;
+  useLayoutEffect(() => {
+    if (parts === undefined) {
+      return;
+    }
+    parts.set({ ...parts.get(), spotlight: { padding } });
+    return () => {
+      parts.set({ ...parts.get(), spotlight: null });
+    };
+  }, [parts, padding]);
+  // Runs after every layout effect of the commit, so a `Tour.Close` later in the popup has counted.
+  useEffect(() => {
+    if (parts?.get().closes === 0 && isThemeDevelopment()) {
+      console.warn("Tour.Spotlight needs a Tour.Close in the same Tour.Popup to hold focus in the popup.");
+    }
+  }, [parts]);
+  return null;
 }
 
 function useShownWords(): { readonly title: ReactNode; readonly description: ReactNode } | null {

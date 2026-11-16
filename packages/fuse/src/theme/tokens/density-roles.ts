@@ -770,6 +770,8 @@ export const PART_DENSITY = {
   // render Button. The progress is `text-xs`, and the live region is visually hidden.
   "tour-target": "layout",
   "tour-popup": "surface",
+  "tour-backdrop": "layout",
+  "tour-cutout": "layout",
   "tour-header": "layout",
   "tour-progress": "fixed",
   "tour-close": "control",

@@ -70,4 +70,4 @@ export type {
 } from "./components/tour/tour-provider";
 export type { TourTargetProps } from "./components/tour/tour-target";
 export type { TourPopupProps } from "./components/tour/tour-popup";
-export type { TourCloseProps, TourStepButtonProps } from "./components/tour/tour-parts";
+export type { TourCloseProps, TourSpotlightProps, TourStepButtonProps } from "./components/tour/tour-parts";
