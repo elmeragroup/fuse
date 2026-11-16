@@ -7,16 +7,21 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement } from "../../internal/dom-node";
+import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { createCalendarStore, useCalendarStateField } from "../calendar/calendar-store";
 import type { CalendarStore } from "../calendar/calendar-store";
-import { overlayPositionerClass, overlaySpotlightBackdropClass } from "../overlay/overlay-classes";
+import {
+  overlayPositionerClass,
+  overlaySpotlightBackdropClass,
+  overlaySpotlightTintClass,
+} from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { TourController } from "./tour-controller";
-import { TourCutout } from "./tour-cutout";
 import { tourStepKey } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
+import { TourHighlight } from "./tour-highlight";
 import { useTourController } from "./tour-provider";
 import type { TourShownStep } from "./tour-session";
 import { tourVariants } from "./tour-variants";
@@ -27,6 +32,8 @@ const slots = tourVariants();
 export type TourPopupParts = {
   /** The mounted `Tour.Spotlight`'s padding, or `null` while none is mounted. */
   readonly spotlight: { readonly padding: number } | null;
+  /** The mounted `Tour.Ring`'s padding, or `null` while none is mounted. */
+  readonly ring: { readonly padding: number } | null;
   /** How many `Tour.Close` parts are mounted. */
   readonly closes: number;
 };
@@ -235,8 +242,11 @@ function TourPopupRoot({
     setLast(shown);
   }
   const view = shown ?? last;
-  const [parts] = useState(() => createCalendarStore<TourPopupParts>({ spotlight: null, closes: 0 }));
+  const [parts] = useState(() =>
+    createCalendarStore<TourPopupParts>({ spotlight: null, ring: null, closes: 0 })
+  );
   const spotlight = useCalendarStateField(parts, "spotlight");
+  const ring = useCalendarStateField(parts, "ring");
   const target = view === null ? null : controller.targetOf(view);
   const anchor = useMemo(() => (view === null ? null : stepAnchor(target)), [view, target]);
   const context = useMemo(
@@ -259,8 +269,10 @@ function TourPopupRoot({
     const rtl = getComputedStyle(event.currentTarget).direction === "rtl";
     const forward = rtl ? "ArrowLeft" : "ArrowRight";
     const backward = rtl ? "ArrowRight" : "ArrowLeft";
-    // On the last step the forward key does nothing: only Done, Skip, Close and Escape finish a tour.
-    if (event.key === forward && view !== null && view.index < view.count - 1) {
+    // Where the popup shows Done, the forward key does nothing: only Done, Skip, Close and Escape
+    // finish a tour.
+    const showsDone = view === null || view.mode === "step" || view.index === view.count - 1;
+    if (event.key === forward && !showsDone) {
       event.preventDefault();
       controller.next(tour);
     } else if (event.key === backward) {
@@ -305,8 +317,25 @@ function TourPopupRoot({
         <OverlayPortal portal={PopoverPrimitive.Portal} container={container}>
           {spotlight === null ? null : (
             <PopoverPrimitive.Backdrop data-slot="tour-backdrop" className={overlaySpotlightBackdropClass}>
-              <TourCutout element={target} padding={spotlight.padding} />
+              <TourHighlight
+                element={target}
+                padding={spotlight.padding}
+                slot="tour-cutout"
+                className={cn(
+                  slots.highlight(),
+                  overlaySpotlightTintClass,
+                  target === null ? undefined : slots.outline()
+                )}
+              />
             </PopoverPrimitive.Backdrop>
+          )}
+          {ring === null || target === null ? null : (
+            <TourHighlight
+              element={target}
+              padding={ring.padding}
+              slot="tour-ring"
+              className={slots.highlight({ className: slots.ring() })}
+            />
           )}
           <PopoverPrimitive.Positioner
             align={align}

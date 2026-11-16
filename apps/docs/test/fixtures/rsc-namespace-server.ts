@@ -500,6 +500,7 @@ function namespaceElements(): ReactElement[] {
       "Progress",
       "Close",
       "Spotlight",
+      "Ring",
       "Title",
       "Description",
       "Footer",

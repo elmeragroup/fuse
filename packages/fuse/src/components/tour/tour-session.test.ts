@@ -10,7 +10,10 @@ import { defineTour } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
 import {
   bumpTourContent,
+  completeTourStep,
   dismissTour,
+  isTourStepDone,
+  tourDoneCount,
   endTour,
   failTourStorage,
   initialTourSession,
@@ -18,6 +21,7 @@ import {
   pickAutoStartTour,
   previousTourStep,
   receiveTourRecords,
+  reconcileTours,
   showPendingStep,
   skipPendingStep,
   startTour,
@@ -30,7 +34,7 @@ const welcome = defineTour({ id: "welcome", version: 2, steps: ["intro", "usage"
 const billing = defineTour({ id: "billing", steps: ["invoices"] });
 
 function ready(state: TourSessionState = initialTourSession()): TourSessionState {
-  return receiveTourRecords(state, {}).state;
+  return receiveTourRecords(state, {}, [], 0).state;
 }
 
 function started(
@@ -77,12 +81,14 @@ describe("ending a run", () => {
     expect(tourStateOf(ended.state, "welcome")).toBe(state);
     expect(ended.state.shown).toBeNull();
     if (state === "completed" || state === "dismissed") {
-      expect(ended.changed).toEqual({
-        tourId: "welcome",
-        record: { v: 2, step: "usage", status: state, at: 99 },
-      });
+      expect(ended.changes).toEqual([
+        {
+          tourId: "welcome",
+          record: { v: 2, step: "usage", status: state, at: 99 },
+        },
+      ]);
     } else {
-      expect(ended.changed).toBeNull();
+      expect(ended.changes).toEqual([]);
       expect(ended.state.records.welcome).toEqual({ v: 2, step: "usage", at: 10 });
     }
   });
@@ -106,7 +112,7 @@ describe("ending a run", () => {
     expect(transition.state.shown?.stepId).toBe("intro");
     transition = skipPendingStep(transition.state, welcome, 40);
     expect(transition.ended?.reason).toBe("no-targets");
-    expect(transition.changed).toBeNull();
+    expect(transition.changes).toEqual([]);
     expect(tourStateOf(transition.state, "welcome")).toBe("idle");
   });
 
@@ -127,12 +133,122 @@ describe("ending a run", () => {
   });
 });
 
+describe("one-step runs and checklist tasks", () => {
+  function stepRun(stepId: string): TourSessionState {
+    const outcome = startTour(ready(), welcome, { origin: "user", at: stepId, mode: "step" });
+    if (outcome._tag !== "started") {
+      throw new Error(`expected a start, got ${outcome.reason}`);
+    }
+    return showPendingStep(outcome.state, welcome, 10).state;
+  }
+
+  it("shows one step without saving a resume step, and ends as step-done with no status on Next", () => {
+    const shown = stepRun("usage");
+    expect(shown.shown).toMatchObject({ stepId: "usage", mode: "step" });
+    expect(shown.records.welcome).toBeUndefined();
+    expect(previousTourStep(shown, welcome).state).toBe(shown);
+    const done = nextTourStep(shown, welcome, 20);
+    expect(done.ended).toMatchObject({ reason: "step-done", status: null });
+    expect(done.changes).toEqual([]);
+  });
+
+  it("writes no status when a one-step run is closed or escaped", () => {
+    for (const reason of ["close-press", "escape-key", "skip-press"] as const) {
+      const ended = endTour(stepRun("usage"), welcome, reason, 20);
+      expect(ended.ended?.status).toBeNull();
+      expect(tourStateOf(ended.state, "welcome")).toBe("idle");
+    }
+  });
+
+  it("refuses a one-step run without a step to show", () => {
+    expect(startTour(ready(), welcome, { origin: "user", mode: "step" })).toEqual({
+      _tag: "refused",
+      reason: "no-steps",
+    });
+  });
+
+  it("marks tasks done, completes the tour with the last one, and ends that step's run", () => {
+    let state = completeTourStep(ready(), welcome, "intro", 5).state;
+    state = completeTourStep(state, welcome, "price", 6).state;
+    expect(isTourStepDone(state, welcome, "intro")).toBe(true);
+    expect(isTourStepDone(state, welcome, "usage")).toBe(false);
+    expect(tourDoneCount(state, welcome)).toBe(2);
+    expect(tourStateOf(state, "welcome")).toBe("idle");
+
+    const running = showPendingStep(
+      (() => {
+        const outcome = startTour(state, welcome, { origin: "user", at: "usage", mode: "step" });
+        if (outcome._tag !== "started") {
+          throw new Error("expected a start");
+        }
+        return outcome.state;
+      })(),
+      welcome,
+      7
+    ).state;
+    const last = completeTourStep(running, welcome, "usage", 8);
+    expect(last.ended).toMatchObject({ reason: "step-done", status: null });
+    expect(last.changes[0]?.record).toEqual({
+      v: 2,
+      done: ["intro", "price", "usage"],
+      status: "completed",
+      at: 8,
+    });
+    expect(tourStateOf(last.state, "welcome")).toBe("completed");
+    expect(completeTourStep(last.state, welcome, "usage", 9).state).toBe(last.state);
+  });
+
+  it("completes a tour whose merged tasks cover every step, and leaves the rest alone", () => {
+    const merged = ready(
+      initialTourSession({
+        welcome: { v: 2, done: ["intro", "usage", "price"], at: 4 },
+        billing: { v: 1, done: ["invoices"], status: "dismissed", at: 4 },
+        partial: { v: 1, done: ["a"], at: 4 },
+        older: { v: 0, done: ["a", "b"], at: 4 },
+      })
+    );
+    const partial = defineTour({ id: "partial", steps: ["a", "b"] });
+    const older = defineTour({ id: "older", steps: ["a", "b"] });
+    const reconciled = reconcileTours(merged, [welcome, billing, partial, older], 9);
+    expect(reconciled.changes).toEqual([
+      { tourId: "welcome", record: { v: 2, done: ["intro", "usage", "price"], status: "completed", at: 9 } },
+    ]);
+    expect(tourStateOf(reconciled.state, "billing")).toBe("dismissed");
+    expect(tourStateOf(reconciled.state, "partial")).toBe("idle");
+    expect(reconcileTours(reconciled.state, [welcome], 10).state).toBe(reconciled.state);
+  });
+
+  it("ends an auto run as synced when incoming tasks complete its checklist, and writes the completion", () => {
+    const auto = showPendingStep(started(ready(), welcome, "auto"), welcome, 10).state;
+    const covered = { welcome: { v: 2, step: "intro", done: ["intro", "usage", "price"], at: 20 } };
+    const received = receiveTourRecords(auto, covered, [welcome], 30);
+    expect(received.ended).toMatchObject({ reason: "synced", status: null });
+    expect(received.state.shown).toBeNull();
+    expect(received.changes).toEqual([
+      { tourId: "welcome", record: { ...covered.welcome, status: "completed", at: 30 } },
+    ]);
+  });
+
+  it("counts tasks done in another version as not done", () => {
+    const older = ready(initialTourSession({ welcome: { v: 1, done: ["intro"], at: 1 } }));
+    expect(isTourStepDone(older, welcome, "intro")).toBe(false);
+    expect(completeTourStep(older, welcome, "usage", 2).changes[0]?.record.done).toEqual(["usage"]);
+  });
+});
+
 describe("dismissing a tour", () => {
   it("writes the dismissed status with no run, ends a running one as skip-press, and keeps a finished status", () => {
     const idle = dismissTour(ready(), welcome, 7);
-    expect(idle.changed).toEqual({ tourId: "welcome", record: { v: 2, status: "dismissed", at: 7 } });
+    expect(idle.changes).toEqual([{ tourId: "welcome", record: { v: 2, status: "dismissed", at: 7 } }]);
     expect(dismissTour(shownAt(welcome, "usage"), welcome, 8).ended?.reason).toBe("skip-press");
     expect(dismissTour(idle.state, welcome, 9).state).toBe(idle.state);
+    const stepRun = startTour(ready(), welcome, { origin: "user", at: "usage", mode: "step" });
+    if (stepRun._tag !== "started") {
+      throw new Error("expected a start");
+    }
+    const fromStep = dismissTour(showPendingStep(stepRun.state, welcome, 10).state, welcome, 11);
+    expect(fromStep.ended).toMatchObject({ reason: "skip-press", status: null });
+    expect(tourStateOf(fromStep.state, "welcome")).toBe("dismissed");
   });
 });
 
@@ -148,7 +264,7 @@ describe("starting a run", () => {
   it("lets a user replay a finished tour and keeps it finished", () => {
     const finished = ready(initialTourSession({ welcome: { status: "completed", v: 2, at: 1 } }));
     const replay = showPendingStep(started(finished, welcome), welcome, 30);
-    expect(replay.changed?.record).toEqual({ status: "completed", v: 2, step: "intro", at: 30 });
+    expect(replay.changes[0]?.record).toEqual({ status: "completed", v: 2, step: "intro", at: 30 });
     const skipped = endTour(replay.state, welcome, "outside-press", 40);
     expect(tourStateOf(skipped.state, "welcome")).toBe("completed");
   });
@@ -187,12 +303,12 @@ describe("records from storage", () => {
   it("ends an auto run that another tab finished, and leaves a user's run going", () => {
     const finishedElsewhere = { welcome: { status: "completed" as const, v: 2, at: 50 } };
     const auto = showPendingStep(started(ready(), welcome, "auto"), welcome, 10).state;
-    const synced = receiveTourRecords(auto, finishedElsewhere);
+    const synced = receiveTourRecords(auto, finishedElsewhere, [welcome], 60);
     expect(synced.ended?.reason).toBe("synced");
-    expect(synced.changed).toBeNull();
+    expect(synced.changes).toEqual([]);
 
     const user = shownAt(welcome, "intro");
-    const kept = receiveTourRecords(user, finishedElsewhere);
+    const kept = receiveTourRecords(user, finishedElsewhere, [welcome], 60);
     expect(kept.ended).toBeNull();
     expect(kept.state.shown).toBe(user.shown);
   });
@@ -235,6 +351,7 @@ const operation: fc.Arbitrary<Operation> = fc.oneof(
       "outside-press",
       "no-targets",
       "synced",
+      "step-done",
       "error"
     ),
   }),
@@ -253,7 +370,7 @@ function apply(state: TourSessionState, op: Operation, now: number): TourTransit
   switch (op.kind) {
     case "start": {
       const outcome = startTour(state, tours[op.tour], { origin: op.origin });
-      return { state: outcome._tag === "started" ? outcome.state : state, ended: null, changed: null };
+      return { state: outcome._tag === "started" ? outcome.state : state, ended: null, changes: [] };
     }
     case "show":
       return showPendingStep(state, definition, now);
@@ -264,12 +381,12 @@ function apply(state: TourSessionState, op: Operation, now: number): TourTransit
     case "prev":
       return previousTourStep(state, definition);
     case "content":
-      return { state: bumpTourContent(state), ended: null, changed: null };
+      return { state: bumpTourContent(state), ended: null, changes: [] };
     case "end":
       return endTour(state, definition, op.reason, now);
     case "receive": {
       const record = op.status === null ? { v: 1, at: now } : { v: 1, at: now, status: op.status };
-      return receiveTourRecords(state, Object.fromEntries([[tours[op.tour].id, record]]));
+      return receiveTourRecords(state, Object.fromEntries([[tours[op.tour].id, record]]), tours, now);
     }
   }
 }
@@ -281,11 +398,11 @@ describe("references across transitions", () => {
         let state = ready();
         operations.forEach((op, now) => {
           const before = state;
-          const { state: after, changed, ended } = apply(before, op, now + 1);
+          const { state: after, changes, ended } = apply(before, op, now + 1);
           const touched = new Set<string>();
-          if (changed !== null) {
-            touched.add(changed.tourId);
-            expect(after.records[changed.tourId]).toBe(changed.record);
+          for (const change of changes) {
+            touched.add(change.tourId);
+            expect(after.records[change.tourId]).toBe(change.record);
           }
           if (op.kind === "receive") {
             touched.add(tours[op.tour].id);

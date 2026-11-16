@@ -200,6 +200,7 @@ const EXPECTED_ENTRIES = {
       "Tour",
       "useTour",
       "useTourStep",
+      "useTourStepDone",
       "useAutoStartTour",
       "defineTour",
       "tourStepKey",

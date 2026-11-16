@@ -26,7 +26,7 @@ import { defineTour } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
 import type { TourError } from "./tour-error";
 import { Tour } from "./tour-namespace";
-import { useAutoStartTour, useTour, useTourStep } from "./tour-provider";
+import { useAutoStartTour, useTour, useTourStep, useTourStepDone } from "./tour-provider";
 import type { TourRecords } from "./tour-records";
 import { localTourStorage, memoryTourStorage, remoteTourStorage } from "./tour-storage";
 import type { TourStorage } from "./tour-storage";
@@ -944,7 +944,7 @@ describe("Tour.Spotlight", () => {
     const dialog = await dialogNamed("Usage");
     await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
     const cutout = cutoutOf();
-    const width = (): string => cutout.style.getPropertyValue("--tour-cutout-w");
+    const width = (): string => cutout.style.getPropertyValue("--tour-highlight-w");
     const lit = width();
     // Unit under test: the hole while the popup closes. Oracle: it stays the size of the element it
     // lit, and never closes to the 0px point a centered step uses.
@@ -957,7 +957,7 @@ describe("Tour.Spotlight", () => {
     expect(widths.filter((value) => value !== lit)).toEqual([]);
   });
 
-  it("moves the lit hole with the element when the layout shifts under it", async () => {
+  it("moves the lit hole and the ring with the element when the layout shifts under it", async () => {
     // The shift moves the element down and keeps the page's height, so nothing scrolls or resizes.
     function Shifting({ children }: { children: ReactNode }): ReactElement {
       const [shifted, setShifted] = useState(false);
@@ -983,6 +983,7 @@ describe("Tour.Spotlight", () => {
         <PriceButton />
         <Tour.Popup tour={welcome} modal="trap-focus">
           <Tour.Spotlight />
+          <Tour.Ring />
           <Tour.Close />
           <Tour.Title />
           <Tour.Next />
@@ -996,13 +997,19 @@ describe("Tour.Spotlight", () => {
     // The step settles first, so no scroll or entrance animation is still moving anything.
     await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
     const cutout = cutoutOf();
+    const ring = document.querySelector<HTMLElement>('[data-slot="tour-ring"]');
+    if (ring === null) {
+      throw new Error("expected the ring");
+    }
     const target = page.getByText("Usage card").element();
-    // Unit under test: the hole's box. Oracle: it covers the element's box, wherever the element is.
-    const covers = (): boolean => {
-      const hole = cutout.getBoundingClientRect();
-      const element = target.getBoundingClientRect();
-      return hole.top <= element.top && hole.bottom >= element.bottom;
-    };
+    // Unit under test: the hole's and the ring's boxes. Oracle: each covers the element's box,
+    // wherever the element is.
+    const covers = (): boolean =>
+      [cutout, ring].every((highlight) => {
+        const box = highlight.getBoundingClientRect();
+        const element = target.getBoundingClientRect();
+        return box.top <= element.top && box.bottom >= element.bottom;
+      });
     await vi.waitFor(() => {
       expect(covers()).toBe(true);
     });
@@ -1028,6 +1035,218 @@ function cutoutOf(): HTMLElement {
   }
   return cutout;
 }
+
+describe("Tour checklist", () => {
+  function Checklist(): ReactElement {
+    const tour = useTour(welcome);
+    const usageDone = useTourStepDone(welcome, "usage");
+    return (
+      <>
+        <output aria-label="Done count">{tour.doneCount}</output>
+        <output aria-label="Usage done">{String(usageDone)}</output>
+        <Button variant="outline" onClick={() => tour.startStep("usage")}>
+          Show the usage tip
+        </Button>
+        <Button variant="outline" onClick={() => tour.completeStep("usage")}>
+          Finish usage
+        </Button>
+        <Button variant="outline" onClick={() => tour.completeStep("intro")}>
+          Finish intro
+        </Button>
+        <Button variant="outline" onClick={() => tour.completeStep("price")}>
+          Finish price
+        </Button>
+      </>
+    );
+  }
+
+  it("shows one step on its own, whose Done ends the run with no status", async () => {
+    const events: TourEvent[] = [];
+    const storage = renderWelcome({ onEvent: (event) => events.push(event), children: <Checklist /> });
+    await userEvent.click(roleNamed("button", "Show the usage tip"));
+    await dialogNamed("Usage");
+    expect(page.getByText("Step 2 of 3").query()).toBeNull();
+    expect(roleNamed("button", "Back")).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(roleNamed("button", "Done"));
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "step-done", status: null });
+    expect((await recordsOf(storage)).welcome).toBeUndefined();
+  });
+
+  it("marks tasks done, ends the shown task's run, and completes the tour with the last task", async () => {
+    const events: TourEvent[] = [];
+    const storage = renderWelcome({ onEvent: (event) => events.push(event), children: <Checklist /> });
+    await userEvent.click(roleNamed("button", "Show the usage tip"));
+    await dialogNamed("Usage");
+    // A coachmark leaves the page usable, so the task's own control is reachable from the keyboard.
+    roleNamed("button", "Finish usage").focus();
+    await userEvent.keyboard("{Enter}");
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "step-done" });
+    expect(roleNamed("status", "Usage done")).toHaveTextContent("true");
+    expect(roleNamed("status", "Done count")).toHaveTextContent("1");
+
+    await userEvent.click(roleNamed("button", "Finish intro"));
+    await userEvent.click(roleNamed("button", "Finish price"));
+    await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("completed");
+    expect((await recordsOf(storage)).welcome).toMatchObject({
+      status: "completed",
+      done: ["usage", "intro", "price"],
+    });
+  });
+
+  it("completes a checklist whose tasks another device finished between them", async () => {
+    const storage = memoryTourStorage({ welcome: { v: 1, done: ["intro", "usage", "price"], at: 3 } });
+    renderWelcome({ storage });
+    await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("completed");
+    await vi.waitFor(async () => {
+      expect((await recordsOf(storage)).welcome?.status).toBe("completed");
+    });
+  });
+
+  it("ends an auto-running checklist as synced when another tab's record finishes its tasks", async () => {
+    function AutoStart(): ReactElement {
+      useAutoStartTour(welcome, { delayMs: 0 });
+      return <></>;
+    }
+    const events: TourEvent[] = [];
+    renderWelcome({
+      storage: localTourStorage(),
+      onEvent: (event) => events.push(event),
+      children: <AutoStart />,
+    });
+    await dialogNamed("Welcome");
+    const covered = JSON.stringify({ welcome: { v: 1, done: ["intro", "usage", "price"], at: Date.now() } });
+    window.dispatchEvent(new StorageEvent("storage", { key: "fuse-tours", newValue: covered }));
+    await expectNoDialog();
+    expect(events.at(-1)).toMatchObject({ type: "end", reason: "synced", status: null });
+    expect(roleNamed("status", "welcome state")).toHaveTextContent("completed");
+  });
+
+  const setup = defineTour({ id: "setup", steps: ["meter", "payment"] });
+  // Each part makes `setup` known to the session on its own. The list items are plain-HTML targets.
+  function SetupList({ children }: { children?: ReactNode }): ReactElement {
+    return (
+      <ul>
+        <li data-tour-step="setup.payment">Add a payment method</li>
+        {children}
+      </ul>
+    );
+  }
+  function WithUseTour(): ReactElement {
+    const tour = useTour(setup);
+    return (
+      <SetupList>
+        <li data-tour-step="setup.meter">Connect your meter ({tour.state})</li>
+      </SetupList>
+    );
+  }
+  function WithUseTourStepDone(): ReactElement {
+    const done = useTourStepDone(setup, "meter");
+    return (
+      <SetupList>
+        <li data-tour-step="setup.meter">Connect your meter {done ? "(done)" : ""}</li>
+      </SetupList>
+    );
+  }
+  function WithTarget(): ReactElement {
+    return (
+      <SetupList>
+        <Tour.Target tour={setup} step="meter" title="Meter" render={<li />}>
+          Connect your meter
+        </Tour.Target>
+      </SetupList>
+    );
+  }
+  function WithUseTourStep(): ReactElement {
+    const { ref } = useTourStep(setup, "meter", { title: "Meter" });
+    return (
+      <SetupList>
+        <li ref={ref}>Connect your meter</li>
+      </SetupList>
+    );
+  }
+  function WithAutoStart(): ReactElement {
+    useAutoStartTour(setup, { delayMs: 0 });
+    return (
+      <SetupList>
+        <li data-tour-step="setup.meter">Connect your meter</li>
+      </SetupList>
+    );
+  }
+
+  it.each([
+    ["useTour", WithUseTour],
+    ["useTourStepDone", WithUseTourStepDone],
+    ["Tour.Target", WithTarget],
+    ["useTourStep", WithUseTourStep],
+    ["useAutoStartTour", WithAutoStart],
+  ])(
+    "completes a checklist that %s makes known after its covering records arrived, and saves it",
+    async (_part, Part) => {
+      function Later(): ReactElement {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            <Button variant="outline" onClick={() => setOpen(true)}>
+              Open the checklist
+            </Button>
+            {open ? <Part /> : null}
+          </>
+        );
+      }
+      const storage = memoryTourStorage({ setup: { v: 1, done: ["meter", "payment"], at: 1 } });
+      renderWelcome({ storage, children: <Later /> });
+      await expect.element(page.getByRole("status", { name: "welcome state" })).toHaveTextContent("idle");
+      await userEvent.click(roleNamed("button", "Open the checklist"));
+      await vi.waitFor(async () => {
+        expect((await recordsOf(storage)).setup?.status).toBe("completed");
+      });
+    }
+  );
+});
+
+describe("Tour.Ring", () => {
+  it("outlines the step's element without taking presses from it", async () => {
+    const presses: string[] = [];
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Tour.Target
+          tour={welcome}
+          step="usage"
+          title="Usage"
+          render={<button type="button" onClick={() => presses.push("usage")} />}>
+          Usage card
+        </Tour.Target>
+        <Tour.Popup tour={welcome} side="right">
+          <Tour.Ring />
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Usage");
+    const target = roleNamed("button", "Usage card");
+    // Unit under test: the ring's box. Oracle: the target's box grown by the default 4px padding.
+    // The ring is hidden from assistive technology, so only its slot finds it.
+    await vi.waitFor(() => {
+      const ring = document.querySelector('[data-slot="tour-ring"]');
+      expect(ring).not.toBeNull();
+      const box = ring?.getBoundingClientRect();
+      const element = target.getBoundingClientRect();
+      expect(box?.left).toBeCloseTo(element.left - 4, 0);
+      expect(box?.width).toBeCloseTo(element.width + 8, 0);
+      expect(box?.height).toBeCloseTo(element.height + 8, 0);
+    });
+    await userEvent.click(target);
+    expect(presses).toEqual(["usage"]);
+    await dialogNamed("Usage");
+  });
+});
 
 describe("Tour re-renders", () => {
   it("renders an unrelated child once, a Target as it becomes and stops being shown, and another tour's Popup only on step changes", async () => {

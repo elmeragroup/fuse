@@ -18,7 +18,7 @@ import { tourStepKey } from "./tour-definition";
 import type { TourDefinition } from "./tour-definition";
 import type { TourError } from "./tour-error";
 import type { TourRecords } from "./tour-records";
-import { initialTourSession, tourStateOf } from "./tour-session";
+import { initialTourSession, isTourStepDone, tourDoneCount, tourStateOf } from "./tour-session";
 import type { TourState } from "./tour-session";
 import type { TourStorage } from "./tour-storage";
 
@@ -34,6 +34,7 @@ const INERT_CONTROLLER: TourController = {
   wordsOf: () => null,
   targetOf: () => null,
   start: () => "not-ready",
+  completeStep: () => undefined,
   next: () => undefined,
   prev: () => undefined,
   end: () => undefined,
@@ -150,6 +151,18 @@ export type TourHandle<S extends string> = {
   readonly prev: () => void;
   /** Turns the tour down for good: a run ends as Skip ends it, and a tour with no run is dismissed. */
   readonly dismiss: () => void;
+  /**
+   * Shows one step on its own, such as a checklist task's tip. Its Next reads "Done" and ends the
+   * run, and closing it writes no status. Returns `"started"`, or `"busy"` while another tour runs.
+   */
+  readonly startStep: (step: S) => TourStartResult;
+  /**
+   * Marks a step done as a checklist task, such as when the user did what the step asks. The tour
+   * completes once every step is done, and a run of that step ends.
+   */
+  readonly completeStep: (step: S) => void;
+  /** How many steps are done as checklist tasks in this version of the tour. */
+  readonly doneCount: number;
 };
 
 /**
@@ -174,7 +187,21 @@ export function useTour<S extends string>(tour: TourDefinition<S>): TourHandle<S
   const index = useCalendarSelector(controller.store, (session) =>
     session.shown?.tourId === tour.id ? session.shown.index : null
   );
-  const start = useCallback((at?: S) => controller.start(tour, "user", at), [controller, tour]);
+  const doneCount = useCalendarSelector(controller.store, (session) => tourDoneCount(session, tour));
+  const start = useCallback(
+    (at?: S) => controller.start(tour, at === undefined ? { origin: "user" } : { origin: "user", at }),
+    [controller, tour]
+  );
+  const startStep = useCallback(
+    (step: S) => controller.start(tour, { origin: "user", at: step, mode: "step" }),
+    [controller, tour]
+  );
+  const completeStep = useCallback(
+    (step: S) => {
+      controller.completeStep(tour, step);
+    },
+    [controller, tour]
+  );
   const next = useCallback(() => {
     controller.next(tour);
   }, [controller, tour]);
@@ -193,7 +220,29 @@ export function useTour<S extends string>(tour: TourDefinition<S>): TourHandle<S
     next,
     prev,
     dismiss,
+    startStep,
+    completeStep,
+    doneCount,
   };
+}
+
+/**
+ * Whether the user finished a step as a checklist task, in this version of the tour. The caller
+ * re-renders only when the answer changes.
+ *
+ * @template S - The tour's step ids.
+ * @param tour - The tour.
+ * @param step - The step.
+ * @returns Whether the step is done.
+ *
+ * @beta
+ */
+export function useTourStepDone<S extends string>(tour: TourDefinition<S>, step: NoInfer<S>): boolean {
+  const controller = useTourController();
+  useLayoutEffect(() => {
+    controller.register(tour);
+  }, [controller, tour]);
+  return useCalendarSelector(controller.store, (session) => isTourStepDone(session, tour, step));
 }
 
 /**

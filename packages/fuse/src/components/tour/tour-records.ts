@@ -152,10 +152,24 @@ function winner(current: TourRecord, incoming: TourRecord): TourRecord {
 }
 
 /**
+ * The winning record, with the checklist steps the losing record of the same version marked done
+ * added, so a step finished on one device stays done on another.
+ */
+function mergeRecord(current: TourRecord, incoming: TourRecord): TourRecord {
+  const won = winner(current, incoming);
+  const lost = won === current ? incoming : current;
+  if (lost.v !== won.v || lost.done === undefined) {
+    return won;
+  }
+  const missing = lost.done.filter((stepId) => won.done?.includes(stepId) !== true);
+  return missing.length === 0 ? won : { ...won, done: [...(won.done ?? []), ...missing] };
+}
+
+/**
  * Two record sets merged tour by tour. A record with a status beats one without, whatever their ages,
  * so a device that saw a tour half way never brings back a tour the user finished elsewhere. Between
  * two records that both have a status, or both lack one, the newer `at` wins, and `current` wins a
- * tie.
+ * tie. The winner keeps every checklist step the other record of the same version marked done.
  *
  * @param current - The records held now.
  * @param incoming - The records to merge in.
@@ -169,7 +183,7 @@ export function mergeTourRecords(current: TourRecords, incoming: TourRecords): T
   const merged = new Map(Object.entries(current));
   for (const [tourId, record] of Object.entries(incoming)) {
     const held = merged.get(tourId);
-    const next = held === undefined ? record : winner(held, record);
+    const next = held === undefined ? record : mergeRecord(held, record);
     if (next !== held) {
       merged.set(tourId, next);
       changed = true;

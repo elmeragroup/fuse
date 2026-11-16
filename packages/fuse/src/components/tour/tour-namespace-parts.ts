@@ -11,6 +11,7 @@ export {
   TourProgress as Progress,
   TourClose as Close,
   TourSpotlight as Spotlight,
+  TourRing as Ring,
   TourTitle as Title,
   TourDescription as Description,
   TourFooter as Footer,

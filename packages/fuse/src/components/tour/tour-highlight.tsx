@@ -3,26 +3,22 @@
 import { useLayoutEffect, useRef } from "react";
 import type { ReactElement } from "react";
 
-import { cn } from "../../styles/cn";
-import { overlaySpotlightCutoutClass } from "../overlay/overlay-classes";
-import { tourVariants } from "./tour-variants";
-
-const cutoutClass = cn(overlaySpotlightCutoutClass, tourVariants().outline());
-
 /**
- * The lit hole in a spotlight's dim: a box over the step's element, outlined in the primary color,
- * whose spread shadow dims the rest of the page. It ignores the pointer, so a press on the hole
- * reaches the backdrop under it. It follows the element through scrolling, resizing and layout
- * shifts by reading the element's box every frame and writing it as custom properties when it
- * changed, with no easing. It closes to a point in the middle of the viewport for a centered step,
- * which shows no outline.
+ * A box over the step's element: the lit hole of `Tour.Spotlight` or the outline of `Tour.Ring`. It
+ * ignores the pointer. It follows the element through scrolling, resizing and layout shifts by
+ * reading the element's box every frame and writing it as the `--tour-highlight-*` properties when it
+ * changed, with no easing. It closes to a point in the middle of the viewport for a centered step.
  */
-export function TourCutout({
+export function TourHighlight({
   element,
   padding,
+  slot,
+  className,
 }: {
   readonly element: Element | null;
   readonly padding: number;
+  readonly slot: "tour-cutout" | "tour-ring";
+  readonly className: string;
 }): ReactElement {
   const ring = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -35,8 +31,8 @@ export function TourCutout({
     // The element moves with scrolling, resizing and layout shifts that nothing announces, such as a
     // late image or an opening banner, so every frame reads its box and writes it only when it changed.
     const measure = (): void => {
-      // An element that left the page keeps its last box while the dim fades, as the popup's anchor
-      // does.
+      // An element that left the page, such as a Beacon that unmounts when its tip ends, keeps its last
+      // box while the highlight fades, as the popup's anchor does.
       if (element !== null && !element.isConnected && written !== "") {
         return;
       }
@@ -51,11 +47,11 @@ export function TourCutout({
       }
       written = geometry;
       const radius = element === null ? 0 : Number.parseFloat(getComputedStyle(element).borderTopLeftRadius);
-      node.style.setProperty("--tour-cutout-x", `${box.left - grow}px`);
-      node.style.setProperty("--tour-cutout-y", `${box.top - grow}px`);
-      node.style.setProperty("--tour-cutout-w", `${box.width + grow * 2}px`);
-      node.style.setProperty("--tour-cutout-h", `${box.height + grow * 2}px`);
-      node.style.setProperty("--tour-cutout-r", `${(Number.isFinite(radius) ? radius : 0) + grow}px`);
+      node.style.setProperty("--tour-highlight-x", `${box.left - grow}px`);
+      node.style.setProperty("--tour-highlight-y", `${box.top - grow}px`);
+      node.style.setProperty("--tour-highlight-w", `${box.width + grow * 2}px`);
+      node.style.setProperty("--tour-highlight-h", `${box.height + grow * 2}px`);
+      node.style.setProperty("--tour-highlight-r", `${(Number.isFinite(radius) ? radius : 0) + grow}px`);
     };
     const follow = (): void => {
       measure();
@@ -66,12 +62,5 @@ export function TourCutout({
       cancelAnimationFrame(frame);
     };
   }, [element, padding]);
-  return (
-    <div
-      ref={ring}
-      aria-hidden="true"
-      data-slot="tour-cutout"
-      className={element === null ? overlaySpotlightCutoutClass : cutoutClass}
-    />
-  );
+  return <div ref={ring} aria-hidden="true" data-slot={slot} className={className} />;
 }

@@ -2,7 +2,7 @@ import { cn } from "../../styles/cn";
 import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
-import { overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayLayer, overlayTimedPopupClass } from "../overlay/overlay-classes";
 
 /** The primary-color ring around a step's element, which every highlight of the element shares. */
 const tourOutlineClass = cn("ring-2 ring-primary");
@@ -19,6 +19,9 @@ const tourOutlineClass = cn("ring-2 ring-primary");
  * - `announcement` hides the live region that announces the step.
  * - `outline` rings a step's lit element in the primary color, so the spotlight's hole reads on any
  *   page, dark ones included, where the scrim's tint barely shows.
+ * - `highlight` places a box over the step's element from the `--tour-highlight-*` properties
+ *   `TourHighlight` writes, and takes no pointer.
+ * - `ring` is the same outline on the overlay layer, for `Tour.Ring`.
  */
 export const tourVariants = tv({
   slots: {
@@ -38,5 +41,8 @@ export const tourVariants = tv({
     skip: "me-auto",
     announcement: "sr-only",
     outline: tourOutlineClass,
+    highlight:
+      "pointer-events-none fixed top-0 left-0 h-(--tour-highlight-h) w-(--tour-highlight-w) translate-x-(--tour-highlight-x) translate-y-(--tour-highlight-y) rounded-(--tour-highlight-r)",
+    ring: [tourOutlineClass, overlayLayer],
   },
 });

@@ -1,5 +1,6 @@
 // Unit under test: the tour record helpers. Oracles: the plan's merge rule (a status beats no
-// status at any age, otherwise the newer `at` wins) restated per tour in the assertions, and the
+// status at any age, otherwise the newer `at` wins, and a done checklist step of the same version
+// is never lost) restated per tour in the assertions, and the
 // cookie's contract that it carries every finished record's status, version and time.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -44,7 +45,25 @@ describe("mergeTourRecords", () => {
         for (const [id, mine] of Object.entries(current)) {
           const theirs = incoming[id];
           if (theirs !== undefined && (mine.status === undefined) === (theirs.status === undefined)) {
-            expect(merged[id]).toBe(theirs.at > mine.at ? theirs : mine);
+            const { done: _done, ...won } = theirs.at > mine.at ? theirs : mine;
+            expect(merged[id]).toMatchObject(won);
+          }
+        }
+      })
+    );
+  });
+
+  it("keeps every checklist step either record of the same version marked done", () => {
+    fc.assert(
+      fc.property(records, records, (current, incoming) => {
+        const merged = mergeTourRecords(current, incoming);
+        for (const [id, mine] of Object.entries(current)) {
+          const theirs = incoming[id];
+          const kept = merged[id];
+          if (theirs !== undefined && theirs.v === mine.v && kept !== undefined) {
+            for (const stepId of [...(mine.done ?? []), ...(theirs.done ?? [])]) {
+              expect(kept.done).toContain(stepId);
+            }
           }
         }
       })
