@@ -30,6 +30,7 @@ import type { DateInputActions } from "./date-input-context";
 import type { DateInputField } from "./date-input-field";
 import { focusAroundRemoved, focusSibling } from "./date-input-focus";
 import type { DateInputNeighbor } from "./date-input-neighbors";
+import type { DateInputResetOwner } from "./date-input-reset";
 import {
   canceled,
   confirm,
@@ -119,9 +120,11 @@ export type SessionActionsOptions<T extends DateInputValue> = {
   readonly neighbor: DateInputNeighbor | undefined;
   /** The surrounding control's widened focus boundary, if any; see `date-input-boundary.ts`. */
   readonly boundary: DateInputBoundary | undefined;
+  /** The surrounding control that runs the input's form reset, if any; see `date-input-reset.ts`. */
+  readonly resetOwner: DateInputResetOwner | undefined;
   /** The Root element. */
   readonly rootRef: RefObject<HTMLElement | null>;
-  /** The input's own value a native form reset restores. */
+  /** The input's own value a native form reset restores, while no parent controls the value. */
   readonly defaultValue: TemporalValue | null;
   /**
    * The Field integration, which the session tells of focus, blur, a dropped draft and a reset. A
@@ -152,7 +155,7 @@ function staysInside(event: FocusEvent<HTMLElement>): boolean {
 
 /**
  * The session's gestures over its store, the rebase that keeps a draft on its basis, and the
- * native form reset of an input that owns its value.
+ * native form reset.
  *
  * @template T - The input's value kind.
  * @param store - The session's store, from `useSessionStore`.
@@ -163,7 +166,7 @@ export function useSessionActions<T extends DateInputValue>(
   store: CalendarStore<SessionState>,
   options: SessionActionsOptions<T>
 ): SessionActions {
-  const { basis, settings, boundary, rootRef, defaultValue, field } = options;
+  const { basis, boundary, resetOwner, rootRef, field } = options;
   const { revalidate } = field;
 
   // A new committed value, hour cycle or set of segments drops any draft typed over the old ones,
@@ -324,15 +327,22 @@ export function useSessionActions<T extends DateInputValue>(
     },
   };
 
-  useFormReset(
-    field.hiddenInput,
-    settings.controlled
-      ? null
-      : () => {
-          store.set(resetSession(defaultValue, settings.hourCycle, settings.fields, settings.units));
-          field.reset();
-        }
-  );
+  // A native form reset drops the draft and starts the Field's validity over. The input's own value
+  // goes back to its default. A parent's value stays, as a controlled native input's does, so a
+  // controlled input emits nothing and keeps showing that value. When a surrounding control runs
+  // the reset, it runs this in the task in which it puts its value back; see `date-input-reset.ts`.
+  const reset = useCallback((): void => {
+    const current = eventProps.current;
+    const { settings: now } = current;
+    store.set(
+      now.controlled
+        ? initialSession(current.defaultValue, current.basis)
+        : resetSession(current.defaultValue, now.hourCycle, now.fields, now.units)
+    );
+    current.field.reset();
+  }, [store]);
+  useLayoutEffect(() => resetOwner?.register(reset), [resetOwner, reset]);
+  useFormReset(field.hiddenInput, resetOwner === undefined ? reset : null);
 
   return { actions, rootHandlers };
 }

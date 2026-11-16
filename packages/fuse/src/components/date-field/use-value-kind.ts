@@ -13,16 +13,26 @@ export type ValueKindProps = Omit<ValueKindSources, "previous">;
 export type ValueKindOptions = {
   /**
    * Whether to warn, in development, when the value replaces a kind a value named with another
-   * kind. Only the input that edits the value warns, so a Root handing its value to one leaves it
-   * off.
+   * kind. Only one party warns for a value's kind. It is either an input that resolves its own kind
+   * or the control that supplies its inputs' kinds, such as a picker Root.
    */
   readonly warnOnKindChange?: boolean;
   /**
-   * The kind the control around the input supplies, as a picker does for its popup time input,
-   * which owns no value: it replaces the resolution, and nothing is remembered.
+   * The kind the control around the input supplies, as a picker does for its inputs. It replaces
+   * the resolution for the input's life. The input keeps the supplied object only while the control
+   * supplies an equal one, so a control may supply a new object each render.
    */
   readonly supplied?: ValueKind;
 };
+
+/** The kind `resolveValueKind` resolves from the props and the kind before. */
+function resolve(props: ValueKindProps, previous: ResolvedKind | undefined, owner: string): ResolvedKind {
+  const resolved = resolveValueKind({ ...props, previous });
+  if (resolved._tag === "err") {
+    throw new TypeError(`${owner} granularity: ${resolved.error.message}`);
+  }
+  return resolved.value;
+}
 
 /**
  * An input's value kind, remembered across renders: `resolveValueKind` with the kind this hook
@@ -42,14 +52,7 @@ export function useValueKind(
   { warnOnKindChange = false, supplied }: ValueKindOptions = {}
 ): ResolvedKind {
   const [previous, setPrevious] = useState<ResolvedKind | undefined>(undefined);
-  if (supplied !== undefined) {
-    return { kind: supplied, named: true };
-  }
-  const resolved = resolveValueKind({ ...props, previous });
-  if (resolved._tag === "err") {
-    throw new TypeError(`${owner} granularity: ${resolved.error.message}`);
-  }
-  const next = resolved.value;
+  const next = supplied === undefined ? resolve(props, previous, owner) : { kind: supplied, named: true };
   // The stored kind is handed back while it holds, so it is stable as a memo dependency.
   if (previous !== undefined && previous.named === next.named && sameKind(previous.kind, next.kind)) {
     return previous;

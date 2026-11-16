@@ -13,6 +13,8 @@ import type { TemporalValue, ValueKind } from "../../temporal/temporal-value";
 import { DateInputRoot } from "../date-field/date-input";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
+import { DateInputKindContext } from "../date-field/date-input-kind";
+import { DateInputResetContext } from "../date-field/date-input-reset";
 import { DateInputScopeContext } from "../date-field/date-input-scope";
 import type { DateInputScope } from "../date-field/date-input-scope";
 import type { KindFromValue } from "../date-field/date-kind-props";
@@ -21,6 +23,7 @@ import { datePickerStrings } from "./intl";
 import { endDay, endKind, endTime } from "./picker-draft";
 import type { EndpointDraft } from "./picker-draft";
 import type { PickerInputPartProps, PickerTimeSettings } from "./picker-root";
+import { usePickerShellContext } from "./picker-shell";
 
 const styles = datePickerVariants();
 
@@ -74,8 +77,6 @@ export type PickerTimeInputProps = PickerInputPartProps & {
   readonly settings: PickerTimeSettings | null;
   /** The key of the input's default name in `datePickerStrings`. */
   readonly label: "time" | "startTime" | "endTime";
-  /** The Root's form-reset generation, which remounts the input and its Field. */
-  readonly resetKey: number;
 };
 
 /**
@@ -83,42 +84,42 @@ export type PickerTimeInputProps = PickerInputPartProps & {
  * value the picker holds, as React Spectrum's picker shows a time field under its calendar. It
  * renders nothing while the picker's values have no time to show. It sits in a Base UI Field of
  * its own, so it is no second control of the picker's Field. It submits nothing, and its own
- * validity, such as a half-typed time on blur, never marks the picker. Its value carries the picker's day,
- * and the picker takes only its time.
+ * validity, such as a half-typed time on blur, never marks the picker. Its value carries the
+ * picker's day, and the picker takes only its time. Its form reset runs with the picker's; see
+ * `date-input-reset.ts`.
  */
 export function PickerTimeInput({
   binding,
   settings,
   label,
-  resetKey,
   className,
   ...props
 }: PickerTimeInputProps): ReactElement | null {
   const strings = useLocalizedStrings(datePickerStrings);
+  const { resetOwner } = usePickerShellContext("DatePicker.TimeInput");
   const { day, kind } = binding;
-  // One scope per day and kind, so the input's settings keep their identity while they hold.
-  const scope = useMemo((): DateInputScope => ({ units: "time", day, kind }), [day, kind]);
+  // One scope per day, so the input's settings keep their identity while the day stays the same.
+  const scope = useMemo((): DateInputScope => ({ units: "time", day }), [day]);
   if (settings === null) {
     return null;
   }
   return (
-    <FieldPrimitive.Root
-      // A form reset remounts the time input and its Field, as it does the picker's own input, so a
-      // half-typed time and its shown error start over.
-      key={resetKey}
-      className={styles.timeField()}
-      disabled={settings.disabled}>
-      <DateInputScopeContext value={scope}>
-        <DateInputRoot<KindFromValue, DateInputValue>
-          aria-label={strings.format(label)}
-          {...definedProps(props)}
-          value={binding.value}
-          onValueChange={binding.onValueChange}
-          {...settings}
-          data-slot="date-picker-time-input"
-          className={cn(styles.timeInput(), className)}
-        />
-      </DateInputScopeContext>
+    <FieldPrimitive.Root className={styles.timeField()} disabled={settings.disabled}>
+      <DateInputResetContext value={resetOwner}>
+        <DateInputScopeContext value={scope}>
+          <DateInputKindContext value={kind}>
+            <DateInputRoot<KindFromValue, DateInputValue>
+              aria-label={strings.format(label)}
+              {...definedProps(props)}
+              value={binding.value}
+              onValueChange={binding.onValueChange}
+              {...settings}
+              data-slot="date-picker-time-input"
+              className={cn(styles.timeInput(), className)}
+            />
+          </DateInputKindContext>
+        </DateInputScopeContext>
+      </DateInputResetContext>
     </FieldPrimitive.Root>
   );
 }

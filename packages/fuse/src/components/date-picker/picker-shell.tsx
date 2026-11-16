@@ -20,6 +20,7 @@ import { fieldActionName } from "../../internal/field-action-name";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { ValueKind } from "../../temporal/temporal-value";
 import { Button } from "../button/button";
 import type { LabelButtonProps } from "../button/button";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
@@ -32,6 +33,7 @@ import {
 } from "../calendar/calendar-parts";
 import type { DateInputBoundary } from "../date-field/date-input-boundary";
 import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
+import type { DateInputResetOwner } from "../date-field/date-input-reset";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import type { PopoverContentProps } from "../popover/popover";
 import { datePickerVariants } from "./date-picker-variants";
@@ -89,6 +91,18 @@ export type PickerShellContextValue = {
   readonly adjacentInput: DateInputNeighbor;
   /** The segment focus was on when the popup opened, which takes focus back when it closes. */
   readonly openerRef: RefObject<HTMLElement | null>;
+  /**
+   * The kind the picker's values take. An empty Input part takes it in place of resolving its own,
+   * so it forms the kind and zone the picker resolved; see `date-input-kind.ts`. An Input part
+   * holding a value takes that value's own kind.
+   */
+  readonly kind: ValueKind;
+  /**
+   * The object that the picker's own inputs, its Input and TimeInput parts, register their form
+   * reset with; see `date-input-reset.ts`. Any other DateInput in a custom popup keeps its own
+   * form reset.
+   */
+  readonly resetOwner: DateInputResetOwner;
 };
 
 /**

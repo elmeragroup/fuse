@@ -733,37 +733,104 @@ describe("DateInput descriptions", () => {
 });
 
 describe("DateInput form reset", () => {
-  it("clears the Field's incomplete error with the draft when the form resets", async () => {
+  // A controlled field's value is its parent's, so the reset puts back what the parent still passes.
+  it.each<{
+    readonly ownership: string;
+    readonly value: Pick<DateFieldProps<Temporal.PlainDate>, "value" | "defaultValue">;
+  }>([
+    { ownership: "uncontrolled", value: { defaultValue: Temporal.PlainDate.from("2026-10-05") } },
+    { ownership: "controlled", value: { value: Temporal.PlainDate.from("2026-10-05") } },
+  ])(
+    "clears the $ownership Field's incomplete error with the draft when the form resets",
+    async ({ value }) => {
+      const changes: string[] = [];
+      renderThemed(
+        withLocale(
+          "en-US",
+          <Form aria-label="Booking" onFormSubmit={() => undefined}>
+            <DateField
+              label="Start date"
+              name="start"
+              {...value}
+              onChange={(next) => changes.push(String(next))}
+            />
+            <button type="submit">Save</button>
+            <button type="reset">Reset</button>
+          </Form>
+        )
+      );
+      await userEvent.click(spin("day, Start date"));
+      await userEvent.keyboard("{Backspace}");
+      await userEvent.click(roleNamed("button", "Save"));
+      await expect
+        .element(page.getByRole("group", { name: "Start date", exact: true }))
+        .toHaveAttribute("data-invalid", "true");
+      await expect
+        .element(
+          page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
+            exact: true,
+          })
+        )
+        .toBeVisible();
+      const changesBeforeReset = [...changes];
+
+      await userEvent.click(roleNamed("button", "Reset"));
+      await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+      await expect
+        .element(page.getByRole("group", { name: "Start date", exact: true }))
+        .not.toHaveAttribute("data-invalid");
+      await expect.element(page.getByText(/The field is incomplete/u)).not.toBeInTheDocument();
+      // A reset emits no change, as a native input's reset fires no change event.
+      expect(changes).toEqual(changesBeforeReset);
+    }
+  );
+
+  it("drops a validation still pending when the form resets to the value it checked", async () => {
+    const verdicts = new Map<string, (error: string) => void>();
+    const pending = (label: string) => () =>
+      new Promise<string>((resolve) => {
+        verdicts.set(label, resolve);
+      });
     renderThemed(
       withLocale(
         "en-US",
-        <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <button type="submit">Save</button>
-          <button type="reset">Reset</button>
-        </Form>
+        <>
+          <form aria-label="Booking">
+            <Field.Root name="start" validate={pending("Start date")}>
+              <Field.Label>Start date</Field.Label>
+              <DateInput.Root defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+              <Field.Error />
+            </Field.Root>
+            <button type="reset">Reset</button>
+          </form>
+          {/* Outside the form, so the reset leaves its check pending: its verdict shows. */}
+          <Field.Root name="check" validate={pending("Check date")}>
+            <Field.Label>Check date</Field.Label>
+            <DateInput.Root defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+            <Field.Error />
+          </Field.Root>
+        </>
       )
     );
+    // These edits end on the default values, so the reset changes no value. Leaving each field starts
+    // its check, and the click on Reset leaves the second field and then resets the form.
     await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{Backspace}");
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-    await expect
-      .element(
-        page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
-          exact: true,
-        })
-      )
-      .toBeVisible();
-
+    await userEvent.keyboard("{ArrowUp}{ArrowDown}");
+    await userEvent.click(spin("day, Check date"));
+    await userEvent.keyboard("{ArrowUp}{ArrowDown}");
+    await expect.element(page.getByText("Start date", { exact: true })).toHaveAttribute("data-touched");
     await userEvent.click(roleNamed("button", "Reset"));
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .not.toHaveAttribute("data-invalid");
-    await expect.element(page.getByText(/The field is incomplete/u)).not.toBeInTheDocument();
+    await expect.poll(() => [...verdicts.keys()].sort()).toEqual(["Check date", "Start date"]);
+    // The reset has rendered, so the field is no longer touched.
+    await expect.element(page.getByText("Start date", { exact: true })).not.toHaveAttribute("data-touched");
+
+    // Both verdicts settle in one task, the reset field's first. React therefore renders any update
+    // from the first verdict no later than the second field's error.
+    verdicts.get("Start date")?.("Taken.");
+    verdicts.get("Check date")?.("Booked.");
+    await expect.element(page.getByText("Booked.", { exact: true })).toBeVisible();
+    expect(page.getByText("Taken.", { exact: true }).query()).toBeNull();
+    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
   });
 
   it("stays unflagged when a reset empties a required field after a failed submit", async () => {
@@ -790,6 +857,33 @@ describe("DateInput form reset", () => {
     await expect
       .element(page.getByText("Please fill out this field.", { exact: true }))
       .not.toBeInTheDocument();
+  });
+
+  it("lets a native form submit again once a reset restores a valid value over a Field validate error", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <Field.Root name="start" validate={(value) => (value === "2026-10-01" ? "No firsts." : null)}>
+            <Field.Label>Start date</Field.Label>
+            <DateInput.Root defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+            <Field.Error />
+          </Field.Root>
+          <button type="button">After</button>
+        </form>
+      )
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("01");
+    await userEvent.click(roleNamed("button", "After"));
+    await expect.element(page.getByText("No firsts.", { exact: true })).toBeVisible();
+    expect(formNamed("Booking").checkValidity()).toBe(false);
+
+    formNamed("Booking").reset();
+
+    await expect.element(page.getByText("No firsts.", { exact: true })).not.toBeInTheDocument();
+    expect(new FormData(formNamed("Booking")).get("start")).toBe("2026-10-05");
+    expect(formNamed("Booking").checkValidity()).toBe(true);
   });
 });
 

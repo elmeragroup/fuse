@@ -175,6 +175,7 @@ function EndpointMessagesReport({
   report,
   otherEnd,
   reversed,
+  generation,
 }: {
   readonly endpoint: Endpoint;
   readonly report: DateRangePickerRootContextValue["reportMessages"];
@@ -182,6 +183,8 @@ function EndpointMessagesReport({
   readonly otherEnd: string;
   /** Whether this end comes before its start. */
   readonly reversed: boolean;
+  /** The Root's form-reset generation. */
+  readonly generation: number;
 }): null {
   const field = useFieldRootContext();
   // This end's validity follows the other end too: an end the other end's move reverses validates
@@ -191,15 +194,22 @@ function EndpointMessagesReport({
   const shownInvalid = field.state.valid === false;
   const committedValue = field.validityData.value;
   const lastOtherEnd = useRef(otherEnd);
+  // A native form reset puts both ends back in the task that bumps the generation. Its move of the
+  // other end validates nothing, as the reset's own change of this end's value validates nothing;
+  // see `date-input-field.ts`. The commit that renders a new generation takes the other end as it
+  // finds it.
+  const handledGeneration = useRef(generation);
   useLayoutEffect(() => {
+    const resetting = handledGeneration.current !== generation;
+    handledGeneration.current = generation;
     if (lastOtherEnd.current === otherEnd) {
       return;
     }
     lastOtherEnd.current = otherEnd;
-    if (shownInvalid || reversed) {
+    if (!resetting && (shownInvalid || reversed)) {
       void validation.commit(committedValue);
     }
-  }, [otherEnd, shownInvalid, reversed, validation, committedValue]);
+  }, [generation, otherEnd, shownInvalid, reversed, validation, committedValue]);
   const { errors } = useFormContext();
   const name = field.name;
   const formError = name !== undefined && Object.hasOwn(errors, name) ? errors[name] : undefined;
@@ -232,8 +242,6 @@ function DateRangePickerEndpoint({
   );
   return (
     <FieldPrimitive.Root
-      // A form reset remounts the end's Field and input, so the draft and shown validity start over.
-      key={root.generation}
       className="contents"
       {...definedProps({ name })}
       invalid={root.invalidProp}
@@ -245,6 +253,7 @@ function DateRangePickerEndpoint({
         report={reportMessages}
         otherEnd={root.ends[endpoint === "start" ? "end" : "start"]?.toString() ?? ""}
         reversed={reversed}
+        generation={root.generation}
       />
       <PickerDateInput
         aria-label={strings.format(endpoint === "start" ? "startDate" : "endDate")}
@@ -293,7 +302,6 @@ function DateRangePickerTimeInput({
       binding={root.timeBindings[endpoint]}
       settings={root.timeSettings}
       label={endpoint === "start" ? "startTime" : "endTime"}
-      resetKey={root.generation}
     />
   );
 }

@@ -25,8 +25,10 @@ import type { DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
 import { boxPressHandlers, firstFocusableSegment } from "./date-input-focus";
 import { useIsIOS } from "./date-input-ios";
+import { DateInputKindContext } from "./date-input-kind";
 import { useDateInputNaming } from "./date-input-naming";
 import { DateInputNeighborContext } from "./date-input-neighbors";
+import { DateInputResetContext } from "./date-input-reset";
 import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
 import { basisOf, draftOver, entryOf } from "./date-input-session";
@@ -116,7 +118,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const ios = useIsIOS();
   const neighbor = use(DateInputNeighborContext);
   const boundary = use(DateInputBoundaryContext);
+  const resetOwner = use(DateInputResetContext);
   const inputScope = use(DateInputScopeContext);
+  const suppliedKind = use(DateInputKindContext);
   const scope = inputScope.units;
   const controlled = valueProp !== undefined;
 
@@ -131,12 +135,13 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const committed = controlled ? parsedValue : session.own;
 
   // A kind a value or default value named sticks, so emptying a zoned input and typing again emits
-  // a zoned value; one the granularity and zone made follows them (`useValueKind`). That memory is
-  // for an input that owns its value: a time-only input takes the kind its control supplies.
+  // a zoned value; one the granularity and zone made follows them (`useValueKind`). An input whose
+  // control supplies its kind, such as a picker's input, takes that kind instead; see
+  // `date-input-kind.ts`.
   const { kind } = useValueKind(
     { value: committed, defaultValue: parsedDefault, granularity: granularityProp, timeZone: timeZoneProp },
     OWNER,
-    inputScope.units === "time" ? { supplied: inputScope.kind } : { warnOnKindChange: true }
+    suppliedKind === undefined ? { warnOnKindChange: true } : { supplied: suppliedKind }
   );
 
   const granularity: DateGranularity = granularityProp ?? (kind.kind === "PlainDate" ? "day" : "minute");
@@ -257,6 +262,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     onValueChange,
     neighbor,
     boundary,
+    resetOwner,
     rootRef,
     defaultValue: parsedDefault,
     field,

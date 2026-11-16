@@ -3,8 +3,8 @@ import { temporal } from "./temporal";
 /**
  * The day the date components use where any fixed day serves: January 1, 2001, a Monday, ISO
  * weekday 1, on which the zones Fuse's markets use move no clocks. A calendar names its weekdays
- * from the week it starts, a picker hands it as a witness of its kind, and a popup time input
- * forms a time on it while its picker holds no day, as `date-field/date-input-scope.ts` does.
+ * from the week it starts, and a popup time input forms a time on it while its picker holds no day,
+ * as `date-field/date-input-scope.ts` does.
  *
  * @returns The day, a new object each call.
  */

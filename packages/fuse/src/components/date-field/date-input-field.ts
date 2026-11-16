@@ -65,8 +65,9 @@ export type DateInputField = {
    */
   readonly revalidate: () => void;
   /**
-   * A native form reset: the shown error and the Field's validity start over, and the reset's own
-   * change of value, in the commit that renders it, does not validate again.
+   * Resets the Field for a native form reset. The shown error and the Field's validity start over.
+   * The reset's own change of value, in the commit that renders it, does not validate again, whether
+   * the change is the input's own or a parent's set in the same task; see `date-input-reset.ts`.
    */
   readonly reset: () => void;
 };
@@ -174,10 +175,18 @@ export function useDateInputField(options: DateInputFieldOptions, fallbackId: st
     setShownError(null);
     setDirty(false);
     setTouched(false);
+    // The reset cancels a validation still pending, such as an async `validate` that a blur started,
+    // so it cannot publish its verdict over the reset. Base UI reads no value when it cancels.
+    validation.change(getValue(), true);
     // A reset value may equal the value before it, so no change revalidates the Field: its shown
     // validity starts over, as a native control's does.
     setValidityData((data) => ({ ...data, state: DEFAULT_VALIDITY_STATE, error: "", errors: [] }));
-  }, [setDirty, setTouched, setValidityData]);
+    // A Field's `validate` error on the hidden input outlives the reset that hides it and would
+    // block a native submit. The reset therefore restores the input's current validity message
+    // immediately, unvalidated. The commit that renders the reset value applies its updated
+    // message.
+    hiddenInput.current?.setCustomValidity(message);
+  }, [setDirty, setTouched, validation, getValue, setValidityData, message]);
 
   const invalid =
     options.invalid || field.invalid === true || field.state.valid === false || shownError !== null;
