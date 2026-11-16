@@ -40,7 +40,7 @@ export function TourFooter({ className, ...props }: ComponentProps<"div">): Reac
 
 /**
  * The run's progress: a dot per step, the count such as "2 of 4", and a polite live region that
- * announces "Step 2 of 4" when the step changes. The dots and the count are hidden from assistive
+ * announces "Step 2 of 4" when the step changes. It renders nothing in a run of one step. The dots and the count are hidden from assistive
  * technology, which hears the live region instead.
  *
  * @beta
@@ -48,7 +48,7 @@ export function TourFooter({ className, ...props }: ComponentProps<"div">): Reac
 export function TourProgress({ className, ...props }: ComponentProps<"div">): ReactElement | null {
   const popup = useTourPopup();
   const strings = useLocalizedStrings(tourStrings);
-  if (popup === null) {
+  if (popup === null || popup.view.mode === "step") {
     return null;
   }
   const { index, count } = popup.view;
@@ -145,6 +145,37 @@ export function TourSpotlight({ padding = 8 }: TourSpotlightProps): ReactElement
   return null;
 }
 
+/**
+ * Props for `Tour.Ring`.
+ *
+ * @beta
+ */
+export type TourRingProps = {
+  /** The space the ring leaves around the step's element, in pixels. */
+  padding?: number;
+};
+
+/**
+ * Outlines the step's element while the page stays usable, for a coachmark. It renders nothing
+ * itself: it makes `Tour.Popup` draw a ring in the primary color around the element, which follows
+ * it through scrolling and takes no pointer. A centered step has no element and shows no ring.
+ *
+ * @beta
+ */
+export function TourRing({ padding = 4 }: TourRingProps): ReactElement | null {
+  const parts = useTourPopup()?.parts;
+  useLayoutEffect(() => {
+    if (parts === undefined) {
+      return;
+    }
+    parts.set({ ...parts.get(), ring: { padding } });
+    return () => {
+      parts.set({ ...parts.get(), ring: null });
+    };
+  }, [parts, padding]);
+  return null;
+}
+
 function useShownWords(): { readonly title: ReactNode; readonly description: ReactNode } | null {
   const popup = useTourPopup();
   // `contentRev` changes when the shown step's registered words change, so the part reads them again.
@@ -230,8 +261,9 @@ export function composeClick(
 }
 
 /**
- * The button that turns the tour down for good, ending the run as `skip-press`. On the last step it
- * stays in place, looks disabled and does nothing, so focus never lands on a removed button.
+ * The button that turns the tour down for good, ending the run as `skip-press`. On the last step, and
+ * in a run of one step, it stays in place, looks disabled and does nothing, so focus never lands on a
+ * removed button.
  *
  * @beta
  */
@@ -247,7 +279,7 @@ export function TourSkip({
     return null;
   }
   const { controller, tour, view } = popup;
-  const last = view.index === view.count - 1;
+  const last = view.mode === "step" || view.index === view.count - 1;
   return (
     <Button
       data-slot="tour-skip"
@@ -267,8 +299,8 @@ export function TourSkip({
 }
 
 /**
- * The button that shows the previous step. On the first step it stays in place, looks disabled and
- * does nothing, so focus never lands on a removed button.
+ * The button that shows the previous step. On the first step, and in a run of one step, it stays in
+ * place, looks disabled and does nothing, so focus never lands on a removed button.
  *
  * @beta
  */
@@ -279,7 +311,7 @@ export function TourPrev({ children, onClick, ...props }: TourStepButtonProps): 
     return null;
   }
   const { controller, tour, view } = popup;
-  const first = view.index === 0;
+  const first = view.mode === "step" || view.index === 0;
   return (
     <Button
       data-slot="tour-prev"
@@ -298,7 +330,8 @@ export function TourPrev({ children, onClick, ...props }: TourStepButtonProps): 
 }
 
 /**
- * The button that shows the next step, labeled "Done" on the last step, where it completes the tour.
+ * The button that shows the next step, labeled "Done" on the last step, where it completes the tour,
+ * and in a run of one step, where it ends the run.
  * It stays mounted for the whole run, so focus on it survives a step change.
  *
  * @beta
@@ -310,7 +343,7 @@ export function TourNext({ children, onClick, ...props }: TourStepButtonProps): 
     return null;
   }
   const { controller, tour, view } = popup;
-  const last = view.index === view.count - 1;
+  const last = view.mode === "step" || view.index === view.count - 1;
   return (
     <Button
       data-slot="tour-next"

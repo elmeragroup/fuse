@@ -17,7 +17,7 @@
 // and no `export *`, local declaration or directive. The exports and barrel generators discover
 // this file. It stays out of the root barrel while it carries the preview label.
 export { Tour } from "./components/tour/tour-namespace";
-export { useTour, useTourStep, useAutoStartTour } from "./components/tour/tour-provider";
+export { useTour, useTourStep, useTourStepDone, useAutoStartTour } from "./components/tour/tour-provider";
 export { defineTour, tourStepKey } from "./components/tour/tour-definition";
 export {
   TOUR_COOKIE_NAME,
@@ -45,6 +45,7 @@ export type { TourRecord, TourRecords, TourStatus } from "./components/tour/tour
 export type {
   TourEndReason,
   TourOrigin,
+  TourRunMode,
   TourRecordChange,
   TourStartRefusal,
   TourState,
@@ -70,4 +71,9 @@ export type {
 } from "./components/tour/tour-provider";
 export type { TourTargetProps } from "./components/tour/tour-target";
 export type { TourPopupProps } from "./components/tour/tour-popup";
-export type { TourCloseProps, TourSpotlightProps, TourStepButtonProps } from "./components/tour/tour-parts";
+export type {
+  TourCloseProps,
+  TourRingProps,
+  TourSpotlightProps,
+  TourStepButtonProps,
+} from "./components/tour/tour-parts";

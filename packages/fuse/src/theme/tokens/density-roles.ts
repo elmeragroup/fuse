@@ -772,6 +772,7 @@ export const PART_DENSITY = {
   "tour-popup": "surface",
   "tour-backdrop": "layout",
   "tour-cutout": "layout",
+  "tour-ring": "layout",
   "tour-header": "layout",
   "tour-progress": "fixed",
   "tour-close": "control",

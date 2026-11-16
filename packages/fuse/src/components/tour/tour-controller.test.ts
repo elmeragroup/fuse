@@ -54,7 +54,7 @@ describe("createTourController", () => {
       reducedMotion: () => false,
     });
     controller.connect();
-    controller.start(welcome, "user");
+    controller.start(welcome, { origin: "user" });
     expect(controller.store.get().shown?.stepId).toBe("intro");
     notify(nothing());
     expect(controller.store.get().shown?.stepId).toBe("intro");

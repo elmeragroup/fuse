@@ -22,6 +22,7 @@ import { parseTourRecords } from "./tour-records";
 import type { TourRecords, TourStatus } from "./tour-records";
 import {
   bumpTourContent,
+  completeTourStep,
   dismissTour,
   endTour,
   failTourStorage,
@@ -30,6 +31,7 @@ import {
   pickAutoStartTour,
   previousTourStep,
   receiveTourRecords,
+  reconcileTours,
   showPendingStep,
   skipPendingStep,
   startTour,
@@ -42,6 +44,7 @@ import type {
   TourOrigin,
   TourSessionState,
   TourShownStep,
+  TourStartOptions,
   TourStartRefusal,
   TourTransition,
 } from "./tour-session";
@@ -149,7 +152,9 @@ export type TourController = {
   /** The element a shown step resolved to, or `null` for a centered step. */
   readonly targetOf: (step: TourShownStep) => Element | null;
   /** Starts a run of `tour`. */
-  readonly start: (tour: TourDefinition, origin: TourOrigin, at?: string) => TourStartResult;
+  readonly start: (tour: TourDefinition, options: TourStartOptions) => TourStartResult;
+  /** Marks a step of `tour` done as a checklist task. */
+  readonly completeStep: (tour: TourDefinition, stepId: string) => void;
   /** Moves `tour`'s run to its next step, or completes it on the last. */
   readonly next: (tour: TourDefinition) => void;
   /** Moves `tour`'s run to its previous step. */
@@ -278,32 +283,31 @@ export function createTourController({ storage, initialRecords }: TourController
     evaluateAutoStart();
   };
 
-  const write = (transition: TourTransition): void => {
-    const { changed } = transition;
-    if (changed === null) {
-      return;
+  const write = ({ state, changes }: TourTransition): void => {
+    for (const change of changes) {
+      writeTurn = writeTurn.then(() => {
+        // The port is read when the write runs, so a write queued behind a failed one goes to memory.
+        const port = portOf();
+        return Promise.resolve()
+          .then(() => port.storage.write(state.records, change))
+          .catch((cause: unknown) => {
+            if (active === port) {
+              degrade("write", new TourError("storage", { cause }));
+            }
+          });
+      });
     }
-    const records = transition.state.records;
-    writeTurn = writeTurn.then(() => {
-      // The port is read when the write runs, so a write queued behind a failed one goes to memory.
-      const port = portOf();
-      return Promise.resolve()
-        .then(() => port.storage.write(records, changed))
-        .catch((cause: unknown) => {
-          if (active === port) {
-            degrade("write", new TourError("storage", { cause }));
-          }
-        });
-    });
   };
 
   const remember = (tour: TourDefinition): void => {
     definitions.set(tour.id, tour);
   };
 
-  // Makes a tour known. Every hook and part that names a tour calls this.
+  // Makes a tour known, and settles the records that arrived before it was: they may already finish
+  // its checklist. Every hook and part that names a tour calls this.
   const know = (tour: TourDefinition): void => {
     remember(tour);
+    apply(reconcileTours(store.get(), [tour], Date.now()));
   };
 
   const wordsOf = (tourId: string, stepId: string): TourStepWords | null =>
@@ -441,7 +445,7 @@ export function createTourController({ storage, initialRecords }: TourController
       if (candidate !== undefined) {
         candidate.due = false;
       }
-      start(picked, "auto");
+      start(picked, { origin: "auto" });
       return;
     }
     let wake: number | null = null;
@@ -458,15 +462,16 @@ export function createTourController({ storage, initialRecords }: TourController
     }
   }
 
-  function start(tour: TourDefinition, origin: TourOrigin, at?: string): TourStartResult {
+  function start(tour: TourDefinition, options: TourStartOptions): TourStartResult {
     remember(tour);
-    const outcome = startTour(store.get(), tour, at === undefined ? { origin } : { origin, at });
+    const { origin } = options;
+    const outcome = startTour(store.get(), tour, options);
     if (outcome._tag === "refused") {
       return outcome.reason;
     }
     const pending = outcome.state.pending;
     apply(
-      { state: outcome.state, ended: null, changed: null },
+      { state: outcome.state, ended: null, changes: [] },
       pending === null ? null : { type: "start", tourId: tour.id, stepId: pending.stepId, origin }
     );
     return "started";
@@ -559,6 +564,10 @@ export function createTourController({ storage, initialRecords }: TourController
     end: guarded(undefined, (tour: TourDefinition, reason: TourEndReason) => {
       apply(endTour(store.get(), tour, reason, Date.now()));
     }),
+    completeStep: guarded(undefined, (tour: TourDefinition, stepId: string) => {
+      remember(tour);
+      apply(completeTourStep(store.get(), tour, stepId, Date.now()));
+    }),
     dismiss: guarded(undefined, (tour: TourDefinition) => {
       remember(tour);
       apply(dismissTour(store.get(), tour, Date.now()));
@@ -597,7 +606,9 @@ export function createTourController({ storage, initialRecords }: TourController
           guarded(undefined, () => {
             // A consumer's storage may answer with whatever its backend returned, such as `null` for a
             // user with no saved tours, so the answer is parsed as the built-in adapters parse theirs.
-            apply(receiveTourRecords(store.get(), parseTourRecords(records)));
+            apply(
+              receiveTourRecords(store.get(), parseTourRecords(records), definitions.values(), Date.now())
+            );
             evaluateAutoStart();
           })();
         }

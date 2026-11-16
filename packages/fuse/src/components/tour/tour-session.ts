@@ -9,8 +9,9 @@
 // - Every transition returns the same `shown`, `pending`, `records` and per-tour record objects
 //   when it did not change them, so a part that selects one by reference renders only when it
 //   changes, and the session writes storage only for a record whose reference changed.
-// - Only a deliberate act writes a status: Done on the shown last step, Skip, Close, Escape and
-//   `dismissTour`. An outside press or an error snoozes the tour for the page. Running out of steps
+// - Only a deliberate act writes a status: Done on the shown last step, Skip, Close, Escape,
+//   `dismissTour`, and marking the last checklist task done, also when merged records cover the
+//   checklist. An outside press or an error snoozes the tour for the page. Running out of steps
 //   whose element exists, and a run another tab finished, write nothing.
 
 import type { TourDefinition } from "./tour-definition";
@@ -24,6 +25,13 @@ import type { TourRecord, TourRecords, TourStatus } from "./tour-records";
  */
 export type TourOrigin = "user" | "auto";
 
+/**
+ * What a run shows: the tour's steps in order, or one step on its own, as a checklist task's tip.
+ *
+ * @beta
+ */
+export type TourRunMode = "sequence" | "step";
+
 /** The step on screen. */
 export type TourShownStep = {
   /** The tour's id. */
@@ -36,6 +44,8 @@ export type TourShownStep = {
   readonly count: number;
   /** Who started the run. */
   readonly origin: TourOrigin;
+  /** Whether the run shows the tour's steps in order or this one step. */
+  readonly mode: TourRunMode;
 };
 
 /** The step resolving: the run waits for its element before it shows the step. */
@@ -68,6 +78,7 @@ export type TourSessionState = {
  * - `outside-press`: the user pressed outside the popup.
  * - `no-targets`: no remaining step in the run's direction had an element.
  * - `synced`: another tab or device finished the tour while it auto-ran here.
+ * - `step-done`: the user finished a run of one step, or the step's task.
  * - `error`: a part or a consumer callback threw.
  *
  * @beta
@@ -80,6 +91,7 @@ export type TourEndReason =
   | "outside-press"
   | "no-targets"
   | "synced"
+  | "step-done"
   | "error";
 
 /** A run's ending, which `onEvent` reports. */
@@ -112,8 +124,8 @@ export type TourTransition = {
   readonly state: TourSessionState;
   /** The run's ending, when the transition ended one. */
   readonly ended: TourEnding | null;
-  /** The record the transition changed, when it changed one. */
-  readonly changed: TourRecordChange | null;
+  /** The records the transition changed, which the session writes to storage in this order. */
+  readonly changes: readonly TourRecordChange[];
 };
 
 /**
@@ -178,6 +190,7 @@ export function tourEndStatus(reason: TourEndReason): TourStatus | null {
     case "outside-press":
     case "no-targets":
     case "synced":
+    case "step-done":
     case "error":
       return null;
   }
@@ -324,16 +337,19 @@ function resumeIndex(state: TourSessionState, definition: TourDefinition): numbe
   return Math.max(0, definition.steps.indexOf(record.step));
 }
 
+/** Who started a run and what it shows, which every step of the run carries. */
+type RunBase = Pick<TourShownStep, "origin" | "mode">;
+
 function pendingAt(
   definition: TourDefinition,
   index: number,
   direction: 1 | -1,
-  origin: TourOrigin
+  { origin, mode }: RunBase
 ): TourPendingStep | null {
   const stepId = definition.steps[index];
   return stepId === undefined
     ? null
-    : { tourId: definition.id, stepId, index, count: definition.steps.length, origin, direction };
+    : { tourId: definition.id, stepId, index, count: definition.steps.length, origin, mode, direction };
 }
 
 /** Options for `startTour`. */
@@ -342,6 +358,8 @@ export type TourStartOptions = {
   readonly origin: TourOrigin;
   /** The step to start at. A user's run starts at the first step and an auto run resumes by default. */
   readonly at?: string;
+  /** What the run shows. A `"step"` run shows the step `at` alone and needs `at`. */
+  readonly mode?: TourRunMode;
 };
 
 /**
@@ -365,16 +383,23 @@ export function startTour(
   if (tourRunStep(state) !== null) {
     return { _tag: "refused", reason: "busy" };
   }
+  const mode = options.mode ?? "sequence";
   const requested = options.at === undefined ? -1 : definition.steps.indexOf(options.at);
+  if (mode === "step" && requested === -1) {
+    return { _tag: "refused", reason: "no-steps" };
+  }
   const index = requested !== -1 ? requested : options.origin === "auto" ? resumeIndex(state, definition) : 0;
-  const pending = pendingAt(definition, index, 1, options.origin);
+  const pending = pendingAt(definition, index, 1, { origin: options.origin, mode });
   return pending === null
     ? { _tag: "refused", reason: "no-steps" }
     : { _tag: "started", state: { ...state, pending } };
 }
 
+/** No changed records. */
+const NO_CHANGES: readonly TourRecordChange[] = Object.freeze([]);
+
 function unchanged(state: TourSessionState): TourTransition {
-  return { state, ended: null, changed: null };
+  return { state, ended: null, changes: NO_CHANGES };
 }
 
 /** A record under construction. */
@@ -405,8 +430,8 @@ function withRecord(state: TourSessionState, tourId: string, record: TourRecord)
 }
 
 /**
- * Shows the resolving step: it becomes the shown step, and its tour's record saves it as the place
- * to resume.
+ * Shows the resolving step: it becomes the shown step, and in a sequence its tour's record saves it
+ * as the place to resume.
  *
  * @param state - The session.
  * @param definition - The run's tour.
@@ -423,18 +448,22 @@ export function showPendingStep(
     return unchanged(state);
   }
   const { direction: _direction, ...shown } = pending;
+  if (pending.mode === "step") {
+    return { state: { ...state, shown, pending: null }, ended: null, changes: NO_CHANGES };
+  }
   const record = progressRecord(state.records[definition.id], definition, pending.stepId, now);
   return {
     state: { ...withRecord(state, definition.id, record), shown, pending: null },
     ended: null,
-    changed: { tourId: definition.id, record },
+    changes: [{ tourId: definition.id, record }],
   };
 }
 
 /**
  * Passes over the resolving step, whose element never appeared. The run moves on in the step's
  * direction. Moving back past the first step keeps the shown step on screen, and moving past either
- * end with no step shown, or past the last step, ends the run as `no-targets`.
+ * end with no step shown, or past the last step, ends the run as `no-targets`. A run of one step
+ * ends as `no-targets` at once.
  *
  * @param state - The session.
  * @param definition - The run's tour.
@@ -450,19 +479,23 @@ export function skipPendingStep(
   if (pending?.tourId !== definition.id) {
     return unchanged(state);
   }
-  const next = pendingAt(definition, pending.index + pending.direction, pending.direction, pending.origin);
+  if (pending.mode === "step") {
+    return endTour(state, definition, "no-targets", now);
+  }
+  const next = pendingAt(definition, pending.index + pending.direction, pending.direction, pending);
   if (next !== null) {
-    return { state: { ...state, pending: next }, ended: null, changed: null };
+    return { state: { ...state, pending: next }, ended: null, changes: NO_CHANGES };
   }
   if (pending.direction === -1 && state.shown !== null) {
-    return { state: { ...state, pending: null }, ended: null, changed: null };
+    return { state: { ...state, pending: null }, ended: null, changes: NO_CHANGES };
   }
   return endTour(state, definition, "no-targets", now);
 }
 
 /**
- * Moves the run to the next step, or completes it when the shown step is the last. It does nothing
- * while a step is resolving, so a second press never skips a step.
+ * Moves the run to the next step, or completes it when the shown step is the last. A run of one
+ * step ends as `step-done`. It does nothing while a step is resolving, so a second press never
+ * skips a step.
  *
  * @param state - The session.
  * @param definition - The run's tour.
@@ -478,16 +511,21 @@ export function nextTourStep(
   if (shown?.tourId !== definition.id || state.pending !== null) {
     return unchanged(state);
   }
+  if (shown.mode === "step") {
+    return endTour(state, definition, "step-done", now);
+  }
   if (shown.index + 1 >= definition.steps.length) {
     return endTour(state, definition, "completed", now);
   }
-  const pending = pendingAt(definition, shown.index + 1, 1, shown.origin);
-  return pending === null ? unchanged(state) : { state: { ...state, pending }, ended: null, changed: null };
+  const pending = pendingAt(definition, shown.index + 1, 1, shown);
+  return pending === null
+    ? unchanged(state)
+    : { state: { ...state, pending }, ended: null, changes: NO_CHANGES };
 }
 
 /**
- * Moves the run to the previous step. It does nothing on the first step or while a step is
- * resolving.
+ * Moves the run to the previous step. It does nothing on the first step, in a run of one step, or
+ * while a step is resolving.
  *
  * @param state - The session.
  * @param definition - The run's tour.
@@ -495,11 +533,18 @@ export function nextTourStep(
  */
 export function previousTourStep(state: TourSessionState, definition: TourDefinition): TourTransition {
   const { shown } = state;
-  if (shown?.tourId !== definition.id || state.pending !== null || shown.index === 0) {
+  if (
+    shown?.tourId !== definition.id ||
+    state.pending !== null ||
+    shown.index === 0 ||
+    shown.mode === "step"
+  ) {
     return unchanged(state);
   }
-  const pending = pendingAt(definition, shown.index - 1, -1, shown.origin);
-  return pending === null ? unchanged(state) : { state: { ...state, pending }, ended: null, changed: null };
+  const pending = pendingAt(definition, shown.index - 1, -1, shown);
+  return pending === null
+    ? unchanged(state)
+    : { state: { ...state, pending }, ended: null, changes: NO_CHANGES };
 }
 
 /** A run stopped: the state with no step, and the ending to report. */
@@ -512,13 +557,20 @@ function stopRun(state: TourSessionState, step: TourShownStep, reason: TourEndRe
   const snoozed = tourEndSnoozes(reason) ? new Set([...state.snoozed, step.tourId]) : state.snoozed;
   return {
     stopped: { ...state, shown: null, pending: null, snoozed },
-    ended: { tourId: step.tourId, stepId: step.stepId, reason, status: tourEndStatus(reason) },
+    // A run of one step is a task's tip: closing it turns down the tip, not the tour.
+    ended: {
+      tourId: step.tourId,
+      stepId: step.stepId,
+      reason,
+      status: step.mode === "step" ? null : tourEndStatus(reason),
+    },
   };
 }
 
 /**
- * Ends the active run. A deliberate ending writes its status, keeping the record's progress; an
- * outside press and an error snooze the tour for the page.
+ * Ends the active run. A deliberate ending of a sequence writes its status, keeping the record's
+ * progress; an ending of a one-step run writes none. An outside press and an error snooze the tour
+ * for the page.
  *
  * @param state - The session.
  * @param definition - The run's tour.
@@ -538,20 +590,161 @@ export function endTour(
   }
   const { stopped, ended } = stopRun(state, step, reason);
   if (ended.status === null) {
-    return { state: stopped, ended, changed: null };
+    return { state: stopped, ended, changes: NO_CHANGES };
   }
   const held = state.records[definition.id];
   const record: TourRecord = { ...held, v: held?.v ?? definition.version, status: ended.status, at: now };
   return {
     state: withRecord(stopped, definition.id, record),
     ended,
-    changed: { tourId: definition.id, record },
+    changes: [{ tourId: definition.id, record }],
   };
 }
 
 /**
- * Turns a tour down for good, as Skip does. A run of the tour ends as `skip-press`; with no run, the
- * tour's record takes the `dismissed` status. A tour that already has a status keeps it.
+ * Whether the user finished a step as a checklist task, in the definition's version.
+ *
+ * @param state - The session.
+ * @param definition - The tour.
+ * @param stepId - The step.
+ * @returns Whether the step is done.
+ */
+export function isTourStepDone(state: TourSessionState, definition: TourDefinition, stepId: string): boolean {
+  const record = state.records[definition.id];
+  return record?.v === definition.version && record.done?.includes(stepId) === true;
+}
+
+/**
+ * How many of the tour's steps the user finished as checklist tasks, in the definition's version.
+ *
+ * @param state - The session.
+ * @param definition - The tour.
+ * @returns The count.
+ */
+export function tourDoneCount(state: TourSessionState, definition: TourDefinition): number {
+  return definition.steps.filter((stepId) => isTourStepDone(state, definition, stepId)).length;
+}
+
+/**
+ * Marks a step done as a checklist task. The tour completes once every step is done, unless it
+ * already has a status. A run of that one step ends as `step-done`.
+ *
+ * @param state - The session.
+ * @param definition - The tour.
+ * @param stepId - The step the user finished.
+ * @param now - The current time, in milliseconds since the epoch.
+ * @returns The transition; unchanged for a step the tour does not list or one already done.
+ */
+export function completeTourStep(
+  state: TourSessionState,
+  definition: TourDefinition,
+  stepId: string,
+  now: number
+): TourTransition {
+  if (!definition.steps.includes(stepId) || isTourStepDone(state, definition, stepId)) {
+    return unchanged(state);
+  }
+  const held = state.records[definition.id];
+  const done = [...(held?.v === definition.version ? (held.done ?? []) : []), stepId];
+  const record: DraftRecord = { v: definition.version, done, at: now };
+  if (held?.v === definition.version && held.step !== undefined) {
+    record.step = held.step;
+  }
+  if (held?.status !== undefined) {
+    record.status = held.status;
+  } else if (definition.steps.every((step) => done.includes(step))) {
+    record.status = "completed";
+  }
+  const marked = withRecord(state, definition.id, record);
+  const run = tourRunStep(marked);
+  if (run?.tourId === definition.id && run.mode === "step" && run.stepId === stepId) {
+    const { stopped, ended } = stopRun(marked, run, "step-done");
+    return { state: stopped, ended, changes: [{ tourId: definition.id, record }] };
+  }
+  return { state: marked, ended: null, changes: [{ tourId: definition.id, record }] };
+}
+
+/** The state with the covered checklists completed, and the records that changed. */
+type CompletedTours = {
+  readonly state: TourSessionState;
+  readonly changes: readonly TourRecordChange[];
+};
+
+/**
+ * Completes every tour whose checklist steps are all done in its current version but which has no
+ * status yet. Records merged from two devices can cover every step between them, as when one device
+ * finished one task and another the rest, and `completeTourStep` cannot repair that because every
+ * step is already done. A tour with a status keeps it.
+ */
+function completeCoveredTours(
+  state: TourSessionState,
+  definitions: Iterable<TourDefinition>,
+  now: number
+): CompletedTours {
+  let next = state;
+  const changes: TourRecordChange[] = [];
+  for (const definition of definitions) {
+    const held = next.records[definition.id];
+    if (
+      held === undefined ||
+      held.status !== undefined ||
+      definition.steps.length === 0 ||
+      tourDoneCount(next, definition) < definition.steps.length
+    ) {
+      continue;
+    }
+    const record: TourRecord = { ...held, status: "completed", at: now };
+    next = withRecord(next, definition.id, record);
+    changes.push({ tourId: definition.id, record });
+  }
+  return { state: next, changes };
+}
+
+/**
+ * Settles records that changed outside a gesture: it completes the checklists they cover, then ends
+ * an auto-started run whose tour gained a status since `before`, as `synced`, writing nothing for
+ * the ending. A run the user started keeps going.
+ */
+function settleTourRecords(
+  before: TourSessionState,
+  merged: TourSessionState,
+  definitions: Iterable<TourDefinition>,
+  now: number
+): TourTransition {
+  const completed = completeCoveredTours(merged, definitions, now);
+  const step = tourRunStep(completed.state);
+  if (
+    step?.origin !== "auto" ||
+    completed.state.records[step.tourId]?.status === undefined ||
+    before.records[step.tourId]?.status !== undefined
+  ) {
+    return { state: completed.state, ended: null, changes: completed.changes };
+  }
+  const { stopped, ended } = stopRun(completed.state, step, "synced");
+  return { state: stopped, ended, changes: completed.changes };
+}
+
+/**
+ * Completes the known checklists whose steps are all done, as `receiveTourRecords` does, for a tour
+ * that became known after its records arrived.
+ *
+ * @param state - The session.
+ * @param definitions - The tours to check.
+ * @param now - The current time, in milliseconds since the epoch.
+ * @returns The transition, with every record it completed and an auto run it ended as `synced`.
+ */
+export function reconcileTours(
+  state: TourSessionState,
+  definitions: Iterable<TourDefinition>,
+  now: number
+): TourTransition {
+  return settleTourRecords(state, state, definitions, now);
+}
+
+/**
+ * Turns a tour down for good, as Skip does. A run of the tour ends as `skip-press`, and the tour's
+ * record takes the `dismissed` status, also after a run of one step, whose own endings write none.
+ * A tour that already has a status keeps it.
  *
  * @param state - The session.
  * @param definition - The tour.
@@ -563,43 +756,40 @@ export function dismissTour(
   definition: TourDefinition,
   now: number
 ): TourTransition {
-  if (tourRunStep(state)?.tourId === definition.id) {
-    return endTour(state, definition, "skip-press", now);
-  }
-  const held = state.records[definition.id];
+  const stopped = endTour(state, definition, "skip-press", now);
+  const held = stopped.state.records[definition.id];
   if (held?.status !== undefined) {
-    return unchanged(state);
+    return stopped;
   }
   const record: TourRecord = { ...held, v: held?.v ?? definition.version, status: "dismissed", at: now };
   return {
-    state: withRecord(state, definition.id, record),
-    ended: null,
-    changed: { tourId: definition.id, record },
+    state: withRecord(stopped.state, definition.id, record),
+    ended: stopped.ended,
+    changes: [{ tourId: definition.id, record }],
   };
 }
 
 /**
- * Merges records that storage read or another tab wrote, and marks storage as answered. When the
- * records finish a tour that is auto-running here, the run ends as `synced` and writes nothing; a
+ * Merges records that storage read or another tab wrote, and marks storage as answered. It then
+ * completes every known checklist whose steps the merged records cover. When the records finish a
+ * tour that is auto-running here, by its status or by its checklist, the run ends as `synced`; a
  * run the user started keeps going.
  *
  * @param state - The session.
  * @param incoming - The records storage answered with.
- * @returns The transition.
+ * @param definitions - The tours the session knows.
+ * @param now - The current time, in milliseconds since the epoch.
+ * @returns The transition, with every record a completed checklist changed.
  */
-export function receiveTourRecords(state: TourSessionState, incoming: TourRecords): TourTransition {
+export function receiveTourRecords(
+  state: TourSessionState,
+  incoming: TourRecords,
+  definitions: Iterable<TourDefinition>,
+  now: number
+): TourTransition {
   const records = mergeTourRecords(state.records, incoming);
   const merged = records === state.records && state.ready ? state : { ...state, records, ready: true };
-  const step = tourRunStep(merged);
-  if (
-    step?.origin !== "auto" ||
-    records[step.tourId]?.status === undefined ||
-    state.records[step.tourId]?.status !== undefined
-  ) {
-    return unchanged(merged);
-  }
-  const { stopped, ended } = stopRun(merged, step, "synced");
-  return { state: stopped, ended, changed: null };
+  return settleTourRecords(state, merged, definitions, now);
 }
 
 /**

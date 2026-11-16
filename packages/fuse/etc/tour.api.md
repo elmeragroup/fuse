@@ -72,6 +72,7 @@ declare namespace Tour {
         TourPrev as Prev,
         TourProgress as Progress,
         TourProvider as Provider,
+        TourRing as Ring,
         TourSkip as Skip,
         TourSpotlight as Spotlight,
         TourTarget as Target,
@@ -127,7 +128,7 @@ export type TourDefinitionStep = {
 function TourDescription(input: ComponentProps<typeof Popover.Description>): ReactElement | null;
 
 // @beta
-export type TourEndReason = "completed" | "skip-press" | "close-press" | "escape-key" | "outside-press" | "no-targets" | "synced" | "error";
+export type TourEndReason = "completed" | "skip-press" | "close-press" | "escape-key" | "outside-press" | "no-targets" | "synced" | "step-done" | "error";
 
 // @beta
 export class TourError extends Error {
@@ -179,6 +180,9 @@ export type TourHandle<S extends string> = {
     readonly next: () => void;
     readonly prev: () => void;
     readonly dismiss: () => void;
+    readonly startStep: (step: S) => TourStartResult;
+    readonly completeStep: (step: S) => void;
+    readonly doneCount: number;
 };
 
 // @beta
@@ -245,6 +249,17 @@ export type TourRecordChange = {
 export type TourRecords = {
     readonly [tourId: string]: TourRecord;
 };
+
+// @beta
+function TourRing(input: TourRingProps): ReactElement | null;
+
+// @beta
+export type TourRingProps = {
+    padding?: number;
+};
+
+// @beta
+export type TourRunMode = "sequence" | "step";
 
 // @beta
 function TourSkip(input: TourStepButtonProps): ReactElement | null;
@@ -325,6 +340,9 @@ export function useTour<S extends string>(tour: TourDefinition<S>): TourHandle<S
 
 // @beta
 export function useTourStep<S extends string>(tour: TourDefinition<S>, step: NoInfer<S>, words?: TourStepWords): TourStepBinding;
+
+// @beta
+export function useTourStepDone<S extends string>(tour: TourDefinition<S>, step: NoInfer<S>): boolean;
 
 // (No @packageDocumentation comment for this package)
 
