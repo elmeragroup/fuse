@@ -4,22 +4,21 @@ import type { ChartConfig } from "@elmeragroup/fuse/chart";
 // One household's electricity bill for October, in kroner.
 const bill = [
   { part: "energy", kr: 612 },
-  { part: "grid", kr: 438 },
+  { part: "rent", kr: 438 },
   { part: "taxes", kr: 287 },
   { part: "fee", kr: 49 },
 ];
 
 const config = {
   energy: { label: "Energy", color: "chart-1" },
-  grid: { label: "Grid rent", color: "chart-2" },
+  rent: { label: "Grid rent", color: "chart-2" },
   taxes: { label: "Taxes", color: "chart-3" },
   fee: { label: "Monthly fee", color: "chart-4" },
 } as const satisfies ChartConfig;
 
 /**
  * A server component. The file has no `"use client"` line, and every prop it passes is plain data,
- * so the server writes the slices, the labels and the table, and sends only the chart's own parts to
- * the browser.
+ * so the server writes the slices, the labels and the table.
  */
 export function PieChartServer() {
   return (
@@ -29,14 +28,10 @@ export function PieChartServer() {
       nameKey="part"
       valueKey="kr"
       valueFormat={{ style: "currency", currency: "NOK", maximumFractionDigits: 0 }}
-      innerRadius={0.62}
       aria-label="Electricity bill for October">
       <PieChart.Pie />
-      <PieChart.Labels position="outside" />
-      <PieChart.Center>
-        <PieChart.CenterValue />
-        <PieChart.CenterName>Total</PieChart.CenterName>
-      </PieChart.Center>
+      <PieChart.Labels />
+      <PieChart.Tooltip />
       <PieChart.Table />
     </PieChart.Root>
   );

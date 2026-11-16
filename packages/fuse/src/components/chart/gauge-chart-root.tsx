@@ -44,8 +44,11 @@ export type GaugeChartRootProps = ChartAccessibleName &
     /**
      * The reading, in the domain's own unit, such as 3.9 kWh. A value past either end draws at that
      * end and sets `data-over-max` or `data-under-min` on the figure, while the centre and the
-     * meter's text keep the true number. Null shows `GaugeChart.Empty`. A value that is not a
-     * finite number throws `non-finite-value` in development and draws as null in production.
+     * meter's text keep the true number. A new reading sweeps on from wherever the dial shows, also
+     * mid-sweep, and the centre's digits roll to it. Under reduced motion and in print the dial
+     * draws at rest at once. Null shows `GaugeChart.Empty`, and the dial is no meter until a
+     * reading arrives. A value that is not a finite number throws `non-finite-value` in development
+     * and draws as null in production.
      */
     value: number | null;
     /** The value at the sweep's start. 0 by default. */
@@ -55,7 +58,10 @@ export type GaugeChartRootProps = ChartAccessibleName &
      * finite number, throws `invalid-gauge-domain`.
      */
     max: number;
-    /** The value format, which the centre, the meter's text and the ruler's labels read. */
+    /**
+     * The value format, which the centre, the meter's text and the ruler's labels read. A screen
+     * reader reads the dial as a meter, with its name, its domain and the value in this format.
+     */
     valueFormat?: ValueFormat;
     /**
      * Degrees from 12 o'clock, clockwise, where the sweep starts. −135 by default. An angle that is
@@ -67,9 +73,15 @@ export type GaugeChartRootProps = ChartAccessibleName &
      * at the bottom. The chart keeps the aspect of the sweep's bounding box.
      */
     endAngle?: number;
-    /** "none" turns the entrance sweep off. */
+    /**
+     * "none" turns off the entrance, in which the track scales out and the fill sweeps from the
+     * minimum to the reading the first time the gauge comes into view.
+     */
     "data-intro"?: "none";
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. Every part draws from `value`, and nothing in
+     * the chart takes focus.
+     */
     children?: ReactNode;
   };
 

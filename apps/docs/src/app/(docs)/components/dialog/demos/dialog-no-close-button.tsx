@@ -10,9 +10,11 @@ export function DialogNoCloseButton() {
       <Dialog.Content showCloseButton={false}>
         <Dialog.Header>
           <Dialog.Title>Terms for the fixed price</Dialog.Title>
-          <Dialog.Description>The corner dismiss affordance is turned off here.</Dialog.Description>
+          <Dialog.Description>The price is fixed for 12 months from the start date.</Dialog.Description>
         </Dialog.Header>
-        <Dialog.Close render={<Button variant="outline" />}>I have read the terms</Dialog.Close>
+        <Dialog.Footer>
+          <Dialog.Close render={<Button variant="outline" />}>I have read the terms</Dialog.Close>
+        </Dialog.Footer>
       </Dialog.Content>
     </Dialog.Root>
   );

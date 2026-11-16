@@ -107,13 +107,11 @@
       "props": [
         {
           "name": "activateOnFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether to automatically change the active tab on arrow key focus. Otherwise, tabs will be activated using <kbd>Enter</kbd> or <kbd>Space</kbd> key press.",
+          "description": "Whether a tab opens its panel when it gets focus. Unset, it does, so the arrow keys move focus and switch panels in one step. Pass `false` to switch only on Enter, Space or a click.",
           "required": false
         },
         {
@@ -162,11 +160,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The list style. `default` sits the tabs on a muted track and fills the active one. `line` draws no track and marks the active tab with a line.",
           "required": false,
           "values": [
             "default",

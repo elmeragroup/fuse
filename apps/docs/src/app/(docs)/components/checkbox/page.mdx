@@ -3,11 +3,27 @@ lede: >
   A checkbox, with a labeled group and a selectable row variant.
 ---
 
-import { CheckboxBasic } from "./demos/checkbox-basic";
+import { CheckboxDemo } from "./demos/checkbox-demo";
+import { CheckboxChecked } from "./demos/checkbox-checked";
+import { CheckboxIndeterminate } from "./demos/checkbox-indeterminate";
+import { CheckboxDisabled } from "./demos/checkbox-disabled";
+import { CheckboxReadOnly } from "./demos/checkbox-read-only";
+import { CheckboxInvalid } from "./demos/checkbox-invalid";
 import { CheckboxGroupDemo } from "./demos/checkbox-group";
-import { CheckboxTristate } from "./demos/checkbox-tristate";
+import { CheckboxGroupHorizontal } from "./demos/checkbox-group-horizontal";
+import { CheckboxGroupDescription } from "./demos/checkbox-group-description";
+import { CheckboxGroupError } from "./demos/checkbox-group-error";
+import { CheckboxGroupDisabled } from "./demos/checkbox-group-disabled";
+import { CheckboxGroupHiddenLabel } from "./demos/checkbox-group-hidden-label";
+import { CheckboxParent } from "./demos/checkbox-parent";
 import { CheckboxItemGroupDemo } from "./demos/checkbox-item-group";
+import { CheckboxItemGroupHorizontal } from "./demos/checkbox-item-group-horizontal";
+import { CheckboxItemControlEnd } from "./demos/checkbox-item-control-end";
+import { CheckboxItemActions } from "./demos/checkbox-item-actions";
+import { CheckboxItemSubSection } from "./demos/checkbox-item-sub-section";
+import { CheckboxItemDisabled } from "./demos/checkbox-item-disabled";
 import { CheckboxDescriptionDemo } from "./demos/checkbox-description";
+import { CheckboxDescriptionLink } from "./demos/checkbox-description-link";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,30 +31,138 @@ export const metadata = componentMetadata("checkbox");
 
 <ComponentIntro slug="checkbox" />
 
-<Demo slug="checkbox" id="basic" title="Basic" file="checkbox-basic.tsx">
-  <CheckboxBasic />
+<DefaultDemo slug="checkbox" file="checkbox-demo.tsx">
+  <CheckboxDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { Field } from "@elmeragroup/fuse/field";
+
+<Field.Root orientation="horizontal">
+  <Checkbox />
+  <Field.Label>Accept terms</Field.Label>
+</Field.Root>
+```
+
+## Examples
+
+<Demo slug="checkbox" id="checked" title="Checked" level={3} file="checkbox-checked.tsx">
+  <CheckboxChecked />
 </Demo>
 
-<Demo slug="checkbox" id="group" title="Group" file="checkbox-group.tsx">
+<Demo slug="checkbox" id="indeterminate" title="Indeterminate" level={3} file="checkbox-indeterminate.tsx">
+  <CheckboxIndeterminate />
+</Demo>
+
+<Demo slug="checkbox" id="disabled" title="Disabled" level={3} file="checkbox-disabled.tsx">
+  <CheckboxDisabled />
+</Demo>
+
+<Demo slug="checkbox" id="read-only" title="Read-only" level={3} file="checkbox-read-only.tsx">
+  <CheckboxReadOnly />
+</Demo>
+
+<Demo slug="checkbox" id="invalid" title="Invalid" level={3} file="checkbox-invalid.tsx">
+  <CheckboxInvalid />
+</Demo>
+
+<Demo slug="checkbox" id="group" title="Group" level={3} file="checkbox-group.tsx">
   <CheckboxGroupDemo />
 </Demo>
 
-<Demo slug="checkbox" id="tristate" title="Tri-state" file="checkbox-tristate.tsx">
-  <CheckboxTristate />
+<Demo
+  slug="checkbox"
+  id="group-horizontal"
+  title="Horizontal group"
+  level={3}
+  file="checkbox-group-horizontal.tsx">
+  <CheckboxGroupHorizontal />
 </Demo>
 
-<Demo slug="checkbox" id="item-group" title="Item group" file="checkbox-item-group.tsx">
+<Demo
+  slug="checkbox"
+  id="group-description"
+  title="Group description"
+  level={3}
+  file="checkbox-group-description.tsx">
+  <CheckboxGroupDescription />
+</Demo>
+
+<Demo slug="checkbox" id="group-error" title="Group error" level={3} file="checkbox-group-error.tsx">
+  <CheckboxGroupError />
+</Demo>
+
+<Demo slug="checkbox" id="group-disabled" title="Disabled group" level={3} file="checkbox-group-disabled.tsx">
+  <CheckboxGroupDisabled />
+</Demo>
+
+<Demo
+  slug="checkbox"
+  id="group-hidden-label"
+  title="Hidden group label"
+  level={3}
+  file="checkbox-group-hidden-label.tsx">
+  <CheckboxGroupHiddenLabel />
+</Demo>
+
+<Demo slug="checkbox" id="parent" title="Parent checkbox" level={3} file="checkbox-parent.tsx">
+  <CheckboxParent />
+</Demo>
+
+<Demo slug="checkbox" id="item-group" title="Item group" level={3} file="checkbox-item-group.tsx">
   <CheckboxItemGroupDemo />
 </Demo>
 
-<Prose>
+<Demo
+  slug="checkbox"
+  id="item-group-horizontal"
+  title="Horizontal item group"
+  level={3}
+  file="checkbox-item-group-horizontal.tsx">
+  <CheckboxItemGroupHorizontal />
+</Demo>
 
-Item group rows draw their edges and the lines between them from theme roles. [Theming on the SelectionItem page](/components/selection-item#theming) lists them, with stacked, checked and horizontal examples.
+<Demo
+  slug="checkbox"
+  id="item-control-end"
+  title="Item with the checkbox at the end"
+  level={3}
+  file="checkbox-item-control-end.tsx">
+  <CheckboxItemControlEnd />
+</Demo>
 
-</Prose>
+<Demo slug="checkbox" id="item-actions" title="Item actions" level={3} file="checkbox-item-actions.tsx">
+  <CheckboxItemActions />
+</Demo>
 
-<Demo slug="checkbox" id="description" title="Description" file="checkbox-description.tsx">
+<Demo
+  slug="checkbox"
+  id="item-sub-section"
+  title="Item sub-section"
+  level={3}
+  file="checkbox-item-sub-section.tsx">
+  <CheckboxItemSubSection />
+</Demo>
+
+<Demo slug="checkbox" id="item-disabled" title="Disabled item" level={3} file="checkbox-item-disabled.tsx">
+  <CheckboxItemDisabled />
+</Demo>
+
+<Demo slug="checkbox" id="description" title="Description" level={3} file="checkbox-description.tsx">
   <CheckboxDescriptionDemo />
+</Demo>
+
+<Demo
+  slug="checkbox"
+  id="description-link"
+  title="Description link"
+  level={3}
+  file="checkbox-description-link.tsx">
+  <CheckboxDescriptionLink />
 </Demo>
 
 <ApiReference slug="checkbox" />

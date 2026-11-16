@@ -17,7 +17,7 @@ import { seriesPaint } from "./layout/color-key";
 export type ChartSwatchProps = ChartDomProps<"span"> & {
   /** The series to paint. Inside a template row the row supplies it. */
   dataKey?: string;
-  /** The swatch's shape. "square" by default. */
+  /** The swatch's shape. */
   variant?: "square" | "circle" | "square-outline" | "circle-outline" | "line" | "bar";
 };
 

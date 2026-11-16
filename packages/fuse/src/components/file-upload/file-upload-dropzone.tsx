@@ -16,8 +16,21 @@ import { read } from "./read-files";
 
 const styles = fileUploadVariants();
 
+type FileUploadDropzoneBaseProps = useRender.ComponentProps<"div">;
+
 /** `FileUpload.Dropzone` takes a `div`'s props plus Base UI's `render`. */
-export type FileUploadDropzoneProps = useRender.ComponentProps<"div">;
+export type FileUploadDropzoneProps = Omit<FileUploadDropzoneBaseProps, "children"> & {
+  /**
+   * The zone's content. Keep a `FileUpload.Trigger` inside for the keyboard: a drop and a click
+   * on the zone's empty surface, which opens the picker too, work by pointer only. While a file
+   * drag that could pass is over the zone, it sets `data-drop-target`, which turns its dashed
+   * border solid on the soft primary fill. When the drop is certain to fail, because a single-file Root gets several files whose
+   * types pass `accept` or every file's type misses `accept`, the drag shows the not-allowed
+   * cursor and the zone stays as it is. Safari hides the files until the drop, so there the check
+   * waits for the drop.
+   */
+  children?: FileUploadDropzoneBaseProps["children"];
+};
 
 /**
  * Whether an event happened in the zone's DOM. React bubbles events from portalled content, such
@@ -33,15 +46,10 @@ const stateAttributesMapping = {
 };
 
 /**
- * The area files drop on. It writes `data-drop-target` while a file drag
- * that could pass is over it, and the drag shows the not-allowed cursor when the drop is certain
- * to be rejected: more than one file of a known type that passes `accept` on a single-file Root,
- * or known types that all miss `accept`.
- * A click on its empty surface opens the picker. That path is pointer only, so keep a
- * `FileUpload.Trigger` inside for the keyboard. That click leaves with `defaultPrevented` set,
- * so an enclosing Dropzone or pressable `DataTable` row skips it, and it still bubbles to
- * document listeners. While the Root is disabled it writes `data-disabled` and leaves every
- * drag to the document, which keeps a dropped file from opening in the tab.
+ * The area files drop on. A click on its empty surface opens the picker and leaves with
+ * `defaultPrevented` set, so an enclosing Dropzone or pressable `DataTable` row skips it, and it
+ * still bubbles to document listeners. While the Root is disabled, it writes `data-disabled` and
+ * leaves every drag to the document, which keeps a dropped file from opening in the tab.
  */
 export function FileUploadDropzone({ className, render, ...props }: FileUploadDropzoneProps): ReactElement {
   const { state, actions, meta } = useFileUploadContext("FileUpload.Dropzone");

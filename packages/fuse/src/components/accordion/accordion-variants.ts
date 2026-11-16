@@ -13,13 +13,12 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * PUBLIC slot recipe. Consumers borrow it from
- * `@elmeragroup/fuse/accordion`. Context-passed `variant` / `radius` stay on Root;
- * parts call this with the published axes for their own slot.
+ * The public slot recipe, exported from `@elmeragroup/fuse/accordion`. `variant` and `radius` are
+ * set on Root, and each part calls the recipe with them for its own slot.
  *
- * Height on `content` is the approved layout exception, owned once by the shared
- * `panelHeightTransition` constant (`styles/panel-height.ts`) against base-ui's
- * `--accordion-panel-height` — not a control size.
+ * The height on `content` is the approved layout exception. The shared `panelHeightTransition`
+ * constant (`styles/panel-height.ts`) owns it against Base UI's `--accordion-panel-height`. It is
+ * not a control size.
  *
  * The trigger is a native button that Base UI also marks `data-disabled`, and a consumer may
  * announce it `aria-disabled`, so it composes the `native` and `data` state faces (both

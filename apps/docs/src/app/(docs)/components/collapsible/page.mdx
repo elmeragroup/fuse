@@ -1,10 +1,11 @@
 ---
 lede: >
-  A single expandable section, with no styling of its own beyond the open/close height transition.
+  A single section that opens and closes, with no styles of its own beyond the height transition.
   Accordion is the styled version.
 ---
 
-import { CollapsibleBasic } from "./demos/collapsible-basic";
+import { CollapsibleDemo } from "./demos/collapsible-demo";
+import { CollapsibleDisabled } from "./demos/collapsible-disabled";
 import { CollapsibleControlled } from "./demos/collapsible-controlled";
 import { CollapsibleHiddenUntilFound } from "./demos/collapsible-hidden-until-found";
 
@@ -14,16 +15,29 @@ export const metadata = componentMetadata("collapsible");
 
 <ComponentIntro slug="collapsible" />
 
-`Collapsible.Content` clips content that escapes the settled panel box, including popovers,
-absolutely positioned children, and focus rings past the edge. To disable both clipping and the
-height transition, set its `className` to
-`h-auto data-starting-style:h-auto data-ending-style:h-auto overflow-visible transition-none`.
+<DefaultDemo slug="collapsible" file="collapsible-demo.tsx">
+  <CollapsibleDemo />
+</DefaultDemo>
 
-<Demo slug="collapsible" id="basic" title="Basic" file="collapsible-basic.tsx">
-  <CollapsibleBasic />
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Collapsible } from "@elmeragroup/fuse/collapsible";
+
+<Collapsible.Root>
+  <Collapsible.Trigger>Show details</Collapsible.Trigger>
+  <Collapsible.Content>Delivery window and billing account.</Collapsible.Content>
+</Collapsible.Root>
+```
+
+## Examples
+
+<Demo slug="collapsible" id="disabled" title="Disabled" level={3} file="collapsible-disabled.tsx">
+  <CollapsibleDisabled />
 </Demo>
 
-<Demo slug="collapsible" id="controlled" title="Controlled" file="collapsible-controlled.tsx">
+<Demo slug="collapsible" id="controlled" title="Controlled" level={3} file="collapsible-controlled.tsx">
   <CollapsibleControlled />
 </Demo>
 
@@ -31,6 +45,7 @@ height transition, set its `className` to
   slug="collapsible"
   id="hidden-until-found"
   title="Hidden until found"
+  level={3}
   file="collapsible-hidden-until-found.tsx">
   <CollapsibleHiddenUntilFound />
 </Demo>

@@ -41,9 +41,7 @@ export function AutocompleteFieldGroups() {
       description="Suggestions are grouped by county."
       items={counties}
       itemToStringValue={(plant) => plant.name}
-      placeholder="Type a power plant…"
-      showClear
-      className="max-w-xs">
+      placeholder="Type a power plant…">
       <Autocomplete.Empty>No power plant matches. The text you typed is kept.</Autocomplete.Empty>
       <Autocomplete.List>
         <Autocomplete.Collection>

@@ -15,25 +15,22 @@ export function GaugeChartLive() {
   const [index, setIndex] = useState(0);
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <GaugeChart.Root value={readings[index] ?? 0} max={11} valueFormat={power} aria-label="Power draw now">
-        <GaugeChart.Zone from={9} to={11} color="chart-sentiment-negative" />
-        <GaugeChart.Track />
-        <GaugeChart.Glow />
-        <GaugeChart.Fill />
-        <GaugeChart.Ruler />
-        <GaugeChart.Needle />
-        <GaugeChart.Center>
-          <GaugeChart.CenterValue />
-          <GaugeChart.CenterLabel>Power now</GaugeChart.CenterLabel>
-        </GaugeChart.Center>
-      </GaugeChart.Root>
       <Button
         variant="outline"
+        size="sm"
         onClick={() => {
           setIndex((current) => (current + 1) % readings.length);
         }}>
         Next reading
       </Button>
+      <GaugeChart.Root value={readings[index] ?? 0} max={11} valueFormat={power} aria-label="Power draw now">
+        <GaugeChart.Track />
+        <GaugeChart.Fill />
+        <GaugeChart.Center>
+          <GaugeChart.CenterValue />
+          <GaugeChart.CenterLabel>Power now</GaugeChart.CenterLabel>
+        </GaugeChart.Center>
+      </GaugeChart.Root>
     </div>
   );
 }

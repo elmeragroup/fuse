@@ -35,7 +35,7 @@ export function BarChartIsometric() {
       className="sm:[--chart-plot-height:175px] [--chart-plot-height:55px]"
       aria-label="Electricity cost per month">
       <BarChart.XAxis />
-      <BarChart.Bar dataKey="cost" emphasis="max" emphasisLabel="peak" />
+      <BarChart.Bar dataKey="cost" />
       <BarChart.Tooltip />
       <BarChart.Table />
     </BarChart.Root>

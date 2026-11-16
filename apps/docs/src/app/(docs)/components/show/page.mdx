@@ -3,7 +3,9 @@ lede: >
   Renders children when a condition is true.
 ---
 
-import { ShowBasic } from "./demos/show-basic";
+import { ShowDemo } from "./demos/show-demo";
+import { ShowHidden } from "./demos/show-hidden";
+import { ShowToggle } from "./demos/show-toggle";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -11,8 +13,29 @@ export const metadata = componentMetadata("show");
 
 <ComponentIntro slug="show" />
 
-<Demo slug="show" id="basic" title="Basic" file="show-basic.tsx">
-  <ShowBasic />
+<DefaultDemo slug="show" file="show-demo.tsx">
+  <ShowDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Show } from "@elmeragroup/fuse/show";
+
+<Show when={discount > 0}>
+  <li>Welcome discount</li>
+</Show>
+```
+
+## Examples
+
+<Demo slug="show" id="hidden" title="Hidden" level={3} file="show-hidden.tsx">
+  <ShowHidden />
+</Demo>
+
+<Demo slug="show" id="toggle" title="Toggle" level={3} file="show-toggle.tsx">
+  <ShowToggle />
 </Demo>
 
 <ApiReference slug="show" />

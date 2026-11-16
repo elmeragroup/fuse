@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "One `InputGroup.Input` or `InputGroup.Textarea` and its `InputGroup.Addon` rails. Keep the input or textarea a direct child: the group paints its disabled, read-only and invalid look from that child alone, so a field nested in an addon, such as a `NumberField`, keeps its state to itself. To make the whole field unavailable, disable the input or textarea. A disabled addon button leaves the field enabled.",
+          "required": false
+        },
         {
           "name": "size",
           "origin": "declared",
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The group's input, addon text and `icon-sm` buttons follow it.",
+          "description": "The control size, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The group's input, addon text and `icon-sm` buttons follow it.",
           "required": false,
           "values": [
             "default",
@@ -33,15 +42,15 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
           "name": "align",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"block-end\" | \"block-start\" | \"inline-end\" | \"inline-start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"inline-start\"",
-          "description": "",
+          "description": "Where the rail sits, also written as `data-align`. `inline-start` and `inline-end` put it before or after the control on its line. `block-start` and `block-end` make it a full-width row above or below the control.",
           "required": false,
           "values": [
             "block-end",
@@ -49,6 +58,15 @@
             "inline-end",
             "inline-start"
           ]
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "An icon, `InputGroup.Text`, a `kbd`, or a few `InputGroup.Button`s that act on the control. A click on the rail outside them focuses the control. A `Field.Description` here still describes the control, so a looked-up value, such as a city beside a postcode, is read with it. The rail has no role, so pass `role=\"group\"` and `aria-label` when its buttons need a shared name.",
+          "required": false
         }
       ]
     },
@@ -173,7 +191,7 @@
           "type": "IconInputGroupButtonSize | LabelInputGroupButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": "\"xs\"",
-          "description": "Local compact size axis, not Button's `size`. Labelled values; icon sizes require `aria-label`. Local compact size axis, not Button's `size`. Icon sizes require `aria-label`.",
+          "description": "The button size, smaller than Button's sizes so the button fits in the field box. `xs` is the xs control height, at least 24px, and `sm` the group's field height. `icon-xs` is an xs square, at least 24px, and `icon-sm` the group's inner square, which follows the group's `size`. An icon size needs `aria-label`.",
           "required": false,
           "values": [
             "icon-sm",
@@ -211,7 +229,7 @@
           "type": "\"button\" | \"reset\" | \"submit\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"button\"",
-          "description": "Native button type, re-typed over `Button`'s own. Defaults to `\"button\"`, so an addon action never submits the surrounding form unless it asks to.",
+          "description": "The native button type. It defaults to `button`, so an addon button submits the surrounding form only when you pass `submit`.",
           "required": false,
           "values": [
             "button",
@@ -256,15 +274,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 310,
+      "forwardedCount": 309,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The input's name when no visible label names it. For a visible label, put the group in a `Field.Root` with a `Field.Label`. The root also marks the input invalid, and the group paints the invalid look from it.",
+          "required": false
+        },
         {
           "name": "filter",
           "origin": "declared",
           "type": "\"numeric\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Digits-only guard. Non-digit characters are stripped from every path — typing, paste, autofill — before `onChange` and Field validation read the value. `maxLength` counts digits where the filter runs first: a cancelable `beforeinput` on an input type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling and are stripped afterwards: `type=\"email\"`, or autofill that sends no cancelable `beforeinput`, is cut to `maxLength` first. The filter is meant for text-like types: under `type=\"number\"` it also strips the sign and the decimal separator. Sets `inputMode=\"numeric\"` unless the caller passes `inputMode` explicitly. An uncontrolled numeric input restores its `defaultValue` on native form reset without calling `onChange`.",
+          "description": "Keeps digits only. The input strips every other character, typed, pasted or autofilled, before `onChange` and Field validation read the value. It sets `inputMode=\"numeric\"` unless you pass `inputMode`. Use it with a text-like type, since under `type=\"number\"` it also strips the sign and the decimal separator. `maxLength` counts digits when the browser sends a cancelable `beforeinput` on a type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted `912 34 567` fits `maxLength={8}` whole. Elsewhere the browser cuts the text to `maxLength` before the input strips it: under a type without a selection API, such as `email`, and for autofill that sends no cancelable `beforeinput`. There a pasted `912 34 567` becomes `912345`. An uncontrolled numeric input restores its `defaultValue` on a native form reset without calling `onChange`.",
           "required": false
         }
       ]
@@ -276,8 +303,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 294,
-      "props": []
+      "forwardedCount": 293,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The textarea's name. A `Field.Root` around the group does not wire the textarea to its `Field.Label`, so name it here or with `aria-labelledby`.",
+          "required": false
+        }
+      ]
     }
   ]
 }

@@ -15,7 +15,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name forwarded to the input for label-less usage. Without a visible `label`, the steppers' names end with it too (\"Increase Quantity\").",
+          "description": "The input's name when there is no `label`. The steppers' names then end with it too, as in \"Increase Quantity\".",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `autoFocus` forwarded to the input.",
+          "description": "Focuses the input when the field mounts, but not when a form reset remounts it.",
           "required": false
         },
         {
@@ -33,7 +33,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The decrement stepper's own name, which its accessible name follows with the field's name (\"Decrease Quantity\"). Defaults to the locale dictionary.",
+          "description": "The decrease stepper's own word, which its name follows with the field's name, as in \"Decrease Quantity\". It defaults to the locale's word.",
           "required": false
         },
         {
@@ -51,7 +51,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial value.",
+          "description": "The starting value of an uncontrolled field.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Unit suffix rendered between the input and the steppers (visual only).",
+          "description": "A unit shown between the input and the steppers, such as `kWh`. It is not part of the input's name or value, so say the unit in `label` or `description` too.",
           "required": false
         },
         {
@@ -69,7 +69,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -78,7 +78,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it, the field shows its own error, such as the browser's constraint message.",
           "required": false
         },
         {
@@ -87,7 +87,7 @@
           "type": "NumberFormatOptions | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Formatting options, forwarded as base-ui `format`. Locale comes from the provider.",
+          "description": "How the value is shown and announced, as `Intl.NumberFormatOptions`, such as `{ style: \"currency\", currency: \"NOK\" }`. The locale, and with it the grouping and decimal separators, comes from the `LocaleProvider`.",
           "required": false
         },
         {
@@ -96,7 +96,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwarded to `NumberField.Root`.",
+          "description": "The id of Base UI's `NumberField.Root`.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The increment stepper's own name, which its accessible name follows with the field's name (\"Increase Quantity\"). Defaults to the locale dictionary.",
+          "description": "The increase stepper's own word, which its name follows with the field's name, as in \"Increase Quantity\". It defaults to the locale's word.",
           "required": false
         },
         {
@@ -114,7 +114,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `disabled` to `Field.Root` and `NumberField.Root`; the group uses `bg-muted`.",
+          "description": "Disables the field, with the muted fill.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`, and `aria-invalid` to the field box for its invalid look.",
+          "description": "Marks the field invalid, with the invalid look on the field box.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a spinner in the label row. Forces that row to exist even without `label`.",
+          "description": "Shows a spinner at the end of the label row. The row shows even without `label`.",
           "required": false
         },
         {
@@ -141,7 +141,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to `NumberField.Root`; the group uses `bg-muted`.",
+          "description": "Makes the field read-only, with the muted fill.",
           "required": false
         },
         {
@@ -150,7 +150,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `required` to `NumberField.Root`.",
+          "description": "Makes the field required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -159,7 +159,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a check in the label row and wins the crossfade over `isPending`.",
+          "description": "Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
           "required": false
         },
         {
@@ -168,7 +168,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`.",
+          "description": "The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`.",
           "required": false
         },
         {
@@ -177,7 +177,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Upper bound, forwarded as base-ui `max`.",
+          "description": "The highest value the field takes.",
           "required": false
         },
         {
@@ -186,7 +186,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Lower bound, forwarded as base-ui `min`.",
+          "description": "The lowest value the field takes.",
           "required": false
         },
         {
@@ -195,7 +195,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `name` forwarded to the primitive (hidden input for form submission).",
+          "description": "The name the field submits its number under.",
           "required": false
         },
         {
@@ -204,7 +204,7 @@
           "type": "((value: number) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the numeric value, not the event. A cleared input reports `NaN` (`onChange?.(next ?? NaN)`).",
+          "description": "Called with the number on every change, each typed character included. A cleared input reports `NaN`. To act once per change, such as to save or fetch, use `onValueCommitted`.",
           "required": false
         },
         {
@@ -213,7 +213,7 @@
           "type": "((value: number) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called once with the numeric value when the user finishes a change: when the input blurs after typing, when a stepper press ends, and on each arrow, Home or End key press. It does not fire on each typed character, and Enter does not commit. A cleared input reports `NaN`.",
+          "description": "Called once with the number when the user finishes a change: when the input blurs after typing, when a stepper press ends, and on each arrow, Home or End key press. It does not fire on each typed character, and Enter does not commit. A cleared input reports `NaN`. Save or fetch from it.",
           "required": false
         },
         {
@@ -222,7 +222,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box, the group around the input and the steppers. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The steppers fill the box's height at both sizes.",
+          "description": "The control size of the field box around the input and the steppers, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The steppers fill the box's height at both sizes.",
           "required": false,
           "values": [
             "default",
@@ -235,7 +235,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Step amount for arrows and steppers. Omitted, they step by 1 and a typed value is held to no step grid. Given with `minValue`, a typed value must also land on the step grid counted from `minValue`, or native validation blocks submission, as with `<input type=\"number\" min step>`; pass `step={1}` to accept whole numbers only. Without `minValue`, a step never constrains a typed value.",
+          "description": "How far the arrow keys and steppers move the value. Left out, they step by 1 and a typed value is held to no step grid. With `minValue`, a typed value must also land on the step grid counted from `minValue`, or native validation blocks the submit, as with `<input type=\"number\" min step>`. Pass `step={1}` to accept whole numbers only. Without `minValue`, a step never limits a typed value.",
           "required": false
         },
         {
@@ -244,7 +244,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled value; `NaN` is the controlled empty state. `undefined` — passed or omitted — is uncontrolled, as with React's own inputs.",
+          "description": "The value, for a controlled field. `NaN` is an empty controlled field. `undefined`, passed or left out, makes the field uncontrolled, as with React's own inputs.",
           "required": false
         }
       ]

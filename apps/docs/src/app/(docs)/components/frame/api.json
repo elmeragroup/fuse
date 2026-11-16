@@ -9,8 +9,17 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The Frame's parts: an optional `Frame.Header`, then panels and Tables, then an optional `Frame.Footer`. The Frame lays out its own items, the panels and Tables that are its direct children and those in the `Collapsible.Content` of a `Collapsible.Root` that is its direct child. Each item takes the Frame's corner, the layout's gutter, seams and flush edges, and the Frame's text inset, so the header, the panels, a Table's first and last columns and the footer start their text on one line. A panel inside any other wrapper, such as a `div`, is a plain panel that rounds with `rounded-xl`. To make a panel collapsible, wrap a `Frame.Header` and a `Collapsible.Content` holding the panel in a `Collapsible.Root`.",
+          "required": false
+        },
         {
           "name": "layout",
           "origin": "declared",
@@ -34,8 +43,27 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The panel's content. A Table inside a panel is a plain table. When the only child is a `Table.Root` or `VerticalTable.Body` element, written directly here, the panel drops its padding. The table then runs to the panel's edges and clips to its corners, and its first and last columns pad, so their text stays on the panel's inset. Anything else keeps the padding, including text beside the table and a component of your own that renders a table.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged after the panel's own. A `bg-*` class that changes the fill should set `--surface` and `--surface-muted-foreground` to match, so a chart inside cuts its seams out of the new fill.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Frame.Header",
@@ -44,8 +72,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The header's content, usually a `Frame.Title` and a `Frame.Description`. A `Collapsible.Trigger` as its direct child takes the whole band and turns a trailing icon, such as `CaretDown`, half a turn while its panel is open.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Frame.Title",

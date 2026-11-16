@@ -3,9 +3,13 @@ lede: >
   A search input with a clear button.
 ---
 
-import { SearchFieldBasic } from "./demos/search-field-basic";
-import { SearchFieldSizes } from "./demos/search-field-sizes";
-import { SearchFieldValidation } from "./demos/search-field-validation";
+import { SearchFieldDemo } from "./demos/search-field-demo";
+import { SearchFieldSmall } from "./demos/search-field-small";
+import { SearchFieldWithText } from "./demos/search-field-with-text";
+import { SearchFieldSubmit } from "./demos/search-field-submit";
+import { SearchFieldError } from "./demos/search-field-error";
+import { SearchFieldDisabled } from "./demos/search-field-disabled";
+import { SearchFieldReadOnly } from "./demos/search-field-read-only";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,24 +17,43 @@ export const metadata = componentMetadata("search-field");
 
 <ComponentIntro slug="search-field" />
 
-<Demo slug="search-field" id="basic" title="Basic" file="search-field-basic.tsx">
-  <SearchFieldBasic />
+<DefaultDemo slug="search-field" file="search-field-demo.tsx">
+  <SearchFieldDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { SearchField } from "@elmeragroup/fuse/search-field";
+
+<SearchField label="Meter search" onSubmit={(query) => search(query)} />
+```
+
+## Examples
+
+<Demo slug="search-field" id="small" title="Small" level={3} file="search-field-small.tsx">
+  <SearchFieldSmall />
 </Demo>
 
-Enter calls `onSubmit` with the value. Without `onSubmit`, Enter submits the surrounding form, as in any
-text input. Escape empties a field that holds text and stops there, so a `Dialog` or `Sheet` around the
-field stays open; on an empty field it closes them as usual. The clear button shows while the field holds
-text. It is out of the tab order, and pressing it keeps focus and the on-screen keyboard on the input.
-
-Inside a `Form`, the field submits its value under its `name`, shows the error the `Form` holds under that
-name, and clears it on an edit or a clear.
-
-<Demo slug="search-field" id="sizes" title="Sizes" file="search-field-sizes.tsx">
-  <SearchFieldSizes />
+<Demo slug="search-field" id="with-text" title="With text" level={3} file="search-field-with-text.tsx">
+  <SearchFieldWithText />
 </Demo>
 
-<Demo slug="search-field" id="validation" title="Validation" file="search-field-validation.tsx">
-  <SearchFieldValidation />
+<Demo slug="search-field" id="submit" title="Submit" level={3} file="search-field-submit.tsx">
+  <SearchFieldSubmit />
+</Demo>
+
+<Demo slug="search-field" id="error" title="Error" level={3} file="search-field-error.tsx">
+  <SearchFieldError />
+</Demo>
+
+<Demo slug="search-field" id="disabled" title="Disabled" level={3} file="search-field-disabled.tsx">
+  <SearchFieldDisabled />
+</Demo>
+
+<Demo slug="search-field" id="read-only" title="Read-only" level={3} file="search-field-read-only.tsx">
+  <SearchFieldReadOnly />
 </Demo>
 
 <ApiReference slug="search-field" />

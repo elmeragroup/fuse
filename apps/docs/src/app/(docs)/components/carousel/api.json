@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 277,
+      "forwardedCount": 276,
       "props": [
         {
           "name": "aria-label",
@@ -18,7 +18,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The name, when the carousel has no visible heading.",
+          "description": "The carousel's name, when it has no visible heading. The Root is a region landmark and needs this or `aria-labelledby`. Leave the word \"carousel\" out of the name, because the role description says it.",
           "required": false
         },
         {
@@ -27,7 +27,16 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible heading's id, the name APG prefers when the carousel has a heading.",
+          "description": "The id of the carousel's visible heading, the name APG prefers. The Root is a region landmark and needs this or `aria-label`. Leave the word \"carousel\" out of the name, because the role description says it.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The parts: a `Carousel.Viewport` that holds the `Carousel.Slide`s, and a `Carousel.Controls` row with `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`, and `Carousel.Next`. Each feature is a part you mount, with no boolean prop for it. A server component can render the Root with server-rendered slides. The server renders no indicators and no page count, because the pages are measured after hydration.",
           "required": false
         },
         {
@@ -36,7 +45,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "0",
-          "description": "The page shown first when the Root owns the page. Defaults to `0`.",
+          "description": "The page shown first when the Root owns the page. The pages are measured after hydration, and this page moves into place before the first client paint.",
           "required": false
         },
         {
@@ -54,7 +63,7 @@
           "type": "((index: number, details: CarouselIndexChangeDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Receives every page change and its reason. A controlled Root that does not take the new `index` scrolls back to its own once the user's scroll ends.",
+          "description": "Receives every page change and its reason: `\"scroll\"`, `\"previous\"`, `\"next\"`, `\"indicator\"`, `\"autoplay\"` or `\"action\"`. A controlled Root that does not take the new `index` scrolls back to its own once the user's scroll ends.",
           "required": false
         },
         {
@@ -63,7 +72,7 @@
           "type": "CarouselOrientation | undefined",
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
-          "description": "The axis the viewport scrolls on. A vertical carousel needs a height. Defaults to `\"horizontal\"`.",
+          "description": "The axis the viewport scrolls on. With `vertical`, Previous and Next point up and down. Give a vertical carousel's `Carousel.Viewport` a height.",
           "required": false,
           "values": [
             "horizontal",
@@ -109,8 +118,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Carousel.Slide`s. The browser scrolls them with scroll snapping, so a swipe, a trackpad, a mouse wheel and, once the viewport has focus, the arrow keys work as on any scroller, and a flick stops at the next slide. The slides do not loop. A page change from a control scrolls smoothly, and jumps when the user prefers reduced motion.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes for the viewport. Give a vertical carousel's viewport a height, such as `h-40`.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -132,8 +159,35 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 277,
       "props": [
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the slide's visible title. Without a name of its own, a slide is named by its place, such as \"3 of 6\".",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The slide's content. A slide fully outside the viewport is `inert`, so Tab and a screen reader's reading order skip it, and in-page search does not find its text. A slide in view, peeking in or holding focus stays reachable.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes for the slide. A slide fills the viewport. Size it with a class such as `basis-1/2` to show more at once. Every slide stays a snap position, so the pages follow the layout: six slides three to a view make four pages. Space the slides with a margin on each one, such as `me-3 last:me-0`, and take it out of the slide's basis.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -155,8 +209,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The controls, in this order: `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`, and `Carousel.Next`. With `Carousel.Autoplay`, put it first, and put the controls before the `Carousel.Viewport` in the source, so the rotation control comes before the rotating content in the tab order. `className=\"order-last\"` on the controls still shows the row below the slides.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -178,7 +241,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "aria-label",
@@ -186,7 +249,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. Defaults to the locale dictionary.",
+          "description": "The accessible name. Unset, it comes from the locale dictionary.",
           "required": false
         },
         {
@@ -195,7 +258,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The icon. Defaults to a caret that points along the carousel's axis.",
+          "description": "The icon. Unset, it is a caret that points along the carousel's axis.",
           "required": false
         },
         {
@@ -248,6 +311,15 @@
           "required": false
         },
         {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so Previous is disabled on the first page and Next on the last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.",
+          "required": false
+        },
+        {
           "name": "onIntent",
           "origin": "declared",
           "type": "(() => void) | undefined",
@@ -290,8 +362,8 @@
           "origin": "declared",
           "type": "IconButtonSize | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Button's square size. Defaults to `\"icon-sm\"`, 36px at comfortable density.",
+          "defaultValue": "\"icon-sm\"",
+          "description": "Button's square size. `icon-sm` is 36px at comfortable density.",
           "required": false,
           "values": [
             "icon",
@@ -340,7 +412,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "aria-label",
@@ -348,7 +420,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. Defaults to the locale dictionary.",
+          "description": "The accessible name. Unset, it comes from the locale dictionary.",
           "required": false
         },
         {
@@ -357,7 +429,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The icon. Defaults to a caret that points along the carousel's axis.",
+          "description": "The icon. Unset, it is a caret that points along the carousel's axis.",
           "required": false
         },
         {
@@ -410,6 +482,15 @@
           "required": false
         },
         {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels the change. The pages do not loop, so Previous is disabled on the first page and Next on the last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.",
+          "required": false
+        },
+        {
           "name": "onIntent",
           "origin": "declared",
           "type": "(() => void) | undefined",
@@ -452,8 +533,8 @@
           "origin": "declared",
           "type": "IconButtonSize | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Button's square size. Defaults to `\"icon-sm\"`, 36px at comfortable density.",
+          "defaultValue": "\"icon-sm\"",
+          "description": "Button's square size. `icon-sm` is 36px at comfortable density.",
           "required": false,
           "values": [
             "icon",
@@ -502,8 +583,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The indicators. Unset, the picker renders one `Carousel.Indicator` per page, so the dots follow the layout. Map your own `Carousel.Indicator`s here to pick slides by thumbnail.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -525,15 +615,24 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 289,
+      "forwardedCount": 288,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The indicator's content, such as a thumbnail. Unset, it is a dot that becomes a pill on the current page, named after the first slide on its page, such as \"Slide 3 of 6\". With children, it draws only the focus ring and keeps a 24px target however small they are. Style them for the current page with the `in-data-current:` variant, and name the indicator with `aria-label` when they have no text. The dot grows into the pill with a transition, which reduced motion turns off.",
+          "required": false
+        },
         {
           "name": "index",
           "origin": "declared",
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page, from 0, the indicator shows and scrolls to.",
+          "description": "The page, from 0, the indicator shows and scrolls to. The current page's indicator is `aria-disabled`, as APG's grouped carousel asks, and stays in the tab order. It also carries `data-current`.",
           "required": true
         },
         {
@@ -566,8 +665,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The text. Unset, it is the page count, such as \"3 of 12\" in the locale. Use the status in place of the indicators when there are many pages. It announces each page change politely, stays silent while the pages rotate, and is empty until the viewport is measured.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -589,7 +697,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "className",
@@ -606,7 +714,7 @@
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "How long each page shows, in ms, before rotation advances. Mounting the part is the opt-in.",
+          "description": "How long each page shows, in ms, before rotation moves on. Mounting the part turns rotation on, and it starts on mount unless the user prefers reduced motion. From the last page it goes back to the first. While the pages rotate, the slides' live region is silent. A new `delay` keeps whether the user stopped it. Keyboard focus on any element in the carousel stops rotation, this button included, as the APG pattern asks. So does a swipe, a drag that snaps back, a wheel turn or a press of another control. Keyboard focus in a slide's portal, such as a popover's field, also in a same-origin frame, or inside a custom element's open shadow root counts as focus in the carousel. Focus that a mouse press moved in does not stop it. Rotation pauses while a mouse or pen is over the carousel and while the document is hidden. Mounted with the Root or later, it starts from what is already so. It is paused under a mouse or pen already over the carousel, even since before the page hydrated on a device whose main pointer can hover. It is stopped with keyboard focus already inside it, as with an `autoFocus` field in a slide.",
           "required": true
         },
         {
@@ -647,6 +755,15 @@
           "shortType": null,
           "defaultValue": "true",
           "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Runs before the button starts or stops rotation, and `event.preventBaseUIHandler()` there cancels it. Only this button starts rotation again after it stops. Once the user presses it to start, keyboard focus and hover no longer stop or pause rotation until they press it again.",
           "required": false
         },
         {
@@ -693,7 +810,7 @@
           "type": "IconButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"icon-sm\"",
-          "description": "Button's square size. Defaults to `\"icon-sm\"`, as Previous and Next.",
+          "description": "Button's square size, as on Previous and Next.",
           "required": false,
           "values": [
             "icon",
@@ -709,7 +826,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The name while the pages do not rotate. Defaults to the locale dictionary.",
+          "description": "The button's name while the pages do not rotate. Unset, it comes from the locale dictionary, \"Start automatic slide show\" in English.",
           "required": false
         },
         {
@@ -718,7 +835,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The name while the pages rotate. Defaults to the locale dictionary.",
+          "description": "The button's name while the pages rotate. Unset, it comes from the locale dictionary, \"Stop automatic slide show\" in English.",
           "required": false
         },
         {

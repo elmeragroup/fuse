@@ -18,10 +18,10 @@ export function hasSubSectionContent(children: ReactNode): boolean {
 }
 
 /**
- * Footer band rendered **outside** the row label. Direct `SelectionItem.SubSection` children
- * are partitioned out of the label row, whether a client or a server component wrote them. In
- * a client component a Fragment, wrapper or HOC hides the part from that partition and it
- * stays inside the label, so clicks would toggle the control. A SubSection with no children
+ * A band below the row's label row, outside the label. The row moves its direct
+ * `SelectionItem.SubSection` children out of the label, whether a client or a server component
+ * wrote them. In a client component a Fragment, wrapper or HOC hides the part from the row, and
+ * it stays inside the label, where a click toggles the control. A SubSection with no children
  * renders nothing.
  */
 export function SelectionItemSubSection({

@@ -3,10 +3,17 @@ lede: >
   Tables for data grids and key/value facts.
 ---
 
-import { TableBasic } from "./demos/table-basic";
+import { TableDemo } from "./demos/table-demo";
+import { TableSelectedRow } from "./demos/table-selected-row";
+import { TableFooter } from "./demos/table-footer";
 import { TableInFrame } from "./demos/table-in-frame";
-import { VerticalTableData } from "./demos/vertical-table-data";
+import { VerticalTableDemo } from "./demos/vertical-table-demo";
 import { VerticalTableCompact } from "./demos/vertical-table-compact";
+import { VerticalTableBoldRow } from "./demos/vertical-table-bold-row";
+import { VerticalTableWrappingText } from "./demos/vertical-table-wrapping-text";
+import { VerticalTableLoading } from "./demos/vertical-table-loading";
+import { VerticalTableRowsAsChildren } from "./demos/vertical-table-rows-as-children";
+import { VerticalTableWrappingKey } from "./demos/vertical-table-wrapping-key";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,26 +21,85 @@ export const metadata = componentMetadata("table");
 
 <ComponentIntro slug="table" />
 
-<Prose>
+<DefaultDemo slug="table" file="table-demo.tsx">
+  <TableDemo />
+</DefaultDemo>
 
-The library never marks rows selected; set `data-state="selected"` on `Table.Row` when your row model says so.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Table } from "@elmeragroup/fuse/table";
 
-<Demo slug="table" id="basic" title="Basic" file="table-basic.tsx">
-  <TableBasic />
+<Table.Root>
+  <Table.Header>
+    <Table.Row>
+      <Table.Head>Order</Table.Head>
+    </Table.Row>
+  </Table.Header>
+  <Table.Body>
+    <Table.Row>
+      <Table.Cell>#1042</Table.Cell>
+    </Table.Row>
+  </Table.Body>
+</Table.Root>
+```
+
+## Examples
+
+<Demo slug="table" id="selected-row" title="Selected row" level={3} file="table-selected-row.tsx">
+  <TableSelectedRow />
 </Demo>
 
-<Demo slug="table" id="in-frame" title="In a frame" file="table-in-frame.tsx">
+<Demo slug="table" id="footer" title="Footer" level={3} file="table-footer.tsx">
+  <TableFooter />
+</Demo>
+
+<Demo slug="table" id="in-frame" title="In a frame" level={3} file="table-in-frame.tsx">
   <TableInFrame />
 </Demo>
 
-<Demo slug="table" id="vertical-data" title="Vertical data" file="vertical-table-data.tsx">
-  <VerticalTableData />
+<Demo slug="table" id="vertical-table" title="Vertical table" level={3} file="vertical-table-demo.tsx">
+  <VerticalTableDemo />
 </Demo>
 
-<Demo slug="table" id="vertical-compact" title="Compact" file="vertical-table-compact.tsx">
+<Demo slug="table" id="vertical-compact" title="Compact" level={3} file="vertical-table-compact.tsx">
   <VerticalTableCompact />
+</Demo>
+
+<Demo slug="table" id="vertical-bold-row" title="Bold row" level={3} file="vertical-table-bold-row.tsx">
+  <VerticalTableBoldRow />
+</Demo>
+
+<Demo
+  slug="table"
+  id="vertical-wrapping-text"
+  title="Wrapping value"
+  level={3}
+  file="vertical-table-wrapping-text.tsx">
+  <VerticalTableWrappingText />
+</Demo>
+
+<Demo
+  slug="table"
+  id="vertical-wrapping-key"
+  title="Wrapping key"
+  level={3}
+  file="vertical-table-wrapping-key.tsx">
+  <VerticalTableWrappingKey />
+</Demo>
+
+<Demo slug="table" id="vertical-loading" title="Loading value" level={3} file="vertical-table-loading.tsx">
+  <VerticalTableLoading />
+</Demo>
+
+<Demo
+  slug="table"
+  id="vertical-rows-as-children"
+  title="Rows as children"
+  level={3}
+  file="vertical-table-rows-as-children.tsx">
+  <VerticalTableRowsAsChildren />
 </Demo>
 
 <ApiReference slug="table" />

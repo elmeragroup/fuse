@@ -13,10 +13,10 @@ export function AccordionControlled() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={() => setValue([...ALL])}>
+        <Button variant="outline" onClick={() => setValue([...ALL])}>
           Open all
         </Button>
-        <Button type="button" variant="outline" onClick={() => setValue([])}>
+        <Button variant="outline" onClick={() => setValue([])}>
           Close all
         </Button>
       </div>
@@ -25,7 +25,7 @@ export function AccordionControlled() {
           <Accordion.Header>
             <Accordion.Trigger>Shipping</Accordion.Trigger>
           </Accordion.Header>
-          <Accordion.Content>Delivered within 3–5 business days.</Accordion.Content>
+          <Accordion.Content>Delivered within 3 to 5 business days.</Accordion.Content>
         </Accordion.Item>
         <Accordion.Item value="billing">
           <Accordion.Header>

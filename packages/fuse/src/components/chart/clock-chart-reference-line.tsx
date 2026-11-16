@@ -29,30 +29,47 @@ import { viewBoxOf } from "./layout/polar-angle";
 export type ClockChartReferenceLineProps = ChartLayerProps &
   (
     | {
-        /** The value the ring marks. */
+        /**
+         * The value the ring marks. A line takes a `y` or an `x`, not both. A `y` outside the
+         * radius domain draws nothing, so widen the domain with Root's `yInclude` to show it.
+         */
         y: number;
-        /** Not on a value ring. */
+        /**
+         * The instant the spoke marks. A line takes a `y` or an `x`, not both. A string throws
+         * `x-type-mismatch`, and an `x` outside the cycle draws nothing.
+         */
         x?: never;
-        /** How `{value}` in `label` prints. */
+        /**
+         * How `{value}` in `label` prints. A ring prints its value in this value format. A spoke
+         * prints its instant, by default in "time" on a dial of slots shorter than a day and as its
+         * slot's label on a coarser dial.
+         */
         format?: ValueFormat;
       }
     | {
-        /** The instant the spoke marks. A string throws `x-type-mismatch`. */
+        /**
+         * The instant the spoke marks. A line takes a `y` or an `x`, not both. A string throws
+         * `x-type-mismatch`, and an `x` outside the cycle draws nothing.
+         */
         x: ChartX;
-        /** Not on a spoke. */
+        /**
+         * The value the ring marks. A line takes a `y` or an `x`, not both. A `y` outside the
+         * radius domain draws nothing, so widen the domain with Root's `yInclude` to show it.
+         */
         y?: never;
         /**
-         * How `{value}` in `label` prints the instant the spoke marks. By default a dial of slots
-         * shorter than a day prints it in "time", and a coarser dial prints its slot's label.
+         * How `{value}` in `label` prints. A ring prints its value in this value format. A spoke
+         * prints its instant, by default in "time" on a dial of slots shorter than a day and as its
+         * slot's label on a coarser dial.
          */
         format?: XFormat;
       }
   ) & {
     /** The visible label. `{value}` prints the ring's or the spoke's value. */
     label?: string;
-    /** The line style. "solid" by default. */
+    /** The line style. */
     variant?: "solid" | "dashed";
-    /** The line's tone. "default" by default. */
+    /** The line's tone. */
     tone?: ChartTone;
   };
 
@@ -65,8 +82,14 @@ export type ClockChartReferenceLineProps = ChartLayerProps &
  *
  * @beta
  */
-export function ClockChartReferenceLine({ style, ...props }: ClockChartReferenceLineProps): ReactElement {
-  const { label, variant = "solid", tone = "default", className } = props;
+export function ClockChartReferenceLine({
+  label,
+  variant = "solid",
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ClockChartReferenceLineProps): ReactElement {
   const { model, box, kernel } = usePolarContext("ClockChart.ReferenceLine", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.ReferenceLine");
   let d: string;

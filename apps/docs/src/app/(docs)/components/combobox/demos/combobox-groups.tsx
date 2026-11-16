@@ -11,7 +11,7 @@ const groups = [
 
 export function ComboboxGroups() {
   return (
-    <Combobox.Root items={[...groups]}>
+    <Combobox.Root items={groups}>
       <Combobox.Input aria-label="Fruit" placeholder="Search fruit…" />
       <Combobox.Content>
         <Combobox.Empty />

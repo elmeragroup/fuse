@@ -3,8 +3,8 @@ lede: >
   A syntax-highlighted code block.
 ---
 
-import { CodeBasic } from "./demos/code-basic";
-import { CodeScroll } from "./demos/code-scroll";
+import { CodeDemo } from "./demos/code-demo";
+import { CodeNamedRegion } from "./demos/code-named-region";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,12 +12,23 @@ export const metadata = componentMetadata("code");
 
 <ComponentIntro slug="code" />
 
-<Demo slug="code" id="basic" title="Basic" file="code-basic.tsx">
-  <CodeBasic />
-</Demo>
+<DefaultDemo slug="code" file="code-demo.tsx">
+  <CodeDemo />
+</DefaultDemo>
 
-<Demo slug="code" id="scroll" title="Scroll region" file="code-scroll.tsx">
-  <CodeScroll />
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Code } from "@elmeragroup/fuse/code";
+
+<Code code={source} />
+```
+
+## Examples
+
+<Demo slug="code" id="named-region" title="Named region" level={3} file="code-named-region.tsx">
+  <CodeNamedRegion />
 </Demo>
 
 <ApiReference slug="code" />

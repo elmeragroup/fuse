@@ -1,34 +1,36 @@
 "use client";
 
-import { ChartBar, House, Package, Receipt, Users } from "@elmeragroup/fuse/icons";
+import { House, Package, Users } from "@elmeragroup/fuse/icons";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
-
-const NAV = [
-  { label: "Dashboard", icon: House },
-  { label: "Orders", icon: Package },
-  { label: "Customers", icon: Users },
-  { label: "Invoices", icon: Receipt },
-  { label: "Reports", icon: ChartBar },
-];
 
 export function SidebarIconCollapse() {
   return (
-    <div className="relative h-[24rem] w-full overflow-hidden rounded-lg border border-border">
+    <div className="relative h-80 w-full overflow-hidden rounded-lg border border-border">
       <Sidebar.Provider bounds="container" defaultOpen={false}>
         <Sidebar.Root collapsible="icon">
           <Sidebar.Content>
             <Sidebar.Group>
-              <Sidebar.GroupLabel>Navigation</Sidebar.GroupLabel>
+              <Sidebar.GroupLabel>Sales</Sidebar.GroupLabel>
               <Sidebar.GroupContent>
                 <Sidebar.Menu>
-                  {NAV.map(({ label, icon: Icon }) => (
-                    <Sidebar.MenuItem key={label}>
-                      <Sidebar.MenuButton tooltip={label} isActive={label === "Orders"}>
-                        <Icon />
-                        <span>{label}</span>
-                      </Sidebar.MenuButton>
-                    </Sidebar.MenuItem>
-                  ))}
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton tooltip="Dashboard">
+                      <House />
+                      <span>Dashboard</span>
+                    </Sidebar.MenuButton>
+                  </Sidebar.MenuItem>
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton isActive tooltip="Orders">
+                      <Package />
+                      <span>Orders</span>
+                    </Sidebar.MenuButton>
+                  </Sidebar.MenuItem>
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton tooltip="Customers">
+                      <Users />
+                      <span>Customers</span>
+                    </Sidebar.MenuButton>
+                  </Sidebar.MenuItem>
                 </Sidebar.Menu>
               </Sidebar.GroupContent>
             </Sidebar.Group>
@@ -38,12 +40,8 @@ export function SidebarIconCollapse() {
         <Sidebar.Inset>
           <header className="flex h-12 items-center gap-2 border-b border-border px-3">
             <Sidebar.Trigger />
-            <span className="text-sm font-medium">Icon mode</span>
+            <span className="text-sm font-medium">Orders</span>
           </header>
-          <p className="text-sm p-4 text-muted-foreground">
-            Collapsed, each row keeps its icon and hovering or focusing it reveals the label as a tooltip on
-            the right. Expand it and the tooltips stay hidden — the labels are already visible.
-          </p>
         </Sidebar.Inset>
       </Sidebar.Provider>
     </div>

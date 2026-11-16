@@ -18,7 +18,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged last through `cn`.",
+          "description": "Extra classes for the group, merged last.",
           "required": false
         },
         {
@@ -89,11 +89,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The size of every item: `xs`, `sm`, `default` or `lg`, where `default` is the `md` control size. Unset, the items take Toggle's `default`. An item's own `size` wins.",
           "required": false,
           "values": [
             "default",
@@ -108,7 +108,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "2",
-          "description": "Tailwind spacing units between items. `0` is segmented-control mode",
+          "description": "The space between items, in Tailwind spacing units. `0` joins the items into one segmented control: they share their inner edges, and outline items share one border between neighbours.",
           "required": false
         },
         {
@@ -117,7 +117,7 @@
           "type": "CSSProperties | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, merged after the library's `--gap` custom property.",
+          "description": "Inline styles, merged after the `--gap` custom property the group sets from `spacing`.",
           "required": false
         },
         {
@@ -133,11 +133,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The look of every item: `default` with no fill or border, or `outline` with a border. Unset, the items take Toggle's `default`. An item's own `variant` wins.",
           "required": false,
           "values": [
             "default",
@@ -162,7 +162,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged after group overrides + `toggleVariants`.",
+          "description": "Extra classes for the item, merged after the group's and Toggle's.",
           "required": false
         },
         {
@@ -233,11 +233,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"lg\" | \"sm\" | \"xs\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The item's size, which overrides the group's `size`.",
           "required": false,
           "values": [
             "default",
@@ -270,11 +270,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The item's look, which overrides the group's `variant`.",
           "required": false,
           "values": [
             "default",

@@ -19,7 +19,7 @@ import { partitionSubSections } from "./partition-sub-sections";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 
-/** Resolved once at module scope — the shell always borrows the `outline` arm. */
+/** Resolved once at module scope, since the shell always borrows Item's `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
 // A connected stack's rows share one line per join: every row but the first drops its top border,
@@ -141,11 +141,10 @@ type SelectionGroupLayoutProps = {
 };
 
 /**
- * Package-private layout announcer that `CheckboxGroup` and `RadioGroup` wrap their
- * primitive's children in. A shell placed directly in a plain
- * group then follows the group's `orientation` for its edge treatment — connected stack
- * when vertical, individually rounded card when horizontal — instead of always
- * assuming a connected stack. It adds no `role`; only `SelectionItemGroup` is a list.
+ * The package-private layout context `CheckboxGroup` and `RadioGroup` wrap their primitive's
+ * children in. A shell placed directly in a plain group then follows the group's `orientation`
+ * for its edges: a connected stack when vertical, and a rounded card of its own when
+ * horizontal. It adds no `role`. Only `SelectionItemGroup` is a list.
  */
 export function SelectionGroupLayout({ children, orientation }: SelectionGroupLayoutProps): ReactElement {
   const value = useMemo(() => ({ orientation, list: false }), [orientation]);
@@ -155,18 +154,18 @@ export function SelectionGroupLayout({ children, orientation }: SelectionGroupLa
 type SelectionItemGroupProps = {
   children?: ReactNode;
   /**
-   * Layout of the actual item list. Vertical (default) is connected
-   * `flex-col gap-0`. Horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`.
+   * How the list lays out its rows. `vertical`, the default, is a connected `flex-col gap-0`
+   * stack. `horizontal` is `flex-row flex-wrap`, `--surface-gap-lg` apart.
    */
   orientation?: SelectionItemGroupOrientation;
 };
 
 /**
- * Private stacked-card list wrapper. `Item.Group` still emits `role="list"`;
- * `SelectionItem.Shell` reads this context and defaults to `role="listitem"`.
- * Vertical remains a connected `flex-col gap-0` stack; horizontal is the actual
- * item list `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded shells.
- * Not part of the public `SelectionItem` namespace or entry.
+ * The private list of rows inside `CheckboxItemGroup` and `RadioItemGroup`. `Item.Group` renders
+ * the `role="list"`, and a `SelectionItem.Shell` that reads this context defaults to
+ * `role="listitem"`. A vertical list is a connected `flex-col gap-0` stack. A horizontal list is
+ * `flex-row flex-wrap`, `--surface-gap-lg` apart, with each shell rounded on its own. It is not
+ * part of the public `SelectionItem` namespace or entry.
  */
 export function SelectionItemGroup({
   children,
@@ -231,45 +230,49 @@ export function SelectionItemActions({
 }
 
 type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className" | "children"> & {
-  /**
-   * Emitted as `data-slot` on the `Field.Item` root. Typical values are
-   * `"checkbox-item"` and `"radio-item"`.
-   */
+  /** The `data-slot` the row's `Field.Item` root carries, such as `"checkbox-item"` or `"radio-item"`. */
   dataSlot: string;
   /**
-   * The selection control rendered in the `Item.Media variant="icon"` slot. Documented
-   * escape hatch for custom indicators (switch, icon crossfade) that the dropped
-   * external-card axes used to provide.
+   * The control the row selects, such as a `Checkbox`, a `RadioGroupItem` or a `Switch`, in the
+   * row's icon slot. `CheckboxItem` and `RadioItem` take no icon. To show one beside the
+   * control, pass the control and the icon together here, and hide the icon with `aria-hidden`
+   * so the row's title and description stay the control's name.
    */
   control: ReactNode;
-  /**
-   * Where the control sits in the labelled row. `"end"` places it after the row
-   * children (trailing indicator). Default `"start"`.
-   */
+  /** Where the control sits in the row: before the content, or after it at `end`. */
   controlPosition?: "start" | "end";
   /**
    * Shows the disabled row: the `not-allowed` cursor and the theme's
    * `--selection-disabled-background` fill under a 45° hatch striped in
-   * `--selection-disabled-hatch`. Neutral themes fill with `--muted` and black stripes at 2%
-   * alpha; branded themes keep the card fill with no stripes. The row's text, its SubSection's
-   * included, takes `--selection-disabled-foreground`: the foreground in neutral themes, the muted
-   * foreground in branded ones. A text colour class in `className` still wins, a description
-   * keeps its own muted text, and the control dims itself. A row whose group is disabled, or whose control in the control
-   * slot carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`, shows the
-   * same look without it. Does not disable the control — the control or group owns that.
+   * `--selection-disabled-hatch`. Neutral themes fill with `--muted` under black stripes at 2%
+   * alpha, and branded themes keep the card fill with no stripes. The row's text, its
+   * SubSection's included, takes `--selection-disabled-foreground`, which is the foreground in
+   * neutral themes and the muted foreground in branded ones. A text colour class in `className`
+   * still wins, a description keeps its own muted text, and the control dims itself. A row
+   * shows the same look without this prop when its group is disabled, or when its control
+   * carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`. It does not
+   * disable the control. Disable the control or the group for that.
    */
   isDisabled?: boolean;
   /**
-   * Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset,
-   * and a click in that inset beside the label row toggles the control. The row paints the
-   * card fill (`bg-card`) like the other field boxes; a list on a surface that should show
-   * through takes a background class such as `bg-background`, which replaces it.
+   * Extra classes for the row, merged last. A `px-*` utility sets the card's side inset, and a
+   * click in that inset beside the label row toggles the control. The row paints the card fill
+   * (`bg-card`) like the other field boxes. A list on a surface that should show through takes a
+   * background class such as `bg-background`, which replaces it.
    * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
    * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
    * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
-   * fill win over such a class; set `--selection-disabled-background`, for example to
+   * fill win over such a class. Set `--selection-disabled-background`, for example to
    * `var(--background)`, to change the disabled fill.
+   *
+   * The edges and the lines between rows come from the `--selection-*` theme roles, which the
+   * Tokens section lists. Stacked rows share one line per join, and a horizontal group's rows
+   * are cards of their own with no line between them. Set a role on the element that carries
+   * the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border:
+   * var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the
+   * rows keep the edges the theme element resolved. A checked row below another draws its top
+   * edge by pulling itself up 1px, so a margin class on the row can break that edge.
    */
   className?: string;
   /**
@@ -286,24 +289,24 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * that ends a text selection does nothing. The control's accessible name stays the label
    * row, and keyboard and assistive-technology users toggle through the control. Leave it
    * off when the SubSection reveals fields under the control, so a click between those
-   * fields does not clear the choice. Default `false`.
+   * fields does not clear the choice.
    */
   isSubSectionSelectable?: boolean;
   /**
-   * Direct children are partitioned: `SelectionItem.SubSection` nodes render outside
-   * the label so interactive content does not toggle the control, in a server component's
-   * tree as in a client one. Everything else renders in the label row. In a client
-   * component, wrapping a SubSection in a Fragment, another component, or an HOC hides it
-   * from the partition and it stays inside the label; pass such a band through `subSections`.
+   * The row's content. Direct `SelectionItem.SubSection` children render outside the label, so
+   * a field or button in one never toggles the control, and everything else renders in the
+   * label row. The row finds a direct SubSection whether a server or a client component wrote
+   * it. In a client component, a Fragment, another component or an HOC around a SubSection hides
+   * it, and it stays inside the label. Pass such a band through `subSections`.
    */
   children?: ReactNode;
 };
 
 /**
- * Root attributes `CheckboxItem` and `RadioItem` forward to the shell's `Field.Item` root,
- * such as `id`, `style`, `data-*`, ARIA attributes and event handlers. It leaves out what
- * the item owns: its row props, `className`, `children`, the shell wiring and `disabled`,
- * which `isDisabled` spells.
+ * The attributes `CheckboxItem` and `RadioItem` pass to the shell's `Field.Item` root, such as
+ * `id`, `style`, `data-*`, ARIA attributes and event handlers. It leaves out what the item
+ * owns: its row props, `className`, `children`, the shell wiring and `disabled`, which the
+ * item spells `isDisabled`.
  */
 export type SelectionItemRootProps = Omit<
   SelectionItemShellProps,
@@ -319,8 +322,8 @@ export type SelectionItemRootProps = Omit<
 >;
 
 /**
- * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
- * component, because it reads Field.Item context. The control and sub-section columns
+ * The card row that CheckboxItem and RadioItem put their control in. It reads Field.Item
+ * context, so it is a client component. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.
  * The shell's side padding is the one horizontal inset, so a `px-*` in `className` sets it.
  * The label is `display: contents`, so its cells are shell grid items and its `::before`
@@ -430,7 +433,10 @@ export function SelectionItemShell({
         "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border py-0 transition-colors has-[>label>[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border",
         shellFillClass,
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
-        connectedStack ? connectedStackClass : "rounded-lg",
+        // Item's root is `w-full`, so in a horizontal group each card would wrap onto a line of its
+        // own. `flex-1` starts every card at zero width and grows them equally, so the cards share
+        // the line and wrap only below their content's narrowest width.
+        connectedStack ? connectedStackClass : "flex-1 rounded-lg",
         disabledShellClass,
         className
       )}>

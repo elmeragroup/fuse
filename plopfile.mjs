@@ -142,7 +142,7 @@ export default function plopfile(plop) {
           `  1. Implement ${answers.name} using AGENTS.md; replace every failing placeholder.`,
           "  2. pnpm --filter @elmeragroup/fuse generate:exports  # rewrites tracked package.json#exports and src/index.ts",
           "  3. pnpm --filter @elmeragroup/fuse build             # dist + publish manifest; does not rewrite source exports",
-          "  4. Author the page and demos. Add the title, RSC status and demo files to apps/docs/test/fixtures/component-inventory.json.",
+          "  4. Author the page and demos. Add the title and demo files to apps/docs/test/fixtures/component-inventory.json.",
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
           "  6. Add public type/API checks; a server-visible part keeps its namespace index directive-free.",
           "  7. pnpm check",

@@ -25,15 +25,25 @@ import type { SparklineMarkPlace } from "./sparkline-marks";
 export type SparklineProps = ChartLayerProps & {
   /** The svg's id. */
   id?: string;
-  /** The consumer's name. The accessible name appends the generated range sentence to it. */
+  /**
+   * The Sparkline's name. A Sparkline is an image with no keyboard stop, and its accessible name is
+   * this text followed by the generated range sentence, which names the lowest and highest values.
+   */
   "aria-label": string;
   /** Evenly spaced values. Null leaves a gap. No values, or only nulls, draw nothing and read the dictionary's `noData`. */
   data: readonly (number | null)[];
-  /** The locale of the range sentence. A hook-free component cannot read LocaleProvider. */
+  /**
+   * The locale of the range sentence. Sparkline calls no hook, so a server component renders it
+   * with no client JavaScript, and it cannot read LocaleProvider.
+   */
   locale: SupportedLocale;
   /** How the range sentence prints values. */
   format?: ValueFormat;
-  /** The mark. "line" by default. */
+  /**
+   * The mark. "line" by default. An area fades from its values toward 0, above and below the zero
+   * line, and an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar
+   * rounds the corners of its far end by `--chart-bar-radius`.
+   */
   variant?: "line" | "area" | "bar";
   /** The curve through the values. "monotone" by default. */
   curve?: ChartCurve;
@@ -46,35 +56,47 @@ export type SparklineProps = ChartLayerProps & {
   /** Replaces the generated range sentence verbatim. */
   description?: string;
   /**
-   * "none" leaves hover out: no value shows a crosshair, a dot or a highlight under the pointer.
-   * Hover writes a region of about half a kilobyte and five elements per value: a 30-value line is about
-   * 18 KB and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about
-   * 106 KB against 7 KB. Pass "none" where many Sparklines render at once, such as one per row of
-   * a long table.
+   * "none" leaves hover out. With hover, a pointer over a value shows a dashed crosshair and a dot
+   * there, fades the rest of the series and draws the line around the value, or the value's bar, at
+   * full strength, and moving to the next value cross-fades the marks. The hover is CSS, shows only
+   * on a device that hovers, and adds no tab stop and nothing to the accessible name. It writes a
+   * region of about half a kilobyte and five elements per value, so a 30-value line is about 18 KB
+   * and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about 106 KB
+   * against 7 KB. Pass "none" where many Sparklines render at once, such as one per row of a long
+   * table.
    */
   "data-hover"?: "none";
   /**
-   * "none" turns the entrance off. The entrance plays whenever the svg enters the document, so it
-   * replays when the element is inserted again: a keyed row that a sort moves, or a panel shown
-   * again. Pass "none" where that happens, such as a Sparkline in a sortable table. Reduced motion
-   * draws the marks at rest either way.
+   * "none" turns the entrance off. A line wipes in from the left, an area fills behind it, and bars
+   * grow from the baseline. The entrance plays whenever the svg enters the document, so it replays
+   * when the element is inserted again, as a keyed row that a sort moves or a panel shown again is.
+   * Pass "none" where that happens, such as a Sparkline in a sortable table. Reduced motion draws
+   * the marks at rest either way.
    */
   "data-intro"?: "none";
 } & (
     | {
-        /** Without a start, the range sentence names no slots. */
+        /**
+         * The first value's slot start. Pass `start`, `interval` and `timeZone` together, and the
+         * range sentence names the slots of the lowest and highest values. Without them it names no
+         * slots.
+         */
         start?: never;
-        /** Only with `start`. */
+        /** Each value's slot length. Pass it with `start` and `timeZone`. */
         interval?: never;
-        /** Only with `start`. */
+        /** The IANA zone the slot labels read in. Pass it with `start` and `interval`. */
         timeZone?: never;
       }
     | {
-        /** The first value's slot start. With all three, the range sentence names the slots of the lowest and highest values. */
+        /**
+         * The first value's slot start. Pass `start`, `interval` and `timeZone` together, and the
+         * range sentence names the slots of the lowest and highest values. Without them it names no
+         * slots.
+         */
         start: ChartInstant;
-        /** Each value's slot length. */
+        /** Each value's slot length. Pass it with `start` and `timeZone`. */
         interval: Interval;
-        /** The IANA zone the slot labels read in. */
+        /** The IANA zone the slot labels read in. Pass it with `start` and `interval`. */
         timeZone: string;
       }
   );

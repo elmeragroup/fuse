@@ -40,13 +40,18 @@ export type RadarChartRootProps<
 > = ChartAccessibleName &
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> & {
-    /** The rows, one per spoke. Negative values draw inside a zero ring. */
+    /**
+     * The rows, one per spoke. The first row's spoke points to 12 o'clock and the rest follow
+     * clockwise, so a cyclic profile such as the days of a week puts its last spoke beside its
+     * first. Negative values draw inside a zero ring. With no reading the chart shows `Empty` and
+     * has no tab stop. A server component can render the chart when every prop is plain data.
+     */
     data: readonly TRow[];
     /**
      * Keyed by series, as in `Chart.Root`. Each entry is a `ChartSeriesConfig` with `label`,
-     * `color` and optionally `format`, `icon`, `missing` and `qualityKey`. A fifth literal key fails
-     * the type, and a fifth runtime key throws. It takes no `stack`, `projectedFrom`, `interval` or
-     * scale.
+     * `color` and optionally `format`, `icon`, `missing` and `qualityKey`. A radar compares at most 4
+     * series. A fifth literal key fails the type, and a fifth runtime key throws in development and
+     * draws the first four in production. It takes no `stack`, `projectedFrom`, `interval` or scale.
      */
     config: TConfig &
       ChartSeriesConfigCheck<TConfig, TRow> &
@@ -63,11 +68,20 @@ export type RadarChartRootProps<
     max?: number;
     /** The spoke that is active before any pointer or key moves. */
     defaultActiveName?: TRow[TNameKey];
-    /** "none" turns the entrance off. */
+    /**
+     * "none" turns off the entrance, in which each series grows from the centre the first time the
+     * chart comes into view.
+     */
     "data-intro"?: "none";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. The plot is one tab stop. Hover a spoke, or focus
+     * the chart and use the arrow keys, to read it. ArrowLeft and ArrowRight move between spokes,
+     * and ArrowUp and ArrowDown between series. The series other than the nearest dim. On a touch
+     * screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a second
+     * tap on the same spoke releases it.
+     */
     children?: ReactNode;
   };
 

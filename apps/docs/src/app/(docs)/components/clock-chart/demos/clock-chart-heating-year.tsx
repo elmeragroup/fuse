@@ -67,10 +67,7 @@ export function ClockChartHeatingYear() {
       <ClockChart.Grid />
       <ClockChart.AngleAxis />
       <ClockChart.RadiusAxis />
-      <ClockChart.Column dataKey="kwh" emphasis="max" />
-      <ClockChart.Center>
-        <ClockChart.ActiveValue dataKey="kwh" fallback="max" />
-      </ClockChart.Center>
+      <ClockChart.Column dataKey="kwh" />
       <ClockChart.Tooltip />
       <ClockChart.Table />
     </ClockChart.Root>

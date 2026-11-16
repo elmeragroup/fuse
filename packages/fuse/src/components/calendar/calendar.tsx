@@ -37,24 +37,43 @@ export type CalendarRootState = {
   readonly invalid: boolean;
 };
 
-/** `Calendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
-export type CalendarRootProps = Omit<
+type RootElementProps = Omit<
   useRender.ComponentProps<"div", CalendarRootState>,
-  "defaultValue" | "onChange"
-> &
+  "defaultValue" | "onChange" | "aria-label" | "aria-labelledby"
+>;
+
+/** `Calendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
+export type CalendarRootProps = RootElementProps &
   CalendarViewProps & {
     /**
      * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation.
-     * A server component cannot pass one, since it reaches the client as text: build the value in
-     * a client component. `null` selects nothing.
+     * A server component cannot pass one, since it reaches the client as ISO text, which the
+     * calendar refuses with a `TypeError`: build the value in a client component. `null` selects
+     * nothing.
+     *
+     * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
+     * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
+     * `/quick-start#temporal` shows.
      */
     value?: Temporal.PlainDate | null;
-    /** The day selected first, when the calendar owns its value. Takes what `value` takes. */
+    /**
+     * The day selected first, when the calendar owns its value. Takes what `value` takes.
+     *
+     * With neither `value` nor `defaultValue`, the calendar opens on today's month. Only the first
+     * client effect reads the clock, so the server and the hydrating render write each month's
+     * frame, the weekday row over six weeks of empty days, hidden from assistive technology, and
+     * the calendar hydrates without a mismatch. It keeps that height for a six-week month and
+     * shrinks by a row or two for a shorter one. Today is marked from the same effect on, never in
+     * a server render, and the mark moves at midnight.
+     */
     defaultValue?: Temporal.PlainDate | null;
     /**
      * Called when the user selects a day, by pressing it or with Enter or Space, with the day as
-     * this runtime's `Temporal.PlainDate`. `details.reason` is `"day-press"` or `"keyboard"`.
-     * Canceling with `details.cancel()` keeps the value unchanged; focus stays on the day.
+     * this runtime's `Temporal.PlainDate`. `details.reason` is `"day-press"` or `"keyboard"`, and
+     * `details.event` and `details.trigger` are the DOM event and the day's button. Canceling
+     * with `details.cancel()` keeps the value unchanged; focus stays on the day.
+     * `details.getValidationError()` returns `null` here, since the calendar lets the user select
+     * only days that pass.
      */
     onValueChange?: (value: Temporal.PlainDate, details: CalendarRootValueChangeEventDetails) => void;
     /**
@@ -63,6 +82,11 @@ export type CalendarRootProps = Omit<
      * changes.
      */
     isDateUnavailable?: (date: Temporal.PlainDate) => boolean;
+    /**
+     * The parts: a `Calendar.Header` with `Calendar.DecrementMonth`,
+     * `Calendar.VisibleRangeHeading` and `Calendar.IncrementMonth`, then `Calendar.Months`.
+     */
+    children?: RootElementProps["children"];
   };
 
 type CalendarState = CalendarSharedState & {
@@ -72,15 +96,8 @@ type CalendarState = CalendarSharedState & {
 
 /**
  * A calendar that selects one day: the months, their day grids and the buttons that page them.
- * It is a `group` named by `aria-label` or `aria-labelledby`, and each grid's name starts with
- * that name. Values are `Temporal.PlainDate`s; it reads `globalThis.Temporal`, so a host without
- * native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once.
- *
- * Today is marked from the first client effect on and moves at midnight; a server render marks
- * no today. A calendar with neither `value` nor `defaultValue` opens on today's month, which only
- * that effect reads: the server and the hydrating render write each visible month's frame with six
- * weeks of empty days in its place (`Calendar.Months`), so it hydrates without a mismatch, and the
- * grid never grows when today's months arrive, only shrinks for a month of fewer weeks.
+ * It is a `group`. It reads `globalThis.Temporal`, so a host without native Temporal imports
+ * `@elmeragroup/fuse/temporal-polyfill` once.
  *
  * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
  *   `maxValue` is a string rather than a Temporal object, a host defect.

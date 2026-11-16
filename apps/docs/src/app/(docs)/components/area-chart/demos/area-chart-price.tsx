@@ -36,14 +36,8 @@ export function AreaChartPrice() {
       <AreaChart.Grid />
       <AreaChart.YAxis />
       <AreaChart.XAxis />
-      <AreaChart.Area
-        dataKey="price"
-        variant="solid"
-        curve="step-after"
-        style={{ "--chart-area-opacity": 0.35 }}
-      />
+      <AreaChart.Area dataKey="price" curve="step-after" />
       <AreaChart.Line dataKey="price" curve="step-after" />
-      <AreaChart.Crosshair />
       <AreaChart.Tooltip />
       <AreaChart.Table />
     </AreaChart.Root>

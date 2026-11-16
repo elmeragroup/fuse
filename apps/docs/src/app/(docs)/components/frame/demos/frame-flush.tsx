@@ -4,15 +4,17 @@ import { Frame } from "@elmeragroup/fuse/frame";
 
 export function FrameFlush() {
   return (
-    <Frame.Root layout="flush" className="max-w-sm">
+    <Frame.Root layout="flush" className="max-w-md w-full">
       <Frame.Header>
-        <Frame.Title>Consumption</Frame.Title>
-        <Frame.Description>Updated every hour</Frame.Description>
+        <Frame.Title>Usage</Frame.Title>
+        <Frame.Description>Last three months</Frame.Description>
       </Frame.Header>
-      <Frame.Panel>
-        <p className="text-sm font-semibold">Storgata 12</p>
-        <p className="text-sm text-muted-foreground">1 240 kWh this month, 8% below March.</p>
-      </Frame.Panel>
+      <Frame.Panel>March, 1 240 kWh</Frame.Panel>
+      <Frame.Panel>April, 980 kWh</Frame.Panel>
+      <Frame.Panel>May, 1 105 kWh</Frame.Panel>
+      <Frame.Footer>
+        <p>Readings arrive every hour.</p>
+      </Frame.Footer>
     </Frame.Root>
   );
 }

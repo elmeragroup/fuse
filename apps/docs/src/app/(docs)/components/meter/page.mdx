@@ -3,11 +3,15 @@ lede: >
   A bar that shows where a value falls in a range.
 ---
 
-import { MeterBasic } from "./demos/meter-basic";
-import { MeterModes } from "./demos/meter-modes";
+import { MeterDemo } from "./demos/meter-demo";
+import { MeterHigh } from "./demos/meter-high";
+import { MeterFull } from "./demos/meter-full";
+import { MeterExceeded } from "./demos/meter-exceeded";
+import { MeterInverted } from "./demos/meter-inverted";
+import { MeterSuccessOnlyWhenFull } from "./demos/meter-success-only-when-full";
+import { MeterNeutral } from "./demos/meter-neutral";
 import { MeterValueLabel } from "./demos/meter-value-label";
 import { MeterRange } from "./demos/meter-range";
-import { MeterNeutral } from "./demos/meter-neutral";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,24 +19,56 @@ export const metadata = componentMetadata("meter");
 
 <ComponentIntro slug="meter" />
 
-<Demo slug="meter" id="basic" title="Basic" file="meter-basic.tsx">
-  <MeterBasic />
+<DefaultDemo slug="meter" file="meter-demo.tsx">
+  <MeterDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Meter } from "@elmeragroup/fuse/meter";
+
+<Meter label="Storage used" value={42} />
+```
+
+## Examples
+
+<Demo slug="meter" id="high" title="High" level={3} file="meter-high.tsx">
+  <MeterHigh />
 </Demo>
 
-<Demo slug="meter" id="modes" title="Modes" file="meter-modes.tsx">
-  <MeterModes />
+<Demo slug="meter" id="full" title="Full" level={3} file="meter-full.tsx">
+  <MeterFull />
 </Demo>
 
-<Demo slug="meter" id="value-label" title="Value label" file="meter-value-label.tsx">
+<Demo slug="meter" id="exceeded" title="Exceeded" level={3} file="meter-exceeded.tsx">
+  <MeterExceeded />
+</Demo>
+
+<Demo slug="meter" id="inverted" title="Inverted" level={3} file="meter-inverted.tsx">
+  <MeterInverted />
+</Demo>
+
+<Demo
+  slug="meter"
+  id="success-only-when-full"
+  title="Success only when full"
+  level={3}
+  file="meter-success-only-when-full.tsx">
+  <MeterSuccessOnlyWhenFull />
+</Demo>
+
+<Demo slug="meter" id="neutral" title="Neutral" level={3} file="meter-neutral.tsx">
+  <MeterNeutral />
+</Demo>
+
+<Demo slug="meter" id="value-label" title="Value label" level={3} file="meter-value-label.tsx">
   <MeterValueLabel />
 </Demo>
 
-<Demo slug="meter" id="range" title="Range" file="meter-range.tsx">
+<Demo slug="meter" id="range" title="Range" level={3} file="meter-range.tsx">
   <MeterRange />
-</Demo>
-
-<Demo slug="meter" id="neutral" title="Neutral" file="meter-neutral.tsx">
-  <MeterNeutral />
 </Demo>
 
 <ApiReference slug="meter" />

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -11,26 +11,36 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { buttonGroupVariants } from "./button-group-variants";
 
-export type ButtonGroupRootProps = ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>;
-
-export type ButtonGroupSeparatorProps = Omit<ComponentProps<typeof Separator>, "orientation"> & {
+/** The props of `ButtonGroup.Root`: a native `div`'s props plus the recipe's `orientation`. */
+export type ButtonGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
+  /** The axis the segments join along. */
+  orientation?: VariantProps<typeof buttonGroupVariants>["orientation"];
   /**
-   * Hairline axis. Flipped from the canonical Separator: a horizontal group needs a
-   * vertical hairline.
-   * @default "vertical"
+   * The segments: Buttons, `ButtonGroup.Text`, fields and nested groups. A child with a
+   * `data-slot` joins the group, which squares its inner corners and merges the borders it shares
+   * with its neighbours. A filled Button, `default` or `secondary`, shows no seam against its
+   * neighbour, so put a `ButtonGroup.Separator` between filled Buttons.
+   */
+  children?: ReactNode;
+};
+
+/** The props of `ButtonGroup.Separator`: Separator's props with the hairline's axis. */
+export type ButtonGroupSeparatorProps = Omit<
+  ComponentProps<typeof Separator>,
+  "orientation" | "className"
+> & {
+  /** Extra classes, merged after the hairline's own. */
+  className?: ComponentProps<typeof Separator>["className"];
+  /**
+   * The hairline's axis. A horizontal group needs a vertical hairline, so set `horizontal` in a
+   * vertical group.
    */
   orientation?: ComponentProps<typeof Separator>["orientation"];
 };
 
 export type ButtonGroupTextProps = useRender.ComponentProps<"div">;
 
-/**
- * Layout container that collapses inner radii and shared borders of `data-slot`
- * children into one visual control. `orientation` defaults so
- * `data-orientation` is always emitted. Filled Buttons (`default`, `secondary`) join
- * with no visible seam because Button's fill paints under its transparent border, so put
- * `ButtonGroup.Separator` between them; `outline` takes its seam from its own border.
- */
+/** A row or column of Buttons and other controls joined into one control. */
 export function ButtonGroupRoot({
   className,
   orientation = "horizontal",
@@ -48,10 +58,8 @@ export function ButtonGroupRoot({
 }
 
 /**
- * Hairline divider between segments. Forwards to the canonical library Separator so the
- * group `[data-slot]` join contract stays intact. Default is
- * `"vertical"` — a horizontal group needs a vertical hairline. It is the seam between
- * filled segments (`default`, `secondary`), which otherwise join as one fill.
+ * The hairline between two segments. It is the library's Separator with a `data-slot`, so the
+ * group joins it like any other segment.
  */
 export function ButtonGroupSeparator({
   className,
@@ -73,10 +81,7 @@ export function ButtonGroupSeparator({
   );
 }
 
-/**
- * Static label/affix segment styled to sit flush with buttons. Polymorphism is
- * `render` via base-ui `useRender` + `mergeProps` — the convention exemplar
- */
+/** A static text segment, such as a unit or a prefix, that sits flush with the Buttons beside it. */
 export function ButtonGroupText({ className, render, ...props }: ButtonGroupTextProps): ReactElement {
   return useRender({
     defaultTagName: "div",

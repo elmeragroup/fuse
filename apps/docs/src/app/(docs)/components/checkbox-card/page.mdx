@@ -3,11 +3,13 @@ lede: >
   A card that toggles a selection, with a title, description, and optional tags.
 ---
 
-import { CheckboxCardBasic } from "./demos/checkbox-card-basic";
+import { CheckboxCardDemo } from "./demos/checkbox-card-demo";
+import { CheckboxCardMuted } from "./demos/checkbox-card-muted";
+import { CheckboxCardChecked } from "./demos/checkbox-card-checked";
+import { CheckboxCardDisabled } from "./demos/checkbox-card-disabled";
 import { CheckboxCardTags } from "./demos/checkbox-card-tags";
+import { CheckboxCardExtraContent } from "./demos/checkbox-card-extra-content";
 import { CheckboxCardRightContent } from "./demos/checkbox-card-right-content";
-import { CheckboxCardVariants } from "./demos/checkbox-card-variants";
-import { CheckboxCardGroup } from "./demos/checkbox-card-group";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,24 +17,56 @@ export const metadata = componentMetadata("checkbox-card");
 
 <ComponentIntro slug="checkbox-card" />
 
-<Demo slug="checkbox-card" id="basic" title="Basic" file="checkbox-card-basic.tsx">
-  <CheckboxCardBasic />
+<DefaultDemo slug="checkbox-card" file="checkbox-card-demo.tsx">
+  <CheckboxCardDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { CheckboxGroup } from "@elmeragroup/fuse/checkbox";
+import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
+
+<CheckboxGroup label="Add-ons">
+  <CheckboxCard value="insurance" title="Insurance" description="Covers theft and water damage." />
+</CheckboxGroup>
+```
+
+## Examples
+
+<Demo slug="checkbox-card" id="muted" title="Muted" level={3} file="checkbox-card-muted.tsx">
+  <CheckboxCardMuted />
 </Demo>
 
-<Demo slug="checkbox-card" id="tags" title="Tags" file="checkbox-card-tags.tsx">
+<Demo slug="checkbox-card" id="checked" title="Checked" level={3} file="checkbox-card-checked.tsx">
+  <CheckboxCardChecked />
+</Demo>
+
+<Demo slug="checkbox-card" id="disabled" title="Disabled" level={3} file="checkbox-card-disabled.tsx">
+  <CheckboxCardDisabled />
+</Demo>
+
+<Demo slug="checkbox-card" id="tags" title="Tags" level={3} file="checkbox-card-tags.tsx">
   <CheckboxCardTags />
 </Demo>
 
-<Demo slug="checkbox-card" id="right-content" title="Right content" file="checkbox-card-right-content.tsx">
+<Demo
+  slug="checkbox-card"
+  id="extra-content"
+  title="Extra content"
+  level={3}
+  file="checkbox-card-extra-content.tsx">
+  <CheckboxCardExtraContent />
+</Demo>
+
+<Demo
+  slug="checkbox-card"
+  id="right-content"
+  title="Right content"
+  level={3}
+  file="checkbox-card-right-content.tsx">
   <CheckboxCardRightContent />
-</Demo>
-
-<Demo slug="checkbox-card" id="variants" title="Variants" file="checkbox-card-variants.tsx">
-  <CheckboxCardVariants />
-</Demo>
-
-<Demo slug="checkbox-card" id="group" title="Group" file="checkbox-card-group.tsx">
-  <CheckboxCardGroup />
 </Demo>
 
 <ApiReference slug="checkbox-card" />

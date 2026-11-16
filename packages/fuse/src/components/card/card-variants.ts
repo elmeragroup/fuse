@@ -15,8 +15,8 @@ import { selfFocusRingClass } from "../../styles/utils";
  * PUBLIC slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/fuse/card`.
  * The base draws its edge in `--card-border` and casts a `shadow-xs` in `--card-shadow`, both of
- * which branded themes make transparent; both composers pin `border-border` and `shadow-xs` over
- * them, since a field box and a control keep a visible edge and elevation. The shadow is one
+ * which branded themes make transparent. Both composers pin `border-border` and `shadow-xs` over
+ * them, because a field box and a control keep a visible edge and elevation. The shadow is one
  * utility, so a consumer shadow size class replaces it whole, and a shadow colour class tints it.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
@@ -109,12 +109,11 @@ export const cardSectionVariants = tv({
 });
 
 /**
- * Module-private type-scale recipes for `Card.Title` / `Card.Description`.
- * Not exported from `@elmeragroup/fuse/card` — there is no borrow
- * pattern. Kept off `cardVariants` because `direction="horizontal"` already
- * sets `cardTitle: "text-xl/snug"`; a second `size` axis on that slot would fight
- * through twMerge. `size` is a type-scale axis, not a control size:
- * it does not read `--control-*`.
+ * Module-private type-scale recipes for `Card.Title` and `Card.Description`.
+ * `@elmeragroup/fuse/card` does not export them, because no other component borrows them.
+ * They stay off `cardVariants` because `direction="horizontal"` already sets
+ * `cardTitle: "text-xl/snug"`, and a second `size` axis on that slot would conflict in
+ * tailwind-merge. `size` is a type-scale axis, not a control size. It does not read `--control-*`.
  */
 export const cardTitleVariants = tv({
   variants: {

@@ -1,22 +1,29 @@
 "use client";
 
-import { RadioItem, RadioItemGroup } from "@elmeragroup/fuse/radio-group";
+import { Checkbox, CheckboxGroup } from "@elmeragroup/fuse/checkbox";
+import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 
 export function SelectionItemHorizontal() {
   return (
-    <RadioItemGroup label="Contract length" orientation="horizontal" defaultValue="12-months">
-      <RadioItem value="12-months">
-        <RadioItem.Content>
-          <RadioItem.Title>12 months</RadioItem.Title>
-          <RadioItem.Description>Fixed price, renews monthly after.</RadioItem.Description>
-        </RadioItem.Content>
-      </RadioItem>
-      <RadioItem value="36-months">
-        <RadioItem.Content>
-          <RadioItem.Title>36 months</RadioItem.Title>
-          <RadioItem.Description>Lowest fixed price per kWh.</RadioItem.Description>
-        </RadioItem.Content>
-      </RadioItem>
-    </RadioItemGroup>
+    <CheckboxGroup label="Add-ons" orientation="horizontal" defaultValue={["ev-charging"]}>
+      <SelectionItem.Shell
+        dataSlot="checkbox-item"
+
+        control={<Checkbox value="price-alert" />}>
+        <SelectionItem.Content>
+          <SelectionItem.Title>Price alert</SelectionItem.Title>
+          <SelectionItem.Description>A text message when the price peaks.</SelectionItem.Description>
+        </SelectionItem.Content>
+      </SelectionItem.Shell>
+      <SelectionItem.Shell
+        dataSlot="checkbox-item"
+
+        control={<Checkbox value="ev-charging" />}>
+        <SelectionItem.Content>
+          <SelectionItem.Title>Electric car charging</SelectionItem.Title>
+          <SelectionItem.Description>A night rate for your charger.</SelectionItem.Description>
+        </SelectionItem.Content>
+      </SelectionItem.Shell>
+    </CheckboxGroup>
   );
 }

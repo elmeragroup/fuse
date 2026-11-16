@@ -12,7 +12,7 @@ import { weekdayStyle } from "./weekday-style";
 /** The instant at a day's UTC midnight, for `Intl` to format in UTC. */
 function utcMidnight(date: { readonly year: number; readonly month: number; readonly day: number }): Date {
   const instant = new Date(0);
-  // `setUTCFullYear` rather than `Date.UTC`, which maps the years 0–99 onto 1900–1999.
+  // `setUTCFullYear` rather than `Date.UTC`, which maps the years 0 to 99 onto 1900 to 1999.
   instant.setUTCFullYear(date.year, date.month - 1, date.day);
   return instant;
 }

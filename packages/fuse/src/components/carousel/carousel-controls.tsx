@@ -23,16 +23,31 @@ import { carouselVariants } from "./carousel-variants";
 import { carouselStrings } from "./intl";
 
 /** `Carousel.Controls` takes a `div`'s props plus Base UI's `render`. */
-export type CarouselControlsProps = useRender.ComponentProps<"div">;
+export type CarouselControlsProps = Omit<useRender.ComponentProps<"div">, "children"> & {
+  /**
+   * The controls, in this order: `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`,
+   * and `Carousel.Next`. With `Carousel.Autoplay`, put it first, and put the controls before the
+   * `Carousel.Viewport` in the source, so the rotation control comes before the rotating content
+   * in the tab order. `className="order-last"` on the controls still shows the row below the
+   * slides.
+   */
+  children?: useRender.ComponentProps<"div">["children"];
+};
 
 /** The props of an icon Button a Carousel control renders, which names itself. */
-type CarouselIconButtonProps = Omit<IconButtonProps, "aria-label" | "size" | "children"> & {
-  /** The accessible name. Defaults to the locale dictionary. */
+type CarouselIconButtonProps = Omit<IconButtonProps, "aria-label" | "size" | "children" | "onClick"> & {
+  /** The accessible name. Unset, it comes from the locale dictionary. */
   "aria-label"?: string;
-  /** Button's square size. Defaults to `"icon-sm"`, 36px at comfortable density. */
+  /** Button's square size. `icon-sm` is 36px at comfortable density. */
   size?: IconButtonSize;
-  /** The icon. Defaults to a caret that points along the carousel's axis. */
+  /** The icon. Unset, it is a caret that points along the carousel's axis. */
   children?: ReactNode;
+  /**
+   * Runs before the control changes the page, and `event.preventBaseUIHandler()` there cancels
+   * the change. The pages do not loop, so Previous is disabled on the first page and Next on the
+   * last. Both stay focusable there, so focus that pressed Next onto the last page stays on Next.
+   */
+  onClick?: IconButtonProps["onClick"];
 };
 
 /** `Carousel.Previous` takes Button's props, named and sized for an icon. */
@@ -42,12 +57,31 @@ export type CarouselPreviousProps = CarouselIconButtonProps;
 export type CarouselNextProps = CarouselIconButtonProps;
 
 /** `Carousel.Indicators` takes a `div`'s props plus Base UI's `render`. */
-export type CarouselIndicatorsProps = useRender.ComponentProps<"div">;
+export type CarouselIndicatorsProps = Omit<useRender.ComponentProps<"div">, "children"> & {
+  /**
+   * The indicators. Unset, the picker renders one `Carousel.Indicator` per page, so the dots
+   * follow the layout. Map your own `Carousel.Indicator`s here to pick slides by thumbnail.
+   */
+  children?: useRender.ComponentProps<"div">["children"];
+};
 
 /** `Carousel.Indicator` takes a `button`'s props, Base UI's `render` and the page it shows. */
-export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "onClick"> & {
-  /** The page, from 0, the indicator shows and scrolls to. */
+export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "onClick" | "children"> & {
+  /**
+   * The page, from 0, the indicator shows and scrolls to. The current page's indicator is
+   * `aria-disabled`, as APG's grouped carousel asks, and stays in the tab order. It also carries
+   * `data-current`.
+   */
   index: number;
+  /**
+   * The indicator's content, such as a thumbnail. Unset, it is a dot that becomes a pill on the
+   * current page, named after the first slide on its page, such as "Slide 3 of 6". With
+   * children, it draws only the focus ring and keeps a 24px target however small they are. Style
+   * them for the current page with the `in-data-current:` variant, and name the indicator with
+   * `aria-label` when they have no text. The dot grows into the pill with a transition, which
+   * reduced motion turns off.
+   */
+  children?: useRender.ComponentProps<"button">["children"];
   /**
    * Runs before the indicator scrolls to its page. `event.preventBaseUIHandler()` cancels that,
    * as on Base UI's own parts.
@@ -56,18 +90,54 @@ export type CarouselIndicatorProps = Omit<useRender.ComponentProps<"button">, "o
 };
 
 /** `Carousel.Status` takes a `div`'s props plus Base UI's `render`. */
-export type CarouselStatusProps = useRender.ComponentProps<"div">;
+export type CarouselStatusProps = Omit<useRender.ComponentProps<"div">, "children"> & {
+  /**
+   * The text. Unset, it is the page count, such as "3 of 12" in the locale. Use the status in
+   * place of the indicators when there are many pages. It announces each page change politely,
+   * stays silent while the pages rotate, and is empty until the viewport is measured.
+   */
+  children?: useRender.ComponentProps<"div">["children"];
+};
 
 /** `Carousel.Autoplay` takes Button's props, sized for an icon, and the rotation's delay. */
-export type CarouselAutoplayProps = Omit<IconButtonProps, "aria-label" | "size" | "children"> & {
-  /** How long each page shows, in ms, before rotation advances. Mounting the part is the opt-in. */
+export type CarouselAutoplayProps = Omit<IconButtonProps, "aria-label" | "size" | "children" | "onClick"> & {
+  /**
+   * How long each page shows, in ms, before rotation moves on. Mounting the part turns rotation
+   * on, and it starts on mount unless the user prefers reduced motion. From the last page it goes
+   * back to the first. While the pages rotate, the slides' live region is silent. A new `delay`
+   * keeps whether the user stopped it.
+   *
+   * Keyboard focus on any element in the carousel stops rotation, this button included, as the
+   * APG pattern asks. So does a swipe, a drag that snaps back, a wheel turn or a press of another
+   * control. Keyboard focus in a slide's portal, such as a popover's field, also in a same-origin
+   * frame, or inside a custom element's open shadow root counts as focus in the carousel. Focus
+   * that a mouse press moved in does not stop it. Rotation pauses while a mouse or pen is over the
+   * carousel and while the document is hidden.
+   *
+   * Mounted with the Root or later, it starts from what is already so. It is paused under a mouse
+   * or pen already over the carousel, even since before the page hydrated on a device whose main
+   * pointer can hover. It is stopped with keyboard focus already inside it, as with an `autoFocus`
+   * field in a slide.
+   */
   delay: number;
-  /** The name while the pages do not rotate. Defaults to the locale dictionary. */
+  /**
+   * The button's name while the pages do not rotate. Unset, it comes from the locale dictionary,
+   * "Start automatic slide show" in English.
+   */
   startLabel?: string;
-  /** The name while the pages rotate. Defaults to the locale dictionary. */
+  /**
+   * The button's name while the pages rotate. Unset, it comes from the locale dictionary, "Stop
+   * automatic slide show" in English.
+   */
   stopLabel?: string;
-  /** Button's square size. Defaults to `"icon-sm"`, as Previous and Next. */
+  /** Button's square size, as on Previous and Next. */
   size?: IconButtonSize;
+  /**
+   * Runs before the button starts or stops rotation, and `event.preventBaseUIHandler()` there
+   * cancels it. Only this button starts rotation again after it stops. Once the user presses it to
+   * start, keyboard focus and hover no longer stop or pause rotation until they press it again.
+   */
+  onClick?: IconButtonProps["onClick"];
 };
 
 const styles = carouselVariants();
@@ -93,10 +163,7 @@ const EDGES = {
   next: { slot: "carousel-next", step: 1, labelKey: "next", horizontal: CaretRight, vertical: CaretDown },
 } as const;
 
-/**
- * The row the controls sit in: Previous, the indicators and Next, centred with the surface gap
- * between them, and an `Autoplay` first when the pages rotate. It is layout only.
- */
+/** The row the controls sit in, centred with the surface gap between them. It is layout only. */
 export function CarouselControls({ className, render, ...props }: CarouselControlsProps): ReactElement {
   return useRender({
     defaultTagName: "div",
@@ -111,11 +178,11 @@ export function CarouselControls({ className, render, ...props }: CarouselContro
 function CarouselEdge({
   direction,
   className,
-  size = "icon-sm",
+  size,
   "aria-label": ariaLabel,
   children,
   ...props
-}: CarouselIconButtonProps & { direction: keyof typeof EDGES }): ReactElement {
+}: CarouselIconButtonProps & { direction: keyof typeof EDGES; size: IconButtonSize }): ReactElement {
   const edge = EDGES[direction];
   const { state, meta, wiring } = useCarouselContext(
     direction === "previous" ? "Carousel.Previous" : "Carousel.Next"
@@ -152,20 +219,16 @@ function CarouselEdge({
 }
 
 /** Scrolls to the previous page. It is disabled, and stays focusable, on the first page. */
-export function CarouselPrevious(props: CarouselPreviousProps): ReactElement {
-  return <CarouselEdge direction="previous" {...props} />;
+export function CarouselPrevious({ size = "icon-sm", ...props }: CarouselPreviousProps): ReactElement {
+  return <CarouselEdge direction="previous" size={size} {...props} />;
 }
 
 /** Scrolls to the next page. It is disabled, and stays focusable, on the last page. */
-export function CarouselNext(props: CarouselNextProps): ReactElement {
-  return <CarouselEdge direction="next" {...props} />;
+export function CarouselNext({ size = "icon-sm", ...props }: CarouselNextProps): ReactElement {
+  return <CarouselEdge direction="next" size={size} {...props} />;
 }
 
-/**
- * The slide picker: a `group` named "Choose slide to display" in the locale. With no children it
- * renders one `Carousel.Indicator` per page, so the dots follow the layout. Map your own
- * `Carousel.Indicator`s inside it for thumbnails.
- */
+/** The slide picker: a `group` named "Choose slide to display" in the locale. */
 export function CarouselIndicators({
   className,
   render,
@@ -196,17 +259,7 @@ export function CarouselIndicators({
   });
 }
 
-/**
- * One page's button in the slide picker. Without children it draws the design's mark, a dot that
- * becomes a pill on the current page, inside a 24px target, and is named after the first slide on
- * its page, such as "Slide 3 of 6". With children, such as a thumbnail, it draws only the focus
- * ring around them, keeps a 24px target however small they are, and the children name it. Its
- * `onClick` runs first, and `event.preventBaseUIHandler()` there keeps the page.
- *
- * The current page's indicator is `aria-disabled`, as APG's grouped carousel asks, so a screen
- * reader hears that it would do nothing and it stays in the tab order. It also carries
- * `data-current` for styling.
- */
+/** One page's button in the slide picker, inside a 24px target. */
 export function CarouselIndicator({
   index,
   className,
@@ -251,11 +304,7 @@ export function CarouselIndicator({
   });
 }
 
-/**
- * The visible page count, such as "3 of 6" in the locale, for carousels with many pages or in
- * place of the indicators. It announces a page change politely, and stays silent while the pages
- * rotate. Before the viewport is measured it is empty. Children replace the text.
- */
+/** The visible page count, such as "3 of 6" in the locale. */
 export function CarouselStatus({ className, render, children, ...props }: CarouselStatusProps): ReactElement {
   const { state, wiring } = useCarouselContext("Carousel.Status");
   const strings = useLocalizedStrings(carouselStrings);
@@ -282,25 +331,8 @@ export function CarouselStatus({ className, render, children, ...props }: Carous
 }
 
 /**
- * Automatic rotation, and the APG rotation control that starts and stops it. Mounting it is the
- * opt-in, and `delay` has no default. The button's name says what pressing it does, "Stop
- * automatic slide show" or "Start automatic slide show", so it carries no `aria-pressed`. Place
- * it first in `Carousel.Controls` and put the controls before the Viewport in the source, so it
- * precedes the rotating content in the tab order; `className="order-last"` on the controls still
- * shows the row below the slides.
- *
- * Rotation starts on mount, unless the user prefers reduced motion. Keyboard focus on any element
- * in the carousel, this button included, stops it, as the APG pattern asks, and so does any swipe,
- * drag, wheel turn or press of another control; only this button starts it again. Once the user
- * presses it to start rotation, keyboard focus and hover no longer stop or pause it, so it keeps
- * running with focus on this button, until it is pressed again. Until then it pauses while a mouse
- * or pen is over the carousel. It pauses while the document is hidden. A new `delay` keeps the
- * user's choice to play or stop. It advances from the last page back to the first. Mounted with
- * the Root or after it, it starts from what is already so: paused under a mouse or pen already
- * over the carousel, even since before the page hydrated, and stopped with keyboard focus already
- * inside it, as an `autoFocus` field in a slide takes. Keyboard focus inside a custom element's
- * open shadow root counts as focus in the carousel. Focus that a mouse press moved in does not
- * stop it.
+ * Automatic rotation, and the APG rotation control that starts and stops it. The button's name
+ * says what pressing it does, so it carries no `aria-pressed`.
  */
 export function CarouselAutoplay({
   delay,

@@ -19,9 +19,6 @@ const prices = [...KNOWN, ...FORECAST_BLOCKS.flatMap((price) => [price, price, p
 /** One row per hour from 00:00 in Oslo on 4 November 2026, which is UTC+1. */
 const hours = prices.map((price, index) => ({ hour: new Date(Date.UTC(2026, 10, 3, 23 + index)), price }));
 
-/** Friday 00:00 in Oslo, where the forecast starts. */
-const forecastFrom = new Date(Date.UTC(2026, 10, 5, 23));
-
 /** The week's average, which splits the colours and draws the reference line. */
 const average = prices.reduce((sum, price) => sum + price, 0) / prices.length;
 
@@ -36,7 +33,6 @@ const config = {
       above: { color: "chart-sentiment-negative", label: "Above average" },
     },
     format,
-    projectedFrom: forecastFrom,
   },
 } as const satisfies ChartConfig;
 
@@ -53,27 +49,13 @@ export function AreaChartThreshold() {
       xKey="hour"
       interval="hour"
       timeZone="Europe/Oslo"
-      now={new Date(Date.UTC(2026, 10, 4, 7, 20))}
-      aria-label="Spot price this week, with the forecast from Friday">
-      <AreaChart.Headline>
-        <AreaChart.ActiveValue dataKey="price" fallback="now" />
-        <span>This hour, or the hour you point at</span>
-      </AreaChart.Headline>
+      aria-label="Spot price this week against its average">
       <AreaChart.Grid />
       <AreaChart.YAxis />
       <AreaChart.XAxis />
-      <AreaChart.ReferenceArea
-        x1={forecastFrom}
-        x2={hours.at(-1)?.hour ?? forecastFrom}
-        label="Forecast"
-        tone="muted"
-      />
       <AreaChart.ReferenceLine y={average} label="Average" variant="dashed" tone="muted" />
       <AreaChart.Area dataKey="price" variant="solid" curve="step-after" />
       <AreaChart.Line dataKey="price" curve="step-after" />
-      <AreaChart.Marker dataKey="price" at="now" />
-      <AreaChart.Crosshair />
-      <AreaChart.ActiveDot dataKey="price" />
       <AreaChart.Tooltip />
       <AreaChart.Legend />
       <AreaChart.Table />

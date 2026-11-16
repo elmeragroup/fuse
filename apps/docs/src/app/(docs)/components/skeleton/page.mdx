@@ -3,11 +3,15 @@ lede: >
   A placeholder shape shown while content loads.
 ---
 
-import { SkeletonBasic } from "./demos/skeleton-basic";
-import { SkeletonCard } from "./demos/skeleton-card";
+import { SkeletonDemo } from "./demos/skeleton-demo";
+import { SkeletonCircle } from "./demos/skeleton-circle";
 import { SkeletonRevealFit } from "./demos/skeleton-reveal-fit";
+import { SkeletonRevealTogether } from "./demos/skeleton-reveal-together";
+import { SkeletonRevealSequence } from "./demos/skeleton-reveal-sequence";
 import { SkeletonRevealHeight } from "./demos/skeleton-reveal-height";
-import { SkeletonRevealModes } from "./demos/skeleton-reveal-modes";
+import { SkeletonRevealRefetch } from "./demos/skeleton-reveal-refetch";
+import { SkeletonRevealPlainChildren } from "./demos/skeleton-reveal-plain-children";
+import { SkeletonRevealMarkers } from "./demos/skeleton-reveal-markers";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,71 +19,78 @@ export const metadata = componentMetadata("skeleton");
 
 <ComponentIntro slug="skeleton" />
 
-<Prose>
+<DefaultDemo slug="skeleton" file="skeleton-demo.tsx">
+  <SkeletonDemo />
+</DefaultDemo>
 
-The skeleton is hidden from screen readers; mark the region that is loading with `aria-busy`.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Skeleton } from "@elmeragroup/fuse/skeleton";
 
-<Demo slug="skeleton" id="basic" title="Basic" file="skeleton-basic.tsx">
-  <SkeletonBasic />
+<div aria-busy="true">
+  <Skeleton className="h-4 w-48" />
+</div>
+```
+
+## Examples
+
+<Demo slug="skeleton" id="circle" title="Circle" level={3} file="skeleton-circle.tsx">
+  <SkeletonCircle />
 </Demo>
 
-<Demo slug="skeleton" id="card" title="Card" file="skeleton-card.tsx">
-  <SkeletonCard />
-</Demo>
-
-## Skeleton from the content
-
-<Prose>
-
-A hand-placed `Skeleton` repeats the layout of what it stands in for. `SkeletonReveal` draws the
-skeleton from the content itself: while loading, it renders its children with `sample` data,
-unseen, and draws a bar over each line of their text and a block over each control, avatar, badge
-or image. The skeleton takes exactly the content's space, so the page does not move when the data
-arrives.
-
-Pass `data` and a render function. The skeleton shows while `data` is `null` or `undefined`, drawn
-from the last data shown, or from `sample` before any has loaded. Set `loading` to show it over
-data that is refetching; it is then drawn from the data on screen. Plain children work too, with
-`loading`.
-
-The root is busy while loading and reads `label` to screen readers, the dictionary's "Loading" by
-default. The skeleton is hidden from them and inert, and the content can take focus once it
-replaces the skeleton. Form controls in the skeleton are not submitted or validated with their
-form, and Fuse overlays in it, such as a Dialog left open, do not open. Keep any portal of your own
-in the content closed while it loads. Before the page hydrates, the skeleton strikes a thick bar through each line
-of text. Mark your own markup with `data-skeleton="block"` to draw it as one block, or
-`data-skeleton="ignore"` to leave it out.
-
-</Prose>
-
-<Demo slug="skeleton" id="reveal-fit" title="Fitted to the content" file="skeleton-reveal-fit.tsx">
+<Demo slug="skeleton" id="reveal-fit" title="Fitted to the content" level={3} file="skeleton-reveal-fit.tsx">
   <SkeletonRevealFit />
 </Demo>
 
-<Prose>
-
-`reveal` decides how the content replaces the skeleton. `smart`, the default, holds a skeleton back
-for 150 ms so a fast load never flashes one. It brings content in at once while someone scrolls or
-types, crossfades a refetch and small content, and brings larger content in row by row. `together`
-crossfades everything at once, and `sequence` brings each piece in from top to bottom.
-
-</Prose>
-
-<Demo slug="skeleton" id="reveal-modes" title="Reveal modes" file="skeleton-reveal-modes.tsx">
-  <SkeletonRevealModes />
+<Demo
+  slug="skeleton"
+  id="reveal-together"
+  title="Reveal together"
+  level={3}
+  file="skeleton-reveal-together.tsx">
+  <SkeletonRevealTogether />
 </Demo>
 
-<Prose>
+<Demo
+  slug="skeleton"
+  id="reveal-sequence"
+  title="Reveal in sequence"
+  level={3}
+  file="skeleton-reveal-sequence.tsx">
+  <SkeletonRevealSequence />
+</Demo>
 
-When the content is taller or shorter than its skeleton, the reveal eases to the new height. Under
-reduced motion the height changes at once.
-
-</Prose>
-
-<Demo slug="skeleton" id="reveal-height" title="Longer than its sample" file="skeleton-reveal-height.tsx">
+<Demo
+  slug="skeleton"
+  id="reveal-height"
+  title="Longer than its sample"
+  level={3}
+  file="skeleton-reveal-height.tsx">
   <SkeletonRevealHeight />
+</Demo>
+
+<Demo slug="skeleton" id="reveal-refetch" title="Refetch" level={3} file="skeleton-reveal-refetch.tsx">
+  <SkeletonRevealRefetch />
+</Demo>
+
+<Demo
+  slug="skeleton"
+  id="reveal-plain-children"
+  title="Plain children"
+  level={3}
+  file="skeleton-reveal-plain-children.tsx">
+  <SkeletonRevealPlainChildren />
+</Demo>
+
+<Demo
+  slug="skeleton"
+  id="reveal-markers"
+  title="Block and ignore markers"
+  level={3}
+  file="skeleton-reveal-markers.tsx">
+  <SkeletonRevealMarkers />
 </Demo>
 
 <ApiReference slug="skeleton" />

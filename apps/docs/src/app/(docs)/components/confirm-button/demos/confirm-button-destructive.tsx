@@ -5,12 +5,12 @@ import { useState } from "react";
 import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
 
 export function ConfirmButtonDestructive() {
-  const [deleted, setDeleted] = useState(false);
-  if (deleted) {
-    return <p>Row removed.</p>;
+  const [confirmed, setConfirmed] = useState(false);
+  if (confirmed) {
+    return <p>Row deleted.</p>;
   }
   return (
-    <ConfirmButton variant="destructive" onConfirm={() => setDeleted(true)} armedChildren="Confirm delete">
+    <ConfirmButton variant="destructive" armedChildren="Confirm delete" onConfirm={() => setConfirmed(true)}>
       Delete
     </ConfirmButton>
   );

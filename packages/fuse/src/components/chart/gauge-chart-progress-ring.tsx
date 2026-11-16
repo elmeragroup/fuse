@@ -25,7 +25,10 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type GaugeChartProgressRingProps = ChartLayerProps & {
-  /** The ring's colour role. "chart-1" by default. */
+  /**
+   * The ring's colour role. The ring draws the reading as a thin ring outside the track, its
+   * remainder dimmed. With `startAngle={0}` and `endAngle={360}` on Root the ring closes.
+   */
   color?: ChartGaugeRole;
 };
 

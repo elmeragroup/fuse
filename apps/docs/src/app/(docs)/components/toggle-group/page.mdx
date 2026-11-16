@@ -3,11 +3,18 @@ lede: >
   A set of buttons that toggle on and off, one or several at a time.
 ---
 
-import { ToggleGroupSingle } from "./demos/toggle-group-single";
-import { ToggleGroupMultiple } from "./demos/toggle-group-multiple";
-import { ToggleGroupOutlineSegmented } from "./demos/toggle-group-outline-segmented";
+import { ToggleGroupDemo } from "./demos/toggle-group-demo";
+import { ToggleGroupOutline } from "./demos/toggle-group-outline";
+import { ToggleGroupExtraSmall } from "./demos/toggle-group-extra-small";
+import { ToggleGroupSmall } from "./demos/toggle-group-small";
+import { ToggleGroupLarge } from "./demos/toggle-group-large";
 import { ToggleGroupVertical } from "./demos/toggle-group-vertical";
-import { ToggleGroupSizes } from "./demos/toggle-group-sizes";
+import { ToggleGroupSegmented } from "./demos/toggle-group-segmented";
+import { ToggleGroupSegmentedOutline } from "./demos/toggle-group-segmented-outline";
+import { ToggleGroupMultiple } from "./demos/toggle-group-multiple";
+import { ToggleGroupIcons } from "./demos/toggle-group-icons";
+import { ToggleGroupDisabled } from "./demos/toggle-group-disabled";
+import { ToggleGroupDisabledItem } from "./demos/toggle-group-disabled-item";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,28 +22,76 @@ export const metadata = componentMetadata("toggle-group");
 
 <ComponentIntro slug="toggle-group" />
 
-<Demo slug="toggle-group" id="single" title="Single" file="toggle-group-single.tsx">
-  <ToggleGroupSingle />
+<DefaultDemo slug="toggle-group" file="toggle-group-demo.tsx">
+  <ToggleGroupDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+
+<ToggleGroup.Root defaultValue={["week"]} aria-label="Period">
+  <ToggleGroup.Item value="day">Day</ToggleGroup.Item>
+  <ToggleGroup.Item value="week">Week</ToggleGroup.Item>
+</ToggleGroup.Root>
+```
+
+## Examples
+
+<Demo slug="toggle-group" id="outline" title="Outline" level={3} file="toggle-group-outline.tsx">
+  <ToggleGroupOutline />
 </Demo>
 
-<Demo slug="toggle-group" id="multiple" title="Multiple" file="toggle-group-multiple.tsx">
-  <ToggleGroupMultiple />
+<Demo slug="toggle-group" id="extra-small" title="Extra small" level={3} file="toggle-group-extra-small.tsx">
+  <ToggleGroupExtraSmall />
+</Demo>
+
+<Demo slug="toggle-group" id="small" title="Small" level={3} file="toggle-group-small.tsx">
+  <ToggleGroupSmall />
+</Demo>
+
+<Demo slug="toggle-group" id="large" title="Large" level={3} file="toggle-group-large.tsx">
+  <ToggleGroupLarge />
+</Demo>
+
+<Demo slug="toggle-group" id="vertical" title="Vertical" level={3} file="toggle-group-vertical.tsx">
+  <ToggleGroupVertical />
+</Demo>
+
+<Demo slug="toggle-group" id="segmented" title="Segmented" level={3} file="toggle-group-segmented.tsx">
+  <ToggleGroupSegmented />
 </Demo>
 
 <Demo
   slug="toggle-group"
-  id="outline-segmented"
-  title="Outline segmented"
-  file="toggle-group-outline-segmented.tsx">
-  <ToggleGroupOutlineSegmented />
+  id="segmented-outline"
+  title="Segmented outline"
+  level={3}
+  file="toggle-group-segmented-outline.tsx">
+  <ToggleGroupSegmentedOutline />
 </Demo>
 
-<Demo slug="toggle-group" id="vertical" title="Vertical" file="toggle-group-vertical.tsx">
-  <ToggleGroupVertical />
+<Demo slug="toggle-group" id="multiple" title="Multiple" level={3} file="toggle-group-multiple.tsx">
+  <ToggleGroupMultiple />
 </Demo>
 
-<Demo slug="toggle-group" id="sizes" title="Sizes" file="toggle-group-sizes.tsx">
-  <ToggleGroupSizes />
+<Demo slug="toggle-group" id="icons" title="Icons" level={3} file="toggle-group-icons.tsx">
+  <ToggleGroupIcons />
+</Demo>
+
+<Demo slug="toggle-group" id="disabled" title="Disabled" level={3} file="toggle-group-disabled.tsx">
+  <ToggleGroupDisabled />
+</Demo>
+
+<Demo
+  slug="toggle-group"
+  id="disabled-item"
+  title="Disabled item"
+  level={3}
+  file="toggle-group-disabled-item.tsx">
+  <ToggleGroupDisabledItem />
 </Demo>
 
 <ApiReference slug="toggle-group" />

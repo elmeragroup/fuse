@@ -17,13 +17,24 @@ import type { ChartLayerProps } from "./chart-types";
  * @beta
  */
 export type ChartTooltipProps = ChartLayerProps & {
-  /** The popup's surface. "default" by default. */
+  /**
+   * The popup's surface. "frosted" is translucent, so its cut-outs show the surface beneath the
+   * popup.
+   */
   variant?: "default" | "frosted";
   /**
-   * Where the popup rests on a vertical chart. "point", the default, centres it on the active slot
-   * inside the chart's box and rests it 8 px above the highest mark under its own width. "top" pins
-   * it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart
-   * places it over or under the active row either way.
+   * Where the popup rests on a vertical chart. "point" centres it on the active slot, inside the
+   * chart's box and then the viewport, and rests it 8 px above the highest mark under its own
+   * width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller
+   * neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less
+   * keeps its height. "top" pins it to the plot top and tracks x only, as a chart with Panels
+   * always does. A horizontal chart places it over or under the active row either way.
+   *
+   * A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that
+   * never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a
+   * data update, when its path would leave the viewport, and under reduced motion. The popup stays
+   * open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second
+   * tap dismisses it.
    */
   anchor?: "point" | "top";
   /**

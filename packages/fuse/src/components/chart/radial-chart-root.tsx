@@ -42,7 +42,14 @@ export type RadialChartRootProps<
 > = ChartAccessibleName &
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> & {
-    /** The rows, one per ring, the first outermost. A negative value throws `negative-polar-value`. */
+    /**
+     * The rows, one per ring, the first outermost. Sort rings in one unit largest first, so the
+     * longest arc holds the largest value. A negative value throws `negative-polar-value`. Each ring fills its value's share of its
+     * maximum and never laps. A value past its maximum fills the whole sweep and sets
+     * `data-over-max` on its ring, and the centre, the tooltip and the table keep the true share. A
+     * data update morphs each ring to its new value, and every value above 0 keeps at least one
+     * device pixel of arc. With no reading the chart shows `Empty` and has no tab stop.
+     */
     data: readonly TRow[];
     /**
      * One entry per category, keyed by category value. Each entry is a `ChartSeriesConfig` with
@@ -55,38 +62,61 @@ export type RadialChartRootProps<
     nameKey: TNameKey;
     /** The column that fills each ring. */
     valueKey: TValueKey;
-    /** The column that holds each ring's `ChartQuality`. */
+    /** The column that holds each ring's `ChartQuality`. An estimated ring draws hatched. */
     qualityKey?: ChartQualityKey<TRow>;
     /** The value format. A category's config `format` overrides it. */
     valueFormat?: ValueFormat;
-    /** A fraction of the outer radius where the innermost ring starts, `0.3` by default. */
+    /** The fraction of the outer radius where the innermost ring starts, `0.3` by default. */
     innerRadius?: number;
     /**
      * Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. An angle
      * that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
      */
     startAngle?: number;
-    /** Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default. */
+    /**
+     * Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default. A shorter
+     * sweep draws a gauge, and the chart keeps the aspect of the sweep's bounding box.
+     */
     endAngle?: number;
     /** The ring that is active before any pointer or key moves. */
     defaultActiveKey?: keyof TConfig & string;
-    /** "none" turns the entrance sweep off. */
+    /**
+     * "none" turns off the entrance, in which the tracks scale out and the rings sweep in the first
+     * time the chart comes into view.
+     */
     "data-intro"?: "none";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. The plot is one tab stop. Hover a ring, or focus
+     * the chart and use the arrow keys, to make it active. The active ring and the rings outside it
+     * grow a little, and the others dim. On a touch screen a drag that starts on the dial scrubs
+     * round it, a tap pins the tooltip, and a second tap on the same ring releases it.
+     */
     children?: ReactNode;
   } & (
     | {
-        /** One maximum for every ring. Without it or `maxKey`, the largest value fills its ring. */
+        /**
+         * One maximum for every ring. Without it or `maxKey`, the largest value fills its ring. Pass
+         * `max` or `maxKey`, not both.
+         */
         max?: number;
-        /** Not with `max`. */
+        /**
+         * The column that holds each row's own maximum, such as a budget per ring. Pass `max` or
+         * `maxKey`, not both.
+         */
         maxKey?: never;
       }
     | {
-        /** The column that holds each row's own maximum, such as a budget per ring. */
+        /**
+         * The column that holds each row's own maximum, such as a budget per ring. Pass `max` or
+         * `maxKey`, not both.
+         */
         maxKey: ChartSeriesKey<TRow>;
-        /** Not with `maxKey`. */
+        /**
+         * One maximum for every ring. Without it or `maxKey`, the largest value fills its ring. Pass
+         * `max` or `maxKey`, not both.
+         */
         max?: never;
       }
   );

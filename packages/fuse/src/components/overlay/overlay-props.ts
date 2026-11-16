@@ -1,28 +1,27 @@
 import type { RefObject } from "react";
 
 /**
- * The portal-target prop every overlay carries. Declared once so the
- * default — the nearest enclosing `ThemeScope` element — is documented in one place.
+ * The portal-target prop every overlay carries, declared once so its default, the nearest
+ * enclosing `ThemeScope` element, is documented in one place.
  *
- * The prop's own sentence is deliberately overlay-neutral: a consumer may portal a
- * popup, a modal, a side panel or a toast viewport, and the docs generator publishes
- * this text verbatim into every public prop table that intersects this type.
+ * The prop's sentence names no kind of overlay. A consumer may portal a popup, a modal, a side
+ * panel or a toast viewport, and the docs generator publishes this text into every public prop
+ * table that intersects this type.
  */
 export type OverlayContainerProps = {
   /**
-   * Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope`
-   * element, so it never escapes the theme that opened it.
+   * The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope`
+   * element, so the overlay keeps the theme of the place that opened it.
    */
   container?: HTMLElement | RefObject<HTMLElement | null>;
 };
 
 /**
  * The four positioner props an overlay lifts onto its Content part and forwards to the
- * internal Positioner. Descriptions only — published defaults come from each
- * component's destructuring. The generic is a structural bound on the four keys because
- * base-ui does not publish its `Side`/`Align`/`OffsetFunction` types through an
- * exported subpath; each overlay pins the exact types by passing its own
- * positioner's props.
+ * internal Positioner. It holds descriptions only; each component's destructuring sets the
+ * published defaults. The generic is a structural bound on the four keys, because Base UI
+ * does not export its `Side`, `Align` and `OffsetFunction` types from a public subpath. Each
+ * overlay pins the exact types by passing its own positioner's props.
  */
 export type OverlayPositionerProps<
   Positioner extends {
@@ -32,20 +31,12 @@ export type OverlayPositionerProps<
     sideOffset?: unknown;
   },
 > = {
-  /**
-   * How the popup aligns to the trigger on the cross axis.
-   */
+  /** How the popup lines up with the trigger along the side it opens on. */
   align?: Positioner["align"];
-  /**
-   * Offset along the alignment axis, in pixels.
-   */
+  /** The popup's shift along the side it opens on, in pixels. */
   alignOffset?: Positioner["alignOffset"];
-  /**
-   * Which side of the trigger the popup is placed on.
-   */
+  /** The side of the trigger the popup opens on. */
   side?: Positioner["side"];
-  /**
-   * Distance from the trigger, in pixels.
-   */
+  /** The gap between the trigger and the popup, in pixels. */
   sideOffset?: Positioner["sideOffset"];
 };

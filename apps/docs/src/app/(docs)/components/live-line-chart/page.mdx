@@ -1,10 +1,25 @@
 ---
 lede: >
-  Preview. A line over a time window that scrolls with the clock, for a live feed.
+  Preview, so names and props can change until Fuse's first stable release. A line over a time
+  window that scrolls with the clock, for a live feed. For a day's hours or a month's days, use Line
+  chart.
 ---
 
-import { LiveLineChartBasic } from "./demos/live-line-chart-basic";
-import { LiveLineChartPolish } from "./demos/live-line-chart-polish";
+import { LiveLineChartArea } from "./demos/live-line-chart-area";
+import { LiveLineChartAxisEnd } from "./demos/live-line-chart-axis-end";
+import { LiveLineChartBadge } from "./demos/live-line-chart-badge";
+import { LiveLineChartCurveBasis } from "./demos/live-line-chart-curve-basis";
+import { LiveLineChartCurveBump } from "./demos/live-line-chart-curve-bump";
+import { LiveLineChartCurveLinear } from "./demos/live-line-chart-curve-linear";
+import { LiveLineChartCurveStep } from "./demos/live-line-chart-curve-step";
+import { LiveLineChartCurveStepAfter } from "./demos/live-line-chart-curve-step-after";
+import { LiveLineChartCurveStepBefore } from "./demos/live-line-chart-curve-step-before";
+import { LiveLineChartDashedGrid } from "./demos/live-line-chart-dashed-grid";
+import { LiveLineChartDemo } from "./demos/live-line-chart-demo";
+import { LiveLineChartDot } from "./demos/live-line-chart-dot";
+import { LiveLineChartFrostedTooltip } from "./demos/live-line-chart-frosted-tooltip";
+import { LiveLineChartPaused } from "./demos/live-line-chart-paused";
+import { LiveLineChartSolidArea } from "./demos/live-line-chart-solid-area";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,51 +27,125 @@ export const metadata = componentMetadata("live-line-chart");
 
 <ComponentIntro slug="live-line-chart" />
 
-<Prose>
+<DefaultDemo slug="live-line-chart" file="live-line-chart-demo.tsx">
+  <LiveLineChartDemo />
+</DefaultDemo>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `LiveLineChart` draws one value over a window of fixed length, `windowMs`, whose right edge is always now, such as a meter's power draw reported once a second. Your app owns the feed: pass the readings as `data`, each a `time` and a `value`, and append to it as readings arrive. The chart only draws. Its x axis is continuous time, so it is a family of its own, as [`ScatterChart`](/components/scatter-chart) is for a numeric x. For a day's hours or a month's days, use [`LineChart`](/components/line-chart).
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { LiveLineChart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
 
-<Demo slug="live-line-chart" id="basic" title="Basic" file="live-line-chart-basic.tsx">
-  <LiveLineChartBasic />
+<LiveLineChart.Root data={readings} label="Power" timeZone="Europe/Oslo" aria-label="Power draw, live">
+  <LiveLineChart.YAxis />
+  <LiveLineChart.XAxis />
+  <LiveLineChart.Line />
+  <LiveLineChart.LiveDot />
+  <LiveLineChart.Tooltip />
+  <LiveLineChart.Table />
+</LiveLineChart.Root>
+```
+
+## Examples
+
+<Demo slug="live-line-chart" id="paused" title="Paused" level={3} file="live-line-chart-paused.tsx">
+  <LiveLineChartPaused />
 </Demo>
 
-## How it moves
-
-<Prose>
-
-The window moves every frame at the pace of time, never a reading at a time, so the line slides smoothly however often readings arrive. Readings stamped ahead of the browser's clock move the window's end ahead with them, so it keeps scrolling between readings. A new reading grows out of the last one, and the value axis eases to fit the window, both on a gentle ease-out curve, so nothing jumps; the axis widens as fast as the values push it and narrows more slowly. Its ticks keep one step through a glide, and fade in and out as the step changes and at the plot's top and bottom edges. The time axis ticks land on round times in the market's zone, and they fade in at the right edge and out at the left. The loop stops while the chart is out of view or its tab is hidden, and on its return the window shows the clock's window at once. `paused` holds the window where it is while the readings keep arriving, and stops the live dot's ring.
-
-The crosshair follows the pointer with no glide, its ring riding the line as the window scrolls under it, and the tooltip names the reading nearest the pointer. A key step moves the crosshair and the tooltip to the reading at once.
-
-Under reduced motion the chart moves nothing: each new reading redraws the window once, ending at the clock, the live dot's ring stops and the badge's digits change at once.
-
-</Prose>
-
-## Fill, badge and live dot
-
-<Prose>
-
-`LiveLineChart.Area` fills under the line with a gradient that fades to nothing, or a flat fill under `variant="solid"`. `LiveLineChart.LiveDot` marks the line's leading edge and sends a ring out from it, which `variant="default"` turns off. `LiveLineChart.Badge` prints the latest value beside the plot's right edge, following the live dot, and its digits roll to each new value. It takes the column an end-side `YAxis` would, so keep the axis at the start. Root's `value` sets the latest value apart from the latest reading, for a value that ticks faster than readings arrive.
-
-</Prose>
-
-<Demo slug="live-line-chart" id="polish" title="Fill, badge and window" file="live-line-chart-polish.tsx">
-  <LiveLineChartPolish />
+<Demo
+  slug="live-line-chart"
+  id="dashed-grid"
+  title="Dashed grid"
+  level={3}
+  file="live-line-chart-dashed-grid.tsx">
+  <LiveLineChartDashedGrid />
 </Demo>
 
-## Keyboard
+<Demo
+  slug="live-line-chart"
+  id="axis-end"
+  title="Value axis at the end"
+  level={3}
+  file="live-line-chart-axis-end.tsx">
+  <LiveLineChartAxisEnd />
+</Demo>
 
-<Prose>
+<Demo slug="live-line-chart" id="area" title="Area" level={3} file="live-line-chart-area.tsx">
+  <LiveLineChartArea />
+</Demo>
 
-The plot is one tab stop, and its one option names the active reading: its time, then the value after Root's `label`. Entering the plot starts at the latest reading. A reading that scrolls out at the left edge hands the option to the oldest one the window still shows. The description states the window's span, its lowest and highest readings and the latest value, and the table lists the window's readings newest first.
+<Demo
+  slug="live-line-chart"
+  id="solid-area"
+  title="Solid area"
+  level={3}
+  file="live-line-chart-solid-area.tsx">
+  <LiveLineChartSolidArea />
+</Demo>
 
-| Where | Keys                                                                                                                                                                                         |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chart | ArrowLeft and ArrowRight move to the previous and next reading in the window. Home and End go to the oldest and the latest. Escape hides the tooltip until the pointer moves or a key steps. |
-| Table | The table's button and the page buttons are native buttons. Past 500 readings the table pages by row range.                                                                                  |
+<Demo
+  slug="live-line-chart"
+  id="linear"
+  title="Linear curve"
+  level={3}
+  file="live-line-chart-curve-linear.tsx">
+  <LiveLineChartCurveLinear />
+</Demo>
 
-</Prose>
+<Demo slug="live-line-chart" id="step" title="Step curve" level={3} file="live-line-chart-curve-step.tsx">
+  <LiveLineChartCurveStep />
+</Demo>
+
+<Demo
+  slug="live-line-chart"
+  id="step-before"
+  title="Step before curve"
+  level={3}
+  file="live-line-chart-curve-step-before.tsx">
+  <LiveLineChartCurveStepBefore />
+</Demo>
+
+<Demo
+  slug="live-line-chart"
+  id="step-after"
+  title="Step after curve"
+  level={3}
+  file="live-line-chart-curve-step-after.tsx">
+  <LiveLineChartCurveStepAfter />
+</Demo>
+
+<Demo slug="live-line-chart" id="bump" title="Bump curve" level={3} file="live-line-chart-curve-bump.tsx">
+  <LiveLineChartCurveBump />
+</Demo>
+
+<Demo slug="live-line-chart" id="basis" title="Basis curve" level={3} file="live-line-chart-curve-basis.tsx">
+  <LiveLineChartCurveBasis />
+</Demo>
+
+<Demo
+  slug="live-line-chart"
+  id="dot"
+  title="Live dot without a ping"
+  level={3}
+  file="live-line-chart-dot.tsx">
+  <LiveLineChartDot />
+</Demo>
+
+<Demo slug="live-line-chart" id="badge" title="Badge" level={3} file="live-line-chart-badge.tsx">
+  <LiveLineChartBadge />
+</Demo>
+
+<Demo
+  slug="live-line-chart"
+  id="frosted-tooltip"
+  title="Frosted tooltip"
+  level={3}
+  file="live-line-chart-frosted-tooltip.tsx">
+  <LiveLineChartFrostedTooltip />
+</Demo>
 
 <ApiReference slug="live-line-chart" />
+
+<ComponentTokens slug="live-line-chart" />

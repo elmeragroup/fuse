@@ -28,7 +28,7 @@
           "type": "\"always\" | boolean | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted.",
+          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted. Closing `Command.Content` clears the highlight. With `\"always\"`, the next opening highlights the first match again. With `true` or `false`, it opens with no row highlighted.",
           "required": false
         },
         {
@@ -57,18 +57,16 @@
           "type": "readonly string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page ids the stack starts with, from the first page to the one on top.",
+          "description": "The page ids the stack starts with, from the first page to the one on top. A Root with `Command.Content` sets the stack back to `defaultPages` when the close animation ends or an opening interrupts the close. With `defaultPages={[\"home\"]}`, a user who goes to another page and closes the palette finds `home` on the next opening. The Root reads `defaultPages` at that reset, so a changed value takes effect from the next reset. Control `pages` to open on a given page. A Root with a stack takes no search props, because each `Command.Page` holds its own search.",
           "required": false
         },
         {
           "name": "defaultValue",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | number | readonly string[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
+          "description": "The query an uncontrolled search starts with. A `Command.Page` starts with it each time it comes on top. In a Root with `Command.Content`, the query goes back to `defaultValue` when the close animation ends or an opening interrupts the close, even while the Root stays mounted.",
           "required": false
         },
         {
@@ -143,7 +141,7 @@
           "type": "Grouped | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
+          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
           "required": false
         },
         {
@@ -196,7 +194,7 @@
           "type": "Groups | readonly Item[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them.",
+          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them. The search filters them as the user types, in the locale of `LocaleProvider`. For results from a server, pass them here and set `filter={null}`, so the list shows them as the server sent them. In a palette that stays mounted, keep `items` unchanged while the dialog closes, so the closing dialog keeps the rows the user chose from.",
           "required": false
         },
         {
@@ -282,13 +280,11 @@
         },
         {
           "name": "onOpenChange",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((open: boolean, eventDetails: DialogRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called when the dialog is opened or closed.",
+          "description": "Runs when the dialog opens or closes, with Base UI Dialog's event details. Escape closes the dialog from any page. To make Escape go back a page first, control `pages` and `open`, and when `eventDetails.reason` is `\"escape-key\"` and the stack has a page to go back to, call `eventDetails.cancel()` and pop the stack. A controlled stack keeps its pages when the palette closes, so set it back to the first page here when the palette opens.",
           "required": false
         },
         {
@@ -324,13 +320,11 @@
         },
         {
           "name": "open",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether the dialog is currently open.",
+          "description": "Whether `Command.Content` is open. Pass it with `onOpenChange` to control the dialog, such as to open the palette from a button outside the Root or from a keyboard shortcut, since `Command.Trigger` works only inside the Root. Closing returns focus to the element that had it when the palette opened.",
           "required": false
         },
         {
@@ -350,7 +344,7 @@
           "type": "readonly string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page ids from the first page to the one on top. Pass it to control the stack.",
+          "description": "The page ids from the first page to the one on top. Pass it with `onPagesChange` to control the stack, such as to open the palette on a page of an entity's actions. A Root with a stack takes no search props, because each `Command.Page` holds its own search.",
           "required": false
         },
         {
@@ -388,24 +382,20 @@
         },
         {
           "name": "value",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | number | readonly string[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The input value of the autocomplete. Use when controlled.",
+          "description": "The query, to control the search with `onValueChange`. A `Command.Page` mounts fresh each time it comes on top, with an empty query. To keep a page's query when the user goes back, hold it above `Command.Root` and pass it here. A query held there also lasts from one opening of `Command.Content` to the next.",
           "required": false
         },
         {
           "name": "virtualized",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the items are being externally virtualized.",
+          "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }
       ]
@@ -485,8 +475,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 273,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The dialog's name. Unset, it reads `command.dialogLabel`, \"Command palette\", from the locale dictionary. A `Dialog.Title` inside the content names the dialog instead.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The palette's parts. Pass them as children, not through `render`. Each opening mounts the children fresh, even one that interrupts the close animation, while content a `render` element or function writes itself keeps its state then.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -504,7 +512,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -561,8 +569,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 303,
+      "forwardedCount": 301,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The field's name. Unset, it is the enclosing `Command.Page`'s `label`, or in a palette without pages `command.inputLabel`, \"Search commands\", from the locale dictionary.",
+          "required": false
+        },
         {
           "name": "children",
           "origin": "declared",
@@ -590,6 +607,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "placeholder",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The field's placeholder. Unset, it reads `command.placeholder` from the locale dictionary.",
           "required": false
         },
         {
@@ -670,7 +696,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name. An explicit `aria-label` wins over it, and both default to the locale dictionary's.",
+          "description": "The accessible name. An `aria-label` wins over it. Unset, both read `command.back` from the locale dictionary.",
           "required": false
         },
         {
@@ -761,8 +787,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((item: any, index: number) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The rows, as a row function over the filtered items or as elements. A row function takes its item type from your annotation, such as `(entry: Entry) =>`. In a `virtualized` search, a row function needs a `render` value, or the list throws.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -776,13 +811,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, ComboboxListState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The list element. Beside a row function, the rendered element receives the row function as `children`, with Base UI's listbox props and no rendered rows, and decides which rows mount. In a `virtualized` search, pass `<CommandVirtual.List />`, and keep `Command.List` out of a `ScrollArea`, because the virtual list is its own scroll element. Beside other children, `render` keeps Base UI's meaning, so a virtualizer of your own can pass `Command.Item` elements, each with its `index`.",
           "required": false
         },
         {
@@ -806,8 +839,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The message shown while no item matches. Unset, it reads `command.empty` from the locale dictionary.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -851,8 +893,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The message to announce, such as \"Searching…\", an error or the number of results. Screen readers announce each change. The region announces only while it stays mounted, so change its children, and leave them empty when there is nothing to say.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -1055,13 +1106,11 @@
         },
         {
           "name": "onClick",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "An optional click handler for the item when selected. It fires when clicking the item with the pointer, as well as when pressing `Enter` with the keyboard if the item is highlighted when the `Input` or `List` element has focus.",
+          "description": "Runs when the user clicks the row, and when they press Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
           "required": false
         },
         {
@@ -1106,8 +1155,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Kbd` caps of one combination, pressed together. The shortcut is `aria-hidden`, so put the same combination on its row in `aria-keyshortcuts`, such as `\"Alt+N\"`. Fuse binds no keys, so the app listens for them.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Command.Page",
@@ -1124,7 +1183,7 @@
           "type": "\"always\" | boolean | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted.",
+          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted. Closing `Command.Content` clears the highlight. With `\"always\"`, the next opening highlights the first match again. With `true` or `false`, it opens with no row highlighted.",
           "required": false
         },
         {
@@ -1138,13 +1197,11 @@
         },
         {
           "name": "defaultValue",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | number | readonly string[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
+          "description": "The query an uncontrolled search starts with. A `Command.Page` starts with it each time it comes on top. In a Root with `Command.Content`, the query goes back to `defaultValue` when the close animation ends or an opening interrupts the close, even while the Root stays mounted.",
           "required": false
         },
         {
@@ -1208,7 +1265,7 @@
           "type": "Grouped | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
+          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws when the first entry disagrees with `grouped`.",
           "required": false
         },
         {
@@ -1228,7 +1285,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The id of the component. The id `Command.PageTrigger` pushes and the Root's stack holds.",
+          "description": "The id of the component. The id `Command.PageTrigger` pushes and the Root's stack holds. The page renders only while its id is on top.",
           "required": true
         },
         {
@@ -1259,7 +1316,7 @@
           "type": "Groups | readonly Item[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them.",
+          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them. The search filters them as the user types, in the locale of `LocaleProvider`. For results from a server, pass them here and set `filter={null}`, so the list shows them as the server sent them. In a palette that stays mounted, keep `items` unchanged while the dialog closes, so the closing dialog keeps the rows the user chose from.",
           "required": false
         },
         {
@@ -1398,24 +1455,20 @@
         },
         {
           "name": "value",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | number | readonly string[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The input value of the autocomplete. Use when controlled.",
+          "description": "The query, to control the search with `onValueChange`. A `Command.Page` mounts fresh each time it comes on top, with an empty query. To keep a page's query when the user goes back, hold it above `Command.Root` and pass it here. A query held there also lasts from one opening of `Command.Content` to the next.",
           "required": false
         },
         {
           "name": "virtualized",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the items are being externally virtualized.",
+          "description": "Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual` 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without the virtualizer never loads it. A virtual list renders flat items only, so `virtualized` beside `grouped` throws.",
           "required": false
         }
       ]
@@ -1476,13 +1529,11 @@
         },
         {
           "name": "onClick",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "An optional click handler for the item when selected. It fires when clicking the item with the pointer, as well as when pressing `Enter` with the keyboard if the item is highlighted when the `Input` or `List` element has focus.",
+          "description": "Runs when the user clicks the row, and when they press Enter while it is highlighted. The arrow keys move the highlight, which Base UI marks with `data-highlighted`.",
           "required": false
         },
         {
@@ -1491,7 +1542,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The id of the `Command.Page` this row opens.",
+          "description": "The id of the `Command.Page` this row opens on click or Enter. Call `preventDefault()` in `onClick` to keep the page closed.",
           "required": true
         },
         {
@@ -1546,8 +1597,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The hint's `Kbd` caps, then its label, such as the cap for `↵` and \"Open\".",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Command.NavigateHint",

@@ -26,14 +26,14 @@ import { pathNumber } from "./layout/rounding";
  */
 export type GaugeChartRulerProps = ChartLayerProps & {
   /**
-   * Where the ruler sits: "inside" the track, or "outside" it at the rim, where the dial makes room
-   * for it and its labels. "inside" by default.
+   * Where the ruler sits. "inside" draws it inside the track, and "outside" at the rim, where the
+   * dial makes room for it and its labels.
    */
   variant?: "inside" | "outside";
   /**
    * The intervals between `min` and `max`, a whole number of 1 or more. By default the domain's
-   * round step for about five majors, each split by the step's leading digit: 0–5 kWh takes 25,
-   * a tick each 0.2 kWh.
+   * round step for about five majors, each split by the step's leading digit, so 0 to 5 kWh takes
+   * 25, a tick each 0.2 kWh.
    */
   ticks?: number;
   /** How many intervals one major tick spans, a whole number of 1 or more. Set it with `ticks`. */

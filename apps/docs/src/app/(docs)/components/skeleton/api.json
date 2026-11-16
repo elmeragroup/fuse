@@ -9,8 +9,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The skeleton's size and radius, such as `h-4 w-48` or `size-10 rounded-full`. The pulse and the muted fill are the skeleton's own. The skeleton is hidden from screen readers, so mark the region that is loading with `aria-busy`.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "SkeletonReveal",
@@ -28,7 +38,7 @@
           "type": "((data: T) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The content, which is also what the skeleton is drawn from. Renders the data, or the sample the skeleton is drawn from.",
+          "description": "The content, which the skeleton is drawn from while `loading`. Renders the data, or the stand-in the skeleton is drawn from: the data on screen, the last data shown, or `sample`. While loading, the content renders unseen, and the skeleton draws a bar over each line of its text and a block over each control, avatar, badge or image. The skeleton takes the content's exact space, so the page does not move when the data arrives. When the content is taller or shorter than its skeleton, the root eases to the new height, at once under reduced motion. The skeleton is hidden from screen readers and inert, and the content can take focus once it replaces the skeleton. Form controls in the skeleton are neither submitted nor validated with their form, and Fuse overlays in it, such as a Dialog left open, do not open. Keep any portal of your own in the content closed while it loads. Before the page hydrates, the skeleton strikes a thick bar through each line of text. Mark your own markup with `data-skeleton=\"block\"` to draw it as one block, or with `data-skeleton=\"ignore\"` to leave it and everything inside it out.",
           "required": true
         },
         {
@@ -46,7 +56,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Read to screen readers while loading, in place of the skeleton, such as \"Loading invoices\". Defaults to the locale dictionary's \"Loading\".",
+          "description": "Read to screen readers while loading, in place of the skeleton, such as \"Loading invoices\". The root is `aria-busy` meanwhile. Defaults to the locale dictionary's \"Loading\".",
           "required": false
         },
         {

@@ -5,21 +5,29 @@ import { isThemeDevelopment } from "../../theme/validate-theme";
 import { Heading } from "../heading/heading";
 import { timelineListVariants } from "./timeline-list-variants";
 
-/** Resolved once at module scope — the recipe has no axes (no per-render work). */
+/** Resolved once at module scope, because the recipe has no axes. */
 const { root, item, dot, title, time, description } = timelineListVariants();
 
+/** `TimelineList.Root` takes a native `ol`'s props. */
 export type TimelineListRootProps = ComponentProps<"ol">;
+/** `TimelineList.Item` takes a native `li`'s props. */
 export type TimelineListItemProps = ComponentProps<"li">;
 type HeadingProps = ComponentPropsWithoutRef<typeof Heading>;
 
-export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level"> & {
+/** `TimelineList.Title` takes Heading's props, except `noMargin`. */
+export type TimelineListTitleProps = Omit<HeadingProps, "noMargin" | "level" | "size" | "font"> & {
+  /** The type size. It replaces the size the `level` sets. */
+  size?: HeadingProps["size"];
+  /** The font weight. It replaces the medium weight every level sets. */
+  font?: HeadingProps["font"];
   /**
-   * Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `3`. The title
-   * keeps Heading's scale from before the theme roles in every theme: 24/33 at level 1, 18/24.75
-   * at level 2 and 16/22 from level 3 down, all at 500, unless `size` or `font` replaces it.
+   * The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. The title keeps the same
+   * type in every theme: 24/33 at level 1, 18/24.75 at level 2 and 16/22 from level 3 down, all at
+   * 500, unless `size` or `font` replaces it.
    */
   level?: HeadingProps["level"];
 };
+/** `TimelineList.Time` takes a native `time`'s props, with `date` in place of `dateTime`. */
 export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
   /**
    * The event's date or instant. An HTML date or date-time string passes through unchanged onto
@@ -28,17 +36,20 @@ export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
    * `2026-10-20T10:00+02:00`). A date-time without an offset names a different instant in each
    * time zone, so development builds warn about one. A `Date`, or another string the JavaScript
    * date parser reads (`June 15, 2024`, or `2024-02-30`, which it rolls over to March 1), is
-   * normalized with `toISOString()`. Every invalid value throws
+   * normalized with `toISOString()`. An invalid value throws
    * `RangeError("TimelineList.Time received an invalid date")`.
    */
   date: string | Date;
 };
+/** `TimelineList.Description` takes a native `div`'s props. */
 export type TimelineListDescriptionProps = ComponentProps<"div">;
 
+/** The ordered list of events. */
 function TimelineListRoot({ className, ...props }: TimelineListRootProps): ReactElement {
   return <ol data-slot="timeline-list" className={cn(root(), className)} {...props} />;
 }
 
+/** One event, with its dot and the line that joins it to the next event. */
 function TimelineListItem({ className, children, ...props }: TimelineListItemProps): ReactElement {
   return (
     <li data-slot="timeline-list-item" className={cn(item(), className)} {...props}>
@@ -66,7 +77,7 @@ function levelSize(level: NonNullable<HeadingProps["level"]>): NonNullable<Headi
 /**
  * An item's title, a level 3 Heading by default. It is not a document section heading, so it
  * keeps Heading's scale from before the theme roles at 500 in every theme instead of reading the
- * level's roles; a `size` or `font` prop still replaces either. The resolved size and font are
+ * level's roles. A `size` or `font` prop still replaces either. The resolved size and font are
  * passed after the rest props, so a forwarded `undefined` cannot erase them.
  */
 function TimelineListTitle({
@@ -126,6 +137,7 @@ function machineDateTime(date: string | Date): string {
   return grammar.input;
 }
 
+/** The event's date, as a `time` element whose `dateTime` comes from `date`. */
 function TimelineListTime({ children, className, date, ...props }: TimelineListTimeProps): ReactElement {
   return (
     <time
@@ -138,6 +150,7 @@ function TimelineListTime({ children, className, date, ...props }: TimelineListT
   );
 }
 
+/** The event's description. */
 function TimelineListDescription({ className, ...props }: TimelineListDescriptionProps): ReactElement {
   return <div data-slot="timeline-list-description" className={cn(description(), className)} {...props} />;
 }

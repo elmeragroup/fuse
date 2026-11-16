@@ -248,7 +248,7 @@ function segmentText(
  * A month's long name, which a month segment adds to its spoken value.
  *
  * @param locale - The locale.
- * @param month - The month, 1–12.
+ * @param month - The month, 1 to 12.
  * @returns The name, such as "October".
  */
 export function monthName(locale: string, month: number): string {
@@ -261,7 +261,7 @@ export function monthName(locale: string, month: number): string {
  * An hour as the locale says it alone, which an hour segment speaks: "2 PM" in en-US, "14" in nb-NO.
  *
  * @param locale - The locale.
- * @param hour - The hour, 0–23.
+ * @param hour - The hour, 0 to 23.
  * @param hourCycle - The hour cycle shown.
  * @returns The text.
  */

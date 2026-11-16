@@ -6,7 +6,7 @@ const PHOTOS = ["Harbor", "Ridge", "Fjord", "Valley", "Coast", "Forest"];
 
 export function ScrollAreaHorizontal() {
   return (
-    <ScrollArea.Root orientation="horizontal" className="w-96 rounded-md border whitespace-nowrap">
+    <ScrollArea.Root orientation="horizontal" className="w-96 rounded-md border">
       <div className="flex w-max gap-4 p-4">
         {PHOTOS.map((photo) => (
           <figure key={photo} className="w-40 shrink-0">

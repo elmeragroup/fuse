@@ -13,14 +13,18 @@ import type {
 import * as DescriptionListModule from "@elmeragroup/fuse/description-list";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
+// Each part but Root redeclares `children` to document it. Flattening both sides to one object type
+// compares their exact keys and property types, which the intersection alone would not match.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("public API exports only the namespace and part prop types, with native attributes, Heading render, and no as prop", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();
-  expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<
-    ComponentProps<"dl"> & { layout?: "responsive" | "inline"; dividers?: boolean }
+  expectTypeOf<Flat<DescriptionListContentProps>>().toEqualTypeOf<
+    Flat<ComponentProps<"dl"> & { layout?: "responsive" | "inline"; dividers?: boolean }>
   >();
-  expectTypeOf<DescriptionListItemProps>().toEqualTypeOf<ComponentProps<"div">>();
-  expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();
-  expectTypeOf<DescriptionListDetailsProps>().toEqualTypeOf<ComponentProps<"dd">>();
+  expectTypeOf<Flat<DescriptionListItemProps>>().toEqualTypeOf<Flat<ComponentProps<"div">>>();
+  expectTypeOf<Flat<DescriptionListTermProps>>().toEqualTypeOf<Flat<ComponentProps<"dt">>>();
+  expectTypeOf<Flat<DescriptionListDetailsProps>>().toEqualTypeOf<Flat<ComponentProps<"dd">>>();
   expectTypeOf<DescriptionListRootProps["ref"]>().toEqualTypeOf<ComponentProps<"div">["ref"]>();
   expectTypeOf<DescriptionListHeadingProps>().toHaveProperty("render");
 

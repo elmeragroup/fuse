@@ -5,8 +5,12 @@ import { expectTypeOf, test } from "vitest";
 import type { SkeletonProps } from "@elmeragroup/fuse/skeleton";
 import { Skeleton } from "@elmeragroup/fuse/skeleton";
 
+// Skeleton redeclares `className` to document it. Flattening both sides to one object type
+// compares the props themselves, so the check stays exact.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("SkeletonProps is ComponentProps of a div so ref passes through, with no namespace or as prop", () => {
-  expectTypeOf<SkeletonProps>().toEqualTypeOf<ComponentProps<"div">>();
+  expectTypeOf<Flat<SkeletonProps>>().toEqualTypeOf<Flat<ComponentProps<"div">>>();
   expectTypeOf<SkeletonProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<SkeletonProps["id"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<SkeletonProps["ref"]>().toEqualTypeOf<ComponentProps<"div">["ref"]>();

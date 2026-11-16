@@ -3,10 +3,11 @@ lede: >
   A placeholder for an area that has nothing to show yet.
 ---
 
-import { EmptyBasic } from "./demos/empty-basic";
+import { EmptyDemo } from "./demos/empty-demo";
 import { EmptyOutline } from "./demos/empty-outline";
-import { EmptyWithActions } from "./demos/empty-with-actions";
-import { EmptyMediaVariants } from "./demos/empty-media-variants";
+import { EmptyOutlineDashed } from "./demos/empty-outline-dashed";
+import { EmptyIllustration } from "./demos/empty-illustration";
+import { EmptyActions } from "./demos/empty-actions";
 import { EmptyInlineLink } from "./demos/empty-inline-link";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -15,23 +16,43 @@ export const metadata = componentMetadata("empty");
 
 <ComponentIntro slug="empty" />
 
-<Demo slug="empty" id="basic" title="Basic" file="empty-basic.tsx">
-  <EmptyBasic />
-</Demo>
+<DefaultDemo slug="empty" file="empty-demo.tsx">
+  <EmptyDemo />
+</DefaultDemo>
 
-<Demo slug="empty" id="outline" title="Outline" file="empty-outline.tsx">
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Empty } from "@elmeragroup/fuse/empty";
+
+<Empty.Root>
+  <Empty.Header>
+    <Empty.Title>No orders yet</Empty.Title>
+    <Empty.Description>Orders you create will show up here.</Empty.Description>
+  </Empty.Header>
+</Empty.Root>
+```
+
+## Examples
+
+<Demo slug="empty" id="outline" title="Outline" level={3} file="empty-outline.tsx">
   <EmptyOutline />
 </Demo>
 
-<Demo slug="empty" id="with-actions" title="With actions" file="empty-with-actions.tsx">
-  <EmptyWithActions />
+<Demo slug="empty" id="outline-dashed" title="Dashed outline" level={3} file="empty-outline-dashed.tsx">
+  <EmptyOutlineDashed />
 </Demo>
 
-<Demo slug="empty" id="media-variants" title="Media variants" file="empty-media-variants.tsx">
-  <EmptyMediaVariants />
+<Demo slug="empty" id="illustration" title="Illustration" level={3} file="empty-illustration.tsx">
+  <EmptyIllustration />
 </Demo>
 
-<Demo slug="empty" id="inline-link" title="Inline link" file="empty-inline-link.tsx">
+<Demo slug="empty" id="actions" title="Actions" level={3} file="empty-actions.tsx">
+  <EmptyActions />
+</Demo>
+
+<Demo slug="empty" id="inline-link" title="Link in the description" level={3} file="empty-inline-link.tsx">
   <EmptyInlineLink />
 </Demo>
 

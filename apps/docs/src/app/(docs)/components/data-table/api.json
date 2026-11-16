@@ -232,7 +232,7 @@
           "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": "DEFAULT_PAGE_SIZES",
-          "description": "The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100.",
+          "description": "The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100. Picking one calls `table.setPageSize` and keeps the page index; reset the index in `onPaginationChange` if your data needs that.",
           "required": false
         },
         {
@@ -259,7 +259,7 @@
           "type": "PaginationSource",
           "shortType": null,
           "defaultValue": null,
-          "description": "The paginated table, from `useTable` with `rowPaginationFeature`.",
+          "description": "The paginated table, from `useTable` with `rowPaginationFeature`. Registering that feature alone pages the rows ten at a time. Keep the table's `data` stable between renders: TanStack resets the page index when `data` changes identity.",
           "required": true
         },
         {
@@ -268,7 +268,7 @@
           "type": "PaginationTotal | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page total. It is the only source of Next and Last. Without it the table's own page count is the known total. Pass `{ kind: \"unknown\", hasMore }` for a cursor API: the status then reads \"Page N\" and Last stays disabled.",
+          "description": "The page total, which alone decides Next and Last. Pass it when the server pages the rows. Without it the table's own page count is the known total. `{ kind: \"known\", pageCount }` reads \"Page N of M\". `{ kind: \"unknown\", hasMore }`, for a cursor API, reads \"Page N\" and keeps Last disabled.",
           "required": false
         }
       ]
@@ -1050,7 +1050,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The trigger's accessible name, distinct per row, such as \"Actions for order 4711\".",
+          "description": "The trigger's accessible name, distinct per row, such as \"Actions for order 4711\". Pass it when you render the menu outside `actionsColumn`, which builds it from the row's name.",
           "required": true
         },
         {

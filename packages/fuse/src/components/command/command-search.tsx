@@ -75,33 +75,59 @@ export type CommandSearchProps<
   Grouped extends boolean | undefined = false,
 > = Omit<
   AutocompleteRootProps<CommandItemOf<Item, Groups, Grouped>>,
-  CommandSearchOmitted | "autoHighlight" | "keepHighlight"
+  CommandSearchOmitted | "autoHighlight" | "keepHighlight" | "value" | "defaultValue" | "virtualized"
 > & {
   /**
    * Marks `items` as groups, each with its own `items`. The callbacks, such as
-   * `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search
-   * throws when the first entry disagrees with it.
-   * @default false
+   * `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each
+   * `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws
+   * when the first entry disagrees with `grouped`.
    */
   grouped?: Grouped;
   /**
    * Whether the search highlights the first matching item, as Base UI's prop of the same name
    * does. `true` highlights it after the user types, and `"always"` keeps it highlighted.
-   * @default "always"
+   * Closing `Command.Content` clears the highlight. With `"always"`, the next opening highlights
+   * the first match again. With `true` or `false`, it opens with no row highlighted.
    */
   autoHighlight?: boolean | "always" | undefined;
-  /**
-   * Whether the highlighted item stays highlighted when the pointer leaves the list.
-   * @default true
-   */
+  /** Whether the highlighted item stays highlighted when the pointer leaves the list. */
   keepHighlight?: boolean | undefined;
+  /**
+   * The query, to control the search with `onValueChange`. A `Command.Page` mounts fresh each
+   * time it comes on top, with an empty query. To keep a page's query when the user goes back,
+   * hold it above `Command.Root` and pass it here. A query held there also lasts from one opening
+   * of `Command.Content` to the next.
+   */
+  value?: AutocompleteRootProps<CommandItemOf<Item, Groups, Grouped>>["value"];
+  /**
+   * The query an uncontrolled search starts with. A `Command.Page` starts with it each time it
+   * comes on top. In a Root with `Command.Content`, the query goes back to `defaultValue` when
+   * the close animation ends or an opening interrupts the close, even while the Root stays
+   * mounted.
+   */
+  defaultValue?: AutocompleteRootProps<CommandItemOf<Item, Groups, Grouped>>["defaultValue"];
+  /**
+   * Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual`
+   * 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it
+   * from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without
+   * the virtualizer never loads it. A virtual list renders flat items only, so `virtualized`
+   * beside `grouped` throws.
+   */
+  virtualized?: AutocompleteRootProps<CommandItemOf<Item, Groups, Grouped>>["virtualized"];
 } & (Grouped extends true
     ? {
         /** The groups of items, in the order the list shows them. */
         items: Groups;
       }
     : {
-        /** The items, as a flat list, in the order the list shows them. */
+        /**
+         * The items, as a flat list, in the order the list shows them. The search filters them
+         * as the user types, in the locale of `LocaleProvider`. For results from a server, pass
+         * them here and set `filter={null}`, so the list shows them as the server sent them. In
+         * a palette that stays mounted, keep `items` unchanged while the dialog closes, so the
+         * closing dialog keeps the rows the user chose from.
+         */
         items?: readonly Item[] | undefined;
       });
 
@@ -141,10 +167,10 @@ function assertGrouping(
 }
 
 /**
- * One search, which is Base UI's Autocomplete, always open, with its list inline and the first
- * match always highlighted. Each new session of the palette sends an uncontrolled query back to
- * `defaultValue` and the highlight back to the first match. A virtualized search tracks the
- * highlighted row and scrolls its virtual list when the highlight jumps out of view.
+ * One search, which is Base UI's Autocomplete, always open, with its list inline. Each new
+ * session of the palette sends an uncontrolled query back to `defaultValue` and clears the
+ * highlight, which `autoHighlight="always"` puts back on the first match. A virtualized search
+ * tracks the highlighted row and scrolls its virtual list when the highlight jumps out of view.
  */
 export function CommandSearch({
   part,

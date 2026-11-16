@@ -10,8 +10,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The bar's name. Without it or `aria-labelledby`, the bar is named \"Bulk actions\" in the reader's locale.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The bar's items: `ActionBar.Count`, `ActionBar.Clear`, `ActionBar.Separator` and `ActionBar.Button`. The bar is one Tab stop, and the arrow keys move between its items.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -29,7 +47,7 @@
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "How many items the selection holds. The bar shows while it is above zero, rising into place, and falls away when it returns to zero.",
+          "description": "How many items the selection holds. While it is above zero, the bar rises into place and a visually hidden live region beside it announces the count politely, such as \"3 selected\", each time it changes. When it returns to zero, the bar falls away and unmounts. If focus was in the bar, as after Clear, focus returns to the element it came from, such as a row checkbox. If that element is gone, as after deleting the selected rows, focus falls to the page.",
           "required": true
         },
         {
@@ -49,7 +67,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "16",
-          "description": "The bar's distance from the bottom of its positioned ancestor, in px. To float the bar above a pagination row or other footer, place it in a positioned ancestor that ends above the footer, and keep `offset` for a small adjustment, such as clearing a faded edge.",
+          "description": "The bar's distance from the bottom of its nearest positioned ancestor, in px. Give that ancestor `position: relative` and keep the bar its last child, so the bar paints over the rows. To keep the bar clear of a pagination row or another footer, wrap only the content above the footer in that ancestor. Use `offset` for a small adjustment, such as clearing a faded edge.",
           "required": false
         },
         {
@@ -83,8 +101,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Text that replaces the count, \"3 selected\" in the reader's locale.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "ActionBar.Clear",
@@ -94,8 +122,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 284,
+      "forwardedCount": 281,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's name. Without it, the button is named \"Clear selection\" in the reader's locale. To show the name in a tooltip, pass Clear to `Tooltip.Trigger`'s `render`: `<Tooltip.Trigger render={<ActionBar.Clear onClick={clear} />} />`.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Content that replaces the X icon.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -141,6 +187,15 @@
           "required": false
         },
         {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Empty the selection here. Clear clears nothing itself, and the bar leaves once `count` is zero.",
+          "required": false
+        },
+        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
@@ -172,8 +227,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 284,
+      "forwardedCount": 283,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "An icon marked `data-icon=\"inline-start\"`, then the words in `ActionBar.ButtonLabel`. While the bar's container is narrower than 28rem, the button shows the icon alone and keeps the words as its accessible name.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {

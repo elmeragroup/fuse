@@ -1,8 +1,8 @@
 import { tv } from "../../styles/tv";
 
 /**
- * Visibility face for the Radix-style `type` prop.
- * `keepMounted` is not a class, so it stays on `SCROLLBAR_KEEP_MOUNTED` in the component.
+ * The scrollbar's visibility classes for each `type`. `keepMounted` is not a class, so it stays
+ * on `SCROLLBAR_KEEP_MOUNTED` in the component.
  */
 export const scrollbarTypeVariants = tv({
   variants: {

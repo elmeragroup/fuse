@@ -143,16 +143,22 @@ export type DateRangePickerRootState = { readonly [K in keyof PickerState]: Pick
  */
 export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
   useRender.ComponentProps<"div", DateRangePickerRootState>,
-  "defaultValue" | "onChange" | "className"
+  "defaultValue" | "onChange" | "className" | "aria-label"
 > & {
   /** Extra classes, or a callback of the Root's state that returns them. */
   className?: DatePickerClassName<DateRangePickerRootState>;
   /**
-   * The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client
-   * component. `null` empties both ends.
+   * The range, when the parent owns it: each end a Temporal value of `T`'s kind from any
+   * implementation. A server component cannot pass one, since it reaches the client as ISO text,
+   * which the picker refuses with a `TypeError`: build the value in a client component. `null`
+   * empties both ends. Picking a range in the calendar keeps each end's time and zone.
+   *
+   * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
+   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
+   * `/quick-start#temporal` shows.
    */
   value?: DateRangePickerValue<T> | null;
-  /** The first range, when the picker owns its value. */
+  /** The first range, when the picker owns its value. Takes what `value` takes. */
   defaultValue?: DateRangePickerValue<T> | null;
   /**
    * Called with this runtime's range once both ends hold a value and one of them changes, or `null`
@@ -160,9 +166,11 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * range filled one end at a time reports nothing until both hold a value. `details.reason` is
    * `"day-press"`, `"keyboard"`, `"outside-press"`, `"focus-out"` (a range completed in the
    * calendar), `"input-change"`, `"input-clear"`, `"input-paste"` or `"preset-press"` (a
-   * `PresetItem` with a `dateValue` range). Canceling with `details.cancel()` keeps the range: a
-   * canceled day keeps the popup open with the anchor, so another end can be picked, a canceled
-   * edit shows the range again in the segments, and a canceled preset stays unchecked.
+   * `PresetItem` with a `dateValue` range), and the other details are `DatePicker.Root`'s.
+   * Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the
+   * anchor, so the user can pick another end, a canceled edit shows the range again in the
+   * segments, and a canceled preset stays unchecked. An end before its start commits and is
+   * invalid on the end ("Start date must be before end date."), as React Aria reports it.
    */
   onValueChange?: NoInfer<
     (value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void
@@ -215,9 +223,13 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
   required?: boolean;
   /** Whether the picker shows as invalid whatever its value. */
   invalid?: boolean;
-  /** The name the start's ISO value submits and `Form` errors arrive under. */
+  /**
+   * The name the start's ISO value submits and `Form` errors arrive under. Each input is a Base UI
+   * Field of its own: a `Form` reads both ISO values, holds errors under either name and focuses
+   * the input whose error it returns.
+   */
   startName?: string;
-  /** The name the end's ISO value submits and `Form` errors arrive under. */
+  /** The name the end's ISO value submits and `Form` errors arrive under, as `startName`'s. */
   endName?: string;
   /** The id of the form the values submit with. */
   form?: string;
@@ -230,7 +242,15 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * that started the leave, as `DatePicker.Root`'s `onFocusLeave` does.
    */
   onFocusLeave?: (event: FocusEvent<Element>) => void;
-  /** The label, group, error, description and popup. */
+  /**
+   * The parts: a `DateRangePicker.Label`, a `DateRangePicker.Group` with
+   * `DateRangePicker.StartInput`, `DateRangePicker.Separator`, `DateRangePicker.EndInput` and
+   * `DateRangePicker.Trigger`, then `DateRangePicker.Error`, `DateRangePicker.Description` and a
+   * `DateRangePicker.Popup` with `DateRangePicker.Calendar`. For values with a time, put
+   * `DateRangePicker.StartTimeInput` and `DateRangePicker.EndTimeInput` in the popup after the
+   * calendar. The label, the description and the error belong to the Root, outside the two ends'
+   * Fields, and the Root wires them to both inputs and the group.
+   */
   children?: ReactNode;
 };
 
@@ -286,60 +306,45 @@ function isReversed(ends: Ends): boolean {
 
 /**
  * A date range picker: a start and an end input and a range calendar in a popup, over one range.
- * Its parts are `Label`, `Group`, `StartInput`, `Separator`, `EndInput`, `Trigger`, `Error`,
- * `Description`, `Popup`, `Calendar`, `StartTimeInput` and `EndTimeInput` (each end's time in the
- * popup) and the preset pane (`Presets`, `PresetItem`).
- *
- * Each input is a Base UI Field of its own, under `startName` and `endName`: a `Form` reads both ISO
- * values, holds errors under either name and focuses the input whose error it returns. The label,
- * the description and the merged error live on the Root, outside those two Fields, and the Root
- * wires them to both inputs and the group. An end before its start is invalid on the end ("Start
- * date must be before end date."), as React Aria reports it.
- *
- * Values are Temporal values, as DatePicker's. Picking a range in the calendar keeps each end's
- * time and zone.
  *
  * @template P - The props, inferred: only their `granularity` and `timeZone` count.
  * @template T - The ends' kind, inferred as `DateInput.Root`'s is.
  * @throws TypeError naming the prop and the fix when a value or bound is a string rather than a
  *   Temporal object, or a time `granularity` meets a PlainDate value: host defects.
  */
-export function DateRangePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
-  props: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>
-): ReactElement {
-  const {
-    value: valueProp,
-    defaultValue,
-    onValueChange,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    shouldCloseOnSelect = true,
-    minValue,
-    maxValue,
-    isDateUnavailable,
-    granularity,
-    hourCycle,
-    hideTimeZone = false,
-    timeZone,
-    firstDayOfWeek,
-    visibleMonths = 1,
-    pageBehavior = "visible",
-    disabled: disabledProp = false,
-    readOnly = false,
-    required = false,
-    invalid: invalidProp = false,
-    startName,
-    endName,
-    form,
-    size = "default",
-    "aria-label": ariaLabel,
-    onFocusLeave,
-    className,
-    render,
-    children,
-    ...elementProps
-  } = props;
+export function DateRangePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>({
+  value: valueProp,
+  defaultValue,
+  onValueChange,
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  shouldCloseOnSelect = true,
+  minValue,
+  maxValue,
+  isDateUnavailable,
+  granularity,
+  hourCycle,
+  hideTimeZone = false,
+  timeZone,
+  firstDayOfWeek,
+  visibleMonths = 1,
+  pageBehavior = "visible",
+  disabled: disabledProp = false,
+  readOnly = false,
+  required = false,
+  invalid: invalidProp = false,
+  startName,
+  endName,
+  form,
+  size = "default",
+  "aria-label": ariaLabel,
+  onFocusLeave,
+  className,
+  render,
+  children,
+  ...elementProps
+}: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>): ReactElement {
   const controlled = valueProp !== undefined;
   const parsedValue = useRangeProp(valueProp, OWNER, "value");
   const parsedDefault = useRangeProp(defaultValue, OWNER, "defaultValue");

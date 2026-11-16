@@ -10,10 +10,25 @@ import type { VariantProps } from "tailwind-variants";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { accordionVariants } from "./accordion-variants";
 
-type AccordionVariantProps = Omit<VariantProps<typeof accordionVariants>, "hasIndicator">;
+type AccordionRecipeProps = VariantProps<typeof accordionVariants>;
+
+type AccordionVariantProps = {
+  /**
+   * The item style. `default` fills each item with the brand's soft tint, `card` draws each item
+   * as a bordered card, and `infodropdown` draws plain rows over one bottom border, with the caret
+   * at the right edge. A `card` item's edge takes the theme's `--card-border`, which branded themes
+   * make transparent; add `border-border` to an item's `className` to keep a visible edge.
+   */
+  variant?: AccordionRecipeProps["variant"];
+  /**
+   * The item corner. `none` keeps the variant's own corner, and `lg` and `xl` round each item to
+   * that radius.
+   */
+  radius?: AccordionRecipeProps["radius"];
+};
 
 type WithSlotClassName<T> = Omit<T, "className"> & {
-  /** Extra classes, merged into the part's recipe slot via the recipe `className` argument. */
+  /** Classes the part adds to its recipe slot. */
   className?: string;
 };
 
@@ -28,9 +43,8 @@ function useAccordion(): AccordionVariantProps {
 }
 
 /**
- * Client accordion over `@base-ui/react/accordion`. Root owns
- * open-item state; `variant` / `radius` publish through module-private context so
- * parts style themselves.
+ * Stacked sections that open and close, built on Base UI's accordion. Root holds the open items
+ * and passes `variant` and `radius` to its parts.
  */
 export function AccordionRoot<Value = unknown>({
   className,
@@ -49,10 +63,9 @@ export function AccordionRoot<Value = unknown>({
 }
 
 /**
- * One accordion item. A rounded item publishes `--inner-corner`, its corner less its border and
- * padding, and a card item's panel rounds with it. A `card` item draws its 1px edge in the theme's
- * `--card-border`: `--border` in neutral themes and a zero-alpha colour in branded ones. A border
- * colour class still wins.
+ * One section, holding a header and its content. A rounded item, under a Root `radius` other
+ * than `none`, publishes `--inner-corner`, its corner less its border and padding, and a `card`
+ * item's panel rounds with it.
  */
 export function AccordionItem({
   className,
@@ -64,6 +77,7 @@ export function AccordionItem({
   return <AccordionPrimitive.Item data-slot="accordion-item" className={item({ className })} {...props} />;
 }
 
+/** The heading that holds an item's trigger. */
 export function AccordionHeader({
   className,
   ...props
@@ -76,21 +90,20 @@ export function AccordionHeader({
   );
 }
 
-/**
- * The item's toggle button. `indicator` follows the children: it defaults to a caret that
- * rotates while the item is open, `null` renders none, and any other node renders as given.
- * The variant places any indicator, default or custom, in the same position. The rotation
- * belongs to the default caret only; a custom indicator, or a leading icon passed as a child,
- * styles its open state from the trigger's `data-panel-open` (`in-data-[panel-open]:rotate-90`).
- * With no indicator the children pack at the start.
- */
+/** The button that opens and closes its item. */
 export function AccordionTrigger({
   className,
   children,
   indicator,
   ...props
 }: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Trigger>> & {
-  /** Node after the children. Defaults to a rotating caret; `null` renders none. */
+  /**
+   * The node after the children. Unset, it is a caret that turns while the item is open. Pass
+   * `null` for none, and the children move to the start. The variant places a custom indicator
+   * where the caret sits but does not turn it. Style its open state from the trigger's
+   * `data-panel-open`, such as `in-data-[panel-open]:rotate-90`, as you would a leading icon in
+   * the children.
+   */
   indicator?: ReactNode;
 }): ReactElement {
   const variants = useAccordion();
@@ -113,6 +126,7 @@ export function AccordionTrigger({
   );
 }
 
+/** The panel that shows while its item is open. */
 export function AccordionContent({
   className,
   children,

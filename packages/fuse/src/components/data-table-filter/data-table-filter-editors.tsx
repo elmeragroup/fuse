@@ -484,8 +484,10 @@ const PRESETS_BESIDE_QUERY = "(min-width: 40rem)";
 /** The props of `DataTableFilter.DateEditor`. */
 export type DataTableFilterDateEditorProps = Omit<DataTableFilterKindEditorProps, "children"> & {
   /**
-   * Replaces the date inputs, such as with a calendar. The presets and the header stay. On a
-   * viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit.
+   * Replaces the date inputs, such as with a `Calendar`. The presets and the header stay. On a
+   * viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to
+   * fit. Keep the calendar in your app's own modules, so the bare entry never pulls the calendars
+   * in.
    */
   children?: (editor: DateEditorState) => ReactNode;
 };

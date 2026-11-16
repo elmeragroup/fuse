@@ -25,10 +25,13 @@ export type ChartCrosshairProps = ChartLayerProps & {
   /**
    * A band over the active slot or a line through it. The default follows `xScale`. A band spans
    * the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.
+   * `--chart-crosshair-width` sets the line's width, 1 px by default. The line glides from slot to
+   * slot on a spring that quickens with the pointer, so a key step or a slow scrub settles in about
+   * half a second and a fast sweep in about 120 ms. It moves at once under reduced motion.
    */
   variant?: "line" | "band";
   /**
-   * The ends of the line that fade out, over 10% of the plot each. "both" by default. "top" is the
+   * The ends of the line that fade out, over 10% of the plot each. "top" is the
    * end at the value axis's maximum, the right end under `orientation="horizontal"`. A band never
    * fades.
    */

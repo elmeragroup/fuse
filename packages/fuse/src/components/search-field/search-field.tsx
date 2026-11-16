@@ -28,57 +28,69 @@ import { searchFieldStrings } from "./intl";
  * callbacks, and the remaining native input attributes, which reach the `<input>`.
  */
 export type SearchFieldProps = {
-  /** Visible label, rendered as `Field.Label`. It names the searchbox. */
+  /**
+   * The visible label, rendered as `Field.Label`, which names the searchbox. Without it, name the
+   * field with `aria-label`.
+   */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` while the field is invalid: through `isInvalid`, its own
-   * constraint validation or an error `Form` holds under its `name`. Without it, the field shows
-   * that `Form` error or the native constraint message itself.
+   * The error message, rendered as `Field.Error` while the field is invalid: through `isInvalid`,
+   * its own constraint check, or an error `Form` holds under its `name`. Without it, the field
+   * shows that `Form` error or the browser's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Controlled value. */
+  /** The value, for a controlled field. */
   value?: string;
-  /** Uncontrolled initial value, restored by a native form reset. */
+  /** The starting value of an uncontrolled field. A native form reset restores it. */
   defaultValue?: string;
-  /** Called with the string value, not the native event, on every edit and on a clear. */
+  /** Called with the input's text on every edit and on a clear. */
   onChange?: (value: string) => void;
   /**
    * Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt,
-   * Control, Meta or Shift. Given, Enter in an editable field never submits the surrounding form;
-   * omitted, Enter keeps its native behaviour and submits it.
+   * Control, Meta or Shift. With it, no Enter in an editable field submits the surrounding form.
+   * Without it, Enter submits the form, as in any text input.
    */
   onSubmit?: (value: string) => void;
-  /** Called after the clear button or Escape empties the field. */
+  /**
+   * Called after the clear button or Escape empties the field. Escape empties a field that holds
+   * text and stops there, so a `Dialog` or `Sheet` around the field stays open. On an empty field,
+   * Escape reaches them and closes them as usual.
+   */
   onClear?: () => void;
-  /** Native `name` forwarded to the inner input. Inside a `Form`, its errors are keyed by it. */
+  /**
+   * The name the input submits its text under. Inside a `Form`, the field shows the error the
+   * form holds under this name, and an edit or a clear removes it.
+   */
   name?: string;
-  /** Native `placeholder` forwarded to the inner input. */
+  /** The input's placeholder text. */
   placeholder?: string;
   /**
-   * Accessible name of the clear button. Defaults to the `searchField.clear` row of the locale
-   * dictionary; an explicit string wins.
+   * The clear button's name. It defaults to the `searchField.clear` row of the locale dictionary,
+   * "Clear search" in English. The button shows while the field holds text. It is out of the tab
+   * order, since Escape clears from the input, and a press keeps focus, and on touch the
+   * on-screen keyboard, on the input.
    */
   clearLabel?: string;
   /**
-   * Forwards `readOnly` to the inner input, which then takes the muted read-only fill. It also
-   * disables the clear button, Enter and Escape.
+   * Makes the input read-only, with the muted read-only fill. It disables the clear button, Escape
+   * no longer clears, and `onSubmit` no longer runs. Enter and Escape keep their native behavior,
+   * so Enter can submit a surrounding form and Escape can close an enclosing `Dialog`.
    */
   isReadOnly?: boolean;
-  /** Forwards `disabled` to `Field.Root` and the inner input, and disables the clear button. */
+  /** Disables the field, the input and the clear button. */
   isDisabled?: boolean;
-  /** Forwards `invalid` to `Field.Root`. */
+  /** Marks the field invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Forwards `required` to the inner input. */
+  /** Makes the input required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
-   * Control size of the field box. Emitted as `data-size`. `"default"` maps to the `md` control
-   * size; `"sm"` maps to the `sm` control size. The clear button follows it.
-   * @default "default"
+   * The control size of the field box, also written as `data-size`. `default` is the md control
+   * size, and `sm` the sm one. The clear button follows it.
    */
   size?: "sm" | "default";
-  /** Extra classes, merged onto the root. */
+  /** Extra classes for the field's root. */
   className?: string;
 } & Omit<
   ComponentProps<"input">,
@@ -140,16 +152,11 @@ function isRepeatOrModified(event: KeyboardEvent): boolean {
 }
 
 /**
- * Labeled search composite over Field and InputGroup: a `<input type="search">` with a leading
- * magnifying glass and a clear button. Client component, because it owns the uncontrolled value,
- * the clear button and the Enter and Escape keys.
- *
- * Escape empties a non-empty field and stops there, so a Dialog or Sheet around it stays open; on
- * an empty field it passes through. Given `onSubmit`, no Enter in an editable field submits the
- * surrounding form, and only a plain Enter calls `onSubmit`: not a held key's repeats, and not an
- * Enter with Alt, Control, Meta or Shift. Other repeats and modified keys, Escape among them, pass
- * through untouched. A read-only field leaves both keys to the browser; a disabled input takes no
- * keys. The root carries `data-empty` while the value is empty.
+ * A labeled search field: an `<input type="search">` with a magnifying glass and a clear button.
+ * It is a client component, because it holds the uncontrolled value, the clear button and the
+ * Enter and Escape keys. Other key repeats and modified keys, Escape among them, pass through. A
+ * read-only field leaves both keys to the browser, and a disabled input takes no keys. The root
+ * carries `data-empty` while the value is empty.
  */
 export function SearchField({
   label,

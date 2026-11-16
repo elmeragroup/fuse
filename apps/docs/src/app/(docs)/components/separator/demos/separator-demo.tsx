@@ -1,0 +1,13 @@
+"use client";
+
+import { Separator } from "@elmeragroup/fuse/separator";
+
+export function SeparatorDemo() {
+  return (
+    <div className="text-sm flex w-64 flex-col gap-3">
+      <p>Documentation</p>
+      <Separator />
+      <p>Source</p>
+    </div>
+  );
+}

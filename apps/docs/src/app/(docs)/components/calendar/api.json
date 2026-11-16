@@ -10,15 +10,42 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 278,
+      "forwardedCount": 275,
       "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The calendar's name, which starts each grid's name, such as \"Delivery date, October 2026\". Name a calendar that stands alone with `aria-label` or `aria-labelledby`.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then named by those elements and its month heading.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The parts: a `Calendar.Header` with `Calendar.DecrementMonth`, `Calendar.VisibleRangeHeading` and `Calendar.IncrementMonth`, then `Calendar.Months`.",
+          "required": false
+        },
         {
           "name": "defaultValue",
           "origin": "declared",
           "type": "PlainDate | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The day selected first, when the calendar owns its value. Takes what `value` takes.",
+          "description": "The day selected first, when the calendar owns its value. Takes what `value` takes. With neither `value` nor `defaultValue`, the calendar opens on today's month. Only the first client effect reads the clock, so the server and the hydrating render write each month's frame, the weekday row over six weeks of empty days, hidden from assistive technology, and the calendar hydrates without a mismatch. It keeps that height for a six-week month and shrinks by a row or two for a shorter one. Today is marked from the same effect on, never in a server render, and the mark moves at midnight.",
           "required": false
         },
         {
@@ -63,7 +90,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The last selectable day, taking what `minValue` takes. Days after it are disabled.",
+          "description": "The last selectable day, taking what `minValue` takes. Days after it are disabled and never take focus, the keyboard stops at it, and its name ends \", Last available date\".",
           "required": false
         },
         {
@@ -72,7 +99,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation. A date-time bound counts from its own wall-clock day. Days before it are disabled, never focusable, and focus clamps to it.",
+          "description": "The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation. A date-time bound counts from its own wall-clock day. Days before it are disabled and never take focus, the keyboard stops at it, and its name ends \", First available date\". A month button whose page has no selectable day is disabled.",
           "required": false
         },
         {
@@ -81,7 +108,7 @@
           "type": "((value: PlainDate, details: CalendarRootValueChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called when the user selects a day, by pressing it or with Enter or Space, with the day as this runtime's `Temporal.PlainDate`. `details.reason` is `\"day-press\"` or `\"keyboard\"`. Canceling with `details.cancel()` keeps the value unchanged; focus stays on the day.",
+          "description": "Called when the user selects a day, by pressing it or with Enter or Space, with the day as this runtime's `Temporal.PlainDate`. `details.reason` is `\"day-press\"` or `\"keyboard\"`, and `details.event` and `details.trigger` are the DOM event and the day's button. Canceling with `details.cancel()` keeps the value unchanged; focus stays on the day. `details.getValidationError()` returns `null` here, since the calendar lets the user select only days that pass.",
           "required": false
         },
         {
@@ -132,7 +159,7 @@
           "type": "PlainDate | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation. A server component cannot pass one, since it reaches the client as text: build the value in a client component. `null` selects nothing.",
+          "description": "The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation. A server component cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a `TypeError`: build the value in a client component. `null` selects nothing. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
           "required": false
         },
         {
@@ -141,7 +168,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "1",
-          "description": "How many months show side by side, wrapping onto new rows when the host is narrow. Pick it from the viewport in the host, such as one month on a phone and two on a desktop. A whole number from 1: a fraction truncates, and anything below 1 or not a finite number shows one month, with a warning in development.",
+          "description": "How many months show side by side, wrapping onto new rows when the host is narrow. Pick it from the viewport in the host, such as one month on a phone and two on a desktop; the server renders the count the host passes there. A whole number from 1: a fraction truncates, and anything below 1 or not a finite number shows one month, with a warning in development. Arrow keys move focus from one month's grid into the next without paging.",
           "required": false
         }
       ]
@@ -154,8 +181,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The month buttons and the `Calendar.VisibleRangeHeading`. The header only lays them out, so put them in the order they should read.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -177,7 +213,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "aria-label",
@@ -247,6 +283,15 @@
           "required": false
         },
         {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Runs before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
+          "required": false
+        },
+        {
           "name": "onIntent",
           "origin": "declared",
           "type": "(() => void) | undefined",
@@ -289,8 +334,8 @@
           "origin": "declared",
           "type": "IconButtonSize | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Button's square size. Defaults to `\"icon\"`.",
+          "defaultValue": "\"icon\"",
+          "description": "Button's square size.",
           "required": false,
           "values": [
             "icon",
@@ -316,7 +361,7 @@
           "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"ghost\"",
           "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
@@ -339,7 +384,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "aria-label",
@@ -409,6 +454,15 @@
           "required": false
         },
         {
+          "name": "onClick",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Runs before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
+          "required": false
+        },
+        {
           "name": "onIntent",
           "origin": "declared",
           "type": "(() => void) | undefined",
@@ -451,8 +505,8 @@
           "origin": "declared",
           "type": "IconButtonSize | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Button's square size. Defaults to `\"icon\"`.",
+          "defaultValue": "\"icon\"",
+          "description": "Button's square size.",
           "required": false,
           "values": [
             "icon",
@@ -478,7 +532,7 @@
           "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"ghost\"",
           "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
@@ -501,8 +555,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the visible months' name, such as \"October 2026\". Render one per calendar, even when each month shows its own `Calendar.MonthHeading`: it is the calendar's one live region, which announces a page politely. Hide it with `className=\"sr-only\"` rather than leaving it out. It stays quiet until the user first pages, so the months a calendar opens or hydrates on are not announced, and while a day has keyboard focus, since that day's name says the same.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -556,8 +619,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The month's `Calendar.MonthHeading` and `Calendar.DayGrid`.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -588,8 +660,26 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 278,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the month's name, such as \"October 2026\", which names the month's grid. In a one-month calendar `Calendar.VisibleRangeHeading` shows the same words, so keep this heading and hide it with `className=\"sr-only\"` rather than leaving it out.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The heading's own id. The grid takes its name from a span inside the heading, so an `id` here, or on the `render` element, leaves the grid's name alone.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -611,8 +701,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 289,
+      "forwardedCount": 288,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `Calendar.DayGridHeader` with the weekday row and the `Calendar.DayGridBody` with the weeks.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -634,8 +733,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The weekday row. Defaults to a `Calendar.DayGridHeaderRow` with its default cells.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -689,8 +797,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 286,
+      "forwardedCount": 285,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the weekday's label: the locale's short name where it fits a column (\"Mon\"), its narrow form otherwise.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -794,8 +911,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 289,
+      "forwardedCount": 288,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last. Each of the day's flags that holds is a bare attribute on the cell, so style a range's band across cells with `data-selected`, `data-selection-start`, `data-selection-end`, `data-in-range`, `data-highlighted` and `data-invalid`. A disabled day holds no flags.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {
@@ -826,8 +952,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 290,
+      "forwardedCount": 289,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the day number. The button keeps its name, the full date as React Aria writes it, such as \"Monday, October 12, 2026\", with \"Today, \" before it on today, \" selected\" after it on the selected day, and \", First available date\" or \", Last available date\" on the bounds. The visible days take one tab stop between them. Arrow Left and Right step a day in the writing direction, Arrow Up and Down a week, Home and End go to the month's first and last day, and Page Up and Page Down a month, or a year with Shift. Focus stays inside the bounds and moves between visible months without paging; past them the view pages. Enter and Space select, once however long they are held. A key with Alt, Control or Meta, and Shift with any other key, is left to the browser.",
+          "required": false
+        },
         {
           "name": "render",
           "origin": {

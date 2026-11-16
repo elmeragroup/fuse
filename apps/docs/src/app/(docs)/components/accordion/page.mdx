@@ -3,12 +3,16 @@ lede: >
   Collapsible sections stacked in one control.
 ---
 
-import { AccordionBasic } from "./demos/accordion-basic";
+import { AccordionDemo } from "./demos/accordion-demo";
+import { AccordionCard } from "./demos/accordion-card";
+import { AccordionInfodropdown } from "./demos/accordion-infodropdown";
+import { AccordionRadiusLg } from "./demos/accordion-radius-lg";
+import { AccordionRadiusXl } from "./demos/accordion-radius-xl";
 import { AccordionMultiple } from "./demos/accordion-multiple";
-import { AccordionVariants } from "./demos/accordion-variants";
+import { AccordionDisabledItem } from "./demos/accordion-disabled-item";
+import { AccordionLeadingIndicator } from "./demos/accordion-leading-indicator";
 import { AccordionControlled } from "./demos/accordion-controlled";
 import { AccordionHiddenUntilFound } from "./demos/accordion-hidden-until-found";
-import { AccordionLeadingIndicator } from "./demos/accordion-leading-indicator";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,34 +20,70 @@ export const metadata = componentMetadata("accordion");
 
 <ComponentIntro slug="accordion" />
 
-<Demo slug="accordion" id="basic" title="Basic" file="accordion-basic.tsx">
-  <AccordionBasic />
+<DefaultDemo slug="accordion" file="accordion-demo.tsx">
+  <AccordionDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Accordion } from "@elmeragroup/fuse/accordion";
+
+<Accordion.Root>
+  <Accordion.Item value="shipping">
+    <Accordion.Header>
+      <Accordion.Trigger>Shipping</Accordion.Trigger>
+    </Accordion.Header>
+    <Accordion.Content>Delivered within 3 to 5 business days.</Accordion.Content>
+  </Accordion.Item>
+</Accordion.Root>
+```
+
+## Examples
+
+<Demo slug="accordion" id="card" title="Card" level={3} file="accordion-card.tsx">
+  <AccordionCard />
 </Demo>
 
-<Demo slug="accordion" id="multiple" title="Multiple" file="accordion-multiple.tsx">
+<Demo slug="accordion" id="infodropdown" title="Info dropdown" level={3} file="accordion-infodropdown.tsx">
+  <AccordionInfodropdown />
+</Demo>
+
+<Demo slug="accordion" id="radius-lg" title="Large radius" level={3} file="accordion-radius-lg.tsx">
+  <AccordionRadiusLg />
+</Demo>
+
+<Demo slug="accordion" id="radius-xl" title="Extra-large radius" level={3} file="accordion-radius-xl.tsx">
+  <AccordionRadiusXl />
+</Demo>
+
+<Demo slug="accordion" id="multiple" title="Multiple" level={3} file="accordion-multiple.tsx">
   <AccordionMultiple />
 </Demo>
 
-<Demo slug="accordion" id="variants" title="Variants" file="accordion-variants.tsx">
-  <AccordionVariants />
-</Demo>
-
-<Demo slug="accordion" id="controlled" title="Controlled" file="accordion-controlled.tsx">
-  <AccordionControlled />
+<Demo slug="accordion" id="disabled-item" title="Disabled item" level={3} file="accordion-disabled-item.tsx">
+  <AccordionDisabledItem />
 </Demo>
 
 <Demo
   slug="accordion"
   id="leading-indicator"
   title="Leading indicator"
+  level={3}
   file="accordion-leading-indicator.tsx">
   <AccordionLeadingIndicator />
+</Demo>
+
+<Demo slug="accordion" id="controlled" title="Controlled" level={3} file="accordion-controlled.tsx">
+  <AccordionControlled />
 </Demo>
 
 <Demo
   slug="accordion"
   id="hidden-until-found"
   title="Hidden until found"
+  level={3}
   file="accordion-hidden-until-found.tsx">
   <AccordionHiddenUntilFound />
 </Demo>

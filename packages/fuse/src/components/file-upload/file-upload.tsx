@@ -32,56 +32,93 @@ import type { FileRejection, FileRules, SplitEntry } from "./split-files";
  */
 type FileUploadPostingRule = { files: readonly File[] } | { name?: undefined };
 
+type FileUploadRootBaseProps = useRender.ComponentProps<"div">;
+
 /** `FileUpload.Root` takes a `div`'s props, Base UI's `render`, and the picker, posting and callback props. */
-export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelect"> &
+export type FileUploadRootProps = Omit<FileUploadRootBaseProps, "onSelect" | "children"> &
   FileUploadPostingRule & {
     /**
-     * Post `files` under this name with a native form submit or `new FormData(form)`. It needs
-     * `files`. An enclosing `Field.Root`'s `name` takes its place, as it does for Base UI's
-     * controls.
+     * The parts: a `FileUpload.Dropzone` for drops, a `FileUpload.Trigger` that opens the picker,
+     * and a `FileUpload.Description` of what the Root takes. Without a Dropzone, the Trigger and
+     * the Description are a plain picker. A paste adds its files while focus is anywhere inside
+     * the Root, such as on the Trigger, and a text field inside the Root keeps its own paste.
+     * While any Root is mounted, a file dropped outside every Dropzone does nothing, so a missed
+     * drop never opens the file in the tab. A custom part inside the Root reads `useFileUpload()`:
+     * `actions.open()` opens the picker from a click or another user gesture, and
+     * `actions.add(files)` sends files from another source through the same check as a pick.
+     */
+    children?: FileUploadRootBaseProps["children"];
+    /**
+     * The name `files` post under with a native form submit or `new FormData(form)`. It needs
+     * `files`, so `name` without `files` is a type error. An enclosing `Field.Root`'s `name`
+     * takes its place, as it does for Base UI's controls. The Root writes `files` into a hidden
+     * input of its own, apart from the picker, so the post carries exactly that list. An empty
+     * list posts one empty entry, as a native file input with no selection does. A disabled Root
+     * posts nothing.
      */
     name?: string;
     /**
-     * The files a native form posts, which the parent owns. The Root never changes the list: add
-     * a pick from `onSelect`, and remove files from your own UI. A native form reset leaves the
-     * list, and the post, as they are. Without a `name`, they post only under an enclosing
-     * `Field.Root`'s `name`.
+     * The files a native form posts, which the parent owns. The Root never changes the list. Add
+     * each pick from `onSelect`, and remove files from your own UI, which removes them from the
+     * post. A rejected pick, or one the parent does not add, never changes what is posted. The
+     * picker stays empty between picks, so picking a file that is already posted still reaches
+     * `onSelect`. A native form reset, including the one React runs after a form action, leaves
+     * the list and the post as they are. Without a `name`, the files post only under an
+     * enclosing `Field.Root`'s `name`, and without `files` the Root posts nothing.
      */
     files?: readonly File[];
     /**
-     * Require at least one file in `files` before a form submits. An empty or undefined `files`
+     * Requires at least one file in `files` before a form submits. An empty or undefined `files`
      * counts as no file, as a native file input with no selection does, and a native form's
      * submit stops and moves focus to the first enabled `FileUpload.Trigger`. Inside a
-     * `Field.Root`, the Field validates the files when its `validationMode` says and on a Base UI
-     * `Form` submit: with none it turns invalid with `valueMissing`, which
-     * `Field.Error match="valueMissing"` shows. A disabled Root is never required.
+     * `Field.Root`, the Trigger is the Field's control and `files` its value. The Field validates
+     * the files as its `validationMode` says, on the Trigger's blur in `onBlur` mode, and on a
+     * Base UI `Form` submit. With none, it turns invalid with `valueMissing`, so
+     * `Field.Error match="valueMissing"` describes the Trigger and marks it `aria-invalid`, and a
+     * `Form` focuses it. Adding a file clears the error, and opening the picker validates nothing.
+     * `onFormSubmit` receives the files under the Field's `name`. A disabled Root is never
+     * required.
      */
     required?: boolean;
     /**
-     * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
-     * every source enforces it: a file that fails it reaches `onReject` with `"type"`.
+     * The file types to take, in the `accept` attribute's syntax, such as `"image/*,.pdf"`. The
+     * picker receives it as it is, and every source, a pick, a drop or a paste, ends in the same
+     * check: a file that fails it reaches `onReject` with `"type"`.
      */
     accept?: string;
     /**
-     * Take more than one file. Without it, a pick, drop or paste in which more than one file
+     * Takes more than one file. Without it, a pick, drop or paste in which more than one file
      * passes `accept` rejects each of those with `"count"`. `accept` is checked first, so a file
      * that fails it is rejected with `"type"` and never counts.
      */
     multiple?: boolean;
-    /** The picker selects folders, and dropped folders expand into their files. */
+    /**
+     * The picker selects folders, and a dropped folder expands into the files inside it, at any
+     * depth. Each file's `webkitRelativePath` holds its path inside the folder, such as
+     * `photos/2024/meter.jpg`, for a dropped folder as for a picked one. While it is off, a
+     * dropped folder reaches `onReject` with `"directory"`.
+     */
     directory?: boolean;
-    /** Ask a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
+    /** Asks a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
     capture?: "user" | "environment";
     /**
-     * Ignore every source, and disable each `FileUpload.Trigger`. An enclosing disabled
+     * Ignores every source, and disables each `FileUpload.Trigger`. An enclosing disabled
      * `Field.Root` or `Field.Set` disables the Root as well.
      */
     disabled?: boolean;
-    /** Receives the files that passed `accept` and the count rule, in a fresh array for each call. */
+    /**
+     * Receives the files that passed `accept` and the count rule, in a fresh array for each call,
+     * which is yours to keep. The Root checks only `accept` and `multiple`. Check limits of your
+     * own, such as a file count or a size, here before you keep a file.
+     */
     onSelect?: (files: File[]) => void;
     /**
-     * Receives the files and folders that did not pass, with the reason for each. For one pick,
-     * drop or paste it runs right after `onSelect`, in the same task.
+     * Receives the files and folders that did not pass, with the reason for each: `"type"` for a
+     * file that fails `accept`, `"count"` for each passing file when a Root without `multiple`
+     * gets more than one, `"directory"` for a folder while `directory` is off, and `"unreadable"`
+     * for a file in a dropped folder that the browser could not read. For one pick, drop or paste,
+     * it runs right after `onSelect`, in the same task. Show the rejections in words, such as in
+     * an `Alert`, which announces itself.
      */
     onReject?: (rejections: FileRejection[]) => void;
   };
@@ -143,22 +180,12 @@ function writeFiles(input: HTMLInputElement, files: readonly File[]): void {
  * inside it, `useFileUpload().actions.add` and a drop on `FileUpload.Dropzone` all end in the
  * same split, which calls `onSelect` with the files that pass and `onReject` with the rest.
  *
- * To post with a native form, pass `name` and the controlled `files`, and add each `onSelect`
- * to `files`. The Root writes `files` into a second hidden file input, apart from the picker's,
- * so a submit or `new FormData(form)` carries exactly that list under `name`; an empty list posts
- * as a native file input with no selection does. The picker's input stays empty between picks,
- * so every pick reaches `onSelect` or `onReject`, and only what the parent adds is posted.
+ * The Root posts `files` through a second hidden file input, apart from the picker's, so the
+ * picker's input stays empty between picks and every pick reaches `onSelect` or `onReject`.
  * Chromium and WebKit empty a file input on a form reset, so the Root writes the list back after
- * a native reset, including the one React runs after a form action. A disabled Root posts
- * nothing. Without `files` nothing is posted.
- *
- * `required` asks for at least one file in `files`. The posting input then carries the validity
- * a native form and a Base UI `Field` read; it is visually hidden rather than `hidden`, so the
- * browser can stop a submit at it, and it hands focus to the first enabled `FileUpload.Trigger`.
- *
- * A disabled `Field.Root` or `Field.Set` disables the Root. Inside a `Field.Root`, the Trigger is
- * the Field's control and `files` its value: `FileUpload.Trigger` documents the rest of the Field
- * wiring.
+ * a native reset. Under `required`, the posting input carries the validity a native form and a
+ * Base UI `Field` read. It is visually hidden rather than `hidden`, so the browser can stop a
+ * submit at it, and it hands focus to the first enabled `FileUpload.Trigger`.
  */
 export function FileUploadRoot({
   name: nameProp,

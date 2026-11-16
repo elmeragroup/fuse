@@ -20,9 +20,13 @@ import type { ScatterRootContextValue } from "./scatter-chart-context";
  * @beta
  */
 export type ScatterChartPointsProps = ChartLayerProps & {
-  /** The series the points draw. An unknown key throws `unknown-key`. */
+  /**
+   * The series the points draw. An unknown key throws `unknown-key`. A series draws all its points
+   * as one SVG path, so 100,000 points stay one element per series, and a data update redraws the
+   * path in place. Overlapping dots of one series never darken each other.
+   */
   dataKey: string;
-  /** The dots' diameter: "sm" is 5 px, "md" 8 px and "lg" 11 px. "md" by default. */
+  /** The dots' diameter. "sm" is 5 px, "md" 8 px and "lg" 11 px. */
   size?: "sm" | "md" | "lg";
   /** The dots' look. "quiet" draws them pale, for a reference series such as last year. */
   variant?: "default" | "quiet";
@@ -34,16 +38,18 @@ export type ScatterChartPointsProps = ChartLayerProps & {
  * @beta
  */
 export type ScatterChartLineProps = ChartLayerProps & {
-  /** The series the line joins. An unknown key throws `unknown-key`. */
+  /**
+   * The series the line joins. An unknown key throws `unknown-key`. Fuse fits nothing, so compute
+   * a fitted line in the app and pass its points as a series of their own.
+   */
   dataKey: string;
   /**
-   * The curve through the points, in x order, ties by y. "linear" by default, which draws a fitted
-   * line through its points as straight segments. "step-after" holds each y until the next x, as a
-   * tariff step does.
+   * The d3 curve through the points, in x order, ties by y. "linear" draws straight segments
+   * between the points. "step-after" holds each y until the next x, as a tariff step does.
    */
   curve?: ScatterCurve;
   /**
-   * The line's look. "default" by default. "dashed" dashes the whole line, "flowing" runs its
+   * The line's look. "dashed" dashes the whole line, "flowing" runs its
    * dashes along it, which reduced motion stops, and "quiet" draws a thin, faint line.
    */
   variant?: "default" | "dashed" | "flowing" | "quiet";
@@ -56,7 +62,7 @@ export type ScatterChartLineProps = ChartLayerProps & {
  */
 export type ScatterChartActiveDotProps = ChartLayerProps & {
   /**
-   * The mark on the active point. "ring" by default, a ring around the point in its series' colour.
+   * The mark on the active point. "ring" draws a ring around the point in its series' colour.
    * "dot" draws a filled dot inside a ring of the surface the chart rests on, `--surface`,
    * for a series a Line draws alone.
    */

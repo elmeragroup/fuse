@@ -1,37 +1,98 @@
 ---
 lede: >
-  Preview. Cartesian charts over a category or time axis, with Panels for composed charts.
+  Preview, so names and props can change until Fuse's first stable release. Bars, lines and areas
+  over a category or time axis, with Panels for charts that mix units.
 ---
 
+import { ChartActiveDot } from "./demos/chart-active-dot";
+import { ChartActivePoint } from "./demos/chart-active-point";
+import { ChartActiveValueLine } from "./demos/chart-active-value-line";
 import { ChartAxisLabels } from "./demos/chart-axis-titles";
-import { ChartBackgroundPatterns } from "./demos/chart-background";
+import { ChartBackgroundPattern } from "./demos/chart-background";
+import { ChartBrushWindow } from "./demos/chart-brush";
 import { ChartComposedBarGroupLine } from "./demos/chart-composed-bar-group-line";
 import { ChartComposedBasic } from "./demos/chart-composed-basic";
-import { ChartComposedBump } from "./demos/chart-composed-bump";
-import { ChartComposedDashed } from "./demos/chart-composed-dashed";
 import { ChartComposedDots } from "./demos/chart-composed-dots";
-import { ChartComposedFlowing } from "./demos/chart-composed-flowing";
 import { ChartComposedGlowing } from "./demos/chart-composed-glowing";
 import { ChartComposedGradientColors } from "./demos/chart-composed-gradient-colors";
-import { ChartComposedHoverHighlight } from "./demos/chart-composed-hover-highlight";
 import { ChartComposedLoading } from "./demos/chart-composed-loading";
-import { ChartComposedVariants } from "./demos/chart-composed-variants";
 import { ChartCrosshairBand } from "./demos/chart-crosshair";
+import { ChartCrosshairLine } from "./demos/chart-crosshair-line";
+import { ChartDemo } from "./demos/chart-demo";
 import { ChartEmptyState } from "./demos/chart-empty";
+import { ChartEntranceCenter } from "./demos/chart-entrance-center";
+import { ChartEntranceEdges } from "./demos/chart-entrance-edges";
+import { ChartEntranceNone } from "./demos/chart-entrance-none";
+import { ChartEntranceRight } from "./demos/chart-entrance-right";
 import { ChartHeadlineFigure } from "./demos/chart-headline";
-import { ChartHourlyUsage } from "./demos/chart-hourly-usage";
-import { ChartMonthUsageAndPrice } from "./demos/chart-month-usage-and-price";
-import { ChartProsumerDay } from "./demos/chart-prosumer-day";
-import { ChartReferenceAreas } from "./demos/chart-reference-area";
-import { ChartReferenceLines } from "./demos/chart-reference-line";
+import { ChartIntervalDay } from "./demos/chart-interval-day";
+import { ChartIntervalMinute } from "./demos/chart-interval-minute";
+import { ChartIntervalMonth } from "./demos/chart-interval-month";
+import { ChartIntervalQuarterHour } from "./demos/chart-interval-quarter-hour";
+import { ChartIntervalSecond } from "./demos/chart-interval-second";
+import { ChartIntervalWeek } from "./demos/chart-interval-week";
+import { ChartIntervalYear } from "./demos/chart-interval-year";
+import { ChartMarker } from "./demos/chart-marker";
 import { ChartSeriesToggles } from "./demos/chart-legend-toggles";
+import { ChartSlotLabel } from "./demos/chart-slot-label";
+import { ChartTableColumn } from "./demos/chart-table-column";
 import { ChartTablePages } from "./demos/chart-table";
 import { ChartTickDots } from "./demos/chart-tick-dot";
-import { ChartTooltipDefault } from "./demos/chart-tooltip-default";
 import { ChartTooltipFrosted } from "./demos/chart-tooltip-frosted";
 import { ChartTooltipTop } from "./demos/chart-tooltip-anchor";
 import { ChartTotalPrice } from "./demos/chart-total-price";
 import { ChartUsageAndPrice } from "./demos/chart-usage-and-price";
+import { ChartYAxisEnd } from "./demos/chart-y-axis-end";
+import { ChartGridDashed } from "./demos/chart-grid-dashed";
+import { ChartGridVertical } from "./demos/chart-grid-vertical";
+import { ChartGridBoth } from "./demos/chart-grid-both";
+import { ChartDotsHalo } from "./demos/chart-dots-halo";
+import { ChartDotsRing } from "./demos/chart-dots-ring";
+import { ChartActiveDotHalo } from "./demos/chart-active-dot-halo";
+import { ChartActiveDotPing } from "./demos/chart-active-dot-ping";
+import { ChartActiveDotRing } from "./demos/chart-active-dot-ring";
+import { ChartMarkerHalo } from "./demos/chart-marker-halo";
+import { ChartMarkerPing } from "./demos/chart-marker-ping";
+import { ChartMarkerRing } from "./demos/chart-marker-ring";
+import { ChartCrosshairFadeTop } from "./demos/chart-crosshair-fade-top";
+import { ChartCrosshairFadeBottom } from "./demos/chart-crosshair-fade-bottom";
+import { ChartCrosshairFadeNone } from "./demos/chart-crosshair-fade-none";
+import { ChartReferenceLineDashed } from "./demos/chart-reference-line-dashed";
+import { ChartReferenceLineMuted } from "./demos/chart-reference-line-muted";
+import { ChartReferenceLineError } from "./demos/chart-reference-line-error";
+import { ChartReferenceAreaMuted } from "./demos/chart-reference-area-muted";
+import { ChartReferenceAreaError } from "./demos/chart-reference-area-error";
+import { ChartHeadlineFirst } from "./demos/chart-headline-first";
+import { ChartHeadlineMin } from "./demos/chart-headline-min";
+import { ChartHeadlineNow } from "./demos/chart-headline-now";
+import { ChartLegendTop } from "./demos/chart-legend-top";
+import { ChartLegendStart } from "./demos/chart-legend-start";
+import { ChartLegendEnd } from "./demos/chart-legend-end";
+import { ChartSwatchSquareOutline } from "./demos/chart-swatch-square-outline";
+import { ChartSwatchCircle } from "./demos/chart-swatch-circle";
+import { ChartSwatchCircleOutline } from "./demos/chart-swatch-circle-outline";
+import { ChartSwatchLine } from "./demos/chart-swatch-line";
+import { ChartSwatchBar } from "./demos/chart-swatch-bar";
+import { ChartLegendValueFirst } from "./demos/chart-legend-value-first";
+import { ChartLegendValueMin } from "./demos/chart-legend-value-min";
+import { ChartLegendValueMax } from "./demos/chart-legend-value-max";
+import { ChartLegendValueNow } from "./demos/chart-legend-value-now";
+import { ChartSeriesTogglesTop } from "./demos/chart-legend-toggles-top";
+import { ChartSeriesTogglesStart } from "./demos/chart-legend-toggles-start";
+import { ChartSeriesTogglesEnd } from "./demos/chart-legend-toggles-end";
+import { ChartBackgroundFourPointedStar } from "./demos/chart-background-4-pointed-star";
+import { ChartBackgroundBubbles } from "./demos/chart-background-bubbles";
+import { ChartBackgroundCrossHatch } from "./demos/chart-background-cross-hatch";
+import { ChartBackgroundDiagonalLines } from "./demos/chart-background-diagonal-lines";
+import { ChartBackgroundFallingTriangles } from "./demos/chart-background-falling-triangles";
+import { ChartBackgroundGrid } from "./demos/chart-background-grid";
+import { ChartBackgroundOverlappingCircles } from "./demos/chart-background-overlapping-circles";
+import { ChartBackgroundPlus } from "./demos/chart-background-plus";
+import { ChartBackgroundTinyCheckers } from "./demos/chart-background-tiny-checkers";
+import { ChartBackgroundWiggleLines } from "./demos/chart-background-wiggle-lines";
+import { ChartLoadingArea } from "./demos/chart-loading-area";
+import { ChartLoadingLine } from "./demos/chart-loading-line";
+import { ChartPanelNoZeroBaseline } from "./demos/chart-panel-no-zero-baseline";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -39,49 +100,101 @@ export const metadata = componentMetadata("chart");
 
 <ComponentIntro slug="chart" />
 
+<DefaultDemo slug="chart" file="chart-demo.tsx">
+  <ChartDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Chart } from "@elmeragroup/fuse/chart";
+import "@elmeragroup/fuse/chart.css";
+
+<Chart.Root data={data} config={config} xKey="month" aria-label="Usage per month">
+  <Chart.YAxis />
+  <Chart.XAxis />
+  <Chart.Bar dataKey="kwh" />
+  <Chart.Tooltip />
+  <Chart.Table />
+</Chart.Root>
+```
+
+## Composition
+
 <Prose>
 
-The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts. Its x axis holds categories or time slots, evenly spaced. A numeric x axis is [`ScatterChart`](/components/scatter-chart), which places each point at its value and draws curves over unevenly spaced numbers too.
+`Chart.Root` reads every series from `config` and draws its children in the order you write them, so write the parts in paint order. Bars, lines and areas in one Root share its x axis and one value axis. To give series of different units their own value axis, put each set in a `Chart.Panel`. The Panels stack as rows over Root's x axis and share its tooltip, legend and table. `BarChart`, `LineChart` and `AreaChart` are `Chart` under other names, so their parts mix in one Root. For a numeric x axis, use [`ScatterChart`](/components/scatter-chart).
 
 </Prose>
 
-<Demo slug="chart" id="usage-and-price" title="Usage and price" file="chart-usage-and-price.tsx">
-  <ChartUsageAndPrice />
+## Examples
+
+<Demo slug="chart" id="second-interval" title="Second interval" level={3} file="chart-interval-second.tsx">
+  <ChartIntervalSecond />
 </Demo>
 
-<Demo slug="chart" id="hourly-usage" title="Hourly usage" file="chart-hourly-usage.tsx">
-  <ChartHourlyUsage />
+<Demo slug="chart" id="minute-interval" title="Minute interval" level={3} file="chart-interval-minute.tsx">
+  <ChartIntervalMinute />
 </Demo>
-
-## Composed charts
-
-<Prose>
-
-Bars and lines share one Root and one x axis. Write the parts in paint order, and every series reads one value axis.
-
-To give two series of different units their own value axis, put each in a `Chart.Panel`. The Panels stack as rows on Root's x grid and share its surface, tooltip and table. Each Panel takes its own `yBaseline` and `yInclude`, and Root's own `yBaseline` and `yInclude` then govern nothing. Every config key sits in one Panel, and every plot part sits in the Panel whose series it draws. The x axis goes in the last Panel. Write config in Panel order, because Up and Down walk the series in config order across the Panels.
-
-A series may take a coarser `interval` than Root's, such as hourly usage under quarter-hour prices. Its bar spans the quarters of its hour, and the option, the tooltip and the table name its hour. Fuse never sums or averages.
-
-</Prose>
 
 <Demo
   slug="chart"
-  id="month-usage-and-price"
-  title="A month of usage and price"
-  file="chart-month-usage-and-price.tsx">
-  <ChartMonthUsageAndPrice />
+  id="quarter-hour-interval"
+  title="Quarter-hour interval"
+  level={3}
+  file="chart-interval-quarter-hour.tsx">
+  <ChartIntervalQuarterHour />
 </Demo>
 
-<Demo slug="chart" id="prosumer-day" title="Bought and sold energy" file="chart-prosumer-day.tsx">
-  <ChartProsumerDay />
+<Demo slug="chart" id="day-interval" title="Day interval" level={3} file="chart-interval-day.tsx">
+  <ChartIntervalDay />
 </Demo>
 
-<Demo slug="chart" id="total-price" title="Total price" file="chart-total-price.tsx">
-  <ChartTotalPrice />
+<Demo slug="chart" id="week-interval" title="Week interval" level={3} file="chart-interval-week.tsx">
+  <ChartIntervalWeek />
 </Demo>
 
-<Demo slug="chart" id="composed-basic" title="Bars and a line" file="chart-composed-basic.tsx">
+<Demo slug="chart" id="month-interval" title="Month interval" level={3} file="chart-interval-month.tsx">
+  <ChartIntervalMonth />
+</Demo>
+
+<Demo slug="chart" id="year-interval" title="Year interval" level={3} file="chart-interval-year.tsx">
+  <ChartIntervalYear />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="entrance-from-the-right"
+  title="Entrance from the right"
+  level={3}
+  file="chart-entrance-right.tsx">
+  <ChartEntranceRight />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="entrance-from-the-center"
+  title="Entrance from the center"
+  level={3}
+  file="chart-entrance-center.tsx">
+  <ChartEntranceCenter />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="entrance-from-the-edges"
+  title="Entrance from the edges"
+  level={3}
+  file="chart-entrance-edges.tsx">
+  <ChartEntranceEdges />
+</Demo>
+
+<Demo slug="chart" id="no-entrance" title="No entrance" level={3} file="chart-entrance-none.tsx">
+  <ChartEntranceNone />
+</Demo>
+
+<Demo slug="chart" id="composed-basic" title="Bars and a line" level={3} file="chart-composed-basic.tsx">
   <ChartComposedBasic />
 </Demo>
 
@@ -89,193 +202,491 @@ A series may take a coarser `interval` than Root's, such as hourly usage under q
   slug="chart"
   id="composed-bar-group-line"
   title="A line beside a bar group"
+  level={3}
   file="chart-composed-bar-group-line.tsx">
   <ChartComposedBarGroupLine />
+</Demo>
+
+<Demo slug="chart" id="panels" title="Panels" level={3} file="chart-usage-and-price.tsx">
+  <ChartUsageAndPrice />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="panel-no-zero-baseline"
+  title="Panel without a zero baseline"
+  level={3}
+  file="chart-panel-no-zero-baseline.tsx">
+  <ChartPanelNoZeroBaseline />
 </Demo>
 
 <Demo
   slug="chart"
   id="composed-gradient-colors"
   title="Colour lists"
+  level={3}
   file="chart-composed-gradient-colors.tsx">
   <ChartComposedGradientColors />
 </Demo>
 
-<Demo slug="chart" id="composed-variants" title="Tinted bars" file="chart-composed-variants.tsx">
-  <ChartComposedVariants />
-</Demo>
-
-<Demo slug="chart" id="composed-dashed" title="A dashed line" file="chart-composed-dashed.tsx">
-  <ChartComposedDashed />
-</Demo>
-
-<Demo slug="chart" id="composed-flowing" title="A flowing line" file="chart-composed-flowing.tsx">
-  <ChartComposedFlowing />
-</Demo>
-
-<Demo slug="chart" id="composed-bump" title="A bump curve" file="chart-composed-bump.tsx">
-  <ChartComposedBump />
-</Demo>
-
-<Demo slug="chart" id="composed-dots" title="Dots" file="chart-composed-dots.tsx">
+<Demo slug="chart" id="composed-dots" title="Dots" level={3} file="chart-composed-dots.tsx">
   <ChartComposedDots />
 </Demo>
 
-<Demo slug="chart" id="composed-hover-highlight" title="Hover dim" file="chart-composed-hover-highlight.tsx">
-  <ChartComposedHoverHighlight />
+<Demo slug="chart" id="dots-halo" title="Halo dots" level={3} file="chart-dots-halo.tsx">
+  <ChartDotsHalo />
 </Demo>
 
-<Demo slug="chart" id="composed-glowing" title="Glow" file="chart-composed-glowing.tsx">
+<Demo slug="chart" id="dots-ring" title="Ring dots" level={3} file="chart-dots-ring.tsx">
+  <ChartDotsRing />
+</Demo>
+
+<Demo slug="chart" id="active-dot" title="Active dot" level={3} file="chart-active-dot.tsx">
+  <ChartActiveDot />
+</Demo>
+
+<Demo slug="chart" id="active-dot-halo" title="Halo active dot" level={3} file="chart-active-dot-halo.tsx">
+  <ChartActiveDotHalo />
+</Demo>
+
+<Demo slug="chart" id="active-dot-ping" title="Pinging active dot" level={3} file="chart-active-dot-ping.tsx">
+  <ChartActiveDotPing />
+</Demo>
+
+<Demo slug="chart" id="active-dot-ring" title="Ring active dot" level={3} file="chart-active-dot-ring.tsx">
+  <ChartActiveDotRing />
+</Demo>
+
+<Demo slug="chart" id="marker" title="Marker" level={3} file="chart-marker.tsx">
+  <ChartMarker />
+</Demo>
+
+<Demo slug="chart" id="marker-halo" title="Halo marker" level={3} file="chart-marker-halo.tsx">
+  <ChartMarkerHalo />
+</Demo>
+
+<Demo slug="chart" id="marker-ping" title="Pinging marker" level={3} file="chart-marker-ping.tsx">
+  <ChartMarkerPing />
+</Demo>
+
+<Demo slug="chart" id="marker-ring" title="Ring marker" level={3} file="chart-marker-ring.tsx">
+  <ChartMarkerRing />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="active-value-line"
+  title="Active value line"
+  level={3}
+  file="chart-active-value-line.tsx">
+  <ChartActiveValueLine />
+</Demo>
+
+<Demo slug="chart" id="composed-glowing" title="Glow" level={3} file="chart-composed-glowing.tsx">
   <ChartComposedGlowing />
 </Demo>
 
-<Demo slug="chart" id="composed-loading" title="Loading" file="chart-composed-loading.tsx">
-  <ChartComposedLoading />
-</Demo>
-
-## Headline
-
-<Demo slug="chart" id="headline-and-takeaway" title="Headline and takeaway" file="chart-headline.tsx">
+<Demo
+  slug="chart"
+  id="headline-and-takeaway"
+  title="Headline and takeaway"
+  level={3}
+  file="chart-headline.tsx">
   <ChartHeadlineFigure />
 </Demo>
 
-## Tooltip
-
-<Demo slug="chart" id="tooltip-default" title="Default" file="chart-tooltip-default.tsx">
-  <ChartTooltipDefault />
+<Demo
+  slug="chart"
+  id="headline-first"
+  title="Headline with the first hour"
+  level={3}
+  file="chart-headline-first.tsx">
+  <ChartHeadlineFirst />
 </Demo>
 
-<Demo slug="chart" id="tooltip-frosted" title="Frosted" file="chart-tooltip-frosted.tsx">
+<Demo
+  slug="chart"
+  id="headline-min"
+  title="Headline with the lowest hour"
+  level={3}
+  file="chart-headline-min.tsx">
+  <ChartHeadlineMin />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="headline-now"
+  title="Headline with the current hour"
+  level={3}
+  file="chart-headline-now.tsx">
+  <ChartHeadlineNow />
+</Demo>
+
+<Demo slug="chart" id="tooltip-frosted" title="Frosted tooltip" level={3} file="chart-tooltip-frosted.tsx">
   <ChartTooltipFrosted />
 </Demo>
 
-<Demo slug="chart" id="tooltip-top" title="Pinned to the plot top" file="chart-tooltip-anchor.tsx">
+<Demo
+  slug="chart"
+  id="tooltip-top"
+  title="Tooltip pinned to the plot top"
+  level={3}
+  file="chart-tooltip-anchor.tsx">
   <ChartTooltipTop />
 </Demo>
 
-<Prose>
+<Demo slug="chart" id="tooltip-total" title="Tooltip total" level={3} file="chart-total-price.tsx">
+  <ChartTotalPrice />
+</Demo>
 
-On a vertical chart the tooltip centres on the active slot, stays inside the chart's box and then the viewport, and rests 8 px above the highest mark under its own width. Those marks are bars, stack tops, line and area strokes between readings, and dots, so the tooltip never covers the data it reads. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. `anchor="top"` keeps it on the plot top instead, and Panels always do.
+<Demo
+  slug="chart"
+  id="active-point"
+  title="Active point in the tooltip"
+  level={3}
+  file="chart-active-point.tsx">
+  <ChartActivePoint />
+</Demo>
 
-A step to another slot by pointer, key or touch glides the tooltip there over `--chart-glide`, 924 ms on a spring that never overshoots, which covers four fifths of the way in the first 300 ms. It moves at once when it opens, when it flips to another side, when the page scrolls or resizes, on a data update, when its path over the marks would leave the viewport, and under reduced motion.
-
-The tooltip stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.
-
-</Prose>
-
-## Legend toggles
-
-<Demo slug="chart" id="series-toggles" title="Series toggles" file="chart-legend-toggles.tsx">
+<Demo slug="chart" id="series-toggles" title="Series toggles" level={3} file="chart-legend-toggles.tsx">
   <ChartSeriesToggles />
 </Demo>
 
-## Guides
+<Demo slug="chart" id="legend-top" title="Legend at the top" level={3} file="chart-legend-top.tsx">
+  <ChartLegendTop />
+</Demo>
 
-<Demo slug="chart" id="crosshair" title="Crosshair" file="chart-crosshair.tsx">
+<Demo slug="chart" id="legend-start" title="Legend at the start" level={3} file="chart-legend-start.tsx">
+  <ChartLegendStart />
+</Demo>
+
+<Demo slug="chart" id="legend-end" title="Legend at the end" level={3} file="chart-legend-end.tsx">
+  <ChartLegendEnd />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="swatch-square-outline"
+  title="Square outline swatches"
+  level={3}
+  file="chart-swatch-square-outline.tsx">
+  <ChartSwatchSquareOutline />
+</Demo>
+
+<Demo slug="chart" id="swatch-circle" title="Circle swatches" level={3} file="chart-swatch-circle.tsx">
+  <ChartSwatchCircle />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="swatch-circle-outline"
+  title="Circle outline swatches"
+  level={3}
+  file="chart-swatch-circle-outline.tsx">
+  <ChartSwatchCircleOutline />
+</Demo>
+
+<Demo slug="chart" id="swatch-line" title="Line swatches" level={3} file="chart-swatch-line.tsx">
+  <ChartSwatchLine />
+</Demo>
+
+<Demo slug="chart" id="swatch-bar" title="Bar swatches" level={3} file="chart-swatch-bar.tsx">
+  <ChartSwatchBar />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="legend-value-first"
+  title="Legend values from the first hour"
+  level={3}
+  file="chart-legend-value-first.tsx">
+  <ChartLegendValueFirst />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="legend-value-min"
+  title="Legend values from the lowest hour"
+  level={3}
+  file="chart-legend-value-min.tsx">
+  <ChartLegendValueMin />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="legend-value-max"
+  title="Legend values from the highest hour"
+  level={3}
+  file="chart-legend-value-max.tsx">
+  <ChartLegendValueMax />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="legend-value-now"
+  title="Legend values from the current hour"
+  level={3}
+  file="chart-legend-value-now.tsx">
+  <ChartLegendValueNow />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="series-toggles-top"
+  title="Series toggles at the top"
+  level={3}
+  file="chart-legend-toggles-top.tsx">
+  <ChartSeriesTogglesTop />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="series-toggles-start"
+  title="Series toggles at the start"
+  level={3}
+  file="chart-legend-toggles-start.tsx">
+  <ChartSeriesTogglesStart />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="series-toggles-end"
+  title="Series toggles at the end"
+  level={3}
+  file="chart-legend-toggles-end.tsx">
+  <ChartSeriesTogglesEnd />
+</Demo>
+
+<Demo slug="chart" id="crosshair" title="Band crosshair" level={3} file="chart-crosshair.tsx">
   <ChartCrosshairBand />
 </Demo>
 
-<Prose>
-
-The line crosshair fades out over 10% of the plot at both ends by default. `fade="top"` or `"bottom"` fades one end, read along the value axis, and `"none"` draws it whole. `--chart-crosshair-width` sets its width, 1 px by default. The line glides from slot to slot on a spring that quickens with the pointer: a keyboard step or a slow scrub settles in about half a second, and a fast sweep in about 120 ms. A `Chart.ActiveDot` glides with it along its series' Line, Area or Bar: on bars it rides a straight track through their tops. It moves at once across a gap or a missing reading. Both move at once under reduced motion. A `Chart.SlotLabel` inside the crosshair prints the active slot on the x axis.
-
-</Prose>
-
-<Demo slug="chart" id="reference-lines" title="Reference lines" file="chart-reference-line.tsx">
-  <ChartReferenceLines />
+<Demo slug="chart" id="line-crosshair" title="Line crosshair" level={3} file="chart-crosshair-line.tsx">
+  <ChartCrosshairLine />
 </Demo>
 
-<Demo slug="chart" id="reference-areas" title="Reference areas" file="chart-reference-area.tsx">
-  <ChartReferenceAreas />
+<Demo
+  slug="chart"
+  id="crosshair-fade-top"
+  title="Crosshair fading at the top"
+  level={3}
+  file="chart-crosshair-fade-top.tsx">
+  <ChartCrosshairFadeTop />
 </Demo>
 
-<Prose>
+<Demo
+  slug="chart"
+  id="crosshair-fade-bottom"
+  title="Crosshair fading at the bottom"
+  level={3}
+  file="chart-crosshair-fade-bottom.tsx">
+  <ChartCrosshairFadeBottom />
+</Demo>
 
-Root never reads its children, so a reference outside the data reaches the axis only through `yInclude`.
+<Demo
+  slug="chart"
+  id="crosshair-fade-none"
+  title="Crosshair without fade"
+  level={3}
+  file="chart-crosshair-fade-none.tsx">
+  <ChartCrosshairFadeNone />
+</Demo>
 
-</Prose>
+<Demo slug="chart" id="slot-label" title="Slot label" level={3} file="chart-slot-label.tsx">
+  <ChartSlotLabel />
+</Demo>
 
-## Axes
+<Demo
+  slug="chart"
+  id="reference-line-dashed"
+  title="Dashed reference line"
+  level={3}
+  file="chart-reference-line-dashed.tsx">
+  <ChartReferenceLineDashed />
+</Demo>
 
-<Demo slug="chart" id="axis-labels" title="Axis labels" file="chart-axis-titles.tsx">
+<Demo
+  slug="chart"
+  id="reference-line-muted"
+  title="Muted reference line"
+  level={3}
+  file="chart-reference-line-muted.tsx">
+  <ChartReferenceLineMuted />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="reference-line-error"
+  title="Error reference line"
+  level={3}
+  file="chart-reference-line-error.tsx">
+  <ChartReferenceLineError />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="reference-area-muted"
+  title="Muted reference area"
+  level={3}
+  file="chart-reference-area-muted.tsx">
+  <ChartReferenceAreaMuted />
+</Demo>
+
+<Demo
+  slug="chart"
+  id="reference-area-error"
+  title="Error reference area"
+  level={3}
+  file="chart-reference-area-error.tsx">
+  <ChartReferenceAreaError />
+</Demo>
+
+<Demo slug="chart" id="brush" title="Brush" level={3} file="chart-brush.tsx">
+  <ChartBrushWindow />
+</Demo>
+
+<Demo slug="chart" id="axis-labels" title="Axis labels" level={3} file="chart-axis-titles.tsx">
   <ChartAxisLabels />
 </Demo>
 
-<Demo slug="chart" id="tick-dots" title="Tick dots" file="chart-tick-dot.tsx">
+<Demo slug="chart" id="grid-dashed" title="Dashed grid" level={3} file="chart-grid-dashed.tsx">
+  <ChartGridDashed />
+</Demo>
+
+<Demo slug="chart" id="grid-vertical" title="Vertical grid lines" level={3} file="chart-grid-vertical.tsx">
+  <ChartGridVertical />
+</Demo>
+
+<Demo slug="chart" id="grid-both" title="Grid lines both ways" level={3} file="chart-grid-both.tsx">
+  <ChartGridBoth />
+</Demo>
+
+<Demo slug="chart" id="tick-dots" title="Tick dots" level={3} file="chart-tick-dot.tsx">
   <ChartTickDots />
 </Demo>
 
-## Background
-
-<Demo slug="chart" id="background-patterns" title="Background patterns" file="chart-background.tsx">
-  <ChartBackgroundPatterns />
+<Demo
+  slug="chart"
+  id="value-axis-at-the-end"
+  title="Value axis at the end"
+  level={3}
+  file="chart-y-axis-end.tsx">
+  <ChartYAxisEnd />
 </Demo>
 
-## Surface
+<Demo slug="chart" id="background-pattern" title="Dot background" level={3} file="chart-background.tsx">
+  <ChartBackgroundPattern />
+</Demo>
 
-<Prose>
+<Demo
+  slug="chart"
+  id="background-4-pointed-star"
+  title="Four-pointed star background"
+  level={3}
+  file="chart-background-4-pointed-star.tsx">
+  <ChartBackgroundFourPointedStar />
+</Demo>
 
-`--surface` is the colour of the opaque fill an element sits on. Every Fuse container that paints a container role states its fill there, and a chart reads it for its cut-outs, the shapes that part overlapping marks: dot rings and halos, ring-dot holes, pie and ghost seams, isometric bar faces, reference-label halos, hollow legend swatches, and the polar radius, Now and value chips. Where nothing sets `--surface`, they paint the page colour, `--background`. A chart inside one of these hosts needs nothing more:
+<Demo
+  slug="chart"
+  id="background-bubbles"
+  title="Bubbles background"
+  level={3}
+  file="chart-background-bubbles.tsx">
+  <ChartBackgroundBubbles />
+</Demo>
 
-| Host                                   | Fill                                                  |
-| -------------------------------------- | ----------------------------------------------------- |
-| Card                                   | `card`                                                |
-| The muted CheckboxCard                 | `muted`                                               |
-| `Frame.Panel`                          | `panel`: `card` in light themes, `background` in dark |
-| The default Alert                      | `panel`                                               |
-| The cells of a framed Table            | `panel`                                               |
-| The bordered `VerticalTable` box       | `panel`                                               |
-| The outline Item                       | `panel`                                               |
-| An unchecked CheckboxItem or RadioItem | `card`                                                |
-| A checked CheckboxItem or RadioItem    | `muted`                                               |
-| A disabled CheckboxItem or RadioItem   | `selection-disabled-background`                       |
-| A hovered outline link Item            | `muted`                                               |
-| The warning and info Alerts            | `warning-soft`, `info-soft`                           |
-| The card Accordion item and its panel  | `card`                                                |
-| Calendar                               | `card`                                                |
-| Dialog, AlertDialog, Sheet             | `dialog`                                              |
-| Popover and the other anchored popups  | `popover`                                             |
-| The page                               | `background`, the fallback                            |
+<Demo
+  slug="chart"
+  id="background-cross-hatch"
+  title="Cross-hatch background"
+  level={3}
+  file="chart-background-cross-hatch.tsx">
+  <ChartBackgroundCrossHatch />
+</Demo>
 
-In light themes the `card` and `panel` hosts are white, so a chart in one rests on white even where the page is tinted.
+<Demo
+  slug="chart"
+  id="background-diagonal-lines"
+  title="Diagonal lines background"
+  level={3}
+  file="chart-background-diagonal-lines.tsx">
+  <ChartBackgroundDiagonalLines />
+</Demo>
 
-Beside `--surface`, each host states `--surface-muted-foreground`, the muted text paired with its fill. The polar radius values, the Now label, and the reference lines and labels in the default and muted tones read it, so they keep 4.5:1 on the chip or halo they sit on. The warning and info Alerts state their soft foreground there, and every other host states `--muted-foreground`, so a Card in a warning Alert does not inherit the Alert's text.
+<Demo
+  slug="chart"
+  id="background-falling-triangles"
+  title="Falling triangles background"
+  level={3}
+  file="chart-background-falling-triangles.tsx">
+  <ChartBackgroundFallingTriangles />
+</Demo>
 
-When you put a chart on another opaque fill, set both on that element beside the fill. `ChartStyle` types them for a `style`:
+<Demo slug="chart" id="background-grid" title="Grid background" level={3} file="chart-background-grid.tsx">
+  <ChartBackgroundGrid />
+</Demo>
 
-```tsx
-import type { ChartStyle } from "@elmeragroup/fuse/chart";
+<Demo
+  slug="chart"
+  id="background-overlapping-circles"
+  title="Overlapping circles background"
+  level={3}
+  file="chart-background-overlapping-circles.tsx">
+  <ChartBackgroundOverlappingCircles />
+</Demo>
 
-const muted: ChartStyle = {
-  background: "var(--muted)",
-  "--surface": "var(--muted)",
-  "--surface-muted-foreground": "var(--muted-foreground)",
-};
+<Demo slug="chart" id="background-plus" title="Plus background" level={3} file="chart-background-plus.tsx">
+  <ChartBackgroundPlus />
+</Demo>
 
-<div className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]">
-  {chart}
-</div>;
-<div style={muted}>{chart}</div>;
-```
+<Demo
+  slug="chart"
+  id="background-tiny-checkers"
+  title="Tiny checkers background"
+  level={3}
+  file="chart-background-tiny-checkers.tsx">
+  <ChartBackgroundTinyCheckers />
+</Demo>
 
-A translucent tint, such as a hovered or selected row, the destructive and success Alerts or the frosted chart tooltip, keeps the surface beneath it, so the cut-outs show the colour under the tint. An image or a gradient is no colour a cut-out can match.
+<Demo
+  slug="chart"
+  id="background-wiggle-lines"
+  title="Wiggle lines background"
+  level={3}
+  file="chart-background-wiggle-lines.tsx">
+  <ChartBackgroundWiggleLines />
+</Demo>
 
-</Prose>
-
-## Table and empty state
-
-<Demo slug="chart" id="table" title="A year of hours" file="chart-table.tsx">
+<Demo slug="chart" id="table" title="A year of hours in the table" level={3} file="chart-table.tsx">
   <ChartTablePages />
 </Demo>
 
-<Prose>
+<Demo slug="chart" id="table-column" title="Extra table column" level={3} file="chart-table-column.tsx">
+  <ChartTableColumn />
+</Demo>
 
-The table stays in the accessibility tree while it is collapsed. Past 500 rows it pages by calendar period, so a year of hours reads as 53 ISO weeks.
-
-</Prose>
-
-<Demo slug="chart" id="empty" title="No data yet" file="chart-empty.tsx">
+<Demo slug="chart" id="empty" title="No data yet" level={3} file="chart-empty.tsx">
   <ChartEmptyState />
 </Demo>
 
+<Demo
+  slug="chart"
+  id="composed-loading"
+  title="Loading a bar chart"
+  level={3}
+  file="chart-composed-loading.tsx">
+  <ChartComposedLoading />
+</Demo>
+
+<Demo slug="chart" id="loading-area" title="Loading an area chart" level={3} file="chart-loading-area.tsx">
+  <ChartLoadingArea />
+</Demo>
+
+<Demo slug="chart" id="loading-line" title="Loading a line chart" level={3} file="chart-loading-line.tsx">
+  <ChartLoadingLine />
+</Demo>
+
 <ApiReference slug="chart" />
+
+<ComponentTokens slug="chart" />

@@ -79,7 +79,7 @@ export const sidebarMenuItemClass = cn("group/menu-item relative");
 
 /**
  * `Sidebar.MenuSkeleton`: a loading row in the default menu row's box. Its text bar's width
- * cycles five values in the 50–90% band by the row's position among its siblings.
+ * cycles five values from 50% to 90% by the row's position among its siblings.
  */
 export const sidebarMenuSkeletonClass = cn(
   sidebarRowBoxClass,

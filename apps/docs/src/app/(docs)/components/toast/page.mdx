@@ -3,11 +3,21 @@ lede: >
   Brief notifications that appear and dismiss on their own.
 ---
 
-import { ToastStatuses } from "./demos/toast-statuses";
+import { ToastDemo } from "./demos/toast-demo";
+import { ToastInfo } from "./demos/toast-info";
+import { ToastSuccess } from "./demos/toast-success";
+import { ToastWarning } from "./demos/toast-warning";
+import { ToastError } from "./demos/toast-error";
+import { ToastLoading } from "./demos/toast-loading";
 import { ToastAction } from "./demos/toast-action";
 import { ToastPromise } from "./demos/toast-promise";
-import { ToastStacking } from "./demos/toast-stacking";
-import { ToastPlacement } from "./demos/toast-placement";
+import { ToastPromiseError } from "./demos/toast-promise-error";
+import { ToastLimit } from "./demos/toast-limit";
+import { ToastTopLeft } from "./demos/toast-top-left";
+import { ToastTopCenter } from "./demos/toast-top-center";
+import { ToastTopRight } from "./demos/toast-top-right";
+import { ToastBottomLeft } from "./demos/toast-bottom-left";
+import { ToastBottomCenter } from "./demos/toast-bottom-center";
 import { ToastModuleManager } from "./demos/toast-module-manager";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -16,37 +26,86 @@ export const metadata = componentMetadata("toast");
 
 <ComponentIntro slug="toast" />
 
-These examples render notifications inside their own preview areas so different examples can run together. In an application, use one provider and viewport for the shared notification stack. Handle the promise returned by `toastManager.promise`; the error toast does not consume its rejection. A `type` returned from `success` or `error`, such as `"warning"`, sets the settled status and its priority. Omit `loading` to show no toast until the promise settles. A loading toast the user closes stays closed when the promise settles.
+<DefaultDemo slug="toast" file="toast-demo.tsx">
+  <ToastDemo />
+</DefaultDemo>
 
-<Demo slug="toast" id="statuses" title="Statuses" file="toast-statuses.tsx">
-  <ToastStatuses />
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Toast } from "@elmeragroup/fuse/toast";
+
+<Toast.Provider>
+  <SaveButton />
+  <Toast.Viewport />
+</Toast.Provider>
+
+function SaveButton() {
+  const toastManager = Toast.useToastManager();
+  return <button onClick={() => toastManager.add({ title: "Draft saved" })}>Save draft</button>;
+}
+```
+
+## Examples
+
+<Demo slug="toast" id="info" title="Info" level={3} file="toast-info.tsx">
+  <ToastInfo />
 </Demo>
 
-<Demo slug="toast" id="action" title="Action" file="toast-action.tsx">
+<Demo slug="toast" id="success" title="Success" level={3} file="toast-success.tsx">
+  <ToastSuccess />
+</Demo>
+
+<Demo slug="toast" id="warning" title="Warning" level={3} file="toast-warning.tsx">
+  <ToastWarning />
+</Demo>
+
+<Demo slug="toast" id="error" title="Error" level={3} file="toast-error.tsx">
+  <ToastError />
+</Demo>
+
+<Demo slug="toast" id="loading" title="Loading" level={3} file="toast-loading.tsx">
+  <ToastLoading />
+</Demo>
+
+<Demo slug="toast" id="action" title="Action" level={3} file="toast-action.tsx">
   <ToastAction />
 </Demo>
 
-<Demo slug="toast" id="promise" title="Promise" file="toast-promise.tsx">
+<Demo slug="toast" id="promise" title="Promise" level={3} file="toast-promise.tsx">
   <ToastPromise />
 </Demo>
 
-<Demo slug="toast" id="stacking" title="Stacking" file="toast-stacking.tsx">
-  <ToastStacking />
+<Demo slug="toast" id="promise-error" title="Rejected promise" level={3} file="toast-promise-error.tsx">
+  <ToastPromiseError />
 </Demo>
 
-## Viewport placement
-
-From the `sm` breakpoint up, `placement` on `Toast.Viewport` puts the stack at the top or bottom edge, aligned left, center or right. The default is `"bottom-right"`. A top placement stacks downward and slides toasts in from above. Toasts dismiss by swiping toward the edge they sit on and toward their side, or right for a centered stack; set `swipeDirection` on `Toast.Root` to choose other directions. On narrower screens every placement sits at the bottom, spans the screen width and swipes down or right.
-
-<Demo slug="toast" id="placement" title="Placement" file="toast-placement.tsx">
-  <ToastPlacement />
+<Demo slug="toast" id="limit" title="Limit" level={3} file="toast-limit.tsx">
+  <ToastLimit />
 </Demo>
 
-## Toasts outside React
+<Demo slug="toast" id="top-left" title="Top left" level={3} file="toast-top-left.tsx">
+  <ToastTopLeft />
+</Demo>
 
-Code outside the React tree, such as a timer or a query-cache listener, raises toasts through a manager from `Toast.createToastManager()`. Create it at module scope and pass it to `Toast.Provider` as `toastManager`. The manager queues calls made before the provider connects, including calls made before it mounts and calls from mount effects in its subtree, and replays them in call order once it connects. `add` returns the toast id at once, so a queued toast can still be updated or closed. Mount the manager in one provider at a time.
+<Demo slug="toast" id="top-center" title="Top center" level={3} file="toast-top-center.tsx">
+  <ToastTopCenter />
+</Demo>
 
-<Demo slug="toast" id="module-manager" title="Module manager" file="toast-module-manager.tsx">
+<Demo slug="toast" id="top-right" title="Top right" level={3} file="toast-top-right.tsx">
+  <ToastTopRight />
+</Demo>
+
+<Demo slug="toast" id="bottom-left" title="Bottom left" level={3} file="toast-bottom-left.tsx">
+  <ToastBottomLeft />
+</Demo>
+
+<Demo slug="toast" id="bottom-center" title="Bottom center" level={3} file="toast-bottom-center.tsx">
+  <ToastBottomCenter />
+</Demo>
+
+<Demo slug="toast" id="module-manager" title="Module manager" level={3} file="toast-module-manager.tsx">
   <ToastModuleManager />
 </Demo>
 

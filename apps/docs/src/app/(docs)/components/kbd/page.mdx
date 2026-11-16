@@ -3,9 +3,12 @@ lede: >
   A key cap for keyboard instructions and shortcut hints, and a group for keys pressed together.
 ---
 
-import { KbdKeys } from "./demos/kbd-keys";
+import { KbdDemo } from "./demos/kbd-demo";
+import { KbdInASentence } from "./demos/kbd-in-a-sentence";
 import { KbdCombination } from "./demos/kbd-combination";
-import { KbdInputGroup } from "./demos/kbd-input-group";
+import { KbdGlyph } from "./demos/kbd-glyph";
+import { KbdIcon } from "./demos/kbd-icon";
+import { KbdShortcutHint } from "./demos/kbd-shortcut-hint";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,28 +16,42 @@ export const metadata = componentMetadata("kbd");
 
 <ComponentIntro slug="kbd" />
 
-<Prose>
+<DefaultDemo slug="kbd" file="kbd-demo.tsx">
+  <KbdDemo />
+</DefaultDemo>
 
-`Kbd` renders one key as a `<kbd>` element. `KbdGroup` wraps the caps of a combination in an outer `<kbd>`, which is how HTML marks keys pressed together. A cap holds whatever you give it: a word, a glyph such as `⌘`, or an icon.
+## Usage
 
-Kbd renders the glyph you pass and never detects the platform, because the server cannot know the visitor's operating system and a guess would differ from the browser's render. When your app knows the platform, pass `⌘` or `Ctrl` yourself.
+{/* prettier-ignore */}
+```tsx
+import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
 
-Screen readers read a cap. When a cap only repeats a shortcut, set `aria-hidden` on it and put the shortcut on the control it belongs to in `aria-keyshortcuts`, as the search field below does.
+<KbdGroup>
+  <Kbd>Ctrl</Kbd>
+  <Kbd>K</Kbd>
+</KbdGroup>
+```
 
-A cap has one size at both densities and takes its colours from the muted role tokens. In an `InputGroup` addon, a cap or a group is the addon's direct child and rounds with the addon's inner corner. A group passes that corner on to its caps.
+## Examples
 
-</Prose>
-
-<Demo slug="kbd" id="keys" title="Keys in a sentence" file="kbd-keys.tsx">
-  <KbdKeys />
+<Demo slug="kbd" id="in-a-sentence" title="In a sentence" level={3} file="kbd-in-a-sentence.tsx">
+  <KbdInASentence />
 </Demo>
 
-<Demo slug="kbd" id="combination" title="Combinations" file="kbd-combination.tsx">
+<Demo slug="kbd" id="combination" title="Combination" level={3} file="kbd-combination.tsx">
   <KbdCombination />
 </Demo>
 
-<Demo slug="kbd" id="input-group" title="Shortcut hint in a search field" file="kbd-input-group.tsx">
-  <KbdInputGroup />
+<Demo slug="kbd" id="glyph" title="Glyph" level={3} file="kbd-glyph.tsx">
+  <KbdGlyph />
+</Demo>
+
+<Demo slug="kbd" id="icon" title="Icon" level={3} file="kbd-icon.tsx">
+  <KbdIcon />
+</Demo>
+
+<Demo slug="kbd" id="shortcut-hint" title="Shortcut hint" level={3} file="kbd-shortcut-hint.tsx">
+  <KbdShortcutHint />
 </Demo>
 
 <ApiReference slug="kbd" />

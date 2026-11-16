@@ -1,26 +1,15 @@
 "use client";
 
-import { useState } from "react";
-
 import { Field } from "@elmeragroup/fuse/field";
 import { Input } from "@elmeragroup/fuse/input";
 
 export function FieldErrorDemo() {
-  const [email, setEmail] = useState("ada");
-  const isInvalid = !email.includes("@");
-
   return (
-    <Field.Root invalid={isInvalid}>
+    <Field.Root invalid>
       <Field.Label>Email</Field.Label>
-      <Input
-        type="email"
-        value={email}
-        onChange={(event) => {
-          setEmail(event.target.value);
-        }}
-      />
-      {isInvalid ? <Field.Error>Enter a work email.</Field.Error> : null}
-      <Field.Description>Validation lives outside the field; the message is passed in.</Field.Description>
+      <Input type="email" defaultValue="ada" />
+      <Field.Error>Enter a work email.</Field.Error>
+      <Field.Description>Work address preferred.</Field.Description>
     </Field.Root>
   );
 }

@@ -24,30 +24,71 @@ const slots = actionBarVariants();
 const ActionBarCountContext = createContext(0);
 
 /** The props of `ActionBar.Root`: Base UI's toolbar root, horizontal only, plus the selection size. */
-export type ActionBarRootProps = Omit<ComponentProps<typeof ToolbarPrimitive.Root>, "orientation"> & {
+export type ActionBarRootProps = Omit<
+  ComponentProps<typeof ToolbarPrimitive.Root>,
+  "orientation" | "aria-label" | "children"
+> & {
   /**
-   * How many items the selection holds. The bar shows while it is above zero, rising into
-   * place, and falls away when it returns to zero.
+   * How many items the selection holds. While it is above zero, the bar rises into place and a
+   * visually hidden live region beside it announces the count politely, such as "3 selected", each
+   * time it changes. When it returns to zero, the bar falls away and unmounts. If focus was in the
+   * bar, as after Clear, focus returns to the element it came from, such as a row checkbox. If that
+   * element is gone, as after deleting the selected rows, focus falls to the page.
    */
   count: number;
   /**
-   * The bar's distance from the bottom of its positioned ancestor, in px. To float the bar above a
-   * pagination row or other footer, place it in a positioned ancestor that ends above the footer,
-   * and keep `offset` for a small adjustment, such as clearing a faded edge.
-   *
-   * @default 16
+   * The bar's distance from the bottom of its nearest positioned ancestor, in px. Give that
+   * ancestor `position: relative` and keep the bar its last child, so the bar paints over the rows.
+   * To keep the bar clear of a pagination row or another footer, wrap only the content above the
+   * footer in that ancestor. Use `offset` for a small adjustment, such as clearing a faded edge.
    */
   offset?: number;
+  /**
+   * The bar's name. Without it or `aria-labelledby`, the bar is named "Bulk actions" in the
+   * reader's locale.
+   */
+  "aria-label"?: ComponentProps<typeof ToolbarPrimitive.Root>["aria-label"];
+  /**
+   * The bar's items: `ActionBar.Count`, `ActionBar.Clear`, `ActionBar.Separator` and
+   * `ActionBar.Button`. The bar is one Tab stop, and the arrow keys move between its items.
+   */
+  children?: ComponentProps<typeof ToolbarPrimitive.Root>["children"];
 };
 
 /** The props of `ActionBar.Count`. */
-export type ActionBarCountProps = ComponentProps<"span">;
+export type ActionBarCountProps = Omit<ComponentProps<"span">, "children"> & {
+  /** Text that replaces the count, "3 selected" in the reader's locale. */
+  children?: ComponentProps<"span">["children"];
+};
 
 /** The props of `ActionBar.Clear`: a toolbar button. */
-export type ActionBarClearProps = ComponentProps<typeof ToolbarPrimitive.Button>;
+export type ActionBarClearProps = Omit<
+  ComponentProps<typeof ToolbarPrimitive.Button>,
+  "onClick" | "aria-label" | "children"
+> & {
+  /**
+   * Empty the selection here. Clear clears nothing itself, and the bar leaves once `count` is zero.
+   */
+  onClick?: ComponentProps<typeof ToolbarPrimitive.Button>["onClick"];
+  /**
+   * The button's name. Without it, the button is named "Clear selection" in the reader's locale.
+   * To show the name in a tooltip, pass Clear to `Tooltip.Trigger`'s `render`:
+   * `<Tooltip.Trigger render={<ActionBar.Clear onClick={clear} />} />`.
+   */
+  "aria-label"?: ComponentProps<typeof ToolbarPrimitive.Button>["aria-label"];
+  /** Content that replaces the X icon. */
+  children?: ComponentProps<typeof ToolbarPrimitive.Button>["children"];
+};
 
 /** The props of `ActionBar.Button`: a toolbar button. */
-export type ActionBarButtonProps = ComponentProps<typeof ToolbarPrimitive.Button>;
+export type ActionBarButtonProps = Omit<ComponentProps<typeof ToolbarPrimitive.Button>, "children"> & {
+  /**
+   * An icon marked `data-icon="inline-start"`, then the words in `ActionBar.ButtonLabel`. While the
+   * bar's container is narrower than 28rem, the button shows the icon alone and keeps the words as
+   * its accessible name.
+   */
+  children?: ComponentProps<typeof ToolbarPrimitive.Button>["children"];
+};
 
 /** The props of `ActionBar.ButtonLabel`. */
 export type ActionBarButtonLabelProps = ComponentProps<"span">;
@@ -61,18 +102,8 @@ function isInside(container: HTMLElement | null, node: EventTarget | null): bool
 
 /**
  * A toolbar of actions on a selection, such as the checked rows of a `DataTable`, that floats at
- * the bottom of its nearest positioned ancestor while `count` is above zero. Give that ancestor
- * `position: relative`, or another position, and keep the bar its last child so it paints over
- * the rows.
- *
- * The bar is one Tab stop whose items the arrow keys move between, as in `Toolbar`. It is named
- * "Bulk actions" from the locale dictionary unless it gets an `aria-label` or `aria-labelledby`.
- * A visually hidden live region beside it announces the count politely each time it changes,
- * including the first selection, and stays empty while nothing is selected.
- *
- * When `count` returns to zero while focus is inside the bar, as after Clear, focus returns to the
- * element it came from, such as the row checkbox, when that element is still in the document;
- * otherwise it falls to the document body. The leaving bar is `inert` until it unmounts.
+ * the bottom of its nearest positioned ancestor while `count` is above zero. The leaving bar is
+ * `inert` until it unmounts.
  */
 export function ActionBarRoot({
   count,
@@ -165,10 +196,7 @@ export function ActionBarRoot({
   );
 }
 
-/**
- * The selection count, "3 selected" from the locale dictionary unless it has children. It is not
- * itself a live region: `ActionBar.Root` announces the count.
- */
+/** The selection count. It is not a live region, because `ActionBar.Root` announces the count. */
 export function ActionBarCount({ className, children, ...props }: ActionBarCountProps): ReactElement {
   const strings = useLocalizedStrings(actionBarStrings);
   const count = useContext(ActionBarCountContext);
@@ -179,12 +207,7 @@ export function ActionBarCount({ className, children, ...props }: ActionBarCount
   );
 }
 
-/**
- * The button that clears the selection: an extra-small ghost icon button with an X, named "Clear
- * selection" from the locale dictionary unless it gets an `aria-label`. It clears nothing itself;
- * empty the selection in `onClick`, and the bar leaves. Children replace the icon. For a tooltip,
- * pass it to `Tooltip.Trigger`'s `render`.
- */
+/** The button that clears the selection: an extra-small ghost icon button with an X. */
 export function ActionBarClear({
   "aria-label": ariaLabel,
   children,
@@ -204,9 +227,8 @@ export function ActionBarClear({
 }
 
 /**
- * An action on the selection, in the bar's arrow-key order: an extra-small ghost `Button` unless
- * `render` gives another control. Lead with an icon marked `data-icon="inline-start"` and put the
- * words in `ActionBar.ButtonLabel`, so a narrow bar shows the icon alone.
+ * An action on the selection, in the bar's arrow-key order. It is an extra-small ghost `Button`
+ * unless `render` gives another control.
  */
 export function ActionBarButton(props: ActionBarButtonProps): ReactElement {
   return (
@@ -218,10 +240,7 @@ export function ActionBarButton(props: ActionBarButtonProps): ReactElement {
   );
 }
 
-/**
- * An `ActionBar.Button`'s words. They are visually hidden while the bar's positioner is narrower
- * than 28rem, so the button shows its icon alone and keeps the words as its accessible name.
- */
+/** An `ActionBar.Button`'s words, visually hidden while the bar's container is narrower than 28rem. */
 export function ActionBarButtonLabel({ className, ...props }: ActionBarButtonLabelProps): ReactElement {
   return (
     <span data-slot="action-bar-button-label" className={cn(slots.buttonLabel(), className)} {...props} />

@@ -9,14 +9,14 @@ export function AccordionHiddenUntilFound() {
         <Accordion.Header>
           <Accordion.Trigger>Shipping</Accordion.Trigger>
         </Accordion.Header>
-        <Accordion.Content>Delivered within 3–5 business days.</Accordion.Content>
+        <Accordion.Content>Delivered within 3 to 5 business days.</Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="warranty">
         <Accordion.Header>
           <Accordion.Trigger>Warranty</Accordion.Trigger>
         </Accordion.Header>
         <Accordion.Content>
-          Closed panels stay searchable. Find-in-page can match the phrase “wolfram filament” and expand this
+          Closed panels stay searchable. Find-in-page can match the words wolfram filament and expand this
           item.
         </Accordion.Content>
       </Accordion.Item>

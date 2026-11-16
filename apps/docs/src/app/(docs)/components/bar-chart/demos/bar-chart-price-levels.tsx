@@ -1,12 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import { BarChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
-import { LocaleProvider, ThemeScope, useTheme } from "@elmeragroup/fuse/theme";
-import type { SupportedLocale } from "@elmeragroup/fuse/theme";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 // An invented SE3 spot price day in SEK per kWh, 24 May 2026, with negative quarters around midday
 // and one evening spike. It follows the elprisetjustnu.se file shape, and every value is typed by
@@ -123,51 +118,21 @@ const config = {
   },
 } as const satisfies ChartConfig;
 
-/** The locales the demo's switch offers. The chart's own text follows the picked one. */
-const LOCALES = [
-  { code: "en-US", label: "English", lang: "en" },
-  { code: "nb-NO", label: "Norsk", lang: "nb" },
-] as const satisfies readonly { code: SupportedLocale; label: string; lang: string }[];
-
 export function BarChartPriceLevels() {
-  const [locale, setLocale] = useState<SupportedLocale>("en-US");
-  const theme = useTheme();
   return (
-    <LocaleProvider locale={locale}>
-      {/* A nested ThemeScope holds the tooltip's portal, so the popup takes the picked language too. */}
-      <ThemeScope
-        theme={theme}
-        className="flex w-full flex-col gap-4"
-        lang={LOCALES.find((option) => option.code === locale)?.lang ?? "en"}>
-        <ToggleGroup.Root
-          aria-label="Language"
-          value={[locale]}
-          onValueChange={(value: string[]) => {
-            const next = LOCALES.find((option) => option.code === value[0]);
-            if (next !== undefined) setLocale(next.code);
-          }}>
-          {LOCALES.map((option) => (
-            <ToggleGroup.Item key={option.code} value={option.code} lang={option.lang}>
-              {option.label}
-            </ToggleGroup.Item>
-          ))}
-        </ToggleGroup.Root>
-        <BarChart.Root
-          data={quarters}
-          config={config}
-          xKey="start"
-          interval="quarter-hour"
-          timeZone="Europe/Stockholm"
-          now={new Date("2026-05-24T13:07:00+02:00")}
-          aria-label="Spot price per quarter hour, 24 May 2026">
-          <BarChart.Grid />
-          <BarChart.YAxis />
-          <BarChart.XAxis />
-          <BarChart.Bar dataKey="price" emphasis="now" />
-          <BarChart.Tooltip />
-          <BarChart.Table />
-        </BarChart.Root>
-      </ThemeScope>
-    </LocaleProvider>
+    <BarChart.Root
+      data={quarters}
+      config={config}
+      xKey="start"
+      interval="quarter-hour"
+      timeZone="Europe/Stockholm"
+      aria-label="Spot price per quarter hour, 24 May 2026">
+      <BarChart.Grid />
+      <BarChart.YAxis />
+      <BarChart.XAxis />
+      <BarChart.Bar dataKey="price" />
+      <BarChart.Tooltip />
+      <BarChart.Table />
+    </BarChart.Root>
   );
 }

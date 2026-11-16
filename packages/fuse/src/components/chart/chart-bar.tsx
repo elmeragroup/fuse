@@ -32,7 +32,19 @@ import { seriesOf } from "./layout/series-of";
 export type ChartBarProps = ChartLayerProps & {
   /**
    * The series the bars draw, in the look its config's `barVariant` names. An unknown key throws
-   * `unknown-key`.
+   * `unknown-key`. A bar fills its band less a 25 % gap. In a vertical chart with more than 100
+   * domain slots a series draws its bars as one path, which draws every look but "gradient" as
+   * "default". A series whose look the path cannot draw warns `bar-variant-needs-html` in
+   * development. A horizontal chart always draws separate bars. The tinted looks, "hatched", "striped", "gradient",
+   * "duotone" and "duotone-reverse", fill most of a bar with a pale tint of the series colour, so
+   * pair them with a Legend or a Table.
+   *
+   * With a config `qualityKey`, an estimated reading draws a dashed outline over a lighter fill and
+   * a missing one a short dashed tick at the baseline, and the option and the table add the quality
+   * word after the value. A data update moves each bar that stays to its new geometry over 480 ms,
+   * fades in the bars it adds and drops the bars that leave. A second update during the move
+   * starts from where each bar is drawn. A change of `xRange` alone snaps, and reduced motion
+   * snaps every update.
    */
   dataKey: string;
   /**

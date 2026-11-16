@@ -1,13 +1,27 @@
 ---
 lede: >
-  A searchable select for one or several options.
+  A searchable select for one or several options. For a labeled combobox in a form, use ComboboxField.
 ---
 
-import { ComboboxBasic } from "./demos/combobox-basic";
-import { ComboboxSizes } from "./demos/combobox-sizes";
+import { ComboboxDemo } from "./demos/combobox-demo";
+import { ComboboxSmall } from "./demos/combobox-small";
+import { ComboboxClearButton } from "./demos/combobox-clear-button";
+import { ComboboxTop } from "./demos/combobox-top";
+import { ComboboxLeft } from "./demos/combobox-left";
+import { ComboboxRight } from "./demos/combobox-right";
+import { ComboboxInlineStart } from "./demos/combobox-inline-start";
+import { ComboboxInlineEnd } from "./demos/combobox-inline-end";
+import { ComboboxAlignCenter } from "./demos/combobox-align-center";
+import { ComboboxAlignEnd } from "./demos/combobox-align-end";
+import { ComboboxOffset } from "./demos/combobox-offset";
 import { ComboboxGroups } from "./demos/combobox-groups";
-import { ComboboxMultiChips } from "./demos/combobox-multi-chips";
-import { ComboboxInputGroupAnchor } from "./demos/combobox-input-group-anchor";
+import { ComboboxMultiple } from "./demos/combobox-multiple";
+import { ComboboxChipsSmall } from "./demos/combobox-chips-small";
+import { ComboboxPopupSearch } from "./demos/combobox-popup-search";
+import { ComboboxDisabledItem } from "./demos/combobox-disabled-item";
+import { ComboboxInvalid } from "./demos/combobox-invalid";
+import { ComboboxDisabled } from "./demos/combobox-disabled";
+import { ComboboxReadOnly } from "./demos/combobox-read-only";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -15,34 +29,110 @@ export const metadata = componentMetadata("combobox");
 
 <ComponentIntro slug="combobox" />
 
-<Prose>
+<DefaultDemo slug="combobox" file="combobox-demo.tsx">
+  <ComboboxDemo />
+</DefaultDemo>
 
-For a labeled combobox in a form, use `ComboboxField`, which lays out the label, error and description as the other labeled fields do. Compose `Field.Root` and these parts for multiple selection or a layout of your own.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Combobox } from "@elmeragroup/fuse/combobox";
 
-<Demo slug="combobox" id="basic" title="Basic" file="combobox-basic.tsx">
-  <ComboboxBasic />
+<Combobox.Root items={["Apple", "Pear"]}>
+  <Combobox.Input aria-label="Fruit" placeholder="Search fruit…" />
+  <Combobox.Content>
+    <Combobox.Empty />
+    <Combobox.List>
+      <Combobox.Collection>
+        {(item: string) => (
+          <Combobox.Item key={item} value={item}>
+            {item}
+          </Combobox.Item>
+        )}
+      </Combobox.Collection>
+    </Combobox.List>
+  </Combobox.Content>
+</Combobox.Root>
+```
+
+## Examples
+
+<Demo slug="combobox" id="small" title="Small" level={3} file="combobox-small.tsx">
+  <ComboboxSmall />
 </Demo>
 
-<Demo slug="combobox" id="sizes" title="Sizes" file="combobox-sizes.tsx">
-  <ComboboxSizes />
+<Demo slug="combobox" id="clear-button" title="Clear button" level={3} file="combobox-clear-button.tsx">
+  <ComboboxClearButton />
 </Demo>
 
-<Demo slug="combobox" id="groups" title="Groups" file="combobox-groups.tsx">
+<Demo slug="combobox" id="top" title="Top" level={3} file="combobox-top.tsx">
+  <ComboboxTop />
+</Demo>
+
+<Demo slug="combobox" id="left" title="Left" level={3} file="combobox-left.tsx">
+  <ComboboxLeft />
+</Demo>
+
+<Demo slug="combobox" id="right" title="Right" level={3} file="combobox-right.tsx">
+  <ComboboxRight />
+</Demo>
+
+<Demo slug="combobox" id="inline-start" title="Inline start" level={3} file="combobox-inline-start.tsx">
+  <ComboboxInlineStart />
+</Demo>
+
+<Demo slug="combobox" id="inline-end" title="Inline end" level={3} file="combobox-inline-end.tsx">
+  <ComboboxInlineEnd />
+</Demo>
+
+<Demo slug="combobox" id="align-center" title="Align center" level={3} file="combobox-align-center.tsx">
+  <ComboboxAlignCenter />
+</Demo>
+
+<Demo slug="combobox" id="align-end" title="Align end" level={3} file="combobox-align-end.tsx">
+  <ComboboxAlignEnd />
+</Demo>
+
+<Demo slug="combobox" id="offset" title="Offset" level={3} file="combobox-offset.tsx">
+  <ComboboxOffset />
+</Demo>
+
+<Demo slug="combobox" id="groups" title="Groups" level={3} file="combobox-groups.tsx">
   <ComboboxGroups />
 </Demo>
 
-<Demo slug="combobox" id="multi-chips" title="Multi chips" file="combobox-multi-chips.tsx">
-  <ComboboxMultiChips />
+<Demo slug="combobox" id="multiple" title="Multiple" level={3} file="combobox-multiple.tsx">
+  <ComboboxMultiple />
+</Demo>
+
+<Demo slug="combobox" id="chips-small" title="Small chips" level={3} file="combobox-chips-small.tsx">
+  <ComboboxChipsSmall />
 </Demo>
 
 <Demo
   slug="combobox"
-  id="input-group-anchor"
-  title="Input group anchor"
-  file="combobox-input-group-anchor.tsx">
-  <ComboboxInputGroupAnchor />
+  id="popup-search"
+  title="Search in the popup"
+  level={3}
+  file="combobox-popup-search.tsx">
+  <ComboboxPopupSearch />
+</Demo>
+
+<Demo slug="combobox" id="disabled-item" title="Disabled item" level={3} file="combobox-disabled-item.tsx">
+  <ComboboxDisabledItem />
+</Demo>
+
+<Demo slug="combobox" id="invalid" title="Invalid" level={3} file="combobox-invalid.tsx">
+  <ComboboxInvalid />
+</Demo>
+
+<Demo slug="combobox" id="disabled" title="Disabled" level={3} file="combobox-disabled.tsx">
+  <ComboboxDisabled />
+</Demo>
+
+<Demo slug="combobox" id="read-only" title="Read-only" level={3} file="combobox-read-only.tsx">
+  <ComboboxReadOnly />
 </Demo>
 
 <ApiReference slug="combobox" />

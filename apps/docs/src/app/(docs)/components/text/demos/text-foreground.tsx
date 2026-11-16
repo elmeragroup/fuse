@@ -1,0 +1,9 @@
+"use client";
+
+import { Text } from "@elmeragroup/fuse/text";
+
+export function TextForeground() {
+  return (
+    <Text variant="foreground">Estimated consumption for the period is 1 240 kWh across two meters.</Text>
+  );
+}

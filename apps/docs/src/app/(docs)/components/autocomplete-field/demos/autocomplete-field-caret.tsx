@@ -3,28 +3,31 @@
 import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
 import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 
-const reasons = [
-  "Moving house",
-  "Question about my bill",
-  "Change of contract",
-  "Meter reading",
-  "Power outage",
+const municipalities = [
+  "Bergen",
+  "Bodø",
+  "Drammen",
+  "Fredrikstad",
+  "Kristiansand",
+  "Oslo",
+  "Stavanger",
+  "Tromsø",
+  "Trondheim",
 ];
 
 export function AutocompleteFieldCaret() {
   return (
     <AutocompleteField
-      label="Reason for contact"
-      name="reason"
-      items={reasons}
-      placeholder="Describe it in a few words…"
-      showTrigger
-      className="max-w-xs">
-      <Autocomplete.Empty />
+      label="Municipality"
+      description="Pick a suggestion or type the name yourself."
+      items={municipalities}
+      placeholder="Type a municipality…"
+      showTrigger>
+      <Autocomplete.Empty>No suggestions. The text you typed is kept.</Autocomplete.Empty>
       <Autocomplete.List>
-        {(reason: string) => (
-          <Autocomplete.Item key={reason} value={reason}>
-            {reason}
+        {(municipality: string) => (
+          <Autocomplete.Item key={municipality} value={municipality}>
+            {municipality}
           </Autocomplete.Item>
         )}
       </Autocomplete.List>

@@ -59,12 +59,18 @@ export type ClockChartRootProps<
 > = ChartAccessibleName &
   ChartFigureProps &
   ChartSelectionProps<keyof TConfig & string> & {
-    /** The rows, one per slot. A row outside the period throws `row-outside-period` in development. */
+    /**
+     * The rows, one per slot. A row outside the period throws `row-outside-period` in development.
+     * With no reading the chart shows `Empty` and has no tab stop. A server component can render
+     * the chart when every prop is plain data.
+     */
     data: readonly TRow[];
     /**
      * Keyed by series, as in `Chart.Root`, with its cartesian fields: `stack`, a series `interval`
      * that nests in the cycle, `projectedFrom`, `qualityKey`, `missing` and a threshold `color`.
-     * Its `barVariant` is "default" or "gradient".
+     * Its `barVariant` is "default" or "gradient". A threshold colour paints each wedge by its own
+     * value's side. Add a dashed `ReferenceLine` at the threshold to draw the ring the colours
+     * split at.
      */
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow> & ChartClockFieldCheck<TConfig, TCycle>;
     /** The instant column. Each row starts a slot. */
@@ -82,38 +88,55 @@ export type ClockChartRootProps<
      * feed filters its rows on the cycle, since a row outside it throws in development.
      */
     period?: ChartPeriod;
-    /** The current instant: Now's hand, the pending readings after it and `fallback="now"`. */
+    /**
+     * The current instant, which sets Now's hand, the pending readings after it and
+     * `fallback="now"`. A live day draws up to `now`.
+     */
     now?: ChartInstant;
     /** The IANA zone of the data's market. The LocaleProvider's zone is the default. */
     timeZone?: string;
     /** The slot label format of options, tooltips and the table. */
     xFormat?: XFormat;
-    /** How stacks combine. "diverging" by default. */
+    /**
+     * How the series of a stack id add up. `diverging` stacks negative values apart from positive
+     * ones. `expand` scales each slot's stack to a total of 1, so each part reads as its share.
+     */
     stackOffset?: "diverging" | "expand";
     /**
-     * "zero" puts 0 in the radius domain, "none" fits the data. "zero" by default. A Column or an
-     * Area under "none" throws `baseline-required`, since each draws its value as the length from 0,
-     * and a Line draws.
+     * `zero` puts 0 in the radius domain, and `none` fits the data. A Column or an Area under
+     * `none` throws `baseline-required`, since each draws its value as the length from 0. A Line
+     * draws under either.
      */
     yBaseline?: "zero" | "none";
     /** Values the radius domain must hold, such as a threshold. */
     yInclude?: readonly number[];
-    /** The hole's radius as a share of the dial's, where the domain's minimum sits. 0.3 by default. */
+    /** The hole's radius as a share of the dial's, where the domain's minimum sits. */
     innerRadius?: number;
     /**
-     * How a value's radius grows. "radial" by default keeps area true, so a ring twice the value
-     * covers twice the area, and "linear" keeps radius true.
+     * How a value's radius grows. `radial` keeps area true, so a ring twice the value covers twice
+     * the area, and `linear` keeps radius true. Use `linear` for a value that reads as a length,
+     * such as a price, so a negative value hangs inward from the zero ring.
      */
     radiusScale?: "radial" | "linear";
     /** The slot that is active before any pointer or key moves. */
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
-    /** "none" turns the entrance off. */
+    /**
+     * "none" turns off the entrance, in which each slot rises from its base as a clockwise wedge
+     * opens the first time the chart comes into view.
+     */
     "data-intro"?: "none";
     /** "past" fades the Column wedges whose slot ended before `now`. */
     "data-fade"?: "past";
     /** Replaces the generated description verbatim. */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. The plot is one tab stop. Hover a slot, or focus
+     * the chart and use the arrow keys, to read it. ArrowLeft and ArrowRight step one slot and wrap
+     * round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a
+     * week and a month round a year, and ArrowUp and ArrowDown move between series. On a touch
+     * screen a drag that starts on the dial scrubs round it, a tap pins the tooltip, and a second
+     * tap on the same slot releases it.
+     */
     children?: ReactNode;
   };
 
@@ -170,30 +193,29 @@ export function ClockChartRoot<
   const TConfig extends ChartConfig,
   TXKey extends ChartKeyOf<TRow, ChartInstant>,
   const TCycle extends ChartClockCycle,
->(props: ClockChartRootProps<TRow, TConfig, TXKey, TCycle>): ReactElement {
-  const {
-    data,
-    config,
-    xKey,
-    cycle,
-    interval,
-    period,
-    now,
-    timeZone: ownZone,
-    xFormat,
-    stackOffset = "diverging",
-    yBaseline = "zero",
-    yInclude,
-    innerRadius = 0.3,
-    radiusScale = "radial",
-    defaultActiveX,
-    selectedKey,
-    defaultSelectedKey,
-    onSelectedKeyChange,
-    description,
-    children,
-    ...figure
-  } = props;
+>({
+  data,
+  config,
+  xKey,
+  cycle,
+  interval,
+  period,
+  now,
+  timeZone: ownZone,
+  xFormat,
+  stackOffset = "diverging",
+  yBaseline = "zero",
+  yInclude,
+  innerRadius = 0.3,
+  radiusScale = "radial",
+  defaultActiveX,
+  selectedKey,
+  defaultSelectedKey,
+  onSelectedKeyChange,
+  description,
+  children,
+  ...figure
+}: ClockChartRootProps<TRow, TConfig, TXKey, TCycle>): ReactElement {
   const { locale, timeZone: providerZone } = useLocale();
   const timeZone = ownZone ?? providerZone;
   assertDial(cycle, interval, config, timeZone);

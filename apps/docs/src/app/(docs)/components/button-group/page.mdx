@@ -3,9 +3,10 @@ lede: >
   Buttons joined into one control.
 ---
 
-import { ButtonGroupBasic } from "./demos/button-group-basic";
+import { ButtonGroupDemo } from "./demos/button-group-demo";
 import { ButtonGroupVertical } from "./demos/button-group-vertical";
-import { ButtonGroupSplitButton } from "./demos/button-group-split-button";
+import { ButtonGroupSeparator } from "./demos/button-group-separator";
+import { ButtonGroupHorizontalSeparator } from "./demos/button-group-horizontal-separator";
 import { ButtonGroupText } from "./demos/button-group-text";
 import { ButtonGroupNested } from "./demos/button-group-nested";
 
@@ -15,23 +16,47 @@ export const metadata = componentMetadata("button-group");
 
 <ComponentIntro slug="button-group" />
 
-<Demo slug="button-group" id="basic" title="Basic" file="button-group-basic.tsx">
-  <ButtonGroupBasic />
-</Demo>
+<DefaultDemo slug="button-group" file="button-group-demo.tsx">
+  <ButtonGroupDemo />
+</DefaultDemo>
 
-<Demo slug="button-group" id="vertical" title="Vertical" file="button-group-vertical.tsx">
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Button } from "@elmeragroup/fuse/button";
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+
+<ButtonGroup.Root aria-label="Actions">
+  <Button variant="outline">Archive</Button>
+  <Button variant="outline">Report</Button>
+</ButtonGroup.Root>
+```
+
+## Examples
+
+<Demo slug="button-group" id="vertical" title="Vertical" level={3} file="button-group-vertical.tsx">
   <ButtonGroupVertical />
 </Demo>
 
-<Demo slug="button-group" id="split-button" title="Split button" file="button-group-split-button.tsx">
-  <ButtonGroupSplitButton />
+<Demo slug="button-group" id="separator" title="Separator" level={3} file="button-group-separator.tsx">
+  <ButtonGroupSeparator />
 </Demo>
 
-<Demo slug="button-group" id="text" title="Text" file="button-group-text.tsx">
+<Demo
+  slug="button-group"
+  id="horizontal-separator"
+  title="Horizontal separator"
+  level={3}
+  file="button-group-horizontal-separator.tsx">
+  <ButtonGroupHorizontalSeparator />
+</Demo>
+
+<Demo slug="button-group" id="text" title="Text" level={3} file="button-group-text.tsx">
   <ButtonGroupText />
 </Demo>
 
-<Demo slug="button-group" id="nested" title="Nested" file="button-group-nested.tsx">
+<Demo slug="button-group" id="nested" title="Nested" level={3} file="button-group-nested.tsx">
   <ButtonGroupNested />
 </Demo>
 

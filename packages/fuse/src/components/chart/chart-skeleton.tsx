@@ -13,7 +13,7 @@ import type { ChartDomProps } from "./chart-types";
  * @beta
  */
 export type ChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
-  /** The mark the placeholder sketches. "bar" by default. */
+  /** The mark the placeholder sketches. */
   variant?: "bar" | "line" | "area";
   /** The loader's name. The dictionary's "Laster diagram" is the default. */
   label?: string;

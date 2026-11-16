@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts. Root never inspects them. The plot is one tab stop, and focus starts at the latest reading. ArrowLeft and ArrowRight step through the window's readings, Home and End go to the oldest and the latest, and Escape hides the tooltip until the pointer moves or a key steps. When the active reading scrolls out at the left edge, the oldest reading the window still shows becomes active.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "\"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\" | \"chart-6\" | \"chart-7\" | \"chart-8\" | \"chart-other\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"chart-1\"",
-          "description": "The line's paint. \"chart-1\" by default. The badge prints in its on-colour role.",
+          "description": "The line's paint. The badge prints in its on-colour role.",
           "required": false,
           "values": [
             "chart-1",
@@ -138,7 +138,7 @@
           "type": "readonly LiveLineChartPoint[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The readings, oldest first, as the consumer's feed keeps them. A reading out of order sorts by time, and one instant holds one reading: of readings that share a time, the last wins, as a feed that corrects its latest reading sends it again. Keep at least the window's worth, and drop older readings as the feed grows: the chart draws only the window, and the table and the description cover the window back from the latest reading. Every cell is serialisable, so a server component passes it.",
+          "description": "The readings, oldest first. Append each reading as it arrives, and drop older ones as the feed grows, keeping at least the window's worth. The chart draws only the window, and the table and the description cover one window back from the latest reading. A reading out of order sorts by time. Of readings that share a time the last wins, so a feed corrects its latest reading by sending it again. Readings stamped ahead of the browser's clock move the window's end ahead with them. Under reduced motion the window does not scroll, and each new reading redraws it once, ending at the clock. Every cell is serialisable, so a server component can pass it.",
           "required": true
         },
         {
@@ -147,7 +147,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the generated description verbatim.",
+          "description": "Replaces the generated description verbatim. The generated one states the window's span, its lowest and highest readings and the latest value.",
           "required": false
         },
         {
@@ -156,7 +156,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value's name, such as \"Spotpris\", which the tooltip, the options and the table print.",
+          "description": "The value's name, such as \"Spotpris\", which the tooltip, the options and the table print. The plot's option reads the active reading's time, then its value after this name.",
           "required": false
         },
         {
@@ -165,7 +165,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Holds the window where it is, so a reader can study it, while the readings keep arriving. The live dot's ping stops while it holds. Once it runs again the window draws the clock's window at once, with the readings it held back.",
+          "description": "Holds the window where it is while the readings keep arriving, so a reader can study it, and stops the live dot's ping. A Root paused from its first render holds the readings it mounted with, so mount it with readings. When it runs again, the window jumps to the clock's window with the readings it held back. The chart also stops drawing while it is out of view or its tab is hidden, and draws the clock's window at once on its return.",
           "required": false
         },
         {
@@ -174,7 +174,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         },
         {
@@ -183,7 +183,7 @@
           "type": "LiveLineChartTimeFormat | undefined",
           "shortType": "Union",
           "defaultValue": "\"time-seconds\"",
-          "description": "How a reading's time prints in the tooltip, the options, the table and the description. `\"time-seconds\"` by default, such as `13:42:04`. The axis picks its own from its tick step.",
+          "description": "How a reading's time prints in the tooltip, the options, the table and the description, such as `13:42:04` under `\"time-seconds\"`. The axis picks its own format from its tick step.",
           "required": false
         },
         {
@@ -192,7 +192,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The IANA zone of the market the readings describe, such as \"Europe/Oslo\", which every time prints in. LocaleProvider's `timeZone` by default.",
+          "description": "The IANA zone of the market the readings describe, such as \"Europe/Oslo\", which every time prints in. The time axis puts its ticks on round times in this zone. LocaleProvider's `timeZone` by default.",
           "required": false
         },
         {
@@ -201,7 +201,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest value, which the line runs on at to the window's right edge, the live dot marks and the badge prints. The latest reading's value by default. Pass it when the value ticks faster than readings arrive. It keeps the readings' bound, a finite number within ±1e15.",
+          "description": "The latest value, which the line runs to at the window's right edge, the live dot marks and the badge prints. The latest reading's value by default. Pass it when the value ticks faster than readings arrive. It takes the readings' bound, a finite number within ±1e15. The badge rolls its digits to each new value, and under reduced motion changes them at once.",
           "required": false
         },
         {
@@ -255,7 +255,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The line style. \"solid\" by default.",
+          "description": "The line style, solid or dashed.",
           "required": false,
           "values": [
             "dashed",
@@ -331,7 +331,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. \"start\" by default.",
+          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. With a `Badge`, keep it at \"start\", since the badge takes the end column.",
           "required": false,
           "values": [
             "end",
@@ -371,7 +371,7 @@
           "type": "LiveLineChartCurve | undefined",
           "shortType": "Union",
           "defaultValue": "\"monotone\"",
-          "description": "The curve through the readings, the same as the Line's. \"monotone\" by default.",
+          "description": "The curve through the readings. Pass the Line's curve, so the fill's edge meets the line.",
           "required": false,
           "values": [
             "basis",
@@ -398,7 +398,7 @@
           "type": "\"gradient\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
-          "description": "The fill. \"gradient\" by default, which fades from the line's paint to nothing at the plot's bottom edge, and \"solid\" fills at `--chart-area-opacity`.",
+          "description": "The fill. \"gradient\" fades from the line's paint to nothing at the plot's bottom edge, and \"solid\" fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over the fill.",
           "required": false,
           "values": [
             "gradient",
@@ -429,7 +429,7 @@
           "type": "LiveLineChartCurve | undefined",
           "shortType": "Union",
           "defaultValue": "\"monotone\"",
-          "description": "The curve through the readings. \"monotone\" by default, which never overshoots a reading. Every curve it takes stays between the readings around each segment, so the line stays in the plot.",
+          "description": "The curve through the readings. \"monotone\" never overshoots a reading. Every curve it takes stays between the readings around each segment, so the line stays in the plot.",
           "required": false,
           "values": [
             "basis",
@@ -483,7 +483,7 @@
           "type": "\"default\" | \"ping\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ping\"",
-          "description": "The dot's look. \"ping\" by default, which sends a ring out from the dot once a cycle, and reduced motion stops the ring. \"default\" draws the dot alone.",
+          "description": "The dot's look. \"ping\" sends a ring out from the dot once a cycle, which stops while Root is `paused` and under reduced motion. \"default\" draws the dot alone.",
           "required": false,
           "values": [
             "default",
@@ -577,7 +577,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The popup's surface. \"default\" by default, and \"frosted\" lets the plot show through.",
+          "description": "The popup's surface. \"frosted\" lets the plot show through.",
           "required": false,
           "values": [
             "default",
@@ -626,7 +626,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. The table lists the window's readings newest first. While collapsed it stays out of the Tab order and stays in the accessibility tree. Past 500 readings it pages by row range.",
           "required": false
         },
         {
@@ -744,7 +744,7 @@
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
           "defaultValue": "\"dots\"",
-          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "description": "The pattern drawn behind the marks.",
           "required": false,
           "values": [
             "4-pointed-star",

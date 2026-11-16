@@ -17,21 +17,23 @@ import { selectContentVariants, selectTriggerVariants } from "./select-variants"
 
 const selectContentSlots = selectContentVariants();
 
+/** Holds the Select's value and open state. Its parts go inside it. */
 export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
 ): ReactElement {
   return <SelectPrimitive.Root {...props} />;
 }
 
+/** The props of {@link SelectTrigger}. */
 export type SelectTriggerProps = ComponentProps<typeof SelectPrimitive.Trigger> & {
   /**
-   * Control size of the trigger box. Emitted as `data-size`. `"default"` maps to the `md`
-   * control size; `"sm"` maps to the `sm` control size.
-   * @default "default"
+   * The trigger's control size, emitted as `data-size`. `default` is the md control size, and
+   * `sm` the sm one.
    */
   size?: "sm" | "default";
 };
 
+/** The button that opens the popup and shows `Select.Value` beside a caret. */
 export function SelectTrigger({
   className,
   size = "default",
@@ -51,6 +53,7 @@ export function SelectTrigger({
   );
 }
 
+/** The selected option's label, or the placeholder while nothing is selected. */
 export function SelectValue({
   className,
   ...props
@@ -64,21 +67,25 @@ export function SelectValue({
   );
 }
 
+/** The props of {@link SelectContent}. */
 export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof SelectPrimitive.Positioner>> & {
     /**
-     * macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`.
-     * Entrance animation is suppressed while this is on, so the popup appears in place.
+     * Places the popup over the trigger, with the selected item on the trigger's value, as macOS
+     * menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance
+     * animation. It does not apply to touch input, and it turns off when the popup does not fit.
+     * The popup then opens on `side`. Pass `false` to open beside the trigger on `side` and `align`
+     * every time.
      *
      * Item alignment places the popup in viewport coordinates (a Base UI 1.8 limitation). When
      * the portal target, or one of its ancestors, is the containing block for fixed-position
      * content, such as a transformed or `contain: paint` scope, pass `false` so the popup opens
      * beside its trigger instead of off by the scope's offset.
-     * @default true
      */
     alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
   } & OverlayContainerProps;
 
+/** The popup that lists the options, portalled with its positioner and scroll arrows. */
 export function SelectContent({
   className,
   children,
@@ -113,6 +120,7 @@ export function SelectContent({
   );
 }
 
+/** An option, with its label and a check while it is selected. */
 export function SelectItem({
   className,
   children,
@@ -151,6 +159,7 @@ export function SelectGroup({
   );
 }
 
+/** The label of a `Select.Group`. */
 export function SelectLabel({
   className,
   ...props
@@ -164,6 +173,7 @@ export function SelectLabel({
   );
 }
 
+/** A line between groups of options. */
 export function SelectSeparator({
   className,
   ...props
@@ -177,6 +187,7 @@ export function SelectSeparator({
   );
 }
 
+/** The arrow at the top of a popup that scrolls. `Select.Content` renders one. */
 export function SelectScrollUpButton({
   className,
   ...props
@@ -194,6 +205,7 @@ export function SelectScrollUpButton({
   );
 }
 
+/** The arrow at the bottom of a popup that scrolls. `Select.Content` renders one. */
 export function SelectScrollDownButton({
   className,
   ...props

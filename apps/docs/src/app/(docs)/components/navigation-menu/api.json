@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
         {
           "name": "actionsRef",
@@ -29,13 +29,22 @@
           "type": "Align | undefined",
           "shortType": null,
           "defaultValue": "\"start\"",
-          "description": "How the shared popup aligns to the open trigger on the cross axis.",
+          "description": "How the shared popup lines up with the open trigger along the trigger's edge.",
           "required": false,
           "values": [
             "center",
             "end",
             "start"
           ]
+        },
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The navigation landmark's name, such as \"Main\". Give every top-level Root one. A Root nested in a `NavigationMenu.Content` renders a `<div>`, not a second landmark, and needs none.",
+          "required": false
         },
         {
           "name": "className",
@@ -65,7 +74,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -96,7 +105,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Render no popup and show the open item's content in the `NavigationMenu.Viewport` you place inside this Root instead. Use it for a submenu nested in a `NavigationMenu.Content` that swaps the panel beside its list, such as a list of audiences with each audience's links next to it. A Root that renders its own popup is never inline.",
+          "description": "Renders no popup. The open item's content shows in a `NavigationMenu.Viewport` that you place inside this Root, beside its `NavigationMenu.List`. Use it for a submenu in a `NavigationMenu.Content` that swaps the panel beside its list as the pointer moves down it. The arrow keys move focus between its triggers, and Enter or Space shows the focused trigger's content. Its triggers have no caret. Pass `defaultValue` to open the first item together with the outer panel. Stack the list above the viewport on narrow screens. A Root that renders its own popup is never inline.",
           "required": false
         },
         {
@@ -153,7 +162,7 @@
           "type": "Side | undefined",
           "shortType": null,
           "defaultValue": "\"bottom\"",
-          "description": "Which side of the open trigger the shared popup opens on. Keep the default `\"bottom\"` for a bar; a submenu nested in a `NavigationMenu.Content` opens to the side, usually `side=\"right\"` with `orientation=\"vertical\"` and `align=\"end\"`.",
+          "description": "The side of the open trigger the shared popup opens on. Every `NavigationMenu.Content` of this Root opens into that one popup, which resizes as the pointer moves between triggers. Keep `bottom` for a bar. A submenu nested in a `NavigationMenu.Content` opens to the side, usually with `side=\"right\"`, `orientation=\"vertical\"` and `align=\"end\"`, and the outer panel stays open.",
           "required": false,
           "values": [
             "bottom",
@@ -297,8 +306,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 284,
+      "forwardedCount": 283,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The trigger's label. The trigger opens its item's content on hover, on click, and on Enter or ArrowDown, and Escape closes it and returns focus to the trigger. A caret after the label points to the Root's `side`. In a bar it points down and turns while the content is open. A trigger in an `inline` Root has no caret.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -364,8 +382,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The item's links, or a nested `NavigationMenu.Root` for a submenu. Lay several links out in a plain `<ul>`, such as a grid. In the popup, the links and the triggers of a nested Root round with the popup's corner. Give a block of your own `rounded-inner` to do the same.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {
@@ -420,17 +447,24 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 283,
+      "forwardedCount": 282,
       "props": [
         {
           "name": "active",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the link is the currently active page.",
+          "description": "Marks the link to the current page, which sets `aria-current=\"page\"`.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The link's label, or a title and a one-line description in a column of plain spans.",
           "required": false
         },
         {
@@ -457,13 +491,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, NavigationMenuLinkState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "Your router's link element, such as `<NextLink href=\"/pricing\" />`, for client-side routing. The link keeps its `active` state and `aria-current`.",
           "required": false
         },
         {
@@ -532,8 +564,17 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 274,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": "<span className={slots.indicatorArrow()} />",
+          "description": "The arrow. Unset, it is a small triangle. Place the indicator inside a `NavigationMenu.Trigger`, where it shows only while that item is open.",
+          "required": false
+        },
         {
           "name": "className",
           "origin": {

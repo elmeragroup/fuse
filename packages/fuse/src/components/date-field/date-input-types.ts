@@ -101,12 +101,21 @@ export type DateInputSegmentState = {
  */
 export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
   useRender.ComponentProps<"div", DateInputRootState>,
-  "defaultValue" | "onChange" | "children"
+  "defaultValue" | "onChange" | "children" | "aria-label"
 > & {
   /**
+   * Names the segment group when no Field label does. Each segment's name is its unit and the
+   * group's name, such as "month, Start date".
+   */
+  "aria-label"?: string | undefined;
+  /**
    * The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation.
-   * A server component cannot pass one, since it reaches the client as text: build the value in a
-   * client component. `null` empties the input.
+   * A server component cannot pass one, since it reaches the client as ISO text, which the input
+   * refuses with a `TypeError`: build the value in a client component. `null` empties the input.
+   *
+   * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
+   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
+   * `/quick-start#temporal` shows.
    */
   value?: T | null;
   /** The first value, when the input owns its value. Takes what `value` takes. */
@@ -115,9 +124,15 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
    * Called when the segments form a new value, with this runtime's Temporal value, or `null` when
    * every segment was cleared. A value forms when every segment is filled and it holds exactly what
    * was typed; a value that does not, such as February 30, waits for blur and then commits
-   * constrained. `details.reason` is `"input-change"` (typing, keys, blur), `"input-clear"` or
-   * `"input-paste"`. Canceling with `details.cancel()` keeps the value and shows it again in the
-   * segments, discarding the edit.
+   * constrained. The keys are DateField's, listed on its `onChange`.
+   *
+   * `details.reason` is `"input-change"` for typing, keys and blur, `"input-clear"` when every
+   * segment is cleared, or `"input-paste"` for pasted ISO text or text in the input's own format,
+   * such as `10/05/2026` in en-US and `05.10.2026` in nb-NO. `details.event` and
+   * `details.trigger` are the DOM event and the segment. `details.getValidationError()` returns
+   * `"rangeUnderflow"`, `"rangeOverflow"`, `"unavailable"` or `null`, the words Calendar uses.
+   * Canceling with `details.cancel()` keeps the value and shows it again in the segments,
+   * discarding the edit.
    */
   onValueChange?: NoInfer<(value: T | null, details: DateInputValueChangeEventDetails) => void>;
   /**
@@ -157,15 +172,25 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
   required?: boolean;
   /** Whether the input shows as invalid whatever its value. */
   invalid?: boolean;
-  /** The name the ISO value submits under. A surrounding Field's `name` wins. */
+  /**
+   * The name the ISO value submits under, through a visually hidden input. A surrounding Field's
+   * `name` wins. Inside a Base UI Field (`Field.Root`, Fuse's `Field` or a labeled composite) the
+   * first editable segment is the Field's control: a `Form` focuses it for an error, the value
+   * reaches `onFormSubmit` as ISO text, and its validity is the Field's, committed on blur and on
+   * submit.
+   */
   name?: string;
   /** The id of the form the ISO value submits with, when it is not the enclosing one. */
   form?: string;
   /** The field box's size: `"default"` the md control size, `"sm"` the sm one. Written as `data-size`. */
   size?: "default" | "sm";
   /**
-   * Renders each segment. Without it each renders as a `DateInput.Segment`, which a server
-   * component can rely on, since a function cannot cross to the client.
+   * Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is
+   * a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit
+   * such as `"month"` when true, and `segment.type` tells `"literal"` from `"timeZoneName"` when
+   * false. Without it each renders as a `DateInput.Segment`, which a server component can rely
+   * on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your
+   * own `Field.Label`, `Field.Description` and `Field.Error`.
    */
   children?: (segment: DateInputSegmentData) => ReactNode;
 };

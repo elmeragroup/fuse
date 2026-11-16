@@ -30,39 +30,57 @@ import { viewBoxOf } from "./layout/polar-angle";
 export type ClockChartReferenceAreaProps = ChartLayerProps &
   (
     | {
-        /** The annulus's first value. */
+        /**
+         * The annulus's first value. A band takes `y1` and `y2` or `x1` and `x2`. The annulus clips
+         * to the radius domain, and one outside it draws nothing.
+         */
         y1: number;
-        /** Its last value. */
+        /** The annulus's last value. A band takes `y1` and `y2` or `x1` and `x2`. */
         y2: number;
-        /** Not on an annulus. */
+        /**
+         * The sector's first instant. A band takes `y1` and `y2` or `x1` and `x2`. A string throws
+         * `x-type-mismatch`, and a sector outside the cycle draws nothing.
+         */
         x1?: never;
-        /** Not on an annulus. */
+        /** The sector's last instant. A band takes `y1` and `y2` or `x1` and `x2`. */
         x2?: never;
-        /** How `{value}` in `label` prints the range. */
+        /**
+         * How `{value}` in `label` prints the range. An annulus prints its values in this value
+         * format. A sector prints its ends, the first slot's start and the last slot's end, joined
+         * by an en dash, and a range preset prints each end in its point form, as "hour-range" does
+         * in "hour". By default a dial of slots shorter than a day prints a sector's ends in
+         * "time", and a coarser dial prints the first and the last slot's labels.
+         */
         format?: ValueFormat;
       }
     | {
-        /** The sector's first instant. A string throws `x-type-mismatch`. */
+        /**
+         * The sector's first instant. A band takes `y1` and `y2` or `x1` and `x2`. A string throws
+         * `x-type-mismatch`, and a sector outside the cycle draws nothing.
+         */
         x1: ChartX;
-        /** Its last instant. */
+        /** The sector's last instant. A band takes `y1` and `y2` or `x1` and `x2`. */
         x2: ChartX;
-        /** Not on a sector. */
+        /**
+         * The annulus's first value. A band takes `y1` and `y2` or `x1` and `x2`. The annulus clips
+         * to the radius domain, and one outside it draws nothing.
+         */
         y1?: never;
-        /** Not on a sector. */
+        /** The annulus's last value. A band takes `y1` and `y2` or `x1` and `x2`. */
         y2?: never;
         /**
-         * How `{value}` in `label` prints the range's ends, the first slot's start and the last
-         * slot's end, joined by an en dash. A range preset prints each end in its point form, as
-         * "hour-range" does in "hour". By default a dial of slots shorter than a day prints them in
-         * "time", and a coarser dial prints the first and the last slot's labels, as the cartesian
-         * ReferenceArea prints them.
+         * How `{value}` in `label` prints the range. An annulus prints its values in this value
+         * format. A sector prints its ends, the first slot's start and the last slot's end, joined
+         * by an en dash, and a range preset prints each end in its point form, as "hour-range" does
+         * in "hour". By default a dial of slots shorter than a day prints a sector's ends in
+         * "time", and a coarser dial prints the first and the last slot's labels.
          */
         format?: XFormat;
       }
   ) & {
     /** The visible label. `{value}` prints the range. */
     label?: string;
-    /** The band's tone. "default" by default. */
+    /** The band's tone. */
     tone?: ChartTone;
   };
 
@@ -75,8 +93,13 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
  *
  * @beta
  */
-export function ClockChartReferenceArea({ style, ...props }: ClockChartReferenceAreaProps): ReactElement {
-  const { label, tone = "default", className } = props;
+export function ClockChartReferenceArea({
+  label,
+  tone = "default",
+  className,
+  style,
+  ...props
+}: ClockChartReferenceAreaProps): ReactElement {
   const { model, box, kernel } = usePolarContext("ClockChart.ReferenceArea", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.ReferenceArea");
   const strings = CHART_STRINGS[kernel.locale];

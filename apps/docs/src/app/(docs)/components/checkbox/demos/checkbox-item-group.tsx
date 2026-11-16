@@ -1,32 +1,20 @@
 "use client";
 
-import { useState } from "react";
-
 import { CheckboxItem, CheckboxItemGroup } from "@elmeragroup/fuse/checkbox";
 
 export function CheckboxItemGroupDemo() {
-  const [value, setValue] = useState<string[]>(["fixed"]);
-  const fixedSelected = value.includes("fixed");
-
   return (
-    <CheckboxItemGroup label="Price plans" value={value} onChange={setValue}>
-      <CheckboxItem value="fixed">
+    <CheckboxItemGroup label="Add-ons" defaultValue={["price-alert"]}>
+      <CheckboxItem value="price-alert">
         <CheckboxItem.Content>
-          <CheckboxItem.Title>Fixed price</CheckboxItem.Title>
-          <CheckboxItem.Description>Locked for 12 months.</CheckboxItem.Description>
+          <CheckboxItem.Title>Price alert</CheckboxItem.Title>
+          <CheckboxItem.Description>A text message when the spot price peaks.</CheckboxItem.Description>
         </CheckboxItem.Content>
-        <CheckboxItem.Actions>Recommended</CheckboxItem.Actions>
-        <CheckboxItem.SubSection
-          role="region"
-          aria-label="Fixed price details"
-          mode={fixedSelected ? "visible" : "hidden"}>
-          Includes a price-freeze guarantee.
-        </CheckboxItem.SubSection>
       </CheckboxItem>
-      <CheckboxItem value="spot">
+      <CheckboxItem value="ev-charging">
         <CheckboxItem.Content>
-          <CheckboxItem.Title>Spot price</CheckboxItem.Title>
-          <CheckboxItem.Description>Follows the market.</CheckboxItem.Description>
+          <CheckboxItem.Title>Electric car charging</CheckboxItem.Title>
+          <CheckboxItem.Description>A night rate for your home charger.</CheckboxItem.Description>
         </CheckboxItem.Content>
       </CheckboxItem>
     </CheckboxItemGroup>

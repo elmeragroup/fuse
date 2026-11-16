@@ -29,7 +29,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the root.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Meter.Label`.",
+          "description": "The visible label.",
           "required": false
         },
         {
@@ -68,8 +68,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Upper bound, forwarded as base-ui `max`. A `value` above it — including the default 100 — resolves to `EXCEEDED_MAX_VALUE`.",
+          "defaultValue": "100",
+          "description": "The high end of the range. A `value` above it shows as exceeded.",
           "required": false
         },
         {
@@ -77,8 +77,8 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Lower bound, forwarded as base-ui `min`.",
+          "defaultValue": "0",
+          "description": "The low end of the range.",
           "required": false
         },
         {
@@ -87,7 +87,7 @@
           "type": "MeterMode | undefined",
           "shortType": null,
           "defaultValue": "\"default\"",
-          "description": "Color and icon semantics. `\"inverted\"` is a mode name, not a Tailwind variant.",
+          "description": "What the bar's colour and icon say about the value. The bar is low up to 80% of the range, high above 80%, full at 100% and exceeded above `maxValue`. - `default`: more is worse. Low is success, high is a warning, and full or exceeded is an error. High, full and exceeded show the warning icon. - `inverted`: more is better. Low is an error, high is a warning, full is success and exceeded is an error, with no icon. - `success-only-when-full`: only full is success, with the success icon. Every other level is an error with the warning icon. - `neutral`: the primary colour at every level, with no icon.",
           "required": false,
           "values": [
             "default",
@@ -124,7 +124,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the CheckCircle icon. Defaults to the locale dictionary.",
+          "description": "The accessible name of the success icon. Unset, it comes from the locale dictionary.",
           "required": false
         },
         {
@@ -133,7 +133,7 @@
           "type": "number",
           "shortType": null,
           "defaultValue": null,
-          "description": "Current value.",
+          "description": "The current value.",
           "required": true
         },
         {
@@ -142,7 +142,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the auto-formatted `Meter.Value`.",
+          "description": "Text that replaces the formatted value at the end of the label row, such as `\"82 of 120 GB\"`.",
           "required": false
         },
         {
@@ -151,7 +151,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the Warning icon. Defaults to the locale dictionary.",
+          "description": "The accessible name of the warning icon. Unset, it comes from the locale dictionary.",
           "required": false
         }
       ]

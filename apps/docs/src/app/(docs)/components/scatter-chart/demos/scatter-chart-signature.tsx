@@ -2,7 +2,6 @@
 
 import { ScatterChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
-import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 // Invented values. One business's weekly consumption in kWh against the week's mean temperature
 // in °C, this year and last, and the normal consumption the app fitted to last year's weeks.
@@ -122,37 +121,35 @@ const rows = [
 // Keys that read as integers, such as "2026", would list in numeric order, so the keys are names.
 // Last year's pale dots take the normal line's role, as a pale tint of it.
 const config = {
-  thisYear: { label: "Forbruk 2026", color: "chart-1" },
-  lastYear: { label: "Forbruk 2025 (referanse)", color: "chart-2" },
-  normal: { label: "Normalforbruk", color: "chart-2" },
+  thisYear: { label: "Use 2026", color: "chart-1" },
+  lastYear: { label: "Use 2025, reference", color: "chart-2" },
+  normal: { label: "Normal use", color: "chart-2" },
 } as const satisfies ChartConfig;
 
 export function ScatterChartSignature() {
   return (
-    <LocaleProvider locale="nb-NO">
-      <ScatterChart.Root
-        data={rows}
-        config={config}
-        xKey="tempC"
-        yKey="kwh"
-        seriesKey="series"
-        xFormat={{ style: "unit", unit: "celsius", maximumFractionDigits: 1 }}
-        valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
-        xLabel="Ukemiddeltemperatur"
-        yLabel="Ukeforbruk"
-        aria-label="Ukeforbruk mot ukemiddeltemperatur, 2026 og 2025"
-        style={{ "--chart-plot-height": "18rem" }}>
-        <ScatterChart.Grid />
-        <ScatterChart.XAxis label="Ukemiddeltemperatur (°C)" format={{ maximumFractionDigits: 0 }} />
-        <ScatterChart.YAxis label="kWh per uke" format={{ maximumFractionDigits: 0 }} />
-        <ScatterChart.Points dataKey="lastYear" size="sm" variant="quiet" />
-        <ScatterChart.Line dataKey="normal" />
-        <ScatterChart.Points dataKey="thisYear" size="md" />
-        <ScatterChart.ActiveDot />
-        <ScatterChart.Tooltip />
-        <ScatterChart.Legend className="justify-start" />
-        <ScatterChart.Table />
-      </ScatterChart.Root>
-    </LocaleProvider>
+    <ScatterChart.Root
+      data={rows}
+      config={config}
+      xKey="tempC"
+      yKey="kwh"
+      seriesKey="series"
+      xFormat={{ style: "unit", unit: "celsius", maximumFractionDigits: 1 }}
+      valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
+      xLabel="Weekly mean temperature"
+      yLabel="Weekly use"
+      aria-label="Weekly use against weekly mean temperature, 2026 and 2025"
+      style={{ "--chart-plot-height": "18rem" }}>
+      <ScatterChart.Grid />
+      <ScatterChart.XAxis label="Weekly mean temperature (°C)" format={{ maximumFractionDigits: 0 }} />
+      <ScatterChart.YAxis label="kWh per week" format={{ maximumFractionDigits: 0 }} />
+      <ScatterChart.Points dataKey="lastYear" size="sm" variant="quiet" />
+      <ScatterChart.Line dataKey="normal" />
+      <ScatterChart.Points dataKey="thisYear" size="md" />
+      <ScatterChart.ActiveDot />
+      <ScatterChart.Tooltip />
+      <ScatterChart.Legend />
+      <ScatterChart.Table />
+    </ScatterChart.Root>
   );
 }

@@ -37,9 +37,13 @@ import type { LabelSize } from "./layout/polar-labels";
  * @beta
  */
 export type PieChartLabelsProps = ChartLayerProps & {
-  /** Where each label sits. An inside label on a role with no on-colour role draws outside instead. */
+  /**
+   * Where each label sits. "outside" draws a leader from the rim and takes a gutter beside the dial.
+   * An inside label draws outside its slice when the slice's role has no on-colour role, such as a
+   * sequential step, or when its box does not fit the slice.
+   */
   position?: "inside" | "outside";
-  /** A per-slice template. Without children, SeriesLabel and LegendShare. */
+  /** A template each label renders for its slice. Without children, `SeriesLabel` and `LegendShare`. */
   children?: ReactNode;
 };
 

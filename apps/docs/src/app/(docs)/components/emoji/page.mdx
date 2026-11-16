@@ -1,11 +1,15 @@
 ---
 lede: >
-  A small set of Twemoji faces rendered as inline SVG.
+  A small set of Twemoji faces drawn as inline SVG.
 ---
 
-import { EmojiFaces } from "./demos/emoji-faces";
-import { EmojiLabeled } from "./demos/emoji-labeled";
-import { EmojiSizing } from "./demos/emoji-sizing";
+import { EmojiDemo } from "./demos/emoji-demo";
+import { EmojiSlightlyFrowningFace } from "./demos/emoji-slightly-frowning-face";
+import { EmojiNeutralFace } from "./demos/emoji-neutral-face";
+import { EmojiLoudlyCryingFace } from "./demos/emoji-loudly-crying-face";
+import { EmojiPartyingFace } from "./demos/emoji-partying-face";
+import { EmojiLabel } from "./demos/emoji-label";
+import { EmojiBesideText } from "./demos/emoji-beside-text";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,16 +17,53 @@ export const metadata = componentMetadata("emoji");
 
 <ComponentIntro slug="emoji" />
 
-<Demo slug="emoji" id="faces" title="Faces" file="emoji-faces.tsx">
-  <EmojiFaces />
+<DefaultDemo slug="emoji" file="emoji-demo.tsx">
+  <EmojiDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Emoji } from "@elmeragroup/fuse/emoji";
+
+<Emoji.SlightlySmilingFace className="size-5" />
+```
+
+## Examples
+
+<Demo
+  slug="emoji"
+  id="slightly-frowning-face"
+  title="Slightly frowning face"
+  level={3}
+  file="emoji-slightly-frowning-face.tsx">
+  <EmojiSlightlyFrowningFace />
 </Demo>
 
-<Demo slug="emoji" id="labeled" title="Labeled" file="emoji-labeled.tsx">
-  <EmojiLabeled />
+<Demo slug="emoji" id="neutral-face" title="Neutral face" level={3} file="emoji-neutral-face.tsx">
+  <EmojiNeutralFace />
 </Demo>
 
-<Demo slug="emoji" id="sizing" title="Sizing" file="emoji-sizing.tsx">
-  <EmojiSizing />
+<Demo
+  slug="emoji"
+  id="loudly-crying-face"
+  title="Loudly crying face"
+  level={3}
+  file="emoji-loudly-crying-face.tsx">
+  <EmojiLoudlyCryingFace />
+</Demo>
+
+<Demo slug="emoji" id="partying-face" title="Partying face" level={3} file="emoji-partying-face.tsx">
+  <EmojiPartyingFace />
+</Demo>
+
+<Demo slug="emoji" id="label" title="Label" level={3} file="emoji-label.tsx">
+  <EmojiLabel />
+</Demo>
+
+<Demo slug="emoji" id="beside-text" title="Beside text" level={3} file="emoji-beside-text.tsx">
+  <EmojiBesideText />
 </Demo>
 
 <ApiReference slug="emoji" />

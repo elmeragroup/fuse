@@ -3,14 +3,20 @@ lede: >
   A control with icons, buttons, or text joined into one bordered group.
 ---
 
-import { InputGroupIcons } from "./demos/input-group-icons";
-import { InputGroupSizes } from "./demos/input-group-sizes";
-import { InputGroupButtons } from "./demos/input-group-buttons";
+import { InputGroupDemo } from "./demos/input-group-demo";
+import { InputGroupSmall } from "./demos/input-group-small";
+import { InputGroupInlineEnd } from "./demos/input-group-inline-end";
+import { InputGroupBlockStart } from "./demos/input-group-block-start";
+import { InputGroupBlockEnd } from "./demos/input-group-block-end";
+import { InputGroupButtonDemo } from "./demos/input-group-button";
+import { InputGroupButtonSmall } from "./demos/input-group-button-small";
+import { InputGroupIconButton } from "./demos/input-group-icon-button";
+import { InputGroupIconButtonSmall } from "./demos/input-group-icon-button-small";
 import { InputGroupKbd } from "./demos/input-group-kbd";
-import { InputGroupBlock } from "./demos/input-group-block";
-import { InputGroupTextarea } from "./demos/input-group-textarea";
+import { InputGroupTextareaDemo } from "./demos/input-group-textarea";
 import { InputGroupInvalid } from "./demos/input-group-invalid";
-import { InputGroupField } from "./demos/input-group-field";
+import { InputGroupDisabled } from "./demos/input-group-disabled";
+import { InputGroupReadOnly } from "./demos/input-group-read-only";
 import { InputGroupNumeric } from "./demos/input-group-numeric";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -19,53 +25,85 @@ export const metadata = componentMetadata("input-group");
 
 <ComponentIntro slug="input-group" />
 
-<Demo slug="input-group" id="icons" title="Icon addons" file="input-group-icons.tsx">
-  <InputGroupIcons />
+<DefaultDemo slug="input-group" file="input-group-demo.tsx">
+  <InputGroupDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { MagnifyingGlass } from "@elmeragroup/fuse/icons";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
+
+<InputGroup.Root>
+  <InputGroup.Addon>
+    <MagnifyingGlass />
+  </InputGroup.Addon>
+  <InputGroup.Input aria-label="Search customers" />
+</InputGroup.Root>
+```
+
+## Examples
+
+<Demo slug="input-group" id="small" title="Small" level={3} file="input-group-small.tsx">
+  <InputGroupSmall />
 </Demo>
 
-<Demo slug="input-group" id="sizes" title="Sizes" file="input-group-sizes.tsx">
-  <InputGroupSizes />
+<Demo slug="input-group" id="inline-end" title="Trailing addon" level={3} file="input-group-inline-end.tsx">
+  <InputGroupInlineEnd />
 </Demo>
 
-Disabling an addon button leaves an editable field enabled. Disable `InputGroup.Input` or `InputGroup.Textarea` when the entire field is unavailable. The group reads its disabled and invalid state from that input or textarea alone, so keep it a direct child of `InputGroup.Root`. A field nested in an addon, such as a `NumberField`, shows its own disabled and invalid state without dimming the group.
-
-<Demo slug="input-group" id="buttons" title="Button addons" file="input-group-buttons.tsx">
-  <InputGroupButtons />
+<Demo slug="input-group" id="block-start" title="Addon above" level={3} file="input-group-block-start.tsx">
+  <InputGroupBlockStart />
 </Demo>
 
-<Demo slug="input-group" id="kbd" title="Keyboard hint" file="input-group-kbd.tsx">
+<Demo slug="input-group" id="block-end" title="Addon below" level={3} file="input-group-block-end.tsx">
+  <InputGroupBlockEnd />
+</Demo>
+
+<Demo slug="input-group" id="button" title="Button" level={3} file="input-group-button.tsx">
+  <InputGroupButtonDemo />
+</Demo>
+
+<Demo slug="input-group" id="button-small" title="Small button" level={3} file="input-group-button-small.tsx">
+  <InputGroupButtonSmall />
+</Demo>
+
+<Demo slug="input-group" id="icon-button" title="Icon button" level={3} file="input-group-icon-button.tsx">
+  <InputGroupIconButton />
+</Demo>
+
+<Demo
+  slug="input-group"
+  id="icon-button-small"
+  title="Small icon button"
+  level={3}
+  file="input-group-icon-button-small.tsx">
+  <InputGroupIconButtonSmall />
+</Demo>
+
+<Demo slug="input-group" id="kbd" title="Keyboard hint" level={3} file="input-group-kbd.tsx">
   <InputGroupKbd />
 </Demo>
 
-<Demo slug="input-group" id="block" title="Block addons" file="input-group-block.tsx">
-  <InputGroupBlock />
+<Demo slug="input-group" id="textarea" title="Textarea" level={3} file="input-group-textarea.tsx">
+  <InputGroupTextareaDemo />
 </Demo>
 
-<Demo slug="input-group" id="textarea" title="Textarea" file="input-group-textarea.tsx">
-  <InputGroupTextarea />
-</Demo>
-
-<Demo slug="input-group" id="invalid" title="Invalid" file="input-group-invalid.tsx">
+<Demo slug="input-group" id="invalid" title="Invalid" level={3} file="input-group-invalid.tsx">
   <InputGroupInvalid />
 </Demo>
 
-<Prose>
-
-InputGroup has no label of its own. For a labelled field with a prefix, a unit or a looked-up value, put the group in `Field.Root` with `Field.Label`, `Field.Description` and `Field.Error`, as with `Input`. `Field.Root` marks `InputGroup.Input` invalid, and the group paints the invalid state from it. A `Field.Description` inside an addon still describes the input, so a looked-up value such as the city is read with it.
-
-</Prose>
-
-<Demo slug="input-group" id="field" title="In a field" file="input-group-field.tsx">
-  <InputGroupField />
+<Demo slug="input-group" id="disabled" title="Disabled" level={3} file="input-group-disabled.tsx">
+  <InputGroupDisabled />
 </Demo>
 
-<Prose>
+<Demo slug="input-group" id="read-only" title="Read-only" level={3} file="input-group-read-only.tsx">
+  <InputGroupReadOnly />
+</Demo>
 
-`InputGroup.Input` takes `Input`'s `filter="numeric"`, so a digits-only field can carry a prefix or suffix.
-
-</Prose>
-
-<Demo slug="input-group" id="numeric" title="Numeric input" file="input-group-numeric.tsx">
+<Demo slug="input-group" id="numeric" title="Numeric filter" level={3} file="input-group-numeric.tsx">
   <InputGroupNumeric />
 </Demo>
 

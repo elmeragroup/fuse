@@ -27,7 +27,7 @@
           "type": "RenderProp<Record<string, unknown>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline levels; the level-2 type classes and `data-slot` stay merged onto the replacement.",
+          "description": "Replaces the host `<h2>`, such as `render={<h3 />}` for another outline level. The heading keeps its level-2 type.",
           "required": false
         }
       ]
@@ -39,15 +39,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The list's Items. Wrap each term and its details in a `DescriptionList.Item`, the `<div>` HTML allows around one name-value group. Do not mix Items with bare terms and details: HTML forbids it, the inline layout styles cells only inside an Item, and rules fall between Items.",
+          "required": false
+        },
         {
           "name": "dividers",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether a responsive list draws a rule above every Item but the first. Pass `false` for a list whose rows need no rules, such as one inside a card that already separates it. Set once per list: it reaches only this list's own Items, so a list nested inside keeps its own rules. An inline list draws no rules either way, so `dividers` has no effect there. Defaults to `true`.",
+          "description": "Whether a responsive list draws a rule above every Item but the first. Pass `false` for a list whose rows need no rules, such as one inside a card that already separates it. It reaches only this list's own Items, so a list nested inside keeps its own rules. An inline list draws no rules either way.",
           "required": false
         },
         {
@@ -56,7 +65,7 @@
           "type": "\"inline\" | \"responsive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"responsive\"",
-          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items at every width unless `dividers` is `false`. `inline` is for label/value rows in cards and summaries: each Item shares its own row between its term and details, whatever the other Items hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a short one leaves the other room. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end, rather than break a word; a word wider than the whole row then breaks in the details. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.",
+          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items. `inline` is for label and value rows in receipts, order summaries and price boxes. Each Item shares its own row between its term and details, with the details at the end of the row. When the two do not fit on one line, both wrap within the row. Only when the term's longest word and the details' longest word cannot share the row does the details move under its term, and a word wider than the whole row then breaks in the details. Inline rows take the label type, follow density as field labels do, space with the small surface gap and have no rules. The term is not muted: add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to stress it. To group rows, use one inline list per group. Consecutive inline lists space with the large surface gap. A colour class on a term or details wins in both layouts. To override the inline cells' padding, sizing and alignment, use a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. To override an inline Item's row, wrap and gap, use a `[:where([data-layout=inline])>&]:` class.",
           "required": false,
           "values": [
             "inline",
@@ -72,8 +81,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's terms and details. An Item can hold several terms of one details, or several details of one term. Its last term pairs with its first details, and earlier terms and later details take rows of their own.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "DescriptionList.Term",
@@ -82,8 +101,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The term. It wraps at its spaces and hyphens, so a hyphenated label such as \"Målepunkt-ID\" can split at the hyphen beside a long value. Write it with a non-breaking hyphen, U+2011, to keep it whole.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "DescriptionList.Details",
@@ -92,8 +121,18 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
-      "props": []
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value. In a `layout=\"inline\"` list, it wraps between its words beside its term. There, an email address too wide to sit beside its term moves under it whole, and one wider than the row breaks inside it. Put a `<wbr>` before the `@` to let it break at the `@` instead, which often keeps it beside its term.",
+          "required": false
+        }
+      ]
     }
   ]
 }

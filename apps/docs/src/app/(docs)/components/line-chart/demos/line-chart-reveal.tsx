@@ -25,12 +25,10 @@ export function LineChartReveal() {
       data={hours}
       config={config}
       xKey="hour"
+      defaultActiveX={new Date(Date.UTC(2026, 9, 16, 16))}
       interval="hour"
       timeZone="Europe/Oslo"
       aria-label="Consumption per hour">
-      <LineChart.Headline>
-        <LineChart.ActiveValue dataKey="kwh" fallback="max" />
-      </LineChart.Headline>
       <LineChart.XAxis />
       <LineChart.Reveal>
         <LineChart.Area dataKey="kwh" />

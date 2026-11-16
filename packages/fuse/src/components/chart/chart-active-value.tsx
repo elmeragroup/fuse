@@ -39,7 +39,10 @@ import { seriesOf } from "./layout/series-of";
 export type ChartActiveValueProps = ChartLayerProps & {
   /** The series to print. */
   dataKey: string;
-  /** The datum to print when nothing is active. "last" by default. */
+  /**
+   * The datum to print when nothing is active: the first or last reading, the lowest or highest, or
+   * the slot that contains Root's `now`.
+   */
   fallback?: ChartFallback;
   /** The value format. The series' config `format` is the default. */
   format?: ValueFormat;

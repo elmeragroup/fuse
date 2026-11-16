@@ -11,26 +11,23 @@ import { TableCell } from "./table-cell";
 import { TABLE_CELL_CLASSES } from "./table-cell-classes";
 import { verticalTableCellText } from "./vertical-table-cell-text";
 
+/** `VerticalTable.Key` takes a native `td`'s props, its text wrapping, a loading state and `render`. */
 export type VerticalTableKeyProps = ComponentProps<"td"> & {
-  /**
-   * `"truncate"` clips overflowing text; `"default"` wraps (`whitespace-normal`).
-   */
+  /** `"truncate"` clips text that overflows the cell; `"default"` wraps it. */
   text?: "default" | "truncate";
-  /**
-   * Replaces children with a `Skeleton` (`h-4 w-full max-w-24`).
-   */
+  /** Shows a skeleton in place of the children while the key loads. */
   isLoading?: boolean;
   /**
-   * Replaces the host `<td>` via base-ui `useRender`. Pass `render={<th scope="row" />}`
-   * for row-header semantics; Key classes and `data-slot` stay merged onto the host.
+   * Replaces the `<td>`. Pass `render={<th scope="row" />}` to make the key the row's header. The
+   * key's classes stay on the replacement.
    */
   render?: useRender.RenderProp;
 };
 
 /**
- * Muted key column, its text at the inline start whether it renders a `td` or a row-header `th`.
- * Client only because polymorphism is `useRender`;
- * the rest of the compound stays server.
+ * The muted key column, its text at the inline start whether it renders a `td` or a row-header
+ * `th`. It is a client module because `render` goes through `useRender`; the rest of the compound
+ * stays server-safe.
  */
 export function VerticalTableKey({
   children,

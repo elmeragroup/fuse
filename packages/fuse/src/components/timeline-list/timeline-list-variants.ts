@@ -1,10 +1,10 @@
 /**
- * Module-private slotted recipe. Not exported from the
- * public entry — there is no proven recipe-borrowing use.
+ * Module-private slotted recipe. The public entry does not export it, because no other
+ * component borrows it.
  *
- * Geometry follows the references. Tokens replace the ref's raw palette:
- * connector `bg-border`, dot `bg-foreground`. The final item drops
- * bottom margin; the connector is `Item::before` on every non-last item.
+ * The geometry follows the reference design. Tokens replace its raw palette, with `bg-border`
+ * for the connector and `bg-foreground` for the dot. The last item drops its bottom margin, and
+ * the connector is `Item::before` on every item but the last.
  */
 import { tv } from "../../styles/tv";
 

@@ -3,15 +3,21 @@ lede: >
   A phone input with a country picker that submits the number in international format.
 ---
 
-import { PhoneNumberFieldBasic } from "./demos/phone-number-field-basic";
-import { PhoneNumberFieldSizes } from "./demos/phone-number-field-sizes";
+import { PhoneNumberFieldDemo } from "./demos/phone-number-field-demo";
+import { PhoneNumberFieldSmall } from "./demos/phone-number-field-small";
 import { PhoneNumberFieldInternational } from "./demos/phone-number-field-international";
-import { PhoneNumberFieldDetect } from "./demos/phone-number-field-detect";
+import { PhoneNumberFieldFormatOnType } from "./demos/phone-number-field-format-on-type";
+import { PhoneNumberFieldWithoutDetection } from "./demos/phone-number-field-without-detection";
 import { PhoneNumberFieldCountries } from "./demos/phone-number-field-countries";
+import { PhoneNumberFieldSingleCountry } from "./demos/phone-number-field-single-country";
 import { PhoneNumberFieldControlledCountry } from "./demos/phone-number-field-controlled-country";
 import { PhoneNumberFieldForm } from "./demos/phone-number-field-form";
-import { PhoneNumberFieldI18n } from "./demos/phone-number-field-i18n";
-import { PhoneNumberFieldStates } from "./demos/phone-number-field-states";
+import { PhoneNumberFieldLocale } from "./demos/phone-number-field-locale";
+import { PhoneNumberFieldCustomLabels } from "./demos/phone-number-field-custom-labels";
+import { PhoneNumberFieldError } from "./demos/phone-number-field-error";
+import { PhoneNumberFieldDisabled } from "./demos/phone-number-field-disabled";
+import { PhoneNumberFieldReadOnly } from "./demos/phone-number-field-read-only";
+import { PhoneNumberFieldEndContent } from "./demos/phone-number-field-end-content";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -19,75 +25,125 @@ export const metadata = componentMetadata("phone-number-field");
 
 <ComponentIntro slug="phone-number-field" />
 
-<Demo slug="phone-number-field" id="basic" title="Basic" file="phone-number-field-basic.tsx">
-  <PhoneNumberFieldBasic />
-</Demo>
+<DefaultDemo slug="phone-number-field" file="phone-number-field-demo.tsx">
+  <PhoneNumberFieldDemo />
+</DefaultDemo>
 
-<Demo slug="phone-number-field" id="sizes" title="Sizes" file="phone-number-field-sizes.tsx">
-  <PhoneNumberFieldSizes />
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
+
+<PhoneNumberField label="Mobile" name="phone" />
+```
+
+## Examples
+
+<Demo slug="phone-number-field" id="small" title="Small" level={3} file="phone-number-field-small.tsx">
+  <PhoneNumberFieldSmall />
 </Demo>
 
 <Demo
   slug="phone-number-field"
   id="international"
   title="International"
+  level={3}
   file="phone-number-field-international.tsx">
   <PhoneNumberFieldInternational />
 </Demo>
 
-The field picks the country from a `+` or `00` prefix as the user types or pastes. `autoDetectCountry={false}` keeps the selected country instead.
-
-<Demo slug="phone-number-field" id="detect" title="Auto-detect" file="phone-number-field-detect.tsx">
-  <PhoneNumberFieldDetect />
+<Demo
+  slug="phone-number-field"
+  id="format-on-type"
+  title="Format on type"
+  level={3}
+  file="phone-number-field-format-on-type.tsx">
+  <PhoneNumberFieldFormatOnType />
 </Demo>
 
-<Demo slug="phone-number-field" id="countries" title="Countries" file="phone-number-field-countries.tsx">
+<Demo
+  slug="phone-number-field"
+  id="without-detection"
+  title="Without country detection"
+  level={3}
+  file="phone-number-field-without-detection.tsx">
+  <PhoneNumberFieldWithoutDetection />
+</Demo>
+
+<Demo
+  slug="phone-number-field"
+  id="countries"
+  title="Countries"
+  level={3}
+  file="phone-number-field-countries.tsx">
   <PhoneNumberFieldCountries />
 </Demo>
 
-<Prose>
-
-Pass `countryCode` with `onCountryChange` to own the country. A new `countryCode` acts like a
-pick: it clears the digits unless `preserveOnCountryChange` keeps them. A pick in the field is a
-proposal the parent accepts by setting `countryCode`; a parent that keeps its code returns the field
-to it. A controlled `value` that starts with `+` or `00` names its own country and keeps it.
-
-A proposal the parent has not answered yet keeps waiting through:
-
-- a render with the same props;
-- a change to `defaultValue`, `defaultCountryCode` or `preserveOnCountryChange` alone;
-- with `countryCode` set, a change to `outputFormat`, `international`, `formatOnType`,
-  `autoDetectCountry`, `metadata` or `countries` that keeps `value` and `countryCode`, while
-  `countries` still offers the proposal's country;
-- an answer to one half of it, in either order, which keeps it waiting for the other:
-  `countryCode` set to its country itself, or a `value` that is its number in a countryless form
-  of the parent's own, such as national digits. A code that only falls back to the proposal's
-  country is no answer.
-
-A proposal answered in full ends, as does one whose number the parent holds while the value names
-another country. Any other change drops it. Each proposal reaches `onChange` once, whatever order
-the parent answers in.
-
-</Prose>
+<Demo
+  slug="phone-number-field"
+  id="single-country"
+  title="Single country"
+  level={3}
+  file="phone-number-field-single-country.tsx">
+  <PhoneNumberFieldSingleCountry />
+</Demo>
 
 <Demo
   slug="phone-number-field"
   id="controlled-country"
   title="Controlled country"
+  level={3}
   file="phone-number-field-controlled-country.tsx">
   <PhoneNumberFieldControlledCountry />
 </Demo>
 
-<Demo slug="phone-number-field" id="form" title="Form submit" file="phone-number-field-form.tsx">
+<Demo slug="phone-number-field" id="form" title="Form submit" level={3} file="phone-number-field-form.tsx">
   <PhoneNumberFieldForm />
 </Demo>
 
-<Demo slug="phone-number-field" id="i18n" title="Translated labels" file="phone-number-field-i18n.tsx">
-  <PhoneNumberFieldI18n />
+<Demo slug="phone-number-field" id="locale" title="Locale" level={3} file="phone-number-field-locale.tsx">
+  <PhoneNumberFieldLocale />
 </Demo>
 
-<Demo slug="phone-number-field" id="states" title="States" file="phone-number-field-states.tsx">
-  <PhoneNumberFieldStates />
+<Demo
+  slug="phone-number-field"
+  id="custom-labels"
+  title="Custom labels"
+  level={3}
+  file="phone-number-field-custom-labels.tsx">
+  <PhoneNumberFieldCustomLabels />
+</Demo>
+
+<Demo slug="phone-number-field" id="error" title="Error" level={3} file="phone-number-field-error.tsx">
+  <PhoneNumberFieldError />
+</Demo>
+
+<Demo
+  slug="phone-number-field"
+  id="disabled"
+  title="Disabled"
+  level={3}
+  file="phone-number-field-disabled.tsx">
+  <PhoneNumberFieldDisabled />
+</Demo>
+
+<Demo
+  slug="phone-number-field"
+  id="read-only"
+  title="Read-only"
+  level={3}
+  file="phone-number-field-read-only.tsx">
+  <PhoneNumberFieldReadOnly />
+</Demo>
+
+<Demo
+  slug="phone-number-field"
+  id="end-content"
+  title="End content"
+  level={3}
+  file="phone-number-field-end-content.tsx">
+  <PhoneNumberFieldEndContent />
 </Demo>
 
 <ApiReference slug="phone-number-field" />

@@ -13,7 +13,9 @@ import { segmentedItemInset, toggleGroupVariants } from "./toggle-group-variants
 
 const slots = toggleGroupVariants();
 
-type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
+type ToggleVariantProps = VariantProps<typeof toggleVariants>;
+
+type ToggleGroupContextValue = ToggleVariantProps & {
   spacing?: number;
   orientation?: "horizontal" | "vertical";
 };
@@ -26,26 +28,42 @@ export type ToggleGroupRootProps = Omit<
   ComponentProps<typeof ToggleGroupPrimitive>,
   "className" | "style"
 > & {
-  /** Extra classes, merged last through `cn`. */
+  /** Extra classes for the group, merged last. */
   className?: string;
-  /** Inline styles, merged after the library's `--gap` custom property. */
+  /** Inline styles, merged after the `--gap` custom property the group sets from `spacing`. */
   style?: CSSProperties;
   /**
-   * Tailwind spacing units between items. `0` is segmented-control mode
+   * The space between items, in Tailwind spacing units. `0` joins the items into one segmented
+   * control: they share their inner edges, and outline items share one border between
+   * neighbours.
    * @default 2
    */
   spacing?: number;
-} & VariantProps<typeof toggleVariants>;
+  /**
+   * The look of every item: `default` with no fill or border, or `outline` with a border. Unset,
+   * the items take Toggle's `default`. An item's own `variant` wins.
+   */
+  variant?: ToggleVariantProps["variant"];
+  /**
+   * The size of every item: `xs`, `sm`, `default` or `lg`, where `default` is the `md` control
+   * size. Unset, the items take Toggle's `default`. An item's own `size` wins.
+   */
+  size?: ToggleVariantProps["size"];
+};
 
 export type ToggleGroupItemProps = Omit<ComponentProps<typeof TogglePrimitive>, "className"> & {
-  /** Extra classes, merged after group overrides + `toggleVariants`. */
+  /** Extra classes for the item, merged after the group's and Toggle's. */
   className?: string;
-} & VariantProps<typeof toggleVariants>;
+  /** The item's look, which overrides the group's `variant`. */
+  variant?: ToggleVariantProps["variant"];
+  /** The item's size, which overrides the group's `size`. */
+  size?: ToggleVariantProps["size"];
+};
 
 /**
- * Client toggle group over `@base-ui/react/toggle-group`.
- * Root publishes `variant` / `size` / `spacing` / `orientation` through
- * module-private context; Item borrows public `toggleVariants`.
+ * A group of toggles built on Base UI's toggle group. Root shares `variant`, `size`, `spacing`
+ * and `orientation` with its items through a module-private context, and each item draws with
+ * Toggle's `toggleVariants`.
  */
 export function ToggleGroupRoot({
   className,
@@ -78,10 +96,7 @@ export function ToggleGroupRoot({
   );
 }
 
-/**
- * Group-aware toggle. Resolves `variant` / `size` as `itemProp ?? contextValue`
- * so an explicit item-level axis wins.
- */
+/** One toggle in the group. Its own `variant` and `size` win over the group's. */
 export function ToggleGroupItem({
   className,
   children,

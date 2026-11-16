@@ -13,49 +13,51 @@ import { textareaFieldVariants } from "./textarea-field-variants";
 
 const slots = textareaFieldVariants();
 
+/** The props of {@link TextareaField}. */
 export type TextareaFieldProps = {
-  /** Visible label, rendered as `Field.Label`. */
+  /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** The textarea's name when there is no `label`. */
+  "aria-label"?: ComponentProps<"textarea">["aria-label"];
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as a native constraint message.
+   * The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so
+   * the textarea is marked invalid too. Without it, the field shows its own error, such as the
+   * browser's constraint message.
    */
   errorMessage?: ReactNode;
-  /** Controlled value. */
+  /** The value, for a controlled field. */
   value?: string;
-  /** Uncontrolled initial value, restored with its counter by native form reset. */
+  /** The starting value of an uncontrolled field. A native form reset restores it and its count. */
   defaultValue?: string;
-  /** Called with the string value, not the native event. */
+  /** Called with the textarea's text on every edit. */
   onChange?: (value: string) => void;
-  /** Native `maxLength`, also drives the `current/max` character counter. `0` is set. */
-  maxLength?: number;
-  /** Forwards `required` to the inner textarea. */
-  isRequired?: boolean;
-  /** Forwards `invalid` to `Field.Root`. */
-  isInvalid?: boolean;
-  /** Forwards `disabled` to `Field.Root` and the inner textarea. */
-  isDisabled?: boolean;
-  /** Extra classes, merged onto the root via `cn`. */
-  className?: string;
-  /** Extra classes, merged onto the inner `Textarea`. */
-  textareaClassName?: string;
   /**
-   * Control size of the inner Textarea's field box, forwarded to `Textarea`. `"default"` maps to
-   * the `md` control size; `"sm"` maps to the `sm` control size.
-   * @default "default"
+   * The most characters the textarea takes. It also shows a `current/max` counter at the end of
+   * the label row, including for `0`.
    */
+  maxLength?: number;
+  /** Makes the textarea required, so the browser's constraint check blocks an empty submit. */
+  isRequired?: boolean;
+  /** Marks the field invalid, with the invalid look. */
+  isInvalid?: boolean;
+  /** Disables the field and the textarea. */
+  isDisabled?: boolean;
+  /** Extra classes for the field's root. */
+  className?: string;
+  /** Extra classes for the inner `Textarea`. */
+  textareaClassName?: string;
+  /** The textarea's control size. `default` is the md control size, and `sm` the sm one. */
   size?: TextareaProps["size"];
 } & Omit<
   ComponentProps<typeof Textarea>,
-  "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className" | "size"
+  "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className" | "size" | "aria-label"
 >;
 
 /**
- * Labeled multiline field composite over Field + Textarea.
- * Client — it owns the uncontrolled counter length and the value-not-event change
- * handler.
+ * A labeled multiline text field with an optional character counter. It is a client component,
+ * because it counts an uncontrolled value and calls `onChange` with the text.
  */
 export function TextareaField({
   label,

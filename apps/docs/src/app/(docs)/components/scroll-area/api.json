@@ -14,13 +14,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: ScrollAreaRootState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state. Extra classes, merged after the area's own. Give the area a height, such as `h-72`, or a max height, such as `max-h-72`. Under a max height, short content keeps the area at its content height, and longer content scrolls once it reaches the cap.",
           "required": false
         },
         {
@@ -29,7 +27,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge; a horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
+          "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge. A horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose Base UI's `ScrollArea` parts and mount two `ScrollArea.Bar`s, one per orientation.",
           "required": false,
           "values": [
             "horizontal",
@@ -75,7 +73,7 @@
           "type": "ScrollAreaType | undefined",
           "shortType": null,
           "defaultValue": "\"hover\"",
-          "description": "Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity: `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible, `auto` mounts it only while the content overflows.",
+          "description": "When the scrollbar shows. `hover` shows it on hover or scroll, `always` keeps it mounted and visible, and `auto` mounts it only while the content overflows.",
           "required": false,
           "values": [
             "always",
@@ -160,7 +158,7 @@
           "type": "ScrollAreaType | undefined",
           "shortType": null,
           "defaultValue": "\"hover\"",
-          "description": "Scrollbar visibility, as on `ScrollArea.Root`.",
+          "description": "When the scrollbar shows, as on `ScrollArea.Root`.",
           "required": false,
           "values": [
             "always",

@@ -23,7 +23,11 @@ import { axisNames, xValueText, yValueText } from "./scatter-chart-text";
 export type ScatterChartTableProps = ChartLayerProps & {
   /** Replaces the generated caption, the chart's name and its point count. */
   caption?: string;
-  /** Replaces the dictionary's "Vis som tabell". */
+  /**
+   * Replaces the dictionary's "Vis som tabell". The button shows the table and moves focus to it.
+   * While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past
+   * 500 points it pages by row range.
+   */
   showLabel?: string;
   /** Replaces the dictionary's "Skjul tabell". */
   hideLabel?: string;

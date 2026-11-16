@@ -11,15 +11,14 @@ const toolbar = toolbarVariants();
  * component sync.
  *
  * - `positioner` spans the bottom of the nearest positioned ancestor, `--action-bar-offset` up from
- *   its bottom edge (Root's `offset`) and 16px in from each side, and
- *   centres the bar in it. It lets the pointer through to the content beside the bar, and it is
+ *   its bottom edge (Root's `offset`) and 16px in from each side, and centres the bar in it. It lets the pointer through to the content beside the bar, and it is
  *   the `action-bar` query container that `buttonLabel` reads, since the bar itself shrinks to its
  *   items. Its layer is `actionBarLayer`, above the content's sticky headers and scrollbars and
  *   below the overlay layer, so a menu or dialog the bar opens covers it.
  * - `root` is Toolbar's bar, raised with `shadow-lg`. It rises 6px and fades in on
  *   `data-starting-style` and falls back on `data-ending-style`, in one 150ms ease-out
- *   transition of opacity and translate. Under reduced motion it only fades: the translate and
- *   its transition are declared under `motion-safe:`.
+ *   transition of opacity and translate. Under reduced motion it only fades, because the
+ *   translate and its transition sit under `motion-safe:`.
  * - `count` is the selection count, kept on one line in tabular figures so the bar does not
  *   reflow as the count changes.
  * - `buttonLabel` is a button's words, visually hidden while the positioner is narrower than

@@ -1,17 +1,16 @@
 import { tv } from "../../styles/tv";
 
 /**
- * PUBLIC recipe, exported from `@elmeragroup/fuse/badge` beside `Badge`.
+ * The public recipe, exported from `@elmeragroup/fuse/badge` beside `Badge`.
  *
- * - `destructive` / `outline-destructive` / `soft-destructive` keep the ref's `destructive`
- *   name for consumer compat, but their classes resolve to the canonical `error` tokens.
- * - Every status (destructive, success, warning, info) has a filled arm, an `outline-*` arm
- *   that draws the status role as border and text, and a `soft-*` arm that uses the paired
- *   soft status tokens on their tinted surface.
- * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
- *   and its `hover:` fills, so no state suggests an affordance a <span> does not have.
- * - `size` is a decorative pill axis, not a control size:
- *   it pins no control box, so it does not read `--control-*`.
+ * - `destructive`, `outline-destructive` and `soft-destructive` keep the reference's
+ *   `destructive` name for consumer compatibility, and their classes use the `error` tokens.
+ * - Every status (destructive, success, warning, info) has a filled arm, an `outline-*` arm that
+ *   draws the status colour as border and text, and a `soft-*` arm that uses the paired soft
+ *   status tokens on their tinted surface.
+ * - Badge is not interactive. The recipe drops the reference's bare `:focus` ring and its
+ *   `hover:` fills, so no state suggests an action a `<span>` does not have.
+ * - `size` sets a decorative pill, not a control, so it reads no `--control-*` metric.
  */
 export const badgeVariants = tv({
   base: "font-medium inline-flex items-center rounded-lg border transition-colors",

@@ -177,14 +177,19 @@ export function DefaultEditor(): ReactElement {
 }
 
 /** The props of `DataTableFilter.Editor`. */
-export type DataTableFilterEditorProps = ComponentProps<"div">;
+export type DataTableFilterEditorProps = ComponentProps<"div"> & {
+  /**
+   * The kind editors, such as `DataTableFilter.OptionEditor` and `DataTableFilter.DateEditor`.
+   * Each renders only for its own kinds, so list one for every kind your fields use.
+   */
+  children?: ComponentProps<"div">["children"];
+};
 
 /**
  * A field's editor in whichever overlay renders it: the value popover for a chip, or the add menu
  * in place of its field list. Its header holds the field's name and, for text, number and date
  * fields, the operator. In the add menu it also starts with a Back button, it is a group named by
- * its title, and it keeps every key but Tab from the menu. The kind editors are its children, and
- * each renders only for its own kinds. A move to another field mounts it fresh.
+ * its title, and it keeps every key but Tab from the menu. A move to another field mounts it fresh.
  */
 export function DataTableFilterEditor({
   className,

@@ -1,7 +1,6 @@
 /**
- * Module-private recipe. Not exported from the public entry —
- * there is no proven recipe-borrowing use. Status fill/text use the `error`
- * tokens.
+ * The module-private recipe. The public entry does not export it, since no consumer borrows it
+ * yet. The status fill and text use the `error` tokens.
  *
  * One `tone` axis, four arms. The `mode` × `level` resolution lives in
  * `METER_TONE_TABLE`, so this recipe holds colors only.

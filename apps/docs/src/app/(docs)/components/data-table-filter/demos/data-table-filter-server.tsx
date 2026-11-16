@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { columnFilteringFeature, rowPaginationFeature, tableFeatures } from "@tanstack/react-table";
-import type { ColumnFiltersState, PaginationState } from "@tanstack/react-table";
+import { columnFilteringFeature, createColumnHelper, tableFeatures, useTable } from "@tanstack/react-table";
+import type { ColumnFiltersState } from "@tanstack/react-table";
 
-import { createFuseTableHook } from "@elmeragroup/fuse/data-table";
 import {
   DataTableFilter,
   defineFilterFields,
@@ -46,11 +45,8 @@ const ORDER_FILTERS = defineFilterFields<Order>()({
   large: { kind: "boolean", label: "Large orders only", icon: <CurrencyCircleDollar />, toggle: true },
 });
 
-const STATUS_LABELS = new Map<string, string>(STATUS_OPTIONS.map((option) => [option.value, option.label]));
-
-type OrderPage = {
-  readonly rows: Order[];
-  readonly pageCount: number;
+type OrderResult = {
+  readonly total: number;
   readonly facets: FilterFacets<typeof ORDER_FILTERS>;
 };
 
@@ -80,14 +76,13 @@ function cellOf(order: Order, columnId: string): string | number | boolean | und
 }
 
 /**
- * Stands in for an API route. It parses the filters as untrusted JSON, filters and pages the rows,
+ * Stands in for an API route. It parses the filters as untrusted JSON, counts the matching rows,
  * and computes each field's facets with every other filter applied.
  */
-function fetchOrders(filtersJson: string, { pageIndex, pageSize }: PaginationState): Promise<OrderPage> {
+function fetchOrders(filtersJson: string): Promise<OrderResult> {
   const filters = parseColumnFilters(JSON.parse(filtersJson), ORDER_FILTERS);
   const passes = (order: Order, skip?: string) =>
     filters.every(({ id, value }) => id === skip || matchesFilter(value, cellOf(order, id)));
-  const matching = SERVER_ORDERS.filter((order) => passes(order));
   const counts: Record<string, number> = {};
   for (const order of SERVER_ORDERS.filter((candidate) => passes(candidate, "status"))) {
     counts[order.status] = (counts[order.status] ?? 0) + 1;
@@ -104,87 +99,70 @@ function fetchOrders(filtersJson: string, { pageIndex, pageSize }: PaginationSta
     amounts.length === 0
       ? { status: { counts }, large }
       : { status: { counts }, large, amount: { range: [Math.min(...amounts), Math.max(...amounts)] } };
-  const page: OrderPage = {
-    rows: matching.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize),
-    pageCount: Math.max(1, Math.ceil(matching.length / pageSize)),
-    facets,
-  };
+  const result: OrderResult = { total: SERVER_ORDERS.filter((order) => passes(order)).length, facets };
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(page);
+      resolve(result);
     }, 300);
   });
 }
 
-const { useAppTable: useOrdersTable, createAppColumnHelper } = createFuseTableHook({
-  features: tableFeatures({ columnFilteringFeature, rowPaginationFeature }),
-  // The server filters and pages, so TanStack does neither and never counts the current page.
-  manualFiltering: true,
-  manualPagination: true,
-  getRowId: (order: Order) => order.id,
-});
+const features = tableFeatures({ columnFilteringFeature });
 
-const columns = createAppColumnHelper<Order>();
+const columns = createColumnHelper<typeof features, Order>();
 const COLUMNS = columns.columns([
-  columns.accessor("id", { header: "Order", cell: ({ cell }) => <cell.TextCell /> }),
-  columns.accessor("customer", { header: "Customer", cell: ({ cell }) => <cell.TextCell /> }),
-  columns.accessor("status", { header: "Status", cell: ({ row }) => STATUS_LABELS.get(row.original.status) }),
-  columns.accessor("amount", { header: "Amount", cell: ({ cell }) => <cell.CurrencyCell currency="NOK" /> }),
+  columns.accessor("customer", {}),
+  columns.accessor("status", {}),
+  columns.accessor("amount", {}),
 ]);
 
-// A stable empty page while loading: TanStack rebuilds the row model whenever `data` changes identity.
+// The server filters, so the table holds no rows. A stable array keeps TanStack from rebuilding
+// its row model on every render.
 const NO_ORDERS: Order[] = [];
 
-/** A fetched page and the request it answers, so a stale page reads as loading. */
-type Fetched = { readonly request: string; readonly page: OrderPage };
+/** A fetched result and the filters it answers, so a stale result reads as loading. */
+type Fetched = { readonly request: string; readonly result: OrderResult };
 
 export function DataTableFilterServer() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 8 });
   const [fetched, setFetched] = useState<Fetched | undefined>(undefined);
-  // The request key: the filters as the URL or a request body would carry them, and the page.
-  const request = JSON.stringify([columnFilters, pagination]);
+  // The filters as the URL or a request body would carry them.
+  const request = JSON.stringify(columnFilters);
 
   useEffect(() => {
     let current = true;
-    void fetchOrders(JSON.stringify(columnFilters), pagination).then((page) => {
+    void fetchOrders(request).then((result) => {
       if (current) {
-        setFetched({ request, page });
+        setFetched({ request, result });
       }
     });
     return () => {
       current = false;
     };
-  }, [columnFilters, pagination, request]);
+  }, [request]);
 
-  const result = fetched?.request === request ? fetched.page : undefined;
-
-  const table = useOrdersTable({
+  const table = useTable({
+    features,
     columns: COLUMNS,
-    data: result?.rows ?? fetched?.page.rows ?? NO_ORDERS,
-    pageCount: result?.pageCount ?? fetched?.page.pageCount ?? -1,
-    state: { columnFilters, pagination },
-    // The state owner resets to the first page when the filters change.
-    onColumnFiltersChange: (updater) => {
-      setColumnFilters(updater);
-      setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    },
-    onPaginationChange: setPagination,
+    data: NO_ORDERS,
+    // The server filters, so TanStack does not.
+    manualFiltering: true,
+    state: { columnFilters },
+    onColumnFiltersChange: setColumnFilters,
   });
 
   return (
-    <table.AppTable>
-      <DataTableFilter.Root table={table} fields={ORDER_FILTERS} facets={fetched?.page.facets}>
-        <div className="flex w-full min-w-0 flex-col gap-4">
-          <DataTableFilter.Bar aria-label="Order filters" />
-          <DataTableFilter.Content />
-          <DataTableFilter.ValueContent />
-          <table.Content aria-label="Orders" loading={fetched === undefined} />
-          <table.Pagination
-            total={{ kind: "known", pageCount: result?.pageCount ?? fetched?.page.pageCount ?? 1 }}
-          />
-        </div>
-      </DataTableFilter.Root>
-    </table.AppTable>
+    <DataTableFilter.Root table={table} fields={ORDER_FILTERS} facets={fetched?.result.facets}>
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        <DataTableFilter.Bar aria-label="Order filters" />
+        <DataTableFilter.Content />
+        <DataTableFilter.ValueContent />
+        <output className="text-sm text-muted-foreground tabular-nums">
+          {fetched?.request === request
+            ? `${String(fetched.result.total)} of ${String(SERVER_ORDERS.length)} orders`
+            : "Loading orders"}
+        </output>
+      </div>
+    </DataTableFilter.Root>
   );
 }

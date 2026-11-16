@@ -3,9 +3,14 @@ lede: >
   A frame that keeps its content at one of seven fixed width-to-height ratios.
 ---
 
-import { AspectRatioBasic } from "./demos/aspect-ratio-basic";
-import { AspectRatioRatios } from "./demos/aspect-ratio-ratios";
-import { AspectRatioPortrait } from "./demos/aspect-ratio-portrait";
+import { AspectRatioDemo } from "./demos/aspect-ratio-demo";
+import { AspectRatioSquare } from "./demos/aspect-ratio-square";
+import { AspectRatioFourThree } from "./demos/aspect-ratio-four-three";
+import { AspectRatioThreeFour } from "./demos/aspect-ratio-three-four";
+import { AspectRatioThreeTwo } from "./demos/aspect-ratio-three-two";
+import { AspectRatioTwoThree } from "./demos/aspect-ratio-two-three";
+import { AspectRatioNineSixteen } from "./demos/aspect-ratio-nine-sixteen";
+import { AspectRatioCustom } from "./demos/aspect-ratio-custom";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,26 +18,49 @@ export const metadata = componentMetadata("aspect-ratio");
 
 <ComponentIntro slug="aspect-ratio" />
 
-<Prose>
+<DefaultDemo slug="aspect-ratio" file="aspect-ratio-demo.tsx">
+  <AspectRatioDemo />
+</DefaultDemo>
 
-`AspectRatio` is a `div` whose height follows its width at the ratio you pass in `ratio`, written width first. Give it a width, such as `w-full max-w-md`, and its child fills the frame. An `img` or `video` with `size-full object-cover` crops to the frame instead of stretching. Round and fill the child, not the frame: the frame owns only its ratio.
+## Usage
 
-`ratio` is required and takes one of seven strings, `"1:1"`, `"4:3"`, `"3:4"`, `"3:2"`, `"2:3"`, `"16:9"` and `"9:16"`. Each shape comes in both orientations, since a photo taken upright on a phone arrives as 3:4. The frame writes the string to `data-ratio`. For a ratio outside the set, pass an `aspect-*` class, such as `aspect-[7/5]`, and it replaces the ratio.
+{/* prettier-ignore */}
+```tsx
+import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
 
-It is a server component and takes no `render` prop.
+<AspectRatio ratio="16:9" className="w-full">
+  <img className="size-full object-cover" src="/photo.webp" alt="" />
+</AspectRatio>
+```
 
-</Prose>
+## Examples
 
-<Demo slug="aspect-ratio" id="basic" title="Basic" file="aspect-ratio-basic.tsx">
-  <AspectRatioBasic />
+<Demo slug="aspect-ratio" id="square" title="Square" level={3} file="aspect-ratio-square.tsx">
+  <AspectRatioSquare />
 </Demo>
 
-<Demo slug="aspect-ratio" id="ratios" title="Every ratio" file="aspect-ratio-ratios.tsx">
-  <AspectRatioRatios />
+<Demo slug="aspect-ratio" id="four-three" title="4:3" level={3} file="aspect-ratio-four-three.tsx">
+  <AspectRatioFourThree />
 </Demo>
 
-<Demo slug="aspect-ratio" id="portrait" title="Portrait" file="aspect-ratio-portrait.tsx">
-  <AspectRatioPortrait />
+<Demo slug="aspect-ratio" id="three-four" title="3:4" level={3} file="aspect-ratio-three-four.tsx">
+  <AspectRatioThreeFour />
+</Demo>
+
+<Demo slug="aspect-ratio" id="three-two" title="3:2" level={3} file="aspect-ratio-three-two.tsx">
+  <AspectRatioThreeTwo />
+</Demo>
+
+<Demo slug="aspect-ratio" id="two-three" title="2:3" level={3} file="aspect-ratio-two-three.tsx">
+  <AspectRatioTwoThree />
+</Demo>
+
+<Demo slug="aspect-ratio" id="nine-sixteen" title="9:16" level={3} file="aspect-ratio-nine-sixteen.tsx">
+  <AspectRatioNineSixteen />
+</Demo>
+
+<Demo slug="aspect-ratio" id="custom-ratio" title="Custom ratio" level={3} file="aspect-ratio-custom.tsx">
+  <AspectRatioCustom />
 </Demo>
 
 <ApiReference slug="aspect-ratio" />

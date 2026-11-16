@@ -36,7 +36,10 @@ import { axisNames, yFormatOf } from "./scatter-chart-text";
  * @beta
  */
 export type ScatterChartTooltipProps = ChartLayerProps & {
-  /** The popup's surface. "default" by default. */
+  /**
+   * The popup's surface. "frosted" is translucent, so its cut-outs show the surface beneath the
+   * popup.
+   */
   variant?: "default" | "frosted";
   /**
    * Without children, a TooltipLabel over one row for x and one for y, each with its name and a

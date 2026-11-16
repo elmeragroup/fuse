@@ -28,7 +28,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "0",
-          "description": "Shared open delay for every tooltip in this group, in milliseconds. Instant by default — the ref overrides base-ui's 600ms. Tooltips in this group also share skip-delay hand-off: after one opens, moving to a neighbor skips the wait.",
+          "description": "The open delay for every tooltip in the group, in milliseconds. It defaults to `0`, where Base UI's own default is 600ms. Once one tooltip in the group has opened, the next one opens without the delay if the first closed less than `timeout` ago, 400ms by default.",
           "required": false
         },
         {
@@ -103,7 +103,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "When set, wraps this Root in a nested scoped Provider with that delay. That tooltip then forms its own provider group: it no longer participates in the outer Provider's shared delay or skip-delay hand-off.",
+          "description": "This tooltip's open delay, in milliseconds. Setting it wraps the tooltip in a provider of its own, so it leaves the outer `Tooltip.Provider`'s group. It no longer takes that group's delay, and moving to it from another tooltip does not skip the wait.",
           "required": false
         },
         {
@@ -329,7 +329,7 @@
           "type": "Align | undefined",
           "shortType": null,
           "defaultValue": "\"center\"",
-          "description": "How the popup aligns to the trigger on the cross axis.",
+          "description": "How the popup lines up with the trigger along the side it opens on.",
           "required": false,
           "values": [
             "center",
@@ -343,7 +343,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": "0",
-          "description": "Offset along the alignment axis, in pixels.",
+          "description": "The popup's shift along the side it opens on, in pixels.",
           "required": false
         },
         {
@@ -363,7 +363,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -372,7 +372,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Popup id used in the trigger description while mounted. Defaults to a stable generated id.",
+          "description": "The popup's id, which the trigger's `aria-describedby` names while the popup is mounted. Unset, it is a generated id.",
           "required": false
         },
         {
@@ -392,7 +392,7 @@
           "type": "Side | undefined",
           "shortType": null,
           "defaultValue": "\"top\"",
-          "description": "Which side of the trigger the popup is placed on. Tooltips open upward by default.",
+          "description": "The side of the trigger the popup opens on.",
           "required": false,
           "values": [
             "bottom",
@@ -409,7 +409,7 @@
           "type": "number | OffsetFunction | undefined",
           "shortType": "Union",
           "defaultValue": "4",
-          "description": "Distance from the trigger, in pixels.",
+          "description": "The gap between the trigger and the popup, in pixels.",
           "required": false
         },
         {

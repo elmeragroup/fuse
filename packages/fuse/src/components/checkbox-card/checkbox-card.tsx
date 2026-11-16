@@ -52,35 +52,39 @@ export type CheckboxCardProps = Omit<
   "render" | "disabled" | "title" | "className"
 > &
   VariantProps<typeof checkboxCardStyles> & {
+    /**
+     * The card's fill. `default` is the card fill, and `muted` the muted fill. Both keep the
+     * `--border` edge in every theme, since the card is a control.
+     */
+    variant?: VariantProps<typeof checkboxCardStyles>["variant"];
     /** Extra content below the description, inside the label. */
     children?: ReactNode;
-    /**
-     * Visible title. The native string `title` attribute is omitted so this
-     * `ReactNode` is not narrowed to `string`.
-     */
+    /** The card's visible title. It takes any node, where the native `title` attribute takes a string. */
     title: ReactNode;
-    /** Badge chips above the title. The row is omitted when `tags` is empty or absent. */
+    /** Badges above the title. An empty or missing list draws no badge row. */
     tags?: string[];
-    /** Supporting line under the title (`text-sm text-pretty`). */
+    /** The line of supporting text under the title. */
     description: string;
-    /** Trailing slot outside the label — clicks there do not toggle the checkbox. */
-    rightContent?: ReactNode;
     /**
-     * Dims the card with the shared disabled look (50% opacity, `not-allowed` cursor) and
-     * sets `disabled` on the checkbox primitive.
-     * Primitive `disabled` is omitted from the pass-through.
+     * Content at the card's end, outside the label, such as a link or a button. A click there
+     * does not toggle the checkbox.
      */
+    rightContent?: ReactNode;
+    /** Disables the checkbox and dims the whole card to 50% with the `not-allowed` cursor. */
     isDisabled?: boolean;
-    /** Checkbox group membership value. */
+    /**
+     * The value the card adds to the enclosing `CheckboxGroup`'s selection. Inside a group, the
+     * group's `value` or `defaultValue` decides whether the card is checked, and the card's own
+     * `checked` and `defaultChecked` have no effect.
+     */
     value?: string;
   };
 
 /**
- * Selectable marketing or product card over the base-ui Checkbox primitive. Client
- * component, because it wires Field.Item, the label and the checkbox primitive. It needs a
- * `Field.Root` ancestor, and a checkbox-group ancestor for `value` membership. Native form
- * reset, including React's reset after a form action, keeps the current state and what the form
- * submits in step; an uncontrolled card does not return to `defaultChecked`.
+ * A selectable card for a product or plan, built on Base UI's checkbox. It needs a `Field.Root`
+ * ancestor, and a `CheckboxGroup` ancestor for `value` to join a selection. A native form reset,
+ * including React's reset after a form action, keeps the shown state and the submitted value in
+ * step. An uncontrolled card does not return to `defaultChecked`.
  */
 export function CheckboxCard({
   children,

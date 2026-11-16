@@ -6,7 +6,7 @@ import { CaretDown } from "@elmeragroup/fuse/icons";
 
 export function FrameCollapsiblePanels() {
   return (
-    <Frame.Root className="max-w-md">
+    <Frame.Root className="max-w-md w-full">
       <Collapsible.Root defaultOpen>
         <Frame.Header>
           <Collapsible.Trigger>
@@ -16,9 +16,7 @@ export function FrameCollapsiblePanels() {
         </Frame.Header>
         <Collapsible.Content>
           <Frame.Panel>
-            <p className="text-sm text-muted-foreground">
-              Fetch the hourly readings for every meter in the billing run and flag the gaps to estimate.
-            </p>
+            <p>Fetch the hourly readings for every meter in the billing run and flag the gaps to estimate.</p>
           </Frame.Panel>
         </Collapsible.Content>
       </Collapsible.Root>
@@ -31,9 +29,7 @@ export function FrameCollapsiblePanels() {
         </Frame.Header>
         <Collapsible.Content>
           <Frame.Panel>
-            <p className="text-sm text-muted-foreground">
-              Price the readings with the spot price and grid rent, then draft one invoice per customer.
-            </p>
+            <p>Price the readings with the spot price and grid rent, then draft one invoice per customer.</p>
           </Frame.Panel>
         </Collapsible.Content>
       </Collapsible.Root>

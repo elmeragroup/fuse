@@ -3,9 +3,23 @@ lede: >
   A panel that slides in from the edge of the screen.
 ---
 
-import { SheetBasic } from "./demos/sheet-basic";
-import { SheetSides } from "./demos/sheet-sides";
-import { SheetSizes } from "./demos/sheet-sizes";
+import { SheetDemo } from "./demos/sheet-demo";
+import { SheetLeft } from "./demos/sheet-left";
+import { SheetTop } from "./demos/sheet-top";
+import { SheetBottom } from "./demos/sheet-bottom";
+import { SheetSizeSm } from "./demos/sheet-size-sm";
+import { SheetSizeLg } from "./demos/sheet-size-lg";
+import { SheetSizeXl } from "./demos/sheet-size-xl";
+import { SheetSize2xl } from "./demos/sheet-size-2xl";
+import { SheetSize3xl } from "./demos/sheet-size-3xl";
+import { SheetSize4xl } from "./demos/sheet-size-4xl";
+import { SheetSize5xl } from "./demos/sheet-size-5xl";
+import { SheetSize6xl } from "./demos/sheet-size-6xl";
+import { SheetSize7xl } from "./demos/sheet-size-7xl";
+import { SheetSize8xl } from "./demos/sheet-size-8xl";
+import { SheetSize9xl } from "./demos/sheet-size-9xl";
+import { SheetSize10xl } from "./demos/sheet-size-10xl";
+import { SheetNoCloseButton } from "./demos/sheet-no-close-button";
 import { SheetForm } from "./demos/sheet-form";
 import { SheetScrolling } from "./demos/sheet-scrolling";
 
@@ -15,23 +29,103 @@ export const metadata = componentMetadata("sheet");
 
 <ComponentIntro slug="sheet" />
 
-<Demo slug="sheet" id="basic" title="Basic" file="sheet-basic.tsx">
-  <SheetBasic />
+<DefaultDemo slug="sheet" file="sheet-demo.tsx">
+  <SheetDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Sheet } from "@elmeragroup/fuse/sheet";
+
+<Sheet.Root>
+  <Sheet.Trigger>Open meter details</Sheet.Trigger>
+  <Sheet.Content>
+    <Sheet.Header>
+      <Sheet.Title>Meter details</Sheet.Title>
+    </Sheet.Header>
+    <Sheet.Body>Last reading 12 480 kWh.</Sheet.Body>
+  </Sheet.Content>
+</Sheet.Root>
+```
+
+## Examples
+
+<Demo slug="sheet" id="left" title="Left" level={3} file="sheet-left.tsx">
+  <SheetLeft />
 </Demo>
 
-<Demo slug="sheet" id="sides" title="Sides" file="sheet-sides.tsx">
-  <SheetSides />
+<Demo slug="sheet" id="top" title="Top" level={3} file="sheet-top.tsx">
+  <SheetTop />
 </Demo>
 
-<Demo slug="sheet" id="sizes" title="Sizes" file="sheet-sizes.tsx">
-  <SheetSizes />
+<Demo slug="sheet" id="bottom" title="Bottom" level={3} file="sheet-bottom.tsx">
+  <SheetBottom />
 </Demo>
 
-<Demo slug="sheet" id="form" title="Form" file="sheet-form.tsx">
+<Demo slug="sheet" id="size-sm" title="Small" level={3} file="sheet-size-sm.tsx">
+  <SheetSizeSm />
+</Demo>
+
+<Demo slug="sheet" id="size-lg" title="Large" level={3} file="sheet-size-lg.tsx">
+  <SheetSizeLg />
+</Demo>
+
+<Demo slug="sheet" id="size-xl" title="Extra large" level={3} file="sheet-size-xl.tsx">
+  <SheetSizeXl />
+</Demo>
+
+<Demo slug="sheet" id="size-2xl" title="2XL" level={3} file="sheet-size-2xl.tsx">
+  <SheetSize2xl />
+</Demo>
+
+<Demo slug="sheet" id="size-3xl" title="3XL" level={3} file="sheet-size-3xl.tsx">
+  <SheetSize3xl />
+</Demo>
+
+<Demo slug="sheet" id="size-4xl" title="4XL" level={3} file="sheet-size-4xl.tsx">
+  <SheetSize4xl />
+</Demo>
+
+<Demo slug="sheet" id="size-5xl" title="5XL" level={3} file="sheet-size-5xl.tsx">
+  <SheetSize5xl />
+</Demo>
+
+<Demo slug="sheet" id="size-6xl" title="6XL" level={3} file="sheet-size-6xl.tsx">
+  <SheetSize6xl />
+</Demo>
+
+<Demo slug="sheet" id="size-7xl" title="7XL" level={3} file="sheet-size-7xl.tsx">
+  <SheetSize7xl />
+</Demo>
+
+<Demo slug="sheet" id="size-8xl" title="8XL" level={3} file="sheet-size-8xl.tsx">
+  <SheetSize8xl />
+</Demo>
+
+<Demo slug="sheet" id="size-9xl" title="9XL" level={3} file="sheet-size-9xl.tsx">
+  <SheetSize9xl />
+</Demo>
+
+<Demo slug="sheet" id="size-10xl" title="10XL" level={3} file="sheet-size-10xl.tsx">
+  <SheetSize10xl />
+</Demo>
+
+<Demo
+  slug="sheet"
+  id="no-close-button"
+  title="Without the corner close button"
+  level={3}
+  file="sheet-no-close-button.tsx">
+  <SheetNoCloseButton />
+</Demo>
+
+<Demo slug="sheet" id="form" title="Form" level={3} file="sheet-form.tsx">
   <SheetForm />
 </Demo>
 
-<Demo slug="sheet" id="scrolling" title="Scrolling content" file="sheet-scrolling.tsx">
+<Demo slug="sheet" id="scrolling" title="Scrolling content" level={3} file="sheet-scrolling.tsx">
   <SheetScrolling />
 </Demo>
 

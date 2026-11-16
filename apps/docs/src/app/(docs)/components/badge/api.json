@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 278,
+      "forwardedCount": 277,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label. Badge is a `<span>` and takes no focus or hover state, so it can sit inside a sentence's `<p>`, such as `Item.Description`.",
+          "required": false
+        },
+        {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"lg\" | \"sm\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The text size and padding.",
           "required": false,
           "values": [
             "default",
@@ -27,11 +36,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"accent\" | \"card\" | \"default\" | \"destructive\" | \"info\" | \"muted\" | \"outline\" | \"outline-destructive\" | \"outline-info\" | \"outline-secondary\" | \"outline-success\" | \"outline-warning\" | \"secondary\" | \"soft-destructive\" | \"soft-info\" | \"soft-success\" | \"soft-warning\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "",
+          "defaultValue": "\"default\"",
+          "description": "The fill and text colour. The status colours come filled, as `soft-*` on a tinted surface, and as `outline-*` in the border and text. `destructive` draws the theme's error colour.",
           "required": false,
           "values": [
             "accent",

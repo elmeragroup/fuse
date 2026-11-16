@@ -78,6 +78,7 @@ export function BarChartUpdate() {
     <div className="flex w-full flex-col gap-4">
       <Button
         variant="outline"
+        size="sm"
         className="self-start"
         onClick={() => {
           setLoad((load + 1) % LOADS.length);
@@ -94,7 +95,6 @@ export function BarChartUpdate() {
         <BarChart.Grid />
         <BarChart.YAxis />
         <BarChart.XAxis />
-        <BarChart.ReferenceLine y={6} label="Contracted {value}" variant="dashed" />
         <BarChart.Bar dataKey="base" />
         <BarChart.Bar dataKey="peak" />
         <BarChart.Tooltip />

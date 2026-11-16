@@ -184,10 +184,8 @@ export function ClockChartFallBack() {
       aria-label="A household's mean hour in NO1, 26 October 2025">
       <ClockChart.Grid />
       <ClockChart.AngleAxis />
-      <ClockChart.Area dataKey="kwh" variant="solid" />
+      <ClockChart.Area dataKey="kwh" />
       <ClockChart.Line dataKey="kwh" />
-      <ClockChart.Dots dataKey="kwh" />
-      <ClockChart.Scrubber />
       <ClockChart.Tooltip />
       <ClockChart.Table />
     </ClockChart.Root>

@@ -1,12 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import { BarChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig, ChartQuality } from "@elmeragroup/fuse/chart";
-import { LocaleProvider, ThemeScope, useTheme } from "@elmeragroup/fuse/theme";
-import type { SupportedLocale } from "@elmeragroup/fuse/theme";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 // NO1 household consumption per metering point and day in October 2025, computed from the Elhub dataset
 // CONSUMPTION_PER_GROUP_MBA_HOUR at https://api.elhub.no. Elhub licenses its datasets under
@@ -75,52 +70,23 @@ const config = {
   },
 } as const satisfies ChartConfig;
 
-/** The locales the demo's switch offers. The chart's own text follows the picked one. */
-const LOCALES = [
-  { code: "en-US", label: "English", lang: "en" },
-  { code: "nb-NO", label: "Norsk", lang: "nb" },
-] as const satisfies readonly { code: SupportedLocale; label: string; lang: string }[];
-
 export function BarChartMonthToDate() {
-  const [locale, setLocale] = useState<SupportedLocale>("en-US");
-  const theme = useTheme();
   return (
-    <LocaleProvider locale={locale}>
-      {/* A nested ThemeScope holds the tooltip's portal, so the popup takes the picked language too. */}
-      <ThemeScope
-        theme={theme}
-        className="flex w-full flex-col gap-4"
-        lang={LOCALES.find((option) => option.code === locale)?.lang ?? "en"}>
-        <ToggleGroup.Root
-          aria-label="Language"
-          value={[locale]}
-          onValueChange={(value: string[]) => {
-            const next = LOCALES.find((option) => option.code === value[0]);
-            if (next !== undefined) setLocale(next.code);
-          }}>
-          {LOCALES.map((option) => (
-            <ToggleGroup.Item key={option.code} value={option.code} lang={option.lang}>
-              {option.label}
-            </ToggleGroup.Item>
-          ))}
-        </ToggleGroup.Root>
-        <BarChart.Root
-          data={days}
-          config={config}
-          xKey="day"
-          interval="day"
-          timeZone="Europe/Oslo"
-          period={[osloMidnight("2025-10-01", "2025-10-26"), osloMidnight("2025-11-01", "2025-10-26")]}
-          now={new Date("2025-10-16T12:00:00+02:00")}
-          aria-label="Household consumption per day, October 2025 to date">
-          <BarChart.Grid />
-          <BarChart.YAxis />
-          <BarChart.XAxis />
-          <BarChart.Bar dataKey="kwh" />
-          <BarChart.Tooltip />
-          <BarChart.Table />
-        </BarChart.Root>
-      </ThemeScope>
-    </LocaleProvider>
+    <BarChart.Root
+      data={days}
+      config={config}
+      xKey="day"
+      interval="day"
+      timeZone="Europe/Oslo"
+      period={[osloMidnight("2025-10-01", "2025-10-26"), osloMidnight("2025-11-01", "2025-10-26")]}
+      now={new Date("2025-10-16T12:00:00+02:00")}
+      aria-label="Household consumption per day, October 2025 to date">
+      <BarChart.Grid />
+      <BarChart.YAxis />
+      <BarChart.XAxis />
+      <BarChart.Bar dataKey="kwh" />
+      <BarChart.Tooltip />
+      <BarChart.Table />
+    </BarChart.Root>
   );
 }

@@ -13,11 +13,11 @@
       "props": [
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"outline\" | \"outline-dashed\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The frame. `outline` draws a border around the empty state, and `outline-dashed` a dashed one.",
           "required": false,
           "values": [
             "default",
@@ -48,11 +48,11 @@
       "props": [
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"icon\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The media's box. `default` is a frameless box for an illustration, and `icon` a muted square that sizes a bare glyph to 24px.",
           "required": false,
           "values": [
             "default",

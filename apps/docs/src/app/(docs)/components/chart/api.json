@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts. Root never inspects them.",
+          "description": "The chart's parts, painted in the order you write them. Root never inspects them, so a server component can compose them.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "TConfig & ChartSeriesConfigCheck<TConfig, TRow>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig` with a required `label` and `color` and an optional `format`, `icon`, `stack`, `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type.",
+          "description": "One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig` with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`, `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type. Series that share a `stack` id stack in one column. A series `interval` coarser than Root's, such as hourly usage under quarter-hour prices, draws each value across the Root slots of its own slot, and the option, the tooltip and the table name that slot. Fuse never sums or averages. A `color` is a role, a list of two or more roles, a scale or a threshold. A role list is a decorative gradient that never follows the value. A scale, \"chart-seq\" or \"chart-diverging\", bins each value into 7 steps, and the diverging scale centres them on 0, so a negative value takes a mirrored step below the solid zero line. A bar paints its step, and a Line or Area paints a gradient along the value axis. A threshold, `{ threshold, below, above }`, paints `above` on values above `threshold` and `below` on values at or below it, and the legend lists both sides. A line and its fill change colour where they cross the threshold, and a bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip, the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under `stackOffset=\"expand\"`, throws `scale-colour-on-stack` for a scale or a threshold. Set `--chart-color-<key>` on Root for a colour outside the roles.",
           "required": true
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per slot or category. Every cell is serialisable, so a server component passes it.",
+          "description": "The rows, one per slot or category. Every cell is serialisable, so a server component passes it. The plot keeps its height and draws no mark until the browser measures it, and a loading icon fades in at its middle if that takes more than a moment.",
           "required": true
         },
         {
@@ -71,7 +71,7 @@
           "type": "ChartIntro | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance plays once, the first time a third of the plot's height is in view, or half the height of the viewport or of the scroll container that clips a taller plot, whether the chart hydrated server HTML or mounted in the browser. Until then Root writes `data-entrance=\"waiting\"` and the marks wait at the entrance's first frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and the chart's name render at once. Root writes `data-entrance=\"played\"` as the entrance starts, and drops it once the wipe of lines, areas and dots has run or is cut short, or at once when no line, area or dots wipe in. Scrolling away and back, hiding the chart and showing it again, even mid-wipe, or a new origin never replays it, and a line or an area added later never wipes in. A data update while the entrance waits plays it with the latest data. Reduced motion, \"none\" and printing draw the marks at rest at once. A bar that a data update adds after the entrance writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
+          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance plays once, the first time a third of the plot's height is in view, or half the height of the viewport or of the scroll container that clips a taller plot, whether the chart hydrated server HTML or mounted in the browser. Until then Root writes `data-entrance=\"waiting\"` and the marks wait at the entrance's first frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and the chart's name render at once. Root writes `data-entrance=\"played\"` as the entrance starts, and drops it once the wipe of lines, areas and dots has run or is cut short, or at once when no line, area or dots wipe in. Scrolling away and back, hiding the chart and showing it again, even mid-wipe, or a new origin never replays it, and a line or an area added later never wipes in. A data update while the entrance waits plays it with the latest data. Reduced motion, \"none\" and printing draw the marks at rest at once. A Bar behind its own Suspense boundary that arrives while the entrance waits grows with the rest, and one that arrives after the entrance started draws at rest. A bar that a data update adds after the entrance writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
           "required": false,
           "values": [
             "center",
@@ -129,7 +129,7 @@
           "type": "ChartXValue<TRow[TXKey]> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The slot that is active before any pointer or key moves. An x survives a reload where an index would not.",
+          "description": "The slot that is active before any pointer or key moves. An x survives a reload where an index would not. The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth of the window's slots and at least one, and Home and End go to the window's first and last slot. ArrowDown and ArrowUp move the series focus. Enter and Space select the focused series while a `LegendToggleGroup` is mounted, and pin the tooltip otherwise. Escape hides the tooltip and keeps focus, and a second Escape passes on.",
           "required": false
         },
         {
@@ -165,7 +165,7 @@
           "type": "Interval | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. A category axis takes no interval. The slot length, which is also the finest interval in the chart. A time axis requires it. The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds throws `slot-limit`.",
+          "description": "Time axes only. The slot length, which is also the finest interval in the chart. A time axis requires it. The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds throws `slot-limit`.",
           "required": false,
           "values": [
             "day",
@@ -286,7 +286,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall.",
+          "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall. On a horizontal chart, ArrowDown and ArrowUp move between categories, and ArrowRight and ArrowLeft move the series focus.",
           "required": false,
           "values": [
             "horizontal",
@@ -335,7 +335,7 @@
           "type": "\"diverging\" | \"expand\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"diverging\"",
-          "description": "\"diverging\" by default, so negative values stack below zero.",
+          "description": "How the series of a stack id add up. \"diverging\" stacks negative values below zero. \"expand\" scales each column to a total of 1, so each part reads as its share.",
           "required": false,
           "values": [
             "diverging",
@@ -366,7 +366,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
           "required": false
         },
         {
@@ -375,7 +375,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. IANA zone of the data's market. It overrides LocaleProvider's, and a time axis with neither throws.",
+          "description": "Time axes only. The IANA zone of the data's market, such as \"Europe/Oslo\". It overrides LocaleProvider's, and a time axis with neither throws.",
           "required": false
         },
         {
@@ -411,7 +411,7 @@
           "type": "\"band\" | \"point\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"band\"",
-          "description": "\"band\" by default. Line and area charts usually pass \"point\".",
+          "description": "The x scale. \"band\" gives each slot a band of its own, which bars fill. \"point\" places each slot at a point, which line and area charts usually pass.",
           "required": false,
           "values": [
             "band",
@@ -442,7 +442,7 @@
           "type": "\"none\" | \"zero\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"zero\"",
-          "description": "\"zero\" by default. \"none\" lets a Line-only layout leave 0 out, and Bar and Area throw under it. It governs the default layout only. Each Panel takes its own.",
+          "description": "Whether the value axis reaches 0. \"none\" lets a Line-only layout leave 0 out, and Bar and Area throw `baseline-required` under it. It governs the default layout only. Each Panel takes its own.",
           "required": false,
           "values": [
             "none",
@@ -473,7 +473,7 @@
           "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Values the default layout's y domain must reach, such as a price cap. Each Panel takes its own.",
+          "description": "Values the default layout's y domain must reach, such as a price cap. Root never reads its children, so a `ReferenceLine` or `ReferenceArea` outside the data reaches the axis only through this list. Each Panel takes its own.",
           "required": false
         }
       ]
@@ -491,7 +491,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The Panel's plot parts. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and Takeaway stay under Root, beside the Panels.",
+          "description": "The Panel's plot parts. Put each plot part in the Panel whose series it draws, and the `XAxis` in the last Panel. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and Takeaway stay under Root, beside the Panels.",
           "required": false
         },
         {
@@ -509,7 +509,7 @@
           "type": "readonly string[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over the rows inside the effective `xRange`. The series cycle and the \"all series\" option list keys in config order, so write config in Panel order. Every key of a `stack` sits in the same Panel.",
+          "description": "The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over the rows inside the effective `xRange`. The series cycle and the \"all series\" option list keys in config order, so write config in Panel order. List each config key in exactly one Panel, and every key of a `stack` in the same Panel.",
           "required": true
         },
         {
@@ -527,7 +527,7 @@
           "type": "\"none\" | \"zero\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"zero\"",
-          "description": "As Root's `yBaseline`, for this Panel's layout. \"zero\" by default.",
+          "description": "As Root's `yBaseline`, for this Panel's layout.",
           "required": false,
           "values": [
             "none",
@@ -590,7 +590,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The line style. \"solid\" by default, as the Figma `Chart` component draws.",
+          "description": "The line style. \"solid\" matches the Figma `Chart` component.",
           "required": false,
           "values": [
             "dashed",
@@ -648,7 +648,7 @@
           "type": "\"dot\" | \"none\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"none\"",
-          "description": "The tick mark. \"none\" by default.",
+          "description": "The tick mark. \"dot\" draws a dot at each tick.",
           "required": false,
           "values": [
             "dot",
@@ -679,7 +679,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. The layout's first series' `format` is the default. Tick labels keep the format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the tooltip and the table print. `label` adds an axis title.",
+          "description": "The tick label format. The layout's first series' `format` is the default. Tick labels keep the format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the tooltip and the table print.",
           "required": false
         },
         {
@@ -697,7 +697,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "\"start\" draws the axis at the left edge, or at the bottom under `orientation=\"horizontal\"`. \"end\" draws it at the opposite edge. \"start\" by default.",
+          "description": "\"start\" draws the axis at the left edge, or at the bottom under `orientation=\"horizontal\"`. \"end\" draws it at the opposite edge.",
           "required": false,
           "values": [
             "end",
@@ -737,7 +737,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the bars draw, in the look its config's `barVariant` names. An unknown key throws `unknown-key`.",
+          "description": "The series the bars draw, in the look its config's `barVariant` names. An unknown key throws `unknown-key`. A bar fills its band less a 25 % gap. In a vertical chart with more than 100 domain slots a series draws its bars as one path, which draws every look but \"gradient\" as \"default\". A series whose look the path cannot draw warns `bar-variant-needs-html` in development. A horizontal chart always draws separate bars. The tinted looks, \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so pair them with a Legend or a Table. With a config `qualityKey`, an estimated reading draws a dashed outline over a lighter fill and a missing one a short dashed tick at the baseline, and the option and the table add the quality word after the value. A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A second update during the move starts from where each bar is drawn. A change of `xRange` alone snaps, and reduced motion snaps every update.",
           "required": true
         },
         {
@@ -836,7 +836,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The curve through the readings. \"monotone\" by default. \"step-after\" and \"step-before\" run each reading across its whole cell, so they need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
+          "description": "The d3 curve through the readings. \"monotone\" stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. \"monotone-y\" is d3's monotoneY, monotone along screen y in either orientation. \"step-after\" and \"step-before\" run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
           "required": false,
           "values": [
             "basis",
@@ -856,7 +856,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the line draws. An unknown key throws `unknown-key`.",
+          "description": "The series the line draws. An unknown key throws `unknown-key`. A missing reading leaves a gap, and a reading between two gaps draws a dot. Config `missing: \"connect\"` bridges a gap with a dashed segment instead. The segments that touch an estimated reading and the tail from config `projectedFrom` draw dashed too. A data update moves the line to its new readings, with its dots and markers on it. An update that appends a reading and drops the first slides the line along the axis, one that shares no slot pairs the old and new readings by position, and any other change of slots crossfades. Above 2,000 slots in the window, the line draws the lowest, highest, first and last reading of each pixel column, so every spike stays.",
           "required": true
         },
         {
@@ -874,7 +874,7 @@
           "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last year.",
+          "description": "The line's look. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last year.",
           "required": false,
           "values": [
             "dashed",
@@ -907,7 +907,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The curve along the area's edge. \"monotone\" by default.",
+          "description": "The d3 curve along the area's edge. \"monotone\" stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. \"monotone-y\" is d3's monotoneY, monotone along screen y in either orientation. \"step-after\" and \"step-before\" run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
           "required": false,
           "values": [
             "basis",
@@ -927,7 +927,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the area draws. An unknown key throws `unknown-key`.",
+          "description": "The series the area draws. An unknown key throws `unknown-key`. The area fills from 0, so it throws `baseline-required` under `yBaseline=\"none\"`. It draws the fill only, and a `Line` on the same key draws its edge. The spans of estimated, bridged and projected readings fill hatched.",
           "required": true
         },
         {
@@ -945,7 +945,7 @@
           "type": "\"dotted\" | \"gradient\" | \"gradient-reverse\" | \"hatched\" | \"lines\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
-          "description": "The fill's look. \"gradient\" by default, which fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
+          "description": "The fill's look. \"gradient\" fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
           "required": false,
           "values": [
             "dotted",
@@ -998,7 +998,7 @@
           "type": "\"default\" | \"halo\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default, a filled dot inside a ring of the surface the chart rests on, `--surface`. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
+          "description": "The dot's look. \"default\" is a filled dot inside a ring of the surface the chart rests on, `--surface`. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
           "required": false,
           "values": [
             "default",
@@ -1030,7 +1030,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the dot follows.",
+          "description": "The series the dot follows. It glides with the crosshair along the series' Line, Area or Bar, on a straight track through the bar tops. It moves at once across a gap or a missing reading, and under reduced motion.",
           "required": true
         },
         {
@@ -1048,7 +1048,7 @@
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default. \"ping\" sends a ring out from the dot once a second.",
+          "description": "The dot's look. \"ping\" sends a ring out from the dot once a second.",
           "required": false,
           "values": [
             "default",
@@ -1117,7 +1117,7 @@
           "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default.",
+          "description": "The dot's look. \"ping\" sends a ring out from the dot once a second.",
           "required": false,
           "values": [
             "default",
@@ -1195,7 +1195,7 @@
           "type": "\"both\" | \"bottom\" | \"none\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"both\"",
-          "description": "The ends of the line that fade out, over 10% of the plot each. \"both\" by default. \"top\" is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
+          "description": "The ends of the line that fade out, over 10% of the plot each. \"top\" is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
           "required": false,
           "values": [
             "both",
@@ -1219,7 +1219,7 @@
           "type": "\"band\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.",
+          "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour. `--chart-crosshair-width` sets the line's width, 1 px by default. The line glides from slot to slot on a spring that quickens with the pointer, so a key step or a slow scrub settles in about half a second and a fast sweep in about 120 ms. It moves at once under reduced motion.",
           "required": false,
           "values": [
             "band",
@@ -1250,7 +1250,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints what the ticks print, and without one the interval's tick preset or the category itself.",
+          "description": "The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints what the ticks print, and without one the interval's tick preset or the category itself. Write the part inside a `Chart.Crosshair`. The tick labels under the pill fade out, and each part of the label, such as the day, rolls to its new value while a part that keeps its value, such as the month, stays still. A horizontal chart renders no pill.",
           "required": false
         },
         {
@@ -1312,8 +1312,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The line's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The line's tone.",
           "required": false,
           "values": [
             "default",
@@ -1352,8 +1352,8 @@
           "origin": "declared",
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "The line style. \"solid\" by default.",
+          "defaultValue": "\"solid\"",
+          "description": "The line style.",
           "required": false,
           "values": [
             "dashed",
@@ -1384,7 +1384,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on a value line. The x the line marks. An x string on a time axis throws `x-type-mismatch`.",
+          "description": "The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a `y` or an `x`.",
           "required": false
         },
         {
@@ -1393,7 +1393,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value the line marks. Not on an x line.",
+          "description": "The value the line marks. A line takes a `y` or an `x`.",
           "required": false
         }
       ]
@@ -1446,8 +1446,8 @@
           "origin": "declared",
           "type": "ChartTone | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "The band's tone. \"default\" by default.",
+          "defaultValue": "\"default\"",
+          "description": "The band's tone.",
           "required": false,
           "values": [
             "default",
@@ -1493,7 +1493,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on a value band. The band's first x. An x string on a time axis throws `x-type-mismatch`.",
+          "description": "The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         },
         {
@@ -1502,7 +1502,7 @@
           "type": "ChartX | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Not on a value band. The band's last x. An x string on a time axis throws `x-type-mismatch`.",
+          "description": "The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         },
         {
@@ -1511,7 +1511,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The band's first value. Not on an x band.",
+          "description": "The band's first value. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         },
         {
@@ -1520,7 +1520,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The band's last value. Not on an x band.",
+          "description": "The band's last value. A band takes `y1` and `y2`, or `x1` and `x2`.",
           "required": false
         }
       ]
@@ -1556,7 +1556,7 @@
           "type": "ChartFallback | undefined",
           "shortType": null,
           "defaultValue": "\"last\"",
-          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "description": "The datum to print when nothing is active: the first or last reading, the lowest or highest, or the slot that contains Root's `now`.",
           "required": false,
           "values": [
             "first",
@@ -1921,7 +1921,7 @@
           "type": "\"area\" | \"bar\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bar\"",
-          "description": "The mark the placeholder sketches. \"bar\" by default.",
+          "description": "The mark the placeholder sketches.",
           "required": false,
           "values": [
             "area",
@@ -2017,7 +2017,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"point\"",
-          "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -2057,7 +2057,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The popup's surface. \"default\" by default.",
+          "description": "The popup's surface. \"frosted\" is translucent, so its cut-outs show the surface beneath the popup.",
           "required": false,
           "values": [
             "default",
@@ -2284,7 +2284,7 @@
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"square\"",
-          "description": "The swatch's shape. \"square\" by default.",
+          "description": "The swatch's shape.",
           "required": false,
           "values": [
             "bar",
@@ -2406,7 +2406,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -2492,7 +2492,7 @@
           "type": "ChartFallback | undefined",
           "shortType": null,
           "defaultValue": "\"last\"",
-          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "description": "The datum to print when nothing is active: the first or last reading, the lowest or highest, or the slot that contains Root's `now`.",
           "required": false,
           "values": [
             "first",
@@ -2605,7 +2605,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.",
+          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie. The group is one tab stop, which Tab enters at the pressed toggle or the first. The arrows move between toggles, Enter or Space presses one, and pressing the pressed toggle clears the selection.",
           "required": false
         },
         {
@@ -2623,7 +2623,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the group sits around the plot. \"bottom\" by default.",
+          "description": "Where the group sits around the plot.",
           "required": false,
           "values": [
             "bottom",
@@ -2737,7 +2737,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -2877,7 +2877,7 @@
           "type": "ChartBackgroundPattern | undefined",
           "shortType": "Union",
           "defaultValue": "\"dots\"",
-          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "description": "The pattern drawn behind the marks.",
           "required": false,
           "values": [
             "4-pointed-star",

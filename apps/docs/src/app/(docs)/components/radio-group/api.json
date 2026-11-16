@@ -15,7 +15,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Group members — typically `Radio`, `RadioItem`, or `RadioIconButton`.",
+          "description": "The options: `Radio`, `RadioItem` or `RadioIconButton`.",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "description": "Extra classes for the element that holds the options.",
           "required": false
         },
         {
@@ -33,7 +33,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial selected value.",
+          "description": "The value selected on mount, for an uncontrolled group.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text under the options, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -51,7 +51,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows its own validation error instead, such as a native constraint message.",
           "required": false
         },
         {
@@ -60,7 +60,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwarded to the group primitive.",
+          "description": "The `id` of the element that holds the options.",
           "required": false
         },
         {
@@ -69,7 +69,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "description": "Disables every option.",
           "required": false
         },
         {
@@ -78,7 +78,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -87,7 +87,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place; while `isPending`, the spinner row stays visible. Default `false`.",
+          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place. While `isPending`, the spinner row stays visible.",
           "required": false
         },
         {
@@ -96,7 +96,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the radiogroup while true; omitted when pending is false or absent. The header row renders when `label` or `isPending` is truthy. An unlabeled pending group renders that status row with no legend element.",
+          "description": "Shows a spinner at the end of the header row and sets `aria-busy` on the group, for options that are still loading. The spinner is decorative. A pending group without a `label` still renders the header row, with no legend.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `readOnly` to the group primitive.",
+          "description": "Makes the group read-only: it shows its selection but a click does not change it.",
           "required": false
         },
         {
@@ -114,7 +114,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `required` to the group primitive.",
+          "description": "Requires a selection before the form submits.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"` in the header row.",
+          "description": "The group's visible name, rendered as `Field.Legend variant=\"label\"` in the header row.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing.",
+          "description": "The form field name the selected option submits its `value` under.",
           "required": false
         },
         {
@@ -141,7 +141,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the selected `string`, not the event. Mapped from base-ui `onValueChange` with `String(next)`.",
+          "description": "Called with the newly selected value as a `string`.",
           "required": false
         },
         {
@@ -150,7 +150,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
+          "description": "How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins `RadioItem` rows into one card with a line between rows. `horizontal` wraps them in a row `--surface-gap-lg` apart, and each `RadioItem` row is a card of its own. The cards share the line in equal widths. A `basis-*` class on a row sets the width below which it wraps.",
           "required": false,
           "values": [
             "horizontal",
@@ -163,7 +163,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Controlled selected value. `null` is passed through to keep the primitive controlled with nothing selected, so clearing a selected value does not switch it to uncontrolled state.",
+          "description": "The selected value, for a controlled group. Pass `null` for no selection: the group stays controlled, so clearing the selection does not make it uncontrolled.",
           "required": false
         }
       ]
@@ -292,7 +292,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label content. The whole row is the click target.",
+          "description": "The option's label. A click anywhere on it selects the option.",
           "required": false
         },
         {
@@ -301,7 +301,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto `Field.Item` via `cn`.",
+          "description": "Extra classes for the row's `Field.Item`.",
           "required": false
         },
         {
@@ -310,7 +310,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to the inner `RadioGroupItem`.",
+          "description": "Disables the option and dims the radio and its label text.",
           "required": false
         },
         {
@@ -319,7 +319,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Member value in the group.",
+          "description": "The value the group takes when this option is selected.",
           "required": true
         }
       ]
@@ -340,7 +340,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Row children, partitioned by the row. Direct `RadioItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "description": "The row's content: `RadioItem.Content` with a `Title` and a `Description`, then `RadioItem.Actions`. Direct `RadioItem.SubSection` children render below the label row, outside the label, so a field or button in one never selects the row. A server component may write these children and pass them to a client component that renders the `RadioItem`. In a client component, a Fragment or wrapper around a SubSection hides it from the row and keeps it inside the label.",
           "required": false
         },
         {
@@ -349,7 +349,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the control. The row paints the card fill (`bg-card`); a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class; set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill.",
+          "description": "Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row selects the radio. The row paints the card fill (`bg-card`), and a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class. Set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill. The edges and the lines between rows come from the `--selection-*` theme roles, which the Tokens section lists. Set a role on the element that carries the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border: var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the rows keep the edges the theme element resolved.",
           "required": false
         },
         {
@@ -358,7 +358,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
+          "description": "Where the radio sits in the row: before the content, or after it at `end`.",
           "required": false,
           "values": [
             "end",
@@ -371,7 +371,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to the inner control, which dims to 50%, and shows the disabled row: the theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (neutral themes stripe a muted fill, branded themes keep the card fill without stripes) and the `not-allowed` cursor. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, the muted foreground in branded themes; a text colour class on the row still wins. A disabled group shows its rows the same way.",
+          "description": "Disables the radio, which dims to 50%, and shows the disabled row. The row fills with the theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep the card fill with no stripes. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text colour class on the row still wins. A disabled group shows its rows the same way.",
           "required": false
         },
         {
@@ -379,8 +379,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Lets a click on a SubSection's text, band or side padding toggle the control, while links, buttons, fields and other focusable elements in it keep their own clicks. Forwarded to `SelectionItem.Shell`; see it there. Leave it off when the SubSection reveals fields under the control. Default `false`.",
+          "defaultValue": "false",
+          "description": "Lets a click on a SubSection's text, band or side padding select the radio, while links, buttons, fields and other focusable elements in it keep their own clicks. The radio's name stays the label row. Leave it off when the SubSection reveals fields under the radio, so a click between those fields does not change the choice.",
           "required": false
         },
         {
@@ -411,7 +411,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Member value in the group. Forwarded to the inner `RadioGroupItem`.",
+          "description": "The value the group takes when this row is selected.",
           "required": true
         }
       ]
@@ -429,7 +429,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Group members — typically `Radio`, `RadioItem`, or `RadioIconButton`.",
+          "description": "The options: `Radio`, `RadioItem` or `RadioIconButton`.",
           "required": false
         },
         {
@@ -438,7 +438,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "description": "Extra classes for the element that holds the options.",
           "required": false
         },
         {
@@ -447,7 +447,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial selected value.",
+          "description": "The value selected on mount, for an uncontrolled group.",
           "required": false
         },
         {
@@ -456,7 +456,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text under the options, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -465,7 +465,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows its own validation error instead, such as a native constraint message.",
           "required": false
         },
         {
@@ -474,7 +474,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwarded to the group primitive.",
+          "description": "The `id` of the element that holds the options.",
           "required": false
         },
         {
@@ -483,7 +483,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "description": "Disables every option.",
           "required": false
         },
         {
@@ -492,7 +492,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -501,7 +501,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place; while `isPending`, the spinner row stays visible. Default `false`.",
+          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place. While `isPending`, the spinner row stays visible.",
           "required": false
         },
         {
@@ -510,7 +510,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Decorative `SpinnerGap` at the header row's end. Sets `aria-busy` on the radiogroup while true; omitted when pending is false or absent. The header row renders when `label` or `isPending` is truthy. An unlabeled pending group renders that status row with no legend element.",
+          "description": "Shows a spinner at the end of the header row and sets `aria-busy` on the group, for options that are still loading. The spinner is decorative. A pending group without a `label` still renders the header row, with no legend.",
           "required": false
         },
         {
@@ -519,7 +519,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `readOnly` to the group primitive.",
+          "description": "Makes the group read-only: it shows its selection but a click does not change it.",
           "required": false
         },
         {
@@ -528,7 +528,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `required` to the group primitive.",
+          "description": "Requires a selection before the form submits.",
           "required": false
         },
         {
@@ -537,7 +537,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"` in the header row.",
+          "description": "The group's visible name, rendered as `Field.Legend variant=\"label\"` in the header row.",
           "required": false
         },
         {
@@ -546,7 +546,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set directly on the base-ui radio-group primitive, which supports `name`. CheckboxGroup threads `name` through Field instead — same external face, different plumbing.",
+          "description": "The form field name the selected option submits its `value` under.",
           "required": false
         },
         {
@@ -555,7 +555,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the selected `string`, not the event. Mapped from base-ui `onValueChange` with `String(next)`.",
+          "description": "Called with the newly selected value as a `string`.",
           "required": false
         },
         {
@@ -564,7 +564,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
+          "description": "How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins `RadioItem` rows into one card with a line between rows. `horizontal` wraps them in a row `--surface-gap-lg` apart, and each `RadioItem` row is a card of its own. The cards share the line in equal widths. A `basis-*` class on a row sets the width below which it wraps.",
           "required": false,
           "values": [
             "horizontal",
@@ -577,7 +577,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Controlled selected value. `null` is passed through to keep the primitive controlled with nothing selected, so clearing a selected value does not switch it to uncontrolled state.",
+          "description": "The selected value, for a controlled group. Pass `null` for no selection: the group stays controlled, so clearing the selection does not make it uncontrolled.",
           "required": false
         }
       ]
@@ -598,7 +598,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Required accessible name, because `RadioIconButton` renders only an icon.",
+          "description": "The option's accessible name. It is required, because the button shows only an icon.",
           "required": true
         },
         {
@@ -616,7 +616,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged via `cn`.",
+          "description": "Extra classes for the button.",
           "required": false
         },
         {
@@ -636,7 +636,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to the radio root.",
+          "description": "Disables the option.",
           "required": false
         },
         {
@@ -689,7 +689,7 @@
           "type": "NonNullable<\"icon\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"icon-xxs\" | undefined> | undefined",
           "shortType": "Union",
           "defaultValue": "\"icon\"",
-          "description": "Icon-button size mapped onto the control sizes like Button: `icon-xxs` and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm` (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5). Svg sizes apply only to `svg:not([class*='size-'])`. Default `\"icon\"`.",
+          "description": "The button's size, matching Button's icon sizes. `icon-xxs` and `icon-xs` take the `xs` control height with a 12px and a 14px icon, `icon-sm` the `sm` height and `icon` the `md` height with a 16px icon, and `icon-lg` the `lg` height with a 20px icon. An icon with its own `size-*` class keeps it.",
           "required": false,
           "values": [
             "icon",
@@ -716,7 +716,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Member value in the group.",
+          "description": "The value the group takes when this option is selected.",
           "required": true
         }
       ]

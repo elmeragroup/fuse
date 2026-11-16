@@ -3,13 +3,13 @@ lede: >
   A list of terms and their descriptions.
 ---
 
-import { DescriptionListBasic } from "./demos/description-list-basic";
-import { DescriptionListInline } from "./demos/description-list-inline";
-import { DescriptionListInlineRows } from "./demos/description-list-inline-rows";
-import { DescriptionListLongValues } from "./demos/description-list-long-values";
-import { DescriptionListMultiDetails } from "./demos/description-list-multi-details";
+import { DescriptionListDemo } from "./demos/description-list-demo";
 import { DescriptionListNoDividers } from "./demos/description-list-no-dividers";
-import { DescriptionListResponsive } from "./demos/description-list-responsive";
+import { DescriptionListInline } from "./demos/description-list-inline";
+import { DescriptionListInlineGroups } from "./demos/description-list-inline-groups";
+import { DescriptionListLongValues } from "./demos/description-list-long-values";
+import { DescriptionListSeveralDetails } from "./demos/description-list-several-details";
+import { DescriptionListSeveralTerms } from "./demos/description-list-several-terms";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -17,52 +17,76 @@ export const metadata = componentMetadata("description-list");
 
 <ComponentIntro slug="description-list" />
 
-Wrap each term and its details in an `Item`, the `<div>` HTML allows around one name-value group. Every list is made of Items: HTML doesn't allow a list to mix Items with bare terms and details, the inline layout styles terms and details only inside an Item, and rules fall between Items only. The responsive layout draws them; the inline layout never does. An Item takes attributes such as a `data-testid`, so a test can find a row by it.
+<DefaultDemo slug="description-list" file="description-list-demo.tsx">
+  <DescriptionListDemo />
+</DefaultDemo>
 
-<Demo slug="description-list" id="basic" title="Basic" file="description-list-basic.tsx">
-  <DescriptionListBasic />
-</Demo>
+## Usage
 
-An Item can hold several terms of one details, or several details of one term. Its last term pairs with its first details; earlier terms and later details take rows of their own. Rules fall between Items only.
+{/* prettier-ignore */}
+```tsx
+import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
-<Demo
-  slug="description-list"
-  id="multi-details"
-  title="Content model"
-  file="description-list-multi-details.tsx">
-  <DescriptionListMultiDetails />
-</Demo>
+<DescriptionList.Root>
+  <DescriptionList.Heading>Customer</DescriptionList.Heading>
+  <DescriptionList.Content>
+    <DescriptionList.Item>
+      <DescriptionList.Term>Name</DescriptionList.Term>
+      <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+    </DescriptionList.Item>
+  </DescriptionList.Content>
+</DescriptionList.Root>
+```
 
-<Demo slug="description-list" id="responsive" title="Responsive" file="description-list-responsive.tsx">
-  <DescriptionListResponsive />
-</Demo>
-
-A responsive list draws a rule above every Item but the first. Pass `dividers={false}` to `Content` to drop them once for the whole list, such as inside a card that already separates it. It reaches only that list's own Items: a list nested inside keeps its own rules, and a list nested in one with rules can drop its own. An inline list draws no rules either way, so `dividers` has no effect there.
+## Examples
 
 <Demo
   slug="description-list"
   id="no-dividers"
   title="Without dividers"
+  level={3}
   file="description-list-no-dividers.tsx">
   <DescriptionListNoDividers />
 </Demo>
 
-`layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.
-
-<Demo slug="description-list" id="inline" title="Inline" file="description-list-inline.tsx">
+<Demo slug="description-list" id="inline" title="Inline" level={3} file="description-list-inline.tsx">
   <DescriptionListInline />
 </Demo>
 
-Each inline Item shares its own row between its term and details, whatever the other rows hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a long term wraps beside a short details, and a long details wraps beside a short term. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end of the row, rather than break a word. A term wraps at its spaces and hyphens, so a hyphenated label such as "Målepunkt-ID" can split at the hyphen beside a long value; write it with a non-breaking hyphen (U+2011) to keep it whole.
-
-<Demo slug="description-list" id="inline-rows" title="Inline rows" file="description-list-inline-rows.tsx">
-  <DescriptionListInlineRows />
+<Demo
+  slug="description-list"
+  id="inline-groups"
+  title="Inline groups"
+  level={3}
+  file="description-list-inline-groups.tsx">
+  <DescriptionListInlineGroups />
 </Demo>
 
-Values in a real order summary are often longer than their labels: a time with seconds, an 18-digit ID, an invoice line that ends in an email address. A value wraps between its words beside its term. An email address too wide to sit beside its term moves under it whole, and one wider than the whole row breaks inside it there rather than overflow the card. A `<wbr>` before the `@` lets it break at the `@` instead, which often keeps it beside its term.
-
-<Demo slug="description-list" id="long-values" title="Long values" file="description-list-long-values.tsx">
+<Demo
+  slug="description-list"
+  id="long-values"
+  title="Long values"
+  level={3}
+  file="description-list-long-values.tsx">
   <DescriptionListLongValues />
+</Demo>
+
+<Demo
+  slug="description-list"
+  id="several-details"
+  title="Several details"
+  level={3}
+  file="description-list-several-details.tsx">
+  <DescriptionListSeveralDetails />
+</Demo>
+
+<Demo
+  slug="description-list"
+  id="several-terms"
+  title="Several terms"
+  level={3}
+  file="description-list-several-terms.tsx">
+  <DescriptionListSeveralTerms />
 </Demo>
 
 <ApiReference slug="description-list" />

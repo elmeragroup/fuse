@@ -1,0 +1,18 @@
+"use client";
+
+import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
+
+export function DateRangePickerBounds() {
+  return (
+    <DateRangePickerField
+      label="Stay"
+      description="Nights in October 2026."
+      minValue={Temporal.PlainDate.from("2026-10-01")}
+      maxValue={Temporal.PlainDate.from("2026-10-31")}
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      }}
+    />
+  );
+}

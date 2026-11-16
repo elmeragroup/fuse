@@ -12,10 +12,11 @@ import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-fac
 import { selfFocusRingClass } from "../../styles/utils";
 import { tabsListVariants } from "./tabs-variants";
 
+type TabsListPrimitiveProps = ComponentProps<typeof TabsPrimitive.List>;
+
 /**
- * Client tabbed panel switcher over `@base-ui/react/tabs`. Root
- * stamps `data-orientation` pre-hydration so the `data-horizontal:flex-col`
- * layout applies on first paint.
+ * Tabs that switch between panels, built on Base UI's tabs. Root writes `data-orientation` into
+ * the server HTML, so the `data-horizontal:flex-col` layout applies on first paint.
  */
 export function TabsRoot({
   className,
@@ -34,19 +35,26 @@ export function TabsRoot({
 }
 
 /**
- * Tab strip. `activateOnFocus` defaults to `true` (the pinned Base UI default is
- * `false`): arrow keys move focus and activate in one step, with
- * `activateOnFocus={false}` as the manual-activation opt-out.
- *
- * The default list publishes `--inner-corner` for its triggers, its corner less its 4px padding.
- * The `line` list publishes none.
+ * The strip of tabs. The default list publishes `--inner-corner` for its triggers, its corner
+ * less its 4px padding. The `line` list publishes none.
  */
 export function TabsList({
   className,
   variant = "default",
   activateOnFocus = true,
   ...props
-}: ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>): ReactElement {
+}: Omit<TabsListPrimitiveProps, "activateOnFocus"> & {
+  /**
+   * Whether a tab opens its panel when it gets focus. Unset, it does, so the arrow keys move focus
+   * and switch panels in one step. Pass `false` to switch only on Enter, Space or a click.
+   */
+  activateOnFocus?: TabsListPrimitiveProps["activateOnFocus"];
+  /**
+   * The list style. `default` sits the tabs on a muted track and fills the active one. `line`
+   * draws no track and marks the active tab with a line.
+   */
+  variant?: VariantProps<typeof tabsListVariants>["variant"];
+}): ReactElement {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -59,8 +67,8 @@ export function TabsList({
 }
 
 /**
- * One tab. An inactive trigger reads `--muted-foreground`, the text-grade role held to 4.5:1 on
- * `muted` and on every surface a line list sits on; hover and the active tab read the foreground.
+ * One tab. An inactive tab reads `--muted-foreground`, the text role held to 4.5:1 on `muted` and
+ * on every surface a line list sits on. Hover and the active tab read the foreground.
  */
 export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Tab>): ReactElement {
   return (
@@ -86,6 +94,7 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsP
   );
 }
 
+/** The panel a tab shows. */
 export function TabsContent({
   className,
   ...props

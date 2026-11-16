@@ -3,9 +3,16 @@ lede: >
   A panel anchored to a trigger. The page underneath stays usable.
 ---
 
-import { PopoverBasic } from "./demos/popover-basic";
+import { PopoverDemo } from "./demos/popover-demo";
+import { PopoverTop } from "./demos/popover-top";
+import { PopoverLeft } from "./demos/popover-left";
+import { PopoverRight } from "./demos/popover-right";
+import { PopoverInlineStart } from "./demos/popover-inline-start";
+import { PopoverInlineEnd } from "./demos/popover-inline-end";
+import { PopoverAlignStart } from "./demos/popover-align-start";
+import { PopoverAlignEnd } from "./demos/popover-align-end";
+import { PopoverOffset } from "./demos/popover-offset";
 import { PopoverArrow } from "./demos/popover-arrow";
-import { PopoverPlacement } from "./demos/popover-placement";
 import { PopoverControlled } from "./demos/popover-controlled";
 import { PopoverAnchor } from "./demos/popover-anchor";
 
@@ -15,32 +22,72 @@ export const metadata = componentMetadata("popover");
 
 <ComponentIntro slug="popover" />
 
-<Demo slug="popover" id="basic" title="Basic" file="popover-basic.tsx">
-  <PopoverBasic />
+<DefaultDemo slug="popover" file="popover-demo.tsx">
+  <PopoverDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Popover } from "@elmeragroup/fuse/popover";
+
+<Popover.Root>
+  <Popover.Trigger>Delivery window</Popover.Trigger>
+  <Popover.Content>
+    <Popover.Header>
+      <Popover.Title>Delivery window</Popover.Title>
+      <Popover.Description>Orders placed before 14:00 ship the same day.</Popover.Description>
+    </Popover.Header>
+  </Popover.Content>
+</Popover.Root>
+```
+
+## Examples
+
+<Demo slug="popover" id="top" title="Top" level={3} file="popover-top.tsx">
+  <PopoverTop />
 </Demo>
 
-<Demo slug="popover" id="arrow" title="Arrow" file="popover-arrow.tsx">
+<Demo slug="popover" id="left" title="Left" level={3} file="popover-left.tsx">
+  <PopoverLeft />
+</Demo>
+
+<Demo slug="popover" id="right" title="Right" level={3} file="popover-right.tsx">
+  <PopoverRight />
+</Demo>
+
+<Demo slug="popover" id="inline-start" title="Inline start" level={3} file="popover-inline-start.tsx">
+  <PopoverInlineStart />
+</Demo>
+
+<Demo slug="popover" id="inline-end" title="Inline end" level={3} file="popover-inline-end.tsx">
+  <PopoverInlineEnd />
+</Demo>
+
+<Demo slug="popover" id="align-start" title="Align start" level={3} file="popover-align-start.tsx">
+  <PopoverAlignStart />
+</Demo>
+
+<Demo slug="popover" id="align-end" title="Align end" level={3} file="popover-align-end.tsx">
+  <PopoverAlignEnd />
+</Demo>
+
+<Demo slug="popover" id="offset" title="Offset" level={3} file="popover-offset.tsx">
+  <PopoverOffset />
+</Demo>
+
+<Demo slug="popover" id="arrow" title="Arrow" level={3} file="popover-arrow.tsx">
   <PopoverArrow />
 </Demo>
 
-<Demo slug="popover" id="placement" title="Placement" file="popover-placement.tsx">
-  <PopoverPlacement />
-</Demo>
-
-<Demo slug="popover" id="controlled" title="Controlled" file="popover-controlled.tsx">
+<Demo slug="popover" id="controlled" title="Controlled" level={3} file="popover-controlled.tsx">
   <PopoverControlled />
 </Demo>
 
-<Demo slug="popover" id="anchor" title="Anchor" file="popover-anchor.tsx">
+<Demo slug="popover" id="anchor" title="Anchor" level={3} file="popover-anchor.tsx">
   <PopoverAnchor />
 </Demo>
-
-`anchor` places the popup against an element other than the trigger. It takes an element, a
-ref or a virtual element. The trigger still opens and closes the popup, reports its state and
-takes focus back when it closes. A controlled popover needs no trigger at all; the opener's
-`aria-expanded`, and where focus goes, are then yours to handle. The popup follows its anchor
-when the anchor moves or resizes. A transform that shrinks the anchor within its last box does
-not move the popup, so pass a new anchor then.
 
 <ApiReference slug="popover" />
 

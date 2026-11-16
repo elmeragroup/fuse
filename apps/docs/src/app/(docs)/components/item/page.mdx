@@ -3,15 +3,23 @@ lede: >
   A row with media, content, and actions.
 ---
 
-import { ItemBasic } from "./demos/item-basic";
-import { ItemSizes } from "./demos/item-sizes";
-import { ItemMediaVariants } from "./demos/item-media-variants";
-import { ItemGroupDemo } from "./demos/item-group";
+import { ItemDemo } from "./demos/item-demo";
+import { ItemMuted } from "./demos/item-muted";
+import { ItemOutline } from "./demos/item-outline";
+import { ItemSmall } from "./demos/item-small";
+import { ItemExtraSmall } from "./demos/item-extra-small";
+import { ItemIconMedia } from "./demos/item-icon-media";
+import { ItemImageMedia } from "./demos/item-image-media";
+import { ItemDefaultMedia } from "./demos/item-default-media";
+import { ItemHeader } from "./demos/item-header";
+import { ItemFooter } from "./demos/item-footer";
 import { ItemFooterReveal } from "./demos/item-footer-reveal";
-import { ItemAsLink } from "./demos/item-as-link";
-import { ItemAsButton } from "./demos/item-as-button";
-import { ItemLinkGroup } from "./demos/item-link-group";
+import { ItemGroup } from "./demos/item-group";
+import { ItemSeparator } from "./demos/item-separator";
 import { ItemCompactGroup } from "./demos/item-compact-group";
+import { ItemAsLink } from "./demos/item-as-link";
+import { ItemUnavailableLink } from "./demos/item-unavailable-link";
+import { ItemAsButton } from "./demos/item-as-button";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -19,42 +27,88 @@ export const metadata = componentMetadata("item");
 
 <ComponentIntro slug="item" />
 
-<Demo slug="item" id="basic" title="Basic" file="item-basic.tsx">
-  <ItemBasic />
+<DefaultDemo slug="item" file="item-demo.tsx">
+  <ItemDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Item } from "@elmeragroup/fuse/item";
+
+<Item.Root>
+  <Item.Content>
+    <Item.Title>Spot</Item.Title>
+    <Item.Description>Hourly price with no lock-in.</Item.Description>
+  </Item.Content>
+</Item.Root>
+```
+
+## Examples
+
+<Demo slug="item" id="muted" title="Muted" level={3} file="item-muted.tsx">
+  <ItemMuted />
 </Demo>
 
-<Demo slug="item" id="sizes" title="Sizes" file="item-sizes.tsx">
-  <ItemSizes />
+<Demo slug="item" id="outline" title="Outline" level={3} file="item-outline.tsx">
+  <ItemOutline />
 </Demo>
 
-<Demo slug="item" id="media-variants" title="Media variants" file="item-media-variants.tsx">
-  <ItemMediaVariants />
+<Demo slug="item" id="small" title="Small" level={3} file="item-small.tsx">
+  <ItemSmall />
 </Demo>
 
-<Demo slug="item" id="group" title="Group" file="item-group.tsx">
-  <ItemGroupDemo />
+<Demo slug="item" id="extra-small" title="Extra small" level={3} file="item-extra-small.tsx">
+  <ItemExtraSmall />
 </Demo>
 
-<Demo slug="item" id="footer-reveal" title="Footer reveal" file="item-footer-reveal.tsx">
+<Demo slug="item" id="icon-media" title="Icon media" level={3} file="item-icon-media.tsx">
+  <ItemIconMedia />
+</Demo>
+
+<Demo slug="item" id="image-media" title="Image media" level={3} file="item-image-media.tsx">
+  <ItemImageMedia />
+</Demo>
+
+<Demo slug="item" id="default-media" title="Default media" level={3} file="item-default-media.tsx">
+  <ItemDefaultMedia />
+</Demo>
+
+<Demo slug="item" id="header" title="Header" level={3} file="item-header.tsx">
+  <ItemHeader />
+</Demo>
+
+<Demo slug="item" id="footer" title="Footer" level={3} file="item-footer.tsx">
+  <ItemFooter />
+</Demo>
+
+<Demo slug="item" id="footer-reveal" title="Footer reveal" level={3} file="item-footer-reveal.tsx">
   <ItemFooterReveal />
 </Demo>
 
-`render={<a href="…" />}` makes a row a link. A link takes no `disabled`, so mark an unavailable row `aria-disabled="true"`: it dims, drops its hover fill and does not navigate on a click or Enter.
+<Demo slug="item" id="group" title="Group" level={3} file="item-group.tsx">
+  <ItemGroup />
+</Demo>
 
-<Demo slug="item" id="as-link" title="As a link" file="item-as-link.tsx">
+<Demo slug="item" id="separator" title="Separator" level={3} file="item-separator.tsx">
+  <ItemSeparator />
+</Demo>
+
+<Demo slug="item" id="compact-group" title="Compact group" level={3} file="item-compact-group.tsx">
+  <ItemCompactGroup />
+</Demo>
+
+<Demo slug="item" id="as-link" title="As a link" level={3} file="item-as-link.tsx">
   <ItemAsLink />
 </Demo>
 
-<Demo slug="item" id="as-button" title="As a button" file="item-as-button.tsx">
+<Demo slug="item" id="unavailable-link" title="Unavailable link" level={3} file="item-unavailable-link.tsx">
+  <ItemUnavailableLink />
+</Demo>
+
+<Demo slug="item" id="as-button" title="As a button" level={3} file="item-as-button.tsx">
   <ItemAsButton />
-</Demo>
-
-<Demo slug="item" id="link-group" title="Group of links" file="item-link-group.tsx">
-  <ItemLinkGroup />
-</Demo>
-
-<Demo slug="item" id="compact-group" title="Compact group" file="item-compact-group.tsx">
-  <ItemCompactGroup />
 </Demo>
 
 <ApiReference slug="item" />

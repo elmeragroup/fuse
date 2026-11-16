@@ -23,20 +23,29 @@ const { root: groupRoot, separator: groupSeparator, item: groupItem } = itemGrou
 /** The enclosing group's variant, or `undefined` outside `Item.Group`. */
 const ItemGroupContext = createContext<ItemGroupVariant | undefined>(undefined);
 
-/**
- * Props for `Item.Group`. `variant="compact"` draws the rows as one connected list: no gap,
- * tighter rows, flush separators, and outline rows joined under one border with rounded
- * outer corners.
- */
-type ItemGroupProps = ComponentProps<"div"> & Pick<VariantProps<typeof itemGroupVariants>, "variant">;
+/** `Item.Group` takes a native `div`'s props and the group's `variant`. */
+type ItemGroupProps = ComponentProps<"div"> & {
+  /**
+   * The group's look. `compact` draws the rows as one connected list: no gap, tighter rows, flush
+   * separators, and outline rows joined under one border with rounded outer corners. Every
+   * `Item.Root` and `Item.Separator` inside reads it, so the rows need no props of their own.
+   */
+  variant?: VariantProps<typeof itemGroupVariants>["variant"];
+  /**
+   * The rows, each an `Item.Root` as a direct child, with or without a `render` element. A
+   * `default` group tightens its gap when one of its rows is `sm` or `xs`. An Item wrapped in
+   * another element or nested inside a row does not count as a row.
+   */
+  children?: ComponentProps<"div">["children"];
+  /** Extra classes, merged after the group's own. A `gap-*` class replaces the gap between rows. */
+  className?: ComponentProps<"div">["className"];
+};
 
 /**
- * A list of Item rows. Every `Item.Root` and `Item.Separator` inside reads the group's
- * `variant`, so the compact look needs no props on the rows.
+ * A list of Item rows.
  *
- * The default look tightens its gap when one of its rows is `sm` or `xs`. A row is a direct
- * child `Item.Root`, with or without a `render` element; an Item wrapped in another element or
- * nested inside a row does not count. A `gap-*` class in `className` replaces the gap.
+ * @param props - The group's `variant`, its rows and the native `div` props.
+ * @returns The rendered list, with `role="list"`.
  */
 export function ItemGroup({ className, variant = "default", ...props }: ItemGroupProps): ReactElement {
   return (
@@ -52,12 +61,23 @@ export function ItemGroup({ className, variant = "default", ...props }: ItemGrou
   );
 }
 
+/** `Item.Separator` takes Separator's props. */
+type ItemSeparatorProps = Omit<ComponentProps<typeof Separator>, "aria-hidden"> & {
+  /**
+   * Hides the rule from assistive technology. Inside `Item.Group` it defaults to `true`, because
+   * a list may own only list items. Pass `false` to expose the rule there. Outside a group it is
+   * a `separator`.
+   */
+  "aria-hidden"?: ComponentProps<typeof Separator>["aria-hidden"];
+};
+
 /**
- * A rule between Item rows. Inside `Item.Group` it is decorative and hidden from assistive
- * technology, since a list may own only list items; pass `aria-hidden={false}` to expose it.
- * Outside a group it is a `separator`.
+ * A rule between Item rows.
+ *
+ * @param props - Separator's props.
+ * @returns The rendered rule.
  */
-export function ItemSeparator({ className, ...props }: ComponentProps<typeof Separator>): ReactElement {
+export function ItemSeparator({ className, ...props }: ItemSeparatorProps): ReactElement {
   const variant = useContext(ItemGroupContext);
   return (
     <Separator
@@ -84,21 +104,37 @@ function renderedVisibility(element: ReactElement): Visibility {
   return definedProps({ hidden: props.hidden, "aria-hidden": props["aria-hidden"] });
 }
 
+/** `Item.Root` takes a native `div`'s props, `render` and the row's `variant` and `size`. */
+type ItemRootPartProps = Omit<useRender.ComponentProps<"div">, "render" | "aria-disabled"> &
+  VariantProps<typeof itemVariants> & {
+    /**
+     * Replaces the host `div`, such as `render={<a href="/orders" />}` for a link row or
+     * `render={<button type="button" />}` for a button row. Inside `Item.Group` the rendered
+     * element keeps its own role inside a list item wrapper. An explicit `role` on the row
+     * replaces that and skips the wrapper.
+     */
+    render?: useRender.ComponentProps<"div">["render"];
+    /**
+     * Marks an unavailable row. A link row takes no `disabled`, so mark it `aria-disabled="true"`.
+     * Any row marked so dims with the `not-allowed` cursor. A `render` row also drops its hover
+     * fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click
+     * neither opens a new tab nor runs `onAuxClick`. A plain row keeps the clicks of the controls
+     * inside it.
+     */
+    "aria-disabled"?: useRender.ComponentProps<"div">["aria-disabled"];
+  };
+
 /**
- * One Item row. Inside `Item.Group` it is a list item: a plain root takes
- * `role="listitem"` itself, while a `render` element (a link or button) keeps its own
- * role inside an `item-listitem` wrapper, like `<li><a/></li>`. The wrapper follows the
- * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
- * root or the render element. An explicit `role` replaces both and skips the wrapper.
- *
- * Any row announced `aria-disabled="true"` dims with the `not-allowed` cursor, as a
- * `render={<button disabled />}` row does. A `render` row, such as a link row, which takes no
- * `disabled`, also drops its hover fill and cancels its own activation: a click or a keyboard
- * Enter neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
- * runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.
+ * One Item row. Inside `Item.Group` a plain row takes `role="listitem"` itself, and a row with a
+ * `render` element sits in an `item-listitem` wrapper, like `<li><a/></li>`. The wrapper follows
+ * the `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
+ * root or the render element.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
+ *
+ * @param props - The row's axes, the host element and the native `div` props.
+ * @returns The rendered row, wrapped in a list item when a group needs one.
  */
 export function ItemRoot({
   className,
@@ -106,7 +142,7 @@ export function ItemRoot({
   size = "default",
   render,
   ...props
-}: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>): ReactElement {
+}: ItemRootPartProps): ReactElement {
   const groupVariant = useContext(ItemGroupContext);
   const inGroup = groupVariant !== undefined;
   const groupClassName = inGroup ? groupItem({ variant: groupVariant, size }) : undefined;

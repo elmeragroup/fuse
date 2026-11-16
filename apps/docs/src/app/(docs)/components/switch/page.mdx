@@ -3,10 +3,13 @@ lede: >
   A two-state control for turning an option on or off.
 ---
 
-import { SwitchBasic } from "./demos/switch-basic";
-import { SwitchSizes } from "./demos/switch-sizes";
-import { SwitchStates } from "./demos/switch-states";
-import { SwitchInField } from "./demos/switch-in-field";
+import { SwitchDemo } from "./demos/switch-demo";
+import { SwitchSmall } from "./demos/switch-small";
+import { SwitchChecked } from "./demos/switch-checked";
+import { SwitchDisabled } from "./demos/switch-disabled";
+import { SwitchDisabledChecked } from "./demos/switch-disabled-checked";
+import { SwitchReadOnly } from "./demos/switch-read-only";
+import { SwitchInvalid } from "./demos/switch-invalid";
 import { SwitchForm } from "./demos/switch-form";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -15,23 +18,55 @@ export const metadata = componentMetadata("switch");
 
 <ComponentIntro slug="switch" />
 
-<Demo slug="switch" id="basic" title="Basic" file="switch-basic.tsx">
-  <SwitchBasic />
+<DefaultDemo slug="switch" file="switch-demo.tsx">
+  <SwitchDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Field } from "@elmeragroup/fuse/field";
+import { Switch } from "@elmeragroup/fuse/switch";
+
+<Field.Root>
+  <Field.Label>Notifications</Field.Label>
+  <Switch />
+</Field.Root>
+```
+
+## Examples
+
+<Demo slug="switch" id="small" title="Small" level={3} file="switch-small.tsx">
+  <SwitchSmall />
 </Demo>
 
-<Demo slug="switch" id="sizes" title="Sizes" file="switch-sizes.tsx">
-  <SwitchSizes />
+<Demo slug="switch" id="checked" title="Checked" level={3} file="switch-checked.tsx">
+  <SwitchChecked />
 </Demo>
 
-<Demo slug="switch" id="states" title="States" file="switch-states.tsx">
-  <SwitchStates />
+<Demo slug="switch" id="disabled" title="Disabled" level={3} file="switch-disabled.tsx">
+  <SwitchDisabled />
 </Demo>
 
-<Demo slug="switch" id="in-field" title="In a field" file="switch-in-field.tsx">
-  <SwitchInField />
+<Demo
+  slug="switch"
+  id="disabled-checked"
+  title="Disabled and checked"
+  level={3}
+  file="switch-disabled-checked.tsx">
+  <SwitchDisabledChecked />
 </Demo>
 
-<Demo slug="switch" id="form" title="Form" file="switch-form.tsx">
+<Demo slug="switch" id="read-only" title="Read-only" level={3} file="switch-read-only.tsx">
+  <SwitchReadOnly />
+</Demo>
+
+<Demo slug="switch" id="invalid" title="Invalid" level={3} file="switch-invalid.tsx">
+  <SwitchInvalid />
+</Demo>
+
+<Demo slug="switch" id="form" title="Form value" level={3} file="switch-form.tsx">
   <SwitchForm />
 </Demo>
 

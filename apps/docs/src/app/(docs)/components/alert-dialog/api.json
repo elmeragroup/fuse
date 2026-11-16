@@ -217,7 +217,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label for the primary action button.",
+          "description": "The action button's label.",
           "required": true
         },
         {
@@ -226,7 +226,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label for the cancel button. Defaults to the locale dictionary (`alertDialog.cancel`).",
+          "description": "The cancel button's label. Unset, it reads `alertDialog.cancel` from the locale dictionary.",
           "required": false
         },
         {
@@ -235,7 +235,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Consequence copy, rendered in a real `Dialog.Description` so `aria-describedby` is wired to the popup.",
+          "description": "What happens if the user confirms. It renders in a `Dialog.Description`, which the popup names in `aria-describedby`.",
           "required": true
         },
         {
@@ -255,7 +255,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the built-in corner close button. Defaults to the locale dictionary.",
+          "description": "The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary.",
           "required": false
         },
         {
@@ -264,7 +264,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
+          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -284,7 +284,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Icon rendered to the right of the title, centred on the title's first line. Defaults to `WarningOctagon` (destructive) or `Info` (neutral).",
+          "description": "The icon at the end of the title's first line. Unset, a `destructive` dialog shows WarningOctagon and a `neutral` one shows Info.",
           "required": false
         },
         {
@@ -304,7 +304,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the primary action button. Cancel stays enabled.",
+          "description": "Disables the action button. Cancel stays enabled.",
           "required": false
         },
         {
@@ -313,7 +313,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "When true, wraps the action button in `Dialog.Close` so clicking it also dismisses. Default leaves closing to the caller (async flows close after success).",
+          "description": "Closes the dialog when the action button is clicked. Leave it off for an action that can fail, and close the dialog from `onAction` once the action succeeds.",
           "required": false
         },
         {
@@ -322,7 +322,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Surfaces the primary button's pending state (`isPending` — `data-pending` and disabled interaction, per Button).",
+          "description": "Shows the action button as pending, as Button's `isPending` does. It sets `data-pending` and blocks clicks. Cancel stays enabled.",
           "required": false
         },
         {
@@ -331,7 +331,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Primary button click. Closing is the caller's job unless `isAutomaticallyCloseOnActionEnabled` is set.",
+          "description": "Runs when the action button is clicked. The dialog stays open unless `isAutomaticallyCloseOnActionEnabled` is set, so close it yourself when the action is done.",
           "required": false
         },
         {
@@ -340,7 +340,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Cancel button click. The cancel button always closes via `Dialog.Close`.",
+          "description": "Runs when the cancel button is clicked. Cancel always closes the dialog.",
           "required": false
         },
         {
@@ -356,11 +356,11 @@
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
+          "description": "The popup's maximum width. `sm` to `7xl` cap it at Tailwind's container width of the same name, and `8xl`, `9xl` and `10xl` at 1366px, 1536px and 1920px. The popup never grows past 90% of the viewport's width.",
           "required": false,
           "values": [
             "10xl",
@@ -395,7 +395,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "Confirm heading, rendered in `Dialog.Title`.",
+          "description": "The question the dialog asks, rendered in a `Dialog.Title`.",
           "required": true
         },
         {
@@ -404,7 +404,7 @@
           "type": "\"destructive\" | \"neutral\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"destructive\"",
-          "description": "Drives the action-button variant and the fallback icon. Destructive dialogs initially focus Cancel; neutral dialogs initially focus the primary action, or Cancel while `isActionDisabled` is set.",
+          "description": "The kind of confirmation, which sets the action button's variant and the fallback icon. A `destructive` dialog opens with focus on Cancel. A `neutral` one opens with focus on the action, or on Cancel while `isActionDisabled` is set. Pass `initialFocus` to focus another element; it wins over both.",
           "required": false,
           "values": [
             "destructive",

@@ -129,16 +129,11 @@ describe("component page manifest", () => {
     }
   });
 
-  it("reports per-part directives and the reviewed page RSC status", () => {
-    for (const [slug, reviewed] of COMPONENT_INVENTORY) {
+  it("reports per-part directives", () => {
+    for (const slug of COMPONENT_INVENTORY.keys()) {
       // Each part's badge is the leading directive of the module that declares it.
       for (const part of ALIAS_PAGES.has(slug) ? [] : pageParts(slug)) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
-      }
-      // The page's own status appears on the markdown endpoint, not in the manifest. A page in the
-      // Usage shape mirrors the page, which names no page-wide status; its parts carry theirs.
-      if (authoredPage(slug).parsed.usage === null) {
-        expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
       }
     }
   });

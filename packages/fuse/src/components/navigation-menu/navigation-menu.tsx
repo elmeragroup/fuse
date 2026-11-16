@@ -15,6 +15,10 @@ import { navigationMenuVariants } from "./navigation-menu-variants";
 const slots = navigationMenuVariants();
 
 type PositionerProps = ComponentProps<typeof NavigationMenuPrimitive.Positioner>;
+type TriggerPrimitiveProps = ComponentProps<typeof NavigationMenuPrimitive.Trigger>;
+type ContentPrimitiveProps = ComponentProps<typeof NavigationMenuPrimitive.Content>;
+type LinkPrimitiveProps = ComponentProps<typeof NavigationMenuPrimitive.Link>;
+type IndicatorPrimitiveProps = ComponentProps<typeof NavigationMenuPrimitive.Icon>;
 
 type NavigationMenuOrientation = NonNullable<
   ComponentProps<typeof NavigationMenuPrimitive.Root>["orientation"]
@@ -51,14 +55,14 @@ const NavigationMenuLinkBoxContext = createContext<NavigationMenuLinkBox>("row")
 
 /** Placement of the built-in popup, which only a Root that renders one takes. */
 type NavigationMenuPopupPlacementProps = OverlayContainerProps & {
-  /**
-   * How the shared popup aligns to the open trigger on the cross axis.
-   */
+  /** How the shared popup lines up with the open trigger along the trigger's edge. */
   align?: PositionerProps["align"];
   /**
-   * Which side of the open trigger the shared popup opens on. Keep the default `"bottom"`
-   * for a bar; a submenu nested in a `NavigationMenu.Content` opens to the side, usually
-   * `side="right"` with `orientation="vertical"` and `align="end"`.
+   * The side of the open trigger the shared popup opens on. Every `NavigationMenu.Content` of
+   * this Root opens into that one popup, which resizes as the pointer moves between triggers.
+   * Keep `bottom` for a bar. A submenu nested in a `NavigationMenu.Content` opens to the side,
+   * usually with `side="right"`, `orientation="vertical"` and `align="end"`, and the outer panel
+   * stays open.
    */
   side?: PositionerProps["side"];
   /** A Root that renders its own popup is never inline. */
@@ -68,10 +72,12 @@ type NavigationMenuPopupPlacementProps = OverlayContainerProps & {
 /** An inline Root renders no popup, so the popup placement props cannot reach it. */
 type NavigationMenuInlineProps = {
   /**
-   * Render no popup and show the open item's content in the `NavigationMenu.Viewport` you
-   * place inside this Root instead. Use it for a submenu nested in a
-   * `NavigationMenu.Content` that swaps the panel beside its list, such as a list of
-   * audiences with each audience's links next to it.
+   * Renders no popup. The open item's content shows in a `NavigationMenu.Viewport` that you place
+   * inside this Root, beside its `NavigationMenu.List`. Use it for a submenu in a
+   * `NavigationMenu.Content` that swaps the panel beside its list as the pointer moves down it.
+   * The arrow keys move focus between its triggers, and Enter or Space shows the focused
+   * trigger's content. Its triggers have no caret. Pass `defaultValue` to open the first item
+   * together with the outer panel. Stack the list above the viewport on narrow screens.
    */
   inline: true;
   align?: never;
@@ -80,15 +86,21 @@ type NavigationMenuInlineProps = {
 };
 
 /** Props for `NavigationMenu.Root`. */
-export type NavigationMenuRootProps<Value = unknown> = NavigationMenuPrimitive.Root.Props<Value> &
-  (NavigationMenuPopupPlacementProps | NavigationMenuInlineProps);
+export type NavigationMenuRootProps<Value = unknown> = Omit<
+  NavigationMenuPrimitive.Root.Props<Value>,
+  "aria-label"
+> & {
+  /**
+   * The navigation landmark's name, such as "Main". Give every top-level Root one. A Root nested
+   * in a `NavigationMenu.Content` renders a `<div>`, not a second landmark, and needs none.
+   */
+  "aria-label"?: NavigationMenuPrimitive.Root.Props<Value>["aria-label"];
+} & (NavigationMenuPopupPlacementProps | NavigationMenuInlineProps);
 
 /**
  * The `<nav>` landmark of a site navigation menu, or a `<div>` when nested in a
- * `NavigationMenu.Content`. It renders the one popup every `NavigationMenu.Content` opens
- * into, placed on `side` of the open trigger, so a menu needs no portal or positioner of
- * its own. An `inline` Root renders none and shows its content in a `NavigationMenu.Viewport`.
- * Name the landmark with `aria-label`.
+ * `NavigationMenu.Content`. It renders the popup every `NavigationMenu.Content` opens into, so a
+ * menu needs no portal or positioner of its own. An `inline` Root renders none.
  */
 export function NavigationMenuRoot<Value = unknown>({
   align = "start",
@@ -163,17 +175,20 @@ export function NavigationMenuItem({
   );
 }
 
-/**
- * The button that opens its item's content on hover, click, Enter or ArrowDown. A caret
- * after the label points to the Root's `side`: in a bar it points down and turns while the
- * content is open, and in a submenu it points to where the popup opens. A trigger in an
- * `inline` Root has no caret, because its content already shows beside or below the list.
- */
+/** The button that opens its item's content. */
 export function NavigationMenuTrigger({
   className,
   children,
   ...props
-}: ComponentProps<typeof NavigationMenuPrimitive.Trigger>): ReactElement {
+}: Omit<TriggerPrimitiveProps, "children"> & {
+  /**
+   * The trigger's label. The trigger opens its item's content on hover, on click, and on Enter
+   * or ArrowDown, and Escape closes it and returns focus to the trigger. A caret after the label
+   * points to the Root's `side`. In a bar it points down and turns while the content is open. A
+   * trigger in an `inline` Root has no caret.
+   */
+  children?: TriggerPrimitiveProps["children"];
+}): ReactElement {
   const { orientation, caret } = useNavigationMenuPlacement("Trigger");
   return (
     <NavigationMenuPrimitive.Trigger
@@ -190,14 +205,20 @@ export function NavigationMenuTrigger({
 
 /**
  * The panel an item shows in the shared popup while its trigger is open. In the popup it pads
- * its rows inside the popup's corner and publishes `--inner-corner`, so its links, the triggers
- * of a Root nested in it and a custom block placed in it with `rounded-inner` round
- * concentrically with the popup. In an `inline` Root on the page its rows keep `rounded-sm`.
+ * its rows inside the popup's corner and publishes `--inner-corner`. In an `inline` Root on the
+ * page its rows keep `rounded-sm`.
  */
 export function NavigationMenuContent({
   className,
   ...props
-}: ComponentProps<typeof NavigationMenuPrimitive.Content>): ReactElement {
+}: Omit<ContentPrimitiveProps, "children"> & {
+  /**
+   * The item's links, or a nested `NavigationMenu.Root` for a submenu. Lay several links out in a
+   * plain `<ul>`, such as a grid. In the popup, the links and the triggers of a nested Root round
+   * with the popup's corner. Give a block of your own `rounded-inner` to do the same.
+   */
+  children?: ContentPrimitiveProps["children"];
+}): ReactElement {
   return (
     <NavigationMenuLinkBoxContext.Provider value="row">
       <NavigationMenuPrimitive.Content
@@ -209,19 +230,27 @@ export function NavigationMenuContent({
   );
 }
 
-/**
- * A navigation link, at the top level or inside a content panel. `active` marks the
- * current page with `aria-current="page"`. Renders an `<a>`; compose a router link
- * through `render`.
- */
+/** A navigation link, at the top level or in a content panel. It renders an `<a>`. */
 export function NavigationMenuLink({
+  active = false,
   className,
   ...props
-}: ComponentProps<typeof NavigationMenuPrimitive.Link>): ReactElement {
+}: Omit<LinkPrimitiveProps, "active" | "render" | "children"> & {
+  /** Marks the link to the current page, which sets `aria-current="page"`. */
+  active?: LinkPrimitiveProps["active"];
+  /**
+   * Your router's link element, such as `<NextLink href="/pricing" />`, for client-side routing.
+   * The link keeps its `active` state and `aria-current`.
+   */
+  render?: LinkPrimitiveProps["render"];
+  /** The link's label, or a title and a one-line description in a column of plain spans. */
+  children?: LinkPrimitiveProps["children"];
+}): ReactElement {
   const box = useContext(NavigationMenuLinkBoxContext);
   return (
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
+      active={active}
       className={mergeClassName(className, slots.link({ box }))}
       {...props}
     />
@@ -229,8 +258,8 @@ export function NavigationMenuLink({
 }
 
 /**
- * Where an `inline` Root shows its open item's content. Place it inside that Root, beside
- * its `NavigationMenu.List`; a Root that renders its own popup already has one.
+ * Where an `inline` Root shows its open item's content. A Root that renders its own popup already
+ * has one.
  */
 export function NavigationMenuViewport({
   className,
@@ -246,15 +275,20 @@ export function NavigationMenuViewport({
 }
 
 /**
- * An arrow under the trigger that points at the open popup. Place it inside a
- * `NavigationMenu.Trigger`; it is hidden from assistive technology and shows only while
- * that item is open. `children` replaces the default arrow.
+ * An arrow under the trigger that points at the open popup. It is hidden from assistive
+ * technology.
  */
 export function NavigationMenuIndicator({
   className,
   children = <span className={slots.indicatorArrow()} />,
   ...props
-}: ComponentProps<typeof NavigationMenuPrimitive.Icon>): ReactElement {
+}: Omit<IndicatorPrimitiveProps, "children"> & {
+  /**
+   * The arrow. Unset, it is a small triangle. Place the indicator inside a
+   * `NavigationMenu.Trigger`, where it shows only while that item is open.
+   */
+  children?: IndicatorPrimitiveProps["children"];
+}): ReactElement {
   return (
     <NavigationMenuPrimitive.Icon
       data-slot="navigation-menu-indicator"

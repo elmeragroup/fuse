@@ -3,5 +3,5 @@
 import { Slider } from "@elmeragroup/fuse/slider";
 
 export function SliderDisabled() {
-  return <Slider label="Brightness" showValue isDisabled defaultValue={40} />;
+  return <Slider label="Volume" isDisabled showValue defaultValue={60} />;
 }

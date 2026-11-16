@@ -3,5 +3,5 @@
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 export function PhoneNumberFieldInternational() {
-  return <PhoneNumberField label="International" international formatOnType placeholder="+47 412 34 567" />;
+  return <PhoneNumberField label="Mobile" international defaultValue="+4741234567" />;
 }

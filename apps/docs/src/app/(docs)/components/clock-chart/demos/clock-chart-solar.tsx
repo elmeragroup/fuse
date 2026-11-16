@@ -129,8 +129,6 @@ export function ClockChartSolar() {
       <ClockChart.AngleAxis />
       <ClockChart.Area dataKey="solar" />
       <ClockChart.Line dataKey="solar" />
-      <ClockChart.ActiveDot dataKey="solar" />
-      <ClockChart.Legend />
       <ClockChart.Tooltip />
       <ClockChart.Table />
     </ClockChart.Root>

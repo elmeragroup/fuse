@@ -32,35 +32,36 @@ type ReportedValue<Value extends SliderValue> = Value extends number
   : { [K in keyof Value]: number };
 
 export type SliderProps<Value extends SliderValue = number> = {
-  /** Visible label, rendered as `Field.Label`; it names the thumb of a single-value slider. */
+  /** The visible label, rendered as `Field.Label`. It names the thumb of a single-value slider. */
   label?: string;
-  /** Supporting copy, rendered as `Field.Description`. */
+  /** Supporting text, rendered as `Field.Description`. */
   description?: string;
   /**
-   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead.
+   * The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows
+   * its own validation error instead.
    */
   errorMessage?: ReactNode;
-  /** Forwards `invalid` to `Field.Root`; the thumb shows the invalid state face. */
+  /** Marks the field invalid, so the thumb shows the invalid face. */
   isInvalid?: boolean;
-  /** Forwards `disabled` to `Field.Root` and `Slider.Root`; the thumb shows the disabled state face. */
+  /** Disables the slider, so the thumb shows the disabled face. */
   isDisabled?: boolean;
   /**
-   * Controlled value. `Value` is a `number`, or an array of at least two numbers with one value
-   * per thumb for a range. A one-number array from untyped code is read as that number, so
-   * `onChange` reports a number. `undefined`, passed or omitted, is uncontrolled, as with
-   * React's own inputs.
+   * The value, for a controlled slider. `Value` is a `number`, or an array of at least two
+   * numbers, one per thumb, for a range. A one-number array from untyped code is read as that
+   * number, so `onChange` reports a number. `undefined`, passed or omitted, makes the slider
+   * uncontrolled, as with React's own inputs. A slider suits known bounds where a rough position
+   * is enough. For an exact number, give a NumberField the same value beside it.
    */
   value?: Value;
   /**
-   * Uncontrolled initial value. An array of two or more numbers renders one thumb per entry; a
-   * one-number array is read as that number. It is read on mount and again on a native form
-   * reset, as React reads its own inputs' defaults.
+   * The value on mount, for an uncontrolled slider. An array of two or more numbers renders one
+   * thumb per entry, and a one-number array is read as that number. The slider reads it on
+   * mount and again on a native form reset, as React reads its own inputs' defaults.
    */
   defaultValue?: Value;
   /**
-   * Called with the new value on every change while it moves. A range keeps the shape of
-   * `value`, with each element widened to `number`. A native form reset does not call it.
+   * Called with the new value on every change while a thumb moves. A range reports an array of
+   * the same length as `value`. A native form reset does not call it.
    */
   onChange?: (value: ReportedValue<Value>) => void;
   /**
@@ -68,25 +69,28 @@ export type SliderProps<Value extends SliderValue = number> = {
    * drag or a track press ends, if the press moved the value at any point, even when the value
    * ends where it started. It also fires on each key press that changes the value. A range
    * reports the same shape as `onChange`. It does not fire while a thumb drags, or for a press
-   * that never moved the value.
+   * that never moved the value. Save or fetch from here rather than from `onChange`.
    */
   onValueCommitted?: (value: ReportedValue<Value>) => void;
-  /** Lower bound, forwarded as base-ui `min`. Defaults to 0. */
+  /** The lowest value. */
   minValue?: number;
-  /** Upper bound, forwarded as base-ui `max`. Defaults to 100. */
+  /** The highest value. */
   maxValue?: number;
-  /** Step for the arrow keys and the snap grid, counted from `minValue`. Defaults to 1. */
+  /** The step for the arrow keys and the snap grid, counted from `minValue`. */
   step?: number;
-  /** Step for PageUp, PageDown and Shift with an arrow. Defaults to 10. */
+  /** The step for PageUp, PageDown and Shift with an arrow key. */
   largeStep?: number;
-  /** Layout axis. A vertical slider fills its parent's height, and its control below the label row keeps at least 160px. */
+  /**
+   * The slider's axis. A vertical slider fills its parent's height below the label row, so give
+   * the parent a height. Its control keeps at least 160px.
+   */
   orientation?: "horizontal" | "vertical";
   /**
-   * Formatting options for the shown value and each thumb's `aria-valuetext`, forwarded as
-   * base-ui `format`. Locale comes from the provider.
+   * Number format options for the value `showValue` shows and the value a screen reader
+   * announces for each thumb. The locale comes from the provider.
    */
   formatOptions?: Intl.NumberFormatOptions;
-  /** Shows the formatted value at the end of the label row; a range joins its values with an en dash. */
+  /** Shows the formatted value at the end of the label row. A range joins its values with an en dash. */
   showValue?: boolean;
   /**
    * Accessible names of a range's thumbs, by index. Defaults to the locale dictionary's
@@ -94,11 +98,11 @@ export type SliderProps<Value extends SliderValue = number> = {
    * from `label` or `aria-label` instead.
    */
   thumbLabels?: readonly string[];
-  /** Native `name` forwarded to the primitive, so the value submits with a form. */
+  /** The form field name the value submits under. */
   name?: string;
-  /** Extra classes, merged onto the root via `cn`. */
+  /** Extra classes for the field's root. */
   className?: string;
-  /** Accessible name for label-less usage. A range joins it to each thumb's name. */
+  /** The accessible name for a slider with no `label`. A range joins it to each thumb's name. */
   "aria-label"?: string;
 };
 
@@ -145,9 +149,9 @@ function SliderThumb({ index, thumbCount, onInputAttach, ...props }: SliderThumb
 }
 
 /**
- * Labeled slider composite over Field + base-ui Slider, for a single value or a range.
- * Client. Base UI owns the value and the pointer and keyboard handling, and the range
- * thumbs read their default names from the locale dictionary.
+ * A labeled slider for a single value or a range, built on Field and Base UI's slider. Base UI
+ * owns the value and the pointer and keyboard handling, and the range thumbs read their default
+ * names from the locale dictionary.
  */
 export function Slider<Value extends SliderValue = number>({
   label,
@@ -159,10 +163,10 @@ export function Slider<Value extends SliderValue = number>({
   defaultValue,
   onChange,
   onValueCommitted,
-  minValue,
-  maxValue,
-  step,
-  largeStep,
+  minValue = 0,
+  maxValue = 100,
+  step = 1,
+  largeStep = 10,
   orientation = "horizontal",
   formatOptions,
   showValue = false,

@@ -40,7 +40,10 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type ClockChartColumnProps = ChartLayerProps & {
-  /** The series the wedges draw, in the look its config's `barVariant` names. */
+  /**
+   * The series the wedges draw, in the look its config's `barVariant` names. Columns of one config
+   * `stack` stack, and the stack keeps a pixel floor for each wedge so a sliver still shows.
+   */
   dataKey: string;
   /**
    * The slots to emphasise. `"now"` selects the slot that holds Root's `now`, and `"max"` and

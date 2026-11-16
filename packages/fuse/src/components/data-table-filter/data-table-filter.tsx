@@ -116,16 +116,40 @@ function focusOnMenuOpen(current: string | null, drilled: string | null): string
  * @template TFields - The fields map, from `defineFilterFields`.
  */
 export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFieldMap> = {
-  /** The table, from `useTable` or a Fuse table hook with `columnFilteringFeature`. */
+  /**
+   * The table, from TanStack Table 9.2 or later: `useTable` or a Fuse table hook with
+   * `columnFilteringFeature`. The filter reads and writes its `columnFilters` state, and every
+   * filter value is a plain object, `{ kind, operator, values }`. To filter on the client, add
+   * `createDataTableFilterFn({ timeZone })` to the features' `filterFns` and name it in
+   * `defaultColumn.filterFn`.
+   */
   table: FilterTableSource;
-  /** The filterable fields keyed by column id, from `defineFilterFields`. */
+  /**
+   * The filterable fields keyed by column id, from `defineFilterFields<Row>()`. The map checks
+   * each field's kind against the column's type and each option's value against the column's
+   * values. It holds no functions, so a server module can define it and pass it to the client.
+   *
+   * A text field matches `contains` by default; list `startsWith` in its `operators` for a prefix
+   * match, such as an ID typed from its start. A boolean field filters a column of `true` and
+   * `false` through a Yes and No list with counts, named by `trueLabel` and `falseLabel`. Give it
+   * `toggle: true` for a scope such as "My orders" that is on or off: its add-menu row ticks the
+   * filter on and off, and its chip is its name and Remove. With `manualFiltering` a toggle's id
+   * need not be a column, since the server decides what it means. A date field lists its presets
+   * by key, such as `presets: ["today", "yesterday", "thisWeek", "lastMonth"]`. A period preset
+   * covers the whole period, and a week starts on the locale's first day.
+   */
   fields: TFields;
   /**
    * Server counts and ranges. They win over TanStack faceting, and with `manualFiltering` they
-   * are the only source, since TanStack would count the current page only.
+   * are the only source, since TanStack would count the current page only. An absent entry means
+   * unknown, and its list shows no counts.
    */
   facets?: FilterFacets<TFields> | undefined;
-  /** The zone for date presets and the date editor's today. Defaults to the runtime zone. */
+  /**
+   * The zone for date presets and the date editor's today. Defaults to the runtime zone. Pass the
+   * zone you give `createDataTableFilterFn`, so the presets and the date matches agree on the
+   * calendar day.
+   */
   timeZone?: string | undefined;
   /**
    * An operator's label for one field. Return undefined to keep the dictionary's. The field id
@@ -134,9 +158,18 @@ export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFiel
   formatOperator?:
     | ((operator: FilterOperator, kind: FilterKind, fieldId: string) => string | undefined)
     | undefined;
-  /** Called with the field whose editor opens, and null when it closes. A server fetches facets from it. */
+  /**
+   * Called with the field whose submenu or editor opens, and null when it closes, so a server can
+   * fetch that field's facets first.
+   */
   onActiveFieldChange?: ((fieldId: string | null) => void) | undefined;
-  /** The Bar, the overlays and anything else that reads the filter. */
+  /**
+   * The `DataTableFilter.Bar`, `DataTableFilter.Content` and `DataTableFilter.ValueContent`, as
+   * siblings, never one inside another, and anything else that reads the filter. A part outside
+   * its Root or chip throws a `DataTableFilterCompositionError` that names the fix. Inside the
+   * Root, `useDataTableFilter().actions.edit(fieldId)` opens a field's editor: the value popover
+   * of a field with a chip, and otherwise the add menu on a text, number or date field's editor.
+   */
   children?: ReactNode;
 };
 

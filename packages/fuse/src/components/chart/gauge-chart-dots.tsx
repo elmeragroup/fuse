@@ -23,11 +23,13 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartDotsProps = ChartLayerProps & {
-  /** The dots' colour role. "chart-1" by default. */
+  /** The dots' colour role. */
   color?: ChartGaugeRole;
-  /** How many rings of dots, 1 to 6, the outermost just inside the track. 4 by default. */
+  /** How many rings of dots, 1 to 6, the outermost just inside the track. */
   rings?: number;
-  /** The rings' look: "even", every ring alike, or "fade", each ring fainter toward the centre. "even" by default. */
+  /**
+   * The rings' look. "even" draws every ring alike, and "fade" each ring fainter toward the centre.
+   */
   variant?: "even" | "fade";
 };
 

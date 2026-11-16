@@ -1,10 +1,24 @@
 ---
 lede: >
-  A text field that suggests values as the user types. Its value is the text, typed or picked.
+  A text field that suggests values as the user types. Its value is the text, typed or picked. For an answer that must be one of the options, use Combobox. For a labeled autocomplete in a form, use AutocompleteField.
 ---
 
-import { AutocompleteCustomLayout } from "./demos/autocomplete-custom-layout";
-import { AutocompleteSizes } from "./demos/autocomplete-sizes";
+import { AutocompleteDemo } from "./demos/autocomplete-demo";
+import { AutocompleteSmall } from "./demos/autocomplete-small";
+import { AutocompleteClearButton } from "./demos/autocomplete-clear-button";
+import { AutocompleteCaret } from "./demos/autocomplete-caret";
+import { AutocompleteTop } from "./demos/autocomplete-top";
+import { AutocompleteLeft } from "./demos/autocomplete-left";
+import { AutocompleteRight } from "./demos/autocomplete-right";
+import { AutocompleteInlineStart } from "./demos/autocomplete-inline-start";
+import { AutocompleteInlineEnd } from "./demos/autocomplete-inline-end";
+import { AutocompleteAlignCenter } from "./demos/autocomplete-align-center";
+import { AutocompleteAlignEnd } from "./demos/autocomplete-align-end";
+import { AutocompleteOffset } from "./demos/autocomplete-offset";
+import { AutocompleteGroups } from "./demos/autocomplete-groups";
+import { AutocompleteInvalid } from "./demos/autocomplete-invalid";
+import { AutocompleteDisabled } from "./demos/autocomplete-disabled";
+import { AutocompleteReadOnly } from "./demos/autocomplete-read-only";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,28 +26,106 @@ export const metadata = componentMetadata("autocomplete");
 
 <ComponentIntro slug="autocomplete" />
 
-<Prose>
+<DefaultDemo slug="autocomplete" file="autocomplete-demo.tsx">
+  <AutocompleteDemo />
+</DefaultDemo>
 
-For a labeled autocomplete in a form, use `AutocompleteField`, which lays out the label, error and description as the other labeled fields do. Compose `Field.Root` and these parts for a layout of your own.
+## Usage
 
-Autocomplete is Base UI's Autocomplete with [Combobox](/components/combobox)'s look. The two differ in their value. A Combobox submits the option the user selected, and editing its text never replaces that selection. An Autocomplete submits the text in its input, and its list only suggests: picking an item fills the input with the item's text, and the user can go on editing it. Text that matches no item is kept on blur and submitted as it is. Use Autocomplete when any text is a valid answer, and Combobox when the answer must be one of the options.
+{/* prettier-ignore */}
+```tsx
+import { Autocomplete } from "@elmeragroup/fuse/autocomplete";
 
-`Autocomplete.Root` holds the state and renders no element. `value`, `defaultValue` and `onValueChange` hold the text, and the input carries `name`, so the form submits the text under it. Inside a `Field.Root`, the field's name, label, description and `Form` errors reach the input, as they do a Combobox. Set `id` on the Root rather than on the input, so the `Field.Label` points at it. Base UI filters `items` against the text in the locale of `LocaleProvider`. Place `Autocomplete.Empty` beside `Autocomplete.List` for the list that matches nothing. It needs `items` on the Root, since it shows only while the Root's filtered items are empty.
+<Autocomplete.Root items={["Bergen", "Oslo"]}>
+  <Autocomplete.Input aria-label="Municipality" placeholder="Type a municipality…" />
+  <Autocomplete.Content>
+    <Autocomplete.Empty />
+    <Autocomplete.List>
+      {(municipality: string) => (
+        <Autocomplete.Item key={municipality} value={municipality}>
+          {municipality}
+        </Autocomplete.Item>
+      )}
+    </Autocomplete.List>
+  </Autocomplete.Content>
+</Autocomplete.Root>
+```
 
-`Autocomplete.Input` has no caret by default, since the list opens as the user types. `showTrigger` and `showClear` add the caret and a clear button, and `triggerLabel` and `clearLabel` replace their names from the locale dictionary. Place `Autocomplete.Status`, a visually hidden live region for the state of a search, beside `Autocomplete.Input` and outside `Autocomplete.Content`, so it stays mounted while the popup opens and closes. The `AutocompleteField` page shows groups and a search that runs on a server, which render these parts inside the field.
+## Examples
 
-</Prose>
-
-<Demo slug="autocomplete" id="sizes" title="Sizes" file="autocomplete-sizes.tsx">
-  <AutocompleteSizes />
+<Demo slug="autocomplete" id="small" title="Small" level={3} file="autocomplete-small.tsx">
+  <AutocompleteSmall />
 </Demo>
 
 <Demo
   slug="autocomplete"
-  id="custom-layout"
-  title="Label row with an info button"
-  file="autocomplete-custom-layout.tsx">
-  <AutocompleteCustomLayout />
+  id="clear-button"
+  title="Clear button"
+  level={3}
+  file="autocomplete-clear-button.tsx">
+  <AutocompleteClearButton />
+</Demo>
+
+<Demo slug="autocomplete" id="caret" title="Caret" level={3} file="autocomplete-caret.tsx">
+  <AutocompleteCaret />
+</Demo>
+
+<Demo slug="autocomplete" id="top" title="Top" level={3} file="autocomplete-top.tsx">
+  <AutocompleteTop />
+</Demo>
+
+<Demo slug="autocomplete" id="left" title="Left" level={3} file="autocomplete-left.tsx">
+  <AutocompleteLeft />
+</Demo>
+
+<Demo slug="autocomplete" id="right" title="Right" level={3} file="autocomplete-right.tsx">
+  <AutocompleteRight />
+</Demo>
+
+<Demo
+  slug="autocomplete"
+  id="inline-start"
+  title="Inline start"
+  level={3}
+  file="autocomplete-inline-start.tsx">
+  <AutocompleteInlineStart />
+</Demo>
+
+<Demo slug="autocomplete" id="inline-end" title="Inline end" level={3} file="autocomplete-inline-end.tsx">
+  <AutocompleteInlineEnd />
+</Demo>
+
+<Demo
+  slug="autocomplete"
+  id="align-center"
+  title="Align center"
+  level={3}
+  file="autocomplete-align-center.tsx">
+  <AutocompleteAlignCenter />
+</Demo>
+
+<Demo slug="autocomplete" id="align-end" title="Align end" level={3} file="autocomplete-align-end.tsx">
+  <AutocompleteAlignEnd />
+</Demo>
+
+<Demo slug="autocomplete" id="offset" title="Offset" level={3} file="autocomplete-offset.tsx">
+  <AutocompleteOffset />
+</Demo>
+
+<Demo slug="autocomplete" id="groups" title="Groups" level={3} file="autocomplete-groups.tsx">
+  <AutocompleteGroups />
+</Demo>
+
+<Demo slug="autocomplete" id="invalid" title="Invalid" level={3} file="autocomplete-invalid.tsx">
+  <AutocompleteInvalid />
+</Demo>
+
+<Demo slug="autocomplete" id="disabled" title="Disabled" level={3} file="autocomplete-disabled.tsx">
+  <AutocompleteDisabled />
+</Demo>
+
+<Demo slug="autocomplete" id="read-only" title="Read-only" level={3} file="autocomplete-read-only.tsx">
+  <AutocompleteReadOnly />
 </Demo>
 
 <ApiReference slug="autocomplete" />

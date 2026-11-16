@@ -5,7 +5,7 @@ import { Table } from "@elmeragroup/fuse/table";
 
 export function FrameWithTable() {
   return (
-    <Frame.Root>
+    <Frame.Root className="max-w-md w-full">
       <Frame.Header>
         <Frame.Title>Invoices</Frame.Title>
         <Frame.Description>Last 30 days</Frame.Description>
@@ -29,7 +29,6 @@ export function FrameWithTable() {
           </Table.Row>
         </Table.Body>
       </Table.Root>
-      <Frame.Panel>Reminders go out seven days after the due date.</Frame.Panel>
     </Frame.Root>
   );
 }

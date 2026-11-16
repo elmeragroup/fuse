@@ -23,12 +23,12 @@ import { alertDialogVariants } from "./alert-dialog-variants";
 import { alertDialogStrings } from "./intl";
 
 /**
- * Root runs Base UI's alert-dialog mode, which is always modal and ignores backdrop
- * clicks: a destructive confirmation must be answered, not dismissed by a stray pointer.
- * Escape still closes it. Its props type omits `modal` and `disablePointerDismissal`, so
- * neither can be opted back in. The rest is Dialog machinery with `role="alertdialog"`:
+ * Runs Base UI's alert-dialog mode, which is always modal and ignores backdrop clicks, so a
+ * stray pointer cannot dismiss a confirmation the user must answer. Escape still closes it. Its
+ * props type omits `modal` and `disablePointerDismissal`, so neither can be turned back on.
  * Trigger and Content render through the public Dialog parts, which read the same root
- * context, so the self-focus ring and every other Dialog behaviour come with them.
+ * context, so they keep Dialog's self focus ring and its other behaviour with
+ * `role="alertdialog"`.
  */
 export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitive.Root>): ReactElement {
   // An alert dialog in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
@@ -37,66 +37,59 @@ export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitiv
 }
 
 /**
- * Trigger restamps its own `data-slot`: Dialog's parts write theirs before spreading the
- * rest, so the value passed here wins.
+ * Opens the alert dialog. It passes its own `data-slot`, which wins because Dialog's parts
+ * write theirs before they spread the rest.
  */
 export function AlertDialogTrigger(props: ComponentProps<typeof AlertDialogPrimitive.Trigger>): ReactElement {
   return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
 export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton" | "children"> & {
-  /** Confirm heading, rendered in `Dialog.Title`. */
+  /** The question the dialog asks, rendered in a `Dialog.Title`. */
   title: string;
   /**
-   * Icon rendered to the right of the title, centred on the title's first line. Defaults to
-   * `WarningOctagon` (destructive) or `Info` (neutral).
+   * The icon at the end of the title's first line. Unset, a `destructive` dialog shows
+   * WarningOctagon and a `neutral` one shows Info.
    */
   icon?: ReactNode;
   /**
-   * Drives the action-button variant and the fallback icon. Destructive dialogs
-   * initially focus Cancel; neutral dialogs initially focus the primary action, or Cancel
-   * while `isActionDisabled` is set.
-   * @default "destructive"
+   * The kind of confirmation, which sets the action button's variant and the fallback icon. A
+   * `destructive` dialog opens with focus on Cancel. A `neutral` one opens with focus on the
+   * action, or on Cancel while `isActionDisabled` is set. Pass `initialFocus` to focus another
+   * element; it wins over both.
    */
   variant?: "destructive" | "neutral";
   /**
-   * Consequence copy, rendered in a real `Dialog.Description` so `aria-describedby` is
-   * wired to the popup.
+   * What happens if the user confirms. It renders in a `Dialog.Description`, which the popup
+   * names in `aria-describedby`.
    */
   children: ReactNode;
-  /** Visible label for the primary action button. */
+  /** The action button's label. */
   actionLabel: string;
-  /**
-   * Visible label for the cancel button. Defaults to the locale dictionary
-   * (`alertDialog.cancel`).
-   */
+  /** The cancel button's label. Unset, it reads `alertDialog.cancel` from the locale dictionary. */
   cancelLabel?: string;
   /**
-   * Primary button click. Closing is the caller's job unless
-   * `isAutomaticallyCloseOnActionEnabled` is set.
+   * Runs when the action button is clicked. The dialog stays open unless
+   * `isAutomaticallyCloseOnActionEnabled` is set, so close it yourself when the action is done.
    */
   onAction?: () => void;
-  /** Cancel button click. The cancel button always closes via `Dialog.Close`. */
+  /** Runs when the cancel button is clicked. Cancel always closes the dialog. */
   onCancel?: () => void;
   /**
-   * Surfaces the primary button's pending state (`isPending` — `data-pending` and
-   * disabled interaction, per Button).
-   * @default false
+   * Shows the action button as pending, as Button's `isPending` does. It sets `data-pending` and
+   * blocks clicks. Cancel stays enabled.
    */
   isPerformingAction?: boolean;
-  /**
-   * Disables the primary action button. Cancel stays enabled.
-   * @default false
-   */
+  /** Disables the action button. Cancel stays enabled. */
   isActionDisabled?: boolean;
   /**
-   * When true, wraps the action button in `Dialog.Close` so clicking it also dismisses.
-   * Default leaves closing to the caller (async flows close after success).
-   * @default false
+   * Closes the dialog when the action button is clicked. Leave it off for an action that can
+   * fail, and close the dialog from `onAction` once the action succeeds.
    */
   isAutomaticallyCloseOnActionEnabled?: boolean;
 };
 
+/** The alert dialog's popup, with its title, icon, description, cancel button and action button. */
 export function AlertDialogContent({
   title,
   icon,

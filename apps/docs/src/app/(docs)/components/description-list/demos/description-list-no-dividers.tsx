@@ -4,7 +4,7 @@ import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
 export function DescriptionListNoDividers() {
   return (
-    <DescriptionList.Root>
+    <DescriptionList.Root className="max-w-xl w-full">
       <DescriptionList.Heading>Delivery</DescriptionList.Heading>
       <DescriptionList.Content dividers={false}>
         <DescriptionList.Item>

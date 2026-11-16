@@ -3,10 +3,10 @@ lede: >
   Tabs that switch between panels.
 ---
 
-import { TabsBasic } from "./demos/tabs-basic";
+import { TabsDemo } from "./demos/tabs-demo";
 import { TabsLine } from "./demos/tabs-line";
 import { TabsVertical } from "./demos/tabs-vertical";
-import { TabsWithIcons } from "./demos/tabs-with-icons";
+import { TabsIcons } from "./demos/tabs-icons";
 import { TabsDisabled } from "./demos/tabs-disabled";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -15,23 +15,41 @@ export const metadata = componentMetadata("tabs");
 
 <ComponentIntro slug="tabs" />
 
-<Demo slug="tabs" id="basic" title="Basic" file="tabs-basic.tsx">
-  <TabsBasic />
-</Demo>
+<DefaultDemo slug="tabs" file="tabs-demo.tsx">
+  <TabsDemo />
+</DefaultDemo>
 
-<Demo slug="tabs" id="line" title="Line" file="tabs-line.tsx">
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Tabs } from "@elmeragroup/fuse/tabs";
+
+<Tabs.Root defaultValue="account">
+  <Tabs.List>
+    <Tabs.Trigger value="account">Account</Tabs.Trigger>
+    <Tabs.Trigger value="password">Password</Tabs.Trigger>
+  </Tabs.List>
+  <Tabs.Content value="account">Account details.</Tabs.Content>
+  <Tabs.Content value="password">Password settings.</Tabs.Content>
+</Tabs.Root>
+```
+
+## Examples
+
+<Demo slug="tabs" id="line" title="Line" level={3} file="tabs-line.tsx">
   <TabsLine />
 </Demo>
 
-<Demo slug="tabs" id="vertical" title="Vertical" file="tabs-vertical.tsx">
+<Demo slug="tabs" id="vertical" title="Vertical" level={3} file="tabs-vertical.tsx">
   <TabsVertical />
 </Demo>
 
-<Demo slug="tabs" id="with-icons" title="With icons" file="tabs-with-icons.tsx">
-  <TabsWithIcons />
+<Demo slug="tabs" id="icons" title="Icons" level={3} file="tabs-icons.tsx">
+  <TabsIcons />
 </Demo>
 
-<Demo slug="tabs" id="disabled" title="Disabled" file="tabs-disabled.tsx">
+<Demo slug="tabs" id="disabled" title="Disabled tab" level={3} file="tabs-disabled.tsx">
   <TabsDisabled />
 </Demo>
 

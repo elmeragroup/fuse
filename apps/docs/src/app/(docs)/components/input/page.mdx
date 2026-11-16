@@ -3,11 +3,12 @@ lede: >
   A single-line text input.
 ---
 
-import { InputBasic } from "./demos/input-basic";
-import { InputSizes } from "./demos/input-sizes";
-import { InputTypes } from "./demos/input-types";
-import { InputStates } from "./demos/input-states";
-import { InputInField } from "./demos/input-in-field";
+import { InputDemo } from "./demos/input-demo";
+import { InputSmall } from "./demos/input-small";
+import { InputDisabled } from "./demos/input-disabled";
+import { InputReadOnly } from "./demos/input-read-only";
+import { InputInvalid } from "./demos/input-invalid";
+import { InputFile } from "./demos/input-file";
 import { InputNumeric } from "./demos/input-numeric";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -16,39 +17,46 @@ export const metadata = componentMetadata("input");
 
 <ComponentIntro slug="input" />
 
-<Prose>
+<DefaultDemo slug="input" file="input-demo.tsx">
+  <InputDemo />
+</DefaultDemo>
 
-A bare input has no accessible name; compose it under `Field.Root` with a `Field.Label`.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Field } from "@elmeragroup/fuse/field";
+import { Input } from "@elmeragroup/fuse/input";
 
-<Demo slug="input" id="basic" title="Basic" file="input-basic.tsx">
-  <InputBasic />
+<Field.Root>
+  <Field.Label>Email</Field.Label>
+  <Input type="email" />
+</Field.Root>
+```
+
+## Examples
+
+<Demo slug="input" id="small" title="Small" level={3} file="input-small.tsx">
+  <InputSmall />
 </Demo>
 
-<Demo slug="input" id="sizes" title="Sizes" file="input-sizes.tsx">
-  <InputSizes />
+<Demo slug="input" id="disabled" title="Disabled" level={3} file="input-disabled.tsx">
+  <InputDisabled />
 </Demo>
 
-<Demo slug="input" id="types" title="Types" file="input-types.tsx">
-  <InputTypes />
+<Demo slug="input" id="read-only" title="Read-only" level={3} file="input-read-only.tsx">
+  <InputReadOnly />
 </Demo>
 
-<Demo slug="input" id="states" title="States" file="input-states.tsx">
-  <InputStates />
+<Demo slug="input" id="invalid" title="Invalid" level={3} file="input-invalid.tsx">
+  <InputInvalid />
 </Demo>
 
-<Demo slug="input" id="in-field" title="In a Field" file="input-in-field.tsx">
-  <InputInField />
+<Demo slug="input" id="file" title="File" level={3} file="input-file.tsx">
+  <InputFile />
 </Demo>
 
-<Prose>
-
-`filter="numeric"` keeps digits only, whether they are typed, pasted or autofilled. On text-like input types it counts `maxLength` in digits, so a pasted number with spaces fits whole; the API reference lists the paths where the browser's own length handling still applies. `TextField` and `InputGroup.Input` take the same prop.
-
-</Prose>
-
-<Demo slug="input" id="numeric" title="Numeric filter" file="input-numeric.tsx">
+<Demo slug="input" id="numeric" title="Numeric filter" level={3} file="input-numeric.tsx">
   <InputNumeric />
 </Demo>
 

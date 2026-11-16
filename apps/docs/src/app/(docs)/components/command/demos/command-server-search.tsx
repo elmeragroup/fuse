@@ -225,6 +225,8 @@ export function CommandServerSearch() {
                   value={order}
                   page="order"
                   onClick={() => {
+                    // Start the request here and read it with `use` inside Suspense on the page,
+                    // so the page's input takes focus while the lines load.
                     setOpened({ order, lines: fetchOrderLines(order.number) });
                   }}>
                   Order {order.number}
@@ -239,6 +241,7 @@ export function CommandServerSearch() {
           </Command.Page>
           {opened !== null && (
             <Command.Page id="order" label={`Order ${opened.order.number}`} items={ORDER_ACTIONS}>
+              {/* The input's description is the order's details between it and the actions. */}
               <Command.Input placeholder="Search actions…" aria-describedby={summaryId} />
               {/* Inset to the rows' text: the list's surface gap, then a row's own padding. */}
               <div className="border-b border-border p-(--surface-gap-sm)">

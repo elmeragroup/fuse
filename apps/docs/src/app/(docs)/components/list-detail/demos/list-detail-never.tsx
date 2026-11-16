@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { ListDetail } from "@elmeragroup/fuse/list-detail";
-import { Table } from "@elmeragroup/fuse/table";
 
 const READINGS = [
   { meter: "707057500012345678", address: "Storgata 1, Oslo", reading: "12 480 kWh" },
@@ -28,19 +27,19 @@ export function ListDetailNever() {
       split="never"
       className="w-full">
       <ListDetail.List>
-        <Table.Root>
-          <Table.Caption>Meter readings</Table.Caption>
-          <Table.Header>
-            <Table.Row>
-              <Table.Head>Meter point</Table.Head>
-              <Table.Head>Address</Table.Head>
-              <Table.Head>Reading</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
+        <table>
+          <caption>Meter readings</caption>
+          <thead>
+            <tr>
+              <th>Meter point</th>
+              <th>Address</th>
+              <th>Reading</th>
+            </tr>
+          </thead>
+          <tbody>
             {READINGS.map((row) => (
-              <Table.Row key={row.meter}>
-                <Table.Cell>
+              <tr key={row.meter}>
+                <td>
                   <Button
                     variant="link"
                     onClick={() => {
@@ -48,13 +47,13 @@ export function ListDetailNever() {
                     }}>
                     {row.meter}
                   </Button>
-                </Table.Cell>
-                <Table.Cell>{row.address}</Table.Cell>
-                <Table.Cell>{row.reading}</Table.Cell>
-              </Table.Row>
+                </td>
+                <td>{row.address}</td>
+                <td>{row.reading}</td>
+              </tr>
             ))}
-          </Table.Body>
-        </Table.Root>
+          </tbody>
+        </table>
       </ListDetail.List>
       <ListDetail.Detail>
         {reading === undefined ? null : (

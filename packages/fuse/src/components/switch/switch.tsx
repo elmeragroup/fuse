@@ -11,24 +11,24 @@ import { switchVariants } from "./switch-variants";
 
 export type SwitchProps = Omit<ComponentProps<typeof SwitchPrimitive.Root>, "className"> & {
   /**
-   * Extra classes, merged via `cn` after the base classes, so a height or width here replaces the
-   * track's size. The track caps its width at the size's, so a wider track also needs a `max-w-*`.
+   * Extra classes for the track. A height or width class replaces the track's size. The track
+   * caps its width at the size's, so a wider track also needs a `max-w-*` class.
    */
   className?: string;
   /**
-   * Optical size of the track and thumb, also emitted as `data-size`. Pixel-fixed at both density
-   * stamps — not a control size.
+   * The size of the track and thumb, also written as `data-size`. `default` is a 32px by 18.4px
+   * track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since
+   * the switch takes no control size.
    */
   size?: "sm" | "default";
 };
 
 /**
- * Unlabeled two-state switch. Client — base-ui Switch owns
- * checked state. The track takes `switchVariants`' `root` and `control` classes for its size,
- * and the thumb its `thumb` classes. Labeled usage composes
- * `Field.Root` + `Field.Label`. Native form reset, including React's reset after a form
- * action, keeps the current state and what the form submits in step; an uncontrolled switch
- * does not return to `defaultChecked`.
+ * An on and off switch with no label, built on Base UI's switch, which owns the checked state.
+ * The track takes `switchVariants`' `root` and `control` classes, and the thumb its `thumb`
+ * classes. Label it with `Field.Root` and `Field.Label`. A native form reset, including React's
+ * reset after a form action, keeps the shown state and the submitted value in step. An
+ * uncontrolled switch does not return to `defaultChecked`.
  */
 export function Switch({ className, size = "default", inputRef, ...props }: SwitchProps): ReactElement {
   const syncedInputRef = useCheckedResetSync(inputRef);

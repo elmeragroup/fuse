@@ -34,15 +34,25 @@ const DescriptionOwnerContext = createContext<DescriptionOwner | null>(null);
 
 const fieldDescriptionOwner: DescriptionOwner = { _tag: "field" };
 
+/** The props of `Field.Root`. */
+type FieldRootProps = ComponentProps<typeof FieldPrimitive.Root> &
+  VariantProps<typeof fieldVariants> & {
+    /**
+     * How the parts sit, also written as `data-orientation`. `vertical` stacks the label, control,
+     * error and description 4px apart at both densities, as the labeled composites do, so a field
+     * built from parts lines up with a `TextField` beside it. It stretches each child to the
+     * field's width, except a `Checkbox` or `Switch`. `horizontal` sets the control beside its
+     * label, a gap apart that follows density. `responsive` is vertical until the nearest
+     * `Field.Group` is 28rem wide, then horizontal. Outside a `Field.Group` it stays vertical.
+     */
+    orientation?: VariantProps<typeof fieldVariants>["orientation"];
+  };
+
 /**
- * A vertical root sets its label 4px from its control at both densities, the stack every labeled
- * composite renders, so a field built from parts lines up with a `TextField` beside it.
+ * A field: it links its `Field.Label`, `Field.Description` and `Field.Error` to the control
+ * inside it, and holds the control's disabled, invalid and validation state.
  */
-export function FieldRoot({
-  className,
-  orientation = "vertical",
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Root> & VariantProps<typeof fieldVariants>): ReactElement {
+export function FieldRoot({ className, orientation = "vertical", ...props }: FieldRootProps): ReactElement {
   return (
     <DescriptionOwnerContext.Provider value={fieldDescriptionOwner}>
       <FieldPrimitive.Root
@@ -55,19 +65,34 @@ export function FieldRoot({
   );
 }
 
+type FieldsetRootProps = ComponentProps<typeof FieldsetPrimitive.Root>;
+
+/** The props of `Field.Set`. */
+type FieldSetProps = Omit<FieldsetRootProps, "aria-describedby" | "disabled"> & {
+  /**
+   * The ids of elements that describe the set. Outside a `Field.Root`, the set adds the ids of the
+   * `Field.Description` parts it holds after these. Inside a root, those descriptions describe the
+   * root's control instead.
+   */
+  "aria-describedby"?: FieldsetRootProps["aria-describedby"];
+  /**
+   * Disables every field in the set. A set inside a disabled set is disabled too. It also
+   * disables the parts that are not a field themselves, such as a date picker's trigger and
+   * calendar.
+   */
+  disabled?: FieldsetRootProps["disabled"];
+};
+
 /**
- * Outside a `Field.Root`, the set is described by the `Field.Description` parts it holds, after
- * the consumer's own `aria-describedby`. Inside a root, they describe the root's control instead.
- * A disabled set, or one inside a disabled set, as Base UI resolves it, also disables the parts
- * that are not a Field themselves, such as a date picker's trigger and calendar
- * (`internal/field-set-disabled.ts`).
+ * A native fieldset that groups related fields under a `Field.Legend`. The disabled state reaches
+ * the non-field parts through `internal/field-set-disabled.ts`.
  */
 export function FieldSet({
   className,
   ref,
   "aria-describedby": consumerDescribedBy,
   ...props
-}: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
+}: FieldSetProps): ReactElement {
   const owner = use(DescriptionOwnerContext);
   const disabled = use(FieldSetDisabledContext) || props.disabled === true;
   // A joined string, so an unchanged order bails out of the state update instead of re-rendering.
@@ -120,17 +145,26 @@ export function FieldSet({
   );
 }
 
-export function FieldLegend({
-  className,
-  variant = "legend",
-  ...props
-}: ComponentProps<typeof FieldsetPrimitive.Legend> & {
+type FieldsetLegendProps = ComponentProps<typeof FieldsetPrimitive.Legend>;
+
+/** The props of `Field.Legend`. */
+type FieldLegendProps = Omit<FieldsetLegendProps, "render"> & {
   /**
-   * Emitted as `data-variant` and drives the text size: `"legend"` (default) titles the
-   * fieldset at a fixed 16/24px, `"label"` reads the label type pair to match a `Field.Label`.
+   * The text size, also written as `data-variant`. `legend` titles the set at a fixed 16px on a
+   * 24px line. `label` takes the label text size, to match a `Field.Label`.
    */
   variant?: "legend" | "label";
-}): ReactElement {
+  /**
+   * Replaces the rendered element, a `div` by default. In a grid `Field.Set`, pass
+   * `render={<legend />}`: the browser keeps a fieldset's first `legend` out of the grid, so the
+   * first field takes the first cell, and the legend still names the set. A `div` legend takes
+   * the first cell itself.
+   */
+  render?: FieldsetLegendProps["render"];
+};
+
+/** The title of a `Field.Set`, which names the set. */
+export function FieldLegend({ className, variant = "legend", ...props }: FieldLegendProps): ReactElement {
   return (
     <FieldsetPrimitive.Legend
       data-slot="field-legend"
@@ -141,6 +175,10 @@ export function FieldLegend({
   );
 }
 
+/**
+ * A column of fields, with a wider gap between fields than inside one. A `Field.Root` with
+ * `orientation="responsive"` reads its width.
+ */
 export function FieldGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -154,6 +192,7 @@ export function FieldGroup({ className, ...props }: ComponentProps<"div">): Reac
   );
 }
 
+/** A column for a `Field.Title` and `Field.Description` beside a control in a horizontal root. */
 export function FieldContent({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -174,15 +213,21 @@ const fieldDescriptionClassName = fieldVariants().description();
 
 const fieldErrorClassName = fieldVariants().error();
 
-/**
- * A label whose direct child is a `Checkbox` renders as a choice row: centered with a pointer
- * cursor. The heading weight is the same as any other label; a consumer `font-*` class wins through
- * the merge.
- */
-export function FieldLabel({
-  className,
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
+type FieldLabelPrimitiveProps = ComponentProps<typeof FieldPrimitive.Label>;
+
+/** The props of `Field.Label`. */
+type FieldLabelProps = Omit<FieldLabelPrimitiveProps, "children"> & {
+  /**
+   * The label text. With a `Checkbox` as a direct child, the label is a choice row with a pointer
+   * cursor. With a horizontal `Field.Root` as its child, holding the `Checkbox` and a
+   * `Field.Content`, the label is a bordered choice card. The checkbox then belongs to the inner
+   * root, so set `htmlFor` to the checkbox's `id`.
+   */
+  children?: FieldLabelPrimitiveProps["children"];
+};
+
+/** The visible label of the control in its `Field.Root`. */
+export function FieldLabel({ className, ...props }: FieldLabelProps): ReactElement {
   return (
     <FieldPrimitive.Label
       data-slot="field-label"
@@ -193,6 +238,7 @@ export function FieldLabel({
   );
 }
 
+/** A heading for a control that a `Field.Label` around it already names, as in a choice card. */
 export function FieldTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
@@ -204,11 +250,25 @@ export function FieldTitle({ className, ...props }: ComponentProps<"div">): Reac
   );
 }
 
+/**
+ * An unstyled native `input` wired to its `Field.Root`. Pass a control that does not wire itself,
+ * such as `Textarea`, to its `render`.
+ */
 export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control>): ReactElement {
   return <FieldPrimitive.Control data-slot="field-control" {...definedProps(props)} />;
 }
 
-type FieldDescriptionProps = ComponentProps<typeof FieldPrimitive.Description>;
+type FieldDescriptionPrimitiveProps = ComponentProps<typeof FieldPrimitive.Description>;
+
+/** The props of `Field.Description`. */
+type FieldDescriptionProps = Omit<FieldDescriptionPrimitiveProps, "children"> & {
+  /**
+   * The supporting text. Inside a `Field.Root` it describes the root's control. Inside a
+   * `Field.Set` and outside any root, it describes the set, so it can follow a `Field.Legend`.
+   * Elsewhere it is a plain paragraph.
+   */
+  children?: FieldDescriptionPrimitiveProps["children"];
+};
 
 /**
  * The state Base UI's description reports for a field nobody has touched. Mapped so the type
@@ -227,11 +287,7 @@ const unownedDescriptionState: UnownedDescriptionState = {
   focused: false,
 };
 
-/**
- * Supporting copy. Inside a `Field.Root` it describes the field's control. Outside any root it
- * renders the same paragraph, and inside a `Field.Set` it describes that fieldset, so a
- * description can follow a `Field.Legend` without a root around the set.
- */
+/** Supporting text for a field or a set. */
 export function FieldDescription({ className, ...props }: FieldDescriptionProps): ReactElement {
   const owner = use(DescriptionOwnerContext);
   const descriptionClassName = mergeClassName(className, fieldDescriptionClassName);
@@ -282,6 +338,7 @@ function UnownedDescription({
   });
 }
 
+/** One choice in a group of checkboxes or radios that shares one `Field.Root`. */
 export function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
   return <FieldPrimitive.Item data-slot="field-item" {...definedProps(props)} />;
 }
@@ -292,8 +349,8 @@ export function FieldSeparator({
   ...props
 }: ComponentProps<"div"> & {
   /**
-   * Optional inline content rendered over the rule — a label for the break between two
-   * groups of fields. Its presence is reflected as `data-content`.
+   * Text over the rule, such as a name for the fields after it. The separator writes
+   * `data-content="true"` when it has children.
    */
   children?: ReactNode;
 }): ReactElement {
@@ -315,22 +372,24 @@ export function FieldSeparator({
   );
 }
 
-/**
- * The field's error message, announced as an alert. Place it directly after the control,
- * ahead of any `Field.Description`, so the message sits right under a field in error, as
- * the labeled composites place theirs.
- *
- * Children are shown as given: the caller decides when the field is in error, and a `match`
- * narrows that to one validity state. Without children it falls through to Base UI's own
- * message, and renders nothing while the field has none: an error from `Form`'s `errors` under
- * the field's name, a `validate` result or the native constraint message, which is in the
- * browser's language. Several messages render as a list.
- */
-export function FieldError({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Error>): ReactElement {
+type FieldErrorPrimitiveProps = ComponentProps<typeof FieldPrimitive.Error>;
+
+/** The props of `Field.Error`. */
+type FieldErrorProps = Omit<FieldErrorPrimitiveProps, "children"> & {
+  /**
+   * The message. Children always show, so render the part only while the field is in error, or
+   * pass `match` to show them for one validity state. Without children, the part shows the
+   * field's own message, and nothing while it has none: an error `Form` holds under the field's
+   * name, a `validate` result on `Field.Root`, or the browser's constraint message, which is in
+   * the browser's language. Several messages render as a list. To localize the message, pass
+   * children or a `validate` that returns your copy. Place the part directly after the control,
+   * ahead of any `Field.Description`, as the labeled composites do.
+   */
+  children?: FieldErrorPrimitiveProps["children"];
+};
+
+/** The field's error message, announced as an alert. */
+export function FieldError({ className, children, ...props }: FieldErrorProps): ReactElement {
   const errorClassName = mergeClassName(className, fieldErrorClassName);
   // Two branches, not `match={children ? true : undefined}`: Base UI merges every present
   // key, so a forwarded `children={undefined}` would erase the message it renders itself.

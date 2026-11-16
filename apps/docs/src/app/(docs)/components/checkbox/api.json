@@ -225,7 +225,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "description": "Every member value, for a group with a `parent` checkbox. The parent is checked when all of them are selected, indeterminate when some are, and unchecked when none are. Checking it selects them all.",
           "required": false
         },
         {
@@ -234,7 +234,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "description": "The options. Write each `Checkbox` in a `Field.Item` with a `Field.Label` around it and its text, or use `CheckboxItem` rows.",
           "required": false
         },
         {
@@ -243,7 +243,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "description": "Extra classes for the element that holds the options.",
           "required": false
         },
         {
@@ -252,7 +252,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial selected values.",
+          "description": "Uncontrolled initial selected values. Start a member checked by listing its `value` here, not with its `defaultChecked`, which the group ignores.",
           "required": false
         },
         {
@@ -261,7 +261,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text under the options, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -270,7 +270,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows its own validation error instead, such as a native constraint message.",
           "required": false
         },
         {
@@ -279,7 +279,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwarded to the group primitive.",
+          "description": "The `id` of the element that holds the options.",
           "required": false
         },
         {
@@ -288,7 +288,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "description": "Disables every option.",
           "required": false
         },
         {
@@ -297,7 +297,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -306,7 +306,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place. Default `false`.",
+          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
           "required": false
         },
         {
@@ -315,7 +315,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "description": "The group's visible name, rendered as `Field.Legend variant=\"label\"`. Leave it out to drop the legend row.",
           "required": false
         },
         {
@@ -324,7 +324,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "description": "The form field name every checked option submits its `value` under.",
           "required": false
         },
         {
@@ -333,7 +333,7 @@
           "type": "((value: string[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "description": "Called with the selected values as a `string[]` when the selection changes.",
           "required": false
         },
         {
@@ -342,7 +342,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
+          "description": "How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins `CheckboxItem` rows into one card with a line between rows. `horizontal` wraps them in a row `--surface-gap-lg` apart, and each `CheckboxItem` row is a card of its own. The cards share the line in equal widths. A `basis-*` class on a row sets the width below which it wraps.",
           "required": false,
           "values": [
             "horizontal",
@@ -355,7 +355,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled selected values.",
+          "description": "Controlled selected values. The group decides which members with a `value` are checked, so their own `checked` and `defaultChecked` have no effect.",
           "required": false
         }
       ]
@@ -376,7 +376,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Row children, partitioned by the row. Direct `CheckboxItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "description": "The row's content: `CheckboxItem.Content` with a `Title` and a `Description`, then `CheckboxItem.Actions`. Direct `CheckboxItem.SubSection` children render below the label row, outside the label, so a field or button in one never toggles the row. A server component may write these children and pass them to a client component that renders the `CheckboxItem`. In a client component, a Fragment or wrapper around a SubSection hides it from the row and keeps it inside the label.",
           "required": false
         },
         {
@@ -385,7 +385,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the control. The row paints the card fill (`bg-card`); a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class; set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill.",
+          "description": "Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the checkbox. The row paints the card fill (`bg-card`), and a background class such as `bg-background` replaces it. The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such as `className=\"bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]\"`. The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over such a class. Set `--selection-disabled-background`, for example to `var(--background)`, to change the disabled fill. The edges and the lines between rows come from the `--selection-*` theme roles, which the Tokens section lists. Set a role on the element that carries the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border: var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the rows keep the edges the theme element resolved.",
           "required": false
         },
         {
@@ -394,7 +394,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
+          "description": "Where the checkbox sits in the row: before the content, or after it at `end`.",
           "required": false,
           "values": [
             "end",
@@ -425,7 +425,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to the inner Checkbox, which dims to 50%, and shows the disabled row: the theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (neutral themes stripe a muted fill, branded themes keep the card fill without stripes) and the `not-allowed` cursor. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, the muted foreground in branded themes; a text colour class on the row still wins. A disabled group shows its rows the same way.",
+          "description": "Disables the checkbox, which dims to 50%, and shows the disabled row. The row fills with the theme's `--selection-disabled-background` under `--selection-disabled-hatch` stripes, and shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep the card fill with no stripes. The row's text, its SubSection's included, takes `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text colour class on the row still wins. A disabled group shows its rows the same way.",
           "required": false
         },
         {
@@ -434,7 +434,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `readOnly` to the inner Checkbox.",
+          "description": "Makes the checkbox read-only: it shows its state but a click does not change it.",
           "required": false
         },
         {
@@ -442,8 +442,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Lets a click on a SubSection's text, band or side padding toggle the control, while links, buttons, fields and other focusable elements in it keep their own clicks. Forwarded to `SelectionItem.Shell`; see it there. Leave it off when the SubSection reveals fields under the control. Default `false`.",
+          "defaultValue": "false",
+          "description": "Lets a click on a SubSection's text, band or side padding toggle the checkbox, while links, buttons, fields and other focusable elements in it keep their own clicks. The checkbox's name stays the label row. Leave it off when the SubSection reveals fields under the checkbox, so a click between those fields does not clear the choice.",
           "required": false
         },
         {
@@ -452,7 +452,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "When true, this row is the tri-state parent. Incompatible with `value`. Tri-state parent — checked/indeterminate/unchecked from the group's `allValues`.",
+          "description": "Makes the row the group's parent checkbox, which checks and unchecks every member and is indeterminate while some are checked. A parent row sets no `value`.",
           "required": false
         },
         {
@@ -483,7 +483,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Member value in the group. Required unless `parent`. Parent rows must not set `value`.",
+          "description": "The value the row adds to the group's selection. Every row but a `parent` needs one. A parent row sets no `value`.",
           "required": false
         }
       ]
@@ -501,7 +501,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Enables the tri-state `parent` checkbox. Base-ui derives checked/indeterminate from whether the group's value is a subset of these members.",
+          "description": "Every member value, for a group with a `parent` checkbox. The parent is checked when all of them are selected, indeterminate when some are, and unchecked when none are. Checking it selects them all.",
           "required": false
         },
         {
@@ -510,7 +510,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Group members — typically `Checkbox` or `CheckboxItem`.",
+          "description": "The options. Write each `Checkbox` in a `Field.Item` with a `Field.Label` around it and its text, or use `CheckboxItem` rows.",
           "required": false
         },
         {
@@ -519,7 +519,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the group primitive via `cn`.",
+          "description": "Extra classes for the element that holds the options.",
           "required": false
         },
         {
@@ -528,7 +528,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Uncontrolled initial selected values.",
+          "description": "Uncontrolled initial selected values. Start a member checked by listing its `value` here, not with its `defaultChecked`, which the group ignores.",
           "required": false
         },
         {
@@ -537,7 +537,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text under the options, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -546,7 +546,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as a native constraint message.",
+          "description": "The error text, rendered as `Field.Error` when truthy. While it is falsy, the field shows its own validation error instead, such as a native constraint message.",
           "required": false
         },
         {
@@ -555,7 +555,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwarded to the group primitive.",
+          "description": "The `id` of the element that holds the options.",
           "required": false
         },
         {
@@ -564,7 +564,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to `Field.Root` and the group primitive.",
+          "description": "Disables every option.",
           "required": false
         },
         {
@@ -573,7 +573,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `invalid` to `Field.Root`.",
+          "description": "Marks the field invalid, so the options show the invalid face.",
           "required": false
         },
         {
@@ -582,7 +582,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place. Default `false`.",
+          "description": "Hides the legend visually and keeps it as the group's accessible name. Use it for a group under a heading that already names it. The first option moves up into the legend's place.",
           "required": false
         },
         {
@@ -591,7 +591,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Fieldset legend, rendered as `Field.Legend variant=\"label\"`. The legend row is omitted when absent.",
+          "description": "The group's visible name, rendered as `Field.Legend variant=\"label\"`. Leave it out to drop the legend row.",
           "required": false
         },
         {
@@ -600,7 +600,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Set on `Field.Root`, not the group primitive. Base-ui's CheckboxGroup has no `name`; Field context threads it to member hidden inputs. RadioGroup puts `name` on its primitive — the face is the same `name?: string` either way.",
+          "description": "The form field name every checked option submits its `value` under.",
           "required": false
         },
         {
@@ -609,7 +609,7 @@
           "type": "((value: string[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the selected `string[]`, not the event. Mapped to base-ui `onValueChange`.",
+          "description": "Called with the selected values as a `string[]` when the selection changes.",
           "required": false
         },
         {
@@ -618,7 +618,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
+          "description": "How the options line up. `vertical` stacks them `--surface-gap-sm` apart, and joins `CheckboxItem` rows into one card with a line between rows. `horizontal` wraps them in a row `--surface-gap-lg` apart, and each `CheckboxItem` row is a card of its own. The cards share the line in equal widths. A `basis-*` class on a row sets the width below which it wraps.",
           "required": false,
           "values": [
             "horizontal",
@@ -631,7 +631,7 @@
           "type": "string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Controlled selected values.",
+          "description": "Controlled selected values. The group decides which members with a `value` are checked, so their own `checked` and `defaultChecked` have no effect.",
           "required": false
         }
       ]
@@ -649,7 +649,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Typically a `Checkbox`.",
+          "description": "The labeled checkbox the note sits beside, usually a `Field.Root` holding a `Checkbox`.",
           "required": false
         },
         {
@@ -658,7 +658,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trailing note. A string renders as a muted `<small>`; any other node renders intact. Visual-only — not wired to `aria-describedby`. Use Field description wiring when programmatic association is required.",
+          "description": "The note after the checkbox. A string renders as a muted `<small>`, and any other node renders as given. Screen readers do not read it as the checkbox's description. Use `Field.Description` when they should.",
           "required": false
         }
       ]

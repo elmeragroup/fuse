@@ -193,20 +193,10 @@ const ROOT_STATE_ATTRIBUTES = {
 
 /**
  * A date, date-time or zoned date-time edited in segments: one per unit, in the locale's order,
- * with the locale's literals between them. Typing fills a segment and moves on, arrow keys step
- * it, Backspace clears it; the value commits once every segment is filled. It is a `group` named
- * by its Field's label, `aria-label` or `aria-labelledby`, and each segment's name starts with its
- * unit: "month, Start date".
- *
- * Inside a Base UI Field (`Field.Root`, Fuse's `Field` or a labeled composite) the first editable
- * segment is the Field's control: a `Form` focuses it for an error, its value reaches
- * `onFormSubmit` as ISO text, and its validity (missing, incomplete, out of bounds, unavailable)
- * is the Field's, committed on blur and on submit. A visually hidden text input submits the ISO
- * value under `name` in a native form.
- *
- * Values are Temporal values; it reads `globalThis.Temporal`, so a host without native Temporal
- * imports `@elmeragroup/fuse/temporal-polyfill` once. It never reads the clock while rendering:
- * today fills an empty segment only when the user steps it.
+ * with the locale's literals between them. It is a `group`. Its validity inside a Field covers a
+ * missing, incomplete, out-of-bounds and unavailable value. It reads `globalThis.Temporal`, so a
+ * host without native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once. It never reads
+ * the clock while rendering.
  *
  * @template P - The props, inferred: only their `granularity` and `timeZone` count.
  * @template T - The value's kind, inferred: the kind `value` or `defaultValue` names, and without

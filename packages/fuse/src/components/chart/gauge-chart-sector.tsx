@@ -26,11 +26,11 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartSectorProps = ChartLayerProps & {
-  /** The sector's colour role. "chart-1" by default. */
+  /** The sector's colour role. */
   color?: ChartGaugeRole;
   /**
-   * The wedge's look: "conic" brightens toward the reading's edge, "radial" brightens toward the
-   * rim, and "flat" paints one tint. "conic" by default.
+   * The wedge's look. "conic" brightens toward the reading's edge, "radial" brightens toward the
+   * rim, and "flat" paints one tint.
    */
   variant?: "conic" | "radial" | "flat";
 };

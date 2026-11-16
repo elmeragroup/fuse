@@ -11,9 +11,9 @@ import { tv } from "../../styles/tv";
  * `data-highlighted:` on listbox options, so each family passes its own as the extra
  * `cn` argument. A row reads the row metrics: it is at least `--row-h` tall and pads with
  * `--row-px` and `--row-py`, and a multi-line row grows. A row with a trailing indicator adds
- * `indicatorRoom`, and an inset row or label adds `inset`, both the row inset plus the 16px
- * indicator and its 8px gap. A row is an inner part: it rounds with `rounded-inner`, from the
- * `--inner-corner` its family's padded popup part publishes.
+ * `indicatorRoom`, and an inset row or label adds `inset`, both the row inset plus a 16px
+ * indicator or icon and its 8px gap. A row is an inner part: it rounds with `rounded-inner`,
+ * from the `--inner-corner` its family's padded popup part publishes.
  */
 const overlayMenuVariants = tv({
   slots: {
@@ -27,7 +27,7 @@ const overlayMenuVariants = tv({
     indicator: "pointer-events-none absolute right-(--row-px) flex items-center justify-center",
     /** The end padding of a row with a trailing indicator. */
     indicatorRoom: "pr-[calc(var(--row-px)+1.5rem)]",
-    /** The start padding of an inset row or label, which lines its text up with indicator rows. */
+    /** The start padding of an inset row or label, which lines its text up with rows that start with an icon. */
     inset: "data-inset:pl-[calc(var(--row-px)+1.5rem)]",
     /** The hairline rule between option groups, shared by Select, Combobox, and DropdownMenu. */
     separator: "-mx-(--surface-pad-sm) my-1 h-px bg-border",
@@ -43,7 +43,7 @@ export const menuItemClass = overlayMenuSlots.item();
 export const menuItemIndicatorClass = overlayMenuSlots.indicator();
 /** The end padding of a menu row with a trailing indicator. */
 export const menuItemIndicatorRoomClass = overlayMenuSlots.indicatorRoom();
-/** The start padding of an inset menu row or label, aligned with indicator rows. */
+/** The start padding of an inset menu row or label, aligned with rows that start with an icon. */
 export const menuItemInsetClass = overlayMenuSlots.inset();
 /** The hairline rule between menu groups. */
 export const menuSeparatorClass = overlayMenuSlots.separator();

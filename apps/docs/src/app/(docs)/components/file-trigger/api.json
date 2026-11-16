@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 286,
+      "forwardedCount": 285,
       "props": [
         {
           "name": "accept",
@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The `accept` attribute's syntax, such as `\"image/*,.pdf\"`. The picker receives it as-is, and a picked file that fails it reaches `onReject` with `\"type\"`.",
+          "description": "The file types to take, in the `accept` attribute's syntax, such as `\"image/*,.pdf\"`. The picker receives it as it is, and a picked file that fails it reaches `onReject` with `\"type\"`.",
           "required": false
         },
         {
@@ -26,12 +26,21 @@
           "type": "\"environment\" | \"user\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Ask a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
+          "description": "Asks a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
           "required": false,
           "values": [
             "environment",
             "user"
           ]
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's label, which names it. The trigger renders the button and a hidden file input with no element around them, so it joins a `ButtonGroup` as a `Button` does.",
+          "required": false
         },
         {
           "name": "directory",
@@ -48,7 +57,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disable the button and ignore picks.",
+          "description": "Disables the button and ignores picks.",
           "required": false
         },
         {
@@ -57,7 +66,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Take more than one file. Without it, a pick in which more than one file passes `accept` rejects each of those with `\"count\"`. `accept` is checked first, so a file that fails it is rejected with `\"type\"` and never counts.",
+          "description": "Takes more than one file. Without it, a pick in which more than one file passes `accept` rejects each of those with `\"count\"`. `accept` is checked first, so a file that fails it is rejected with `\"type\"` and never counts.",
           "required": false
         },
         {
@@ -66,7 +75,7 @@
           "type": "((rejections: FileRejection[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Receives the files that did not pass, each with its `reason`. For one pick it runs right after `onSelect`, in the same task.",
+          "description": "Receives the files that did not pass, each with its `reason`. For one pick, it runs right after `onSelect`, in the same task.",
           "required": false
         },
         {
@@ -93,7 +102,7 @@
           "type": "LabelButtonSize | undefined",
           "shortType": null,
           "defaultValue": "\"sm\"",
-          "description": "The Button's label size: `xs`, `sm` (the default), `default` or `lg`.",
+          "description": "The button's size, as on `Button`.",
           "required": false,
           "values": [
             "default",
@@ -126,7 +135,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Leading icon on/off. Defaults to on: a camera with `capture`, a folder with `directory`, a paperclip otherwise. It is decorative, so the children name the button.",
+          "description": "Shows the leading icon: a camera with `capture`, a folder with `directory` and a paperclip otherwise. The icon is decorative, so the children name the button.",
           "required": false
         }
       ]

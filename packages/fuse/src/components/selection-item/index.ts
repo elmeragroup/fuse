@@ -9,8 +9,8 @@ import { SelectionItemDescription } from "./selection-item-description";
 import { SelectionItemSubSection } from "./selection-item-sub-section";
 
 /**
- * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects so
- * `child.type` partitioning keeps working across spellings.
+ * The selectable card row. `CheckboxItem` and `RadioItem` reuse these part objects, so the row
+ * recognises a SubSection by `child.type` under either spelling.
  */
 export const SelectionItem = {
   Shell: SelectionItemShell,

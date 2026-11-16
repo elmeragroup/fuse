@@ -22,6 +22,16 @@ import { currentOrder, pickedValues, unpickedMatches } from "./option-list";
 /** The props of `DataTableFilter.ValuesFooter`. */
 export type DataTableFilterValuesFooterProps = ComponentProps<"div"> & {
   /**
+   * The actions: `DataTableFilter.SelectAllValues`, `DataTableFilter.ClearValues` and
+   * `DataTableFilter.Done`. Render the footer as one shared component in `FieldList`'s children,
+   * for the add menu's submenus, and in `OptionEditor`'s children, for a chip's popover. It stays
+   * in view below the scrolling list. Select all picks every option, past the 50 shown rows, or
+   * every option the search matches, beside the values already picked; a boolean or
+   * single-select field leaves it out. Clear all removes only that field's filter and keeps the
+   * list open. Done closes the list.
+   */
+  children?: ComponentProps<"div">["children"];
+  /**
    * The field ids whose lists show the footer. Without it, every option, multi-option and boolean
    * field's list shows it. Each id must be a key of the Root's `fields`.
    */

@@ -5,9 +5,13 @@ import { expectTypeOf, test } from "vitest";
 import type { InputProps } from "@elmeragroup/fuse/input";
 import { Input } from "@elmeragroup/fuse/input";
 
+// Input redeclares `aria-label` to document it. Flattening both sides to one object type compares
+// their exact keys and property types, which the intersection alone would not match.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("InputProps is the native input surface plus the numeric filter and the field size, with no render prop", () => {
-  expectTypeOf<InputProps>().toEqualTypeOf<
-    Omit<ComponentProps<"input"> & { filter?: "numeric" }, "size"> & { size?: "sm" | "default" }
+  expectTypeOf<Flat<InputProps>>().toEqualTypeOf<
+    Flat<Omit<ComponentProps<"input"> & { filter?: "numeric" }, "size"> & { size?: "sm" | "default" }>
   >();
 
   const _text = <Input type="email" aria-label="Email" />;

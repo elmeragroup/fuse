@@ -24,7 +24,11 @@ import { useCentreItem } from "./pie-chart-center";
  * @beta
  */
 export type PieChartCenterValueProps = ChartLayerProps & {
-  /** The value format. The category's config `format`, then Root's `valueFormat`, is the default. */
+  /**
+   * The value format. The category's config `format`, then Root's `valueFormat`, is the default. The
+   * part prints the active slice's or ring's value, and with nothing active the total, or nothing
+   * when the categories' formats differ.
+   */
   format?: ValueFormat;
 };
 
@@ -34,7 +38,11 @@ export type PieChartCenterValueProps = ChartLayerProps & {
  * @beta
  */
 export type PieChartCenterShareProps = ChartLayerProps & {
-  /** The percentage digits. */
+  /**
+   * The percentage digits. The part prints the active slice's share of the total, or the active
+   * ring's share of its maximum. With nothing active a gauge pie prints its total over `max`, and a
+   * radial chart its sum over the sum of its maxima when every ring shares one format.
+   */
   format?: ChartFractionDigits;
 };
 
@@ -44,7 +52,11 @@ export type PieChartCenterShareProps = ChartLayerProps & {
  * @beta
  */
 export type PieChartCenterMaxProps = ChartLayerProps & {
-  /** The maximum's format. The value's format is the default. */
+  /**
+   * The maximum's format. The value's format is the default. The part prints a gauge pie's `max`,
+   * or the active ring's `max` or `maxKey` value, and with nothing active a radial chart's sum of
+   * maxima when every ring shares one format.
+   */
   format?: ValueFormat;
 };
 

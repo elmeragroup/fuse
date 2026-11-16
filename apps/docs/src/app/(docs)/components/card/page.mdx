@@ -3,16 +3,18 @@ lede: >
   A surface that groups related content and actions.
 ---
 
-import { CardBasic } from "./demos/card-basic";
+import { CardDemo } from "./demos/card-demo";
 import { CardContentOnly } from "./demos/card-content-only";
-import { CardWithAction } from "./demos/card-with-action";
+import { CardAction } from "./demos/card-action";
 import { CardTag } from "./demos/card-tag";
+import { CardTitleIcon } from "./demos/card-title-icon";
 import { CardHorizontal } from "./demos/card-horizontal";
-import { CardItemRows } from "./demos/card-item-rows";
-import { CardNested } from "./demos/card-nested";
-import { CardSizes } from "./demos/card-sizes";
+import { CardLarge } from "./demos/card-large";
 import { CardSections } from "./demos/card-sections";
+import { CardSectionMedia } from "./demos/card-section-media";
 import { CardSectionButton } from "./demos/card-section-button";
+import { CardSectionLink } from "./demos/card-section-link";
+import { CardSectionLinkUnavailable } from "./demos/card-section-link-unavailable";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -20,58 +22,74 @@ export const metadata = componentMetadata("card");
 
 <ComponentIntro slug="card" />
 
-<Demo slug="card" id="basic" title="Basic" file="card-basic.tsx">
-  <CardBasic />
-</Demo>
+<DefaultDemo slug="card" file="card-demo.tsx">
+  <CardDemo />
+</DefaultDemo>
 
-A card needs no header. A content or footer that opens the card pads every side with the card's tier, and one below another section drops its top padding, so the tier is also the gap between them.
+## Usage
 
-<Demo slug="card" id="content-only" title="Content only" file="card-content-only.tsx">
+{/* prettier-ignore */}
+```tsx
+import { Card } from "@elmeragroup/fuse/card";
+
+<Card.Root>
+  <Card.Header>
+    <Card.Title>March usage</Card.Title>
+    <Card.Description>Estimated consumption for the period.</Card.Description>
+  </Card.Header>
+  <Card.Content>1 240 kWh across two meters.</Card.Content>
+</Card.Root>
+```
+
+## Examples
+
+<Demo slug="card" id="content-only" title="Content only" level={3} file="card-content-only.tsx">
   <CardContentOnly />
 </Demo>
 
-<Demo slug="card" id="with-action" title="With an action" file="card-with-action.tsx">
-  <CardWithAction />
+<Demo slug="card" id="action" title="Action" level={3} file="card-action.tsx">
+  <CardAction />
 </Demo>
 
-<Demo slug="card" id="tag" title="Tag" file="card-tag.tsx">
+<Demo slug="card" id="tag" title="Tag" level={3} file="card-tag.tsx">
   <CardTag />
 </Demo>
 
-Horizontal cards wrap whole sections as their container narrows, keeping the title and description together.
+<Demo slug="card" id="title-icon" title="Title icon" level={3} file="card-title-icon.tsx">
+  <CardTitleIcon />
+</Demo>
 
-<Demo slug="card" id="horizontal" title="Horizontal" file="card-horizontal.tsx">
+<Demo slug="card" id="horizontal" title="Horizontal" level={3} file="card-horizontal.tsx">
   <CardHorizontal />
 </Demo>
 
-<Demo slug="card" id="item-rows" title="Item rows" file="card-item-rows.tsx">
-  <CardItemRows />
+<Demo slug="card" id="large" title="Large" level={3} file="card-large.tsx">
+  <CardLarge />
 </Demo>
 
-A card pads its sections, and spaces them, with a surface tier. The default size takes the medium tier, 16px comfortable and 12px dense, which Items and Accordion items pad with too, so the text in a card starts on the same edge as theirs. `size="lg"` takes the large tier, 24px comfortable and 16px dense, for a card that holds long prose or acts as a page's main panel. A card nested in a large card takes its own size.
-
-<Demo slug="card" id="sizes" title="Sizes" file="card-sizes.tsx">
-  <CardSizes />
-</Demo>
-
-A card draws its 1px edge in the theme's `--card-border` and casts a small shadow in `--card-shadow`. Neutral themes draw the edge in `--border` and the shadow in black at 5%. Branded themes draw neither, so a white card stands on the page tint by its fill alone, and a card on a card-coloured surface, such as a nested card, has no outline. A border colour class or a shadow size class such as `shadow-md` on the card still wins, and a shadow colour class tints the card's own shadow. To change the edge or shadow colour, override `--card-border` or `--card-shadow` on the `ThemeScope` or on any element around the cards.
-
-<Demo slug="card" id="nested" title="Nested" file="card-nested.tsx">
-  <CardNested />
-</Demo>
-
-A vertical card's body can be split into stacked sections of equal weight with `Card.Section`, under one optional `Card.Header`. Each section pads every side with the card's tier, so it follows the card's `size`, and a 1px line in the theme's `--card-section-divider` runs above every section that has a part above it, from edge to edge. Neutral themes draw the line in `--border`, and branded themes in the page tint, `--background`, so the card reads as split into segments. The first and last sections round with the card's corners, so a fill or a hover fill follows them. A `Card.SectionMedia` before a `Card.Content` makes the section a two-column grid with the icon centred beside the content. Inside a section, `Card.Content` is that column and drops its own padding, since the section pads.
-
-Sections are the whole body, so put no `Card.Content` or `Card.Footer` beside them. A footer after sections takes no line and no top padding, so it reads as part of the last section; put that content in a last section instead. Sections take no `direction`: a horizontal card pads itself, so sections belong in a vertical card.
-
-<Demo slug="card" id="sections" title="Sections" file="card-sections.tsx">
+<Demo slug="card" id="sections" title="Sections" level={3} file="card-sections.tsx">
   <CardSections />
 </Demo>
 
-`Card.SectionButton` makes a whole section one button. It stacks, divides and rounds like a `Card.Section`, renders `<button type="button">`, takes a hover fill and a pointer cursor, and draws its focus ring inside its own edges, so the sections around it cannot cover it. `render={<a href="/terms" />}` makes it a link; mark an unavailable link `aria-disabled="true"`, and it dims and does not navigate. A trigger composes it as it composes `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>`. Hold text, an icon or a `Card.SectionMedia` in it, and no other control. `Card.Section` itself stays a static, server-rendered part.
+<Demo slug="card" id="section-media" title="Section media" level={3} file="card-section-media.tsx">
+  <CardSectionMedia />
+</Demo>
 
-<Demo slug="card" id="section-button" title="Section button" file="card-section-button.tsx">
+<Demo slug="card" id="section-button" title="Section button" level={3} file="card-section-button.tsx">
   <CardSectionButton />
+</Demo>
+
+<Demo slug="card" id="section-link" title="Section link" level={3} file="card-section-link.tsx">
+  <CardSectionLink />
+</Demo>
+
+<Demo
+  slug="card"
+  id="section-link-unavailable"
+  title="Unavailable section link"
+  level={3}
+  file="card-section-link-unavailable.tsx">
+  <CardSectionLinkUnavailable />
 </Demo>
 
 <ApiReference slug="card" />

@@ -8,7 +8,7 @@ export function AlertAction() {
   const [retried, setRetried] = useState(false);
 
   return (
-    <Alert.Root variant="warning" onAction={() => setRetried(true)} actionLabel="Retry">
+    <Alert.Root variant="warning" className="max-w-lg" onAction={() => setRetried(true)} actionLabel="Retry">
       <Alert.Title>Sync delayed</Alert.Title>
       <Alert.Description>
         {retried ? "Retry requested." : "Facility data is more than an hour old."}

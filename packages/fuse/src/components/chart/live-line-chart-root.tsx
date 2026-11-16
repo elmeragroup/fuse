@@ -60,17 +60,20 @@ export type LiveLineChartPoint = {
 export type LiveLineChartRootProps = ChartAccessibleName &
   ChartFigureProps & {
     /**
-     * The readings, oldest first, as the consumer's feed keeps them. A reading out of order sorts by
-     * time, and one instant holds one reading: of readings that share a time, the last wins, as a
-     * feed that corrects its latest reading sends it again. Keep at least the window's worth, and drop older readings as the feed grows: the chart
-     * draws only the window, and the table and the description cover the window back from the latest
-     * reading. Every cell is serialisable, so a server component passes it.
+     * The readings, oldest first. Append each reading as it arrives, and drop older ones as the feed
+     * grows, keeping at least the window's worth. The chart draws only the window, and the table and
+     * the description cover one window back from the latest reading. A reading out of order sorts by
+     * time. Of readings that share a time the last wins, so a feed corrects its latest reading by
+     * sending it again. Readings stamped ahead of the browser's clock move the window's end ahead
+     * with them. Under reduced motion the window does not scroll, and each new reading redraws it
+     * once, ending at the clock. Every cell is serialisable, so a server component can pass it.
      */
     data: readonly LiveLineChartPoint[];
     /**
-     * The latest value, which the line runs on at to the window's right edge, the live dot marks and
-     * the badge prints. The latest reading's value by default. Pass it when the value ticks faster
-     * than readings arrive. It keeps the readings' bound, a finite number within ±1e15.
+     * The latest value, which the line runs to at the window's right edge, the live dot marks and the
+     * badge prints. The latest reading's value by default. Pass it when the value ticks faster than
+     * readings arrive. It takes the readings' bound, a finite number within ±1e15. The badge rolls
+     * its digits to each new value, and under reduced motion changes them at once.
      */
     value?: number;
     /**
@@ -81,28 +84,43 @@ export type LiveLineChartRootProps = ChartAccessibleName &
     /** How values print on the axis, the badge, in the tooltip, the options, the table and the description. */
     valueFormat?: ValueFormat;
     /**
-     * How a reading's time prints in the tooltip, the options, the table and the description.
-     * `"time-seconds"` by default, such as `13:42:04`. The axis picks its own from its tick step.
+     * How a reading's time prints in the tooltip, the options, the table and the description, such as
+     * `13:42:04` under `"time-seconds"`. The axis picks its own format from its tick step.
      */
     timeFormat?: LiveLineChartTimeFormat;
-    /** The value's name, such as "Spotpris", which the tooltip, the options and the table print. */
+    /**
+     * The value's name, such as "Spotpris", which the tooltip, the options and the table print. The
+     * plot's option reads the active reading's time, then its value after this name.
+     */
     label?: string;
-    /** The line's paint. "chart-1" by default. The badge prints in its on-colour role. */
+    /** The line's paint. The badge prints in its on-colour role. */
     color?: ChartCategoricalRole | "chart-other";
     /**
      * The IANA zone of the market the readings describe, such as "Europe/Oslo", which every time
-     * prints in. LocaleProvider's `timeZone` by default.
+     * prints in. The time axis puts its ticks on round times in this zone. LocaleProvider's
+     * `timeZone` by default.
      */
     timeZone?: string;
     /**
-     * Holds the window where it is, so a reader can study it, while the readings keep arriving.
-     * The live dot's ping stops while it holds. Once it runs again the window draws the clock's
-     * window at once, with the readings it held back.
+     * Holds the window where it is while the readings keep arriving, so a reader can study it, and
+     * stops the live dot's ping. A Root paused from its first render holds the readings it mounted
+     * with, so mount it with readings. When it runs again, the window jumps to the clock's window
+     * with the readings it held back. The chart also stops drawing while it is out of view or its
+     * tab is hidden, and draws the clock's window at once on its return.
      */
     paused?: boolean;
-    /** Replaces the generated description verbatim. */
+    /**
+     * Replaces the generated description verbatim. The generated one states the window's span, its
+     * lowest and highest readings and the latest value.
+     */
     description?: string;
-    /** The chart's parts. Root never inspects them. */
+    /**
+     * The chart's parts. Root never inspects them. The plot is one tab stop, and focus starts at the
+     * latest reading. ArrowLeft and ArrowRight step through the window's readings, Home and End go to
+     * the oldest and the latest, and Escape hides the tooltip until the pointer moves or a key steps.
+     * When the active reading scrolls out at the left edge, the oldest reading the window still shows
+     * becomes active.
+     */
     children?: ReactNode;
   };
 

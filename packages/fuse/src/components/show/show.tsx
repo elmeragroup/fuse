@@ -1,23 +1,25 @@
 import type { ReactElement, ReactNode } from "react";
 
+/** `Show` takes the condition and the children it renders. */
 export type ShowProps = {
   /**
-   * Render condition. Strict boolean — callers coerce (for example `items.length > 0`);
-   * the helper does not.
+   * The render condition, a strict boolean. Coerce it yourself, as in `items.length > 0`.
    */
   when: boolean;
   /**
-   * Rendered inside a fragment when `when` is true. `children` is an ordinary prop: the
-   * JSX is evaluated by the parent before `Show` decides anything; only rendering is
-   * skipped. Guarding expressions that throw when the condition is false (`data!.name`)
-   * is not safe here — use an inline ternary or optional chaining.
+   * Rendered when `when` is true. The parent evaluates this JSX before `Show` decides, and only
+   * rendering is skipped, so an expression that throws when the condition is false, such as
+   * `data!.name`, still throws here. Use an inline ternary or optional chaining for it instead.
    */
   children?: ReactNode;
 };
 
 /**
- * Server render helper with no DOM of its own. Returns children in a
- * fragment when `when` is true, otherwise `null`.
+ * A render helper with no DOM of its own. It returns its children in a fragment when `when` is
+ * true, otherwise `null`.
+ *
+ * @param props - The condition and the children.
+ * @returns The children, or `null`.
  */
 export function Show({ children, when }: ShowProps): ReactElement | null {
   return when ? <>{children}</> : null;

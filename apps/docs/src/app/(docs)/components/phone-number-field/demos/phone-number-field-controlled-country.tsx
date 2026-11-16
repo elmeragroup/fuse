@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 const MARKETS = [
   { code: "NO", name: "Norway" },
@@ -22,22 +21,24 @@ export function PhoneNumberFieldControlledCountry() {
 
   return (
     <div className="flex flex-col gap-3">
-      <ToggleGroup.Root
-        aria-label="Market"
-        value={[countryCode]}
-        onValueChange={(value: string[]) => {
-          const next = marketCode(value[0]);
-          if (next !== undefined) setCountryCode(next);
-        }}>
-        {MARKETS.map((market) => (
-          <ToggleGroup.Item key={market.code} value={market.code}>
-            {market.name}
-          </ToggleGroup.Item>
-        ))}
-      </ToggleGroup.Root>
+      <label className="text-sm flex flex-col gap-1">
+        Market
+        <select
+          className="self-start"
+          value={countryCode}
+          onChange={(event) => {
+            const next = marketCode(event.target.value);
+            if (next !== undefined) setCountryCode(next);
+          }}>
+          {MARKETS.map((market) => (
+            <option key={market.code} value={market.code}>
+              {market.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <PhoneNumberField
         label="Mobile"
-        description="The market steers the country, and a pick in the field moves the market."
         countries={MARKETS.map((market) => market.code)}
         countryCode={countryCode}
         onCountryChange={(country) => {

@@ -3,14 +3,17 @@ lede: >
   A number input with step buttons and locale-aware formatting.
 ---
 
-import { NumberFieldBasic } from "./demos/number-field-basic";
-import { NumberFieldSizes } from "./demos/number-field-sizes";
-import { NumberFieldCommit } from "./demos/number-field-commit";
+import { NumberFieldDemo } from "./demos/number-field-demo";
+import { NumberFieldSmall } from "./demos/number-field-small";
 import { NumberFieldDenomination } from "./demos/number-field-denomination";
-import { NumberFieldFormat } from "./demos/number-field-format";
+import { NumberFieldCurrency } from "./demos/number-field-currency";
+import { NumberFieldPercent } from "./demos/number-field-percent";
 import { NumberFieldError } from "./demos/number-field-error";
-import { NumberFieldStates } from "./demos/number-field-states";
-import { NumberFieldUncontrolled } from "./demos/number-field-uncontrolled";
+import { NumberFieldDisabled } from "./demos/number-field-disabled";
+import { NumberFieldReadOnly } from "./demos/number-field-read-only";
+import { NumberFieldPending } from "./demos/number-field-pending";
+import { NumberFieldSuccess } from "./demos/number-field-success";
+import { NumberFieldCommit } from "./demos/number-field-commit";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -18,44 +21,63 @@ export const metadata = componentMetadata("number-field");
 
 <ComponentIntro slug="number-field" />
 
-<Demo slug="number-field" id="basic" title="Basic" file="number-field-basic.tsx">
-  <NumberFieldBasic />
+<DefaultDemo slug="number-field" file="number-field-demo.tsx">
+  <NumberFieldDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { NumberField } from "@elmeragroup/fuse/number-field";
+
+<NumberField label="Quantity" minValue={0} maxValue={20} />
+```
+
+## Examples
+
+<Demo slug="number-field" id="small" title="Small" level={3} file="number-field-small.tsx">
+  <NumberFieldSmall />
 </Demo>
 
-<Demo slug="number-field" id="sizes" title="Sizes" file="number-field-sizes.tsx">
-  <NumberFieldSizes />
-</Demo>
-
-<Demo slug="number-field" id="denomination" title="Denomination" file="number-field-denomination.tsx">
+<Demo
+  slug="number-field"
+  id="denomination"
+  title="Denomination"
+  level={3}
+  file="number-field-denomination.tsx">
   <NumberFieldDenomination />
 </Demo>
 
-<Demo slug="number-field" id="format" title="Format" file="number-field-format.tsx">
-  <NumberFieldFormat />
+<Demo slug="number-field" id="currency" title="Currency" level={3} file="number-field-currency.tsx">
+  <NumberFieldCurrency />
 </Demo>
 
-<Demo slug="number-field" id="error" title="Error" file="number-field-error.tsx">
+<Demo slug="number-field" id="percent" title="Percent" level={3} file="number-field-percent.tsx">
+  <NumberFieldPercent />
+</Demo>
+
+<Demo slug="number-field" id="error" title="Error" level={3} file="number-field-error.tsx">
   <NumberFieldError />
 </Demo>
 
-<Demo slug="number-field" id="states" title="States" file="number-field-states.tsx">
-  <NumberFieldStates />
+<Demo slug="number-field" id="disabled" title="Disabled" level={3} file="number-field-disabled.tsx">
+  <NumberFieldDisabled />
 </Demo>
 
-<Demo slug="number-field" id="uncontrolled" title="Uncontrolled" file="number-field-uncontrolled.tsx">
-  <NumberFieldUncontrolled />
+<Demo slug="number-field" id="read-only" title="Read-only" level={3} file="number-field-read-only.tsx">
+  <NumberFieldReadOnly />
 </Demo>
 
-<Prose>
+<Demo slug="number-field" id="pending" title="Pending" level={3} file="number-field-pending.tsx">
+  <NumberFieldPending />
+</Demo>
 
-`onChange` reports the value on every typed character. `onValueCommitted` reports it once the
-user finishes a change. That happens when the input blurs after typing, when a stepper press
-ends, and on each arrow, Home or End key press. Save or fetch from `onValueCommitted` to act
-once per change.
+<Demo slug="number-field" id="success" title="Success" level={3} file="number-field-success.tsx">
+  <NumberFieldSuccess />
+</Demo>
 
-</Prose>
-
-<Demo slug="number-field" id="commit" title="Commit" file="number-field-commit.tsx">
+<Demo slug="number-field" id="commit" title="Commit" level={3} file="number-field-commit.tsx">
   <NumberFieldCommit />
 </Demo>
 

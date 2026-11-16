@@ -7,17 +7,18 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { cn } from "../../styles/cn";
 
+/** `VerticalTable.Header` takes a native `h2`'s props and a `render` replacement. */
 export type VerticalTableHeaderProps = ComponentProps<"h2"> & {
   /**
-   * Replaces the host `<h2>` via base-ui `useRender`. Use this for other outline
-   * levels; the level-2 type classes and `data-slot` stay merged onto the replacement.
+   * Replaces the `<h2>`, such as `render={<h3 />}` for another outline level. The level-2 type
+   * classes stay on the replacement.
    */
   render?: useRender.RenderProp;
 };
 
 /**
- * Plain semantic `<h2>` with the ref's level-2 type classes.
- * Client only because polymorphism is `useRender`; the rest of the compound stays server.
+ * The facts sheet's heading, an `<h2>` in the level-2 type. It is a client module because `render`
+ * goes through `useRender`; the rest of the compound stays server-safe.
  */
 export function VerticalTableHeader({ className, render, ...props }: VerticalTableHeaderProps): ReactElement {
   return useRender({

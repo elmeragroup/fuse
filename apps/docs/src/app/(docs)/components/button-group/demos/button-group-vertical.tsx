@@ -6,7 +6,7 @@ import { CaretDown, CaretUp } from "@elmeragroup/fuse/icons";
 
 export function ButtonGroupVertical() {
   return (
-    <ButtonGroup.Root orientation="vertical" aria-label="Media controls">
+    <ButtonGroup.Root orientation="vertical" aria-label="Quantity">
       <Button variant="outline" size="icon" aria-label="Increase">
         <CaretUp />
       </Button>

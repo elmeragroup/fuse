@@ -1,20 +1,19 @@
 "use client";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { CheckboxGroup } from "@elmeragroup/fuse/checkbox";
 import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
 
 export function CheckboxCardRightContent() {
   return (
-    <CheckboxGroup name="addons" label="Add-ons">
+    <CheckboxGroup label="Add-ons">
       <CheckboxCard
         value="insurance"
         title="Insurance"
-        description="Covers everything."
+        description="Covers theft and water damage."
         rightContent={
-          <Button type="button" size="sm" variant="outline">
-            Details
-          </Button>
+          <a href="#insurance-terms" className="text-sm text-primary underline underline-offset-4">
+            Terms
+          </a>
         }
       />
     </CheckboxGroup>

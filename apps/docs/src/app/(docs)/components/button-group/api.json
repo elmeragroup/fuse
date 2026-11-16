@@ -9,15 +9,24 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The segments: Buttons, `ButtonGroup.Text`, fields and nested groups. A child with a `data-slot` joins the group, which squares its inner corners and merges the borders it shares with its neighbours. A filled Button, `default` or `secondary`, shows no seam against its neighbour, so put a `ButtonGroup.Separator` between filled Buttons.",
+          "required": false
+        },
+        {
           "name": "orientation",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
-          "description": "",
+          "description": "The axis the segments join along.",
           "required": false,
           "values": [
             "horizontal",
@@ -38,13 +47,11 @@
       "props": [
         {
           "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "description": "Extra classes, merged after the hairline's own.",
           "required": false
         },
         {
@@ -53,7 +60,7 @@
           "type": "Orientation | undefined",
           "shortType": null,
           "defaultValue": "\"vertical\"",
-          "description": "Hairline axis. Flipped from the canonical Separator: a horizontal group needs a vertical hairline.",
+          "description": "The hairline's axis. A horizontal group needs a vertical hairline, so set `horizontal` in a vertical group.",
           "required": false,
           "values": [
             "horizontal",

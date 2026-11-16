@@ -5,12 +5,12 @@ import { useState } from "react";
 import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
 
 export function ConfirmButtonSuccess() {
-  const [approved, setApproved] = useState(false);
-  if (approved) {
+  const [confirmed, setConfirmed] = useState(false);
+  if (confirmed) {
     return <p>Request approved.</p>;
   }
   return (
-    <ConfirmButton variant="success" onConfirm={() => setApproved(true)} armedChildren="Confirm approve">
+    <ConfirmButton variant="success" armedChildren="Confirm approve" onConfirm={() => setConfirmed(true)}>
       Approve
     </ConfirmButton>
   );

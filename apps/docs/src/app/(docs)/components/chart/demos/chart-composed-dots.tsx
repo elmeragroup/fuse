@@ -38,7 +38,6 @@ export function ChartComposedDots() {
       <Chart.Bar dataKey="consumption" />
       <Chart.Line dataKey="production" />
       <Chart.Dots dataKey="production" />
-      <Chart.ActiveDot dataKey="production" variant="ring" />
       <Chart.Legend />
       <Chart.Tooltip />
       <Chart.Table />

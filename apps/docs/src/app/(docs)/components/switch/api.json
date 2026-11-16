@@ -29,7 +29,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged via `cn` after the base classes, so a height or width here replaces the track's size. The track caps its width at the size's, so a wider track also needs a `max-w-*`.",
+          "description": "Extra classes for the track. A height or width class replaces the track's size. The track caps its width at the size's, so a wider track also needs a `max-w-*` class.",
           "required": false
         },
         {
@@ -159,7 +159,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Optical size of the track and thumb, also emitted as `data-size`. Pixel-fixed at both density stamps — not a control size.",
+          "description": "The size of the track and thumb, also written as `data-size`. `default` is a 32px by 18.4px track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since the switch takes no control size.",
           "required": false,
           "values": [
             "default",

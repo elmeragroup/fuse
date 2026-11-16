@@ -1,10 +1,9 @@
 /**
- * PUBLIC recipe. Extends `textVariants` and only overrides the
- * `leading` default to `snug` for inline use. Type-scale, not a control
- * size.
+ * PUBLIC recipe. Extends `textVariants` and changes only the `leading` default, to `snug`
+ * for inline use. `size` is a type-scale axis, not a control size.
  *
- * Internal composition imports `textVariants` from the Text recipe module —
- * not a grab-bag styles barrel. Consumers use `@elmeragroup/fuse/span`.
+ * Internal composition imports `textVariants` from the Text recipe module, not from a shared
+ * styles barrel. Consumers use `@elmeragroup/fuse/span`.
  */
 import { tv } from "../../styles/tv";
 import { textVariants } from "../text/text-variants";

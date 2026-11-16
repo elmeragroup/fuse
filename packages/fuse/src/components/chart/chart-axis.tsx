@@ -37,7 +37,7 @@ export type ChartXAxisProps = ChartLayerProps & {
   format?: XFormat;
   /** The axis title. */
   label?: string;
-  /** The tick mark. "none" by default. */
+  /** The tick mark. "dot" draws a dot at each tick. */
   tick?: "none" | "dot";
 };
 
@@ -50,14 +50,14 @@ export type ChartYAxisProps = ChartLayerProps & {
   /**
    * The tick label format. The layout's first series' `format` is the default. Tick labels keep the
    * format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the
-   * tooltip and the table print. `label` adds an axis title.
+   * tooltip and the table print.
    */
   format?: ValueFormat;
   /** The axis title. */
   label?: string;
   /**
    * "start" draws the axis at the left edge, or at the bottom under `orientation="horizontal"`.
-   * "end" draws it at the opposite edge. "start" by default.
+   * "end" draws it at the opposite edge.
    */
   side?: "start" | "end";
 };

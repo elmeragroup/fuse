@@ -28,7 +28,11 @@ import type { SpokeStates } from "./radar-chart-part";
  * @beta
  */
 export type RadarChartActiveDotProps = ChartLayerProps & {
-  /** The series the dot follows. */
+  /**
+   * The series the dot follows. A step carries the dot along the polygon's edges to the next spoke.
+   * Over an edge beside a missing reading it fades out and back in past it, and a missing reading at
+   * the active spoke shows no dot.
+   */
   dataKey: string;
 };
 

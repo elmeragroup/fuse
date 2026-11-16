@@ -9,16 +9,24 @@ import { attachmentVariants } from "./attachment-variants";
 
 const styles = attachmentVariants();
 
+type AttachmentMediaVariantProps = Pick<VariantProps<typeof attachmentVariants>, "variant">;
+
 /** `Attachment.Media` takes a native `div`'s props plus its `variant`. */
 export type AttachmentMediaProps = ComponentProps<"div"> &
-  Pick<VariantProps<typeof attachmentVariants>, "variant">;
+  AttachmentMediaVariantProps & {
+    /**
+     * What the square holds, written to `data-variant`. `icon` holds an icon or a status glyph,
+     * such as a Loader. `image` frames an `img` placed directly inside the media in the square,
+     * which the image fills and crops to. Image media stays at 60% opacity until the root's `state`
+     * is `idle` or `done`. For another shape, put an `Attachment.AspectRatio` inside the media with
+     * one of AspectRatio's ratios.
+     */
+    variant?: AttachmentMediaVariantProps["variant"];
+  };
 
 /**
- * The file's leading square: an icon or a status glyph such as a Loader with `variant="icon"`,
- * a picture with `variant="image"`. It rounds concentric with the root and takes the error tint
- * when the root's `state` is `error`. Image media stays at 60% opacity until the state is `idle`
- * or `done`, and an `img` directly inside it fills the square. An `Attachment.AspectRatio` inside
- * it replaces the square with that ratio. On a vertical tile it spans the tile's width.
+ * The file's leading square. It rounds concentric with the root and takes the error tint when
+ * the root's `state` is `error`. On a vertical tile it spans the tile's width.
  */
 export function AttachmentMedia({
   className,
@@ -65,12 +73,18 @@ export function AttachmentTitle({ className, ...props }: ComponentProps<"span">)
   return <span data-slot="attachment-title" className={cn(styles.title(), className)} {...props} />;
 }
 
-/**
- * One truncated line of muted detail, such as the size, the progress or the reason an upload
- * failed. It carries the readable status: the root's `state` only styles, so write the state
- * here in words. It takes the error tint when the state is `error`.
- */
-export function AttachmentDescription({ className, ...props }: ComponentProps<"span">): ReactElement {
+/** `Attachment.Description` takes a native `span`'s props. */
+type AttachmentDescriptionProps = Omit<ComponentProps<"span">, "children"> & {
+  /**
+   * The detail, such as the size, the progress or the reason an upload failed, such as "Upload
+   * failed. The file is over 10 MB." The root's `state` only styles, so write the state here in
+   * words.
+   */
+  children?: ComponentProps<"span">["children"];
+};
+
+/** One truncated line of muted detail. It takes the error tint when the root's `state` is `error`. */
+export function AttachmentDescription({ className, ...props }: AttachmentDescriptionProps): ReactElement {
   return (
     <span data-slot="attachment-description" className={cn(styles.description(), className)} {...props} />
   );

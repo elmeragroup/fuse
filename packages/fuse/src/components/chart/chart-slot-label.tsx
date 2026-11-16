@@ -25,7 +25,10 @@ import type { PlotFrame } from "./layout/plot-frame";
 export type ChartSlotLabelProps = ChartLayerProps & {
   /**
    * The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints
-   * what the ticks print, and without one the interval's tick preset or the category itself.
+   * what the ticks print, and without one the interval's tick preset or the category itself. Write
+   * the part inside a `Chart.Crosshair`. The tick labels under the pill fade out, and each part of
+   * the label, such as the day, rolls to its new value while a part that keeps its value, such as
+   * the month, stays still. A horizontal chart renders no pill.
    */
   format?: XFormat;
 };

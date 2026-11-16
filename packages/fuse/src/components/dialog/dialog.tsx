@@ -20,12 +20,14 @@ import { dialogContentVariants, dialogVariants } from "./dialog-variants";
 
 const slots = dialogVariants();
 
+/** Holds the dialog's open state and connects its trigger to its popup. */
 export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
   // A dialog in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
   const override = useOverlayRootOverride();
   return <DialogPrimitive.Root {...props} {...override} />;
 }
 
+/** Opens the dialog. It renders a plain `button`; pass `render` to render another element. */
 export function DialogTrigger({
   className,
   ...props
@@ -39,10 +41,12 @@ export function DialogTrigger({
   );
 }
 
+/** Renders the scrim and popup in a portal. `Dialog.Content` renders one for you. */
 export function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): ReactElement {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
+/** Closes the dialog. It renders a plain `button`; pass `render` to render another element. */
 export function DialogClose({
   className,
   ...props
@@ -56,6 +60,7 @@ export function DialogClose({
   );
 }
 
+/** The scrim behind the popup. `Dialog.Content` renders one for you. */
 export function DialogOverlay({
   className,
   ...props
@@ -69,30 +74,29 @@ export function DialogOverlay({
   );
 }
 
-export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
-  VariantProps<typeof dialogContentVariants> & {
-    /**
-     * Renders the built-in corner dismiss affordance — a `Dialog.Close` styled as a
-     * ghost icon button in the popup's top-right corner.
-     */
-    showCloseButton?: boolean;
-  } & OverlayContainerProps & {
-    /**
-     * Accessible name for the built-in corner close button. Defaults to the locale
-     * dictionary.
-     */
+export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> & {
+  /**
+   * The popup's maximum width. `sm` to `7xl` cap it at Tailwind's container width of the same
+   * name, and `8xl`, `9xl` and `10xl` at 1366px, 1536px and 1920px. The popup never grows
+   * past 90% of the viewport's width.
+   */
+  size?: VariantProps<typeof dialogContentVariants>["size"];
+  /** Shows a close button, a ghost icon `Dialog.Close`, in the popup's top-right corner. */
+  showCloseButton?: boolean;
+} & OverlayContainerProps & {
+    /** The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. */
     closeLabel?: string;
   };
 
 /**
- * The Dialog popup. It publishes `--inner-corner`, its corner less its padding, for parts that
- * round with `rounded-inner`.
+ * The dialog popup, with its scrim and portal. It publishes `--inner-corner`, its corner less its
+ * padding, for parts that round with `rounded-inner`.
  */
 export function DialogContent({
   className,
   children,
   showCloseButton = true,
-  size,
+  size = "md",
   container,
   closeLabel,
   ...props
@@ -116,20 +120,22 @@ export function DialogContent({
   );
 }
 
+/** Stacks the title and description. */
 export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="dialog-header" className={cn(slots.header(), className)} {...props} />;
 }
 
 export type DialogFooterProps = ComponentProps<"div"> & {
   /**
-   * Appends a `Dialog.Close` rendered as an outline button after `children` — a footer
-   * action, distinct from `Dialog.Content`'s corner dismiss affordance.
+   * Adds a close button, an outline `Dialog.Close`, after the footer's children. It is separate
+   * from `Dialog.Content`'s corner close button.
    */
   showCloseButton?: boolean;
-  /** Visible text for the built-in footer close action. Defaults to the locale dictionary. */
+  /** The footer close button's label. Unset, it reads `overlay.close` from the locale dictionary. */
   closeLabel?: string;
 };
 
+/** The dialog's actions, stacked on narrow screens and in an end-aligned row from `sm`. */
 export function DialogFooter({
   className,
   showCloseButton = false,
@@ -150,14 +156,14 @@ export function DialogFooter({
 
 export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
   /**
-   * Makes the heading a programmatic focus target: stamps `tabIndex={-1}` and paints the
-   * shared self focus ring so the focused title is visible. For dialogs that pass the
-   * title to `initialFocus` and open on its content.
-   * @default false
+   * Lets the title take focus from script. It sets `tabIndex={-1}` and shows a focus ring
+   * while the title has focus. For long content, set it and pass the title's ref to
+   * `Dialog.Content`'s `initialFocus`, so the dialog opens at the top of its content.
    */
   isFocusable?: boolean;
 };
 
+/** The dialog's title, which names the popup. */
 export function DialogTitle({
   className,
   isFocusable = false,
@@ -175,6 +181,7 @@ export function DialogTitle({
   );
 }
 
+/** The dialog's description, which describes the popup. A link inside is underlined. */
 export function DialogDescription({
   className,
   ...props

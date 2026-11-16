@@ -14,12 +14,16 @@ import type {
 import * as FrameModule from "@elmeragroup/fuse/frame";
 import { Frame } from "@elmeragroup/fuse/frame";
 
+// Panel and Header redeclare `children` to document it. Flattening both sides to one object type
+// compares their exact keys and property types, which the intersection alone would not match.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("public API exports only the namespace, the part prop types and the layout union, and parts take native attributes, a layout, and no polymorphic as prop", () => {
   expectTypeOf<FrameRootProps>().toMatchTypeOf<ComponentProps<"div">>();
   expectTypeOf<FrameRootProps["layout"]>().toEqualTypeOf<"gutter" | "stacked" | "flush" | undefined>();
   expectTypeOf<FrameLayout>().toEqualTypeOf<"gutter" | "stacked" | "flush">();
-  expectTypeOf<FramePanelProps>().toEqualTypeOf<ComponentProps<"div">>();
-  expectTypeOf<FrameHeaderProps>().toEqualTypeOf<ComponentProps<"header">>();
+  expectTypeOf<Flat<FramePanelProps>>().toEqualTypeOf<Flat<ComponentProps<"div">>>();
+  expectTypeOf<Flat<FrameHeaderProps>>().toEqualTypeOf<Flat<ComponentProps<"header">>>();
   expectTypeOf<FrameTitleProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<FrameDescriptionProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<FrameFooterProps>().toEqualTypeOf<ComponentProps<"footer">>();

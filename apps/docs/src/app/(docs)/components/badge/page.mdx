@@ -1,12 +1,29 @@
 ---
 lede: >
-  A small label for statuses, counts, and tags.
+  A small label for statuses, counts and tags.
 ---
 
-import { BadgeVariants } from "./demos/badge-variants";
-import { BadgeSizes } from "./demos/badge-sizes";
-import { BadgeStatus } from "./demos/badge-status";
-import { BadgeBasic } from "./demos/badge-basic";
+import { BadgeDemo } from "./demos/badge-demo";
+import { BadgeSecondary } from "./demos/badge-secondary";
+import { BadgeDestructive } from "./demos/badge-destructive";
+import { BadgeSuccess } from "./demos/badge-success";
+import { BadgeWarning } from "./demos/badge-warning";
+import { BadgeInfo } from "./demos/badge-info";
+import { BadgeSoftDestructive } from "./demos/badge-soft-destructive";
+import { BadgeSoftSuccess } from "./demos/badge-soft-success";
+import { BadgeSoftWarning } from "./demos/badge-soft-warning";
+import { BadgeSoftInfo } from "./demos/badge-soft-info";
+import { BadgeOutline } from "./demos/badge-outline";
+import { BadgeOutlineSecondary } from "./demos/badge-outline-secondary";
+import { BadgeOutlineDestructive } from "./demos/badge-outline-destructive";
+import { BadgeOutlineSuccess } from "./demos/badge-outline-success";
+import { BadgeOutlineWarning } from "./demos/badge-outline-warning";
+import { BadgeOutlineInfo } from "./demos/badge-outline-info";
+import { BadgeMuted } from "./demos/badge-muted";
+import { BadgeAccent } from "./demos/badge-accent";
+import { BadgeCard } from "./demos/badge-card";
+import { BadgeSmall } from "./demos/badge-small";
+import { BadgeLarge } from "./demos/badge-large";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,20 +31,109 @@ export const metadata = componentMetadata("badge");
 
 <ComponentIntro slug="badge" />
 
-<Demo slug="badge" id="variants" title="Variants" file="badge-variants.tsx">
-  <BadgeVariants />
+<DefaultDemo slug="badge" file="badge-demo.tsx">
+  <BadgeDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Badge } from "@elmeragroup/fuse/badge";
+
+<Badge>Badge</Badge>
+```
+
+## Examples
+
+<Demo slug="badge" id="secondary" title="Secondary" level={3} file="badge-secondary.tsx">
+  <BadgeSecondary />
 </Demo>
 
-<Demo slug="badge" id="sizes" title="Sizes" file="badge-sizes.tsx">
-  <BadgeSizes />
+<Demo slug="badge" id="destructive" title="Destructive" level={3} file="badge-destructive.tsx">
+  <BadgeDestructive />
 </Demo>
 
-<Demo slug="badge" id="status" title="Status tones" file="badge-status.tsx">
-  <BadgeStatus />
+<Demo slug="badge" id="success" title="Success" level={3} file="badge-success.tsx">
+  <BadgeSuccess />
 </Demo>
 
-<Demo slug="badge" id="basic" title="Basic" file="badge-basic.tsx">
-  <BadgeBasic />
+<Demo slug="badge" id="warning" title="Warning" level={3} file="badge-warning.tsx">
+  <BadgeWarning />
+</Demo>
+
+<Demo slug="badge" id="info" title="Info" level={3} file="badge-info.tsx">
+  <BadgeInfo />
+</Demo>
+
+<Demo slug="badge" id="soft-destructive" title="Soft destructive" level={3} file="badge-soft-destructive.tsx">
+  <BadgeSoftDestructive />
+</Demo>
+
+<Demo slug="badge" id="soft-success" title="Soft success" level={3} file="badge-soft-success.tsx">
+  <BadgeSoftSuccess />
+</Demo>
+
+<Demo slug="badge" id="soft-warning" title="Soft warning" level={3} file="badge-soft-warning.tsx">
+  <BadgeSoftWarning />
+</Demo>
+
+<Demo slug="badge" id="soft-info" title="Soft info" level={3} file="badge-soft-info.tsx">
+  <BadgeSoftInfo />
+</Demo>
+
+<Demo slug="badge" id="outline" title="Outline" level={3} file="badge-outline.tsx">
+  <BadgeOutline />
+</Demo>
+
+<Demo
+  slug="badge"
+  id="outline-secondary"
+  title="Outline secondary"
+  level={3}
+  file="badge-outline-secondary.tsx">
+  <BadgeOutlineSecondary />
+</Demo>
+
+<Demo
+  slug="badge"
+  id="outline-destructive"
+  title="Outline destructive"
+  level={3}
+  file="badge-outline-destructive.tsx">
+  <BadgeOutlineDestructive />
+</Demo>
+
+<Demo slug="badge" id="outline-success" title="Outline success" level={3} file="badge-outline-success.tsx">
+  <BadgeOutlineSuccess />
+</Demo>
+
+<Demo slug="badge" id="outline-warning" title="Outline warning" level={3} file="badge-outline-warning.tsx">
+  <BadgeOutlineWarning />
+</Demo>
+
+<Demo slug="badge" id="outline-info" title="Outline info" level={3} file="badge-outline-info.tsx">
+  <BadgeOutlineInfo />
+</Demo>
+
+<Demo slug="badge" id="muted" title="Muted" level={3} file="badge-muted.tsx">
+  <BadgeMuted />
+</Demo>
+
+<Demo slug="badge" id="accent" title="Accent" level={3} file="badge-accent.tsx">
+  <BadgeAccent />
+</Demo>
+
+<Demo slug="badge" id="card" title="Card" level={3} file="badge-card.tsx">
+  <BadgeCard />
+</Demo>
+
+<Demo slug="badge" id="small" title="Small" level={3} file="badge-small.tsx">
+  <BadgeSmall />
+</Demo>
+
+<Demo slug="badge" id="large" title="Large" level={3} file="badge-large.tsx">
+  <BadgeLarge />
 </Demo>
 
 <ApiReference slug="badge" />

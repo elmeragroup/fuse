@@ -4,19 +4,11 @@ import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 export function InputGroupInvalid() {
   return (
-    <div className="flex flex-col gap-4">
-      <InputGroup.Root>
-        <InputGroup.Addon>
-          <InputGroup.Text>NO</InputGroup.Text>
-        </InputGroup.Addon>
-        <InputGroup.Input aria-label="Account number" aria-invalid defaultValue="12" />
-      </InputGroup.Root>
-      <InputGroup.Root>
-        <InputGroup.Addon>
-          <InputGroup.Text>NO</InputGroup.Text>
-        </InputGroup.Addon>
-        <InputGroup.Input aria-label="Locked account number" defaultValue="1234 56 78901" disabled />
-      </InputGroup.Root>
-    </div>
+    <InputGroup.Root>
+      <InputGroup.Addon>
+        <InputGroup.Text>+47</InputGroup.Text>
+      </InputGroup.Addon>
+      <InputGroup.Input aria-label="Mobile number" type="tel" defaultValue="4123" aria-invalid />
+    </InputGroup.Root>
   );
 }

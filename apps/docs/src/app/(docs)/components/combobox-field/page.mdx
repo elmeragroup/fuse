@@ -3,8 +3,13 @@ lede: >
   A labeled searchable select for one option, laid out like the other labeled fields.
 ---
 
-import { ComboboxFieldBasic } from "./demos/combobox-field-basic";
-import { ComboboxFieldForm } from "./demos/combobox-field-form";
+import { ComboboxFieldDemo } from "./demos/combobox-field-demo";
+import { ComboboxFieldClearButton } from "./demos/combobox-field-clear-button";
+import { ComboboxFieldWithoutCaret } from "./demos/combobox-field-without-caret";
+import { ComboboxFieldError } from "./demos/combobox-field-error";
+import { ComboboxFieldDisabled } from "./demos/combobox-field-disabled";
+import { ComboboxFieldReadOnly } from "./demos/combobox-field-read-only";
+import { ComboboxFieldFormError } from "./demos/combobox-field-form-error";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -12,33 +17,64 @@ export const metadata = componentMetadata("combobox-field");
 
 <ComponentIntro slug="combobox-field" />
 
-<Prose>
+<DefaultDemo slug="combobox-field" file="combobox-field-demo.tsx">
+  <ComboboxFieldDemo />
+</DefaultDemo>
 
-`ComboboxField` puts a label, the error and a description around [Combobox](/components/combobox)'s input and options, in the order `TextField` uses: the label 4px from the input, then the error under the input, ahead of the description. The input fills the field's width. It takes one selection, which `value`, `defaultValue` and `onValueChange` hold. Pass `items` and the popup's content as children: a `Combobox.List` that renders each item as a `Combobox.Item`, and a `Combobox.Empty` beside it for the list that matches nothing. With object items, `items` gives `itemToStringLabel`, `itemToStringValue` and the value the item type. The props the field does not name itself go to `Combobox.Root`, and a `ref` goes to the input.
+## Usage
 
-</Prose>
+{/* prettier-ignore */}
+```tsx
+import { Combobox } from "@elmeragroup/fuse/combobox";
+import { ComboboxField } from "@elmeragroup/fuse/combobox-field";
 
-<Demo slug="combobox-field" id="basic" title="Basic" file="combobox-field-basic.tsx">
-  <ComboboxFieldBasic />
+<ComboboxField label="Country" items={["Norway", "Sweden"]} placeholder="Search countries…">
+  <Combobox.Empty />
+  <Combobox.List>
+    {(country: string) => (
+      <Combobox.Item key={country} value={country}>
+        {country}
+      </Combobox.Item>
+    )}
+  </Combobox.List>
+</ComboboxField>
+```
+
+## Examples
+
+<Demo
+  slug="combobox-field"
+  id="clear-button"
+  title="Clear button"
+  level={3}
+  file="combobox-field-clear-button.tsx">
+  <ComboboxFieldClearButton />
 </Demo>
 
-<Prose>
-
-Inside a `Form`, the field shows the error `Form` holds under its `name` when it gets no `errorMessage`, also in the first HTML a server renders. Choosing another option clears it, and a new `errors` object shows it again. The selection submits under `name`, once, and `isRequired` blocks an empty submit with the required message.
-
-`isReadOnly` keeps the selection: the input stays focusable and takes the muted read-only fill the other fields take, and its popup still opens to show the options, but choosing one, typing or the clear button changes nothing. The value still submits under `name`.
-
-</Prose>
-
-<Demo slug="combobox-field" id="form" title="In a form" file="combobox-field-form.tsx">
-  <ComboboxFieldForm />
+<Demo
+  slug="combobox-field"
+  id="without-caret"
+  title="Without caret"
+  level={3}
+  file="combobox-field-without-caret.tsx">
+  <ComboboxFieldWithoutCaret />
 </Demo>
 
-<Prose>
+<Demo slug="combobox-field" id="error" title="Error" level={3} file="combobox-field-error.tsx">
+  <ComboboxFieldError />
+</Demo>
 
-`ComboboxField` takes one selection. For multiple selection, chips or a layout of your own, such as a label row with an info button or a label beside the input, compose `Field.Root` and the `Combobox` parts.
+<Demo slug="combobox-field" id="disabled" title="Disabled" level={3} file="combobox-field-disabled.tsx">
+  <ComboboxFieldDisabled />
+</Demo>
 
-</Prose>
+<Demo slug="combobox-field" id="read-only" title="Read-only" level={3} file="combobox-field-read-only.tsx">
+  <ComboboxFieldReadOnly />
+</Demo>
+
+<Demo slug="combobox-field" id="form-error" title="Form error" level={3} file="combobox-field-form-error.tsx">
+  <ComboboxFieldFormError />
+</Demo>
 
 <ApiReference slug="combobox-field" />
 

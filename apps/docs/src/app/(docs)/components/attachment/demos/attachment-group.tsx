@@ -25,7 +25,7 @@ const FILES: readonly SharedFile[] = [
   { name: "moving-notice.pdf", meta: "PDF · 220 KB" },
 ];
 
-export function AttachmentGroupDemo() {
+export function AttachmentGroup() {
   return (
     <div className="max-w-md w-full">
       <Attachment.Group aria-label="Attached files">

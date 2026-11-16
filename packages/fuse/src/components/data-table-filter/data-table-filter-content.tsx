@@ -172,6 +172,15 @@ export type DataTableFilterContentProps = Omit<
   /**
    * The menu's body: `FieldList` and an `Editor` for the in-place drill, each rendering only for
    * its step. Defaults to both, with the default kind editors.
+   *
+   * The menu searches the fields. An option or multi-option field opens a submenu of its values
+   * with their counts, and each tick applies at once. A text, number or date field opens its
+   * editor in the same menu, in place of the list, and its value applies as it changes. Back,
+   * Escape, or Backspace in an empty text input return to the list with the search kept and that
+   * field highlighted. From two typed characters on, the menu also lists matching option values
+   * across every field. A list of values shows its first 50 matches and asks for more typing. A
+   * tap opens the menu or a submenu without focusing its search, so the on-screen keyboard stays
+   * down until the person taps the search.
    */
   children?: ReactNode;
 };

@@ -4,18 +4,19 @@ import { useState } from "react";
 
 import { Item } from "@elmeragroup/fuse/item";
 
-/** A toggle button reports its selected product and can be pressed again to reset. */
 export function ItemAsButton() {
   const [selected, setSelected] = useState(false);
   return (
-    <div className="flex flex-col gap-3">
+    <div className="max-w-md flex w-full flex-col gap-3">
       <Item.Root
+        variant="outline"
         render={<button type="button" aria-pressed={selected} onClick={() => setSelected(!selected)} />}>
         <Item.Content>
-          <Item.Title>{selected ? "Clear product selection" : "Choose this product"}</Item.Title>
+          <Item.Title>Spot</Item.Title>
+          <Item.Description>Hourly price with no lock-in.</Item.Description>
         </Item.Content>
       </Item.Root>
-      <p role="status">{selected ? "Product selected." : "No product selected."}</p>
+      <p role="status">{selected ? "Spot selected." : "No product selected."}</p>
     </div>
   );
 }

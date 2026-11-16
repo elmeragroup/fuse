@@ -24,7 +24,10 @@ import { viewBoxOf } from "./layout/polar-angle";
  * @beta
  */
 export type PieChartGlowProps = ChartLayerProps & {
-  /** The category whose slice or ring glows. */
+  /**
+   * The category whose slice or ring glows. A category that folds into Other glows nothing, and
+   * Other has no config key to name.
+   */
   dataKey: string;
 };
 

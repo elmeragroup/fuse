@@ -15,7 +15,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Description reference forwarded to the visible input when defined.",
+          "description": "The ids of the elements that describe the number input.",
           "required": false
         },
         {
@@ -24,7 +24,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name forwarded to the visible input when defined.",
+          "description": "The number input's name when there is no `label`. It names the field box too.",
           "required": false
         },
         {
@@ -33,7 +33,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name reference forwarded to the visible input when defined.",
+          "description": "The ids of the elements that name the number input, in place of `label`.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "Booleanish | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks the number input required for assistive technology only, forwarded when defined. It doesn't validate: an empty field still submits. Use `isRequired` for the native constraint, and this for a rule a schema can relax.",
+          "description": "Marks the number input required for screen readers only. It does not validate, so an empty field still submits. Use `isRequired` for the browser's constraint check, and this for a rule a schema can relax.",
           "required": false
         },
         {
@@ -51,7 +51,7 @@
           "type": "HTMLInputAutoCompleteAttribute | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Native `autoComplete`, also forwarded to Combobox.Root.",
+          "description": "The number input's `autoComplete`, also passed to the country picker.",
           "required": false
         },
         {
@@ -59,8 +59,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Detect country from a `+`/`00` prefix while typing or pasting.",
+          "defaultValue": "true",
+          "description": "Picks the country from a `+` or `00` prefix as the user types or pastes. Pass `false` to keep the selected country.",
           "required": false
         },
         {
@@ -69,7 +69,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `autoFocus` forwarded to the visible input.",
+          "description": "Focuses the number input when the field mounts.",
           "required": false
         },
         {
@@ -78,7 +78,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the root via `cn`.",
+          "description": "Extra classes for the field's root.",
           "required": false
         },
         {
@@ -87,7 +87,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for the country picker. Defaults to the nearest enclosing `ThemeScope` element.",
+          "description": "Where the country popup renders. It defaults to the nearest `ThemeScope` element.",
           "required": false
         },
         {
@@ -96,7 +96,7 @@
           "type": "readonly (\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\")[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The countries the picker offers, as ISO codes. The metadata still parses every number: detection only selects a listed country, so a number from another one stays in international form beside the selected country, as with trimmed metadata. With one country the field shows its flag and dial code as plain context instead of a picker. Codes outside the catalog, without a packaged flag or in the product exclusions are ignored, and a list that leaves no country throws. A change that drops the selected country keeps the shown number's international identity, except a controlled `raw` value, which names no country and reads again in the one that remains. The rows sort by name whatever the list's order.",
+          "description": "The countries the picker offers, as ISO codes. Every country by default. The metadata still parses every number. Detection only selects a listed country, so a number from another one stays in international form beside the selected country, as with trimmed metadata. With one country, the field shows its flag and dial code as plain text instead of a picker. The field ignores codes outside the catalog, without a packaged flag or in the product exclusions, and a list that leaves no country throws. A change that drops the selected country keeps the shown number's international identity, except a controlled `raw` value, which names no country and is read again in the country that remains. The rows sort by name whatever the list's order.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Authoritative controlled country, paired with `onCountryChange`, in place of `defaultCountryCode`; omit it for an uncontrolled country. The field shows the country a controlled `value` names with its own `+` or `00` prefix while `autoDetectCountry` is on, else a proposal's country the parent holds, else `countryCode`; a value without a prefix, or an uncontrolled `defaultValue`, is read in `countryCode`. A new `countryCode`, or a `countries` or `metadata` change that resolves it to another country, acts like a pick: it clears the digits unless `preserveOnCountryChange` keeps them, and proposes the result through `onChange`; a change that leaves the country in place keeps the number. A pick, or a country detected while typing or pasting, is a proposal the field shows once the parent sets `countryCode` to it; a parent that keeps its code returns the field to it. An uncontrolled number reports a pick's number only once the field shows it, so a rejected pick reports nothing. `onCountryChange` hears each country that disagrees with `countryCode` once, and never the code the parent just set. A code the picker does not offer resolves as `defaultCountryCode` does. Removing `countryCode` keeps the country and number the field shows.",
+          "description": "The country, for a controlled country. Pass it with `onCountryChange`, in place of `defaultCountryCode`. Leave it out for an uncontrolled country. The field shows the country a controlled `value` names with its own `+` or `00` prefix while `autoDetectCountry` is on, else the country of a proposal the parent holds, else `countryCode`. It reads a value without a prefix, or an uncontrolled `defaultValue`, in `countryCode`. A new `countryCode`, or a `countries` or `metadata` change that resolves it to another country, acts like a pick. It clears the digits unless `preserveOnCountryChange` keeps them, and proposes the result through `onChange`. A change that leaves the country in place keeps the number. A pick, or a country detected while typing or pasting, is a proposal. The field shows it once the parent sets `countryCode` to it, and a parent that keeps its code returns the field to it. An uncontrolled number reports a pick's number only once the field shows it, so a rejected pick reports nothing. Each proposal reaches `onChange` once, whatever order the parent answers in. A proposal the parent has not answered yet keeps waiting through a render with the same props, and through a change to `defaultValue`, `defaultCountryCode` or `preserveOnCountryChange` alone. It also waits through a change to `outputFormat`, `international`, `formatOnType`, `autoDetectCountry`, `metadata` or `countries` that keeps `value` and `countryCode`, while `countries` still offers the proposal's country. An answer to one half of it keeps it waiting for the other, in either order: `countryCode` set to its country, or a `value` that is its number in a countryless form of the parent's own, such as national digits. A code that only falls back to the proposal's country is no answer. A proposal answered in full ends, as does one whose number the parent holds while the value names another country. Any other change drops it. A code the picker does not offer resolves as `defaultCountryCode` does. Removing `countryCode` keeps the country and number the field shows.",
           "required": false,
           "values": [
             "AD",
@@ -356,8 +356,8 @@
           "origin": "declared",
           "type": "\"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Initial country. Must be a libphonenumber country with a packaged flag asset. A code the picker does not offer (outside `countries`, excluded, or untyped) falls back to `NO` when offered, else the first offered country in catalog order. Ignored while `countryCode` is set.",
+          "defaultValue": "\"NO\"",
+          "description": "The starting country. It must be a libphonenumber country with a packaged flag. A code the picker does not offer, because it is outside `countries`, excluded or untyped, falls back to `NO` when the picker offers it, else to the first offered country in catalog order. The field ignores it while `countryCode` is set.",
           "required": false,
           "values": [
             "AD",
@@ -609,7 +609,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Initial number of an uncontrolled field, read on mount as `value` is. A native form reset restores it, read again under the current props, and calls `onCountryChange` when that changes the country; `\"\"` restores an empty number in `defaultCountryCode`. Without a `defaultValue`, a reset clears the digits and keeps the country. A later change leaves the shown number alone and becomes the next reset's target. Ignored while `value` is set, even to `\"\"`.",
+          "description": "The starting number of an uncontrolled field, read on mount as `value` is. A native form reset restores it, reads it again under the current props, and calls `onCountryChange` when that changes the country. `\"\"` restores an empty number in `defaultCountryCode`. Without a `defaultValue`, a reset clears the digits and keeps the country. A later change leaves the shown number alone and becomes the next reset's target. The field ignores it while `value` is set, even to `\"\"`.",
           "required": false
         },
         {
@@ -618,7 +618,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`.",
+          "description": "Supporting text, rendered as `Field.Description`.",
           "required": false
         },
         {
@@ -627,7 +627,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trailing content inside the InputGroup.",
+          "description": "Content at the end of the field box, such as a button that acts on the number.",
           "required": false
         },
         {
@@ -636,7 +636,7 @@
           "type": "\"done\" | \"enter\" | \"go\" | \"next\" | \"previous\" | \"search\" | \"send\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Native `enterKeyHint` forwarded to the visible input.",
+          "description": "The number input's `enterKeyHint`.",
           "required": false,
           "values": [
             "done",
@@ -654,7 +654,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows a `Form` error under `name`, or the visible input's own constraint message.",
+          "description": "The error message, rendered as `Field.Error` while it is truthy. Pass `isInvalid` with it, so the field is marked invalid too. Without it, the field shows a `Form` error under `name`, or the number input's constraint message.",
           "required": false
         },
         {
@@ -662,8 +662,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "As-you-type display formatting. A national entry keeps the trunk prefix it was typed with, so a Swedish \"0701234567\" shows \"070-123 45 67\", and one typed without it stays ungrouped. A number detected from a `+` or `00` prefix shows in the national format.",
+          "defaultValue": "false",
+          "description": "Formats the display as the user types. A national entry keeps the trunk prefix it was typed with, so a Swedish \"0701234567\" shows \"070-123 45 67\", and one typed without it stays ungrouped. A number detected from a `+` or `00` prefix shows in the national format.",
           "required": false
         },
         {
@@ -672,7 +672,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Native `id` forwarded to the visible input when defined.",
+          "description": "The number input's `id`.",
           "required": false
         },
         {
@@ -681,7 +681,7 @@
           "type": "\"decimal\" | \"email\" | \"none\" | \"numeric\" | \"search\" | \"tel\" | \"text\" | \"url\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"tel\"",
-          "description": "Native `inputMode` forwarded to the visible input.",
+          "description": "The number input's `inputMode`, which picks the on-screen keyboard.",
           "required": false,
           "values": [
             "decimal",
@@ -699,8 +699,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Preserve entered digits and international prefixes in the display. Accepted national drafts stay national.",
+          "defaultValue": "false",
+          "description": "Keeps the typed digits and international prefixes in the display. An accepted national draft stays national.",
           "required": false
         },
         {
@@ -709,7 +709,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables editing and both visible and hidden form inputs.",
+          "description": "Disables editing, the country picker, and both the visible and the hidden input.",
           "required": false
         },
         {
@@ -718,7 +718,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root`. InputGroup gets `aria-invalid || undefined`.",
+          "description": "Marks the field invalid, with the invalid look on the field box.",
           "required": false
         },
         {
@@ -727,7 +727,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Blocks edits, including paste and country changes, while preserving focus and form submission. The field takes the muted read-only fill.",
+          "description": "Blocks edits, paste and country changes. The field stays focusable and still submits, with the muted read-only fill.",
           "required": false
         },
         {
@@ -736,7 +736,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `required` to the visible input, so native constraint validation blocks an empty submit.",
+          "description": "Makes the number input required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -745,7 +745,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as `Field.Label`.",
+          "description": "The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`.",
           "required": false
         },
         {
@@ -754,7 +754,7 @@
           "type": "MetadataJson | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity. A shallow copy, such as `{ ...metadata }` written in a render, is the same metadata and replaces nothing. To limit the picker, pass `countries` instead: trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller: the field imports its full default metadata either way.",
+          "description": "Your own or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps the international identity of the number shown. A shallow copy, such as `{ ...metadata }` written in a render, is the same metadata and replaces nothing. To limit the picker, pass `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller, since the field imports its full default metadata either way.",
           "required": false
         },
         {
@@ -763,7 +763,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value`. Unset, neither input submits. Inside a `Form`, the field shows `errors[name]`, clears it when the number it submits changes, and gives `onFormSubmit` that number under `name`, in `outputFormat`.",
+          "description": "The name the number submits under, from a hidden input. The visible input takes `${name}-display-value`. Without it, neither input submits. Inside a `Form`, the field shows the form's error under this name, removes it when the submitted number changes, and gives `onFormSubmit` the number under this name, in `outputFormat`.",
           "required": false
         },
         {
@@ -772,7 +772,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Explicit override for the built-in `noCountries` dictionary key.",
+          "description": "Replaces the `noCountries` text of the locale dictionary, shown when no country matches.",
           "required": false
         },
         {
@@ -781,7 +781,7 @@
           "type": "FocusEventHandler<HTMLInputElement> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Native `onBlur` forwarded to the visible input.",
+          "description": "Called when the number input loses focus.",
           "required": false
         },
         {
@@ -790,7 +790,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Proposes a formatted output value. Controlled fields display it after parent acceptance. Called only when the proposal differs from the value the parent holds: `value`, compared exactly, or the output an uncontrolled field already shows. So deleting a separator, which keeps the number, calls nothing, while a parent that stores another form of the number, such as national digits, hears every proposal. Also called once as hydration commits, with a number typed or autofilled before the client scripts attached, under the same rule; a controlled parent accepts or rejects it like any other proposal.",
+          "description": "Proposes a number in `outputFormat`. A controlled field shows it once the parent accepts it. The field calls it only when the proposal differs from the number the parent holds: `value`, compared exactly, or the output an uncontrolled field already shows. So deleting a separator, which keeps the number, calls nothing, while a parent that stores another form of the number, such as national digits, hears every proposal. It is also called once as hydration commits, with a number typed or autofilled before the client scripts ran, under the same rule. A controlled parent accepts or rejects it like any other proposal.",
           "required": false
         },
         {
@@ -799,7 +799,7 @@
           "type": "((country: { code: \"AD\" | \"AE\" | \"AF\" | \"AG\" | \"AI\" | \"AL\" | \"AM\" | \"AO\" | \"AR\" | \"AS\" | \"AT\" | \"AU\" | \"AW\" | \"AX\" | \"AZ\" | \"BA\" | \"BB\" | \"BD\" | \"BE\" | \"BF\" | \"BG\" | \"BH\" | \"BI\" | \"BJ\" | \"BL\" | \"BM\" | \"BN\" | \"BO\" | \"BR\" | \"BS\" | \"BT\" | \"BW\" | \"BY\" | \"BZ\" | \"CA\" | \"CC\" | \"CD\" | \"CF\" | \"CG\" | \"CH\" | \"CI\" | \"CK\" | \"CL\" | \"CM\" | \"CN\" | \"CO\" | \"CR\" | \"CU\" | \"CV\" | \"CW\" | \"CX\" | \"CY\" | \"CZ\" | \"DE\" | \"DJ\" | \"DK\" | \"DM\" | \"DO\" | \"DZ\" | \"EC\" | \"EE\" | \"EG\" | \"ER\" | \"ES\" | \"ET\" | \"FI\" | \"FJ\" | \"FK\" | \"FM\" | \"FO\" | \"FR\" | \"GA\" | \"GB\" | \"GD\" | \"GE\" | \"GF\" | \"GG\" | \"GH\" | \"GI\" | \"GL\" | \"GM\" | \"GN\" | \"GP\" | \"GQ\" | \"GR\" | \"GT\" | \"GU\" | \"GW\" | \"GY\" | \"HK\" | \"HN\" | \"HR\" | \"HT\" | \"HU\" | \"ID\" | \"IE\" | \"IL\" | \"IM\" | \"IN\" | \"IO\" | \"IQ\" | \"IR\" | \"IS\" | \"IT\" | \"JE\" | \"JM\" | \"JO\" | \"JP\" | \"KE\" | \"KG\" | \"KH\" | \"KI\" | \"KM\" | \"KN\" | \"KP\" | \"KR\" | \"KW\" | \"KY\" | \"KZ\" | \"LA\" | \"LB\" | \"LC\" | \"LI\" | \"LK\" | \"LR\" | \"LS\" | \"LT\" | \"LU\" | \"LV\" | \"LY\" | \"MA\" | \"MC\" | \"MD\" | \"ME\" | \"MF\" | \"MG\" | \"MH\" | \"MK\" | \"ML\" | \"MM\" | \"MN\" | \"MO\" | \"MP\" | \"MQ\" | \"MR\" | \"MS\" | \"MT\" | \"MU\" | \"MV\" | \"MW\" | \"MX\" | \"MY\" | \"MZ\" | \"NA\" | \"NC\" | \"NE\" | \"NF\" | \"NG\" | \"NI\" | \"NL\" | \"NO\" | \"NP\" | \"NR\" | \"NU\" | \"NZ\" | \"OM\" | \"PA\" | \"PE\" | \"PF\" | \"PG\" | \"PH\" | \"PK\" | \"PL\" | \"PM\" | \"PR\" | \"PS\" | \"PT\" | \"PW\" | \"PY\" | \"QA\" | \"RE\" | \"RO\" | \"RS\" | \"RU\" | \"RW\" | \"SA\" | \"SB\" | \"SC\" | \"SD\" | \"SE\" | \"SG\" | \"SH\" | \"SI\" | \"SJ\" | \"SK\" | \"SL\" | \"SM\" | \"SN\" | \"SO\" | \"SR\" | \"SS\" | \"ST\" | \"SV\" | \"SX\" | \"SY\" | \"SZ\" | \"TC\" | \"TD\" | \"TG\" | \"TH\" | \"TJ\" | \"TK\" | \"TL\" | \"TM\" | \"TN\" | \"TO\" | \"TR\" | \"TT\" | \"TV\" | \"TW\" | \"TZ\" | \"UA\" | \"UG\" | \"US\" | \"UY\" | \"UZ\" | \"VA\" | \"VC\" | \"VE\" | \"VG\" | \"VI\" | \"VN\" | \"VU\" | \"WF\" | \"WS\" | \"XK\" | \"YE\" | \"YT\" | \"ZA\" | \"ZM\" | \"ZW\"; dialCode: string; }) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called when the selected picker country changes. With `countryCode` set, called instead once as each disagreement starts: the country of a proposal waiting for the parent, else the one shown, differing from `countryCode`. A proposal that moves the country calls it before `onChange`, so a parent that takes both at once reads the number in the new country.",
+          "description": "Called when the selected country changes. With `countryCode` set, it is called instead once as each disagreement starts, with the country of a proposal waiting for the parent, else the one shown, when it differs from `countryCode`. It never hears the code the parent just set. A proposal that moves the country calls it before `onChange`, so a parent that takes both at once reads the number in the new country.",
           "required": false
         },
         {
@@ -807,8 +807,8 @@
           "origin": "declared",
           "type": "\"e164\" | \"international\" | \"national\" | \"raw\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Format of `onChange` and the hidden submit input.",
+          "defaultValue": "\"e164\"",
+          "description": "The format `onChange` reports and the hidden input submits.",
           "required": false,
           "values": [
             "e164",
@@ -823,7 +823,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Placeholder for the visible number input.",
+          "description": "The number input's placeholder text.",
           "required": false
         },
         {
@@ -831,8 +831,8 @@
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": null,
-          "description": "Keep digits when switching country. Default clears them, and calls `onChange` with `\"\"` unless the parent already holds `\"\"`.",
+          "defaultValue": "false",
+          "description": "Keeps the digits when the country changes. Otherwise a country change clears them, and calls `onChange` with `\"\"` unless the parent already holds `\"\"`.",
           "required": false
         },
         {
@@ -841,7 +841,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Explicit override for the built-in `searchCountries` dictionary key.",
+          "description": "Replaces the `searchCountries` text of the locale dictionary, the country search box's name.",
           "required": false
         },
         {
@@ -850,7 +850,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Explicit override for the built-in `selectCountry` dictionary key: the country popup's name and the country trigger's description. The trigger's name is its visible dial code and the selected country, such as \"+47 Norway\".",
+          "description": "Replaces the `selectCountry` text of the locale dictionary: the country popup's name and the country button's description. The button's name is its visible dial code and the selected country, such as \"+47 Norway\".",
           "required": false
         },
         {
@@ -859,7 +859,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control size of the field box, the InputGroup around the country picker and the number. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The country picker's search box in the popup keeps the default size.",
+          "description": "The control size of the field box around the country picker and the number, also written as `data-size`. `default` is the md control size, and `sm` the sm one. The search box in the country popup keeps the default size.",
           "required": false,
           "values": [
             "default",
@@ -872,7 +872,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing.",
+          "description": "The number, for a controlled field. The field decodes it as a URI component when it arrives. Leave it out for an uncontrolled field.",
           "required": false
         }
       ]
