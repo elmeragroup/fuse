@@ -42,17 +42,22 @@ export type CalendarSharedState = {
 };
 
 /**
- * Every day flag, in the order `dayFlags` writes them. The `CalendarDayFlag` union is read from
- * this list, so the list includes every flag by construction.
+ * The one day-flag table, which maps each `CalendarDayFlagState` field to its flag. The `satisfies`
+ * check limits its keys to exactly the state's fields, so neither a field without a flag nor a flag
+ * without a field compiles. The `CalendarDayFlag` union derives from it, and its key order is the
+ * order `dayFlags` writes.
  */
-const DAY_FLAGS = [
-  "selected",
-  "selection-start",
-  "selection-end",
-  "in-range",
-  "highlighted",
-  "invalid",
-] as const;
+const DAY_FLAG_NAMES = {
+  selected: "selected",
+  selectionStart: "selection-start",
+  selectionEnd: "selection-end",
+  inRange: "in-range",
+  highlighted: "highlighted",
+  invalid: "invalid",
+} as const satisfies Record<keyof CalendarDayFlagState, string>;
+
+/** Every day flag, in the table's key order. */
+const DAY_FLAGS = Object.values(DAY_FLAG_NAMES);
 
 /**
  * One fact about a day's place in the selection. The day button writes each flag that holds as a
@@ -67,7 +72,7 @@ const DAY_FLAGS = [
  *
  * Calendar reports only `selected` and `invalid`; RangeCalendar reports the rest.
  */
-export type CalendarDayFlag = (typeof DAY_FLAGS)[number];
+export type CalendarDayFlag = (typeof DAY_FLAG_NAMES)[keyof typeof DAY_FLAG_NAMES];
 
 declare const dayFlagsBrand: unique symbol;
 
@@ -109,15 +114,31 @@ export type CalendarDayFlagState = {
   readonly invalid: boolean;
 };
 
-/** The one mapping between a flag and its render-state field. */
-const DAY_FLAG_FIELDS = {
-  selected: "selected",
-  "selection-start": "selectionStart",
-  "selection-end": "selectionEnd",
-  "in-range": "inRange",
-  highlighted: "highlighted",
-  invalid: "invalid",
-} as const satisfies Record<CalendarDayFlag, keyof CalendarDayFlagState>;
+/**
+ * One value for each `CalendarDayFlagState` field.
+ *
+ * @template T - The value each field holds.
+ */
+type DayFlagFields<T> = { readonly [Field in keyof CalendarDayFlagState]: T };
+
+/**
+ * One value for each render-state field, from the field's flag. TypeScript checks the literal
+ * against `CalendarDayFlagState`'s fields, so it names every field and no other.
+ *
+ * @template T - The value each field holds.
+ * @param map - The value for one flag.
+ * @returns One value for each field.
+ */
+function byDayFlagField<T>(map: (flag: CalendarDayFlag) => T): DayFlagFields<T> {
+  return {
+    selected: map(DAY_FLAG_NAMES.selected),
+    selectionStart: map(DAY_FLAG_NAMES.selectionStart),
+    selectionEnd: map(DAY_FLAG_NAMES.selectionEnd),
+    inRange: map(DAY_FLAG_NAMES.inRange),
+    highlighted: map(DAY_FLAG_NAMES.highlighted),
+    invalid: map(DAY_FLAG_NAMES.invalid),
+  };
+}
 
 /**
  * A day's flags as the booleans of its render state: `selected`, `selectionStart`,
@@ -129,11 +150,7 @@ const DAY_FLAG_FIELDS = {
  */
 export function dayFlagState(flags: CalendarDayFlags): CalendarDayFlagState {
   const present = new Set(flags.split(" "));
-  // SAFETY: DAY_FLAG_FIELDS names one field for each flag, and the six flags' fields are the six
-  // fields of CalendarDayFlagState, so the entries build exactly that object.
-  return Object.fromEntries(
-    DAY_FLAGS.map((flag) => [DAY_FLAG_FIELDS[flag], present.has(flag)])
-  ) as CalendarDayFlagState;
+  return byDayFlagField((flag) => present.has(flag));
 }
 
 /** A render-state attribute writer, in the shape of Base UI's `stateAttributesMapping`. */
@@ -144,14 +161,9 @@ type BooleanStateAttribute = (value: boolean) => Record<string, string> | null;
  * attribute from a `CalendarDayFlagState`. A part whose `useRender` state spreads the flag state,
  * such as the day button, passes these so every flag reaches the DOM under the same name.
  */
-export const DAY_FLAG_STATE_ATTRIBUTES: Readonly<Record<keyof CalendarDayFlagState, BooleanStateAttribute>> =
-  // SAFETY: as in dayFlagState, the six flags' fields are exactly CalendarDayFlagState's keys.
-  Object.fromEntries(
-    DAY_FLAGS.map((flag) => [
-      DAY_FLAG_FIELDS[flag],
-      (value: boolean) => (value ? { [`data-${flag}`]: "" } : null),
-    ])
-  ) as Record<keyof CalendarDayFlagState, BooleanStateAttribute>;
+export const DAY_FLAG_STATE_ATTRIBUTES: DayFlagFields<BooleanStateAttribute> = byDayFlagField(
+  (flag) => (value: boolean) => (value ? { [`data-${flag}`]: "" } : null)
+);
 
 /**
  * The selection model a Root owns, and the one seam between the shared parts and how days are
