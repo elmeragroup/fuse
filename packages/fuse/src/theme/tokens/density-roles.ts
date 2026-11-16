@@ -766,6 +766,20 @@ export const PART_DENSITY = {
   "tooltip-trigger": "control",
   "tooltip-content": "surface",
 
+  // The popup pads with the Popover shell's surface tier; the step buttons and the close button
+  // render Button. The progress is `text-xs`, and the live region is visually hidden.
+  "tour-target": "layout",
+  "tour-popup": "surface",
+  "tour-header": "layout",
+  "tour-progress": "fixed",
+  "tour-close": "control",
+  "tour-title": "fixed",
+  "tour-description": "fixed",
+  "tour-footer": "layout",
+  "tour-skip": "control",
+  "tour-prev": "control",
+  "tour-next": "control",
+
   "data-table-filter-bar": "layout",
   "data-table-filter-bar-row": "surface",
   "data-table-filter-trigger": "control",

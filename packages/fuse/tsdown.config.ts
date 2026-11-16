@@ -4,17 +4,17 @@ import { defineConfig } from "tsdown";
 import { entries } from "./scripts/entries.ts";
 
 /**
- * Keeps each chart namespace an ES module namespace in `dist`. Rolldown turns `export * as Chart`
- * into a getter object, which no consumer bundler can shake part by part, but it emits an
- * external module's namespace re-export as written. Each parts module is its own entry, so the
- * external specifier points at its emitted sibling.
+ * Keeps the namespace of each `src/components/<component>/*-namespace.ts` module an ES module
+ * namespace in `dist`. Rolldown turns `export * as Chart` into a getter object, which no consumer
+ * bundler can shake part by part, but it emits an external module's namespace re-export as written.
+ * Each parts module is its own entry, so the external specifier points at its emitted sibling.
  */
-const chartNamespaces = {
-  name: "fuse-chart-namespaces",
+const componentNamespaces = {
+  name: "fuse-component-namespaces",
   resolveId(id: string, importer: string | undefined) {
     if (
       importer === undefined ||
-      !/[\\/]components[\\/]chart[\\/][a-z-]+-namespace\.(?:d\.)?ts$/u.test(importer)
+      !/[\\/]components[\\/][a-z-]+[\\/][a-z-]+-namespace\.(?:d\.)?ts$/u.test(importer)
     )
       return null;
     if (!/^\.\/[a-z-]+-parts$/u.test(id)) return null;
@@ -34,7 +34,7 @@ export default defineConfig({
   dts: { tsgo: { path: fileURLToPath(new URL("node_modules/.bin/tsrs", import.meta.url)) } },
   clean: true,
   sourcemap: true,
-  plugins: [chartNamespaces],
+  plugins: [componentNamespaces],
   // Keep validateTheme's runtime NODE_ENV branch.
   define: {
     "process.env.NODE_ENV": "process.env.NODE_ENV",

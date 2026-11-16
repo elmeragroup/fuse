@@ -14,6 +14,8 @@ import type { TourRecordChange } from "./tour-session";
 /**
  * Where a `Tour.Provider` keeps tour records. Implement it to keep records on a backend, or use
  * `remoteTourStorage`.
+ *
+ * @beta
  */
 export type TourStorage = {
   /** Reads every tour's record. It may throw or reject; the Provider then keeps records in memory. */
@@ -35,6 +37,8 @@ export type TourStorage = {
  *
  * @param seed - The records it starts with.
  * @returns The storage.
+ *
+ * @beta
  */
 export function memoryTourStorage(seed: TourRecords = NO_TOUR_RECORDS): TourStorage {
   let records = seed;
@@ -46,10 +50,18 @@ export function memoryTourStorage(seed: TourRecords = NO_TOUR_RECORDS): TourStor
   };
 }
 
-/** The localStorage key `localTourStorage` uses by default. */
+/**
+ * The localStorage key `localTourStorage` uses by default.
+ *
+ * @beta
+ */
 export const TOUR_STORAGE_KEY = "fuse-tours";
 
-/** Options for `localTourStorage`. */
+/**
+ * Options for `localTourStorage`.
+ *
+ * @beta
+ */
 export type LocalTourStorageOptions = {
   /** The localStorage key. */
   readonly key?: string;
@@ -62,6 +74,8 @@ export type LocalTourStorageOptions = {
  *
  * @param options - The key.
  * @returns The storage.
+ *
+ * @beta
  */
 export function localTourStorage({ key = TOUR_STORAGE_KEY }: LocalTourStorageOptions = {}): TourStorage {
   const stored = (): TourRecords => parseTourRecordsJson(window.localStorage.getItem(key));
@@ -85,7 +99,11 @@ export function localTourStorage({ key = TOUR_STORAGE_KEY }: LocalTourStorageOpt
   };
 }
 
-/** Options for `remoteTourStorage`. */
+/**
+ * Options for `remoteTourStorage`.
+ *
+ * @beta
+ */
 export type RemoteTourStorageOptions = {
   /**
    * Loads every tour's record from the backend, such as through `fetch` or a Server Action. The
@@ -103,6 +121,8 @@ export type RemoteTourStorageOptions = {
  *
  * @param options - How to load and save.
  * @returns The storage.
+ *
+ * @beta
  */
 export function remoteTourStorage({ load, save }: RemoteTourStorageOptions): TourStorage {
   return {
@@ -111,7 +131,11 @@ export function remoteTourStorage({ load, save }: RemoteTourStorageOptions): Tou
   };
 }
 
-/** Options for `layeredTourStorage`. */
+/**
+ * Options for `layeredTourStorage`.
+ *
+ * @beta
+ */
 export type LayeredTourStorageOptions = {
   /** How long a read waits for the remote before it answers with the cache, in milliseconds. */
   readonly waitMs?: number;
@@ -131,6 +155,8 @@ export const DEFAULT_LAYERED_WAIT_MS = 1200;
  * @param remote - The durable storage.
  * @param options - How long a read waits for the remote. Defaults to 1,200 milliseconds.
  * @returns The storage.
+ *
+ * @beta
  */
 export function layeredTourStorage(
   cache: TourStorage,

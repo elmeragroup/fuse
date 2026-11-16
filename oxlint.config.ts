@@ -667,6 +667,7 @@ export default defineConfig({
         "packages/fuse/src/components/*/index.ts",
         "packages/fuse/src/components/chart/*-namespace.ts",
         "packages/fuse/src/components/chart/*-parts.ts",
+        "packages/fuse/src/components/tour/tour-namespace*.ts",
         "packages/fuse/src/components/chart/format/**/*.ts",
         "packages/fuse/src/components/chart/layout/**/*.ts",
         "packages/fuse/src/components/checkbox/checkbox-item.tsx",
@@ -698,6 +699,14 @@ export default defineConfig({
         "fuse/no-color-literal": "error",
         "fuse/no-display-name-assignment": "error",
         "fuse/no-theme-color-write": "error",
+      },
+    },
+    {
+      // The tour entry's API report reads each part as one declaration, and a `displayName`
+      // assignment adds a second one without the part's release tag.
+      files: ["packages/fuse/src/components/tour/**/*.{ts,tsx}"],
+      rules: {
+        "fuse/no-display-name-assignment": "error",
       },
     },
     {

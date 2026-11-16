@@ -8,25 +8,26 @@ import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
 /**
- * Writes each chart namespace module's declarations from its source, which holds only JSDoc and
- * `export * as` lines. The declaration bundler drops the namespaces' JSDoc, which carries the
- * preview label and the growth rule, so the source text becomes the declaration, with each parts
- * specifier pointing at its emitted sibling.
+ * Writes the declarations of each `src/components/<component>/*-namespace.ts` module from its source,
+ * which holds only JSDoc and `export * as` lines. The declaration bundler drops the namespaces'
+ * JSDoc, which carries the preview label and the growth rule, so the source text becomes the
+ * declaration, with each parts specifier pointing at its emitted sibling.
  */
-function writeChartNamespaceDeclarations(packageRoot: string): void {
-  const source = join(packageRoot, "src/components/chart");
-  for (const name of readdirSync(source).filter((file) => file.endsWith("-namespace.ts"))) {
+function writeNamespaceDeclarations(packageRoot: string): void {
+  const source = join(packageRoot, "src/components");
+  const modules = readdirSync(source, { recursive: true, encoding: "utf8" });
+  for (const name of modules.filter((file) => /^[a-z-]+[\\/][a-z-]+-namespace\.ts$/u.test(file))) {
     const text = readFileSync(join(source, name), "utf8").replaceAll(
       /(from "\.\/[a-z-]+-parts)";$/gmu,
       '$1.js";'
     );
-    writeFileSync(join(packageRoot, "dist/components/chart", name.replace(/\.ts$/u, ".d.ts")), text);
+    writeFileSync(join(packageRoot, "dist/components", name.replace(/\.ts$/u, ".d.ts")), text);
   }
 }
 
 export function buildPackage(packageRoot: string, release?: ReleaseStamp): void {
   runCommand("pnpm", ["exec", "tsdown"], packageRoot);
-  writeChartNamespaceDeclarations(packageRoot);
+  writeNamespaceDeclarations(packageRoot);
 
   buildCss(packageRoot);
 
