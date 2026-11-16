@@ -14,7 +14,7 @@ import type { ChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
 import { referenceSentence } from "./chart-reference-text";
 import { sameShallow, useSteady } from "./chart-steady";
-import { slotLabel } from "./chart-text";
+import { linearLabel, slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -39,13 +39,15 @@ import {
 import type { PlotFrame } from "./layout/plot-frame";
 import { slotCenter, valueTop } from "./layout/plot-geometry";
 import type { LabelSize } from "./layout/reference-labels";
-import { stringOf } from "./layout/scalar";
+import { numberOf, stringOf } from "./layout/scalar";
+import { domainShare } from "./layout/tick-fit";
 import { slotOf } from "./layout/x-domain";
 
 /**
  * Props for `Chart.ReferenceLine`, a closed part. It takes either `y` with a `ValueFormat` or `x`
  * with an `XFormat`. Without a format, a `y` line prints through the layout's first series' format
- * and an `x` line through the interval's label preset.
+ * and an `x` line through the interval's label preset. Under `xScale="linear"` an `x` line marks any
+ * number at its true place, between rows too, and prints it in Root's `xFormat`.
  *
  * @beta
  */
@@ -55,8 +57,8 @@ export type ChartReferenceLineProps = ChartLayerProps &
         /** The value the line marks. A line takes a `y` or an `x`. */
         y: number;
         /**
-         * The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a
-         * `y` or an `x`.
+         * The x the line marks. An x string on a time axis, or anything but a number on a linear
+         * axis, throws `x-type-mismatch`. A line takes a `y` or an `x`.
          */
         x?: never;
         /**
@@ -67,8 +69,8 @@ export type ChartReferenceLineProps = ChartLayerProps &
       }
     | {
         /**
-         * The x the line marks. An x string on a time axis throws `x-type-mismatch`. A line takes a
-         * `y` or an `x`.
+         * The x the line marks. An x string on a time axis, or anything but a number on a linear
+         * axis, throws `x-type-mismatch`. A line takes a `y` or an `x`.
          */
         x: ChartX;
         /** The value the line marks. A line takes a `y` or an `x`. */
@@ -90,6 +92,8 @@ export type ChartReferenceLineProps = ChartLayerProps &
 
 /**
  * Props for `Chart.ReferenceArea`, a closed part. It takes either `y1` and `y2` or `x1` and `x2`.
+ * Under `xScale="linear"` an x band runs between any two numbers at their true places, such as a
+ * tariff step from 5 to 10 kW, and prints them in Root's `xFormat`.
  *
  * @beta
  */
@@ -101,13 +105,13 @@ export type ChartReferenceAreaProps = ChartLayerProps &
         /** The band's last value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y2: number;
         /**
-         * The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes
-         * `y1` and `y2`, or `x1` and `x2`.
+         * The band's first x. An x string on a time axis, or anything but a number on a linear axis,
+         * throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.
          */
         x1?: never;
         /**
-         * The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1`
-         * and `y2`, or `x1` and `x2`.
+         * The band's last x. An x string on a time axis, or anything but a number on a linear axis,
+         * throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.
          */
         x2?: never;
         /**
@@ -118,13 +122,13 @@ export type ChartReferenceAreaProps = ChartLayerProps &
       }
     | {
         /**
-         * The band's first x. An x string on a time axis throws `x-type-mismatch`. A band takes
-         * `y1` and `y2`, or `x1` and `x2`.
+         * The band's first x. An x string on a time axis, or anything but a number on a linear axis,
+         * throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.
          */
         x1: ChartX;
         /**
-         * The band's last x. An x string on a time axis throws `x-type-mismatch`. A band takes `y1`
-         * and `y2`, or `x1` and `x2`.
+         * The band's last x. An x string on a time axis, or anything but a number on a linear axis,
+         * throws `x-type-mismatch`. A band takes `y1` and `y2`, or `x1` and `x2`.
          */
         x2: ChartX;
         /** The band's first value. A band takes `y1` and `y2`, or `x1` and `x2`. */
@@ -145,11 +149,33 @@ export type ChartReferenceAreaProps = ChartLayerProps &
   };
 
 /**
- * The slot a child x prop names. A string on a time axis, or a `Date` or number on a category axis,
- * throws `x-type-mismatch` in every build.
+ * The number a child x prop names on a linear axis. Anything but a number throws `x-type-mismatch`
+ * in every build.
+ */
+function linearX(part: string, x: ChartX): number {
+  const value = numberOf(x);
+  if (value === undefined) {
+    throw new ChartCompositionError(
+      part,
+      "x-type-mismatch",
+      `received a ${stringOf(x) === undefined ? "Date" : "string"} on a linear axis. Pass the x number.`
+    );
+  }
+  return value;
+}
+
+/** Where a number lies on a linear axis, as a percent of the x domain from its lower bound. */
+function linearShare(context: ChartRootContextValue, value: number): number {
+  return domainShare(context.model.x?.domain ?? [0, 1], value) * 100;
+}
+
+/**
+ * The slot a child x prop names. A string on a time axis, a `Date` or number on a category axis,
+ * or anything but a number on a linear axis throws `x-type-mismatch` in every build.
  */
 export function childSlot(context: ChartRootContextValue, part: string, x: ChartX): number {
   const { domain } = context.model;
+  if (domain.kind === "linear") return slotOf(domain, linearX(part, x));
   const isString = stringOf(x) !== undefined;
   if ((domain.kind === "time") === isString) {
     throw new ChartCompositionError(
@@ -345,7 +371,6 @@ type ReferenceLook = {
   readonly kind: "line" | "area";
   readonly frame: PlotFrame | null;
   readonly axis: "value" | "slot";
-  readonly xScale: "band" | "point";
   readonly label: StackedLabel;
 };
 
@@ -434,17 +459,10 @@ type ReferenceDrawn = {
  * outside the plot for a slot outside the window. A slot line inside the plot draws inside its
  * slot's band, as `slotLineAt` draws it, and its span starts where the rule does.
  */
-function lineDrawn(
-  frame: PlotFrame,
-  axis: "value" | "slot",
-  at: number,
-  width: number,
-  xScale: "band" | "point"
-): ReferenceDrawn {
+function lineDrawn(frame: PlotFrame, axis: "value" | "slot", at: number, width: number): ReferenceDrawn {
   const [low, high] = axisBounds(frame, axis);
   const outside = at < low || at > high;
-  const start =
-    axis === "slot" && !outside ? slotLineAt(frame, at, xScale, width)[0] : drawnPixel(frame, axis, at);
+  const start = axis === "slot" && !outside ? slotLineAt(frame, at, width)[0] : drawnPixel(frame, axis, at);
   const span = [start, start] as const;
   return { outside, clipped: false, span, guide: outside ? null : span };
 }
@@ -456,12 +474,12 @@ const referencePart = partsCache((node) =>
 
 /** Draws a line from the loop's numbers, its coordinate and its width. */
 function drawLine(node: HTMLDivElement, look: ReferenceLook, values: MarkValues): void {
-  const { frame, axis, xScale, label } = look;
+  const { frame, axis, label } = look;
   if (frame === null) return;
   const [pixel = 0, tweened = 1] = values;
   // The rule's width in whole device pixels, which its stroke and its label's centering read.
   const width = wholeWidth(frame.box, tweened);
-  const state = lineDrawn(frame, axis, pixel, width, xScale);
+  const state = lineDrawn(frame, axis, pixel, width);
   const share = referenceShare(frame, axis, state.span[0]);
   writeStyle(node, "--chart-at", `${String(share)}%`);
   writeStyle(node, "--chart-x", String(share / 100));
@@ -559,7 +577,13 @@ export function ChartReferenceLine({
   let axis: "value" | "slot";
   // The line's place in the window when it marks a slot, which draws it inside the slot's band.
   let position: number | null = null;
-  if (props.y === undefined) {
+  if (props.y === undefined && context.model.x !== null) {
+    // A linear axis marks the number itself, wherever it lies between the rows.
+    const x = linearX("Chart.ReferenceLine", props.x);
+    at = linearShare(context, x);
+    value = linearLabel(context, x);
+    axis = "slot";
+  } else if (props.y === undefined) {
     const window = context.model.window;
     const slot = childSlot(context, "Chart.ReferenceLine", props.x);
     at = window === null || slot === -1 ? -1 : slotCenter(window, slot, context.xScale) * 100;
@@ -590,14 +614,14 @@ export function ChartReferenceLine({
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;
   const look = useMemo(
-    (): ReferenceLook => ({ kind: "line", frame, axis, xScale: context.xScale, label: stacked }),
-    [frame, axis, context.xScale, stacked]
+    (): ReferenceLook => ({ kind: "line", frame, axis, label: stacked }),
+    [frame, axis, stacked]
   );
   // A line tweens its unsnapped coordinate, a value's edge or its slot's center, and its width, which
   // a slot line narrows to its band. A slot line draws inside its band, as the crosshair does.
   const ruleWidth = (measured: PlotFrame): number => {
     if (position === null) return hairline(measured.box);
-    const [start, end] = slotLine(measured, position, context.xScale);
+    const [start, end] = slotLine(measured, position);
     return end - start;
   };
   const target = (measured: PlotFrame) => [plotCoordinate(measured, axis, at), ruleWidth(measured)] as const;
@@ -606,12 +630,7 @@ export function ChartReferenceLine({
   const rule = (measured: PlotFrame) => {
     const [coordinate, wide] = target(measured);
     const width = wholeWidth(measured.box, wide);
-    return lineAttributes(
-      measured,
-      axis,
-      lineDrawn(measured, axis, coordinate, width, context.xScale).span[0],
-      width
-    );
+    return lineAttributes(measured, axis, lineDrawn(measured, axis, coordinate, width).span[0], width);
   };
   const ruleAttributes = useFirstDraw(() => (frame === null ? null : rule(frame)));
   return (
@@ -656,7 +675,18 @@ export function ChartReferenceArea({
   let to: number;
   let value: FormattedText;
   let axis: "value" | "slot";
-  if (props.y1 === undefined) {
+  if (props.y1 === undefined && context.model.x !== null) {
+    // A linear axis bands the numbers themselves, wherever they lie between the rows.
+    const x1 = linearX("Chart.ReferenceArea", props.x1);
+    const x2 = linearX("Chart.ReferenceArea", props.x2);
+    const a = linearShare(context, x1);
+    const b = linearShare(context, x2);
+    from = Math.min(a, b);
+    to = Math.max(a, b);
+    const [low, high] = x2 < x1 ? [x2, x1] : [x1, x2];
+    value = rangeText(linearLabel(context, low), linearLabel(context, high), strings.valueRange);
+    axis = "slot";
+  } else if (props.y1 === undefined) {
     const window = context.model.window;
     const a = childSlot(context, "Chart.ReferenceArea", props.x1);
     const b = childSlot(context, "Chart.ReferenceArea", props.x2);
@@ -709,8 +739,8 @@ export function ChartReferenceArea({
   const { ref: labelRef } = stacked;
   const frame = drawn?.frame ?? null;
   const look = useMemo(
-    (): ReferenceLook => ({ kind: "area", frame, axis, xScale: context.xScale, label: stacked }),
-    [frame, axis, context.xScale, stacked]
+    (): ReferenceLook => ({ kind: "area", frame, axis, label: stacked }),
+    [frame, axis, stacked]
   );
   // A band keeps its edges unsnapped until it draws, so a band narrower than a device pixel keeps
   // one, and whether it lies inside the plot or past its top never rests on a snap.

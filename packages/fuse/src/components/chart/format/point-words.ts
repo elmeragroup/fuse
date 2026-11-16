@@ -1,7 +1,8 @@
 /**
- * The point word in the four locales. A scatter chart counts its points with it, and a live line
- * chart its readings. It is a leaf apart from both families' dictionaries, so a live line route ships
- * no scatter words and no cartesian route ships it.
+ * The point word in the four locales. A scatter chart counts its points with it, a live line chart
+ * its readings, and a cartesian chart the slots of a linear x axis. It is a leaf apart from every
+ * family's dictionary, with no runtime dependencies, so each route that counts points shares one
+ * set of inflections and a live line route ships no scatter words.
  */
 import type { Inflected } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";

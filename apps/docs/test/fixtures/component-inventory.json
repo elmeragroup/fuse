@@ -79,6 +79,7 @@
       "area-chart-curve-step.tsx",
       "area-chart-curve-step-before.tsx",
       "area-chart-curve-step-after.tsx",
+      "area-chart-capacity-tariff.tsx",
       "area-chart-curve-bump.tsx",
       "area-chart-curve-basis.tsx",
       "area-chart-stacked.tsx",
@@ -197,6 +198,7 @@
       "bar-chart-stacked.tsx",
       "bar-chart-percent.tsx",
       "bar-chart-horizontal.tsx",
+      "bar-chart-heat-pump-output.tsx",
       "bar-chart-hatched.tsx",
       "bar-chart-duotone.tsx",
       "bar-chart-duotone-reverse.tsx",
@@ -996,6 +998,7 @@
     "demos": [
       "line-chart-demo.tsx",
       "line-chart-point-scale.tsx",
+      "line-chart-charging-curve.tsx",
       "line-chart-no-zero-baseline.tsx",
       "line-chart-curve-linear.tsx",
       "line-chart-curve-monotone-y.tsx",

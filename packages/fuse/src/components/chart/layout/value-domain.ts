@@ -4,6 +4,7 @@
  * first, because d3 cannot nice a range of zero width. No bound or tick is ever −0.
  */
 import { linearScale, niceScale, scaleTicks } from "./linear-scale";
+import { sameItems } from "./same-items";
 
 /** Whether a layout's domain keeps 0. */
 export type Baseline = "zero" | "none";
@@ -33,6 +34,12 @@ export type ValueDomain = {
 
 /** Every value axis aims for 5 ticks, as the Figma price chart does. */
 const TICK_COUNT = 5;
+
+/**
+ * The tick count a numeric x axis aims for, d3's own default, since it runs along the plot's long
+ * side: a scatter chart's x axis and a cartesian chart's linear one.
+ */
+export const X_TICK_COUNT = 10;
 
 /**
  * A range narrower than this fraction of its magnitude follows the flat rule. A double carries
@@ -65,6 +72,19 @@ const TINY = 1e-15;
 
 /** The domain of a layout with no value, `[0, 1]` with d3's ticks. */
 export const EMPTY_DOMAIN: ValueDomain = { domain: [0, 1], ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] };
+
+/**
+ * Whether two value domains hold the same bounds and ticks, as a data update that keeps a linear
+ * axis's x range builds them.
+ *
+ * @param a - One domain, or null.
+ * @param b - The other, or null.
+ * @returns Whether they match.
+ */
+export function sameValueDomain(a: ValueDomain | null, b: ValueDomain | null): boolean {
+  if (a === null || b === null) return a === b;
+  return sameItems(a.domain, b.domain) && sameItems(a.ticks, b.ticks);
+}
 
 /** Turns −0 into 0 and leaves every other number alone. */
 function withoutNegativeZero(value: number): number {

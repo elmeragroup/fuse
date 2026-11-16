@@ -1,7 +1,7 @@
 ---
 lede: >
   Preview, so names and props can change until Fuse's first stable release. Bars, lines and areas
-  over a category or time axis, with Panels for charts that mix units.
+  over a category, time or numeric axis, with Panels for charts that mix units.
 ---
 
 import { ChartActiveDot } from "./demos/chart-active-dot";
@@ -124,7 +124,7 @@ import "@elmeragroup/fuse/chart.css";
 
 <Prose>
 
-`Chart.Root` reads every series from `config` and draws its children in the order you write them, so write the parts in paint order. Bars, lines and areas in one Root share its x axis and one value axis. To give series of different units their own value axis, put each set in a `Chart.Panel`. The Panels stack as rows over Root's x axis and share its tooltip, legend and table. `BarChart`, `LineChart` and `AreaChart` are `Chart` under other names, so their parts mix in one Root. For a numeric x axis, use [`ScatterChart`](/components/scatter-chart).
+`Chart.Root` reads every series from `config` and draws its children in the order you write them, so write the parts in paint order. Bars, lines and areas in one Root share its x axis and one value axis. To give series of different units their own value axis, put each set in a `Chart.Panel`. The Panels stack as rows over Root's x axis and share its tooltip, legend and table. `BarChart`, `LineChart` and `AreaChart` are `Chart` under other names, so their parts mix in one Root. For a cloud of points with several per x, use [`ScatterChart`](/components/scatter-chart).
 
 </Prose>
 

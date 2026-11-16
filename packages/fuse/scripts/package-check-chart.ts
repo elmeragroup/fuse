@@ -171,9 +171,10 @@ const SCATTER_ROUTE_FORBIDDEN: readonly Forbidden[] = [
 
 /**
  * The scatter family's code no cartesian route ships, the reverse of the scatter rule: its parts,
- * its model, its frame, its point index, its words and the point word it shares with a live line
- * chart. A live line chart draws through the scatter frame, so the frame is scatter's, not shared
- * cartesian code. The rule also matches the words and data messages by their text, so one that
+ * its model, its frame, its point index and its words. A live line chart draws through the scatter
+ * frame, so the frame is scatter's, not shared cartesian code. The point word is shared, because a
+ * scatter chart, a live line chart and a cartesian chart's linear x axis all count with
+ * `point-words.ts`. The rule also matches the words and data messages by their text, so one that
  * moves back into the cartesian dictionary or `DATA_MESSAGES` trips it too.
  */
 const CARTESIAN_ROUTE_FORBIDDEN: readonly Forbidden[] = [
@@ -182,7 +183,6 @@ const CARTESIAN_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   { label: "scatter frame", module: /^scatter-frame\./u },
   { label: "point index", module: /^point-index\./u },
   { label: "scatter words", module: /^scatter-strings\./u },
-  { label: "point words", module: /^point-words\./u },
   { label: "scatter axis words", text: /x-verdi/u },
   { label: "scatter data messages", text: /received an x cell/u },
 ];

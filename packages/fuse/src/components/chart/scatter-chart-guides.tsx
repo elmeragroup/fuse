@@ -7,11 +7,10 @@ import type { ChartLayerProps, ChartTone, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
-import { labelWidth } from "./layout/label-width";
 import { hairline, ruleAcross } from "./layout/plot-frame";
 import { valueTop } from "./layout/plot-geometry";
 import { frameX, frameY, referenceInDomains } from "./layout/scatter-frame";
-import { thinTicks } from "./layout/tick-fit";
+import { domainShare, thinValueTicks } from "./layout/tick-fit";
 import { useScatterDomains, useScatterFrame, useScatterRoot } from "./scatter-chart-context";
 import { xValueText, yFormatOf } from "./scatter-chart-text";
 
@@ -168,18 +167,6 @@ export function ScatterChartGrid({
 }
 
 /**
- * The tick strides an x axis thins by. Each divides the next, so every wider width bucket shows a
- * superset of a narrower one's labels, as the thinning requires, and each keeps a nice step.
- */
-const STRIDES = [1, 2, 10, 20, 100] as const;
-
-/** A domain share, never −0. */
-function shareOf(domain: readonly [number, number], value: number): number {
-  const [low, high] = domain;
-  return high === low ? 0.5 : (value - low) / (high - low) + 0;
-}
-
-/**
  * The x axis along the bottom, with d3 nice ticks over the data. When the labels do not fit, the
  * axis shows fewer: each width bucket shows the smallest stride whose labels fit, and a wider axis
  * never shows fewer labels than a narrower one. It is plot output, so it is hidden from screen
@@ -201,25 +188,12 @@ export function ScatterChartXAxis({
   const drawn = useScatterDomains(context).x;
   const labels = useMemo(() => {
     const texts = ticks.map((value) => formatValue(locale, value, format ?? xFormat, "tick").text);
-    // The candidates keep every 1st, 2nd or 10th tick, counted from the lowest, so the shown
-    // values keep a nice step of the ticks' own, such as −2, 2, 6 and so on up to 18.
-    const strides = STRIDES.filter((stride) => stride === 1 || stride < texts.length).map((stride) => ({
-      slots: texts.flatMap((_text, slot) => (slot % stride === 0 ? [slot] : [])),
-    }));
-    const shown = thinTicks(strides, {
-      position: (slot) => shareOf(domain, ticks[slot] ?? 0),
-      width: (slot) => labelWidth(texts[slot] ?? ""),
-    });
-    return shown.map(({ slot, visibility }) => ({
-      value: ticks[slot] ?? 0,
-      text: texts[slot] ?? "",
-      visibility,
-    }));
+    return thinValueTicks(ticks, domain, texts);
   }, [ticks, domain, locale, xFormat, format]);
   return (
     <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={style}>
       {labels.flatMap(({ value, text, visibility }) => {
-        const at = shareOf(drawn, value);
+        const at = domainShare(drawn, value);
         return at < -1e-9 || at > 1 + 1e-9
           ? []
           : [
@@ -266,7 +240,7 @@ export function ScatterChartYAxis({
         ))}
       </span>
       {labels.flatMap(({ value, text }) => {
-        const at = shareOf(drawn, value);
+        const at = domainShare(drawn, value);
         return at < -1e-9 || at > 1 + 1e-9
           ? []
           : [
@@ -334,7 +308,8 @@ export function ScatterChartReferenceLine({
   // The label sits at the line's x or y, at a horizontal line's right end, and at both coordinates
   // of a segment's visible last end. `share` is the label's x as a share of the plot's width.
   const end = part?.[1];
-  const share = axis === "value" ? 1 : shareOf(drawn.x, axis === "slot" ? (props.x ?? 0) : (end?.[0] ?? 0));
+  const share =
+    axis === "value" ? 1 : domainShare(drawn.x, axis === "slot" ? (props.x ?? 0) : (end?.[0] ?? 0));
   const at =
     axis === "slot" ? share * 100 : valueTop(drawn.y, axis === "value" ? (props.y ?? 0) : (end?.[1] ?? 0));
   const shown = label === undefined ? value.spoken : label.replace("{value}", value.spoken);

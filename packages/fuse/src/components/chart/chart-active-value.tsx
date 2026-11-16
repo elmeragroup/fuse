@@ -224,9 +224,7 @@ function PlotValue({
   useChartFollower("Chart.ActiveValue", (active, cause) => {
     const shown = active?.slot ?? slot;
     const center =
-      drawn === null || window === null || shown === null
-        ? 0
-        : centerOf(drawn.frame, shown - window.first, context.xScale);
+      drawn === null || window === null || shown === null ? 0 : centerOf(drawn.frame, shown - window.first);
     // The value joins what draws its slot, so a step onto a bar mid-update draws at that bar's tip.
     const cell = cellAt(context, dataKey, shown);
     const tip = drawn === null || cell === null ? 0 : barTip(drawn.frame, cell);

@@ -14,22 +14,30 @@ export type SlotKeys = {
 };
 
 /**
- * One slot's identity, its start instant on a time axis or its name on a category axis.
+ * One slot's identity: its start instant on a time axis, its number on a linear axis or its name on
+ * a category axis.
  *
  * @param domain - The domain.
  * @param slot - The slot.
  * @returns The identity, the slot's index for a slot the domain lacks.
  */
 export function slotId(domain: XDomain, slot: number): string {
-  return domain.kind === "time" ? String(domain.starts[slot] ?? slot) : (domain.names[slot] ?? String(slot));
+  switch (domain.kind) {
+    case "time":
+      return String(domain.starts[slot] ?? slot);
+    case "linear":
+      return String(domain.values[slot] ?? slot);
+    case "category":
+      return domain.names[slot] ?? String(slot);
+  }
 }
 
 /** Each domain's slot identities, made once per domain. */
 const idsOf = new WeakMap<XDomain, readonly string[]>();
 
 /**
- * Every slot's identity, its start instant on a time axis or its name on a category axis, as
- * `slotId` gives it, made once per domain.
+ * Every slot's identity, its start instant on a time axis, its number on a linear axis or its name
+ * on a category axis, as `slotId` gives it, made once per domain.
  *
  * @param domain - The domain.
  * @returns One identity per slot, by slot index.
@@ -37,15 +45,23 @@ const idsOf = new WeakMap<XDomain, readonly string[]>();
 export function slotIds(domain: XDomain): readonly string[] {
   let ids = idsOf.get(domain);
   if (ids === undefined) {
-    ids = domain.kind === "time" ? domain.starts.map(String) : domain.names;
+    ids =
+      domain.kind === "time"
+        ? domain.starts.map(String)
+        : domain.kind === "linear"
+          ? domain.values.map(String)
+          : domain.names;
     idsOf.set(domain, ids);
   }
   return ids;
 }
 
-/** Whether two domains count slots alike, so position pairing applies between them. */
+/**
+ * Whether two domains count slots alike, so position pairing applies between them: two category
+ * axes, two linear axes, or two time axes of one interval and zone.
+ */
 function sameGrid(previous: XDomain, next: XDomain): boolean {
-  if (previous.kind === "category" || next.kind === "category") return previous.kind === next.kind;
+  if (previous.kind !== "time" || next.kind !== "time") return previous.kind === next.kind;
   return previous.interval === next.interval && previous.timeZone === next.timeZone;
 }
 

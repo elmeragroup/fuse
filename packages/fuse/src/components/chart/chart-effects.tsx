@@ -79,11 +79,7 @@ export function ChartReveal({ className, style, children }: ChartRevealProps): R
     const at =
       active === null || drawn === null || window === null
         ? null
-        : pointAlong(
-            drawn.frame,
-            slotCenterAt(drawn.frame, active.slot - window.first, context.xScale),
-            context.xScale
-          );
+        : pointAlong(drawn.frame, slotCenterAt(drawn.frame, active.slot - window.first));
     const from = shown.current;
     shown.current = at;
     // A step glides the edge from where it rested. Showing, hiding, a commit and reduced motion,

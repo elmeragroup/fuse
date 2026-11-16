@@ -7,6 +7,8 @@ import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useRootFrame } from "./chart-plot";
 import { sameShallow, useSteady } from "./chart-steady";
+import { linearLabel } from "./chart-text";
+import type { LinearXText } from "./chart-text";
 import type { ChartLayerProps, ValueFormat, XFormat } from "./chart-types";
 import type { Interval, TimePreset } from "./format/time-format";
 import { formatSlot, isClockPreset } from "./format/time-format";
@@ -15,8 +17,10 @@ import { labelWidth } from "./layout/label-width";
 import { runMargins } from "./layout/plot-frame";
 import { slotCenter, valueTop } from "./layout/plot-geometry";
 import type { SlotWindow } from "./layout/slot-window";
-import { fitsEveryBucket, thinTicks } from "./layout/tick-fit";
+import { domainShare, fitsEveryBucket, thinTicks, thinValueTicks } from "./layout/tick-fit";
 import type { ShownTick, TickVisibility } from "./layout/tick-fit";
+import { sameValueDomain } from "./layout/value-domain";
+import type { ValueDomain } from "./layout/value-domain";
 import { slotCount } from "./layout/x-domain";
 import type { XDomain } from "./layout/x-domain";
 import { tickStrides } from "./layout/x-ticks";
@@ -29,10 +33,12 @@ import type { TickStride } from "./layout/x-ticks";
  */
 export type ChartXAxisProps = ChartLayerProps & {
   /**
-   * The tick label format. Defaults to the interval's tick preset. A tick that starts a coarser
-   * calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset
-   * can't name a day, so those ticks keep their unit's default preset, such as `okt` under
-   * `format="hour-range"`. A calendar preset or Intl options format them as given.
+   * The tick label format of a time axis. Defaults to the interval's tick preset. A tick that starts
+   * a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock
+   * preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under
+   * `format="hour-range"`. A calendar preset or Intl options format them as given. A category axis
+   * prints its categories, and a linear axis prints d3 nice ticks over its x domain in Root's
+   * `xFormat`, so neither reads it.
    */
   format?: XFormat;
   /** The axis title. */
@@ -85,43 +91,68 @@ function tickFormat(format: XFormat | undefined, unit: Interval, coarser: boolea
 }
 
 /**
- * A slot's x axis label in the axis's format: the category itself, or the slot's start in the
- * interval's tick preset or `format`.
+ * A slot's x axis label in the axis's format: the category itself, the slot's start in the
+ * interval's tick preset or `format`, or a linear slot's number in Root's `xFormat`.
  *
- * @param input - The domain and the locale.
+ * @param input - The domain, the locale and a linear axis's x words.
  * @param slot - A slot index.
  * @param format - The axis's `format`, or undefined for the interval's tick preset.
  * @returns The label's visual text.
  */
 export function slotTickLabel(
-  input: { readonly domain: XDomain; readonly locale: ChartRootContextValue["locale"] },
+  input: {
+    readonly domain: XDomain;
+    readonly locale: ChartRootContextValue["locale"];
+    readonly xValue?: LinearXText | undefined;
+  },
   slot: number,
   format: XFormat | undefined
 ): string {
   const { domain, locale } = input;
   if (domain.kind === "category") return domain.names[slot] ?? "";
+  if (domain.kind === "linear") return linearLabel(input, domain.values[slot] ?? 0, "tick").text;
   const preset = tickFormat(format, domain.interval, false);
   return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, preset, "tick").text;
 }
 
 /** One x tick ready to draw. */
 type XTick = {
+  /** The slot a slot axis's tick names, or the tick's place among a linear axis's nice ticks. */
   readonly slot: number;
+  /** A linear axis's tick number, which keys its node, or undefined on a slot axis. */
+  readonly value: number | undefined;
   readonly text: string;
   readonly at: number;
   readonly visibility: ShownTick["visibility"];
 };
 
-/** What the x ticks read: the domain and the window, never the values. */
-type XTickInput = Pick<ChartRootContextValue, "locale" | "xScale" | "orientation"> & {
+/** What the x ticks read: the domain, the window and a linear axis's x domain, never the values. */
+type XTickInput = Pick<ChartRootContextValue, "locale" | "xScale" | "orientation" | "xValue"> & {
   readonly domain: XDomain;
   readonly window: SlotWindow | null;
+  readonly x: ValueDomain | null;
 };
+
+/**
+ * A linear axis's ticks: d3 nice ticks over its x domain at their shares, thinned as a scatter
+ * chart's x axis thins them, in Root's `xFormat`.
+ */
+function linearTicks(input: XTickInput, x: ValueDomain): XTick[] {
+  const texts = x.ticks.map((value) => linearLabel(input, value, "tick").text);
+  return thinValueTicks(x.ticks, x.domain, texts).map(({ value, text, visibility }, slot) => ({
+    slot,
+    value,
+    text,
+    at: domainShare(x.domain, value),
+    visibility,
+  }));
+}
 
 /** The x axis's ticks over the window, each with its text, place and visibility. */
 function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
   const { domain, window, locale, xScale, orientation } = input;
   if (window === null) return [];
+  if (input.x !== null) return linearTicks(input, input.x);
   const inWindow = (slot: number): boolean => slot >= window.first && slot <= window.last;
   const whole = window.first === 0 && window.last === slotCount(domain) - 1;
   const strides = tickStrides(domain);
@@ -138,7 +169,7 @@ function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
     for (const slot of entry.slots) unitOf.set(slot, entry.unit);
   }
   const text = (slot: number, coarse: boolean): string => {
-    if (domain.kind === "category" || !coarse) return slotTickLabel(input, slot, format);
+    if (domain.kind !== "time" || !coarse) return slotTickLabel(input, slot, format);
     const unit = unitOf.get(slot) ?? domain.interval;
     const preset = tickFormat(format, unit, unit !== domain.interval);
     return formatSlot(locale, domain.timeZone, domain.starts[slot] ?? 0, unit, preset, "tick").text;
@@ -169,6 +200,7 @@ function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
     const { label } = measure(false);
     return (own[0]?.slots ?? []).map((slot) => ({
       slot,
+      value: undefined,
       text: label(slot),
       at: position(slot),
       visibility: "always" as const,
@@ -182,6 +214,7 @@ function xTicks(input: XTickInput, format: XFormat | undefined): XTick[] {
   // Only ticks that show at some width render, so a year of hours draws a few spans, not 8,760.
   return thinTicks(coarse ? all : own, geometry).map(({ slot, visibility }) => ({
     slot,
+    value: undefined,
     text: label(slot),
     at: position(slot),
     visibility,
@@ -211,7 +244,8 @@ function inlineValueTicks(
 
 /**
  * The `xKey` axis in both orientations. It draws at the bottom, or at the left edge under
- * `orientation="horizontal"`. Labels never rotate. When long labels do not fit, the axis shows
+ * `orientation="horizontal"`. A time or category axis labels its slots, and a linear axis labels
+ * d3 nice numbers over its x domain, where no slot need lie. Labels never rotate. When long labels do not fit, the axis shows
  * fewer: each width bucket shows the smallest stride whose labels fit, and a wider axis never shows
  * fewer labels than a narrower one. The axis is plot output, so it is hidden from screen readers.
  *
@@ -235,9 +269,11 @@ export function ChartXAxis({
     axis.setFormat(steadyFormat);
     return () => axis.setFormat(undefined);
   }, [axis, steadyFormat]);
-  // A value update keeps the domain object, and the window by its two ends, so it keeps the ticks.
-  const { locale, xScale, orientation } = context;
+  // A value update keeps the domain object, the window by its two ends and a linear axis's x domain
+  // by its bounds and ticks, so it keeps the ticks.
+  const { locale, xScale, orientation, xValue } = context;
   const { domain, window } = context.model;
+  const x = useSteady(context.model.x, sameValueDomain);
   const first = window?.first;
   const last = window?.last;
   const ticks = useMemo(
@@ -249,10 +285,12 @@ export function ChartXAxis({
           locale,
           xScale,
           orientation,
+          xValue,
+          x,
         },
         steadyFormat
       ),
-    [domain, first, last, locale, xScale, orientation, steadyFormat]
+    [domain, first, last, locale, xScale, orientation, xValue, x, steadyFormat]
   );
   // A SlotLabel reads these tick nodes' boxes, so it hears when the nodes mount, change or leave.
   useLayoutEffect(() => {
@@ -263,9 +301,12 @@ export function ChartXAxis({
   // replacing them. Its key is the slot's render key, which Root keeps for a slot across updates.
   // The first tick, which always shows, keeps one node across every window, since a stream's first
   // slot changes with each append and a node inserted into the axis restyles its ancestors. Slot
-  // keys take a prefix, so no category name can match the first tick's key.
-  const keyOf = (slot: number, index: number): string =>
-    index === 0 ? "first" : `slot:${context.update.keys[slot] ?? String(slot)}`;
+  // keys take a prefix, so no category name can match the first tick's key. A linear tick's key is
+  // its number.
+  const keyOf = ({ slot, value }: XTick, index: number): string => {
+    if (value !== undefined) return `value:${String(value)}`;
+    return index === 0 ? "first" : `slot:${context.update.keys[slot] ?? String(slot)}`;
+  };
   // Once Root measures, the axis spans the run the slot bands take, the plot less its leftover
   // device pixels at both ends, which its CSS turns into margins.
   const drawn = useRootFrame("Chart.XAxis");
@@ -282,18 +323,18 @@ export function ChartXAxis({
       {/* Every horizontal label shows, so a hidden sizer gives the axis column the widest one. */}
       {context.orientation === "horizontal" ? (
         <span data-slot="chart-axis-sizer">
-          {ticks.map(({ slot, text }, index) => (
-            <span key={keyOf(slot, index)}>{text}</span>
+          {ticks.map((entry, index) => (
+            <span key={keyOf(entry, index)}>{entry.text}</span>
           ))}
         </span>
       ) : null}
-      {ticks.map(({ slot, text, at, visibility }, index) => (
+      {ticks.map((entry, index) => (
         <span
-          key={keyOf(slot, index)}
+          key={keyOf(entry, index)}
           data-slot="chart-x-tick"
-          data-min={visibility === "always" ? undefined : String(visibility)}
-          style={{ "--chart-at": at }}>
-          {text}
+          data-min={entry.visibility === "always" ? undefined : String(entry.visibility)}
+          style={{ "--chart-at": entry.at }}>
+          {entry.text}
         </span>
       ))}
       {label === undefined ? null : <span data-slot="chart-axis-label">{label}</span>}

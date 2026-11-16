@@ -31,7 +31,7 @@ import {
 } from "./clock-chart-part";
 import { columnAxis, columnFloorSpan, columnSpan, wedgePad } from "./layout/clock";
 import { clockWedges, entranceFrame, slotAt } from "./layout/clock-path";
-import { DECIMATE_ABOVE, m4Indexes } from "./layout/decimate";
+import { DECIMATE_ABOVE, bucketEdges, m4Indexes } from "./layout/decimate";
 import { viewBoxOf } from "./layout/polar-angle";
 
 /**
@@ -82,7 +82,7 @@ function shownAt(series: ClockSeries, radius: number): readonly number[] {
   const known = decimations.get(series);
   const columns = Math.round(2 * Math.PI * radius);
   if (known?.columns === columns) return known.shown;
-  const shown = m4Indexes(series.values, columns);
+  const shown = m4Indexes(series.values, bucketEdges(series.values.length, Math.max(1, columns)));
   decimations.set(series, { columns, shown });
   return shown;
 }

@@ -13,6 +13,18 @@ import type { ValueFormat } from "./format/value-format";
 export type { FormattedText } from "./format/formatted-text";
 export type { Interval, TimePreset } from "./format/time-format";
 export type { ChartFractionDigits, ValueFormat } from "./format/value-format";
+export type {
+  ChartLinearScaleProps,
+  ChartSlotScaleProps,
+  ChartTimeAxisProps,
+  ChartTimeFields,
+  ChartXAxisKind,
+  ChartXOut,
+  ChartXRange,
+  ChartXRangeChangeReason,
+  ChartXScaleProps,
+  ChartXValue,
+} from "./chart-x-axis-types";
 
 /**
  * Every value a data cell may hold. Flight serializes each of these, and none is a function.
@@ -112,36 +124,6 @@ export type ChartQuality = "measured" | "estimated" | "corrected" | "missing";
  * @beta
  */
 export type ChartPeriod = readonly [start: ChartInstant, end: ChartInstant];
-
-/**
- * What a prop that names an x accepts. On a time axis any instant inside the slot finds it. A row
- * type that cannot be narrowed accepts any x.
- *
- * @template TX - The type of the x column.
- * @beta
- */
-export type ChartXValue<TX> = [TX] extends [string]
-  ? TX
-  : [TX] extends [ChartInstant]
-    ? ChartInstant
-    : ChartX;
-
-/**
- * What a callback reports for an x, which is the category, or the slot start as a `Date` for every
- * instant column.
- *
- * @template TX - The type of the x column.
- * @beta
- */
-export type ChartXOut<TX> = [TX] extends [string] ? TX : [TX] extends [ChartInstant] ? Date : string | Date;
-
-/**
- * The first and last slot of a window, both inclusive.
- *
- * @template TX - The type of the x column.
- * @beta
- */
-export type ChartXRange<TX> = readonly [first: ChartXValue<TX>, last: ChartXValue<TX>];
 
 /**
  * One of the eight shared categorical roles. Theme layers own the values.
@@ -423,13 +405,6 @@ export type ChartChangeEventDetails<TReason extends string> = {
 export type ChartSelectionChangeReason = "legend" | "plot" | "keyboard";
 
 /**
- * The gestures that change the brushed window, Base UI Slider's own names.
- *
- * @beta
- */
-export type ChartXRangeChangeReason = "drag" | "keyboard" | "track-press" | "input-change";
-
-/**
  * Every chart needs a name. Exactly one of the two is required, because with both the label would
  * be dead text.
  *
@@ -457,8 +432,8 @@ export type ChartAccessibleName =
 export type ChartPoint = {
   /** The slot or slice index. */
   readonly index: number;
-  /** A category string, or the slot start as a `Date` on a time axis. */
-  readonly x: string | Date;
+  /** A category string, the slot start as a `Date` on a time axis, or the number on a linear axis. */
+  readonly x: string | number | Date;
   /** The slot's or category's label. */
   readonly label: FormattedText;
   /**
@@ -656,70 +631,6 @@ export type ChartSelectionProps<TKey extends string> = {
     details: ChartChangeEventDetails<ChartSelectionChangeReason>
   ) => void;
 };
-
-/**
- * The time-axis props other than `interval`. A wrapper uses this helper to type its props.
- *
- * @beta
- */
-export type ChartTimeFields = {
-  /**
-   * The whole window the axis lists, past the first and last rows, such as one calendar month.
-   * Every slot inside it gets a cell, with or without a row. A series with no reading at a slot
-   * that starts at or after `now` is pending there, which draws nothing. A past slot inside the
-   * series' run of readings is missing, which draws the missing marker. So leave out the rows of
-   * days to come, or give their cells null.
-   */
-  period?: ChartPeriod;
-  /** The current instant. Fuse never reads the clock. */
-  now?: ChartInstant;
-  /**
-   * The IANA zone of the data's market, such as "Europe/Oslo". It overrides LocaleProvider's, and a
-   * time axis with neither throws.
-   */
-  timeZone?: string;
-  /** The x label format in the tooltip, the table and spoken text. */
-  xFormat?: XFormat;
-};
-
-/**
- * Time-axis props exist only when the x column holds instants, and there `interval` is required.
- * It is the slot length and the finest interval in the chart. A row type that cannot be narrowed
- * takes every time prop as optional, which a wrapper typed with the default parameters relies on.
- *
- * @template TX - The type of the x column.
- * @beta
- */
-export type ChartTimeAxisProps<TX> = [TX] extends [string]
-  ? {
-      /** Time axes only. */
-      interval?: never;
-      /** Time axes only. */
-      period?: never;
-      /** Time axes only. */
-      now?: never;
-      /** Time axes only. */
-      timeZone?: never;
-      /** Time axes only. */
-      xFormat?: never;
-    }
-  : [TX] extends [ChartInstant]
-    ? {
-        /**
-         * The slot length, which is also the finest interval in the chart. A time axis requires it.
-         * The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds
-         * throws `slot-limit`.
-         */
-        interval: Interval;
-      } & ChartTimeFields
-    : {
-        /**
-         * The slot length, which is also the finest interval in the chart. A time axis requires it.
-         * The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds
-         * throws `slot-limit`.
-         */
-        interval?: Interval;
-      } & ChartTimeFields;
 
 /**
  * Config keys must name number columns, and a literal `qualityKey` must name a quality column. A

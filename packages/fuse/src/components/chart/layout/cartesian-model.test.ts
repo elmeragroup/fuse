@@ -9,7 +9,10 @@ import type { ModelInput } from "./cartesian-model";
 
 const day = (n: number): Date => new Date(Date.UTC(2025, 9, n - 1, 22));
 
-const base = (rows: readonly ChartRow[], overrides: Partial<ModelInput> = {}): ModelInput => ({
+/** A model input on a time or category axis, which these cases read. */
+type SlotAxisInput = Extract<ModelInput, { readonly linear?: undefined }>;
+
+const base = (rows: readonly ChartRow[], overrides: Partial<SlotAxisInput> = {}): ModelInput => ({
   rows,
   series: [
     ["a", {}],
@@ -301,10 +304,55 @@ describe("layout domains for Panels", () => {
   });
 });
 
+// Unit under test: a linear axis's x domain and window. Oracle: d3's nice rule for 10 ticks worked
+// by hand, as a scatter chart's x domain takes it.
+describe("a linear axis", () => {
+  const linear = (rows: readonly ChartRow[], include: readonly number[] = []): ModelInput => ({
+    rows,
+    series: [["kw", {}]],
+    xKey: "soc",
+    linear: { include },
+    stackOffset: "diverging",
+    baseline: "zero",
+    include: [],
+  });
+  const rows = [3, 17, 42, 88].map((soc) => ({ soc, kw: soc / 2 }));
+
+  it("nices the x domain over the window's first and last numbers", () => {
+    // 3 to 88 at 10 ticks steps by 10, so the domain widens to 0 and 90.
+    const model = buildCartesianModel(linear(rows));
+    expect(model.x?.domain).toEqual([0, 90]);
+    expect(model.x?.ticks).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90]);
+  });
+
+  it("reaches every xInclude value", () => {
+    // 3 to 120 at 10 ticks steps by 20, so the domain runs from 0 to 120.
+    const model = buildCartesianModel(linear(rows, [120]));
+    expect(model.x?.domain).toEqual([0, 120]);
+  });
+
+  it("windows the rows whose numbers lie in xRange, and nices the x domain over them alone", () => {
+    const model = buildCartesianModel({ ...linear(rows), xRange: [10, 50] });
+    expect(model.window).toEqual({ first: 1, last: 2 });
+    // 17 to 42 at 10 ticks: 25 / 10 = 2.5 lies below √10, d3's threshold for a step of 5, so the
+    // step is 2 and the domain runs from 16 to 42.
+    expect(model.x?.domain).toEqual([16, 42]);
+  });
+
+  it("widens a lone row by a tenth of its magnitude, as the flat rule does", () => {
+    const model = buildCartesianModel(linear([{ soc: 50, kw: 1 }]));
+    expect(model.x?.domain).toEqual([45, 55]);
+  });
+
+  it("has no x domain on a time axis", () => {
+    expect(buildCartesianModel(base([{ x: day(1), a: 1, b: 2 }])).x).toBeNull();
+  });
+});
+
 describe("coarse series", () => {
   /** Oslo midnight on 1 October 2025 is 22:00 UTC the day before. */
   const quarter = (index: number) => new Date(Date.UTC(2025, 8, 30, 22, index * 15));
-  const input = (rows: readonly ChartRow[]): ModelInput => ({
+  const input = (rows: readonly ChartRow[]): SlotAxisInput => ({
     rows,
     series: [
       ["price", {}],

@@ -2,7 +2,7 @@
  * The cartesian chart's data model, computed during render from Root's props alone, so the server
  * HTML is the final chart and Root never inspects its children. It places the rows on the x domain,
  * reads each series' state per slot, stacks the series that share a `stack` id and measures the
- * default layout's value domain over the effective window.
+ * default layout's value domain over the effective window, and a linear axis's x domain too.
  */
 import type { ChartRow, ChartScalar } from "../chart-types";
 import type { Interval } from "../format/time-format";
@@ -14,9 +14,9 @@ import { effectiveWindow } from "./slot-window";
 import type { SlotWindow } from "./slot-window";
 import { stackSeries } from "./stack";
 import type { Extent, StackOffset } from "./stack";
-import { EMPTY_DOMAIN, valueDomain } from "./value-domain";
+import { EMPTY_DOMAIN, X_TICK_COUNT, valueDomain } from "./value-domain";
 import type { Baseline, ValueDomain } from "./value-domain";
-import { placeRows, projectedSlot } from "./x-domain";
+import { LINEAR_AXIS, placeRows, projectedSlot } from "./x-domain";
 import type { RowIssue, RowPlacer, XDomain } from "./x-domain";
 
 /** The fields of one config entry the model reads. */
@@ -28,21 +28,31 @@ export type ModelSeriesConfig = {
   readonly interval?: Interval | undefined;
 };
 
+/** A time axis's interval, zone, period and `now`. */
+type TimeInput = {
+  readonly interval: Interval;
+  readonly timeZone: string;
+  readonly period?: readonly [number, number] | undefined;
+  readonly now?: number | undefined;
+};
+
+/** A linear axis's own input: the values its x domain must reach, Root's `xInclude`. */
+type LinearInput = { readonly include: readonly number[] };
+
+/**
+ * The axis the rows place on: a time axis passes `time`, a linear axis `linear`, and a category
+ * axis neither. No axis is both.
+ */
+type AxisInput =
+  | { readonly time?: TimeInput | undefined; readonly linear?: undefined }
+  | { readonly time?: undefined; readonly linear: LinearInput };
+
 /** What the model reads from Root's props. */
-export type ModelInput = {
+export type ModelInput = AxisInput & {
   readonly rows: readonly ChartRow[];
   /** The config keys in config order, with the fields the model reads. */
   readonly series: readonly (readonly [key: string, config: ModelSeriesConfig])[];
   readonly xKey: string;
-  /** A time axis's interval, zone, period and `now`. A category axis passes none. */
-  readonly time?:
-    | {
-        readonly interval: Interval;
-        readonly timeZone: string;
-        readonly period?: readonly [number, number] | undefined;
-        readonly now?: number | undefined;
-      }
-    | undefined;
   readonly stackOffset: StackOffset;
   readonly baseline: Baseline;
   readonly include: readonly number[];
@@ -88,6 +98,11 @@ export type CartesianModel = {
   readonly stacks: readonly { readonly id: string; readonly keys: readonly string[] }[];
   /** The default layout's value domain, over the rows inside the effective window. */
   readonly y: ValueDomain;
+  /**
+   * A linear axis's x domain over the slots inside the effective window, niced with d3's rule for
+   * 10 ticks and reaching every `xInclude` value, or null on a time or category axis.
+   */
+  readonly x: ValueDomain | null;
   /** Whether no slot holds a reading for any config key. */
   readonly empty: boolean;
   readonly issues: readonly ModelIssue[];
@@ -104,7 +119,7 @@ export type CartesianModel = {
 export function buildCartesianModel(input: ModelInput, place: RowPlacer = placeRows): CartesianModel {
   const { rows, series: entries, xKey, time } = input;
   const xs = rows.map((row) => row[xKey]);
-  const placed = place(xs, time);
+  const placed = place(xs, input.linear === undefined ? time : LINEAR_AXIS);
   const { domain, rowAt } = placed;
   const issues: ModelIssue[] = [...placed.issues];
   const slots = domain.kind === "time" ? domain : undefined;
@@ -175,7 +190,24 @@ export function buildCartesianModel(input: ModelInput, place: RowPlacer = placeR
     baseline: input.baseline,
     include: input.include,
   });
-  return { domain, rowAt, window, series, stacks, y, empty, issues };
+  const x =
+    domain.kind === "linear" && input.linear !== undefined
+      ? linearDomain(domain.values, window, input.linear.include)
+      : null;
+  return { domain, rowAt, window, series, stacks, y, empty, issues, x };
+}
+
+/**
+ * A linear axis's x domain: the numbers of the window's first and last slots and every include,
+ * niced as a scatter chart's x domain is, so a window of one slot widens by the flat rule.
+ */
+function linearDomain(
+  values: readonly number[],
+  window: SlotWindow | null,
+  include: readonly number[]
+): ValueDomain {
+  const ends = window === null ? [] : [values[window.first] ?? 0, values[window.last] ?? 0];
+  return valueDomain({ values: ends, baseline: "none", include, count: X_TICK_COUNT });
 }
 
 /** A coarse series' readings by Root slot, the cell issues of its own slots, and its off-grid rows. */

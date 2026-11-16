@@ -41,6 +41,8 @@ export type ChartStrings = {
   readonly xHeaderMonth: string;
   readonly xHeaderYear: string;
   readonly xHeaderCategory: string;
+  /** A linear axis's first table column header when Root has no `xLabel`. */
+  readonly xHeaderValue: string;
   readonly brushGroup: string;
   readonly brushStart: string;
   readonly brushEnd: string;
@@ -78,7 +80,10 @@ export type ChartStrings = {
   readonly descriptionQuality: (count: string, state: "missing" | "estimated" | "corrected") => string;
   /** Where a projection starts, such as `Forbruk er prognose fra 17. oktober.` */
   readonly descriptionProjection: (label: string, from: string) => string;
-  /** The interval's slot words, counted. */
+  /**
+   * The interval's slot words, counted, and a category axis's. A linear axis counts its slots in
+   * `POINT_WORDS`.
+   */
   readonly slots: { readonly [I in Interval | "category"]: Inflected };
   /** The keyboard instructions of a live line chart. */
   readonly instructionsLive: string;
@@ -122,6 +127,7 @@ const NB_NO: ChartStrings = {
   xHeaderMonth: "Måned",
   xHeaderYear: "År",
   xHeaderCategory: "Kategori",
+  xHeaderValue: "Verdi",
   brushGroup: "Periode",
   brushStart: "fra",
   brushEnd: "til",
@@ -192,6 +198,7 @@ const SV_SE: ChartStrings = {
   xHeaderMonth: "Månad",
   xHeaderYear: "År",
   xHeaderCategory: "Kategori",
+  xHeaderValue: "Värde",
   brushGroup: "Period",
   brushStart: "från",
   brushEnd: "till",
@@ -263,6 +270,7 @@ const FI_FI: ChartStrings = {
   xHeaderMonth: "Kuukausi",
   xHeaderYear: "Vuosi",
   xHeaderCategory: "Luokka",
+  xHeaderValue: "Arvo",
   brushGroup: "Jakso",
   brushStart: "alku",
   brushEnd: "loppu",
@@ -334,6 +342,7 @@ const EN_US: ChartStrings = {
   xHeaderMonth: "Month",
   xHeaderYear: "Year",
   xHeaderCategory: "Category",
+  xHeaderValue: "Value",
   brushGroup: "Period",
   brushStart: "start",
   brushEnd: "end",

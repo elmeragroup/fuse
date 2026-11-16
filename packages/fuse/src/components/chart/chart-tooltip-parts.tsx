@@ -25,7 +25,8 @@ import type { ChartDomProps, ChartFractionDigits, ValueFormat, XFormat } from ".
 export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
   /**
    * The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the
-   * categories of pie, radial and radar charts print as they are.
+   * categories of pie, radial and radar charts print as they are. A linear axis prints its x number
+   * in Root's `xFormat`, so it does not read this.
    */
   format?: XFormat;
 };

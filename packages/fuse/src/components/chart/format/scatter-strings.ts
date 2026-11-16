@@ -1,7 +1,7 @@
 /**
  * The scatter family's own words in the four locales. They live apart from `CHART_STRINGS`, so a
- * cartesian route ships none of them. The point word that a scatter and a live line chart both count
- * with is in `point-words.ts`, so a live line route ships none of these.
+ * cartesian route ships none of them. The point word that a scatter, a live line and a linear
+ * cartesian chart count with is in `point-words.ts`, so a live line route ships none of these.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
 

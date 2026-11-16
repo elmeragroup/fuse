@@ -3,22 +3,21 @@
  * its own box, so the server writes final positions with no measured width.
  */
 import { linearScale, scaleValue } from "./linear-scale";
+import { centerShare } from "./slot-scale";
+import type { SlotScale } from "./slot-scale";
 import type { SlotWindow } from "./slot-window";
 
 /**
  * A slot's center along the x axis, as a fraction of the plot width. Band slots center in equal
- * cells, and point slots run from the first edge to the last.
+ * cells, point slots run from the first edge to the last, and linear slots sit at their values.
  *
  * @param window - The effective window.
  * @param slot - A slot inside the window.
  * @param xScale - The Root's x scale.
  * @returns The fraction from 0 to 1.
  */
-export function slotCenter(window: SlotWindow, slot: number, xScale: "band" | "point"): number {
-  const count = window.last - window.first + 1;
-  const offset = slot - window.first;
-  if (xScale === "band") return (offset + 0.5) / count;
-  return count === 1 ? 0.5 : offset / (count - 1);
+export function slotCenter(window: SlotWindow, slot: number, xScale: SlotScale): number {
+  return centerShare(xScale, window.last - window.first + 1, slot - window.first);
 }
 
 /**

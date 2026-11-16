@@ -25,6 +25,7 @@ import { buildCartesianModel } from "./cartesian-model";
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
 import { WHOLE_BAND, optionBand, plotFrame } from "./plot-frame";
 import type { BarMetrics, PlotBox, PlotFrame, PlotRect, SubBand } from "./plot-frame";
+import { linearSlots } from "./slot-scale";
 
 /** A plot of whole pixels, at 1x unless a ratio is given. */
 function box(width: number, height: number, dpr = 1): PlotBox {
@@ -630,7 +631,7 @@ describe("grouped path columns", () => {
           const { rects } = pathForm(grouped, series, frame, { index: index % group, count: group });
           expect(rects).toHaveLength(categories);
           for (const [position, rect] of rects.entries()) {
-            const [start, end] = optionBand(frame, position, "band");
+            const [start, end] = optionBand(frame, position);
             expect(rect.x).toBeGreaterThanOrEqual(start - 1e-9);
             expect(rect.x + rect.width).toBeLessThanOrEqual(end + 1e-9);
             expect(rect.width).toBeGreaterThanOrEqual(1 / dpr - 1e-9);
@@ -727,7 +728,7 @@ describe("decimated column identity", () => {
 
   it("buckets the window's slots only, from its first slot", () => {
     // 2,600 rows and a window from c100 to c2599, so 2,500 slots fall into 500 buckets of 5 and
-    // the last column ends at slot 2,500 of the window.
+    // the last column ends at the end of the plot.
     const rows = Array.from({ length: 2600 }, (_, index) => ({ name: `c${String(index)}`, v: 2 }));
     const windowed = model(rows, ["v"], false, ["c100", "c2599"]);
     const series = windowed.series[0];
@@ -735,7 +736,7 @@ describe("decimated column identity", () => {
     const columns = bucketColumns(windowed, series, [0, 2]);
     expect(columns).toHaveLength(500);
     expect(columns[0]?.slot).toBe(100);
-    expect(columns.at(-1)?.x1).toBe(2500);
+    expect(columns.at(-1)?.x1).toBe(1);
   });
 
   it("gives a mixed-sign column the slot of its larger extreme", () => {
@@ -889,5 +890,34 @@ describe("two stacks and a missing reading", () => {
     expect(slots(q)).toEqual([0, 5, ...firsts]);
     // r's own stack s2 tops at slot 2 with 6 + 1, where s1's totals would pick slot 0.
     expect(slots(r)).toEqual([2, 5, ...firsts]);
+  });
+});
+
+// Unit under test: a decimated path form under a linear x axis. Oracle: the rows' pixel span,
+// worked by hand from their x over the x domain, where the axis and the pointer place them.
+describe("decimated columns on a linear x axis", () => {
+  it("draws each bucket in the pixel columns its rows' x project to", () => {
+    // 2,001 rows from x = 10 to 20 over an x domain of 0 to 100 on a 400 px plot, so the rows
+    // project to 40 to 80 px. Buckets split the plot into 500 columns of 0.8 px, and the last
+    // row's bucket, at x = 20, runs from 80 to 80.8 px.
+    const rows = Array.from({ length: 2001 }, (_, index) => ({ x: 10 + index / 200, v: 1 }));
+    const chart = buildCartesianModel({
+      rows,
+      series: [["v", {}]],
+      xKey: "x",
+      linear: { include: [0, 100] },
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const series = chart.series[0];
+    if (series === undefined || chart.x === null) throw new Error("no series");
+    expect(chart.x.domain).toEqual([0, 100]);
+    const slots = linearSlots(chart.domain.kind === "linear" ? chart.domain.values : [], chart.x);
+    const { rects } = pathForm(chart, series, plotFrame(box(400, 100), "vertical", 2001, [0, 1], slots));
+    expect(Math.min(...rects.map(({ x }) => x))).toBe(40);
+    const right = Math.max(...rects.map(({ x, width }) => x + width));
+    expect(right).toBeGreaterThanOrEqual(80);
+    expect(right).toBeLessThanOrEqual(81);
   });
 });

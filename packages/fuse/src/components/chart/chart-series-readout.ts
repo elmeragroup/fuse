@@ -34,7 +34,7 @@ import { assertKnownKey } from "./layout/errors";
 import type { Reading } from "./layout/readings";
 import { seriesOf } from "./layout/series-of";
 import { roundShares } from "./layout/shares";
-import { slotX } from "./layout/x-domain";
+import { slotCount, slotX } from "./layout/x-domain";
 
 /**
  * One key's reading at one slot.
@@ -189,7 +189,7 @@ const PAGE_LABEL = {
 /** The slots the table lists: every slot that holds a reading or a missing reading in some series. */
 function tableSlots(model: CartesianModel): number[] {
   const { series, domain } = model;
-  const count = domain.kind === "time" ? domain.starts.length : domain.names.length;
+  const count = slotCount(domain);
   const slots: number[] = [];
   for (let slot = 0; slot < count; slot += 1) {
     if (series.some(({ readings }) => readings[slot]?.kind !== "pending")) slots.push(slot);
@@ -206,7 +206,8 @@ function tablePages(
   const { domain } = model;
   const strings = CHART_STRINGS[locale];
   if (slots.length <= PAGE_ROWS) return [{ key: 0, slots, label: "", spoken: "" }];
-  if (domain.kind === "category") {
+  // A category or a linear axis has no calendar, so it pages by rows.
+  if (domain.kind !== "time") {
     const pages: ChartTablePage[] = [];
     for (let from = 0; from < slots.length; from += PAGE_ROWS) {
       const page = slots.slice(from, from + PAGE_ROWS);
@@ -268,6 +269,10 @@ function captionText(context: SeriesTableContext, slots: readonly number[]): str
   let period: string;
   if (domain.kind === "category") {
     period = CHART_STRINGS[context.locale].valueRange(domain.names[first] ?? "", domain.names[last] ?? "");
+  } else if (domain.kind === "linear") {
+    const from = slotLabel(context, first).text;
+    const to = slotLabel(context, last).text;
+    period = from === to ? from : CHART_STRINGS[context.locale].valueRange(from, to);
   } else {
     const options: Intl.DateTimeFormatOptions =
       domain.interval === "year"
@@ -285,11 +290,12 @@ function captionText(context: SeriesTableContext, slots: readonly number[]): str
   return context.name === undefined ? period : `${context.name}, ${period}`;
 }
 
-/** The first column's header, which the interval picks. */
+/** The first column's header, which the interval picks, or a linear axis's `xLabel`. */
 function xHeaderText(context: TextContext): string {
   const strings = CHART_STRINGS[context.locale];
   const { domain } = context.model;
   if (domain.kind === "category") return strings.xHeaderCategory;
+  if (domain.kind === "linear") return context.xValue?.label ?? strings.xHeaderValue;
   switch (domain.interval) {
     case "second":
     case "minute":

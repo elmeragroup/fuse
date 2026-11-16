@@ -23,6 +23,7 @@ import {
   valueAt,
 } from "./plot-frame";
 import type { PlotBox, PlotFrame } from "./plot-frame";
+import { linearSlots } from "./slot-scale";
 
 function box(width: number, height: number, dpr = 1, left = 0, top = 0): PlotBox {
   return { width, height, dpr, left, top };
@@ -36,7 +37,7 @@ describe("slot bands and centers", () => {
       [100, 200],
       [200, 300],
     ]);
-    expect(centerOf(frame, 1, "band")).toBe(150);
+    expect(centerOf(frame, 1)).toBe(150);
   });
 
   it("shares each edge between neighboring bands a device pixel or more wide, at any width and pixel ratio", () => {
@@ -60,11 +61,11 @@ describe("slot bands and centers", () => {
   it("runs point slots from the first edge to the last, and gives each a clipped band-wide cell", () => {
     // Four points on 300 px lie 100 px apart, and each takes the 75 px around its point. An edge half
     // way between two pixels rounds toward the left.
-    const frame = plotFrame(box(300, 50), "vertical", 4, [0, 1]);
-    expect([0, 1, 3].map((position) => centerOf(frame, position, "point"))).toEqual([0, 100, 300]);
-    expect(optionBand(frame, 1, "point")).toEqual([62, 137]);
-    expect(optionBand(frame, 0, "point")).toEqual([0, 37]);
-    expect(optionBand(frame, 3, "point")).toEqual([262, 300]);
+    const frame = plotFrame(box(300, 50), "vertical", 4, [0, 1], "point");
+    expect([0, 1, 3].map((position) => centerOf(frame, position))).toEqual([0, 100, 300]);
+    expect(optionBand(frame, 1)).toEqual([62, 137]);
+    expect(optionBand(frame, 0)).toEqual([0, 37]);
+    expect(optionBand(frame, 3)).toEqual([262, 300]);
   });
 
   it("keeps the device pixel a band's middle lies in when the pixel before it is the plot's first", () => {
@@ -83,7 +84,7 @@ describe("slot bands and centers", () => {
     const frame = plotFrame(box(514.109375, 50, 2), "vertical", 31, [0, 1]);
     expect(slotBand(frame, 0)).toEqual([1, 17.5]);
     expect(slotBand(frame, 30)).toEqual([496, 512.5]);
-    expect(centerOf(frame, 0, "band")).toBe(9);
+    expect(centerOf(frame, 0)).toBe(9);
     // At 1x the plot draws 514 pixels, 16 per slot leaves 18, so the bands start 9 px in and slot
     // 30 runs from 9 + 480 to 505.
     expect(slotBand(plotFrame(box(514.109375, 50, 1), "vertical", 31, [0, 1]), 30)).toEqual([489, 505]);
@@ -100,10 +101,10 @@ describe("slot bands and centers", () => {
     for (const orientation of ["vertical", "horizontal"] as const) {
       const frame = plotFrame(box(0, 0), orientation, 3, [0, 1]);
       const numbers = [
-        ...slotBandAt(frame, 0, "band"),
-        ...slotBandAt(frame, 5, "band"),
-        pointAlong(frame, 0, "band"),
-        ...optionBand(frame, 1, "band"),
+        ...slotBandAt(frame, 0),
+        ...slotBandAt(frame, 5),
+        pointAlong(frame, 0),
+        ...optionBand(frame, 1),
         ...cellRun(frame, 0),
         ...cellRun(frame, 0, 2),
       ];
@@ -114,6 +115,56 @@ describe("slot bands and centers", () => {
   it("runs slots down the plot under a horizontal frame", () => {
     const frame = plotFrame(box(300, 64), "horizontal", 2, [0, 1]);
     expect(slotBand(frame, 1)).toEqual([32, 64]);
+  });
+});
+
+// Unit under test: the frame's projection of linear slots. Oracle: the rows' numbers over a stated
+// x domain of 0 to 100 on a 400 px plot, so a number n lands at 4n px, worked by hand.
+describe("linear slots", () => {
+  const xs = [0, 5, 20, 50, 100];
+  const slots = linearSlots(xs, { domain: [0, 100], ticks: [0, 50, 100] });
+  const frame = plotFrame(box(400, 100), "vertical", xs.length, [0, 1], slots);
+
+  it("centers each slot at its number's share of the x domain", () => {
+    expect(xs.map((_, position) => centerOf(frame, position))).toEqual([0, 20, 80, 200, 400]);
+  });
+
+  it("gives each slot the cell from halfway to the previous slot to halfway to the next", () => {
+    expect(xs.map((_, position) => optionBand(frame, position))).toEqual([
+      [0, 10],
+      [10, 50],
+      [50, 140],
+      [140, 300],
+      [300, 400],
+    ]);
+    // 139 px lies nearer 80 than 200, and 141 px nearer 200.
+    expect(slotBandAt(frame, 139)).toEqual([50, 140]);
+    expect(slotBandAt(frame, 141)).toEqual([140, 300]);
+  });
+
+  it("gives every bar the closest pair's pitch less the band gap, centered and clipped to the plot", () => {
+    // The closest numbers, 0 and 5, lie 20 px apart, so a band gap of a half leaves 10 px bars.
+    const metrics = { bandGap: 0.5, barGap: 0, seam: 0 };
+    expect(xs.map((_, position) => barSpan(frame, position, metrics, WHOLE_BAND))).toEqual([
+      [0, 5],
+      [15, 25],
+      [75, 85],
+      [195, 205],
+      [395, 400],
+    ]);
+    // A BarGroup of two splits the 10 px band at 50 into two 4 px bars 2 px apart.
+    const grouped = { bandGap: 0.5, barGap: 2, seam: 0 };
+    expect([0, 1].map((index) => barSpan(frame, 3, grouped, { index, count: 2 }))).toEqual([
+      [195, 199],
+      [201, 205],
+    ]);
+  });
+
+  it("gives a lone slot one tick step of the x domain", () => {
+    const lone = linearSlots([50], { domain: [0, 100], ticks: [0, 20, 40, 60, 80, 100] });
+    const single = plotFrame(box(400, 100), "vertical", 1, [0, 1], lone);
+    // One tick step, 20 of 100, is 80 px, and no band gap leaves the whole step.
+    expect(barSpan(single, 0, { bandGap: 0, barGap: 0, seam: 0 }, WHOLE_BAND)).toEqual([160, 240]);
   });
 });
 

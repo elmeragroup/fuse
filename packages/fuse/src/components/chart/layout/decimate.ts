@@ -27,15 +27,75 @@ export function bucketEdges(count: number, buckets: number = BUCKETS): number[] 
 }
 
 /**
+ * The first slot of each bucket when buckets split by each slot's share of the plot's length: bucket
+ * `b` of `buckets` holds the slots whose share lies in `[b / buckets, (b + 1) / buckets)`, the last
+ * one taking a share of 1 too, so on a linear x axis, which places slots at their values, each
+ * bucket covers one pixel column and slots crowded into one column share a bucket. A share outside
+ * the plot falls into the nearest end bucket.
+ *
+ * @param shares - Each slot's center as a share of the plot's length, ascending.
+ * @param buckets - How many buckets the plot splits into.
+ * @returns The first slot of each bucket, followed by the slot count, as `bucketEdges` gives them. An
+ *   empty bucket starts where the next one does.
+ */
+function shareEdges(shares: readonly number[], buckets: number): number[] {
+  const edges = Array.from({ length: buckets + 1 }, () => shares.length);
+  let bucket = 0;
+  shares.forEach((share, index) => {
+    const own = Math.min(buckets - 1, Math.max(0, Math.floor(share * buckets)));
+    for (; bucket <= own; bucket += 1) edges[bucket] = index;
+  });
+  return edges;
+}
+
+/** Where a decimated window's buckets split, as `bucketEdges` or `shareEdges` lays them out. */
+export type BucketSplit = {
+  /** The first slot of each bucket, followed by the slot count. */
+  readonly edges: readonly number[];
+  /** Each bucket's start along the slot axis as a share of the plot's length, followed by 1. */
+  readonly starts: readonly number[];
+};
+
+/**
+ * Buckets that split a window by slot index, as a band, point or time axis spaces its slots evenly.
+ *
+ * @param count - The window's slot count.
+ * @param buckets - How many buckets the window splits into.
+ * @returns The split.
+ */
+export function slotSplit(count: number, buckets: number): BucketSplit {
+  const edges = bucketEdges(count, buckets);
+  return { edges, starts: edges.map((edge) => (count === 0 ? 0 : edge / count)) };
+}
+
+/**
+ * Buckets that split a window by pixel column, as a linear axis places its slots at their values.
+ *
+ * @param shares - Each slot's center as a share of the plot's length, ascending.
+ * @param buckets - How many buckets the plot splits into.
+ * @returns The split.
+ */
+export function shareSplit(shares: readonly number[], buckets: number): BucketSplit {
+  return {
+    edges: shareEdges(shares, buckets),
+    starts: Array.from({ length: buckets + 1 }, (_, bucket) => bucket / buckets),
+  };
+}
+
+/**
  * The slots one series keeps under M4. Each bucket keeps its first and last reading and its lowest
  * and highest reading, in x order, so a spike or a negative low stays visible. Ties keep the first
  * occurrence. A window of 2,000 slots or fewer keeps every slot with a reading.
  *
  * @param values - The series' readings in the window, `null` where it has none.
- * @param buckets - How many buckets a decimated window splits into, 500 by default.
+ * @param edges - The first slot of each bucket, followed by the slot count, as `bucketEdges` or
+ *   `shareEdges` gives them. Defaults to 500 buckets by slot index.
  * @returns The kept slot indexes, ascending.
  */
-export function m4Indexes(values: readonly (number | null)[], buckets: number = BUCKETS): number[] {
+export function m4Indexes(
+  values: readonly (number | null)[],
+  edges: readonly number[] = bucketEdges(values.length)
+): number[] {
   const kept: number[] = [];
   if (values.length <= DECIMATE_ABOVE) {
     values.forEach((value, index) => {
@@ -43,7 +103,6 @@ export function m4Indexes(values: readonly (number | null)[], buckets: number = 
     });
     return kept;
   }
-  const edges = bucketEdges(values.length, Math.max(1, Math.round(buckets)));
   for (let bucket = 0; bucket + 1 < edges.length; bucket += 1) {
     const end = edges[bucket + 1] ?? 0;
     let first = -1;

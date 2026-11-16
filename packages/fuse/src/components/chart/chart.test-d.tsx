@@ -397,6 +397,10 @@ test("wrappers typed with the default parameters accept any column", () => {
   function BillPie(props: PieChartRootProps) {
     return <PieChart.Root {...props} />;
   }
+  // A wrapper that names its chart itself and forwards every other prop.
+  function NamedUsageChart(props: Omit<ChartRootProps, "aria-label" | "aria-labelledby">) {
+    return <Chart.Root aria-label="Forbruk" {...props} />;
+  }
   const xKey: ChartRootProps["xKey"] = "day";
   const rowKey: ChartXKey<ChartRow> = "day";
   const nameKey: PieChartRootProps["nameKey"] = "part";
@@ -422,7 +426,16 @@ test("wrappers typed with the default parameters accept any column", () => {
     />
   );
   const pie = <BillPie data={browsers} config={{}} nameKey="browser" valueKey="visitors" aria-label="x" />;
-  for (const element of [category, time, pie]) {
+  const named = (
+    <NamedUsageChart
+      data={hours}
+      config={{ kwh: { label: "k", color: "chart-1" } }}
+      xKey="start"
+      interval="hour"
+      timeZone="Europe/Oslo"
+    />
+  );
+  for (const element of [category, time, pie, named]) {
     expectTypeOf(element).toExtend<ReactElement>();
   }
 });

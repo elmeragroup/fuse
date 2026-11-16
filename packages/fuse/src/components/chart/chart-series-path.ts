@@ -204,7 +204,8 @@ export type SeriesPathState = PathMark & {
  * @param options - Root's context and the part's layout, the series key, the curve, the route kind,
  *   the numbers per vertex, `LINE_STRIDE` or `AREA_STRIDE`, and how a stroked path reads its width.
  * @returns The state the part draws from.
- * @throws {ChartCompositionError} `step-curve-needs-cells` for a step curve under a point scale, and
+ * @throws {ChartCompositionError} `step-curve-needs-cells` for a step curve under a point scale, whose
+ *   even steps have no cells, and
  *   `scale-color-on-stack` for a scale color on a stacked series.
  */
 export function useSeriesPath(
@@ -227,7 +228,7 @@ export function useSeriesPath(
     throw new ChartCompositionError(
       part,
       "step-curve-needs-cells",
-      `draws curve="${curve}" under xScale="point", where slots have no cells to run across. Use xScale="band", or curve="step".`
+      `draws curve="${curve}" under xScale="point", where slots have no cells to run across. Use xScale="band", xScale="linear" to run each step to the next x, or curve="step".`
     );
   }
   const series = seriesOf(model, dataKey);
@@ -264,26 +265,25 @@ export function useSeriesPath(
         ? null
         : {
             frame,
-            xScale,
             curve,
             topology,
             moving,
             clips: { solid: `${prefix}-solid`, marked: `${prefix}-marked` },
             stroke: { width },
           },
-    [frame, xScale, curve, topology, prefix, width]
+    [frame, curve, topology, prefix, width]
   );
   const rest = useMemo(
     () =>
       frame === null || path === null
         ? []
-        : pathValues(path.vertices, stride, centerAlong(frame, xScale), (value) => valueAt(frame, value)),
-    [frame, path, xScale, stride]
+        : pathValues(path.vertices, stride, centerAlong(frame), (value) => valueAt(frame, value)),
+    [frame, path, stride]
   );
   const axes = useMemo(() => pathAxes(context.orientation, stride), [context.orientation, stride]);
   const kind = useMemo(
-    () => (frame === null ? null : seriesPathKind(stride, slotStep(frame, xScale))),
-    [frame, stride, xScale]
+    () => (frame === null ? null : seriesPathKind(stride, slotStep(frame))),
+    [frame, stride]
   );
   const placed = useMemo(
     () => (look === null || path === null || kind === null ? null : { look, kind, path, topology, rest }),

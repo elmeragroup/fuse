@@ -29,11 +29,11 @@ import {
 } from "./layout/plot-frame";
 import type { PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
+import { isLinearScale } from "./layout/slot-scale";
 
 /** What a path's writer reads besides the numbers: the frame, the curve and the topology. */
 export type PathLook = {
   readonly frame: PlotFrame;
-  readonly xScale: "band" | "point";
   readonly curve: ChartCurve;
   /** The topology of the resting path. */
   readonly topology: PathTopology;
@@ -57,7 +57,10 @@ export type PathLook = {
  * risers and values on device pixels, each moved by the stroke's parity, so a stroked step's runs
  * and risers cover whole device pixels at any width. A riser of an odd width takes the pixels just
  * past its cell edge, inside the band of the run it starts. An Area strokes nothing, so its fill
- * edges stay on the cell edges.
+ * edges stay on the cell edges. Under a linear x scale a step run goes from its vertex to the next
+ * one under `step-after`, and from the one before under `step-before`, so a tariff ladder holds each
+ * price from its threshold to the next. The last run of a `step-after` path reaches the plot's end,
+ * and the first run of a `step-before` path starts at the plot's start.
  *
  * @param look - The path's look.
  * @returns The placement for `linePaths` and `areaPaths`.
@@ -68,15 +71,33 @@ export function placeOf(look: PathLook): PathPlacement {
   return {
     orientation: frame.orientation,
     curve: look.curve,
-    along: (at) => pointAlong(frame, at, look.xScale),
-    run: (center, cells) => {
-      const [start, end] = cellRun(frame, center, cells);
+    along: (at) => pointAlong(frame, at),
+    run: (center, cells, before, after) => {
+      const [start, end] = isLinearScale(frame.scale)
+        ? linearRun(frame, look.curve, center, before, after)
+        : cellRun(frame, center, cells);
       return [strokeCenter(frame, start, width), strokeCenter(frame, end, width)];
     },
     across: (at) => strokeCenter(frame, snapAcross(frame, at), width),
     edge: (at) => strokeCenter(frame, snapAlong(frame, at), width),
     digits: null,
   };
+}
+
+/**
+ * A step run over a linear x scale, from a vertex to its neighbor on the side the curve holds its
+ * value, each edge snapped, so neighboring runs share their edges.
+ */
+function linearRun(
+  frame: PlotFrame,
+  curve: ChartCurve,
+  center: number,
+  before: number | undefined,
+  after: number | undefined
+): readonly [number, number] {
+  const [start, end] =
+    curve === "step-before" ? [before ?? 0, center] : [center, after ?? alongLength(frame)];
+  return [snapAlong(frame, start), snapAlong(frame, end)];
 }
 
 /**
@@ -448,22 +469,20 @@ export function pathStep<S extends Counted, T>(
  * The distance from one slot's center to the next along the slot axis.
  *
  * @param frame - The layout's frame.
- * @param xScale - Root's x scale.
  * @returns The distance in CSS pixels.
  */
-export function slotStep(frame: PlotFrame, xScale: "band" | "point"): number {
-  return slotCenterAt(frame, 1, xScale) - slotCenterAt(frame, 0, xScale);
+export function slotStep(frame: PlotFrame): number {
+  return slotCenterAt(frame, 1) - slotCenterAt(frame, 0);
 }
 
 /**
  * A window position's unsnapped center along the slot axis, where a vertex rests.
  *
  * @param frame - The layout's frame.
- * @param xScale - Root's x scale.
  * @returns The function.
  */
-export function centerAlong(frame: PlotFrame, xScale: "band" | "point"): (position: number) => number {
-  return (position) => slotCenterAt(frame, position, xScale);
+export function centerAlong(frame: PlotFrame): (position: number) => number {
+  return (position) => slotCenterAt(frame, position);
 }
 
 /** What a path mark places in a commit, or null before the plot is measured. */
