@@ -110,7 +110,8 @@ const NO_FIGMA_FORM = new Map([
  * part below it on one line, while the `overflow` and `text-overflow` it also sets stay on the box,
  * and a part's label wraps as Empty's `text-balance` on the root says. `text-align` inherits too, and
  * `overflow-wrap` (CSS Text 3 §5.5), so each label below the box that sets it decides whether it
- * breaks a word there.
+ * breaks a word there. A list's `list-style-type`, `list-style-image` and `list-style-position` inherit
+ * (CSS Lists 3 §3), so an item reads the marker its list sets.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -125,6 +126,10 @@ const INHERITED_PROPERTIES = new Set([
   "text-wrap-style",
   "text-align",
   "overflow-wrap",
+  "list-style",
+  "list-style-type",
+  "list-style-image",
+  "list-style-position",
 ]);
 
 /**
@@ -919,10 +924,16 @@ export type BoxCascade = {
    */
   readonly elementTag?: string | undefined;
   /**
+   * Whether the box's element sets its `::marker` a `content` beyond `normal` or `none`, where the
+   * cascade read the element, as a capture does. Undefined for the recipe cascade.
+   */
+  readonly markerContent?: boolean | undefined;
+  /**
    * What a capture measured of the box's element, as reasons the mapping reads in place of a
    * definition's measurements: its text, or its wrapping row's items, on one line under its
-   * `max-width`; its content under its `max-height`; and whether it is, or holds, the widest row of
-   * a popup that hugs its rows. Undefined for the recipe cascade.
+   * `max-width`; its content under its `max-height`; whether it is, or holds, the widest row of a
+   * popup that hugs its rows; and whether its line box adds nothing to its one inline-level child.
+   * Undefined for the recipe cascade.
    */
   readonly measured?: MeasuredBox | undefined;
 };
@@ -933,6 +944,8 @@ export type MeasuredBox = {
   readonly underMaxHeight: string | undefined;
   readonly widest: boolean;
   readonly holdsWidest: boolean;
+  /** The box's line box adds no height or baseline offset to its one inline-level child. */
+  readonly lineFits: boolean;
 };
 
 /**
@@ -1994,6 +2007,56 @@ function inheritedCurrentColor(source: Provenance, inherited: ComputedStyle): St
   return { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
 }
 
+/** The CSS-wide keywords, which a shorthand passes to each of its longhands (CSS Cascade 4 §7.3). */
+const CSS_WIDE_KEYWORDS: ReadonlySet<string> = new Set([
+  "inherit",
+  "initial",
+  "unset",
+  "revert",
+  "revert-layer",
+]);
+
+/**
+ * `list-style` as its longhands, each part it leaves out at its initial value: `disc`, `outside` and
+ * `none` (CSS Lists 3 §3.4). A `none` sets whichever of the type and the image the shorthand leaves
+ * out, so `list-style: none` sets both, as Tailwind preflight writes it on every list. A CSS-wide
+ * keyword sets every longhand to itself, so `list-style: inherit` takes the parent's type, image
+ * and position alike.
+ */
+function listStyleLonghands(parts: readonly string[]): readonly (readonly [string, string])[] {
+  const [only] = parts;
+  if (parts.length === 1 && only !== undefined && CSS_WIDE_KEYWORDS.has(only.toLowerCase())) {
+    return [
+      ["list-style-type", only],
+      ["list-style-position", only],
+      ["list-style-image", only],
+    ];
+  }
+  let type: string | undefined;
+  let position: string | undefined;
+  let image: string | undefined;
+  const named = parts.filter((part) => part.toLowerCase() !== "none");
+  for (const part of named) {
+    const lower = part.toLowerCase();
+    if (lower === "inside" || lower === "outside") {
+      position = lower;
+    } else if (/^(?:url|[a-z-]*gradient|image-set)\(/.test(lower)) {
+      image = part;
+    } else {
+      type = part;
+    }
+  }
+  if (named.length < parts.length) {
+    image ??= "none";
+    type ??= "none";
+  }
+  return [
+    ["list-style-type", type ?? "disc"],
+    ["list-style-position", position ?? "outside"],
+    ["list-style-image", image ?? "none"],
+  ];
+}
+
 /**
  * Split the padding, margin and inset shorthands into their physical sides, as Figma pads a box and
  * as a part's margin draws, and name a logical inset or margin by its physical side, keeping every other
@@ -2071,6 +2134,8 @@ function expandShorthand(property: string, value: string): readonly (readonly [s
       return [["margin-top", value]];
     case "margin-block-end":
       return [["margin-bottom", value]];
+    case "list-style":
+      return listStyleLonghands(parts);
     case "white-space":
     case "text-wrap":
       return wrappingLonghands(property, value);

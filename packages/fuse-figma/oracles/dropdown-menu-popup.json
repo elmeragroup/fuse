@@ -8,18 +8,6 @@
       "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
     },
     {
-      "kind": "field",
-      "path": "variants[*].root.children[*].sizing.horizontal.kind",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the popup sits at its `min-w-32`, 128px, so no row's text sets its width, and the capture names no widest row: every row fills and the popup hugs at its floor. The recipe definition named a widest row here, which drew the same 128px."
-    },
-    {
-      "kind": "field",
-      "path": "variants[*].root.children[*].minWidth",
-      "verdict": "fix-in-new",
-      "reason": "As above."
-    },
-    {
       "kind": "row-added",
       "match": {
         "part": "dropdown-menu-content",
@@ -138,7 +126,7 @@
         "detail": "no rule of the class wins a declaration on an element of any captured cell"
       },
       "verdict": "fix-in-new",
-      "reason": "The popup's `motion-safe:transition-[\u2026]` sets the same properties after `transition-opacity` wherever motion is allowed, as in the capture's browser, so `transition-opacity` wins nothing."
+      "reason": "The popup's `motion-safe:transition-[…]` sets the same properties after `transition-opacity` wherever motion is allowed, as in the capture's browser, so `transition-opacity` wins nothing."
     },
     {
       "kind": "row-lost",

@@ -5,12 +5,18 @@
 
 import type { Result } from "effect";
 
+import accordionItem from "../../captures/accordion-item.json" with { type: "json" };
 import alertDialogContent from "../../captures/alert-dialog-content.json" with { type: "json" };
 import alertDialogOpen from "../../captures/alert-dialog-open.json" with { type: "json" };
 import alert from "../../captures/alert.json" with { type: "json" };
 import avatarGroup from "../../captures/avatar-group.json" with { type: "json" };
 import avatar from "../../captures/avatar.json" with { type: "json" };
 import badge from "../../captures/badge.json" with { type: "json" };
+import breadcrumbEllipsis from "../../captures/breadcrumb-ellipsis.json" with { type: "json" };
+import breadcrumbLink from "../../captures/breadcrumb-link.json" with { type: "json" };
+import breadcrumbPage from "../../captures/breadcrumb-page.json" with { type: "json" };
+import breadcrumbSeparator from "../../captures/breadcrumb-separator.json" with { type: "json" };
+import breadcrumbTrail from "../../captures/breadcrumb-trail.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
@@ -19,6 +25,7 @@ import comboboxOpen from "../../captures/combobox-open.json" with { type: "json"
 import comboboxPopup from "../../captures/combobox-popup.json" with { type: "json" };
 import commandDialogOpen from "../../captures/command-dialog-open.json" with { type: "json" };
 import commandItem from "../../captures/command-item.json" with { type: "json" };
+import commandList from "../../captures/command-list.json" with { type: "json" };
 import commandPalette from "../../captures/command-palette.json" with { type: "json" };
 import confirmButton from "../../captures/confirm-button.json" with { type: "json" };
 import dialogContent from "../../captures/dialog-content.json" with { type: "json" };
@@ -28,6 +35,7 @@ import dropdownMenuItem from "../../captures/dropdown-menu-item.json" with { typ
 import dropdownMenuOpen from "../../captures/dropdown-menu-open.json" with { type: "json" };
 import dropdownMenuPopup from "../../captures/dropdown-menu-popup.json" with { type: "json" };
 import dropdownMenuRadioItem from "../../captures/dropdown-menu-radio-item.json" with { type: "json" };
+import dropdownMenuSubContent from "../../captures/dropdown-menu-sub-content.json" with { type: "json" };
 import dropdownMenuSubTrigger from "../../captures/dropdown-menu-sub-trigger.json" with { type: "json" };
 import empty from "../../captures/empty.json" with { type: "json" };
 import fieldDescription from "../../captures/field-description.json" with { type: "json" };
@@ -39,6 +47,8 @@ import iconButton from "../../captures/icon-button.json" with { type: "json" };
 import iconToggle from "../../captures/icon-toggle.json" with { type: "json" };
 import inputGroup from "../../captures/input-group.json" with { type: "json" };
 import input from "../../captures/input.json" with { type: "json" };
+import itemLink from "../../captures/item-link.json" with { type: "json" };
+import item from "../../captures/item.json" with { type: "json" };
 import kbdGroup from "../../captures/kbd-group.json" with { type: "json" };
 import kbd from "../../captures/kbd.json" with { type: "json" };
 import label from "../../captures/label.json" with { type: "json" };
@@ -47,6 +57,10 @@ import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
 import menuSeparator from "../../captures/menu-separator.json" with { type: "json" };
 import meter from "../../captures/meter.json" with { type: "json" };
+import paginationEdge from "../../captures/pagination-edge.json" with { type: "json" };
+import paginationEllipsis from "../../captures/pagination-ellipsis.json" with { type: "json" };
+import paginationLink from "../../captures/pagination-link.json" with { type: "json" };
+import paginationRow from "../../captures/pagination-row.json" with { type: "json" };
 import popoverContent from "../../captures/popover-content.json" with { type: "json" };
 import popoverOpen from "../../captures/popover-open.json" with { type: "json" };
 import radioGroup from "../../captures/radio-group.json" with { type: "json" };
@@ -66,6 +80,7 @@ import textareaField from "../../captures/textarea-field.json" with { type: "jso
 import textarea from "../../captures/textarea.json" with { type: "json" };
 import toggleGroup from "../../captures/toggle-group.json" with { type: "json" };
 import toggle from "../../captures/toggle.json" with { type: "json" };
+import toolbar from "../../captures/toolbar.json" with { type: "json" };
 import tooltipContent from "../../captures/tooltip-content.json" with { type: "json" };
 import tooltipOpen from "../../captures/tooltip-open.json" with { type: "json" };
 import { decodeCapture } from "./capture-format.ts";
@@ -136,6 +151,21 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["textarea-field", textareaField],
   ["select-field", selectField],
   ["file-upload-dropzone", fileUploadDropzone],
+  ["pagination-link", paginationLink],
+  ["pagination-edge", paginationEdge],
+  ["pagination-ellipsis", paginationEllipsis],
+  ["pagination-row", paginationRow],
+  ["breadcrumb-link", breadcrumbLink],
+  ["breadcrumb-page", breadcrumbPage],
+  ["breadcrumb-ellipsis", breadcrumbEllipsis],
+  ["breadcrumb-separator", breadcrumbSeparator],
+  ["breadcrumb-trail", breadcrumbTrail],
+  ["dropdown-menu-sub-content", dropdownMenuSubContent],
+  ["command-list", commandList],
+  ["item", item],
+  ["item-link", itemLink],
+  ["accordion-item", accordionItem],
+  ["toolbar", toolbar],
 ]);
 
 /**

@@ -1255,6 +1255,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly elementChildren: number | undefined;
   /** The tag of the box's element in the capture. */
   readonly elementTag: string | undefined;
+  /** Whether the box's element sets its `::marker` a `content` beyond `normal` or `none`. */
+  readonly markerContent: boolean | undefined;
   /** What the capture measured of the box's element. */
   readonly measured: MeasuredBox | undefined;
 
@@ -1296,6 +1298,8 @@ class CaptureBoxCascade implements BoxCascade {
     readPseudoElements(read, ledger, placed, this.#layer, path);
     this.elementChildren = own?.element.children.length;
     this.elementTag = own?.element.tag;
+    // The capture records a `::marker` only where it sets such a `content`.
+    this.markerContent = own === undefined ? undefined : own.element.pseudo.marker !== undefined;
     this.measured = own === undefined ? undefined : measuredBox(own.element, read.declarations);
   }
 
@@ -1718,5 +1722,6 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
         : undefined,
     widest: facts?.widest === true,
     holdsWidest: holds(element),
+    lineFits: facts?.lineFits === true,
   };
 }

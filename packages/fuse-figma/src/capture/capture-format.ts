@@ -86,13 +86,19 @@ const MeasuredFactsSchema = Schema.Struct({
   containerWidth: Schema.optionalKey(Schema.Finite),
   /**
    * The element is the widest row of a root that hugs its rows: its text's own width, more than half
-   * a pixel wider than any other row's, sets the root's width.
+   * a pixel wider than any other row's, sets the root's width past its `min-width`.
    */
   widest: Schema.optionalKey(Schema.Literal(true)),
   /** The element's text, or a wrapping row's items, sits on one line under its `max-width`. */
   oneLine: Schema.optionalKey(Schema.Literal(true)),
   /** The element stays more than half a pixel under its `max-height`. */
   underMaxHeight: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * The element's line box holds its one inline-level child with no height or baseline offset of
+   * its own, by a margin of 1px above and below: its content box's top and bottom edges are the
+   * child's margin box's at its line height and at 2px more.
+   */
+  lineFits: Schema.optionalKey(Schema.Literal(true)),
   /**
    * On an anchored popup's root: the anchor beside it is more than half a pixel wider than the
    * popup's `min-width`, so Base UI widens the popup to the anchor.

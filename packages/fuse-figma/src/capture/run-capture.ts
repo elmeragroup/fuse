@@ -348,7 +348,9 @@ function captureElement(
     if (winners instanceof UnknownLayer) {
       return winners;
     }
-    // A `::before` or `::after` with no `content` renders no box (CSS Generated Content 3 §1.1).
+    // A `::before` or `::after` with no `content` renders no box (CSS Generated Content 3 §1.1), and
+    // a `::marker` whose `content` is `normal` or `none` draws what its list item's `list-style-type`
+    // and `list-style-image` say (CSS Lists 3 §3.2), which the element's own declarations hold.
     const renders =
       name === "placeholder" ||
       winners.some(({ property }) => property.name === "content" && !/^(none|normal)$/.test(property.value));
@@ -636,12 +638,20 @@ async function withInitial(cdp: CDPSession, raw: RawCell): Promise<RawCell | Unk
  *   margin box fills it, widening with it, and one more character of the root's text leaves it as it
  *   is, so CSS sets it and not the text. A positioned element with an auto width, as Base UI's
  *   positioner, shrinks to its content, so it is no such container.
- * - `widest`: in a root as wide as its own content and wider than its `min-width`, so its rows' text
- *   sets its width, the leaf row with text that fills its parent and whose own text is the widest,
- *   more than half a pixel wider than the next.
+ * - `widest`: in a root as wide as its own content, at its `min-width` or past it, the leaf row with
+ *   text that fills its parent and whose own text is the widest, more than half a pixel wider than
+ *   the next. That row's text sets the root's width once it outgrows the minimum, as a longer label
+ *   does, so the build hugs it and keeps the minimum as its own (PH3).
  * - `oneLine`: an element under a `max-width` whose own text sits on one line, or a wrapping flex
  *   row whose items do.
  * - `underMaxHeight`: an element more than half a pixel under its `max-height`.
+ * - `lineFits`: an element whose one element child is an inline-level box and which holds no text
+ *   of its own, whose content box's top and bottom edges are the child's margin box's, within half
+ *   a pixel, at its own line height and at 2px more. Matching edges leave no baseline offset, which
+ *   moves the child down a line taller than a fixed-height box, and a line 2px taller grows the strut
+ *   by 1px above and below (CSS 2.1 §10.8.1), so the line box adds nothing to the child by at least
+ *   that margin. The second reading holds only where the page's computed line height took the 2px
+ *   and the child kept its own.
  *
  * The page restores every element it changes before it returns.
  */
@@ -714,9 +724,8 @@ const MEASURE_IN_PAGE = `function () {
       put("", "containerWidth", Math.round(before * 100) / 100);
     }
   }
-  const minimum = Number.parseFloat(getComputedStyle(root).minWidth) || 0;
   const width = root.getBoundingClientRect().width;
-  if (width > minimum + 0.5 && Math.abs(maxContent(root) - width) <= 0.5) {
+  if (Math.abs(maxContent(root) - width) <= 0.5) {
     const rows = elements.filter(({ element }) => element !== root && element.hasAttribute("data-slot") && element.parentElement !== null && texts(element).length > 0 && Math.abs(element.getBoundingClientRect().width - contentWidth(element.parentElement)) <= 0.5);
     const leaves = rows.filter((row) => !rows.some((other) => other !== row && row.element.contains(other.element)));
     const widths = leaves.map(({ element, path }) => ({ path, width: maxContent(element) })).sort((left, right) => right.width - left.width);
@@ -747,6 +756,32 @@ const MEASURE_IN_PAGE = `function () {
     }
     if (style.maxHeight !== "none" && element.getBoundingClientRect().height + 0.5 < Number.parseFloat(style.maxHeight)) {
       put(path, "underMaxHeight", true);
+    }
+    const [child, ...others] = element.children;
+    const line = Number.parseFloat(style.lineHeight);
+    if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
+      const sum = (style, names) => names.reduce((total, name) => total + (Number.parseFloat(style.getPropertyValue(name)) || 0), 0);
+      const fits = () => {
+        const box = element.getBoundingClientRect();
+        const inner = getComputedStyle(element);
+        const top = box.top + sum(inner, ["border-top-width", "padding-top"]);
+        const bottom = box.bottom - sum(inner, ["border-bottom-width", "padding-bottom"]);
+        const outer = getComputedStyle(child);
+        const edges = child.getBoundingClientRect();
+        return Math.abs(edges.top - sum(outer, ["margin-top"]) - top) <= 0.5 && Math.abs(edges.bottom + sum(outer, ["margin-bottom"]) - bottom) <= 0.5;
+      };
+      if (fits()) {
+        const elementStyle = element.getAttribute("style");
+        const childStyle = child.getAttribute("style");
+        const childLine = getComputedStyle(child).lineHeight;
+        child.style.setProperty("line-height", childLine, "important");
+        element.style.setProperty("line-height", String(line + 2) + "px", "important");
+        const applied = Math.abs(Number.parseFloat(getComputedStyle(element).lineHeight) - line - 2) <= 0.01 && getComputedStyle(child).lineHeight === childLine;
+        const still = applied && fits();
+        if (elementStyle === null) { element.removeAttribute("style"); } else { element.setAttribute("style", elementStyle); }
+        if (childStyle === null) { child.removeAttribute("style"); } else { child.setAttribute("style", childStyle); }
+        if (still) { put(path, "lineFits", true); }
+      }
     }
   }
   return out;

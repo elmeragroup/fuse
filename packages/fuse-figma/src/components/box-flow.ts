@@ -123,20 +123,27 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  *   alignment of their own.
  * @param box - The box's sizing and limits, which say whether it hugs its layers along its
  *   direction with no minimum, so `justify-content` has no free space to distribute, and the sizing
- *   of the layers inside it, which a column's `align-items` decides as it stretches them or not.
+ *   of the layers inside it, which a column's `align-items` decides as it stretches them or not, and
+ *   how its cascade knows whether a list item draws a marker.
  * @returns The box's layout, and the alignment its parts set, which {@link settleFlow}
  *   settles once the parts map.
  */
 export function readFlow(
   reader: LayerStyle,
   flow: FlowLayers,
-  box: { readonly sizing: SizingSpec; readonly limits: LimitsSpec; readonly inside: Feed }
+  box: {
+    readonly sizing: SizingSpec;
+    readonly limits: LimitsSpec;
+    readonly inside: Feed;
+    readonly markers: MarkerReading;
+    readonly lineFits: boolean;
+  }
 ): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "grid" && placesInOneColumn(reader, flow)) {
     return { layout: ONE_COLUMN_GRID, self: undefined };
   }
-  const blocks = stacksBlocks(reader, flow);
+  const blocks = stacksBlocks(reader, flow, box);
   if (display === "grid" || display === "-webkit-box" || blocks) {
     const column = display !== "grid";
     return {
@@ -354,50 +361,106 @@ function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-
 }
 
 /**
- * The displays of a block container that stacks its block-level children: a block box, and a list
- * item, which is a block box with a marker (CSS Display 3 §2.3). Tailwind preflight's `list-style:
- * none` on a list leaves its items no marker, as every list the kit draws has.
+ * How a box's cascade knows whether a list item draws a marker: `resolved` where it read the element
+ * and the page's style sheets, as a capture does, and its `::marker` sets no `content` beyond
+ * `normal` or `none`, so the item's own `list-style-type` and `list-style-image` say; `content`
+ * where its `::marker` sets other `content`, which draws whatever they say (CSS Lists 3 §3.2); and
+ * `assumed-none` for the recipe cascade, which models no list style and takes Tailwind preflight's
+ * `list-style: none`, which every list the kit draws carries.
  */
-export const BLOCK_CONTAINERS: ReadonlySet<string> = new Set(["block", "list-item"]);
+export type MarkerReading = "resolved" | "content" | "assumed-none";
+
+/**
+ * Whether a box lays out as a block container that draws no more than a block box does: a `block`,
+ * or a `list-item`, a block box with a marker (CSS Display 3 §2.3), that generates no marker: its
+ * resolved `list-style-type` and `list-style-image` are both `none` (CSS Lists 3 §3), as Tailwind
+ * preflight's `list-style: none` leaves every item of every list the kit draws, and its `::marker`
+ * sets no `content` of its own. A list item that draws a marker, or whose marker the cascade cannot
+ * resolve, is no such container.
+ *
+ * @param reader - The box's style.
+ * @param markers - How the cascade knows whether a list item draws a marker.
+ * @returns True for a block box or a list item with no marker.
+ */
+export function isPlainBlock(reader: LayerStyle, markers: MarkerReading): boolean {
+  const display = normalizeCss(reader.raw("display") ?? "");
+  if (display === "block") {
+    return true;
+  }
+  if (display !== "list-item") {
+    return false;
+  }
+  return (
+    markers === "assumed-none" ||
+    (markers === "resolved" &&
+      normalizeCss(reader.resolved("list-style-type") ?? "disc").toLowerCase() === "none" &&
+      normalizeCss(reader.resolved("list-style-image") ?? "none").toLowerCase() === "none")
+  );
+}
 
 /** The gaps, which separate the items of flex, grid and multi-column boxes and no blocks. */
 const GAPS = ["gap", "row-gap", "column-gap"] as const;
 
 /**
  * Whether a block box stacks its layers as blocks: every layer in its flow is a part whose display
- * is block-level, and the box sets no gap, which separates no blocks (CSS Box Alignment 3 §8). A part
- * whose display nothing sets may be inline, so it leaves the box as it was.
+ * is block-level, or its one layer is an icon whose display is, as preflight makes an `<svg>` a
+ * block, and the box sets no gap, which separates no blocks (CSS Box Alignment 3 §8). A part whose
+ * display nothing sets may be inline, so it leaves the box as it was.
  */
-function stacksBlocks(reader: LayerStyle, flow: FlowLayers): boolean {
-  return (
-    BLOCK_CONTAINERS.has(normalizeCss(reader.raw("display") ?? "")) &&
+function stacksBlocks(
+  reader: LayerStyle,
+  flow: FlowLayers,
+  box: { readonly sizing: SizingSpec; readonly markers: MarkerReading; readonly lineFits: boolean }
+): boolean {
+  const blockLevel = (style: LayerStyle): boolean =>
+    BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""));
+  const parts =
     flow.parts.length > 0 &&
     flow.others.length === 0 &&
-    (flow.parts.every(({ style }) => BLOCK_LEVEL.has(normalizeCss(style.raw("display") ?? ""))) ||
-      spansItsLine(flow)) &&
-    GAPS.every((property) => !reader.has(property))
+    (flow.parts.every(({ style }) => blockLevel(style)) ||
+      spansItsLine(flow, box.sizing.horizontal.kind === "hug", box.lineFits));
+  const icon =
+    flow.parts.length === 0 && flow.others.length === 1 && flow.last !== undefined && blockLevel(flow.last);
+  return (
+    isPlainBlock(reader, box.markers) && (parts || icon) && GAPS.every((property) => !reader.has(property))
   );
 }
 
 /**
- * Whether a block container's one layer is an inline-block as wide as the container, with a fixed
- * height, as TextField's `relative` container holds its `<input>`. The layer sits alone on the
- * container's one line and spans it (CSS 2.1 §9.2.2, §10.3.9), so it lays out as a block would.
- * The line box takes the layer's height where the container's strut fits inside it: Chromium
- * measured the container exactly as tall and wide as its 36px and 44px input at both densities, in
- * a 16px `normal` line, on 2026-10-27, and a real file drew the container 384×36 at Dense and 384×44
- * at Comfortable around the Input set's instance (W5-P4).
+ * Whether a block container's one layer is an inline-level box with a height of its own that spans
+ * the container's one line, so it lays out as a block would (CSS 2.1 §9.2.2, §10.3.9):
+ *
+ * - An inline-block as wide as the container, as TextField's `relative` container holds its
+ *   `<input>`. Chromium measured the container exactly as tall and wide as its 36px and 44px input at
+ *   both densities, in a 16px `normal` line, on 2026-10-27, and a real file drew the container 384×36
+ *   at Dense and 384×44 at Comfortable around the Input set's instance (W5-P4).
+ * - An inline-block, inline flex or inline grid box in a container that hugs its width, which shrinks
+ *   to fit it (CSS 2.1 §10.3.7), as a Pagination item holds its link, where the capture measured that
+ *   the line box adds nothing to it: the container's strut and the layer's baseline decide the line
+ *   box's height (CSS 2.1 §10.8), which a 10px box in a 40px line leaves 40px tall, so the layout
+ *   rests on the `lineFits` fact. On 2026-11-17 Chromium measured each Pagination item as tall as
+ *   its 36px and 44px link in a 24px line, and, with the link's own line height held, first taller
+ *   at a 32px line for Previous, whose caret sets its baseline, and 37px for a page link at Dense,
+ *   40px and 45px at Comfortable.
+ *
+ * @param flow - The box's layers.
+ * @param hugs - Whether the box hugs its width.
+ * @param lineFits - Whether the capture measured the box's line box adding nothing to its layer.
  */
-function spansItsLine(flow: FlowLayers): boolean {
+function spansItsLine(flow: FlowLayers, hugs: boolean, lineFits: boolean): boolean {
   const [only, ...rest] = flow.parts;
-  return (
-    only !== undefined &&
-    rest.length === 0 &&
-    normalizeCss(only.style.raw("display") ?? "") === "inline-block" &&
-    normalizeCss(only.style.resolved("width") ?? "") === "100%" &&
-    only.style.has("height")
-  );
+  if (only === undefined || rest.length > 0 || !only.style.has("height")) {
+    return false;
+  }
+  const display = normalizeCss(only.style.raw("display") ?? "");
+  if (display === "inline-block" && normalizeCss(only.style.resolved("width") ?? "") === "100%") {
+    return true;
+  }
+  return hugs && lineFits && (display === "inline-block" || INLINE_BOXES.has(display));
 }
+
+/** The inline-level displays whose box lays out its own content, as a block would sit on a line. */
+const INLINE_BOXES: ReadonlySet<string> = new Set(["inline-flex", "inline-grid"]);
 
 /** The reverse flag Tailwind's `space-x-*` multiplies its margins by, 0 unless `space-x-reverse` sets it. */
 const SPACE_X_REVERSE = "--tw-space-x-reverse";

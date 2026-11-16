@@ -83,7 +83,7 @@ type CdpRule = {
 type CdpRuleMatch = { readonly rule: CdpRule; readonly matchingSelectors: readonly number[] };
 
 /** The pseudo-elements the capture keeps, those a kit cell can draw. */
-export const KEPT_PSEUDO: ReadonlySet<string> = new Set(["placeholder", "before", "after"]);
+export const KEPT_PSEUDO: ReadonlySet<string> = new Set(["placeholder", "before", "after", "marker"]);
 
 /** Where a rule comes from, by its stylesheet's URL, its layer and its selector. */
 function ruleSource(rule: CdpRule, sheets: ReadonlyMap<string, string>, layer: string): RuleSource {

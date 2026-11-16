@@ -23,6 +23,7 @@
  */
 import { breadcrumbVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type {
   AncestorDefinition,
   Cell,
@@ -255,6 +256,104 @@ export const BREADCRUMB_TRAIL: ComponentDefinition = {
       kind: "instance",
       key: "page",
       of: BREADCRUMB_PAGE,
+      cell: () => ({ current: "page" }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+  ],
+  swapProperties: [],
+};
+
+/** A manifest of a Breadcrumb part that holds a label or an icon, as its definition names them. */
+function partManifest(definition: ComponentDefinition): SetManifest {
+  return {
+    key: definition.key,
+    name: definition.name,
+    slot: definition.slot,
+    axes: definition.axes,
+    columnAxis: definition.columnAxis,
+    label: definition.label,
+    iconsFor: definition.iconsFor,
+    swapProperties: [],
+  };
+}
+
+/** The link's manifest, which the capture-backed build reads with `captures/breadcrumb-link.json`. */
+export const BREADCRUMB_LINK_MANIFEST: SetManifest = partManifest(BREADCRUMB_LINK);
+
+/** The page's manifest, which the capture-backed build reads with `captures/breadcrumb-page.json`. */
+export const BREADCRUMB_PAGE_MANIFEST: SetManifest = partManifest(BREADCRUMB_PAGE);
+
+/** The ellipsis's manifest, which the capture-backed build reads with `captures/breadcrumb-ellipsis.json`. */
+export const BREADCRUMB_ELLIPSIS_MANIFEST: SetManifest = partManifest(BREADCRUMB_ELLIPSIS);
+
+/** The separator's manifest, which the capture-backed build reads with `captures/breadcrumb-separator.json`. */
+export const BREADCRUMB_SEPARATOR_MANIFEST: SetManifest = partManifest(BREADCRUMB_SEPARATOR);
+
+/** An entry of the trail as its manifest names it, as {@link entry} draws it. */
+function entryManifest(inner: InstanceManifest): PartManifest {
+  return {
+    key: `${inner.key}-item`,
+    slot: "breadcrumb-item",
+    shownIn: inner.shownIn,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [{ ...inner, shownIn: () => true }],
+  };
+}
+
+/** The separator after an entry as the trail's manifest names it, as {@link separatorAfter} draws it. */
+function separatorManifest(key: string, shownIn: (cell: Cell) => boolean = () => true): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `${key}-separator`,
+    of: BREADCRUMB_SEPARATOR_MANIFEST,
+    cell: () => ({ size: "14" }),
+    shownIn,
+  };
+}
+
+/** The trail's manifest, which the capture-backed build reads with `captures/breadcrumb-trail.json`. */
+export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
+  key: "breadcrumb-trail",
+  name: "Breadcrumb trail",
+  slot: "breadcrumb-list",
+  axes: BREADCRUMB_TRAIL.axes,
+  columnAxis: "ellipsis",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    entryManifest({
+      kind: "instance",
+      key: "home",
+      of: BREADCRUMB_LINK_MANIFEST,
+      cell: () => ({ state: "rest" }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+    separatorManifest("home"),
+    entryManifest({
+      kind: "instance",
+      key: "ellipsis",
+      of: BREADCRUMB_ELLIPSIS_MANIFEST,
+      cell: () => ({ size: "20" }),
+      shownIn: collapsed,
+    }),
+    separatorManifest("ellipsis", collapsed),
+    entryManifest({
+      kind: "instance",
+      key: "quick-start",
+      of: BREADCRUMB_LINK_MANIFEST,
+      cell: () => ({ state: "rest" }),
+      properties: () => ({ text: { Label: BREADCRUMB_TRAIL_LINK_LABEL } }),
+      shownIn: () => true,
+      exposed: true,
+    }),
+    separatorManifest("quick-start"),
+    entryManifest({
+      kind: "instance",
+      key: "page",
+      of: BREADCRUMB_PAGE_MANIFEST,
       cell: () => ({ current: "page" }),
       shownIn: () => true,
       exposed: true,

@@ -24,7 +24,7 @@ import {
   selectContentVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { SetManifest } from "../capture/manifest";
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type {
   AncestorDefinition,
   Cell,
@@ -275,6 +275,73 @@ export function menuGroupPart({ slot, classes, labelSlot, label, rows, shownIn }
     shownIn,
     classesFor: () => classes,
     elementDefaults: DIV_BLOCK,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [labelSlot === undefined ? caption : { ...caption, slot: labelSlot }, ...rows],
+  };
+}
+
+/**
+ * A row of a menu popup as a manifest names it, as {@link menuRowPart} draws it.
+ *
+ * @param of - The family's row set's manifest.
+ * @param cell - The row set's cell every popup cell shows.
+ * @param label - The row's text, which also names its layer.
+ * @param shownIn - Whether a popup cell shows the row.
+ * @param extra - The instance's other property values.
+ * @returns The row's instance part.
+ */
+export function menuRowManifest(
+  of: SetManifest,
+  cell: Cell,
+  label: string,
+  shownIn: (cell: Cell) => boolean,
+  extra: Omit<InstanceProperties, "text"> = {}
+): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `item-${keyOf(label)}`,
+    of,
+    cell: () => cell,
+    properties: () => ({ text: { Label: label }, ...extra }),
+    shownIn,
+    exposed: true,
+  };
+}
+
+/**
+ * A menu group as a manifest names it, as {@link menuGroupPart} draws it: the shared group label's
+ * instance, in its plain kind, and the rows.
+ *
+ * @param group - The group's slot, the slot the family stamps on the label, the label and the rows.
+ * @returns The group's part.
+ */
+export function menuGroupManifest({
+  slot,
+  labelSlot,
+  label,
+  rows,
+  shownIn,
+}: {
+  readonly slot: string;
+  readonly labelSlot?: string;
+  readonly label: string;
+  readonly rows: readonly InstanceManifest[];
+  readonly shownIn: (cell: Cell) => boolean;
+}): PartManifest {
+  const caption: InstanceManifest = {
+    kind: "instance",
+    key: `label-${keyOf(label)}`,
+    of: MENU_GROUP_LABEL_MANIFEST,
+    cell: () => ({ kind: "plain" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn,
+    exposed: true,
+  };
+  return {
+    key: `group-${keyOf(label)}`,
+    slot,
+    shownIn,
     label: undefined,
     iconsFor: () => [],
     parts: [labelSlot === undefined ? caption : { ...caption, slot: labelSlot }, ...rows],

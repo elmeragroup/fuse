@@ -661,6 +661,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
                   "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
+                  "measured": {"widest":true},
                   "children": [
                     {
                       "tag": "span",
@@ -787,6 +788,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
                   "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-disabled:pointer-events-none","data-disabled:opacity-50","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
+                  "measured": {"widest":true},
                   "children": [
                     {
                       "tag": "svg",
@@ -927,6 +929,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":6},"--row-px":{"_tag":"element","up":6},"--row-py":{"_tag":"element","up":6},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
               "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
+              "measured": {"widest":true},
               "children": []
             },
             {

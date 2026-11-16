@@ -41,7 +41,7 @@ import type {
 } from "./component-spec";
 import { DIV_BLOCK } from "./element-defaults";
 import { KBD_GROUP, KBD_GROUP_MANIFEST } from "./kbd-kit";
-import { menuGroupPart, menuRowPart } from "./menu-kit";
+import { menuGroupManifest, menuGroupPart, menuRowManifest, menuRowPart } from "./menu-kit";
 import { always, never } from "./popup-facts";
 
 const { list, item, trailing } = commandVariants();
@@ -223,5 +223,37 @@ export const COMMAND_ITEM_MANIFEST: SetManifest = {
     return cell.trailing === "caret" ? [caret] : [];
   },
   parts: [shortcutManifest(false), shortcutManifest(true)],
+  swapProperties: [],
+};
+
+/**
+ * The list's manifest, which the capture-backed build reads with `captures/command-list.json`: each
+ * group's label and its rows, each row's shortcut showing Alt and its letter (PN).
+ */
+export const COMMAND_LIST_MANIFEST: SetManifest = {
+  key: "command-list",
+  name: "Command list",
+  slot: "command-list",
+  axes: COMMAND_LIST.axes,
+  columnAxis: "content",
+  previewWidth: COMMAND_LIST_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: COMMAND_GROUPS.map(({ value: label, items }) =>
+    menuGroupManifest({
+      slot: "command-group",
+      labelSlot: "command-label",
+      label,
+      rows: items.map(({ label: row, key }) =>
+        menuRowManifest(COMMAND_ITEM_MANIFEST, { trailing: "shortcut", state: "rest" }, row, isGrouped, {
+          nested: [
+            { path: ["shortcut", "modifier"], text: { Label: COMMAND_LIST_MODIFIER } },
+            { path: ["shortcut", "key"], text: { Label: key } },
+          ],
+        })
+      ),
+      shownIn: isGrouped,
+    })
+  ),
   swapProperties: [],
 };

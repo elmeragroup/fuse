@@ -56,9 +56,10 @@ export function makeVariableIndex(
     }
   }
   // The builder reads values with Tailwind's variables substituted, which drops the fallback of
-  // every synced variable, so the index compares code syntax the same way.
+  // every synced variable, so the index compares code syntax the same way. It spells each number one
+  // way, so the shipped CSS's `.25rem` meets a formula's `0.25rem`.
   const canonical = (value: string): string =>
-    normalizeCss(
+    canonicalCss(
       substituteVars(
         value,
         () => undefined,

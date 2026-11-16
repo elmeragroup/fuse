@@ -285,6 +285,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -398,6 +399,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -511,6 +513,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -624,6 +627,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -737,6 +741,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -863,6 +868,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -976,6 +982,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -1089,6 +1096,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -1202,6 +1210,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",
@@ -1315,6 +1324,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"lineFits":true},
                   "children": [
                     {
                       "tag": "input",

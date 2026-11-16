@@ -6,7 +6,9 @@
  * assembles a set from the root of each cell.
  */
 
+import type { MarkerReading } from "./box-flow";
 import {
+  isPlainBlock,
   negativeRowSpacing,
   orderModified,
   readFlow,
@@ -148,9 +150,9 @@ function readDisplay(
   label: string | undefined,
   layout: Layout,
   clamp: number | undefined,
-  box: { readonly width: SizeSpec; readonly inside: Feed }
+  box: { readonly width: SizeSpec; readonly inside: Feed; readonly markers: MarkerReading }
 ): boolean {
-  const { width, inside } = box;
+  const { width, inside, markers } = box;
   // The display picks the layout: its direction, the alignments an unset property leaves, whether the
   // layers inside fill or hug, and the paint order of a box that stacks blocks.
   const lays = [
@@ -203,34 +205,41 @@ function readDisplay(
     return false;
   }
   const ownText = label !== undefined && layers.length === 1 && layers[0] === label;
-  // Blocks fill a box only across a width it has before they lay out.
-  const stacked = layout.blocks && width.kind !== "hug";
+  // Blocks fill a box only across a width it has before they lay out, but one block fills a box
+  // that hugs its width exactly, since the box shrinks to fit that block.
+  const stacked = layout.blocks && (width.kind !== "hug" || layers.length === 1);
+  // A list item with no marker lays out as the block box it is (CSS Display 3 §2.3). The recipe
+  // cascade, which assumes no marker, maps one only where it stacks its blocks.
+  const assumed = display === "list-item" && markers === "assumed-none";
+  const plainBlock = isPlainBlock(reader, markers) && (!assumed || stacked);
+  const marker =
+    display === "list-item" && !assumed
+      ? ", a list item whose resolved `list-style-type` and `list-style-image` are `none`, so it draws no marker"
+      : "";
+  const stackDetail = assumed
+    ? "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
+    : "a vertical auto layout, its block-level parts stacked down it, each as wide as the box";
   const flow =
-    display === "list-item" && stacked
+    display === "inline-block" && ownText
       ? literalLayout(
-          ["list-item"],
-          "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
+          ["inline-block"],
+          "an inline-block that holds only its own text, which it lays out inside as a block box does (CSS Display 3 §2.1), as an `<input>` holds its value"
         )
-      : display === "inline-block" && ownText
+      : plainBlock && (layers.length === 0 || ownText || stacked)
         ? literalLayout(
-            ["inline-block"],
-            "an inline-block that holds only its own text, which it lays out inside as a block box does (CSS Display 3 §2.1), as an `<input>` holds its value"
+            [display],
+            (stacked
+              ? stackDetail
+              : ownText
+                ? "a block box that sets its own text in lines"
+                : "a frame with no layers to lay out") + marker
           )
-        : display === "block" && (layers.length === 0 || ownText || stacked)
-          ? literalLayout(
-              ["block"],
-              stacked
-                ? "a vertical auto layout, its block-level parts stacked down it, each as wide as the box"
-                : ownText
-                  ? "a block box that sets its own text in lines"
-                  : "a frame with no layers to lay out"
-            )
-          : literalLayout(
-              ["inline-flex", "flex"],
-              layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
-            );
+        : literalLayout(
+            ["inline-flex", "flex"],
+            layout.direction === "VERTICAL" ? "a vertical auto layout" : "a horizontal auto layout"
+          );
   reader.read("display", flow.map, flow.describe, lays);
-  return display === "block" && ownText;
+  return plainBlock && ownText;
 }
 
 /**
@@ -479,6 +488,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...others.map(({ name }) => name),
     ...flowingAfter.map(({ name }) => name),
   ];
+  // A cascade that read the element resolves a list item's marker; the recipe cascade assumes none.
+  const markers: MarkerReading =
+    cascade.elementTag === undefined
+      ? "assumed-none"
+      : cascade.markerContent === true
+        ? "content"
+        : "resolved";
   // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
   const flow = readFlow(
     reader,
@@ -498,7 +514,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         (label === undefined ? (lastIcon.get("start") ?? flowingBefore.at(-1)?.cascade.style) : undefined),
       labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
     },
-    { sizing, limits, inside }
+    { sizing, limits, inside, markers, lineFits: cascade.measured?.lineFits === true }
   );
   const { layout } = flow;
   // A class that spaces every child but the last draws as the item spacing only where each element
@@ -661,6 +677,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp, {
     width: across === undefined ? sizing.horizontal : FILL_ACROSS,
     inside,
+    markers,
   });
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
