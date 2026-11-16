@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { LineChart } from "@elmeragroup/fuse/chart";
@@ -12,6 +12,8 @@ const KW = [
 ];
 const FIRST = Date.UTC(2026, 5, 7, 8);
 const QUARTER = 15 * 60 * 1000;
+// The feed replays a reading every 250 ms, faster than an update's 480 ms.
+const FEED_MS = 250;
 
 /** A window of eight quarters starting at a reading. */
 function windowAt(start: number) {
@@ -30,19 +32,34 @@ const config = {
 } as const satisfies ChartConfig;
 
 /**
- * Each press appends the next reading and drops the first, so the line slides one quarter left.
+ * Each press of Next reading appends the next reading and drops the first, so the line slides one quarter left.
  * Its dots and the latest marker move with the line, and a reader who prefers reduced motion sees the
- * new line at once.
+ * new line at once. Start feed appends a reading every 250 ms. Each slide then runs for the time
+ * since the previous reading, so it ends as the next one arrives.
  */
 export function LineChartUpdate() {
   const [start, setStart] = useState(0);
+  const [feeding, setFeeding] = useState(false);
+  // The rows keep their identity when only the feed toggles, so Start feed and Stop feed send no new
+  // `data`.
+  const data = useMemo(() => windowAt(start), [start]);
+  useEffect(() => {
+    if (!feeding) return;
+    const feed = setInterval(() => setStart((value) => value + 1), FEED_MS);
+    return () => clearInterval(feed);
+  }, [feeding]);
   return (
     <div className="flex w-full flex-col items-start gap-4">
-      <Button variant="outline" size="sm" onClick={() => setStart((value) => value + 1)}>
-        Next reading
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => setStart((value) => value + 1)}>
+          Next reading
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setFeeding((value) => !value)}>
+          {feeding ? "Stop feed" : "Start feed"}
+        </Button>
+      </div>
       <LineChart.Root
-        data={windowAt(start)}
+        data={data}
         config={config}
         xKey="at"
         xScale="point"

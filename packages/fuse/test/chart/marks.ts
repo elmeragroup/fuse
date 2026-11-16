@@ -19,6 +19,17 @@ export function bars(host: HTMLElement, series?: number): HTMLElement[] {
 }
 
 /**
+ * The path a chart's line draws its solid part with, which the loop writes in every frame of a tween.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The path's `d`, or an empty string with no line.
+ */
+export function linePath(host: HTMLElement): string {
+  // The line is aria-hidden plot output, so its slot locates it.
+  return host.querySelector('[data-slot="chart-line"][data-part="solid"]')?.getAttribute("d") ?? "";
+}
+
+/**
  * The plot surface's client box.
  *
  * @param host - The rendered chart's host.

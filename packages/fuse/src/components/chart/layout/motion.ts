@@ -10,6 +10,20 @@ import type { Spring } from "./spring";
 /** How long a data update moves a mark, in milliseconds. `chart.css` mirrors it as `--chart-update`. */
 export const CHART_UPDATE_MS = 480;
 
+/**
+ * The duration of a data update paced to its feed. It uses the time since the previous data update
+ * when that is shorter than `CHART_UPDATE_MS`, 480 ms. A window that slides on every reading of a faster feed
+ * then ends each slide as the next reading arrives. A gap shorter than a frame needs no floor of its
+ * own, because the next frame draws the update at its target either way. The floor of 1 ms keeps
+ * the duration above zero when two commits read the same clock instant.
+ *
+ * @param sincePrevious - The time since the previous data update's commit, in milliseconds.
+ * @returns The update's duration, in milliseconds.
+ */
+export function feedUpdateMs(sincePrevious: number): number {
+  return Math.max(1, Math.min(CHART_UPDATE_MS, sincePrevious));
+}
+
 /** The control values of every data update and of the entrance. */
 export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
 

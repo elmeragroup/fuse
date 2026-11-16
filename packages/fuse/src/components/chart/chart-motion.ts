@@ -5,10 +5,11 @@
  * writing attributes straight to the DOM, so React commits nothing while marks move. A second
  * update during a tween starts from the drawn numbers, so the mark continues without a jump.
  */
+import type { ChartUpdate } from "./chart-context";
 import { cubicBezier } from "./layout/ease";
 import { momentumSpring, spanAround, springAt, springProgress } from "./layout/momentum";
 import type { MomentumPoint, MomentumSpring, NumberSpring } from "./layout/momentum";
-import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./layout/motion";
+import { CHART_UPDATE_CURVE, CHART_UPDATE_MS, feedUpdateMs } from "./layout/motion";
 import { sameItems } from "./layout/same-items";
 
 /** A mark's drawn numbers in a fixed order, such as a bar's x, y, width and height. */
@@ -92,8 +93,8 @@ export type Placement =
       readonly from: MarkValues;
       readonly delay: number;
       /**
-       * How long the entrance moves the mark, in milliseconds. Defaults to the update's 480 ms. The
-       * polar entrance runs over `--chart-intro`, 1 s.
+       * How long the entrance moves the mark, in milliseconds. Defaults to `CHART_UPDATE_MS`, 480 ms.
+       * The polar entrance runs over `--chart-intro`, 1 s.
        */
       readonly duration?: number;
       /**
@@ -236,6 +237,17 @@ export type ChartMotion = {
   readonly restRevision: () => number;
   /** Draws every moving mark at its target at once, as a range step does. */
   readonly finish: () => void;
+  /**
+   * Sets how long every move of a data update runs, and lets the update's first move restart the
+   * running group. Root calls it as it commits a data update, before any of the update's marks
+   * places, whether the update moves a mark, snaps or crossfades. A slide, a window that moves by
+   * whole slots, runs for the time since the previous new `data` when that is shorter than 480 ms,
+   * so each slide ends as the next reading arrives. Any other update runs 480 ms. A second call for
+   * the same commit does nothing.
+   *
+   * @param update - The commit's update, compared by identity.
+   */
+  readonly dataUpdated: (update: ChartUpdate) => void;
   /** Follows the user's motion preference. Reduced motion snaps every placement. */
   readonly setReduced: (reduced: boolean) => void;
   /** Whether the loop follows the user's reduced-motion preference, as `setReduced` last set it. */
@@ -286,7 +298,7 @@ type Tween = {
   /** When the clock started, or infinity for an entrance the hold keeps waiting. */
   readonly start: number;
   readonly delay: number;
-  /** How long the tween runs, the update's duration when undefined. */
+  /** How long the tween runs, `CHART_UPDATE_MS` when undefined, 480 ms. */
   readonly duration?: number;
   /** `"linear"` for a steady pace, the update curve when undefined. */
   readonly curve?: "linear";
@@ -563,6 +575,11 @@ export function createChartMotion(
   let commitTime: number | null = null;
   // The commit whose data update last restarted the group.
   let restartedAt: number | null = null;
+  // What `dataUpdated` keeps: how long the update runs, the last update it noted, and the instant
+  // of the last one with new `data`.
+  let updateMs = CHART_UPDATE_MS;
+  let noted: ChartUpdate | null = null;
+  let fedAt: number | null = null;
   // The measurement each frame's marks were last mapped into, or the commit that mapped them.
   const rescaledFor = new WeakMap<FrameOwner, object | number>();
   const startTime = (): number => {
@@ -708,6 +725,15 @@ export function createChartMotion(
     if (!held) handle ??= host.requestFrame(step);
   };
 
+  /** A data update's move, on the commit's clock for the update's duration. */
+  const moveTween = (from: MarkValues, to: MarkValues): Tween => ({
+    from,
+    to,
+    start: startTime(),
+    delay: 0,
+    duration: updateMs,
+  });
+
   /**
    * The momentum tween a moving mark leaves on toward a new target: a spring from where it showed,
    * at its velocity then, on the clock it showed it at. Null for a mark at rest, one in its delay
@@ -828,9 +854,10 @@ export function createChartMotion(
         for (const mark of moving) {
           if (mark.tween === null) continue;
           // A frame's list is drawn into again, so the restart keeps a copy.
-          // A restart runs on the update's clock, so an entrance it interrupts takes 480 ms from here.
-          const { duration: _entrance, spring: _spring, ...restarted } = mark.tween;
-          mark.tween = { ...restarted, from: [...mark.drawn], start, delay: 0 };
+          // A restart runs on the update's clock, so an entrance it interrupts takes the update's
+          // duration from here.
+          const { spring: _spring, ...restarted } = mark.tween;
+          mark.tween = { ...restarted, from: [...mark.drawn], start, delay: 0, duration: updateMs };
           mark.eased = 0;
         }
       }
@@ -848,7 +875,7 @@ export function createChartMotion(
         snap(id, target, write, axes, owner);
         return;
       }
-      run(id, write, { from, to, rest: target, start: startTime(), delay: 0 }, axes, owner);
+      run(id, write, { ...moveTween(from, to), rest: target }, axes, owner);
       return;
     }
     if (placement.kind === "settle" && mark !== undefined && tween?.rest !== undefined) {
@@ -903,7 +930,7 @@ export function createChartMotion(
       return;
     }
     if (placement.kind === "move") {
-      run(id, write, { from: mark.drawn, to: target, start: startTime(), delay: 0 }, axes, owner);
+      run(id, write, moveTween(mark.drawn, target), axes, owner);
       return;
     }
     // A resize retargets a running tween on its own clock, so the mark keeps the progress it
@@ -984,6 +1011,19 @@ export function createChartMotion(
       projectAll();
       if (handle !== null) host.cancelFrame(handle);
       handle = null;
+    },
+    dataUpdated(update) {
+      if (noted === update) return;
+      noted = update;
+      // Each data commit reads the loop's clock afresh and forgets the last restart, so of two in
+      // one task, as successive `flushSync` calls make, the second restarts the group the first
+      // started, even on a clock that reads the same instant for both.
+      commitTime = null;
+      restartedAt = null;
+      const at = startTime();
+      updateMs =
+        update.window.mode === "slide" && fedAt !== null ? feedUpdateMs(at - fedAt) : CHART_UPDATE_MS;
+      if (update.rows === "new") fedAt = at;
     },
     setReduced(value) {
       reduced = value;
