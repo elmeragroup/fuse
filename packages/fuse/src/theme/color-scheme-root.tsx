@@ -12,29 +12,30 @@ import type { ColorSchemeRuntime, ColorSchemeRuntimeConfig } from "./color-schem
 import { InjectedColorSchemeScript } from "./color-scheme-script";
 
 /**
- * The document's color-scheme runtime, provided by the one `ColorSchemeRoot`. Consumers
- * subscribe to it themselves: the value never changes after mount, because a changed context
- * value reaches Suspense boundaries that have not hydrated yet, and React client-renders a
- * boundary it cannot hydrate on the spot, deleting the server's markers for streamed content.
+ * The document's color-scheme runtime, provided by the one `ColorSchemeRoot`. Readers subscribe to
+ * the runtime themselves. The value never changes after mount, because a changed context value
+ * reaches Suspense boundaries that have not hydrated yet, and React client-renders a boundary it
+ * cannot hydrate on the spot. That deletes the server's markers for streamed content.
  */
 export const ColorSchemeContext = createContext<ColorSchemeRuntime | undefined>(undefined);
 
-/** The runtime's `force`, for `ForceColorScheme`; `undefined` outside a `ColorSchemeRoot`. */
+/** The runtime's `force`, for `ForceColorScheme`. It is `undefined` outside a `ColorSchemeRoot`. */
 export const ColorSchemeForceContext = createContext<ColorSchemeRuntime["force"] | undefined>(undefined);
 
 /** How many `ForceColorScheme` boundaries enclose a subtree. */
 export const ColorSchemeForceDepthContext = createContext(0);
 
 /**
- * `ThemeProvider`'s color-scheme props. Declared apart from `ThemeProviderProps` so that
- * public type keeps its exact text; a type test pins that the provider's props fit here.
+ * Props for `ColorSchemeRoot`, which are `ThemeProvider`'s color-scheme props. They are declared
+ * apart from `ThemeProviderProps` so that public type keeps its exact text. A type test checks that
+ * the provider's props fit here.
  */
 export type ColorSchemeRootProps = ColorSchemeOptions & {
   /** The subtree that reads or forces the color scheme. */
   children: ReactNode;
-  /** Suppress CSS transitions for every runtime `data-theme` write. */
+  /** Whether the runtime suppresses CSS transitions for every `data-theme` write it makes. */
   disableTransitionOnChange?: boolean;
-  /** Render the bootstrap script instead of expecting the host to place it. */
+  /** Whether the root renders the bootstrap script instead of expecting the host to place it. */
   injectColorSchemeScript?: boolean;
   /** The CSP nonce for the injected script and the transition-suppression style. */
   nonce?: string;
@@ -43,10 +44,10 @@ export type ColorSchemeRootProps = ColorSchemeOptions & {
 };
 
 /**
- * Owns the document's color-scheme runtime: it creates it over the browser platform,
- * configures it in the insertion phase of every commit, connects it after mount, runs the
- * one-time bootstrap diagnostics and renders the injected script. Render it exactly once
- * per document, above everything that reads the color scheme.
+ * The provider of the document's color-scheme runtime. It creates the runtime over the browser
+ * platform, configures it in the insertion phase of every commit, connects it after mount, runs the
+ * one-time bootstrap diagnostics and renders the injected script. Render it exactly once per
+ * document, above everything that reads the color scheme.
  *
  * @param props - The color-scheme options and the subtree.
  * @returns The subtree inside the color-scheme contexts.

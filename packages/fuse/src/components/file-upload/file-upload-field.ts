@@ -31,7 +31,7 @@ export type FileUploadFieldOptions = {
   readonly files: readonly File[];
   /** The Root's own `name`; a surrounding Field's wins. */
   readonly name: string | undefined;
-  /** Whether the Root is disabled, by itself or by its Field. A disabled control is not validated. */
+  /** Whether the Root is disabled, by itself or by its Field. The Field skips a disabled control. */
   readonly disabled: boolean;
   /** The Trigger a Form focuses on an invalid submit. */
   readonly trigger: RefObject<HTMLElement | null>;
@@ -133,9 +133,9 @@ export type FileUploadTriggerFocusOptions = {
 
 /** The focus handlers a Trigger spreads. */
 export type FileUploadTriggerFocus = {
-  /** Focus entered the Trigger. */
+  /** Called when focus enters the Trigger. */
   readonly onFocus: () => void;
-  /** Focus left the Trigger, or only the window did. */
+  /** Called when focus leaves the Trigger, or leaves only the window. */
   readonly onBlur: (event: FocusEvent<HTMLElement>) => void;
 };
 

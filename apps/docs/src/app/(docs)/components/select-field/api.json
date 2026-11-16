@@ -54,7 +54,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The error message, rendered as `Field.Error` under the trigger, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the trigger is marked invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
+          "description": "The error message, rendered as `Field.Error` under the trigger, ahead of the description, while it is truthy. Pass `isInvalid` with it, so the field marks the trigger invalid too. Without it, the field shows its own error, such as one `Form` holds under its `name` or the required message.",
           "required": false
         },
         {
@@ -72,7 +72,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field and the trigger.",
+          "description": "Whether the field and the trigger are disabled.",
           "required": false
         },
         {
@@ -81,7 +81,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look.",
+          "description": "Whether the field is invalid, with the invalid look.",
           "required": false
         },
         {
@@ -99,7 +99,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the select read-only, with the muted read-only fill. The trigger stays focusable and its popup still opens to show the options, but no choice changes the value. The value still submits under `name`.",
+          "description": "Whether the select is read-only, with the muted read-only fill. The trigger stays focusable and its popup still opens to show the options, but no choice changes the value. The value still submits under `name`.",
           "required": false
         },
         {
@@ -108,7 +108,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes a selection required, so an empty submit is blocked with the required message.",
+          "description": "Whether a selection is required, so the field blocks an empty submit with the required message.",
           "required": false
         },
         {
@@ -244,7 +244,7 @@
           "type": "Value | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The selection, for a controlled field. `null` selects nothing. The field takes one value; for multiple selection, compose `Field.Root` and the `Select` parts.",
+          "description": "The selection, for a controlled field. `null` selects nothing. The field takes one value. For multiple selection, compose `Field.Root` and the `Select` parts.",
           "required": false
         }
       ]

@@ -107,5 +107,6 @@ Take PR screenshots with `pnpm shots`; read [its README](tooling/pr-shots/README
 For release or changeset work, read [scripts/RELEASE.md](scripts/RELEASE.md).
 For palette changes, read the [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
 For a component docs page or its demos, read [the fuse-component-page skill](.agents/skills/fuse-component-page/SKILL.md).
+For JSDoc in `packages/fuse`, read [the fuse-jsdoc skill](.agents/skills/fuse-jsdoc/SKILL.md).
 For theme vocabulary, read [CONTEXT.md](CONTEXT.md).
 For Figma variable sync, read [the fuse-figma README](packages/fuse-figma/README.md).

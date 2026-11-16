@@ -59,13 +59,13 @@ export type SessionSettings = {
   readonly editable: boolean;
   /** The segments shown. */
   readonly fields: readonly EditableSegmentType[];
-  /** Whether the input shows its date and time, or its time alone (`date-input-scope.ts`). */
+  /** Whether the input shows its date and time, or its time alone; see `date-input-scope.ts`. */
   readonly units: DateInputUnits;
   /** Text in the field's own format read into its units, or `undefined`; see `readFieldText`. */
   readonly readText: (text: string) => FieldText | undefined;
   /**
    * The instant the input names a value's zone at, as its segments write the name: the value's
-   * own, or today's for a time on the stand-in day (see `zoneNamingInstant`).
+   * own, or today's for a time on the stand-in day; see `zoneNamingInstant`.
    */
   readonly zoneInstant: (value: TemporalValue) => number;
   readonly hourCycle: HourCycle;
@@ -190,7 +190,7 @@ export function draftOver(state: SessionState, basis: string): DateDraft | null 
 
 /**
  * What the segments show, as far as validity goes: nothing, the committed value, or a draft that
- * is not (yet) a value.
+ * is not yet a value.
  *
  * @param state - The state.
  * @param committed - The committed value.
@@ -251,7 +251,7 @@ function committedState(
 
 /**
  * What a gesture edits: the draft typed over the committed value and these segments, or the value
- * itself, on the day its hidden units belong to (see {@link onShownDay}). Every transition reads
+ * itself, on the day its hidden units belong to; see {@link onShownDay}. Every transition reads
  * the draft through here, paste and blur confirmation included.
  */
 function current(state: SessionState, settings: SessionSettings): DateDraft {
@@ -262,12 +262,13 @@ function current(state: SessionState, settings: SessionSettings): DateDraft {
 }
 
 /**
- * The one owner of a time-only input's hidden date units: they are always the day its time is
- * on, the committed value's day, else the placeholder's (the day the control around the input
- * holds, else today). A time-only draft keeps its typed time while the value moves to another day
- * (its basis is the time; see {@link shownKey}), and an empty one has no day of its own, so without
- * this its hour would step through another day's instants, past the repeated hour of a night the
- * clocks go back. A field that shows its date owns its date units, which this leaves alone.
+ * The draft with a time-only input's hidden date units set to the day its time is on, as they
+ * always are. This is the one place that sets them. The day is the committed value's day, else
+ * the placeholder's, which is the day the control around the input holds, else today. A time-only
+ * draft keeps its typed time while the value moves to another day, since its basis is the time;
+ * see {@link shownKey}. An empty draft has no day of its own. Without this, its hour would step
+ * through another day's instants, past the repeated hour of a night the clocks go back. A field
+ * that shows its date sets its own date units, which this leaves alone.
  *
  * @param draft - A draft of the input.
  * @param settings - The settings, which name the committed value and the placeholder.
@@ -494,8 +495,8 @@ export function confirm(state: SessionState, settings: SessionSettings): Session
 
 /**
  * Pasted text: ISO text of a kind the input can hold, converted to the input's kind, or else text
- * in the field's own format, commits; a time-only input takes a wall-clock time
- * (`date-input-paste.ts`).
+ * in the field's own format, commits; a time-only input takes a wall-clock time, as
+ * `date-input-paste.ts` reads it.
  *
  * @param state - The state.
  * @param text - The clipboard's text.

@@ -41,7 +41,7 @@ export function AvatarGroup({
 }: Omit<ComponentProps<"div">, "children"> & {
   /**
    * The `Avatar.Root`s to stack. The group overlaps them and rings each in the background
-   * colour, so they need no negative margin or ring of their own. A ring class on one avatar
+   * color, so they need no negative margin or ring of their own. A ring class on one avatar
    * wins over the group's.
    */
   children?: ComponentProps<"div">["children"];

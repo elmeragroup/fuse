@@ -9,10 +9,10 @@ const TEXT_FLOOR = 4.5;
 const NEUTRAL_950 = PRIMITIVES["neutral-950"];
 
 /**
- * The text color for a direct label on a chart mark: white or neutral 950, whichever contrasts
- * more with the fill, white on a tie.
+ * The text color for a direct label on a chart mark: white or neutral 950, whichever contrasts more
+ * with the fill, white on a tie.
  *
- * @throws When neither reaches 4.5:1 on the fill, a defect in the chart palette.
+ * @throws When neither reaches 4.5:1 on the fill, which is a defect in the chart palette.
  */
 function markForeground(fill: string): string {
   const white = literalContrast(WHITE, fill);
@@ -29,12 +29,12 @@ export type ChartForegroundName = Extract<DerivedTokenName, `chart-${string}`>;
 
 /**
  * The on-color roles of one composed theme, each read from the slot its `DERIVED_ROLES` entry
- * names: white or neutral 950, whichever contrasts more with the slot, at 4.5:1 or more. The
- * ramp, diverging and sentiment marks get none, so their labels sit outside the mark.
+ * names: white or neutral 950, whichever contrasts more with the slot, at 4.5:1 or more. The ramp,
+ * diverging and sentiment marks get none, so their labels sit outside the mark.
  *
  * @param tokens - Every layer-assigned role of one composed theme in one scheme.
  * @returns Each `chart-*-foreground` value, the `oklch()` literal of white or of neutral 950.
- * @throws When a slot has no readable foreground, a defect in the chart palette.
+ * @throws When a slot has no readable foreground, which is a defect in the chart palette.
  */
 export function chartForegrounds(tokens: LayerTokens): Pick<TokenContract, ChartForegroundName> {
   const on = (name: ChartForegroundName): string => markForeground(tokens[DERIVED_ROLES[name].sources[0]]);

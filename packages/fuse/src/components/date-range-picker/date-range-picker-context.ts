@@ -66,7 +66,10 @@ export type DateRangePickerRootContextValue = {
   readonly messages: readonly string[];
   readonly describedBy: string | undefined;
   readonly hasPresets: boolean;
-  /** A part the Root could not see among its children announces itself after mount (fallback). */
+  /**
+   * The fallback for a part the Root could not see among its children: the part announces itself
+   * after mount.
+   */
   readonly registerPart: (part: RangePart) => () => void;
   readonly inputChange: (
     endpoint: Endpoint,

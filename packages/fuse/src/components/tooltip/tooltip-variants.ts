@@ -3,13 +3,12 @@ import { tv } from "../../styles/tv";
 import { overlayPopupMotionClass } from "../overlay/overlay-classes";
 
 /**
- * The module-private recipe for the Tooltip popup and its arrow. It is not exported from
- * `@elmeragroup/fuse/tooltip`, and the workspace-only recipe catalog re-exports it for the Figma
- * component sync.
+ * The module-private recipe for the Tooltip popup and its arrow. `@elmeragroup/fuse/tooltip` does
+ * not export it, and the workspace-only recipe catalog re-exports it for the Figma component sync.
  *
  * - `popup` takes the shared motion set but not the composed popup surface or the timing rung.
  *   It inverts the fill and has no ring, and `ring-0` could not remove the surface's
- *   `ring-foreground/10`, because width and colour are separate tailwind-merge conflict groups.
+ *   `ring-foreground/10`, because width and color are separate tailwind-merge conflict groups.
  *   It has no timing on purpose. The Tooltip shell rounds and pads it, and it is at most 320px
  *   wide.
  * - `arrow` is a 10px square in the popup's fill, turned 45° and pulled half out of the popup's

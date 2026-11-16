@@ -162,7 +162,7 @@ export type TokenContract = {
  * design tools store, and the CSS emitter writes the matching `color-mix()`.
  */
 export type OklchMixRole = {
-  /** Emitted as a live `color-mix()`. */
+  /** The tag for a role the CSS emitter writes as a live `color-mix()`. */
   readonly _tag: "OklchMix";
   /** The role the mix starts from. */
   readonly from: TokenName;
@@ -175,11 +175,11 @@ export type OklchMixRole = {
 /**
  * A derived role that composition computes at build time from the roles it reads. Per theme,
  * composition picks either a literal color or an alias of a source, such as `var(--brand)`, and
- * theme rules declare that choice. A literal does not follow a host override of a source; an
+ * theme rules declare that choice. A literal does not follow a host override of a source, and an
  * alias does.
  */
 export type ComposedRole = {
-  /** Emitted as the composed value. */
+  /** The tag for a role the CSS emitter writes as its composed value. */
   readonly _tag: "Composed";
   /** Every role the computation reads. */
   readonly sources: readonly TokenName[];
@@ -418,9 +418,9 @@ export type ColorTokenName = {
 export type TokenPaint = "surface" | "ink" | "line";
 
 /**
- * Where Fuse paints each color role. Exporters read it to offer a role only where it belongs,
- * such as the Figma sync's picker scopes. A role no component paints takes the paints its name and the docs demos give it. A new color
- * token without an entry fails to compile.
+ * Where Fuse paints each color role. Exporters read it to offer a role only where it belongs, such
+ * as the Figma sync's picker scopes. A role no component paints takes the paints its name and the
+ * docs demos give it. A new color token without an entry fails to compile.
  */
 export const TOKEN_PAINTS = {
   background: ["surface", "ink", "line"],
@@ -564,12 +564,12 @@ export function isColorTokenName(name: string): name is ColorTokenName {
 }
 
 /**
- * What each contract token is for, in one or two sentences for a designer picking a variable.
- * Each names the rule a designer could break, where the code states one, such as a pair that
- * is not text-grade or a value that turns transparent in an identity. Exporters, such as the
- * Figma sync, and the docs token list show it. A new token without one fails to compile. No
- * description holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
- * `packages/fuse-figma/src/variable-set.ts`).
+ * What each contract token is for, in one or two sentences for a designer picking a variable. Each
+ * names the rule a designer could break, where the code states one, such as a pair that is not
+ * text-grade or a value that turns transparent in an identity. Exporters, such as the Figma sync,
+ * and the docs token list show it. A new token without one fails to compile. No description
+ * contains `& < > " '`, which the Figma sync refuses. `descriptionProblem` in
+ * `packages/fuse-figma/src/variable-set.ts` has that check.
  */
 // oxlint-disable-next-line elmera/no-raw-class-map -- the values are prose for designers, not classes; "text-grade" reads as a text- utility
 export const TOKEN_DESCRIPTIONS = {
@@ -798,10 +798,10 @@ export const TOKEN_DESCRIPTIONS = {
 } as const satisfies Record<TokenName, string>;
 
 /**
- * The roles a light theme rule resets. They are every key the branded identity layer, a
- * brand palette or a segment delta can assign, plus each derived role computed from them
- * and each alias that reads one of them. The brand ramps are not among them: the brand rules
- * own them, so a palette rule never restates a ramp step. `--sidebar-ring` defaults to `var(--ring)`, so the
+ * The roles a light theme rule resets. They are every key the branded identity layer, a brand
+ * palette or a segment delta can assign, plus each derived role computed from them and each alias
+ * that reads one of them. The brand ramps are not among them. The brand rules declare the ramps, so
+ * a palette rule never restates a ramp step. `--sidebar-ring` defaults to `var(--ring)`, so the
  * rule restates it and the alias resolves against the scope's own ring.
  */
 export const LIGHT_RESET_KEYS = [
@@ -898,10 +898,10 @@ const MUST_OVERRIDE_BRANDED = [
 const MUST_OVERRIDE_NEUTRAL = ["brand", "brand-foreground"] as const;
 
 /**
- * The roles each identity's light composition must supply through its non-default layers.
- * Branded themes supply their brand, surface and interactive identity; neutral themes supply
- * the brand pair and inherit the neutral system. Corners are no layer's obligation: the full
- * `Corners` record type of `theme/corners/corners.ts` guarantees every set.
+ * The roles each identity's light composition must supply through its non-default layers. Branded
+ * themes supply their brand, surface and interactive identity. Neutral themes supply the brand pair
+ * and inherit the neutral system. Corners are no layer's obligation, because the full `Corners`
+ * record type of `theme/corners/corners.ts` guarantees every set.
  */
 export const MUST_OVERRIDE_BY_IDENTITY = {
   neutral: MUST_OVERRIDE_NEUTRAL,
@@ -910,18 +910,17 @@ export const MUST_OVERRIDE_BY_IDENTITY = {
 
 /**
  * What a dark palette keeps from the light composition: geometry, typography, a Card's edge,
- * section divider and shadow colors, the outline Button's border color, a selection row's resting and checked border and
- * divider colors, a disabled selection row's fill, stripe and label text colors and a pressed
- * Toggle's fill and label colors. Each color is
- * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
- * the dark role it names, or a value that does not depend on the scheme, such as the branded
- * card and row edges' zero alpha, the card shadow's black at 5% or the disabled row's black
- * stripe at 2% alpha.
+ * section divider and shadow colors, the outline Button's border color, a selection row's resting
+ * and checked border and divider colors, a disabled selection row's fill, stripe and label text
+ * colors and a pressed Toggle's fill and label colors. Each color is either an alias, such as
+ * `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows the dark role it names, or
+ * a value that does not depend on the scheme, such as the branded card and row edges' zero alpha,
+ * the card shadow's black at 5% or the disabled row's black stripe at 2% alpha.
  *
- * Every one is a light reset key, so each light theme rule declares it on the theme element,
- * and light rules match in both schemes. No dark rule restates one, so a host override at the
- * light rule's weight holds in dark, and an alias resolves against the element's own dark
- * roles. {@link DarkTokenLayer} keeps every dark layer from setting one.
+ * Every one is a light reset key, so each light theme rule declares it on the theme element, and
+ * light rules match in both schemes. No dark rule restates one, so a host override at the light
+ * rule's weight holds in dark, and an alias resolves against the element's own dark roles.
+ * {@link DarkTokenLayer} keeps every dark layer from setting one.
  */
 export const LIGHT_ONLY_KEYS = [
   "card-border",
@@ -1009,7 +1008,7 @@ export function assignedTokenNames(layer: TokenLayer): LayerTokenName[] {
 }
 
 /**
- * Overlay layers on a complete base, a later layer's value replacing an earlier one's.
+ * Overlays layers on a complete base. A later layer's value replaces an earlier one's.
  *
  * @param base - A value for every layer role, such as `LAYER_DEFAULTS`.
  * @param layers - The layers in application order.

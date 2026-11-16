@@ -2,8 +2,8 @@
 
 /**
  * What a gauge's Root shares with its parts: the model its props describe and the frame that paints
- * every mark from one value per frame. A light leaf, so the scope every chart Root starts can reset
- * it without the gauge's modules.
+ * every mark from one value per frame. It is a small module of its own, so the scope every chart
+ * Root starts can reset it without importing the gauge's modules.
  */
 import { createContext, use } from "react";
 
@@ -19,7 +19,7 @@ export type GaugeReading =
   | { readonly kind: "empty" }
   | {
       readonly kind: "value";
-      /** The true value, which the centre and the meter's text print. */
+      /** The true value, which the center and the meter's text print. */
       readonly value: number;
       readonly place: GaugePlace;
     };
@@ -41,10 +41,10 @@ export type GaugeModel = {
   readonly reading: GaugeReading;
   /**
    * The reading's share of the domain at rest, from 0 at `min` to 1 at `max`, clamped, and 0 while
-   * the chart has no reading: the one number the loop moves and every painter draws from.
+   * the chart has no reading. It is the one number the loop moves and every painter draws from.
    */
   readonly rest: number;
-  /** Root's value format, which the centre, the meter's text and the ruler's labels read. */
+  /** Root's value format, which the center, the meter's text and the ruler's labels read. */
   readonly format: ValueFormat;
   readonly locale: SupportedLocale;
 };
@@ -62,7 +62,7 @@ export type GaugeContextValue = {
 export const GaugeContext = createContext<GaugeContextValue | null>(null);
 
 /**
- * Read the enclosing gauge Root.
+ * Reads the enclosing gauge Root.
  *
  * @param part - The calling part's display name, which the error names.
  * @returns The Root's context.

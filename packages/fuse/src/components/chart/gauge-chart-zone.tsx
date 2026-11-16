@@ -2,7 +2,7 @@
 
 /**
  * A gauge's zone: a band at the rim that marks a value range, such as the step above the capacity
- * limit, in a colour role. The dial makes room for the band at the rim, so the track scales in to
+ * limit, in a color role. The dial makes room for the band at the rim, so the track scales in to
  * sit inside it.
  */
 import type { ReactElement } from "react";
@@ -26,7 +26,7 @@ export type GaugeChartZoneProps = ChartLayerProps & {
   from: number;
   /** Where the range ends, in the domain's unit. */
   to: number;
-  /** The band's colour role, such as "chart-sentiment-negative" for the step above a limit. */
+  /** The band's color role, such as `chart-sentiment-negative` for the step above a limit. */
   color: ChartGaugeRole;
 };
 
@@ -34,7 +34,7 @@ export type GaugeChartZoneProps = ChartLayerProps & {
 const ZONE_CORNER = 0.012;
 
 /**
- * A band at the rim over a value range, in a colour role. Repeat it for several ranges: each draws
+ * A band at the rim over a value range, in a color role. Repeat it for several ranges: each draws
  * its own band, and a later zone paints over an earlier one where they overlap. The range clamps to
  * the domain, and a range wholly outside it draws nothing. The band sits outside the track and
  * inside an outside `Ruler`, and the dial makes room for it at the rim.

@@ -101,8 +101,8 @@ export function AccordionTrigger({
    * The node after the children. Unset, it is a caret that turns while the item is open. Pass
    * `null` for none, and the children move to the start. The variant places a custom indicator
    * where the caret sits but does not turn it. Style its open state from the trigger's
-   * `data-panel-open`, such as `in-data-[panel-open]:rotate-90`, as you would a leading icon in
-   * the children.
+   * `data-panel-open`, such as `in-data-[panel-open]:rotate-90`, the same way as a leading icon
+   * in the children.
    */
   indicator?: ReactNode;
 }): ReactElement {

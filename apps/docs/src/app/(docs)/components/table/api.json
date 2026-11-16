@@ -57,7 +57,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The row's cells. The table never marks a row selected: set `data-state=\"selected\"` on the row when your row model selects it, and the row takes the muted fill.",
+          "description": "The row's cells. The table never marks a row selected. Set `data-state=\"selected\"` on the row when the row model selects it, and the row takes the muted fill.",
           "required": false
         }
       ]
@@ -160,7 +160,7 @@
           "type": "DetailedHTMLProps<TableHTMLAttributes<HTMLTableElement>, HTMLTableElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The inner `Table.Root`'s props. Put association attributes such as `aria-labelledby` here: the Body's own props, `aria-*` included, stay on the wrapper `div`. A `className` here merges with `table-fixed`.",
+          "description": "The inner `Table.Root`'s props. Put association attributes such as `aria-labelledby` here, since the Body's own props, `aria-*` included, stay on the wrapper `div`. A `className` here merges with `table-fixed`.",
           "required": false
         }
       ]
@@ -193,7 +193,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the row.",
+          "description": "Whether the row is hidden.",
           "required": false
         }
       ]

@@ -57,7 +57,7 @@ import { floorAxisOf, tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./layout/plot-frame";
 
 /**
- * Mark a drawn bar's body, or the active overlay, with what its drawn geometry says now: the side
+ * Marks a drawn bar's body, or the active overlay, with what its drawn geometry says now: the side
  * its tip lies on, which turns its far end over, and its top weight, which scales its rounded end.
  */
 function writeSide(body: SVGElement | null, negative: boolean, top: number): void {
@@ -71,7 +71,7 @@ function topWeight(geometry: MarkValues): number {
   return Math.min(1, Math.max(0, geometry[5] ?? 0));
 }
 
-/** Write a rectangle onto a polygon's points, as a bar's JSX writes them. */
+/** Writes a rectangle onto a polygon's points, as a bar's JSX writes them. */
 function writeBox(node: Element, rect: PlotRect): void {
   writeAttribute(node, "points", boxPoints(rect));
 }
@@ -106,7 +106,7 @@ const barElements = partsCache((node): BarElements =>
 );
 
 /**
- * Draw one bar from the loop's numbers. Every shape it draws comes from the numbers: its rectangle,
+ * Draws one bar from the loop's numbers. Every shape it draws comes from the numbers: its rectangle,
  * seam, side, rounded end, cap and blocks track, and which side's fill it takes. A stacked bar
  * records its segment with the stack floors, which paint it with the place they decide.
  */
@@ -131,7 +131,7 @@ function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): voi
   );
 }
 
-/** Paint one bar from its geometry and plain rectangle, owning its stack side's pixel floor or not. */
+/** Paints one bar from its geometry and plain rectangle, owning its stack side's pixel floor or not. */
 function paintBar(
   node: SVGElement,
   look: BarWriterLook,
@@ -176,7 +176,7 @@ type OverlayLook = {
   readonly seat: { readonly floors: StackFloors; readonly stack: string; readonly series: string } | null;
 };
 
-/** Draw the active overlay from the loop's numbers, as `drawBar` draws a bar, with no seam. */
+/** Draws the active overlay from the loop's numbers, as `drawBar` draws a bar, with no seam. */
 function drawOverlay(overlay: SVGPolygonElement, look: OverlayLook, values: MarkValues): void {
   const { frame, seat } = look;
   const fills = look.fills.current;
@@ -322,7 +322,7 @@ const BarMark = memo(function BarMark({
   );
 });
 
-/** Draw a missing tick from the loop's numbers: its span along the slot axis and its zero line. */
+/** Draws a missing tick from the loop's numbers: its span along the slot axis and its zero line. */
 function drawTick(line: SVGLineElement, look: { readonly frame: PlotFrame }, values: MarkValues): void {
   const [start = 0, end = 0, base = 0] = values;
   writeAttributes(line, tickEnds(look.frame, [start, end], base));

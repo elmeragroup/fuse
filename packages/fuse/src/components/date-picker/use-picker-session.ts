@@ -34,11 +34,11 @@ export type PickerSessionOptions<V, R extends string> = {
   /** The committed value's key, which a held selection belongs to. */
   readonly basis: string;
   /**
-   * Commit a held selection the close finalizes, through the Root's cancelable `onValueChange`.
+   * Commits a held selection the close finalizes, through the Root's cancelable `onValueChange`.
    * Returns whether it applied; a canceled commit keeps the popup open.
    */
   readonly finalize: (value: V, origin: PickerHeldOrigin<R>) => boolean;
-  /** A native form reset reached the picker: put the owned value back to its default. */
+  /** Called when a native form reset reaches the picker, to put the owned value back to its default. */
   readonly onReset: () => void;
 };
 
@@ -54,14 +54,14 @@ export type PickerSession<V, R extends string> = {
   readonly held: PickerHeld<V, R> | null;
   /** The form-reset generation the parts key what starts over by. */
   readonly generation: number;
-  /** Open or close the popup as one transaction; see `usePickerSession`. */
+  /** Opens or closes the popup as one transaction; see `usePickerSession`. */
   readonly requestOpen: PickerOpenRequest;
   /**
-   * Hold a selection over the committed value: the current one, or the `basis` of the value a
+   * Holds a selection over the committed value: the current one, or the `basis` of the value a
    * commit in the same gesture has just made, which the Root has not rendered yet.
    */
   readonly hold: (value: V, finalizeOnClose: PickerHeldOrigin<R> | null, basis?: string) => void;
-  /** Drop the held selection. */
+  /** Drops the held selection. */
   readonly release: () => void;
   /** A name-less hidden input for the Root to render, which ties the form-reset subscription to its form. */
   readonly resetRef: RefObject<HTMLInputElement | null>;
@@ -72,14 +72,14 @@ export type PickerSession<V, R extends string> = {
  *
  * - Closing is one transaction: a held selection marked `finalizeOnClose` commits first, through the
  *   Root's cancelable `onValueChange`, and a canceled commit keeps the popup open; then `onOpenChange`
- *   reports the close, and a canceled close keeps it open (with the selection committed).
- * - A parent that closes the popup itself (`open` going from `true` to `false`) finalizes the held
+ *   reports the close, and a canceled close keeps it open with the selection committed.
+ * - A parent that closes the popup itself, `open` going from `true` to `false`, finalizes the held
  *   selection the same way, after the fact.
  * - A held selection belongs to the committed value it was made over: once that value changes it is
  *   gone for good, so restoring the old value never resurrects it.
- * - A native form reset drops the held selection, bumps `generation` (the Root keys its inputs and
- *   calendar by it, so drafts, shown validity and the view start over even when the value is
- *   unchanged) and calls `onReset`.
+ * - A native form reset drops the held selection, bumps `generation` and calls `onReset`. The Root
+ *   keys its inputs and calendar by `generation`, so drafts, shown validity and the view start over
+ *   even when the value is unchanged.
  *
  * @template V - What the picker holds.
  * @template R - The gestures that make a selection.

@@ -21,7 +21,7 @@ export type PropsMadeValue<P> = MadeValue<PropType<P, "granularity">, PropType<P
  * parameter from the whole object, and the inference keeps a prop's own type: an optional
  * `timeZone` stays `string | undefined`, where inferring from the prop alone drops the
  * `undefined`. `granularity` and `timeZone` keep their types; the component's other declared props,
- * React's `key` and hyphenated attributes add nothing; any other key is `never`, so a misspelt or
+ * React's `key` and hyphenated attributes add nothing; any other key is `never`, so a misspelled or
  * undeclared prop is an error. A spread object's keys are checked like written ones, unlike on a
  * component that is not generic, so destructure the keys the component does not take, such as a
  * react-hook-form field's `ref` or a wrapper's own props, before spreading the rest. The same

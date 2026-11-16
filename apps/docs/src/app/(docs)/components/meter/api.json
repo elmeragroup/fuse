@@ -87,7 +87,7 @@
           "type": "MeterMode | undefined",
           "shortType": null,
           "defaultValue": "\"default\"",
-          "description": "What the bar's colour and icon say about the value. The bar is low up to 80% of the range, high above 80%, full at 100% and exceeded above `maxValue`. - `default`: more is worse. Low is success, high is a warning, and full or exceeded is an error. High, full and exceeded show the warning icon. - `inverted`: more is better. Low is an error, high is a warning, full is success and exceeded is an error, with no icon. - `success-only-when-full`: only full is success, with the success icon. Every other level is an error with the warning icon. - `neutral`: the primary colour at every level, with no icon.",
+          "description": "What the bar's color and icon say about the value. The bar is low up to 80% of the range, high above 80%, full at 100% and exceeded above `maxValue`. - `default`: more is worse. Low is success, high is a warning, and full or exceeded is an error. High, full and exceeded show the warning icon. - `inverted`: more is better. Low is an error, high is a warning, full is success and exceeded is an error, with no icon. - `success-only-when-full`: only full is success, with the success icon. Every other level is an error with the warning icon. - `neutral`: the primary color at every level, with no icon.",
           "required": false,
           "values": [
             "default",
@@ -124,7 +124,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the success icon. Unset, it comes from the locale dictionary.",
+          "description": "The accessible name of the success icon. Defaults to the locale dictionary.",
           "required": false
         },
         {
@@ -151,7 +151,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the warning icon. Unset, it comes from the locale dictionary.",
+          "description": "The accessible name of the warning icon. Defaults to the locale dictionary.",
           "required": false
         }
       ]

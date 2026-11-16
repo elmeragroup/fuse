@@ -13,14 +13,14 @@ type ScopeElementSource = {
 };
 
 /**
- * One `ThemeScope`'s element as a store. The scope provides the store, never the element: a
- * context value that changes when the element attaches reaches Suspense boundaries that have
- * not hydrated yet, and React client-renders a boundary it cannot hydrate on the spot,
- * deleting the server's markers for content that is still streaming.
+ * One `ThemeScope`'s element as a store. The scope provides the store, never the element. A context
+ * value that changes when the element attaches reaches Suspense boundaries that have not hydrated
+ * yet, and React client-renders a boundary it cannot hydrate on the spot. That deletes the server's
+ * markers for content that is still streaming.
  */
 export type ThemeScopeContainerStore = ScopeElementSource & {
   getSnapshot: () => HTMLElement | null;
-  /** `null`: the server renders a scope without an element, so its overlays wait. */
+  /** Returns `null`. The server renders a scope without an element, so its overlays wait. */
   getServerSnapshot: () => null;
   /** The scope element's callback ref. */
   attach: (node: HTMLElement | null) => void;
@@ -103,27 +103,27 @@ function isElementRef(
 }
 
 /**
- * Resolves the portal target for one overlay, in this order:
- * explicit `container` element or ref → nearest `ThemeScope` element → primitive
- * default. The three return arms are the whole contract, and every overlay reads
- * them the same way:
+ * Resolves the portal target for one overlay, in this order: an explicit `container` element or
+ * ref, then the nearest `ThemeScope` element, then the primitive's default. The three return values
+ * are the whole contract, and every overlay reads them the same way:
  *
- * - an `HTMLElement` — portal there;
- * - `null` — an explicit ref or an enclosing `ThemeScope` exists but its element is
- *   not attached yet, or the scope's element left the document, so the overlay
- *   renders nothing and waits. It must never briefly escape to `document.body`. A
- *   scope element that a Suspense boundary only hides stays the target. An overlay
- *   that mounts in the same commit as its scope sees the element after that commit's
- *   passive effects, since the scope never updates state while it commits;
- * - `undefined` — no scope and no explicit container, so the primitive's own default
- *   (`document.body`) stays in place.
+ * - An `HTMLElement` means the overlay portals there.
+ * - `null` means an explicit ref or an enclosing `ThemeScope` exists but its element is not
+ *   attached yet, or the scope's element left the document. The overlay renders nothing and waits,
+ *   and it must never briefly escape to `document.body`. A scope element that a Suspense boundary
+ *   only hides stays the target. An overlay that mounts in the same commit as its scope sees the
+ *   element after that commit's passive effects, since the scope never updates state while it
+ *   commits.
+ * - `undefined` means there is no scope and no explicit container, so the primitive's own default,
+ *   `document.body`, stays in place.
  *
- * Inside an overlay exclusion (`internal/overlay-exclusion.ts`) it is always `null`, so content
- * that must open no overlay mounts no popup, focus trap, backdrop or anchored scroll lock.
+ * Inside an overlay exclusion, which `internal/overlay-exclusion.ts` defines, it is always `null`.
+ * Content that must open no overlay therefore mounts no popup, focus trap, backdrop or anchored
+ * scroll lock.
  *
- * The canonical call site is `if (resolved === null) return null;` followed by
- * forwarding the value to the primitive's portal/container prop. Package-private:
- * neither this hook nor the underlying context is exported.
+ * The canonical call site is `if (resolved === null) return null;`, followed by forwarding the
+ * value to the primitive's portal or container prop. It is package-private, and neither this hook
+ * nor the underlying context is exported.
  */
 export function useResolvedPortalContainer(
   container?: HTMLElement | RefObject<HTMLElement | null>

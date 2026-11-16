@@ -7,7 +7,7 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { cn } from "../../styles/cn";
 
-/** `VerticalTable.Header` takes a native `h2`'s props and a `render` replacement. */
+/** Props for `VerticalTable.Header`, a native `h2`'s props and a `render` replacement. */
 export type VerticalTableHeaderProps = ComponentProps<"h2"> & {
   /**
    * Replaces the `<h2>`, such as `render={<h3 />}` for another outline level. The level-2 type

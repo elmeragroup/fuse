@@ -269,7 +269,7 @@ export function sameFormat(a: ValueFormat, b: ValueFormat): boolean {
 }
 
 /**
- * Format a chart value for one locale.
+ * Formats a chart value for one locale.
  *
  * Values that round to zero, and −0, print `0`, because `signDisplay` defaults to `"negative"`.
  * A `signDisplay` in Intl options wins over that default. Presets never take one.
@@ -298,7 +298,7 @@ export function formatValue(
 }
 
 /**
- * A formatted value as its number and the text the formatter wrote around it, which a centre lays
+ * A formatted value as its number and the text the formatter wrote around it, which a center lays
  * out apart: the number large and rolling, the text before and after it small and breakable.
  */
 export type ValueRun = {
@@ -357,7 +357,7 @@ function numberRun(parts: readonly Intl.NumberFormatPart[]): ValueRun {
 export type FormattedRun = FormattedText & ValueRun;
 
 /**
- * Format a value as `formatValue` does, and split its visual text at its number, so a centre lays
+ * Formats a value as `formatValue` does, and splits its visual text at its number, so a center lays
  * the number out large and the unit around it small. One formatting writes both.
  *
  * @param locale - The active supported locale.
@@ -452,7 +452,7 @@ export function formatUnitless(locale: SupportedLocale, value: number, format: V
   );
 }
 
-/** The part of a formatted 2 that names a currency or a unit, such as `kr` or `kilowattimer`. */
+/** The part of the formatted number 2 that names a currency or a unit, such as `kr` or `kilowattimer`. */
 function unitPart(locale: SupportedLocale, options: Intl.NumberFormatOptions): string {
   return numberFormat(locale, options)
     .formatToParts(2)

@@ -42,8 +42,8 @@ export type ScatterChartTooltipProps = ChartLayerProps & {
    */
   variant?: "default" | "frosted";
   /**
-   * Without children, a TooltipLabel over one row for x and one for y, each with its name and a
-   * TooltipValue.
+   * Without children, the tooltip renders a TooltipLabel over one row for x and one for y, each
+   * with its name and a TooltipValue.
    */
   children?: ReactNode;
 };
@@ -63,7 +63,10 @@ export type ScatterChartTooltipLabelProps = ChartDomProps<"span">;
 export type ScatterChartTooltipValueProps = ChartDomProps<"span"> & {
   /** Which coordinate of the active point to print. */
   axis: "x" | "y";
-  /** The value format. Root's `xFormat`, or the series' config `format` over Root's `valueFormat`, by default. */
+  /**
+   * The value format. Defaults to Root's `xFormat`, or to the series' config `format` over Root's
+   * `valueFormat`.
+   */
   format?: ValueFormat;
 };
 

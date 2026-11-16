@@ -30,7 +30,10 @@ export type SparklineProps = ChartLayerProps & {
    * this text followed by the generated range sentence, which names the lowest and highest values.
    */
   "aria-label": string;
-  /** Evenly spaced values. Null leaves a gap. No values, or only nulls, draw nothing and read the dictionary's `noData`. */
+  /**
+   * Evenly spaced values. Null leaves a gap. No values, or only nulls, draw nothing and read the
+   * dictionary's `noData`.
+   */
   data: readonly (number | null)[];
   /**
    * The locale of the range sentence. Sparkline calls no hook, so a server component renders it
@@ -40,38 +43,38 @@ export type SparklineProps = ChartLayerProps & {
   /** How the range sentence prints values. */
   format?: ValueFormat;
   /**
-   * The mark. "line" by default. An area fades from its values toward 0, above and below the zero
+   * The mark. Defaults to "line". An area fades from its values toward 0, above and below the zero
    * line, and an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar
    * rounds the corners of its far end by `--chart-bar-radius`.
    */
   variant?: "line" | "area" | "bar";
-  /** The curve through the values. "monotone" by default. */
+  /** The curve through the values. Defaults to "monotone". */
   curve?: ChartCurve;
-  /** The paint. "chart-1" by default. */
+  /** The paint. Defaults to "chart-1". */
   color?: ChartRole;
   /** A dot on one value, by keyword or by index. */
   emphasis?: Exclude<ChartFallback, "now"> | number;
   /** A flat dashed line, such as Norgespris against spot. */
   reference?: number;
-  /** Replaces the generated range sentence verbatim. */
+  /** The text that replaces the generated range sentence verbatim. */
   description?: string;
   /**
-   * "none" leaves hover out. With hover, a pointer over a value shows a dashed crosshair and a dot
-   * there, fades the rest of the series and draws the line around the value, or the value's bar, at
-   * full strength, and moving to the next value cross-fades the marks. The hover is CSS, shows only
-   * on a device that hovers, and adds no tab stop and nothing to the accessible name. It writes a
-   * region of about half a kilobyte and five elements per value, so a 30-value line is about 18 KB
-   * and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about 106 KB
-   * against 7 KB. Pass "none" where many Sparklines render at once, such as one per row of a long
-   * table.
+   * The hover mode. "none" leaves hover out. With hover, a pointer over a value shows a dashed
+   * crosshair and a dot there, fades the rest of the series and draws the line around the value, or
+   * the value's bar, at full strength, and moving to the next value cross-fades the marks. The
+   * hover is CSS, shows only on a device that hovers, and adds no tab stop and nothing to the
+   * accessible name. It writes a region of about half a kilobyte and five elements per value, so a
+   * 30-value line is about 18 KB and 150 elements with it and 1.4 KB and 3 elements without, and a
+   * 168-value line about 106 KB against 7 KB. Pass "none" where many Sparklines render at once,
+   * such as one per row of a long table.
    */
   "data-hover"?: "none";
   /**
-   * "none" turns the entrance off. A line wipes in from the left, an area fills behind it, and bars
-   * grow from the baseline. The entrance plays whenever the svg enters the document, so it replays
-   * when the element is inserted again, as a keyed row that a sort moves or a panel shown again is.
-   * Pass "none" where that happens, such as a Sparkline in a sortable table. Reduced motion draws
-   * the marks at rest either way.
+   * The entrance mode. "none" turns the entrance off. A line wipes in from the left, an area fills
+   * behind it, and bars grow from the baseline. The entrance plays whenever the svg enters the
+   * document, so it replays when the element is inserted again, as a keyed row that a sort moves or
+   * a panel shown again is. Pass "none" where that happens, such as a Sparkline in a sortable
+   * table. Reduced motion draws the marks at rest either way.
    */
   "data-intro"?: "none";
 } & (

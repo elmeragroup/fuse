@@ -16,7 +16,7 @@ export type Inflected = { readonly one: string; readonly other: string };
  * @param count - The count the word follows.
  * @param word - The word's forms.
  * @param options - The digits the count prints with, which decide its plural category.
- * @returns The singular for the locale's "one" category, else the plural.
+ * @returns The singular for the locale's `one` category, otherwise the plural.
  */
 export function inflect(
   locale: SupportedLocale,

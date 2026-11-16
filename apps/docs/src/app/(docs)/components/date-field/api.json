@@ -15,7 +15,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when there is no visible `label`.",
+          "description": "The segment group's accessible name when there is no visible `label`.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as `Field.Description`. The description, the error and the selected value (\"Selected Date: October 05, 2026\") describe the first segment, and every segment while the field is invalid.",
+          "description": "Supporting copy, rendered as `Field.Description`. The description, the error and the selected value, such as \"Selected Date: October 05, 2026\", describe the first segment, and every segment while the field is invalid.",
           "required": false
         },
         {
@@ -51,7 +51,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` while the field is invalid, in place of its own message. Without `isInvalid` it shows only once the field's own validation fails. Falsy, the field shows its own message: an error `Form` holds under its `name`, or why the value fails (\"Value must be 10/31/2026 or earlier.\").",
+          "description": "Error copy, rendered as `Field.Error` while the field is invalid, in place of its own message. Without `isInvalid` it shows only once the field's own validation fails. Falsy, the field shows its own message: an error `Form` holds under its `name`, or why the value fails, such as \"Value must be 10/31/2026 or earlier.\"",
           "required": false
         },
         {
@@ -75,7 +75,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides the zone name a `ZonedDateTime` field shows after the time.",
+          "description": "Whether to hide the zone name a `ZonedDateTime` field shows after the time.",
           "required": false
         },
         {
@@ -102,7 +102,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field and leaves its value out of the form. Pass a form library's `disabled` here. The field accepts no undeclared prop, a spread object's keys included, so destructure what it does not take, such as the library's `ref`, before you spread the rest.",
+          "description": "Whether the field is disabled, which leaves its value out of the form. Pass a form library's `disabled` here. The field accepts no undeclared prop, a spread object's keys included, so destructure what it does not take, such as the library's `ref`, before spreading the rest.",
           "required": false
         },
         {
@@ -111,7 +111,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows the field invalid, with `errorMessage` under the box.",
+          "description": "Whether the field shows as invalid, with `errorMessage` under the box.",
           "required": false
         },
         {
@@ -120,7 +120,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Keeps the value. The segments stay focusable and take the muted read-only fill.",
+          "description": "Whether the value is read-only. The segments stay focusable and take the muted read-only fill.",
           "required": false
         },
         {
@@ -129,7 +129,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Reports an empty field missing, and a half-typed one incomplete.",
+          "description": "Whether the field needs a value. It reports an empty field missing, and a half-typed one incomplete.",
           "required": false
         },
         {
@@ -183,7 +183,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads days, months and hours with a leading zero whatever the locale writes. React Aria's DateField defaults to the locale's padding.",
+          "description": "Whether days, months and hours pad with a leading zero whatever the locale writes. React Aria's DateField defaults to the locale's padding.",
           "required": false
         },
         {
@@ -235,7 +235,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -244,7 +244,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -295,7 +295,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides a zoned value's zone name.",
+          "description": "Whether to hide a zoned value's zone name.",
           "required": false
         },
         {
@@ -322,7 +322,7 @@
           "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Values the input reports invalid (\"Selected date unavailable.\"), such as fully booked days.",
+          "description": "Values the input reports invalid with \"Selected date unavailable.\", such as fully booked days.",
           "required": false
         },
         {
@@ -331,7 +331,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest valid value, taking what `minValue` takes. \"Value must be … or earlier.\"",
+          "description": "The latest valid value, taking what `minValue` takes. The input reports a later value invalid with \"Value must be … or earlier.\"",
           "required": false
         },
         {
@@ -349,7 +349,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The name the ISO value submits under, through a visually hidden input. A surrounding Field's `name` wins. Inside a Base UI Field (`Field.Root`, Fuse's `Field` or a labeled composite) the first editable segment is the Field's control: a `Form` focuses it for an error, the value reaches `onFormSubmit` as ISO text, and its validity is the Field's, committed on blur and on submit.",
+          "description": "The name the ISO value submits under, through a visually hidden input. A surrounding Field's `name` wins. Inside a Base UI Field, such as `Field.Root`, Fuse's `Field` or a labeled composite, the first editable segment is the Field's control: a `Form` focuses it for an error, the value reaches `onFormSubmit` as ISO text, and its validity is the Field's, committed on blur and on submit.",
           "required": false
         },
         {
@@ -387,7 +387,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether an empty or incomplete input is invalid (\"Please fill out this field.\").",
+          "description": "Whether an empty or incomplete input is invalid, with \"Please fill out this field.\"",
           "required": false
         },
         {
@@ -396,7 +396,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         },
         {

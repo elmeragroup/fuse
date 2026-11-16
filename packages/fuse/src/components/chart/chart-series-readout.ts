@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * What a series model reads out: the readout the shared parts read, a
- * reading as a tooltip row or a legend value prints it, the shares, the stack totals, a fallback
- * keyword's slot, and the rows of the table. A cartesian Root's readout reads it, and so does any
+ * What a series model reads out: the readout the shared parts read, a reading as a tooltip row or a
+ * legend value prints it, the shares, the stack totals, a fallback keyword's slot, and the rows of
+ * the table. A cartesian Root's readout reads it, and so does any
  * family that builds a `CartesianModel`. It reads no plot geometry.
  */
 import type { SupportedLocale } from "../../intl/locale-context";

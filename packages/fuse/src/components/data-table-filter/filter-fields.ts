@@ -9,9 +9,9 @@ import type { FilterKind, FilterOperator } from "./filter-model";
 import { allowedOperators } from "./filter-model";
 
 type FieldBase = {
-  /** The field's name: the chip's subject, the menu row and the editor's title. */
+  /** The field's name, used as the chip's subject, the menu row and the editor's title. */
   readonly label: string;
-  /** Shown at 16px beside the label and hidden from assistive technology. */
+  /** The field's icon, shown at 16px beside the label and hidden from assistive technology. */
   readonly icon?: ReactNode;
 };
 
@@ -25,7 +25,7 @@ export type FilterOption<V extends string = string> = {
   readonly value: V;
   /** The value's name in lists and summaries. */
   readonly label: string;
-  /** Shown at 16px before the label and hidden from assistive technology. */
+  /** The value's icon, shown at 16px before the label and hidden from assistive technology. */
   readonly icon?: ReactNode;
 };
 
@@ -36,16 +36,16 @@ export type FilterOption<V extends string = string> = {
  */
 export type OptionFilterField<V extends string = string> = FieldBase & {
   readonly kind: "option";
-  /** Any length. A list shows its first 50 matches and asks for more typing. */
+  /** The field's options, any number of them. A list shows its first 50 matches and asks for more typing. */
   readonly options: readonly FilterOption<V>[];
   /**
    * A subset of the option operators, in menu order. Defaults to all of them. A listed
    * multi-value operator also allows its one-value sibling, so `["isAnyOf"]` starts a filter at
-   * `is`. Without a multi-value operator, as in `["is", "isNot"]`, the field is single-select: a
+   * `is`. Without a multi-value operator, as in `["is", "isNot"]`, the field is single-select. A
    * second pick replaces the first.
    */
   readonly operators?: readonly FilterOperator<"option">[];
-  /** List order: config order, the default, or by count with the highest first. */
+  /** The list order: `"options"` for config order, the default, or `"count"` with the highest count first. */
   readonly order?: "options" | "count";
 };
 
@@ -82,11 +82,11 @@ export type TextFilterField = FieldBase & {
 /** A field whose cell holds a number. */
 export type NumberFilterField = FieldBase & {
   readonly kind: "number";
-  /** Formats the editor, the chip's summary and the slider's value text. */
+  /** The number format for the editor, the chip's summary and the slider's value text. */
   readonly format?: Intl.NumberFormatOptions;
-  /** The slider's lower bound when no facet range is known. Used only together with `max`. */
+  /** The slider's lower bound when no facet range is known. The filter uses it only together with `max`. */
   readonly min?: number;
-  /** The slider's upper bound when no facet range is known. Used only together with `min`. */
+  /** The slider's upper bound when no facet range is known. The filter uses it only together with `min`. */
   readonly max?: number;
   /** The slider's and the number fields' step. Defaults to 1. */
   readonly step?: number;
@@ -99,7 +99,7 @@ export type DateFilterField = FieldBase & {
   readonly kind: "date";
   /**
    * A subset of the date operators, in menu order. Defaults to all of them. The presets write
-   * `isBetween`. Without it, a one-day preset writes `is`, and other presets are left out.
+   * `isBetween`. Without it, a one-day preset writes `is`, and the editor leaves other presets out.
    */
   readonly operators?: readonly FilterOperator<"date">[];
   /**
@@ -117,9 +117,9 @@ export type BooleanFilterField = FieldBase & {
   /** `false`'s name. Defaults to "No". */
   readonly falseLabel?: string;
   /**
-   * A scope that is on or off, such as "My orders". Its add-menu row ticks the filter on and off,
-   * its chip is its name and Remove, and it admits only `is` `true`. Off means no filter. In server
-   * mode its id need not be a column: the server gives it meaning.
+   * Whether the field is a scope that is on or off, such as "My orders". Its add-menu row ticks the
+   * filter on and off, its chip is its name and Remove, and it admits only `is` `true`. Off means
+   * no filter. In server mode its id need not be a column, since the server gives it meaning.
    */
   readonly toggle?: boolean;
   /** `is`, the default, and `isNot`, which a missing cell passes. A toggle allows `is` only. */
@@ -171,9 +171,9 @@ export type FilterFields<TRow> = { readonly [K in keyof TRow & string]?: FieldFo
 export type FilterFieldMap = { readonly [columnId: string]: FilterField };
 
 /**
- * Pins a fields map to a row type: an option's values must be the column's values, and a kind
+ * Pins a fields map to a row type. An option's values must be the column's values, and a kind
  * must fit the column's type. Pass the row type once, as with `createColumnHelper<TRow>()`, and
- * the map's literal type is inferred.
+ * TypeScript infers the map's literal type.
  *
  * @template TRow - The table's row type.
  * @returns A function that returns the map it receives, typed as written.

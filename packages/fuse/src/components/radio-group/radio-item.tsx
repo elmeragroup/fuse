@@ -20,20 +20,20 @@ export type RadioItemProps = SelectionItemRootProps & {
    * shows the `not-allowed` cursor. Neutral themes stripe a muted fill, and branded themes keep
    * the card fill with no stripes. The row's text, its SubSection's included, takes
    * `--selection-disabled-foreground`, which is the muted foreground in branded themes. A text
-   * colour class on the row still wins. A disabled group shows its rows the same way.
+   * color class on the row still wins. A disabled group shows its rows the same way.
    */
   isDisabled?: boolean;
   /** Where the radio sits in the row: before the content, or after it at `end`. */
   controlPosition?: "start" | "end";
   /**
    * Extra classes for the row. A `px-*` utility sets the card's side inset, and a click in that
-   * inset beside the label row selects the radio. The row paints the card fill (`bg-card`),
+   * inset beside the label row selects the radio. The row paints the card fill, `bg-card`,
    * and a background class such as `bg-background` replaces it.
-   * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
+   * The row states its fill as `--surface`, the color a chart's cut-outs paint, so a row that
    * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
    * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
-   * fill win over such a class. Set `--selection-disabled-background`, for example to
+   * fill win over such a class. Set `--selection-disabled-background`, such as to
    * `var(--background)`, to change the disabled fill.
    *
    * The edges and the lines between rows come from the `--selection-*` theme roles, which the
@@ -64,7 +64,7 @@ export type RadioItemProps = SelectionItemRootProps & {
 /**
  * A labeled radio row built on `SelectionItem.Shell`. A server component can render it. The
  * parts `Title`, `Description`, `Content`, `Actions` and `SubSection` are the same objects as
- * `SelectionItem`'s, so the row recognises either spelling. Other attributes, such as `id`,
+ * `SelectionItem`'s, so the row recognizes either spelling. Other attributes, such as `id`,
  * `data-testid` or a `data-*` hook, land on the row's `Field.Item` root, the element that
  * carries the row's `data-slot`.
  */

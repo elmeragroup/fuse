@@ -25,7 +25,7 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 /**
- * Maps each `side` to the primitive's `swipeDirection`, so a swipe toward the anchored edge
+ * Maps each `side` to Base UI Drawer's `swipeDirection`, so a swipe toward the anchored edge
  * dismisses the sheet. The sheet derives the direction from `side` and never exposes it as a
  * prop of its own.
  */
@@ -87,7 +87,7 @@ export function SheetRoot({ side = "right", children, ...props }: SheetRootProps
   );
 }
 
-/** Opens the sheet. It renders a plain `button`; pass `render` to render another element. */
+/** The button that opens the sheet. It renders a plain `button`. Pass `render` to render another element. */
 export function SheetTrigger({
   className,
   ...props
@@ -101,7 +101,7 @@ export function SheetTrigger({
   );
 }
 
-/** Closes the sheet. It renders a plain `button`; pass `render` to render another element. */
+/** The button that closes the sheet. It renders a plain `button`. Pass `render` to render another element. */
 export function SheetClose({
   className,
   ...props
@@ -115,12 +115,12 @@ export function SheetClose({
   );
 }
 
-/** Renders the scrim and panel in a portal. `Sheet.Content` renders one for you. */
+/** The portal that holds the scrim and panel. `Sheet.Content` renders one itself. */
 export function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-/** The scrim behind the panel. `Sheet.Content` renders one for you. */
+/** The scrim behind the panel. `Sheet.Content` renders one itself. */
 export function SheetOverlay({
   className,
   ...props
@@ -151,7 +151,7 @@ export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
     /** Shows a close button, a ghost icon `Sheet.Close`, in the panel's top-right corner. */
     showCloseButton?: boolean;
   } & OverlayContainerProps & {
-    /** The corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. */
+    /** The corner close button's accessible name. Defaults to the locale dictionary's `overlay.close`. */
     closeLabel?: string;
   };
 

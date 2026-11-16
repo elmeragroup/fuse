@@ -70,7 +70,9 @@ export type CheckboxCardProps = Omit<
      * does not toggle the checkbox.
      */
     rightContent?: ReactNode;
-    /** Disables the checkbox and dims the whole card to 50% with the `not-allowed` cursor. */
+    /**
+     * Whether the checkbox is disabled. A disabled card dims to 50% with the `not-allowed` cursor.
+     */
     isDisabled?: boolean;
     /**
      * The value the card adds to the enclosing `CheckboxGroup`'s selection. Inside a group, the

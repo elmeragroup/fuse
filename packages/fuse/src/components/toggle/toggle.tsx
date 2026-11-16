@@ -15,7 +15,7 @@ export type ToggleProps = Omit<ComponentProps<typeof TogglePrimitive>, "classNam
   className?: string;
   /**
    * The resting look. `default` has no fill or border, and `outline` adds a border and a small
-   * shadow. Pressed, either fills with the theme's `toggle-pressed` colours.
+   * shadow. Pressed, either fills with the theme's `toggle-pressed` colors.
    */
   variant?: ToggleVariantProps["variant"];
   /**

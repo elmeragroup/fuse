@@ -16,8 +16,8 @@ export type SwitchProps = Omit<ComponentProps<typeof SwitchPrimitive.Root>, "cla
    */
   className?: string;
   /**
-   * The size of the track and thumb, also written as `data-size`. `default` is a 32px by 18.4px
-   * track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since
+   * The size of the track and thumb, which the Switch also writes as `data-size`. `default` is a
+   * 32px by 18.4px track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since
    * the switch takes no control size.
    */
   size?: "sm" | "default";

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ClockChart's Tooltip: the polar popup over the active slot, whose default content adds a total
+ * ClockChart's Tooltip, the polar popup over the active slot. Its default content adds a total
  * row per stack of two or more series, as the table and the option name them.
  */
 import type { ReactElement } from "react";

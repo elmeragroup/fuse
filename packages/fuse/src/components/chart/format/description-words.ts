@@ -8,7 +8,7 @@ import { CHART_STRINGS } from "./chart-strings";
 import { formatUnitLabel, formatUnitless } from "./value-format";
 
 /**
- * Start a text as a sentence: its first letter in upper case.
+ * Starts a text as a sentence, with its first letter in upper case.
  *
  * @param text - The text.
  * @param locale - The locale whose case rules apply.
@@ -29,7 +29,7 @@ export type UnitLabel = {
 
 /**
  * A description label with the format's spoken unit, and the unitless spoken value that follows
- * it, as `Forbruk i kilowattimer: lavest 0,33`. A format with no unit keeps the label and speaks
+ * it, such as `Forbruk i kilowattimer: lavest 0,33`. A format with no unit keeps the label and speaks
  * each value whole.
  *
  * @param locale - The active supported locale.

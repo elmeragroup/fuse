@@ -11,8 +11,8 @@ import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import type { itemVariants } from "./item-variants";
 
 /**
- * Out-of-group `Item.Root` element. No hooks and no `render` prop, so Alert can
- * render it from a server component. Public `Item.Root` stays client: it reads
+ * The out-of-group `Item.Root` element. It has no hooks and no `render` prop, so Alert can
+ * render it from a server component. The public `Item.Root` stays a client module, since it reads
  * group context and forwards `render` through `useRender`. Both take their
  * attributes and classes from `itemRootProps`.
  */
@@ -25,12 +25,12 @@ export function ItemRootElement({
   return <div {...itemRootProps({ variant, size, className })} {...props} />;
 }
 
-/** `Item.Media` takes a native `div`'s props and the media `variant`. */
+/** Props for `Item.Media`. It takes a native `div`'s props and the media `variant`. */
 type ItemMediaProps = ComponentProps<"div"> & {
   /**
    * The media's frame. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a
    * rounded square sized by the row's `size`. Beside a description, `default` and `image` media
-   * top-align with the content, and `icon` media centres its glyph on the title's first line.
+   * top-align with the content, and `icon` media centers its glyph on the title's first line.
    */
   variant?: VariantProps<typeof itemMediaVariants>["variant"];
   /**
@@ -68,7 +68,7 @@ export function ItemDescription({ className, ...props }: ComponentProps<"p">): R
   return <p data-slot="item-description" className={cn(itemDescriptionClass, className)} {...props} />;
 }
 
-/** The row's trailing controls, centred on the row. */
+/** The row's trailing controls, centered on the row. */
 export function ItemActions({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="item-actions" className={cn(itemActionsClass, className)} {...props} />;
 }
@@ -87,7 +87,7 @@ export function ItemFooter({
   ...props
 }: ComponentProps<"div"> & {
   /**
-   * Whether the footer shows. `hidden` collapses its row to zero height, clips it and makes it
+   * The footer's display mode. `hidden` collapses its row to zero height, clips it and makes it
    * inert. Switching between `hidden` and `visible` animates the height with a fade and a short
    * slide, so content below moves instead of jumping. Switching to `default` snaps.
    */
@@ -96,9 +96,8 @@ export function ItemFooter({
    * The footer's content, wrapped in an inner `item-footer-content` element. A `hidden` or
    * `visible` footer clips content that reaches more than 0.25rem past that element's box.
    * That includes absolutely positioned content with no positioned ancestor inside the footer,
-   * which positions against the inner element. Keep 0.25rem of inset
-   * on a zero-inset item flush against a scroll container's edge, or that room scrolls. A
-   * `default` footer never clips.
+   * which positions against the inner element. Keep 0.25rem of inset on a zero-inset item flush
+   * against a scroll container's edge, or that room scrolls. A `default` footer never clips.
    */
   children?: ReactNode;
 }): ReactElement {

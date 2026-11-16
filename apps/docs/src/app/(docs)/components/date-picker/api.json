@@ -18,7 +18,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the picker when no Field label does: the group, the segments, the trigger and the popup.",
+          "description": "The picker's accessible name when no Field label names it. It names the group, the segments, the trigger and the popup.",
           "required": false
         },
         {
@@ -27,7 +27,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The parts: a `DatePicker.Group` with `DatePicker.Input` and `DatePicker.Trigger`, and a `DatePicker.Popup` with `DatePicker.Calendar`. For a value with a time, put `DatePicker.TimeInput` in the popup after the calendar. It renders only while the picker's values have a time (a `PlainDateTime` or `ZonedDateTime` and a `granularity` finer than `\"day\"`), is named \"Time\" and reports through `onValueChange` with the input's reasons. It is a Field of its own: it submits nothing, and a half-typed time marks only itself. A preset pane, `DatePicker.Presets`, goes in the popup beside the calendar.",
+          "description": "The parts: a `DatePicker.Group` with `DatePicker.Input` and `DatePicker.Trigger`, and a `DatePicker.Popup` with `DatePicker.Calendar`. For a value with a time, put `DatePicker.TimeInput` in the popup after the calendar. It renders only while the picker's values have a time, that is a `PlainDateTime` or `ZonedDateTime` and a `granularity` finer than `\"day\"`. It is named \"Time\" and reports through `onValueChange` with the input's reasons. It is a Field of its own: it submits nothing, and a half-typed time marks only itself. A preset pane, `DatePicker.Presets`, goes in the popup beside the calendar.",
           "required": false
         },
         {
@@ -141,7 +141,7 @@
           "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Values the picker refuses: the calendar's days stay focusable but unselectable, a typed one is invalid.",
+          "description": "Values the picker refuses: the calendar's days stay focusable but unselectable, and a typed one is invalid.",
           "required": false
         },
         {
@@ -159,7 +159,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value, a Temporal value of any kind. Earlier days are disabled in the calendar.",
+          "description": "The earliest valid value, a Temporal value of any kind. The calendar disables earlier days.",
           "required": false
         },
         {
@@ -168,7 +168,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The name the ISO value submits under. A surrounding Field's `name` wins. Inside a Base UI Field (`Field.Root`, or `DatePickerField`) the input is the Field's control: `Field.Label` names the group, the segments, the trigger (\"Calendar Start date\") and the popup, and a `Form` focuses the first segment for an error.",
+          "description": "The name the ISO value submits under. A surrounding Field's `name` wins. Inside a Base UI Field, such as `Field.Root` or `DatePickerField`, the input is the Field's control. `Field.Label` then names the group, the segments, the trigger and the popup, so the trigger reads \"Calendar Start date\", and a `Form` focuses the first segment for an error.",
           "required": false
         },
         {
@@ -186,7 +186,7 @@
           "type": "((open: boolean, details: DatePickerOpenChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called when the popup opens or closes. `details.reason` is Base UI Popover's, such as `\"trigger-press\"`, `\"outside-press\"`, `\"escape-key\"` or `\"focus-out\"`, or the picker's own: `\"keyboard\"` (Alt+ArrowDown in the group, or Enter on a day that closes it), `\"day-press\"` or `\"preset-press\"`. Canceling with `details.cancel()` keeps the popup as it is. Opening moves focus to the calendar's focused day, the selected one or today. Closing, by Escape among others, returns focus to the segment it opened from, or to the trigger. Typing in the input never opens the popup, and opening it never commits a half-typed value.",
+          "description": "Called when the popup opens or closes. `details.reason` is Base UI Popover's, such as `\"trigger-press\"`, `\"outside-press\"`, `\"escape-key\"` or `\"focus-out\"`, or the picker's own: `\"keyboard\"` for Alt+ArrowDown in the group or Enter on a day that closes it, `\"day-press\"` or `\"preset-press\"`. Canceling with `details.cancel()` keeps the popup as it is. Opening moves focus to the calendar's focused day, the selected one or today. Closing, by Escape among others, returns focus to the segment it opened from, or to the trigger. Typing in the input never opens the popup, and opening it never commits a half-typed value.",
           "required": false
         },
         {
@@ -195,7 +195,7 @@
           "type": "NoInfer<(value: T | null, details: DatePickerValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with this runtime's value when a day is picked in the calendar or the input forms a new value, `null` when the input is cleared. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"input-change\"`, `\"input-clear\"`, `\"input-paste\"` or `\"preset-press\"` (a `PresetItem` with a `dateValue`), and `details.event`, `details.trigger` and `details.getValidationError()` are the input's. Canceling with `details.cancel()` keeps the value: a canceled day keeps the popup open with focus on the day, a canceled edit shows the value again in the segments, and a canceled preset stays unchecked.",
+          "description": "Called when the user picks a day in the calendar or the input forms a new value, with this runtime's value, or with `null` when the user clears the input. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"input-change\"`, `\"input-clear\"`, `\"input-paste\"` or `\"preset-press\"`, for a `PresetItem` with a `dateValue`. `details.event`, `details.trigger` and `details.getValidationError()` are the input's. Canceling with `details.cancel()` keeps the value: a canceled day keeps the popup open with focus on the day, a canceled edit shows the value again in the segments, and a canceled preset stays unchecked.",
           "required": false
         },
         {
@@ -255,7 +255,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether picking a day closes the popup. With a time `granularity` and no value yet, a picked day is held while the popup stays open: a time typed in `DatePicker.TimeInput` commits it at that time, and otherwise it commits at midnight when the popup closes, however it closes (a parent setting `open` to `false` included). A time typed before any day waits for one. That commit runs first and reports the pick's reason; canceling it keeps the popup open with the day still held. A native form reset drops a held day and any half-typed segments, and the shown error, also when the value is unchanged.",
+          "description": "Whether picking a day closes the popup. With a time `granularity` and no value yet, a picked day is held while the popup stays open: a time typed in `DatePicker.TimeInput` commits it at that time, and otherwise it commits at midnight when the popup closes, however it closes, including a parent setting `open` to `false`. A time typed before any day waits for one. That commit runs first and reports the pick's reason; canceling it keeps the popup open with the day still held. A native form reset drops a held day and any half-typed segments, and the shown error, also when the value is unchanged.",
           "required": false
         },
         {
@@ -347,7 +347,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -356,7 +356,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -365,7 +365,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -386,7 +386,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. Your own icon components must pass `data-icon` through to the element they render. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
+          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. A custom icon component must pass `data-icon` through to the element it renders. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
           "required": false
         },
         {
@@ -415,7 +415,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -424,7 +424,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -444,7 +444,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -453,7 +453,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -493,7 +493,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -546,7 +546,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. The trigger still opens and closes the popup, reports its state and takes focus back when the popup closes. A controlled popover with no trigger opens against the anchor, and the opener's `aria-expanded` and focus return are then yours to handle. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor then, such as a new virtual element, to place the popup again.",
+          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. The trigger still opens and closes the popup, reports its state and takes focus back when the popup closes. A controlled popover with no trigger opens against the anchor. In that case, handle the opener's `aria-expanded` and focus return. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor then, such as a new virtual element, to place the popup again.",
           "required": false
         },
         {
@@ -566,7 +566,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -608,7 +608,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shows an arrow on the popup's edge that points at the trigger, or at `anchor` when set.",
+          "description": "Whether the popup shows an arrow on its edge that points at the trigger, or at `anchor` when set.",
           "required": false
         },
         {
@@ -675,7 +675,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then named by those elements and its month heading.",
+          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid then takes its name from those elements and its month heading.",
           "required": false
         },
         {
@@ -733,7 +733,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -742,7 +742,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -751,7 +751,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -828,7 +828,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The checked preset's value, when the parent owns it. `null` checks none. Clear it yourself, in the picker's `onValueChange`, when the value changes any other way.",
+          "description": "The checked preset's value, when the parent owns it. `null` checks none. Clear it in the picker's `onValueChange` when the value changes any other way.",
           "required": false
         }
       ]
@@ -867,7 +867,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Closes the popup on double-click (`reason: \"preset-press\"`), after the item's own `onDoubleClick`. A pointer shortcut: a click or Space selects without closing.",
+          "description": "Whether a double-click closes the popup, with `reason: \"preset-press\"`, after the item's own `onDoubleClick`. It is a pointer shortcut. A click or Space selects without closing.",
           "required": false
         },
         {
@@ -876,7 +876,7 @@
           "type": "DatePickerPresetValue | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press (the value and the checked preset stay, and the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way (a day, typing, a time, a form reset), and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
+          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press: the value and the checked preset stay, and the pane's `onValueChange` is not called. For a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way, by a day, typing, a time or a form reset, and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
           "required": false
         },
         {
@@ -923,7 +923,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the picker when there is no visible `label`.",
+          "description": "The picker's accessible name when there is no visible `label`.",
           "required": false
         },
         {
@@ -941,7 +941,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for the popup. Defaults to the nearest `ThemeScope`.",
+          "description": "The popup's portal target. Defaults to the nearest `ThemeScope`.",
           "required": false
         },
         {
@@ -1019,7 +1019,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides a zoned value's zone name in the field and in the popup's time input.",
+          "description": "Whether the field and the popup's time input hide a zoned value's zone name.",
           "required": false
         },
         {
@@ -1046,7 +1046,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the picker and leaves its value out of the form.",
+          "description": "Whether the picker is disabled, which also leaves its value out of the form.",
           "required": false
         },
         {
@@ -1055,7 +1055,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows the picker invalid, with `errorMessage` under the box.",
+          "description": "Whether the picker shows as invalid, with `errorMessage` under the box.",
           "required": false
         },
         {
@@ -1073,7 +1073,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Keeps the value. The segments stay focusable and take the muted read-only fill, and the trigger is disabled.",
+          "description": "Whether the value is read-only. The segments stay focusable and take the muted read-only fill, and the trigger is disabled.",
           "required": false
         },
         {
@@ -1082,7 +1082,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Reports an empty picker missing, and a half-typed one incomplete.",
+          "description": "Whether the picker reports an empty value as missing and a half-typed one as incomplete.",
           "required": false
         },
         {
@@ -1100,7 +1100,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest valid value, taking what `minValue` takes. Later days are disabled in the calendar.",
+          "description": "The latest valid value, taking what `minValue` takes. The calendar disables later days.",
           "required": false
         },
         {
@@ -1109,7 +1109,7 @@
           "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value, a Temporal value of any kind, compared as DateField compares it. Earlier days are disabled in the calendar.",
+          "description": "The earliest valid value, a Temporal value of any kind, compared as DateField compares it. The calendar disables earlier days.",
           "required": false
         },
         {
@@ -1136,7 +1136,7 @@
           "type": "NoInfer<(value: T | null) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with this runtime's value when a day is picked or the segments form one, `null` when cleared. Its kind is typed as DateField's `onChange` is, with no type argument. The segments take DateField's keys.",
+          "description": "Called when the user picks a day or the segments form a value, with this runtime's value, or with `null` when the user clears it. Its kind is typed as DateField's `onChange` is, with no type argument. The segments take DateField's keys.",
           "required": false
         },
         {
@@ -1167,7 +1167,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The preset pane beside the calendar, normally `DatePicker.Presets`. A falsy node (`false` from a `&&` guard, `null`, `\"\"`) keeps the calendar alone.",
+          "description": "The preset pane beside the calendar, normally `DatePicker.Presets`. A falsy node, such as `false` from a `&&` guard, `null` or `\"\"`, keeps the calendar alone.",
           "required": false
         },
         {
@@ -1185,7 +1185,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads days, months and hours with a leading zero, as DateField does.",
+          "description": "Whether days, months and hours take a leading zero, as DateField's do.",
           "required": false
         },
         {
@@ -1194,7 +1194,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The field box's control size: `\"default\"` the `md` one, `\"sm\"` the `sm` one.",
+          "description": "The field box's control size: `\"default\"` is the `md` size and `\"sm\"` the `sm` size.",
           "required": false,
           "values": [
             "default",

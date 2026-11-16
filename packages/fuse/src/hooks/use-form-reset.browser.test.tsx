@@ -20,13 +20,13 @@ function resetCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
 type ProbeProps = {
   onReset: (() => void) | null;
   defaultValue?: string;
-  /** Rendered inside the form after the input, e.g. a reset button. */
+  /** Rendered inside the form after the input, such as a reset button. */
   children?: ReactNode;
   onFormReset?: (event: FormEvent<HTMLFormElement>) => void;
   onRender?: () => void;
 };
 
-/** One labelled form around one subscribed input: the shape every plain-DOM case shares. */
+/** One labeled form around one subscribed input: the shape every plain-DOM case shares. */
 function Probe({ onReset, defaultValue, children, onFormReset, onRender }: ProbeProps) {
   onRender?.();
   const element = useRef<HTMLInputElement>(null);

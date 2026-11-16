@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The path form of one Bar above 100 slots: per colour step a solid path, a projected path and an
- * estimated path, then the missing ticks and the emphasised overlays. The series grows from the zero
+ * The path form of one Bar above 100 slots: per color step a solid path, a projected path and an
+ * estimated path, then the missing ticks and the emphasized overlays. The series grows from the zero
  * line in Root's entrance as one transform, which holds one registration with Root's loop.
  */
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
@@ -36,7 +36,7 @@ import { floorAxisOf, frameRect, snapY, tickWidth, valueAt } from "./layout/plot
 import type { PlotFrame, PlotRect, StackPlace } from "./layout/plot-frame";
 
 /**
- * Scale the path form's marks from the zero line by the loop's number. The paths draw the latest
+ * Scales the path form's marks from the zero line by the loop's number. The paths draw the latest
  * frame at once, so the zero line they grow from is that frame's, snapped as the paths snap it.
  */
 function drawGrow(node: SVGGElement, look: { readonly frame: PlotFrame }, values: MarkValues): void {
@@ -78,7 +78,10 @@ const columnParts = partsCache((group) => ({
   boxes: [...group.querySelectorAll('[data-slot="chart-bar-emphasis"]')],
 }));
 
-/** Draw the columns, their quality paths, the missing ticks and the emphasis boxes from the loop's numbers. */
+/**
+ * Draws the columns, their quality paths, the missing ticks and the emphasis boxes from the loop's
+ * numbers.
+ */
 function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkValues): void {
   if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / COLUMN_STRIDE);
@@ -130,7 +133,7 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
   });
 }
 
-/** Write a drawing onto the columns' paths and emphasis boxes. */
+/** Writes a drawing onto the columns' paths and emphasis boxes. */
 function paintColumns(group: SVGGElement, drawing: ColumnsDrawing): void {
   const { paths, boxes } = columnParts(group);
   for (const { path, part, fill } of paths) {

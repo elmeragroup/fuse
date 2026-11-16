@@ -4,11 +4,11 @@
  * The readout port: what every Root that has a readout provides to the parts every family shares,
  * the Tooltip's and the Legend's parts, Empty, Swatch, SeriesLabel, SeriesIcon and `useChartPoint`.
  * A shared part reads its Root through this port alone, so a family ships its own model and pick
- * and never another family's. Each Root memoises its port on its own context, which changes with
+ * and never another family's. Each Root memoizes its port on its own context, which changes with
  * data, config and the effective window and never with the pointer, so a pointer move commits no
  * shared part that reads only the port.
  *
- * Two capabilities ride with a family's own part instead, so a route that renders neither ships
+ * Two capabilities come with a family's own part instead, so a route that renders neither ships
  * neither: the Tooltip part hands the shared tooltip body its `TooltipPlacer`, and the Table part
  * hands the shared table body its `ChartTableModel`.
  *
@@ -49,8 +49,8 @@ export type ReadoutItem = {
   /** Whether the default LegendToggleGroup lists a toggle for it. */
   readonly selectable: boolean;
   /**
-   * The two sides of a threshold colour, above first as the value axis reads, each with its own
-   * legend entry, or null for every other colour, which has one entry with no side.
+   * The two sides of a threshold color, above first as the value axis reads, each with its own
+   * legend entry, or null for every other color, which has one entry with no side.
    */
   readonly sides: readonly [ChartThresholdSide, ChartThresholdSide] | null;
 };
@@ -62,7 +62,7 @@ export type PointerSlot = { readonly slot: number; readonly near: number | null 
 export type AnchorMeasure = {
   /** The box the popup touches. */
   readonly box: DOMRect;
-  /** How far the popup moves along its side from the box's centre to stay inside the Root's box. */
+  /** How far the popup moves along its side from the box's center to stay inside the Root's box. */
   readonly shift: number;
   /** How a step's glide travels to this place. */
   readonly route: GlideRoute;
@@ -108,12 +108,12 @@ export type TooltipAnchor = {
    */
   readonly revision: object;
   /**
-   * Forget what the anchor read. "moved" forgets what it read of the marks, as the popup opens or
+   * Forgets what the anchor read. "moved" forgets what it read of the marks, as the popup opens or
    * the revision changes, and "closed" also forgets where the popup rested.
    */
   readonly forget: (reason: "moved" | "closed") => void;
   /**
-   * Watch the marks while the popup shows, and call `again` when they draw something the anchor
+   * Watches the marks while the popup shows, and calls `again` when they draw something the anchor
    * should measure afresh. It returns the watch's teardown, and a new function stands for a new
    * revision, so the tooltip watches again after one.
    */
@@ -207,7 +207,7 @@ export type ChartReadout = {
   /** A key's item, or undefined for a key the Root lacks. */
   readonly item: (key: string) => ReadoutItem | undefined;
   /**
-   * Check a key a part names explicitly.
+   * Checks a key a part names explicitly.
    *
    * @throws {ChartCompositionError} `unknown-key` for a key the config lacks.
    */
@@ -238,13 +238,13 @@ export type ChartReadout = {
   ) => { readonly paint: string; readonly look: string | undefined };
   /** The active point `useChartPoint` reports. */
   readonly point: (active: number, near: number | null) => ChartPoint;
-  /** Select a key, or clear the selection with null, and announce it. */
+  /** Selects a key, or clears the selection with null, and announces it. */
   readonly select: (key: string | null, reason: ChartSelectionChangeReason, event: Event | undefined) => void;
   /** A LegendToggleGroup registers while it is mounted, and the returned function unregisters it. */
   readonly registerToggleGroup: () => () => void;
-  /** Highlight a key through Root's attributes with no React render, or clear it with null. */
+  /** Highlights a key through Root's attributes with no React render, or clears it with null. */
   readonly highlight: (key: string | null) => void;
-  /** Warn once per Root for each rule and subject. */
+  /** Warns once per Root for each rule and subject. */
   readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
   /**
    * The pick a pointer over the plot or the tooltip makes. It is a hook with the same calls for the
@@ -254,7 +254,7 @@ export type ChartReadout = {
 };
 
 /**
- * A family's tooltip placement, which its Tooltip part hands the shared tooltip body. It rides with
+ * A family's tooltip placement, which its Tooltip part hands the shared tooltip body. It comes with
  * the Tooltip part instead of the Root's readout, so a route that renders no Tooltip ships no
  * anchor.
  */

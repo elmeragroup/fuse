@@ -69,9 +69,9 @@ type WithFeature<TFeatures, TFeature extends string, TPart> = TFeature extends k
 /**
  * The table parts Fuse registers on the table `useFuseTable` returns. One registry serves every
  * table the hook creates, so each part is generic over the row data and defaults it to `TData`, the
- * row data of the table it is read from: `table.Content`'s row takeover receives `Row<TFeatures,
- * TData>`, while `table.Row` takes any row it is given. `Pagination` and `ColumnToggle` appear only
- * with their feature.
+ * row data of the table it is read from. `table.Content`'s row takeover receives
+ * `Row<TFeatures, TData>`, while `table.Row` takes any row it is given. `Pagination` and
+ * `ColumnToggle` appear only with their feature.
  */
 export type FuseTableComponents<TFeatures extends TableFeatures, TData extends RowData = RowData> = {
   /** The whole table, rendered through the registered header and cell wrappers. */
@@ -161,9 +161,9 @@ type FuseAppTable<
 >;
 
 /**
- * What `createFuseTableHook` returns: `createTableHook`'s result over the merged registries.
- * `useAppTable` and `useTableContext` default Fuse's table parts to the table's row data, which
- * TanStack's result cannot express: it types the registry once, for every table.
+ * What `createFuseTableHook` returns, which is `createTableHook`'s result over the merged
+ * registries. `useAppTable` and `useTableContext` default Fuse's table parts to the table's row
+ * data, which TanStack's result cannot express, since it types the registry once, for every table.
  */
 export type CreateFuseTableHookResult<
   TFeatures extends TableFeatures,
@@ -200,7 +200,7 @@ export type CreateFuseTableHookResult<
 };
 
 /**
- * Erased to the registry constraint: the parts are typed over every stock feature, which TypeScript
+ * Erased to the registry constraint. The parts are typed over every stock feature, which TypeScript
  * cannot compare with the app's `TFeatures`, so the factory retypes them with one cast.
  */
 // oxlint-disable-next-line anti-slop/no-known-value-widening -- deliberate erasure; see above
@@ -232,13 +232,13 @@ function mergeRegistry<TFuse extends ComponentRegistry, TApp extends ComponentRe
 }
 
 /**
- * Bind an app's table features, default options and components into one `useFuseTable` hook, with
+ * Binds an app's table features, default options and components into one `useFuseTable` hook, with
  * Fuse's parts registered: `table.Content`, `table.Row`, `table.Pagination`,
  * `table.ColumnToggle`, `header.SortButton` and the default cells `TextCell`, `NumberCell`,
  * `CurrencyCell`, `DateCell` and `DateTimeCell`.
  *
  * It wraps TanStack's `createTableHook` and passes `features` and every default option through
- * untouched; Fuse adds no features of its own. The app's components are registered after Fuse's,
+ * untouched. Fuse adds no features of its own. The hook registers the app's components after Fuse's,
  * so registering `cellComponents: { NumberCell }` replaces Fuse's `NumberCell`, props included. A
  * registered part appears in the types only when its feature is in `features`: `Pagination` needs
  * `rowPaginationFeature`, `ColumnToggle` `columnVisibilityFeature` and `SortButton`

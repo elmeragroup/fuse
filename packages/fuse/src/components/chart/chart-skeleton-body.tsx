@@ -15,7 +15,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 export type ChartSkeletonBodyProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
   /** The sketch's `data-variant`, which the stylesheet lays its shapes out by. */
   readonly variant: string;
-  /** The loader's name. The dictionary's "Laster diagram" is the default. */
+  /** The loader's name. Defaults to the dictionary's "Laster diagram". */
   readonly label: string | undefined;
   /** The family's Fuse Skeleton shapes. */
   readonly marks: ReactNode;

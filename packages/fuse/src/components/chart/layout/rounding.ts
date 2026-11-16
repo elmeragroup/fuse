@@ -1,9 +1,8 @@
 /**
  * The rounding a server-drawn path goes through. A Sparkline's path keeps 3 digits, as d3-shape's
- * generators round by default. A chart's own
- * paths keep every digit, because each coordinate lies on the device pixel grid already. Either
- * way React renders a path's resting `d` through the same builder the loop's last frame calls, so
- * the two write the same string.
+ * generators round by default. A chart's own paths keep every digit, because each coordinate lies on
+ * the device pixel grid already. Either way React renders a path's resting `d` through the same
+ * builder the loop's last frame calls, so the two write the same string.
  */
 
 /** The digits a path coordinate keeps, d3-shape's default. */

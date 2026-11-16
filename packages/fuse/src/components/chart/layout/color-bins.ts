@@ -1,10 +1,10 @@
 /**
- * Value-driven colour, as CONTRACT section 8.9 defines it. A series whose `color` names a scale
+ * Value-driven color, as CONTRACT section 8.9 defines it. A series whose `color` names a scale
  * paints each value with one of 7 steps. The bins read every row of the data, never a brush
- * window, so a colour never shifts while the window moves.
+ * window, so a color never shifts while the window moves.
  */
 
-/** The two scales a series colour may name. */
+/** The two scales a series color may name. */
 export type ColorScale = "chart-seq" | "chart-diverging";
 
 /** One of a scale's 7 steps. */
@@ -20,7 +20,7 @@ function step(index: number): ColorStep {
 }
 
 /**
- * Build a series' bins from its readings.
+ * Builds a series' bins from its readings.
  *
  * - `chart-diverging` keeps step 4 for magnitudes below M/7, where M is the largest magnitude in
  *   the series, then steps 3 and 5 below 3M/7, 2 and 6 below 5M/7, and 1 and 7 beyond. Negative

@@ -4,9 +4,9 @@ import { cn } from "../../styles/cn";
 import { labelTypeClass } from "../../styles/label-type";
 import { DescriptionListHeading } from "./description-list-heading";
 
-/** `DescriptionList.Root` takes a native `div`'s props. */
+/** Props for `DescriptionList.Root`, a native `div`'s props. */
 export type DescriptionListRootProps = ComponentProps<"div">;
-/** `DescriptionList.Content` takes a native `dl`'s props, the `layout` and `dividers`. */
+/** Props for `DescriptionList.Content`, a native `dl`'s props with `layout` and `dividers`. */
 export type DescriptionListContentProps = ComponentProps<"dl"> & {
   /**
    * How each Item's terms and details sit. `responsive` stacks the details under the term on
@@ -22,7 +22,7 @@ export type DescriptionListContentProps = ComponentProps<"dl"> & {
    * details to stress it. To group rows, use one inline list per group. Consecutive inline lists
    * space with the large surface gap.
    *
-   * A colour class on a term or details wins in both layouts. To override the inline cells'
+   * A color class on a term or details wins in both layouts. To override the inline cells'
    * padding, sizing and alignment, use a `[:where([data-layout=inline]>*)>&]:` class or a CSS
    * rule. To override an inline Item's row, wrap and gap, use a `[:where([data-layout=inline])>&]:`
    * class.
@@ -37,12 +37,12 @@ export type DescriptionListContentProps = ComponentProps<"dl"> & {
   dividers?: boolean;
   /**
    * The list's Items. Wrap each term and its details in a `DescriptionList.Item`, the `<div>`
-   * HTML allows around one name-value group. Do not mix Items with bare terms and details: HTML
+   * HTML allows around one name-value group. Do not mix Items with bare terms and details. HTML
    * forbids it, the inline layout styles cells only inside an Item, and rules fall between Items.
    */
   children?: ComponentProps<"dl">["children"];
 };
-/** `DescriptionList.Item` takes a native `div`'s props. */
+/** Props for `DescriptionList.Item`, a native `div`'s props. */
 export type DescriptionListItemProps = ComponentProps<"div"> & {
   /**
    * The group's terms and details. An Item can hold several terms of one details, or several
@@ -51,16 +51,16 @@ export type DescriptionListItemProps = ComponentProps<"div"> & {
    */
   children?: ComponentProps<"div">["children"];
 };
-/** `DescriptionList.Term` takes a native `dt`'s props. */
+/** Props for `DescriptionList.Term`, a native `dt`'s props. */
 export type DescriptionListTermProps = ComponentProps<"dt"> & {
   /**
-   * The term. It wraps at its spaces and hyphens, so a hyphenated label such as "Målepunkt-ID" can
+   * The term. It wraps at its spaces and hyphens, so a hyphenated label such as `Målepunkt-ID` can
    * split at the hyphen beside a long value. Write it with a non-breaking hyphen, U+2011, to keep
    * it whole.
    */
   children?: ComponentProps<"dt">["children"];
 };
-/** `DescriptionList.Details` takes a native `dd`'s props. */
+/** Props for `DescriptionList.Details`, a native `dd`'s props. */
 export type DescriptionListDetailsProps = ComponentProps<"dd"> & {
   /**
    * The value. In a `layout="inline"` list, it wraps between its words beside its term. There, an
@@ -73,7 +73,7 @@ export type DescriptionListDetailsProps = ComponentProps<"dd"> & {
 export type { DescriptionListHeadingProps } from "./description-list-heading";
 
 /**
- * A semantic `<dl>`, `<dt>` and `<dd>` list. A server compound: it owns no state, handlers or
+ * A semantic `<dl>`, `<dt>` and `<dd>` list. It is a server compound with no state, handlers or
  * browser APIs. `Heading` is a client `useRender` part, so other outline levels stay possible
  * without making this module a client boundary.
  */

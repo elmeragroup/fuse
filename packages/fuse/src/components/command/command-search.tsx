@@ -59,7 +59,7 @@ type CommandSearchOmitted =
   | "children";
 
 /**
- * The props of a palette's search, which `Command.Root` takes when it has no stack and each
+ * Props for a palette's search, which `Command.Root` takes when it has no stack and each
  * `Command.Page` takes. They are Base UI Autocomplete Root's props. Without `grouped` they are
  * generic over one item, as Base UI's flat overload is. With `grouped` they are generic over the
  * whole array of groups, as its grouped overload is. `locale` comes from `LocaleProvider`, and the
@@ -78,7 +78,7 @@ export type CommandSearchProps<
   CommandSearchOmitted | "autoHighlight" | "keepHighlight" | "value" | "defaultValue" | "virtualized"
 > & {
   /**
-   * Marks `items` as groups, each with its own `items`. The callbacks, such as
+   * Whether `items` are groups, each with its own `items`. The callbacks, such as
    * `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. Give each
    * `Command.Group` its group's `items`, and name it with `Command.Label`. The search throws
    * when the first entry disagrees with `grouped`.
@@ -108,7 +108,7 @@ export type CommandSearchProps<
    */
   defaultValue?: AutocompleteRootProps<CommandItemOf<Item, Groups, Grouped>>["defaultValue"];
   /**
-   * Renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual`
+   * Whether the list renders only the rows in view, for thousands of items. Install `@tanstack/react-virtual`
    * 3.14 or later, and pass `<CommandVirtual.List />` as `Command.List`'s `render`. Import it
    * from `@elmeragroup/fuse/command-virtual`, which the root barrel leaves out, so an app without
    * the virtualizer never loads it. A virtual list renders flat items only, so `virtualized`

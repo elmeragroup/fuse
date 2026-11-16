@@ -8,11 +8,10 @@ import type { FileRules } from "./split-files";
 export type DragVerdict = "accept" | "reject" | "unknown";
 
 /**
- * Judge a file drag from its items. A drag exposes each item's kind and
- * MIME type but no file name, so the verdict is `"reject"` only when the drop is certain to
- * reject every file. That holds on a single-file Root when more than one file has a known type
- * that passes `accept`, and for files whose types are all known and all miss an `accept` that has
- * no extension token.
+ * Judges a file drag from its items. A drag exposes each item's kind and MIME type but no file
+ * name, so the verdict is `"reject"` only when the drop is certain to reject every file. That holds
+ * on a single-file Root when more than one file has a known type that passes `accept`, and for
+ * files whose types are all known and all miss an `accept` that has no extension token.
  *
  * @param items - The event's `dataTransfer.items`.
  * @param options - The parsed `accept` rule and whether the Root takes several files.

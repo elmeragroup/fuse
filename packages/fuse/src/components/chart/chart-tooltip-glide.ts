@@ -45,15 +45,15 @@ export type GlideRoute =
  */
 export type TooltipGlider = {
   /**
-   * Glide to the place Base UI writes for this step, from where the popup shows now. `route` reads,
+   * Glides to the place Base UI writes for this step, from where the popup shows now. `route` reads,
    * at that place, how the glide travels. A route over the roof glides straight once the popup
    * leaves the top side, and jumps when its path would leave the viewport. The arming lasts for the
    * step's own placement: a step that moves the popup nowhere spends it by the next frame.
    */
   readonly arm: (route: () => GlideRoute) => void;
-  /** End any glide at once, so the popup shows Base UI's last place. */
+  /** Ends any glide at once, so the popup shows Base UI's last place. */
   readonly stop: () => void;
-  /** Stop watching the positioner. */
+  /** Stops watching the positioner. */
   readonly dispose: () => void;
 };
 
@@ -69,7 +69,7 @@ type Armed = {
 const TRANSLATE = /translate\(\s*(-?[\d.e+-]+)px\s*,\s*(-?[\d.e+-]+)px\s*\)/;
 
 /**
- * Glide a positioner after slot steps.
+ * Glides a positioner after slot steps.
  *
  * @param positioner - The tooltip's positioner.
  * @param chart - The chart Root's element, whose glide duration the positioner takes.
@@ -162,7 +162,7 @@ function facingKept(shift: Shift, before: PlaceSize, after: PlaceSize, side: str
   return shift;
 }
 
-/** Copy the chart's glide duration onto the positioner. */
+/** Copies the chart's glide duration onto the positioner. */
 function takeDuration(positioner: HTMLElement, chart: HTMLElement | null): void {
   if (chart === null) return;
   const tokens = getComputedStyle(chart);

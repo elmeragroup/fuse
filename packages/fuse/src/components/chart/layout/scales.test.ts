@@ -89,7 +89,7 @@ describe("section 8.15 bands", () => {
 describe("nearestIndex", () => {
   const centre = (scale: BandScale, slot: number): number => (scale.starts[slot] ?? 0) + scale.bandwidth / 2;
 
-  /** The brute-force oracle's distance, from the position to the nearest centre of any slot. */
+  /** The brute-force oracle's distance, from the position to the nearest center of any slot. */
   function nearestDistance(scale: BandScale, position: number): number {
     return Math.min(...scale.starts.map((_, slot) => Math.abs(position - centre(scale, slot))));
   }

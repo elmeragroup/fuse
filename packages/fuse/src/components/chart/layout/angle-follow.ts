@@ -3,7 +3,7 @@ import { turnOf } from "./polar-angle";
  * An angle that follows its target on a damped spring of mass 1 and keeps its velocity when the
  * target moves, so a step mid-glide never jumps and never stalls. A polar Root turns its hand, its
  * active dots and its tooltip's lane offset on one of these. The spring advances in closed form,
- * since the stiffest follow spring at 60 Hz has ω·dt ≈ 1.2, which would destabilise a numeric step.
+ * since the stiffest follow spring at 60 Hz has ω·dt ≈ 1.2, which would destabilize a numeric step.
  */
 import { criticalStep } from "./spring";
 import type { Spring } from "./spring";
@@ -31,7 +31,7 @@ export function shortTarget(shown: number, target: number): number {
 }
 
 /**
- * Advance a damped spring of mass 1 toward its target by `dtMs` from any position and velocity, in
+ * Advances a damped spring of mass 1 toward its target by `dtMs` from any position and velocity, in
  * closed form. A retarget changes only the target, so the position and velocity carry over, and no
  * time passed leaves the state as it was.
  *

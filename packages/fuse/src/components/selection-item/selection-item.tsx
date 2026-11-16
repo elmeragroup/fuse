@@ -19,7 +19,7 @@ import { partitionSubSections } from "./partition-sub-sections";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 
-/** Resolved once at module scope, since the shell always borrows Item's `outline` arm. */
+/** Item's `outline` arm, resolved once at module scope, since the shell always borrows it. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
 // A connected stack's rows share one line per join: every row but the first drops its top border,
@@ -93,7 +93,7 @@ const disabledShellClass = cn(
 );
 
 /**
- * The click router of a row whose SubSection is selectable: a click in the row's own band
+ * The click router of a row whose SubSection is selectable. A click in the row's own band
  * toggles the row's control, unless it lands on an element that keeps its own click, comes
  * from a portal or a nested row, or ends a text selection that reaches into the band. It reads
  * only the event, so every row shares this one handler. `mergeProps` runs the consumer's
@@ -127,9 +127,9 @@ function selectFromSubSection(event: MouseEvent<HTMLDivElement>): void {
 }
 
 /**
- * What a shell sits in: `false` outside any selection group; otherwise the enclosing
- * group's `orientation` plus whether that group is the private `role="list"` card list
- * (`list: true`) or the plain group primitive (`list: false`).
+ * What a shell sits in. It is `false` outside any selection group. Otherwise it is the enclosing
+ * group's `orientation` and `list`, which is `true` for the private `role="list"` card list and
+ * `false` for the plain group primitive.
  */
 type SelectionItemGroupContextValue = false | { orientation: SelectionItemGroupOrientation; list: boolean };
 
@@ -154,8 +154,8 @@ export function SelectionGroupLayout({ children, orientation }: SelectionGroupLa
 type SelectionItemGroupProps = {
   children?: ReactNode;
   /**
-   * How the list lays out its rows. `vertical`, the default, is a connected `flex-col gap-0`
-   * stack. `horizontal` is `flex-row flex-wrap`, `--surface-gap-lg` apart.
+   * How the list lays out its rows. `vertical` is a connected `flex-col gap-0` stack. `horizontal`
+   * is `flex-row flex-wrap`, `--surface-gap-lg` apart.
    */
   orientation?: SelectionItemGroupOrientation;
 };
@@ -185,14 +185,14 @@ export function SelectionItemGroup({
 }
 
 /**
- * A selection row's title, `CheckboxItem.Title` and `RadioItem.Title`: the option's name, in its
- * own `selection-item-title` slot because it is label text. It takes the label text size,
+ * A selection row's title, `CheckboxItem.Title` and `RadioItem.Title`, which is the option's name.
+ * It sits in its own `selection-item-title` slot because it is label text. It takes the label text size,
  * `--label-text`, in place of `Item.Title`'s fixed `text-sm`. The size carries `leading-snug` as
- * its `/snug` modifier: a separate `leading-snug` before it would fall to tailwind-merge, which
+ * its `/snug` modifier, because a separate `leading-snug` before it would fall to tailwind-merge, which
  * drops a line height that comes before a font size, and the formatter sorts the classes inside a
  * string.
  *
- * Its weight comes from the theme's `--selection-title-weight`: 400 in neutral themes and 500
+ * Its weight comes from the theme's `--selection-title-weight`, 400 in neutral themes and 500
  * in branded ones, which matches the group legend and `CheckboxCard` titles. Without
  * `themes.css` it is 400 unless the host sets the role. A `className` weight, such as
  * `font-medium`, replaces it.
@@ -211,10 +211,10 @@ export function SelectionItemTitle({ className, ...props }: ComponentProps<typeo
 }
 
 /**
- * A selection row's trailing content, such as a price or a badge: `CheckboxItem.Actions` and
+ * A selection row's trailing content, such as a price or a badge, in `CheckboxItem.Actions` and
  * `RadioItem.Actions`. Its box is at least one first line of the row tall, the line the control
- * centres on, and its text takes that line height, so one line of text or a badge up to a line
- * tall centres on the title's first line. Wrapped text keeps its first line there and grows the
+ * centers on, and its text takes that line height, so one line of text or a badge up to a line
+ * tall centers on the title's first line. Wrapped text keeps its first line there and grows the
  * row, and content taller than a line tops flush with the title.
  */
 export function SelectionItemActions({
@@ -242,12 +242,12 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   /** Where the control sits in the row: before the content, or after it at `end`. */
   controlPosition?: "start" | "end";
   /**
-   * Shows the disabled row: the `not-allowed` cursor and the theme's
+   * Whether the row shows as disabled, with the `not-allowed` cursor and the theme's
    * `--selection-disabled-background` fill under a 45° hatch striped in
    * `--selection-disabled-hatch`. Neutral themes fill with `--muted` under black stripes at 2%
    * alpha, and branded themes keep the card fill with no stripes. The row's text, its
    * SubSection's included, takes `--selection-disabled-foreground`, which is the foreground in
-   * neutral themes and the muted foreground in branded ones. A text colour class in `className`
+   * neutral themes and the muted foreground in branded ones. A text color class in `className`
    * still wins, a description keeps its own muted text, and the control dims itself. A row
    * shows the same look without this prop when its group is disabled, or when its control
    * carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`. It does not
@@ -256,10 +256,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   isDisabled?: boolean;
   /**
    * Extra classes for the row, merged last. A `px-*` utility sets the card's side inset, and a
-   * click in that inset beside the label row toggles the control. The row paints the card fill
-   * (`bg-card`) like the other field boxes. A list on a surface that should show through takes a
+   * click in that inset beside the label row toggles the control. The row paints the card fill,
+   * `bg-card`, like the other field boxes. A list on a surface that should show through takes a
    * background class such as `bg-background`, which replaces it.
-   * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
+   * The row states its fill as `--surface`, the color a chart's cut-outs paint, so a row that
    * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
    * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
@@ -269,22 +269,22 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * The edges and the lines between rows come from the `--selection-*` theme roles, which the
    * Tokens section lists. Stacked rows share one line per join, and a horizontal group's rows
    * are cards of their own with no line between them. Set a role on the element that carries
-   * the theme attributes, `<html>` or a `ThemeScope`. For example, `--selection-border:
-   * var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a plain wrapper the
-   * rows keep the edges the theme element resolved. A checked row below another draws its top
-   * edge by pulling itself up 1px, so a margin class on the row can break that edge.
+   * the theme attributes, `<html>` or a `ThemeScope`. For example,
+   * `--selection-border: var(--border)` on the `ThemeScope` gives branded rows an outer edge. On a
+   * plain wrapper the rows keep the edges the theme element resolved. A checked row below another
+   * draws its top edge by pulling itself up 1px, so a margin class on the row can break that edge.
    */
   className?: string;
   /**
    * Band content passed apart from the row children, rendered outside the label before any
    * direct `SelectionItem.SubSection` children. A SubSection inside a wrapper the partition
-   * cannot see through goes here. Direct SubSection children need no help: the shell
-   * recognises them whether a server or a client component wrote them.
+   * cannot see through goes here. Direct SubSection children need no help, because the
+   * shell recognizes them whether a server or a client component wrote them.
    */
   subSections?: ReactNode;
   /**
-   * Lets a click on a SubSection's passive parts toggle the control: its text, the band
-   * around it and the side padding beside it. A click inside a link, button, form field,
+   * Whether a click on a SubSection's passive parts toggles the control. Those parts are its
+   * text, the band around it and the side padding beside it. A click inside a link, button, form field,
    * label or other focusable element in the SubSection stays that element's, and a click
    * that ends a text selection does nothing. The control's accessible name stays the label
    * row, and keyboard and assistive-technology users toggle through the control. Leave it
@@ -296,8 +296,8 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * The row's content. Direct `SelectionItem.SubSection` children render outside the label, so
    * a field or button in one never toggles the control, and everything else renders in the
    * label row. The row finds a direct SubSection whether a server or a client component wrote
-   * it. In a client component, a Fragment, another component or an HOC around a SubSection hides
-   * it, and it stays inside the label. Pass such a band through `subSections`.
+   * it. In a client component, a Fragment, another component or a higher-order component around a
+   * SubSection hides it, and it stays inside the label. Pass such a band through `subSections`.
    */
   children?: ReactNode;
 };
@@ -322,7 +322,7 @@ export type SelectionItemRootProps = Omit<
 >;
 
 /**
- * The card row that CheckboxItem and RadioItem put their control in. It reads Field.Item
+ * The card row that `CheckboxItem` and `RadioItem` put their control in. It reads `Field.Item`
  * context, so it is a client component. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.
  * The shell's side padding is the one horizontal inset, so a `px-*` in `className` sets it.
@@ -330,26 +330,28 @@ export type SelectionItemRootProps = Omit<
  * is an absolute child of the shell grid. With automatic columns, that pseudo-element
  * spans the shell's padding box, so a click anywhere across the label row toggles the
  * control at any inset. While a SubSection shows, it covers the label row only and the
- * sub-section band keeps its own clicks; while every SubSection is `mode="hidden"`, it
+ * sub-section band keeps its own clicks. While every SubSection is `mode="hidden"`, it
  * covers the whole row, bottom inset included. With `isSubSectionSelectable` it always
  * covers the whole row, and a click on the band's passive parts toggles the control.
  * Nothing clips, so a focus ring at a zero inset paints whole.
  *
- * The shell's 1px edge is the theme's `--selection-border`, not Item's outline `--border`:
- * `--border` in neutral themes, a zero-alpha colour in branded ones, which keeps the border's
+ * The shell's 1px edge is the theme's `--selection-border`, not Item's outline `--border`. It is
+ * `--border` in neutral themes and a zero-alpha color in branded ones, which keeps the border's
  * geometry but draws no line. A checked shell paints its edge in the theme's
- * `--selection-checked-border`: `--primary` in neutral themes, the resting `--selection-border`
- * in branded ones, whose radio card shows the selection through its control alone.
+ * `--selection-checked-border`, which is `--primary` in neutral themes and the resting
+ * `--selection-border` in branded ones, whose radio card shows the selection through its control
+ * alone.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse borders with
  * `not-first:border-t-0`, so one line divides two rows. The bottom edge of a row with another
  * row after it is the theme's `--selection-divider`, and a checked row's edges shared with another
  * row are its `--selection-checked-divider`. Neutral themes alias them to the row's own edges, so
- * a checked row stays boxed in `--primary`. Branded themes draw both in `--border`: stacked rows
- * keep a grey separator, checked or not, while the sides, the stack's outer top and bottom and a
- * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top border by pulling itself up one
- * pixel (`has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a
- * z-index lift; `className` margin overrides can break that. Horizontal item groups render
+ * a checked row stays boxed in `--primary`. Branded themes draw both in `--border`. Stacked rows
+ * keep a gray separator, checked or not, while the sides, the stack's outer top and bottom and a
+ * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top
+ * border by pulling itself up one pixel, through
+ * `has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`, instead of
+ * a z-index lift, so `className` margin overrides can break that edge. Horizontal item groups render
  * individually rounded full-border cards with no vertical border collapse, no divider and no
  * checked negative margin. The checked selectors read only the row's own control, through
  * `>label>`, so a checked row nested in a SubSection cannot repaint the shell.
@@ -358,7 +360,7 @@ export type SelectionItemRootProps = Omit<
  * with the theme's `--selection-disabled-background` under a hatch of
  * `--selection-disabled-hatch`, which outweighs the checked fill and a background class and
  * leaves the checked border, joins and pull-up alone. The row's text, its SubSection's included,
- * takes `--selection-disabled-foreground`, and the control dims itself at 50%. A text colour class
+ * takes `--selection-disabled-foreground`, and the control dims itself at 50%. A text color class
  * in `className` wins over the resting, checked and disabled text alike.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with

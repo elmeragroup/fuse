@@ -34,10 +34,8 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    so a rule about children goes on a declared `children` prop. Implementation rationale goes
    into a comment beside its owner, usually the recipe file. Done when every rule a reader needs
    is on the HTML page.
-5. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
-   rule as an instruction to the consumer, with the value or markup it names in backticks. Give
-   each fact once, on the prop it concerns, and leave out how the component implements it. Cut
-   filler: no "simply", "just", "note that", or restating the type.
+5. **Rewrite the JSDoc you touched** to the house style in the fuse-jsdoc skill. Give each fact
+   once, on the prop it concerns, and leave out how the component implements it.
 6. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
    declared prop's default only from destructuring; it reads `@default` only for dependency
    props. A prop with no recorded default shows "unset" in Live code, which is correct when the

@@ -1,16 +1,15 @@
 /**
- * Workspace-only facade for the docs pipeline and the Figma sync. It is not published and
- * not in the root barrel. It stays server-safe `.ts` because Node scripts cannot load
- * `/theme`, which re-exports client TSX. Its values are the resolved catalog, so readers
- * translate resolved values into their own format and never parse CSS themselves, and the
- * part density table it carries, which the docs coverage test reads without resolving every
- * theme. It also carries the theme axes and the brand table, so a design tool can lay out
- * identity, brand and segment as separate choices. It carries the legal radius steps and the
- * radius rungs too, so the docs studio reads them instead of restating them. The text-grade pairs
- * name the role pairs the contrast gate holds at 4.5:1 everywhere, and the role text pairs those
- * it holds in some schemes or identities, so the docs palettes page grades the same pairs. The
- * ramp scales, steps and seed steps let it lay out the brand ramps without parsing token names
- * or restating the ramp recipe.
+ * Workspace-only facade for the docs pipeline and the Figma sync. It is not published and not in
+ * the root barrel. It stays a server-safe `.ts` module because Node scripts cannot load `/theme`,
+ * which re-exports client TSX. Its values are the resolved catalog, so readers translate resolved
+ * values into their own format and never parse CSS themselves. It also carries the part density
+ * table, which the docs coverage test reads without resolving every theme. It carries the theme
+ * axes and the brand table, so a design tool can lay out identity, brand and segment as separate
+ * choices. It carries the legal radius steps and the radius rungs too, so the docs studio reads
+ * them instead of restating them. The text-grade pairs name the role pairs the contrast gate holds
+ * at 4.5:1 everywhere, and the role text pairs name those it holds in some schemes or identities,
+ * so the docs palettes page grades the same pairs. The ramp scales, steps and seed steps let a
+ * reader lay out the brand ramps without parsing token names or restating the ramp recipe.
  */
 
 export { ROLE_TEXT_PAIRS, TEXT_GRADE_PAIRS } from "./contrast";

@@ -7,19 +7,19 @@ import { useFormReset } from "./use-form-reset";
 import { useMergedRefs } from "./use-merged-refs";
 
 /**
- * Package-private native form-reset sync for the Base UI checked controls: Checkbox,
- * CheckboxCard, Switch, RadioGroupItem and RadioIconButton. Base UI renders a hidden input
- * whose `checked` React writes from the control's state on each render, but it does not observe
- * native form reset. A native reset, which React also runs after a form action, puts that input
- * back to its mount-time state while the control keeps showing its current state, so the next submit
- * sends what is not on screen.
+ * Syncs a Base UI checked control's hidden input with native form reset. The hook is
+ * package-private, for Checkbox, CheckboxCard, Switch, RadioGroupItem and RadioIconButton. Base UI
+ * renders a hidden input whose `checked` React writes from the control's state on each render, but
+ * it does not observe native form reset. A native reset, which React also runs after a form action,
+ * puts that input back to its mount-time state while the control keeps showing its current state,
+ * so the next submit sends what is not on screen.
  *
  * The hook re-renders the control after each reset of its form, and React writes the shown state
- * back into the same hidden input. Every control subscribes, controlled or not, and a group member
- * reads its state from the group, so no group wiring is needed. The selection stays as it is:
- * an uncontrolled control does not return to its default (see #504). Nothing remounts and
- * no value changes, so focus, validity and `Form` errors stay. Returns `inputRef` merged with the
- * hidden input ref the subscription reads.
+ * back into the same hidden input. Every control subscribes, controlled or not. A group member reads
+ * its state from the group, so it needs no group wiring. The selection stays as it is, so an
+ * uncontrolled control does not return to its default. See #504. Nothing remounts and no value
+ * changes, so focus, validity and `Form` errors stay. Returns `inputRef` merged with the hidden input
+ * ref the subscription reads.
  */
 export function useCheckedResetSync(
   inputRef: Ref<HTMLInputElement> | undefined

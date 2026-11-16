@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** AlertDialog's own dictionary: it owns the `alertDialog.cancel` key. */
+/** AlertDialog's own dictionary, with the `alertDialog.cancel` key. */
 export const alertDialogStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

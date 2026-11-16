@@ -1,10 +1,10 @@
 /**
  * Unit under test: SparklineHover's glide, over the Sparkline's markup and chart.css. Oracles: the
- * image's own box, worked by hand. Three values own a third of its width each, centred at a sixth,
+ * image's own box, worked by hand. Three values own a third of its width each, centered at a sixth,
  * a half and five sixths; [2, 6, 4] spans [2, 6], so 6 sits at the top edge and 4 halfway down.
  * Hovering the first value, then the third, moves the one crosshair from a sixth to five sixths of
  * the width and the dot from the bottom edge to halfway down. A line's band runs from the box's left
- * bleed to the second value's centre around the first value, and from the second value's centre
+ * bleed to the second value's center around the first value, and from the second value's center
  * past the right edge around the third, so at 100 px across, on the line at row 16, only the first
  * band strokes the line whole, and at 200 px, row 8, only the second does. The rest of the line
  * shows at the hover dim, 0.45, so pure blue on white reads 255 × 0.55 ≈ 140 in red there, and

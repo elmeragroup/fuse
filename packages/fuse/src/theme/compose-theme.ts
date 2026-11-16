@@ -37,7 +37,7 @@ function mustOverrideKeys(identity: ThemeIdentity, colorScheme: ResolvedColorSch
  * @param identity - The theme's identity, which picks the light obligations.
  * @param colorScheme - The scheme whose obligations apply.
  * @param slug - The theme's slug, for the message.
- * @throws When a must-override token is missing, a defect in the theme tables.
+ * @throws When a must-override token is missing, which is a defect in the theme tables.
  */
 export function assertMustOverrideCoverage(
   supplied: ReadonlySet<TokenName>,
@@ -52,18 +52,18 @@ export function assertMustOverrideCoverage(
 }
 
 /**
- * Composes a theme's full token contract in one scheme: the defaults, the brand pointer, the
- * brand ramps, the identity's palette layers and its corner set.
+ * Composes a theme's full token contract in one scheme: the defaults, the brand pointer, the brand
+ * ramps, the identity's palette layers and its corner set.
  *
  * @param theme - A legal theme.
- * @param colorScheme - The scheme, light by default.
+ * @param colorScheme - The scheme.
  * @returns Every token's composed value.
- * @throws When the theme misses a must-override token, a defect in the theme tables.
+ * @throws When the theme misses a must-override token, which is a defect in the theme tables.
  */
 export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme = "light"): TokenContract {
   const slug = themeSlug(theme);
-  // The light layers always run — every composition overlays them — and a dark composition
-  // adds the dark layers' gate.
+  // The light layers always run, because every composition overlays them, and a dark
+  // composition adds the dark layers' gate.
   const gates: readonly ResolvedColorScheme[] = colorScheme === "dark" ? ["light", "dark"] : ["light"];
   for (const gate of gates) {
     assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.identity, gate, slug);

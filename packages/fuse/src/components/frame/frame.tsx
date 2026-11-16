@@ -33,16 +33,16 @@ export type FrameRootProps = ComponentProps<"div"> & {
   children?: ComponentProps<"div">["children"];
 };
 
-/** A Frame's `layout`: how it lays out its panels. */
+/** A Frame's `layout`, the way it lays out its panels. */
 export type FrameLayout = NonNullable<FrameRootProps["layout"]>;
-/** `Frame.Panel` takes a native `div`'s props. */
+/** Props for `Frame.Panel`, a native `div`'s props. */
 export type FramePanelProps = ComponentProps<"div"> & {
   /**
    * The panel's content. A Table inside a panel is a plain table. When the only child is a
    * `Table.Root` or `VerticalTable.Body` element, written directly here, the panel drops its
    * padding. The table then runs to the panel's edges and clips to its corners, and its first and
    * last columns pad, so their text stays on the panel's inset. Anything else keeps the padding,
-   * including text beside the table and a component of your own that renders a table.
+   * including text beside the table and a consumer's own component that renders a table.
    */
   children?: ComponentProps<"div">["children"];
   /**
@@ -52,7 +52,7 @@ export type FramePanelProps = ComponentProps<"div"> & {
    */
   className?: ComponentProps<"div">["className"];
 };
-/** `Frame.Header` takes a native `header`'s props. */
+/** Props for `Frame.Header`, a native `header`'s props. */
 export type FrameHeaderProps = ComponentProps<"header"> & {
   /**
    * The header's content, usually a `Frame.Title` and a `Frame.Description`. A
@@ -66,7 +66,7 @@ export type FrameDescriptionProps = ComponentProps<"div">;
 export type FrameFooterProps = ComponentProps<"footer">;
 
 /**
- * The Frame surface: a muted band behind a 1px border that holds a header, panels, Tables and a
+ * The Frame surface, a muted band behind a 1px border that holds a header, panels, Tables and a
  * footer. It hands its panels and Tables the corner they take, concentric with its `rounded-xl`.
  */
 function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): ReactElement {
@@ -106,8 +106,8 @@ function FrameRoot({ className, layout = "gutter", ...props }: FrameRootProps): 
 }
 
 /**
- * The panel's content as far as the panel can see it without rendering its children: Fragments
- * flattened, and blank text dropped.
+ * The panel's content as far as the panel can see it without rendering its children, with
+ * Fragments flattened and blank text dropped.
  */
 function contentNodes(children: ReactNode): ReactNode[] {
   return Children.toArray(children).flatMap((child) => {
@@ -120,7 +120,7 @@ function contentNodes(children: ReactNode): ReactNode[] {
 
 /**
  * Whether a panel's only content is a `Table.Root` or `VerticalTable.Body` element. The panel
- * decides it here, at the React boundary, because CSS cannot see text nodes: a component child
+ * decides it here, at the React boundary, because CSS cannot see text nodes. A component child
  * that renders text beside a Table leaves one element in the DOM, but it is not a Table element.
  */
 function holdsOnlyTable(children: ReactNode): boolean {
@@ -140,7 +140,7 @@ function holdsOnlyTable(children: ReactNode): boolean {
  * as a plain table.
  *
  * It fills with the `panel` role, white like a Card in light themes and the page in dark ones, sets
- * its text in `panel-foreground`, and states the fill as `--surface`, the colour of the fill an
+ * its text in `panel-foreground`, and states the fill as `--surface`, the color of the fill an
  * element sits on, so a chart in it cuts its rings and seams out of the panel, with its muted text
  * as `--surface-muted-foreground`.
  *
@@ -163,8 +163,8 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
 }
 
 /**
- * The header and footer bars' padding: inline the Frame's bar inset, or the large surface tier
- * outside a Frame, and on the block axis half that tier.
+ * The header and footer bars' padding. The inline padding is the Frame's bar inset, or the large
+ * surface tier outside a Frame, and the block padding is half that tier.
  */
 const barPaddingClass = cn(
   "px-[var(--frame-bar-inset,var(--surface-pad-lg))] py-[calc(var(--surface-pad-lg)/2)]"

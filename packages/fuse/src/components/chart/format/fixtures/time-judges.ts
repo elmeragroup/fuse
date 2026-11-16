@@ -57,8 +57,8 @@ const RANGE_PRESET = { hour: "hour-range", "quarter-hour": "time-range" } as con
 
 /**
  * The oracle writes long zone names and `month_year` with U+0020, which canonical spacing writes as
- * U+00A0, as TIME-CONVENTIONS.md tells a canonical judge to map. It is written out here so that
- * Fuse's own `canonicalSpaces` never judges itself.
+ * U+00A0, as TIME-CONVENTIONS.md tells a canonical judge to map. This module writes the mapping out
+ * so that Fuse's own `canonicalSpaces` never judges itself.
  */
 const oracleSpaces = (text: string): string => text.replaceAll(" ", "\u00a0");
 

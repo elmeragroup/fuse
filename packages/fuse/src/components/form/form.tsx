@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
-/** The props of `Form`, typed over the values `onFormSubmit` receives. */
+/** Props for `Form`, typed over the values `onFormSubmit` receives. */
 export type FormProps<FormValues extends object = FormPrimitive.Values> = Omit<
   FormPrimitive.Props<FormValues>,
   "errors" | "onFormSubmit"
@@ -29,8 +29,8 @@ export type FormProps<FormValues extends object = FormPrimitive.Values> = Omit<
    *
    * The form checks every enabled field first. While one is invalid, it calls neither this nor
    * `onSubmit`, runs no native submit or form action, and focuses the first invalid field. A
-   * field passed `invalid`, or `isInvalid` on `TextField`, stays invalid for as long as you
-   * pass it.
+   * field passed `invalid`, or `isInvalid` on `TextField`, stays invalid for as long as it gets
+   * that prop.
    */
   onFormSubmit?: FormPrimitive.Props<FormValues>["onFormSubmit"];
 };

@@ -4,14 +4,14 @@ import { tv } from "./tv";
 /**
  * The shared keyboard focus ring: a 2px `--ring` box-shadow drawn flush against the control,
  * with no offset gap. The flush ring keeps one 2px reach in every target, so a ring never
- * paints the page colour between itself and the control, and the ring's colour is held to 3:1
- * against the page and card it is drawn on (`contrast-matrix.test.ts`). The focused faces use
+ * paints the page color between itself and the control. `contrast-matrix.test.ts` holds the
+ * ring's color to 3:1 against the page and card it is drawn on. The focused faces use
  * `outline-hidden`, so forced-colors mode, which drops box-shadow, still draws an outline.
  *
  * - `self` paints on the element that matches `:focus-visible`.
  * - `within` paints on a group whose `data-focus-ring-control` direct child is focus-visible;
  *   its `control` slot cancels the control's own ring so the group paints once. Only a direct
- *   child counts, as in the within state face (`state-face.ts`), so a field box nested in the
+ *   child counts, as in the within state face in `state-face.ts`, so a field box nested in the
  *   group's addon, such as a NumberField, rings itself and leaves the outer group unpainted.
  *   The owner keeps its control as a direct child.
  *
@@ -49,7 +49,7 @@ export const focusRing = tv({
 export const selfFocusRingClass = focusRing({ target: "self" }).root();
 
 /**
- * The within-target focus ring root class, resolved once at module scope — the parent
+ * The within-target focus ring root class, resolved once at module scope. It is the parent
  * face that lights up when the element carrying `data-focus-ring-control` is
  * keyboard-focused. Pair it with {@link withinFocusRingControlClass} on the control.
  */
@@ -84,7 +84,7 @@ export const dataInvalidFocusRingClass = cn(
 );
 
 /**
- * The focused invalid face (see {@link ariaInvalidFocusRingClass}) on a within-target group.
+ * The focused invalid face of {@link ariaInvalidFocusRingClass} on a within-target group.
  * It reads only the group's own control, a direct child marked `data-focus-ring-control` with
  * `aria-invalid="true"`, as the within state face does. NumberField is covered too, because
  * Base UI stamps `aria-invalid` on its input from the invalid Field. Each selector outweighs the
@@ -96,7 +96,7 @@ export const withinInvalidFocusRingClass = cn(
 );
 
 /**
- * The focused invalid face (see {@link ariaInvalidFocusRingClass}) on a within-target host that
+ * The focused invalid face of {@link ariaInvalidFocusRingClass} on a within-target host that
  * Base UI marks `data-invalid`, such as Slider's thumb, which paints the ring for the range
  * input nested in it as a direct child.
  * The thumb takes the data-target state face, so its halo and this ring key off the same

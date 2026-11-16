@@ -63,7 +63,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether nothing responds and the values are not submitted.",
+          "description": "Whether the picker is disabled, so nothing responds and the form leaves out its values.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides zoned values' zone names.",
+          "description": "Whether the picker hides zoned values' zone names.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
           "type": "12 | 24 | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The hour cycle shown. Defaults to the locale's.",
+          "description": "The hour cycle the picker shows. Defaults to the locale's.",
           "required": false
         },
         {
@@ -195,7 +195,7 @@
           "type": "NoInfer<(value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"`, `\"focus-out\"` (a range completed in the calendar), `\"input-change\"`, `\"input-clear\"`, `\"input-paste\"` or `\"preset-press\"` (a `PresetItem` with a `dateValue` range), and the other details are `DatePicker.Root`'s. Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so the user can pick another end, a canceled edit shows the range again in the segments, and a canceled preset stays unchecked. An end before its start commits and is invalid on the end (\"Start date must be before end date.\"), as React Aria reports it.",
+          "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"` or `\"focus-out\"` for a range completed in the calendar, `\"input-change\"`, `\"input-clear\"` or `\"input-paste\"` for an input, or `\"preset-press\"` for a `PresetItem` with a `dateValue` range. The other details are `DatePicker.Root`'s. Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so the user can pick another end, a canceled edit shows the range again in the segments, and a canceled preset stays unchecked. An end before its start commits and shows invalid on the end with \"Start date must be before end date.\", as React Aria reports it.",
           "required": false
         },
         {
@@ -255,7 +255,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, a completed range is held while the popup stays open, as `DatePicker.Root`'s day: it commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise at midnight (an end with a typed time at that time) when the popup closes; that commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it was typed over: a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
+          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, the picker holds a completed range while the popup stays open, as `DatePicker.Root` holds its day. The range commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise when the popup closes, with midnight for an end without a typed time. That commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range the user typed it over, and a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
           "required": false
         },
         {
@@ -325,7 +325,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label text. It names the group, both inputs' segments (\"month, Start Date, Period\"), the trigger and the popup. Pressing the label focuses the first segment.",
+          "description": "The label text. It names the group, both inputs' segments, such as \"month, Start Date, Period\", the trigger and the popup. Pressing the label focuses the first segment.",
           "required": false
         },
         {
@@ -397,7 +397,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -406,7 +406,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -415,7 +415,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -458,7 +458,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -467,7 +467,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -476,7 +476,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -497,7 +497,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. Your own icon components must pass `data-icon` through to the element they render. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
+          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. A custom icon component must pass `data-icon` through to the element it renders. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
           "required": false
         },
         {
@@ -526,7 +526,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -535,7 +535,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -555,7 +555,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -564,7 +564,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -604,7 +604,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -634,7 +634,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the merged messages: each end's own message (missing, incomplete, out of bounds, unavailable, an end before its start) and the errors a `Form` holds under `startName` and `endName`, once each. `null`, `false` and `\"\"` keep them. The error renders nothing while the picker is valid, and while it renders its text describes the group and both inputs.",
+          "description": "Replaces the merged messages, once each: each end's own message, for a missing, incomplete, out of bounds or unavailable end or an end before its start, and the errors a `Form` holds under `startName` and `endName`. `null`, `false` and `\"\"` keep them. The error renders nothing while the picker is valid, and while it renders its text describes the group and both inputs.",
           "required": false
         },
         {
@@ -721,7 +721,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. The trigger still opens and closes the popup, reports its state and takes focus back when the popup closes. A controlled popover with no trigger opens against the anchor, and the opener's `aria-expanded` and focus return are then yours to handle. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor then, such as a new virtual element, to place the popup again.",
+          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. The trigger still opens and closes the popup, reports its state and takes focus back when the popup closes. A controlled popover with no trigger opens against the anchor. In that case, handle the opener's `aria-expanded` and focus return. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box. Pass a new anchor then, such as a new virtual element, to place the popup again.",
           "required": false
         },
         {
@@ -741,7 +741,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -783,7 +783,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shows an arrow on the popup's edge that points at the trigger, or at `anchor` when set.",
+          "description": "Whether the popup shows an arrow on its edge that points at the trigger, or at `anchor` when set.",
           "required": false
         },
         {
@@ -850,7 +850,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then named by those elements and its month heading.",
+          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid then takes its name from those elements and its month heading.",
           "required": false
         },
         {
@@ -921,7 +921,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -930,7 +930,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -939,7 +939,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -959,7 +959,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Names the segment group when no Field label does. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
+          "description": "The segment group's accessible name when no Field label names it. Each segment's name is its unit and the group's name, such as \"month, Start date\".",
           "required": false
         },
         {
@@ -968,7 +968,7 @@
           "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders each segment, normally as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside your own `Field.Label`, `Field.Description` and `Field.Error`.",
+          "description": "A function that renders each segment, usually as a `DateInput.Segment` keyed by `segment.index`. A segment is a literal, the zone's name or a unit: `segment.isEditable` narrows `segment.type` to a unit such as `\"month\"` when true, and `segment.type` tells `\"literal\"` from `\"timeZoneName\"` when false. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client. Put the Root in a `Field.Root` beside a `Field.Label`, `Field.Description` and `Field.Error`.",
           "required": false
         },
         {
@@ -977,7 +977,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "description": "Whether days, months and hours pad to two digits whatever the locale writes.",
           "required": false
         }
       ]
@@ -1054,7 +1054,7 @@
           "type": "string | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The checked preset's value, when the parent owns it. `null` checks none. Clear it yourself, in the picker's `onValueChange`, when the value changes any other way.",
+          "description": "The checked preset's value, when the parent owns it. `null` checks none. Clear it in the picker's `onValueChange` when the value changes any other way.",
           "required": false
         }
       ]
@@ -1093,7 +1093,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Closes the popup on double-click (`reason: \"preset-press\"`), after the item's own `onDoubleClick`. A pointer shortcut: a click or Space selects without closing.",
+          "description": "Whether a double-click closes the popup, with `reason: \"preset-press\"`, after the item's own `onDoubleClick`. It is a pointer shortcut. A click or Space selects without closing.",
           "required": false
         },
         {
@@ -1102,7 +1102,7 @@
           "type": "DatePickerPresetValue | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press (the value and the checked preset stay, and the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way (a day, typing, a time, a form reset), and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
+          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press: the value and the checked preset stay, and the pane's `onValueChange` is not called. For a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way, by a day, typing, a time or a form reset, and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
           "required": false
         },
         {
@@ -1167,7 +1167,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Portal target for the popup. Defaults to the nearest `ThemeScope`.",
+          "description": "The popup's portal target. Defaults to the nearest `ThemeScope`.",
           "required": false
         },
         {
@@ -1212,7 +1212,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy shown while the range is invalid, in place of its own messages (an end out of bounds, an end before its start, the `Form` errors under `startName` and `endName`). Those merge into one error, which describes the group and both ends. Without `isInvalid` it shows only once the range's own validation fails. A node that renders nothing (`null`, `false`, `\"\"`) keeps the range's own messages.",
+          "description": "Error copy shown while the range is invalid, in place of the range's own messages: an end out of bounds, an end before its start, and the `Form` errors under `startName` and `endName`. Those merge into one error, which describes the group and both ends. Without `isInvalid` it shows only once the range's own validation fails. A node that renders nothing, such as `null`, `false` or `\"\"`, keeps the range's own messages.",
           "required": false
         },
         {
@@ -1254,7 +1254,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hides zoned values' zone names in the inputs and in the popup's time inputs.",
+          "description": "Whether the inputs and the popup's time inputs hide zoned values' zone names.",
           "required": false
         },
         {
@@ -1281,7 +1281,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the picker and leaves its values out of the form.",
+          "description": "Whether the picker is disabled, which also leaves its values out of the form.",
           "required": false
         },
         {
@@ -1290,7 +1290,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows the picker invalid, with `errorMessage` under the box.",
+          "description": "Whether the picker shows as invalid, with `errorMessage` under the box.",
           "required": false
         },
         {
@@ -1308,7 +1308,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Keeps the range. The segments stay focusable and take the muted read-only fill, and the trigger is disabled.",
+          "description": "Whether the range is read-only. The segments stay focusable and take the muted read-only fill, and the trigger is disabled.",
           "required": false
         },
         {
@@ -1317,7 +1317,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Reports an empty or incomplete end invalid, and an empty end blocks a `Form` submit.",
+          "description": "Whether an empty or incomplete end reports invalid. An empty end also blocks a `Form` submit.",
           "required": false
         },
         {
@@ -1326,7 +1326,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible label, for the whole picker. It names the field box's `group`, both inputs' segments, by unit, end and label (\"month, Start Date, Stay\"), and the trigger and the popup, a `dialog` (\"Calendar Stay\").",
+          "description": "The visible label, for the whole picker. It names the field box's `group`, and both inputs' segments by unit, end and label, such as \"month, Start Date, Stay\". It also names the trigger and the popup, a `dialog`, such as \"Calendar Stay\".",
           "required": false
         },
         {
@@ -1393,7 +1393,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The preset pane beside the calendar, normally `DateRangePicker.Presets`, a radio group of your keys. Map the chosen key to a range in its `onValueChange` and set the picker's value, or give each preset its range as `dateValue`, `{ start, end }`. With a pane, focus leaving the calendar drops a half-picked range instead of completing it. A falsy node keeps the calendar alone.",
+          "description": "The preset pane beside the calendar, such as `DateRangePicker.Presets`, a radio group of preset keys. Map the chosen key to a range in its `onValueChange` and set the picker's value, or give each preset its range as `dateValue`, `{ start, end }`. With a pane, focus leaving the calendar drops a half-picked range instead of completing it. A falsy node keeps the calendar alone.",
           "required": false
         },
         {
@@ -1411,7 +1411,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Pads days, months and hours with a leading zero in both inputs.",
+          "description": "Whether both inputs pad days, months and hours with a leading zero.",
           "required": false
         },
         {

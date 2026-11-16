@@ -62,7 +62,7 @@ export function endOfValue(value: TemporalValue | null): EndpointDraft {
 
 /**
  * An end's value as its input shows it, in the picker's kind now: the value, a picked day at its
- * time (midnight until one is typed), or nothing for a time with no day yet.
+ * time, which is midnight until one is typed, or nothing for a time with no day yet.
  *
  * @param draft - The end's draft.
  * @param kind - The picker's kind now.
@@ -94,8 +94,8 @@ export function dayEndValue(end: DayEnd, kind: ValueKind): TemporalValue {
 
 /**
  * The day an end's input shows: its picked day, or its value's own wall-clock day. The calendar
- * selects it, and the end's popup time input forms a typed time on it; `null` while the end holds
- * no day (see `standInDay`).
+ * selects it, and the end's popup time input forms a typed time on it. It is `null` while the end
+ * holds no day; see `standInDay`.
  *
  * @param draft - The end's draft.
  * @returns The day, or `null`.
@@ -114,8 +114,8 @@ export function endDay(draft: EndpointDraft): Temporal.PlainDate | null {
 
 /**
  * The kind an end's popup time input forms values in: the end's value's own, while it holds a
- * value, else the picker's kind now, which a picked day's time and a held time take (`endTime`).
- * The input keeps no kind of its own (`DateInputScope`), so this is its one source.
+ * value, else the picker's kind now, which a picked day's time and a held time take in `endTime`.
+ * The input keeps no kind of its own in `DateInputScope`, so this is its one source.
  *
  * @param draft - The end's draft.
  * @param kind - The picker's kind now.
@@ -127,7 +127,7 @@ export function endKind(draft: EndpointDraft, kind: ValueKind): ValueKind {
 
 /**
  * The value an end's popup time input shows and edits, in the picker's kind now: the value itself,
- * a picked day at its typed time, or a time typed with no day yet (see `heldTimeValue`). A picked
+ * a picked day at its typed time, or a time typed with no day yet, as `heldTimeValue` makes it. A picked
  * day without a time shows none, since its midnight is no time anyone chose. A picked day's time
  * sits on that day, so the input steps the hour through that day's instants: the repeated hour of
  * a night the clocks go back, not the typing day's.
@@ -162,10 +162,10 @@ export function endAwaitsTime(draft: EndpointDraft): boolean {
 
 /**
  * A day picked in the calendar for an end: the end becomes that day, keeping the time it had, by
- * React Aria's rule (see the module comment). A value with a time, or a picked day's typed time,
+ * React Aria's rule, which the module comment states. A value with a time, or a picked day's typed time,
  * that already sits on the day stays as it is, so a repeated hour keeps the instant it was stepped
- * to. Any other time takes the day at its wall-clock time, resolved as a typed time is
- * (`dayAtTime`): on a repeated hour the earlier instant. A value's time resolves in the value's own
+ * to. Any other time takes the day at its wall-clock time, resolved as `dayAtTime` resolves a typed
+ * time: on a repeated hour the earlier instant. A value's time resolves in the value's own
  * zone and kind, and stays a value; a time the picker made resolves in the picker's kind now.
  *
  * @param draft - The end's draft.
@@ -235,8 +235,9 @@ export function editEndTime(draft: EndpointDraft, time: TemporalValue, kind: Val
 }
 
 /**
- * Every segment of an end's popup time input was cleared: a picked day goes back to midnight, a
- * time with no day is forgotten, and a value keeps its own time, which the input shows again.
+ * The draft after every segment of an end's popup time input is cleared: a picked day goes back to
+ * midnight, a time with no day is forgotten, and a value keeps its own time, which the input shows
+ * again.
  *
  * @param draft - The end's draft.
  * @returns The end's draft, the same draft for an empty end, or `undefined` for a value, whose

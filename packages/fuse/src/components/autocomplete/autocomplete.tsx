@@ -32,7 +32,7 @@ import { autocompleteStrings } from "./intl";
 const styles = autocompleteVariants();
 
 /**
- * `Autocomplete.Root` takes Base UI Autocomplete Root's props, without `locale`.
+ * Props for `Autocomplete.Root`, Base UI Autocomplete Root's props without `locale`.
  *
  * @template ItemValue - One item of `items`, which `itemToStringValue` receives.
  */
@@ -48,8 +48,8 @@ export type AutocompleteRootProps<ItemValue = unknown> = Omit<
  * @template Items - The `items` array, flat or of groups.
  * @template Filtered - The `filteredItems` array, flat or of groups.
  * @template ItemValue - One item of `items`, which `itemToStringValue` receives. `items` decides
- * it; without `items`, `filteredItems` does; when neither is given, an annotated callback such as
- * `itemToStringValue` or `onItemHighlighted` sets it.
+ * it. Without `items`, `filteredItems` decides it. When neither is given, an annotated callback
+ * such as `itemToStringValue` or `onItemHighlighted` sets it.
  */
 export function AutocompleteRoot<
   Items extends readonly unknown[] = readonly never[],
@@ -132,7 +132,7 @@ export function AutocompleteTrigger({
   );
 }
 
-/** The props of {@link AutocompleteClear}. */
+/** Props for {@link AutocompleteClear}. */
 export type AutocompleteClearProps = ComponentProps<typeof AutocompletePrimitive.Clear> & {
   /**
    * The accessible name of the icon-only clear button. An `aria-label` wins over it. Unset, the
@@ -163,7 +163,7 @@ export function AutocompleteClear({
   );
 }
 
-/** The props of {@link AutocompleteInput}. */
+/** Props for {@link AutocompleteInput}. */
 export type AutocompleteInputProps = Omit<
   ComponentProps<typeof AutocompletePrimitive.Input>,
   "children" | "className" | "size"
@@ -180,24 +180,24 @@ export type AutocompleteInputProps = Omit<
    */
   id?: string;
   /**
-   * Renders the caret button in the inline-end addon. The list opens as the user types, so the
-   * field has no caret unless you pass this. The caret hides while the group holds a clear
-   * button.
+   * Whether the input renders the caret button in the inline-end addon. The list opens as the user
+   * types, so the field has no caret unless this is set. The caret hides while the group holds a
+   * clear button.
    */
   showTrigger?: boolean;
   /**
-   * Renders `Autocomplete.Clear` in the inline-end addon. It shows while the input holds text,
-   * and the caret hides while it shows.
+   * Whether the input renders `Autocomplete.Clear` in the inline-end addon. It shows while the
+   * input holds text, and the caret hides while it shows.
    */
   showClear?: boolean;
   /**
-   * Disables the input and its caret and clear buttons. `disabled` on `Autocomplete.Root` or
+   * Whether the input and its caret and clear buttons are disabled. `disabled` on `Autocomplete.Root` or
    * `Field.Root` disables the input too.
    */
   disabled?: boolean;
   /** Extra classes for the outer InputGroup, which is `w-auto`, not for the input element. */
   className?: string;
-  /** Content after the inline-end addon inside the InputGroup, such as an `InputGroup.Addon` of your own. */
+  /** Content after the inline-end addon inside the InputGroup, such as a consumer's `InputGroup.Addon`. */
   children?: ReactNode;
   /**
    * The accessible name of the clear button that `showClear` renders. Unset, it is the locale
@@ -269,7 +269,7 @@ export function AutocompleteInput({
   );
 }
 
-/** The props of {@link AutocompleteContent}. */
+/** Props for {@link AutocompleteContent}. */
 export type AutocompleteContentProps = ComponentProps<typeof AutocompletePrimitive.Popup> &
   OverlayPositionerProps<ComponentProps<typeof AutocompletePrimitive.Positioner>> &
   OverlayContainerProps;
@@ -321,10 +321,10 @@ export function AutocompleteList({
 
 type AutocompleteItemPrimitiveProps = ComponentProps<typeof AutocompletePrimitive.Item>;
 
-/** The props of {@link AutocompleteItem}. */
+/** Props for {@link AutocompleteItem}. */
 type AutocompleteItemProps = Omit<AutocompleteItemPrimitiveProps, "onClick"> & {
   /**
-   * Runs on a click, and on Enter while the item is highlighted. Use it to capture the picked
+   * Called on a click, and on Enter while the item is highlighted. Use it to capture the picked
    * item, such as to fill another field from it, since `onValueChange` receives only the text.
    */
   onClick?: AutocompleteItemPrimitiveProps["onClick"];
@@ -343,7 +343,7 @@ export function AutocompleteItem({ className, ...props }: AutocompleteItemProps)
 
 type AutocompleteGroupPrimitiveProps = ComponentProps<typeof AutocompletePrimitive.Group>;
 
-/** The props of {@link AutocompleteGroup}. */
+/** Props for {@link AutocompleteGroup}. */
 type AutocompleteGroupProps = Omit<AutocompleteGroupPrimitiveProps, "items"> & {
   /** The group's own items. Pass them when the Root's items are grouped. */
   items?: AutocompleteGroupPrimitiveProps["items"];
@@ -383,7 +383,7 @@ export function AutocompleteCollection(
 
 type AutocompleteEmptyPrimitiveProps = ComponentProps<typeof AutocompletePrimitive.Empty>;
 
-/** The props of {@link AutocompleteEmpty}. */
+/** Props for {@link AutocompleteEmpty}. */
 type AutocompleteEmptyProps = Omit<AutocompleteEmptyPrimitiveProps, "children"> & {
   /**
    * The message while the list is empty, such as loading, an error or no results. Unset, it is
@@ -409,7 +409,7 @@ export function AutocompleteEmpty({ className, children, ...props }: Autocomplet
 
 type AutocompleteStatusPrimitiveProps = ComponentProps<typeof AutocompletePrimitive.Status>;
 
-/** The props of {@link AutocompleteStatus}. */
+/** Props for {@link AutocompleteStatus}. */
 type AutocompleteStatusProps = Omit<AutocompleteStatusPrimitiveProps, "children"> & {
   /**
    * The state of a search the app runs, such as "Searching…", an error or the number of results.

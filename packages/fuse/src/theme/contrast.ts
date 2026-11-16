@@ -84,7 +84,7 @@ export const FEATURE_TEXT_PAIRS = [
 
 /**
  * Muted copy, such as a field description, in a default Accordion item, which fills with
- * `primary-soft`. The gate holds it at 4.5:1 in dark only; light is an accepted deviation.
+ * `primary-soft`. The gate holds it at 4.5:1 in dark only. Light is an accepted deviation.
  */
 export const ACCORDION_MUTED_PAIRS = [
   ["muted-foreground", "primary-soft"],

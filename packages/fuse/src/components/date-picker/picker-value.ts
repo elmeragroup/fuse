@@ -15,8 +15,8 @@ import type { DatePickerPresetRange, DatePickerPresetValue } from "./picker-chan
 
 /**
  * A day at a wall-clock time as a value of the picker's kind, resolved as a typed date and time
- * is: on a repeated hour the earlier instant, in a skipped one the instant after it (Temporal's
- * `"compatible"`). Midnight without a time.
+ * is: on a repeated hour the earlier instant, in a skipped one the instant after it, as Temporal's
+ * `"compatible"` does. Without a time it is midnight.
  *
  * @param day - The day.
  * @param kind - The picker's kind now.
@@ -53,8 +53,8 @@ export function wallTimeOf(value: TemporalValue): Temporal.PlainTime | null {
 
 /**
  * A wall time with no day yet as a value a popup time input shows, in the picker's kind and zone
- * now, on the stand-in day (`standInDay`): the input holds no day of the picker's, and the picker
- * commits the time on its day when one comes (see `dayAtTime`).
+ * now, on the stand-in day from `standInDay`. The input holds no day of the picker's, and the
+ * picker commits the time on its day when one comes; see `dayAtTime`.
  *
  * @param time - The wall-clock time.
  * @param kind - The picker's kind now.
@@ -185,7 +185,7 @@ export function useDayUnavailable(
  * value or default value named that kind. DateInput resolves its kind from its value, then the kind
  * a value named before, then its default value, then its granularity; an input a form reset
  * remounts holds no kind yet, so with an empty value its kind would come from `granularity` and
- * `timeZone` alone, and a zoned picker showing only the day (`granularity="day"`) would emit
+ * `timeZone` alone, and a zoned picker showing only the day with `granularity="day"` would emit
  * PlainDates, a zoned picker without `timeZone` PlainDateTimes. Handing this witness as
  * `defaultValue` keeps the named kind and zone. A kind `granularity` and `timeZone` made gets no
  * witness: the input takes the same props, makes the same kind, and follows them when they change,

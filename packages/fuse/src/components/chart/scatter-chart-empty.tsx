@@ -57,7 +57,7 @@ export function ScatterChartEmpty(props: ScatterChartEmptyProps): ReactElement {
 }
 
 /**
- * A loading placeholder that renders in place of Root, for example as a Suspense fallback. Its dots
+ * A loading placeholder that renders in place of Root, such as a Suspense fallback. Its dots
  * are Fuse Skeleton shapes that readers skip, and one Fuse Loader names the wait.
  *
  * @beta

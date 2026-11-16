@@ -88,7 +88,7 @@ const DEFAULT_SKELETON_ROWS = 5;
  * The number of skeleton rows a loading table shows.
  *
  * @param pageSize - The table's page size, or `undefined` without `rowPaginationFeature`.
- * @returns The page size clamped to one through ten, or five without a page size.
+ * @returns The page size clamped to one to ten, or five without a page size.
  */
 export function skeletonRowCount(pageSize: number | undefined): number {
   if (pageSize === undefined || Number.isNaN(pageSize)) {
@@ -97,7 +97,7 @@ export function skeletonRowCount(pageSize: number | undefined): number {
   return Math.min(MAX_SKELETON_ROWS, Math.max(1, Math.floor(pageSize)));
 }
 
-/** The number of columns a full-width row spans: the visible leaf columns. */
+/** The number of columns a full-width row spans, which is the visible leaf columns. */
 function visibleColumnCount(table: RowsSource<unknown>): number {
   return (table.getVisibleLeafColumns?.() ?? table.getAllLeafColumns()).length;
 }
@@ -151,7 +151,7 @@ function BodyRows<TRow extends { readonly id: string }>({
   );
 }
 
-/** Package-private row over any cell renderer. The registered parts pass `table.AppCell`. */
+/** The package-private row over any cell renderer. The registered parts pass `table.AppCell`. */
 export function RowCells<TCell extends CellSource>({
   row,
   renderCell,
@@ -185,8 +185,8 @@ export function RowCells<TCell extends CellSource>({
 }
 
 /**
- * Package-private whole table over any header and row renderer: `DataTable.Content` passes
- * `table.FlexRender` and `DataTable.Row`, the registered `table.Content` passes `table.AppHeader`
+ * The package-private whole table over any header and row renderer. `DataTable.Content` passes
+ * `table.FlexRender` and `DataTable.Row`, and the registered `table.Content` passes `table.AppHeader`
  * and `table.Row`. While `loading` the table carries `aria-busy`.
  */
 export function ContentTable<TGroup extends HeaderGroupSource, TRow extends { readonly id: string }>({
@@ -218,8 +218,8 @@ export type DataTableHeaderProps<TGroup extends HeaderGroupSource> = ComponentPr
 
 /**
  * Every header group of a table as `<thead>` rows. Each `<th>` takes the header's `colSpan`,
- * renders nothing for a placeholder, and carries `aria-sort` (`ascending`, `descending` or `none`)
- * only when its column can sort.
+ * renders nothing for a placeholder, and carries `aria-sort` only when its column can sort. The
+ * value is `ascending`, `descending` or `none`.
  *
  * @template TGroup - The header group type of the table's `getHeaderGroups()`.
  */
@@ -249,9 +249,9 @@ export type DataTableBodyProps<TRow extends RowSource<TCell>, TCell extends Cell
   };
 
 /**
- * The rows of a table's current row model. With no rows it renders skeleton rows while `loading`
- * (page-size many, at most ten), or else one row whose cell spans the visible leaf columns and
- * shows `empty`.
+ * The rows of a table's current row model. With no rows it renders skeleton rows while `loading`,
+ * as many as the page size and at most ten. Otherwise it renders one row whose cell spans the
+ * visible leaf columns and shows `empty`.
  */
 export function DataTableBody<TRow extends RowSource<TCell>, TCell extends CellSource = CellOf<TRow>>({
   table,
@@ -284,9 +284,9 @@ export type DataTableContentProps<
   };
 
 /**
- * A whole table on Fuse `Table`: the shared content table with `table.FlexRender` headers and
- * `DataTable.Row` rows. While `loading` the table carries `aria-busy`. Pass `children` to render
- * each row yourself.
+ * A whole table on Fuse `Table`, which is the shared content table with `table.FlexRender` headers
+ * and `DataTable.Row` rows. While `loading` the table carries `aria-busy`. Pass `children` to render
+ * each row.
  *
  * @template TGroup - The header group type of the table's `getHeaderGroups()`.
  * @template TRow - The row type of the table's row model.
@@ -315,11 +315,12 @@ export type DataTableRowProps<TCell extends CellSource> = ComponentProps<"tr"> &
   /** The row to render. */
   row: RowSource<TCell>;
   /**
-   * Makes the whole row clickable without changing its role: the `<tr>` gets no `role="button"`
-   * and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input, radio,
-   * slider, editable region or other interactive or focusable element in the row do not press it,
-   * nor does the click that ends a text selection reaching into the row, nor a click inside a
-   * portal the row renders, such as an open menu. Keyboard users need the same action through a
+   * Called when the user presses the row. It makes the whole row clickable without changing its
+   * role. The `<tr>` gets no `role="button"` and no `tabIndex`, so table navigation keeps working.
+   * Clicks on a link, button, input, radio, slider, editable region or other interactive or
+   * focusable element in the row do not press it, nor does the click that ends a text selection
+   * reaching into the row, nor a click inside a portal the row renders, such as an open menu.
+   * Keyboard users need the same action through a
    * focusable primary action in the row, such as a link in its first cell.
    */
   onPress?: (event: MouseEvent<HTMLTableRowElement>) => void;

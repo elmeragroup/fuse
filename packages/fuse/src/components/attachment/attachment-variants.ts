@@ -22,8 +22,8 @@ const hiddenGuardClass = cn("[&[hidden]:not([hidden=until-found])]:hidden");
  * The other parts are separate components that never see the root's props, so they style off
  * the root's `data-size`, `data-orientation` and `data-state` through the `attachment` group.
  *
- * `variant` is the media's axis and changes only the `media` slot. Package-private: the facade
- * exports the parts, not the recipe.
+ * `variant` is the media's axis and changes only the `media` slot. The recipe is package-private,
+ * and the facade exports the parts, not the recipe.
  */
 export const attachmentVariants = tv({
   slots: {

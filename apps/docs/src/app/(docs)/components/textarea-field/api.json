@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The textarea's name when there is no `label`.",
+          "description": "The textarea's accessible name when there is no `label`.",
           "required": false
         },
         {
@@ -62,7 +62,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field and the textarea.",
+          "description": "Whether the field and the textarea are disabled.",
           "required": false
         },
         {
@@ -71,7 +71,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look.",
+          "description": "Whether the field is marked invalid, with the invalid look.",
           "required": false
         },
         {
@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the textarea required, so the browser's constraint check blocks an empty submit.",
+          "description": "Whether the textarea is required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {

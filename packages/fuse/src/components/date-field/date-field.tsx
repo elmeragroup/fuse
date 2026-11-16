@@ -10,7 +10,7 @@ import type { KindFromValue, KindProps, PropsMadeValue } from "./date-kind-props
 /**
  * DateField's props: React Aria's DateField prop names, over Temporal values.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ * @template T - The value's kind: `Temporal.PlainDate` by default, `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, DateField reads it from its `value` or `defaultValue`, and without
  *   either from `granularity` and `timeZone`, so `onChange` receives the kind the field emits.
  */
@@ -23,15 +23,15 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   label?: string;
   /**
    * Supporting copy, rendered as `Field.Description`. The description, the error and the selected
-   * value ("Selected Date: October 05, 2026") describe the first segment, and every segment while
-   * the field is invalid.
+   * value, such as "Selected Date: October 05, 2026", describe the first segment, and every segment
+   * while the field is invalid.
    */
   description?: string;
   /**
    * Error copy, rendered as `Field.Error` while the field is invalid, in place of its own message.
    * Without `isInvalid` it shows only once the field's own validation fails. Falsy, the field shows
-   * its own message: an error `Form` holds under its `name`, or why the value fails ("Value must be
-   * 10/31/2026 or earlier.").
+   * its own message: an error `Form` holds under its `name`, or why the value fails, such as "Value
+   * must be 10/31/2026 or earlier."
    */
   errorMessage?: ReactNode;
   /**
@@ -95,7 +95,7 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
    * Changing `hourCycle` while segments are half-typed drops what was typed.
    */
   hourCycle?: 12 | 24;
-  /** Hides the zone name a `ZonedDateTime` field shows after the time. */
+  /** Whether to hide the zone name a `ZonedDateTime` field shows after the time. */
   hideTimeZone?: boolean;
   /**
    * The zone an empty field takes. React Aria reads the zone from a value, so a field that starts
@@ -107,7 +107,7 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
    */
   timeZone?: string;
   /**
-   * Pads days, months and hours with a leading zero whatever the locale writes. React Aria's
+   * Whether days, months and hours pad with a leading zero whatever the locale writes. React Aria's
    * DateField defaults to the locale's padding.
    * @default true
    */
@@ -120,23 +120,26 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
    */
   name?: string;
   /**
-   * Disables the field and leaves its value out of the form. Pass a form library's `disabled`
-   * here. The field accepts no undeclared prop, a spread object's keys included, so destructure
-   * what it does not take, such as the library's `ref`, before you spread the rest.
+   * Whether the field is disabled, which leaves its value out of the form. Pass a form library's
+   * `disabled` here. The field accepts no undeclared prop, a spread object's keys included, so
+   * destructure what it does not take, such as the library's `ref`, before spreading the rest.
    */
   isDisabled?: boolean;
-  /** Keeps the value. The segments stay focusable and take the muted read-only fill. */
+  /** Whether the value is read-only. The segments stay focusable and take the muted read-only fill. */
   isReadOnly?: boolean;
-  /** Reports an empty field missing, and a half-typed one incomplete. */
+  /**
+   * Whether the field needs a value. It reports an empty field missing, and a half-typed one
+   * incomplete.
+   */
   isRequired?: boolean;
-  /** Shows the field invalid, with `errorMessage` under the box. */
+  /** Whether the field shows as invalid, with `errorMessage` under the box. */
   isInvalid?: boolean;
   /**
    * The field box's control size: `"default"` the `md` one, `"sm"` the `sm` one.
    * @default "default"
    */
   size?: "default" | "sm";
-  /** Names the segment group when there is no visible `label`. */
+  /** The segment group's accessible name when there is no visible `label`. */
   "aria-label"?: string;
   /** Extra classes, merged onto `Field.Root`. */
   className?: string;

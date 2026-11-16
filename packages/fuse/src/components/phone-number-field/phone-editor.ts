@@ -38,14 +38,14 @@ import type { Configuration, Snapshot } from "./phone-snapshot";
 
 /** The props the editor reads, as `PhoneNumberField` takes them. */
 export type PhoneEditorProps = {
-  /** Authoritative controlled value; URI-decoded when received. */
+  /** The authoritative controlled value, URI-decoded when received. */
   readonly value?: string;
-  /** Initial number of an uncontrolled field, and the target of its form reset. */
+  /** The initial number of an uncontrolled field, and the target of its form reset. */
   readonly defaultValue?: string;
-  /** Initial country, and the country a reset reads its default in. */
+  /** The initial country, and the country a reset reads its default in. */
   readonly defaultCountryCode?: PhoneCountryCode;
   /**
-   * Authoritative controlled country, in place of `defaultCountryCode`. A change acts like a
+   * The authoritative controlled country, in place of `defaultCountryCode`. A change acts like a
    * pick, except that a controlled `value` which names its own country keeps it.
    */
   readonly countryCode?: PhoneCountryCode;
@@ -53,15 +53,15 @@ export type PhoneEditorProps = {
   readonly metadata?: MetadataJson;
   /** The codes the picker offers, compared by value. */
   readonly countries?: readonly PhoneCountryCode[];
-  /** Detect the country from a `+` or `00` prefix. */
+  /** Whether the editor detects the country from a `+` or `00` prefix. */
   readonly autoDetectCountry?: boolean;
-  /** Keep entered digits and international prefixes in the display. */
+  /** Whether the display keeps entered digits and international prefixes. */
   readonly international?: boolean;
   /** The format of the output value. */
   readonly outputFormat?: PhoneNumberFormat;
-  /** Format the display as the user types. */
+  /** Whether the display formats as the user types. */
   readonly formatOnType?: boolean;
-  /** Keep the digits when the country changes. */
+  /** Whether the digits stay when the country changes. */
   readonly preserveOnCountryChange?: boolean;
 };
 
@@ -78,7 +78,7 @@ export type PhoneEdit = {
   readonly selectionEnd: number | null;
   /** The input's `selectionDirection` after the change. */
   readonly selectionDirection: PhoneSelectionDirection | null;
-  /** The `inputType` of the change's `InputEvent`, or null for any other event. */
+  /** The `inputType` of the change's `InputEvent`, or `null` for any other event. */
   readonly inputType: string | null;
 };
 
@@ -101,14 +101,14 @@ export type PhoneEditorView = {
   /** The country the picker shows. */
   readonly country: Readonly<PhoneNumberCountry>;
   /**
-   * The picker countries, in catalog order. The same array until the catalog changes. Read-only,
-   * since the editor keeps reading the configuration through it.
+   * The picker countries, in catalog order. It stays the same array until the catalog changes. It
+   * is read-only, since the editor keeps reading the configuration through it.
    */
   readonly countries: ReadonlyArray<Readonly<PhoneNumberCountry>>;
   /**
    * Where the latest edit left the caret, while the field shows the display it proposed, or
-   * null to leave the caret alone. The same object for as long as that edit's caret lasts,
-   * and a new one for each edit, even one that proposes the display already shown, so a
+   * `null` to leave the caret alone. It stays the same object for as long as that edit's caret
+   * lasts, and is a new one for each edit, even one that proposes the display already shown, so a
    * caller applies it once by its identity.
    */
   readonly selection: PhoneSelection | null;
@@ -147,7 +147,7 @@ type EditorRecord = {
    * The value that holds the waiting proposal's number: the output the parent heard for it, or
    * the countryless form of its own the parent answered its number with. It outlives the
    * formatting changes that carry the proposal into a new output, so the parent's answer in the
-   * form it heard still holds the number. Null without a waiting proposal.
+   * form it heard still holds the number. It is `null` without a waiting proposal.
    */
   readonly numberAnswer: string | null;
   /** The country the controlled value's own prefix detects, cached by value and metadata. */
@@ -172,7 +172,7 @@ type ValueDetection = {
 /**
  * An output a props change proposed: the number a `countryCode` pick leaves, cleared or kept under
  * `preserveOnCountryChange`, or the number of an uncontrolled proposal the props show only now. A
- * new object for each, so the hook sends it once by its identity.
+ * new object for each output, so the hook sends it once by its identity.
  */
 export type ValueNotice = {
   /** The proposed output value. */
@@ -206,7 +206,7 @@ function wrap(record: EditorRecord): PhoneEditorState {
 
 /**
  * The controlled value when it can name a country: a controlled `countryCode` is set, detection
- * is on, and the value itself carries a `+` or `00` prefix. Else null.
+ * is on, and the value itself carries a `+` or `00` prefix. Otherwise it is `null`.
  */
 function namingValue({ value, countryCode, configuration }: EditorRecord): string | null {
   return value !== undefined &&
@@ -233,7 +233,7 @@ function seeded(record: EditorRecord): EditorRecord {
   };
 }
 
-/** The detection the record holds for its current value under its metadata, or null. */
+/** The detection the record holds for its current value under its metadata, or `null`. */
 function currentDetection({ value, configuration, detection }: EditorRecord): ValueDetection | null {
   return detection !== null && detection.value === value && detection.metadata === configuration.metadata
     ? detection
@@ -274,7 +274,7 @@ function readNamed(record: EditorRecord, { value, country }: NamedValue): Snapsh
 
 /**
  * The country the record's controlled value names, from the detection it holds only, so it
- * parses nothing; null without one.
+ * parses nothing; `null` without one.
  */
 function cachedValueCountry(record: EditorRecord): NamedValue | null {
   const value = namingValue(record);
@@ -284,7 +284,7 @@ function cachedValueCountry(record: EditorRecord): NamedValue | null {
 
 /**
  * The country a controlled `value` names under a controlled `countryCode`: the offered country
- * the value's own prefix detects. Read from the value string as a whole, never from a snapshot
+ * the value's own prefix detects. It reads the value string as a whole, never a snapshot
  * of a national entry, whose parse would lend a partial number the picker's country. A value
  * without a prefix, as `raw` or `national` output usually is, names none, whatever country its
  * digits were shown in. Without a controlled country the shown country follows the proposal
@@ -339,7 +339,7 @@ function visibleSnapshot(record: EditorRecord): Snapshot {
   return proposal && shows(record, proposal) ? proposal : accepted;
 }
 
-/** The caret the field shows, or null when it shows a display other than the caret's. */
+/** The caret the field shows, or `null` when it shows a display other than the caret's. */
 function shownCaret(record: EditorRecord): EditCaret | null {
   const { caret } = record;
   return caret && visibleSnapshot(record).values.displayValue === caret.display ? caret : null;
@@ -477,7 +477,7 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
 }
 
 /**
- * The proposal the new props show, which becomes the accepted number, or null. Releasing
+ * The proposal the new props show, which becomes the accepted number, or `null`. Releasing
  * `countryCode` judges it as if the parent had set the country shown before, so the field keeps
  * showing it; releasing `value` accepts nothing, and drops a proposal the parent held its value
  * against, as releasing `countryCode` keeps the shown country.
@@ -501,7 +501,7 @@ function judged(record: EditorRecord): JudgedProps {
 }
 
 /**
- * The country new props pick, or null; the one place the props pick a country, which clears the
+ * The country new props pick, or `null`; the one place the props pick a country, which clears the
  * number unless `preserveOnCountryChange` keeps it. A clearing pick is a move of the controlled
  * country itself: a new code, or a catalog that resolves the same code to another country; a
  * catalog, detection or metadata change that leaves it in place keeps the number, and a country
@@ -679,7 +679,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
 }
 
 /**
- * Fold new props into the state, as {@link settle} says. A proposal the parent echoes becomes
+ * Folds new props into the state, as {@link settle} says. A proposal the parent echoes becomes
  * the accepted state, one it rejects stays out of view, and a new value, configuration or
  * catalog is read as described on {@link PhoneEditorProps}. Props that keep the value, the
  * configuration and `countryCode` show what they showed: a waiting proposal stays, unless it can
@@ -726,9 +726,9 @@ function kept(stored: EditorRecord, settings: Settings): EditorRecord {
 }
 
 /**
- * Propose what the user typed. The caret is kept as the digits after each end of the
+ * Proposes what the user typed. The editor keeps the caret as the digits after each end of the
  * selection: a forward deletion leaves it before the next digit, any other edit after the
- * previous one. No caret is kept when the display is what was typed.
+ * previous one. The editor keeps no caret when the display matches what the user typed.
  *
  * @param state - The current state.
  * @param change - The input's value and selection after the change.
@@ -760,7 +760,7 @@ export function edit(
 }
 
 /**
- * Propose pasted text in place of the number, with no caret to restore.
+ * Proposes pasted text in place of the number, with no caret to restore.
  *
  * @param state - The current state.
  * @param text - The clipboard text.
@@ -772,7 +772,7 @@ export function paste(state: PhoneEditorState, text: string): PhoneEditorState {
 }
 
 /**
- * Propose a picked country. The digits clear unless `preserveOnCountryChange` keeps them.
+ * Proposes a picked country. The digits clear unless `preserveOnCountryChange` keeps them.
  *
  * @param state - The current state.
  * @param code - The picked country's code.
@@ -789,9 +789,9 @@ export function selectCountry(state: PhoneEditorState, code: CountryCode | undef
 }
 
 /**
- * Native form reset for an uncontrolled field, with no proposal. A default number, `""`
- * included, is read again as on mount ({@link readInitial}), under the current configuration, so
- * a later formatting or catalog change shows in it.
+ * Resets an uncontrolled field for a native form reset, with no proposal. The editor reads a
+ * default number again, including `""`, as on mount through {@link readInitial}, under the current
+ * configuration, so a later formatting or catalog change shows in it.
  * Without one, the digits empty in the controlled country, else the visible one.
  *
  * @param state - The current state.
@@ -856,7 +856,7 @@ export function view(state: PhoneEditorState): PhoneEditorView {
  * from every proposal and so hears each one.
  *
  * @param state - The state a proposing transition returned.
- * @returns The proposal's output, or null when the state holds no proposal or its output is the
+ * @returns The proposal's output, or `null` when the state holds no proposal or its output is the
  * value the parent holds.
  */
 export function proposedValue(state: PhoneEditorState): string | null {
@@ -867,11 +867,11 @@ export function proposedValue(state: PhoneEditorState): string | null {
  * The output the latest `countryCode` change proposed, for `onChange`: the pick's output when
  * it differs from the value the parent holds, or the output of an uncontrolled number's
  * proposal that the change revealed. Later props that propose nothing carry it forward; an
- * edit, paste, picker pick or reset clears it. A new object for each change, so a caller sends
- * it once by its identity.
+ * edit, paste, picker pick or reset clears it. It is a new object for each change, so a caller
+ * sends it once by its identity.
  *
  * @param state - The current state.
- * @returns The latest steered output, or null when none was proposed since the last user
+ * @returns The latest steered output, or `null` when none was proposed since the last user
  * transition or reset.
  */
 export function steeredValue(state: PhoneEditorState): ValueNotice | null {

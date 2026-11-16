@@ -1,9 +1,9 @@
 /**
  * The carousel's page math: which scroll positions a native scroll-snap viewport stops at, which
- * of them is nearest a position, and which slides a position shows. Pure and React-free, so the
- * engine measures the DOM once and these functions answer from the numbers.
+ * of them is nearest a position, and which slides a position shows. The functions are pure and do
+ * not use React, so the engine measures the DOM once and these functions answer from the numbers.
  *
- * Every length is logical px on the scroll axis, measured from the scroll origin: `0` is the
+ * Every length is in logical pixels on the scroll axis, measured from the scroll origin. `0` is the
  * inline start in either direction, and the top for a vertical carousel. The engine turns the
  * physical `scrollLeft`, negative in a right-to-left viewport, into that position.
  */
@@ -40,7 +40,7 @@ export type ScrollPort = {
   readonly paddingEnd: number;
 };
 
-/** The pages a layout scrolls through: one per distinct snap position. */
+/** The pages a layout scrolls through, one per distinct snap position. */
 export type Pages = {
   /** Each page's scroll position, ascending. */
   readonly positions: readonly number[];
@@ -48,7 +48,7 @@ export type Pages = {
   readonly leadingSlides: readonly number[];
 };
 
-/** Two snap positions closer than this are one page: layout rounds lengths to a fraction of a px. */
+/** Two snap positions closer than this are one page, since layout rounds lengths to a fraction of a pixel. */
 const SAME_POSITION = 1;
 
 /** A slide shows when more than this much of it is inside the viewport. */
@@ -61,7 +61,7 @@ function isSnapAlign(value: string): value is SnapAlign {
 }
 
 /**
- * Read a computed `scroll-snap-align` for one axis. The property takes one value for both axes or
+ * Reads a computed `scroll-snap-align` for one axis. The property takes one value for both axes or
  * two, block first and inline second.
  *
  * @param computed - The computed value, such as `"start"` or `"none center"`.
@@ -135,8 +135,8 @@ export function pagesOf(port: ScrollPort, slides: readonly SlideGeometry[]): Pag
 }
 
 /**
- * Whether two measurements make the same pages: as many, each at the same position within a
- * pixel, as `pagesOf` merges positions, and each led by the same slide.
+ * Whether two measurements make the same pages. They match when they have as many pages, each at
+ * the same position within a pixel, as `pagesOf` merges positions, and each led by the same slide.
  *
  * @param left - One measurement's pages.
  * @param right - The other's.
@@ -153,8 +153,8 @@ export function samePages(left: Pages, right: Pages): boolean {
 }
 
 /**
- * A requested page as one the layout has: truncated to a whole page, and clamped to the first
- * and last. Without pages nothing clamps it from above, so a page asked for before the first
+ * A requested page as one the layout has, truncated to a whole page and clamped to the first and
+ * last. Without pages nothing clamps it from above, so a page asked for before the first
  * measurement stands until one arrives.
  *
  * @param index - The requested page.
@@ -186,7 +186,7 @@ export function nearestPage(positions: readonly number[], position: number): num
 }
 
 /**
- * The slides a scroll position shows: those with more than a pixel of their border box inside the
+ * The slides a scroll position shows, those with more than a pixel of their border box inside the
  * viewport, so a slide that only touches its edge does not count and a peeking one does.
  *
  * @param port - The viewport's geometry.

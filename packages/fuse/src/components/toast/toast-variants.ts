@@ -89,7 +89,7 @@ export const toastVariants = tv({
  * Module-private viewport recipe. Below `sm` the viewport sits at the bottom and spans the
  * screen minus a 1rem gutter whatever the placement; `placement` only moves the 340px
  * column from `sm` up. Toast roots stack from the viewport's edge, so the root mirrors its
- * vertical math for a top placement (see `toastVariants`).
+ * vertical math for a top placement, as `toastVariants` describes.
  */
 export const toastViewportVariants = tv({
   base: "sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",

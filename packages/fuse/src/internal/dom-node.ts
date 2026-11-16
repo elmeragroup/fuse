@@ -92,7 +92,7 @@ export function containsAcrossShadowRoots(element: Element, node: Node): boolean
 }
 
 /**
- * Compare two nodes by document order, for sorting.
+ * Compares two nodes by document order, for sorting.
  *
  * @param left - One node.
  * @param right - The other node.
@@ -113,7 +113,7 @@ export function isText(node: Node): node is Text {
 }
 
 /**
- * Whether an event target is an element of any kind (HTML, SVG, MathML), from any realm.
+ * Whether an event target is an element of any kind, such as HTML, SVG or MathML, from any realm.
  *
  * @param target - The event target, such as a node.
  * @returns `true` for an element.

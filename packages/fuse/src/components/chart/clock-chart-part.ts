@@ -27,7 +27,7 @@ export const NOMINAL_RADIUS = 100;
 export const DIAL_REGION = { x: -1.5, y: -1.5, width: 3, height: 3, unit: NOMINAL_RADIUS } as const;
 
 /**
- * Throw `baseline-required` for a part that encodes its value as the length from 0, as a Column's
+ * Throws `baseline-required` for a part that encodes its value as the length from 0, as a Column's
  * wedge and an Area's band do, under a Root whose `yBaseline="none"` domain cuts that length off at
  * the hole, as the cartesian Bar and Area rule says.
  *
@@ -136,7 +136,7 @@ function pairedFrom(
 }
 
 /**
- * Place a series mark for a commit through the classifier: the entrance, an update, or a turn of
+ * Places a series mark for a commit through the classifier: the entrance, an update, or a turn of
  * the dial when the slot count changes, along the route that pairs the old slots with the new. A
  * turn starts from what the mark draws, mid-tween too, so its first frame never jumps. It places
  * only when the dial, the series, the writer's look or the commit changes, so a render that changes
@@ -176,14 +176,14 @@ export function useClockPlacement<L>(
   }, [clock, series, look, commit, place, drawn]);
 }
 
-/** Write the entrance's open wedge onto a mark's clip path, or none once the dial is whole. */
+/** Writes the entrance's open wedge onto a mark's clip path, or none once the dial is whole. */
 export function writeReveal(group: SVGGElement, reveal: number): void {
   const clip = group.ownerSVGElement?.querySelector('[data-part="reveal"]');
   if (clip !== null && clip !== undefined) writeAttribute(clip, "d", revealPath(reveal));
   writeAttribute(group, "clip-path", reveal >= 360 ? null : (group.getAttribute("data-clip") ?? null));
 }
 
-/** Write each named path of a group from a map of paths by part. */
+/** Writes each named path of a group from a map of paths by part. */
 export function writeParts(group: SVGGElement, paths: ReadonlyMap<string, string>): void {
   for (const path of group.querySelectorAll("path[data-part]")) {
     const part = path.getAttribute("data-part");
@@ -192,7 +192,7 @@ export function writeParts(group: SVGGElement, paths: ReadonlyMap<string, string
   }
 }
 
-/** The series paint of a drawing's series, its config colour over its model. */
+/** The series paint of a drawing's series, its config color over its model. */
 export function paintOf(clock: ClockDrawing, series: ClockSeries) {
   const model = clock.text.model.series.find(({ key }) => key === series.key);
   return seriesPaintOf(series.key, clock.text.config[series.key]?.color ?? "chart-1", model);
@@ -205,7 +205,7 @@ export function groupOf(series: ClockSeries, clock: ClockDrawing, slot: number):
 }
 
 /**
- * Tune a value glow's blur to the dial as it draws: the halo's CSS pixels over the dial's pixels per
+ * Tunes a value glow's blur to the dial as it draws: the halo's CSS pixels over the dial's pixels per
  * unit, and the filter's region past the dial by three of them.
  */
 export function retuneGlow(svg: SVGSVGElement, unit: number, halo: typeof PATH_GLOW): void {
@@ -222,11 +222,11 @@ export function retuneGlow(svg: SVGSVGElement, unit: number, halo: typeof PATH_G
   }
 }
 
-/** Each loop's drawn curves by series and by part, which an ActiveDot rides between slots. */
+/** Each loop's drawn curves by series and by part, which an ActiveDot follows between slots. */
 const curves = new WeakMap<ChartMotion, Map<string, Map<"line" | "area", ChartCurve>>>();
 
 /**
- * Note the curve a Line or an Area draws its series in, for as long as it is mounted.
+ * Records the curve a Line or an Area draws its series in, for as long as it is mounted.
  *
  * @param motion - The Root's loop.
  * @param key - The series.
@@ -252,7 +252,7 @@ export function useSeriesCurve(
 }
 
 /**
- * The curve a series' ActiveDot rides: its Line's, else its Area's top edge, or null for a series
+ * The curve a series' ActiveDot follows: its Line's, else its Area's top edge, or null for a series
  * drawn only as Columns or Dots.
  *
  * @param motion - The Root's loop.

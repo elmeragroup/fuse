@@ -26,7 +26,7 @@ export type BreadcrumbListProps = ComponentProps<"ol">;
 export type BreadcrumbItemProps = ComponentProps<"li">;
 export type BreadcrumbLinkProps = Omit<useRender.ComponentProps<"a">, "render"> & {
   /**
-   * Your router's link element, with its own destination prop, such as `<NextLink href="/" />` or
+   * The router's link element, with its own destination prop, such as `<NextLink href="/" />` or
    * React Router's `<RouterLink to="/" />`. The link merges its classes and props onto it, and the
    * router handles the click.
    */

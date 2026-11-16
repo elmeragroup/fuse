@@ -7,17 +7,20 @@ import type { FileRules } from "./split-files";
 
 /** What a FileUpload shows: whether a file drag is over a Dropzone, and whether it takes files. */
 export type FileUploadState = {
-  /** A file drag that could drop here is over a `FileUpload.Dropzone`. */
+  /** Whether a file drag that could drop here is over a `FileUpload.Dropzone`. */
   readonly dragging: boolean;
-  /** The Root is disabled, by itself or by an enclosing `Field.Root` or `Field.Set`, so every source is ignored. */
+  /**
+   * Whether the Root is disabled, by itself or by an enclosing `Field.Root` or `Field.Set`, so it
+   * ignores every source.
+   */
   readonly disabled: boolean;
 };
 
 /** What a part or a custom child can do. Both do nothing while the Root is disabled. */
 export type FileUploadActions = {
-  /** Open the file picker. Browsers open it only inside a user gesture, such as a click. */
+  /** Opens the file picker. Browsers open it only inside a user gesture, such as a click. */
   readonly open: () => void;
-  /** Run `files` through the Root's `accept` and count rules, as a pick does. */
+  /** Runs `files` through the Root's `accept` and count rules, as a pick does. */
   readonly add: (files: File[]) => void;
 };
 
@@ -25,16 +28,16 @@ export type FileUploadActions = {
 export type FileUploadMeta = {
   /** The ids of the mounted Descriptions, in the order they mounted. */
   readonly descriptionIds: readonly string[];
-  /** Track a mounted Description's id. The returned function stops tracking it. */
+  /** Tracks a mounted Description's id. The returned function stops tracking it. */
   readonly registerDescription: (id: string) => () => void;
   /**
-   * Track a mounted Trigger's element. The first one mounted is the Field's control, and the first
-   * enabled one takes the focus an invalid submit gives the Root's validity input. The returned function stops
-   * tracking it.
+   * Tracks a mounted Trigger's element. The first one mounted is the Field's control, and the
+   * first enabled one takes the focus an invalid submit gives the Root's validity input. The
+   * returned function stops tracking it.
    */
   readonly registerTrigger: (trigger: HTMLElement) => () => void;
   /**
-   * Count a Trigger mounted inside a Field. A Field has one control, so development logs an error
+   * Counts a Trigger mounted inside a Field. A Field has one control, so development logs an error
    * when a second one mounts. The returned function stops counting it.
    */
   readonly registerFieldTrigger: () => () => void;
@@ -45,10 +48,10 @@ export type FileUploadMeta = {
   readonly triggerLeft: () => void;
   /** The Dropzones, by id, that show a drop target now. `state.dragging` is whether any does. */
   readonly dropTargets: ReadonlySet<string>;
-  /** Mark the Dropzone `zone` as showing a drop target, or as no longer showing one. */
+  /** Marks the Dropzone `zone` as showing a drop target, or as no longer showing one. */
   readonly setDropTarget: (zone: string, shown: boolean) => void;
   /**
-   * Expand the folders of a drop or paste under the Root's `directory`, then run the result
+   * Expands the folders of a drop or paste under the Root's `directory`, then runs the result
    * through the split and the Root's callbacks. It ignores a result that resolves after the Root
    * unmounts.
    */

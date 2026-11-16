@@ -34,8 +34,8 @@ export type ToggleGroupRootProps = Omit<
   style?: CSSProperties;
   /**
    * The space between items, in Tailwind spacing units. `0` joins the items into one segmented
-   * control: they share their inner edges, and outline items share one border between
-   * neighbours.
+   * control. They share their inner edges, and outline items share one border between
+   * neighbors.
    * @default 2
    */
   spacing?: number;

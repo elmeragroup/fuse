@@ -242,7 +242,7 @@ export function ChartSurface({
 
   /**
    * A tap or a click on the plot. It pins the slot under the pointer, and on the pinned slot it
-   * takes the one dismissal. Under a LegendToggleGroup it selects the nearest series instead.
+   * runs the store's `dismiss`. Under a LegendToggleGroup it selects the nearest series instead.
    */
   const press = (
     event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>,

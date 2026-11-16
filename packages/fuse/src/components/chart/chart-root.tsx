@@ -98,7 +98,7 @@ export type ChartRootProps<
   ChartSelectionProps<keyof TConfig & string> &
   ChartTimeAxisProps<TRow[TXKey]> & {
     /**
-     * The rows, one per slot or category. Every cell is serialisable, so a server component passes
+     * The rows, one per slot or category. Every cell is serializable, so a server component passes
      * it. The plot keeps its height and draws no mark until the browser measures it, and a loading
      * icon fades in at its middle if that takes more than a moment.
      */
@@ -107,7 +107,7 @@ export type ChartRootProps<
      * One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig`
      * with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`,
      * `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it
-     * `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type.
+     * `as const satisfies ChartConfig`, so a misspelled literal `qualityKey` fails the type.
      *
      * Series that share a `stack` id stack in one column. A series `interval` coarser than Root's,
      * such as hourly usage under quarter-hour prices, draws each value across the Root slots of its
@@ -116,16 +116,16 @@ export type ChartRootProps<
      *
      * A `color` is a role, a list of two or more roles, a scale or a threshold. A role list is a
      * decorative gradient that never follows the value. A scale, "chart-seq" or "chart-diverging",
-     * bins each value into 7 steps, and the diverging scale centres them on 0, so a negative value
+     * bins each value into 7 steps, and the diverging scale centers them on 0, so a negative value
      * takes a mirrored step below the solid zero line. A bar paints its step, and a Line or Area
      * paints a gradient along the value axis. A threshold, `{ threshold, below, above }`, paints
      * `above` on values above `threshold` and `below` on values at or below it, and the legend
-     * lists both sides. A line and its fill change colour where they cross the threshold, and a
+     * lists both sides. A line and its fill change color where they cross the threshold, and a
      * bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip,
      * the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the
      * same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under
      * `stackOffset="expand"`, throws `scale-colour-on-stack` for a scale or a threshold. Set
-     * `--chart-color-<key>` on Root for a colour outside the roles.
+     * `--chart-color-<key>` on Root for a color outside the roles.
      */
     config: TConfig & ChartSeriesConfigCheck<TConfig, TRow>;
     /**
@@ -204,13 +204,12 @@ export type ChartRootProps<
      * and drops it once the wipe of lines, areas and dots has run or is cut short, or at once when
      * no line, area or dots wipe in. Scrolling away and back, hiding the chart and showing it
      * again, even mid-wipe, or a new origin never replays it, and a line or an area added later
-     * never wipes in. A data update while the
-     * entrance waits plays it with the latest data. Reduced motion, "none" and printing draw the
-     * marks at rest at once. A Bar behind its own Suspense boundary that arrives while the entrance
-     * waits grows with the rest, and one that arrives after the entrance started draws at rest.
-     * A bar that a data update adds after the entrance writes
-     * `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush step or a
-     * pan adds writes `data-intro="none"` and takes its place at once.
+     * never wipes in. A data update while the entrance waits plays it with the latest data. Reduced
+     * motion, "none" and printing draw the marks at rest at once. A Bar behind its own Suspense
+     * boundary that arrives while the entrance waits grows with the rest, and one that arrives
+     * after the entrance started draws at rest. A bar that a data update adds after the entrance
+     * writes `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush
+     * step or a pan adds writes `data-intro="none"` and takes its place at once.
      */
     "data-intro"?: ChartIntro;
     /** "past" fades marks whose slot ended before `now`. */
@@ -218,13 +217,13 @@ export type ChartRootProps<
     /** Replaces the generated description verbatim. */
     description?: string;
     /**
-     * The chart's parts, painted in the order you write them. Root never inspects them, so a server
+     * The chart's parts, painted in their source order. Root never inspects them, so a server
      * component can compose them.
      */
     children?: ReactNode;
   };
 
-/** Order two Panels as their plots sit on the page. */
+/** Orders two Panels as their plots sit on the page. */
 function inPageOrder(a: PanelEntry, b: PanelEntry): number {
   const [first, second] = [a.plot(), b.plot()];
   if (first === null || second === null || first === second) return 0;
@@ -282,7 +281,7 @@ function thresholdMessage(key: string): string {
   return `${DATA_MESSAGES["non-finite-threshold"]} Series ${JSON.stringify(key)}.`;
 }
 
-/** Throw for config that cannot draw: a key that names no column of any row. */
+/** Throws for config that cannot draw: a key that names no column of any row. */
 function assertConfigFits(config: ChartConfig, data: readonly ChartRow[]): void {
   const keys = Object.keys(config);
   if (data.length > 0) {
@@ -311,7 +310,7 @@ function activeSlot(snapshot: ChartSnapshot, model: CartesianModel): ActiveSlot 
 }
 
 /**
- * Write the active state onto Root, where the dim rules read it. Only these attributes change on
+ * Writes the active state onto Root, where the dim rules read it. Only these attributes change on
  * enter and leave, so a pointer move restyles no mark.
  */
 function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSlot): void {
@@ -321,7 +320,7 @@ function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSl
 }
 
 /**
- * Provide the Root's readout, which the shared parts read the Root through. It changes with the
+ * Provides the Root's readout, which the shared parts read the Root through. It changes with the
  * Root's context alone, so a pointer move renders no part that reads only the readout.
  */
 function ReadoutScope({ children }: { readonly children: ReactNode }): ReactElement {

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A gauge's Root. It turns its reading and domain into the model its parts draw, owns the loop
+ * A gauge's Root. It turns its reading and domain into the model its parts draw, runs the loop
  * that moves the reading's one offset and the frame every part paints from, plays the entrance
  * once the dial comes into view, and names the dial as a meter. The figure is a polar figure, so
  * the frame, the aspect-locked cell, the layers and the first-paint rules are the polar families'
@@ -43,15 +43,15 @@ export type GaugeChartRootProps = ChartAccessibleName &
   ChartFigureProps & {
     /**
      * The reading, in the domain's own unit, such as 3.9 kWh. A value past either end draws at that
-     * end and sets `data-over-max` or `data-under-min` on the figure, while the centre and the
+     * end and sets `data-over-max` or `data-under-min` on the figure, while the center and the
      * meter's text keep the true number. A new reading sweeps on from wherever the dial shows, also
-     * mid-sweep, and the centre's digits roll to it. Under reduced motion and in print the dial
+     * mid-sweep, and the center's digits roll to it. Under reduced motion and in print the dial
      * draws at rest at once. Null shows `GaugeChart.Empty`, and the dial is no meter until a
      * reading arrives. A value that is not a finite number throws `non-finite-value` in development
      * and draws as null in production.
      */
     value: number | null;
-    /** The value at the sweep's start. 0 by default. */
+    /** The value at the sweep's start. */
     min?: number;
     /**
      * The value at the sweep's end, above `min`. A `max` at or below `min`, or one that is not a
@@ -59,22 +59,22 @@ export type GaugeChartRootProps = ChartAccessibleName &
      */
     max: number;
     /**
-     * The value format, which the centre, the meter's text and the ruler's labels read. A screen
+     * The value format, which the center, the meter's text and the ruler's labels read. A screen
      * reader reads the dial as a meter, with its name, its domain and the value in this format.
      */
     valueFormat?: ValueFormat;
     /**
-     * Degrees from 12 o'clock, clockwise, where the sweep starts. −135 by default. An angle that is
+     * Degrees from 12 o'clock, clockwise, where the sweep starts. Defaults to −135. An angle that is
      * not a finite number, here or in `endAngle`, throws `invalid-sweep`.
      */
     startAngle?: number;
     /**
-     * Degrees from 12 o'clock, clockwise, where the sweep ends. 135 by default, a 270° sweep open
+     * Degrees from 12 o'clock, clockwise, where the sweep ends. Defaults to 135, a 270° sweep open
      * at the bottom. The chart keeps the aspect of the sweep's bounding box.
      */
     endAngle?: number;
     /**
-     * "none" turns off the entrance, in which the track scales out and the fill sweeps from the
+     * `none` turns off the entrance, in which the track scales out and the fill sweeps from the
      * minimum to the reading the first time the gauge comes into view.
      */
     "data-intro"?: "none";
@@ -141,7 +141,7 @@ function gaugeSpan(pace: IntroPace): number {
 /** The scale the layers inside a missing Track close in by: out by the notches' depth. */
 const GAUGE_CLOSED = 1 / GAUGE_RADII.notchInner;
 
-/** When the centre's digits start counting: as the sweep starts. */
+/** When the center's digits start counting: as the sweep starts. */
 const REEL_DELAY = `${String(GAUGE_INTRO_START_MS)}ms`;
 
 /**

@@ -5,11 +5,11 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { badgeVariants } from "./badge-variants";
 
-/** `Badge` takes a native `span`'s props plus the recipe's `variant` and `size`. */
+/** Props for `Badge`, a native `span`'s props plus the recipe's `variant` and `size`. */
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   /**
-   * The fill and text colour. The status colours come filled, as `soft-*` on a tinted surface,
-   * and as `outline-*` in the border and text. `destructive` draws the theme's error colour.
+   * The fill and text color. The status colors come filled, as `soft-*` on a tinted surface,
+   * and as `outline-*` in the border and text. `destructive` draws the theme's error color.
    */
   variant?: VariantProps<typeof badgeVariants>["variant"];
   /** The text size and padding. */

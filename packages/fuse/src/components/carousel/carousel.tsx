@@ -36,7 +36,7 @@ import { carouselStrings } from "./intl";
 
 /**
  * A carousel's accessible name. The Root is a region landmark, which needs one. The role
- * description already says "carousel", so the name should not.
+ * description already says "carousel", so leave that word out of the name.
  */
 export type CarouselName =
   | {
@@ -58,7 +58,10 @@ export type CarouselName =
       "aria-label": string;
     };
 
-/** `Carousel.Root` takes a `div`'s props, Base UI's `render`, a required name and the page props. */
+/**
+ * Props for `Carousel.Root`. It takes a `div`'s props, Base UI's `render`, a required name and the
+ * page props.
+ */
 export type CarouselRootProps = Omit<
   useRender.ComponentProps<"div">,
   "aria-label" | "aria-labelledby" | "defaultValue" | "children"
@@ -67,32 +70,32 @@ export type CarouselRootProps = Omit<
     /** The current page, from 0, when the parent owns it. Pair it with `onIndexChange`. */
     index?: number;
     /**
-     * The page shown first when the Root owns the page. The pages are measured after hydration,
-     * and this page moves into place before the first client paint.
+     * The page shown first when the Root owns the page. The Root measures the pages after
+     * hydration, and moves this page into place before the first client paint.
      */
     defaultIndex?: number;
     /**
-     * Receives every page change and its reason: `"scroll"`, `"previous"`, `"next"`,
+     * Called on every page change, with its reason: `"scroll"`, `"previous"`, `"next"`,
      * `"indicator"`, `"autoplay"` or `"action"`. A controlled Root that does not take the new
      * `index` scrolls back to its own once the user's scroll ends.
      */
     onIndexChange?: (index: number, details: CarouselIndexChangeDetails) => void;
     /**
-     * The axis the viewport scrolls on. With `vertical`, Previous and Next point up and down. Give
-     * a vertical carousel's `Carousel.Viewport` a height.
+     * The axis the viewport scrolls on. With `vertical`, `Carousel.Previous` and `Carousel.Next`
+     * point up and down. Give a vertical carousel's `Carousel.Viewport` a height.
      */
     orientation?: CarouselOrientation;
     /**
      * The parts: a `Carousel.Viewport` that holds the `Carousel.Slide`s, and a `Carousel.Controls`
      * row with `Carousel.Previous`, `Carousel.Indicators` or `Carousel.Status`, and
-     * `Carousel.Next`. Each feature is a part you mount, with no boolean prop for it. A server
+     * `Carousel.Next`. Each feature is a part to mount, with no boolean prop for it. A server
      * component can render the Root with server-rendered slides. The server renders no indicators
-     * and no page count, because the pages are measured after hydration.
+     * and no page count, because the Root measures the pages after hydration.
      */
     children?: useRender.ComponentProps<"div">["children"];
   };
 
-/** `Carousel.Viewport` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Carousel.Viewport`. It takes a `div`'s props plus Base UI's `render`. */
 export type CarouselViewportProps = Omit<useRender.ComponentProps<"div">, "children" | "className"> & {
   /**
    * The `Carousel.Slide`s. The browser scrolls them with scroll snapping, so a swipe, a trackpad,
@@ -105,7 +108,7 @@ export type CarouselViewportProps = Omit<useRender.ComponentProps<"div">, "child
   className?: useRender.ComponentProps<"div">["className"];
 };
 
-/** `Carousel.Slide` takes a `div`'s props plus Base UI's `render`. */
+/** Props for `Carousel.Slide`. It takes a `div`'s props plus Base UI's `render`. */
 export type CarouselSlideProps = Omit<
   useRender.ComponentProps<"div">,
   "children" | "className" | "aria-labelledby"
@@ -118,14 +121,14 @@ export type CarouselSlideProps = Omit<
   children?: useRender.ComponentProps<"div">["children"];
   /**
    * Classes for the slide. A slide fills the viewport. Size it with a class such as `basis-1/2`
-   * to show more at once. Every slide stays a snap position, so the pages follow the layout: six
+   * to show more at once. Every slide stays a snap position, so the pages follow the layout. Six
    * slides three to a view make four pages. Space the slides with a margin on each one, such as
    * `me-3 last:me-0`, and take it out of the slide's basis.
    */
   className?: useRender.ComponentProps<"div">["className"];
   /**
-   * The id of the slide's visible title. Without a name of its own, a slide is named by its
-   * place, such as "3 of 6".
+   * The id of the slide's visible title. A slide without a name of its own takes its place as its
+   * name, such as "3 of 6".
    */
   "aria-labelledby"?: useRender.ComponentProps<"div">["aria-labelledby"];
 };
@@ -134,7 +137,7 @@ const styles = carouselVariants();
 const verticalStyles = carouselVariants({ orientation: "vertical" });
 
 /**
- * The provider every Carousel part reads, and the carousel container APG describes: a `region`
+ * The provider every Carousel part reads, and the carousel container APG describes, a `region`
  * landmark with the localized role description "carousel". It owns the page, as `index` or
  * `defaultIndex`, and the engine that measures `Carousel.Viewport`, so the parts and
  * `useCarousel()` read one state.
@@ -342,7 +345,7 @@ export function CarouselViewport({ className, render, ref, ...props }: CarouselV
 }
 
 /**
- * One slide: a `group` with the localized role description "slide". Its place, such as "3 of 6",
+ * One slide, a `group` with the localized role description "slide". Its place, such as "3 of 6",
  * names it when it has no name of its own, as APG suggests for slides without titles. A slide
  * outside the viewport is `inert`, as APG asks.
  */

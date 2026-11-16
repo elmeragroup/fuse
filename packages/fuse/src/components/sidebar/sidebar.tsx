@@ -85,16 +85,16 @@ import {
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE } from "./sidebar-width";
 
 /**
- * The cookie a page Sidebar writes its open state to. Keep the colon: the funnel `layout.tsx`
- * reads `cookieStore.get("sidebar:state")` on the server for the first paint, so the shadcn
- * template's underscore name would break it without an error.
+ * The cookie a page Sidebar writes its open state to. Keep the colon, because the funnel
+ * `layout.tsx` reads `cookieStore.get("sidebar:state")` on the server for the first paint, so the
+ * shadcn template's underscore name would break it without an error.
  */
 export const SIDEBAR_COOKIE_NAME = "sidebar:state";
 /** Cookie lifetime in seconds: seven days. */
 export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 /**
- * Key that toggles the sidebar together with the platform's command modifier: ⌘ (`metaKey`) on
- * Apple platforms, where Ctrl+B moves the caret, and Ctrl (`ctrlKey`) elsewhere.
+ * The key that toggles the sidebar together with the platform's command modifier, ⌘ or `metaKey`
+ * on Apple platforms, where Ctrl+B moves the caret, and Ctrl or `ctrlKey` elsewhere.
  */
 export const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
@@ -104,8 +104,8 @@ const APPLE_PLATFORM = /mac|iphone|ipad|ipod/iu;
 /**
  * Whether a keydown is the sidebar shortcut: B with the platform's command modifier alone, not
  * already handled by another listener, not mid-composition and not typed into a text field, so
- * an editor's own ⌘B (bold) and the caret keys keep working. Reads the platform per event, so
- * the server render never touches `navigator`.
+ * an editor's own ⌘B for bold and the caret keys keep working. It reads the platform per event,
+ * so the server render never touches `navigator`.
  */
 function isSidebarShortcut(event: KeyboardEvent): boolean {
   if (event.defaultPrevented || event.isComposing || event.altKey || event.shiftKey) {
@@ -125,15 +125,15 @@ export type SidebarContextValue = {
   /** The desktop open state, controlled or the Provider's own. */
   open: boolean;
   /**
-   * Accepts a boolean or an updater. At `bounds="page"` it writes the cookie on every call,
-   * controlled or not; at `bounds="container"` it never does.
+   * The desktop open state's setter, which accepts a boolean or an updater. At `bounds="page"` it
+   * writes the cookie on every call, controlled or not. At `bounds="container"` it never does.
    */
   setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
   /** The mobile Sheet's open state, controlled or the Provider's own. It lasts for the session only. */
   openMobile: boolean;
   /**
-   * Accepts a boolean or an updater, as a React state setter does. When the Provider takes
-   * `openMobile`, it reports the request through `onOpenMobileChange` instead.
+   * The mobile Sheet's setter, which accepts a boolean or an updater, as a React state setter does.
+   * When the Provider takes `openMobile`, it reports the request through `onOpenMobileChange` instead.
    */
   setOpenMobile: Dispatch<SetStateAction<boolean>>;
   /** Whether the viewport is below 768px. It is `false` on the server and the first client render. */
@@ -149,7 +149,7 @@ export type SidebarLabels = {
   description: string;
 };
 
-/** What bounds a Sidebar; see `Sidebar.Provider`'s `bounds` prop. */
+/** What bounds a Sidebar. See `Sidebar.Provider`'s `bounds` prop. */
 export type SidebarBounds = "page" | "container";
 
 type SidebarInternalContextValue = {
@@ -172,7 +172,7 @@ function useSidebarInternal(): SidebarInternalContextValue {
 
 /**
  * Reads the Provider's desktop and mobile open state and its setters, such as `toggleSidebar` for a
- * trigger of your own. It throws outside `Sidebar.Provider`.
+ * custom trigger. It throws outside `Sidebar.Provider`.
  */
 export function useSidebar(): SidebarContextValue {
   return useSidebarInternal().value;
@@ -180,7 +180,7 @@ export function useSidebar(): SidebarContextValue {
 
 /**
  * Resolves a boolean-or-updater request to the open state it asks for. Updaters within one event
- * compose from the last request; the next event starts from committed state again, so a parent
+ * compose from the last request. The next event starts from committed state again, so a parent
  * that controls the state may reject every request without causing another render. React's own
  * setter queues updaters instead, so the uncontrolled phone Sheet passes them to it untouched. The
  * desktop setter resolves even uncontrolled requests here, because its cookie needs the value.
@@ -216,10 +216,10 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
    * so a client-only read has to control `open` instead.
    */
   defaultOpen?: boolean;
-  /** The desktop open state, for a Sidebar you control. */
+  /** The desktop open state, for a controlled Sidebar. */
   open?: boolean;
   /**
-   * Called with the requested desktop open state. When you pass it, the Provider keeps no state
+   * Called with the requested desktop open state. When it is passed, the Provider keeps no state
    * of its own. At `bounds="page"` it still writes the cookie on every change.
    */
   onOpenChange?: (open: boolean) => void;
@@ -231,7 +231,7 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
   openMobile?: boolean;
   /**
    * Called with the requested Sheet state when the Trigger, the shortcut, the Sheet's own
-   * dismissal or `useSidebar().setOpenMobile` asks to open or close it. When you pass it, the
+   * dismissal or `useSidebar().setOpenMobile` asks to open or close it. When it is passed, the
    * Provider keeps no Sheet state of its own, and the host decides.
    */
   onOpenMobileChange?: (open: boolean) => void;
@@ -527,7 +527,7 @@ export type SidebarTriggerProps = ButtonProps & {
 
 /**
  * The icon button that toggles the Sidebar. It names the keyboard shortcut in
- * `aria-keyshortcuts`, and an `aria-keyshortcuts` you pass replaces it.
+ * `aria-keyshortcuts`, and a passed `aria-keyshortcuts` replaces it.
  */
 export function SidebarTrigger({
   className,
@@ -608,7 +608,7 @@ export function SidebarInset({ className, render, ...props }: SidebarInsetProps)
 }
 
 /**
- * The props of `Sidebar.Input`, a native input's. It takes a string `className`, not Base UI
+ * Props for `Sidebar.Input`, a native input's props. It takes a string `className`, not Base UI
  * Input's state function, which `cn` cannot merge, and it keeps the native numeric `size`
  * attribute.
  */
@@ -742,9 +742,9 @@ export function SidebarMenuItem({ className, ...props }: SidebarMenuItemProps): 
   return <li data-slot="sidebar-menu-item" className={cn(sidebarMenuItemClass, className)} {...props} />;
 }
 
-/** The props of `Sidebar.MenuButton`, a menu row. */
+/** Props for `Sidebar.MenuButton`, a menu row. */
 export type SidebarMenuButtonProps = Omit<useRender.ComponentProps<"button">, "aria-disabled"> & {
-  /** The row style. `outline` gives the row a fill and a 1px ring in the sidebar border colour. */
+  /** The row style. `outline` gives the row a fill and a 1px ring in the sidebar border color. */
   variant?: VariantProps<typeof sidebarMenuButtonVariants>["variant"];
   /**
    * The row height. `default` takes the density's row height, `sm` is 28px with smaller type, and
@@ -752,13 +752,13 @@ export type SidebarMenuButtonProps = Omit<useRender.ComponentProps<"button">, "a
    */
   size?: VariantProps<typeof sidebarMenuButtonVariants>["size"];
   /**
-   * Marks the current item. The row gets `data-active` and the accent fill. Pass
-   * `aria-current="page"` on its link yourself.
+   * Whether the row is the current item. The row gets `data-active` and the accent fill. Sidebar
+   * sets no `aria-current`, so pass `aria-current="page"` on its link.
    */
   isActive?: boolean;
   /**
    * The label to show beside the collapsed icon rail. The row becomes the tooltip's trigger, so
-   * one element is the row, your `render` element and the trigger. The tooltip opens to the right
+   * one element is the row, the `render` element and the trigger. The tooltip opens to the right
    * and only while the desktop rail is collapsed. A string is short for `{ children }`.
    */
   tooltip?: string | TooltipContentProps;
@@ -773,7 +773,7 @@ export type SidebarMenuButtonProps = Omit<useRender.ComponentProps<"button">, "a
 /**
  * The collapsed-rail tooltip. It reads the context, not `Sidebar.MenuButton`, so a menu button
  * without a `tooltip` does not re-render when the rail toggles. The root
- * is disabled, not unmounted, while the rail is expanded or on mobile: Base UI then closes
+ * is disabled, not unmounted, while the rail is expanded or on mobile. Base UI then closes
  * an open hover or focus state instead of keeping it for the collapse, and the trigger
  * element, with its focus, survives the toggle.
  */
@@ -826,7 +826,7 @@ export function SidebarMenuButton({
 
 export type SidebarMenuActionProps = useRender.ComponentProps<"button"> & {
   /**
-   * Hides the action from 768px up until its menu item is hovered or holds focus, or the action
+   * Whether the action hides from 768px up until its menu item is hovered or holds focus, or the action
    * has `aria-expanded`, so an open dropdown keeps it in view.
    */
   showOnHover?: boolean;
@@ -872,12 +872,12 @@ export function SidebarMenuBadge({ className, ...props }: SidebarMenuBadgeProps)
 }
 
 export type SidebarMenuSkeletonProps = ComponentProps<"div"> & {
-  /** Draws a square icon placeholder before the text bar. */
+  /** Whether the skeleton draws a square icon placeholder before the text bar. */
   showIcon?: boolean;
 };
 
 /**
- * A placeholder menu row while items load. CSS sets the text bar's width: `--skeleton-width`
+ * A placeholder menu row while items load. CSS sets the text bar's width. `--skeleton-width`
  * cycles five values from 50% to 90% by the row's `:nth-child` position, so the server and the
  * client render the same DOM. The shadcn template picked a random width per mount, which could
  * not hydrate.
@@ -913,14 +913,14 @@ export function SidebarMenuSubItem({ className, ...props }: SidebarMenuSubItemPr
   );
 }
 
-/** The props of `Sidebar.MenuSubButton`, a submenu row. */
+/** Props for `Sidebar.MenuSubButton`, a submenu row. */
 export type SidebarMenuSubButtonProps = Omit<useRender.ComponentProps<"a">, "aria-disabled"> & {
   /**
    * The row size, written as `data-size`. `md` takes the md control height and the density's
    * type, and `sm` the sm control height and `text-sm`.
    */
   size?: "sm" | "md";
-  /** Marks the current item. The row gets `data-active` and the accent fill. */
+  /** Whether the row is the current item. The row gets `data-active` and the accent fill. */
   isActive?: boolean;
   /**
    * Pass `"true"` to make the row unavailable. It looks disabled, a click or Enter neither
@@ -956,7 +956,7 @@ export function SidebarMenuSubButton({
 export type SidebarIconProps = ComponentProps<"div">;
 
 /**
- * Centres a brand mark in the footer, full width in the collapsed icon rail. The shadcn template
+ * A footer box that centers a brand mark, full width in the collapsed icon rail. The shadcn template
  * has no such part.
  */
 export function SidebarIcon({ className, ...props }: SidebarIconProps): ReactElement {

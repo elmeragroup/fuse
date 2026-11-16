@@ -1,9 +1,9 @@
 /**
  * The shared `Table.Cell` class string. `VerticalTable.Key` applies the same layout and in-frame
- * padding, so a `render` host keeps the cell geometry. It is package-private: the
+ * padding, so a `render` host keeps the cell geometry. It is package-private. The
  * `@elmeragroup/fuse/table` entry does not export it.
  *
- * A cell is a row: at least `--row-h` tall, padded with `--row-px` and `--row-py`, so a
+ * A cell is a row. It is at least `--row-h` tall, padded with `--row-px` and `--row-py`, so a
  * one-line row measures exactly `--row-h` and a taller control grows the row by its own height.
  * `box-border` keeps the height a border-box one without preflight.
  */
@@ -11,10 +11,10 @@ import { cn } from "../../styles/cn";
 
 /**
  * A cell's or head's inline padding. Each side reads a cell-local default, `--table-cell-ps` or
- * `--table-cell-pe`: `--row-px`, or 0 at the end of a cell holding a checkbox, or what a variant
+ * `--table-cell-pe`, which is `--row-px`, or 0 at the end of a cell with a checkbox, or what a variant
  * such as the compact VerticalTable sets. The first and last of a row pad their outer side with the
  * Table's edge inset, `--table-edge-px`, instead, where a Frame or a padless panel sets one, so
- * their text lines up with its panels: their `--table-cell-edge-*` reads it, and stays invalid, so
+ * their text lines up with its panels. Their `--table-cell-edge-*` reads it, and stays invalid, so
  * the side falls back to its default, where nothing sets it. Each side is one `ps-*` or `pe-*`
  * utility, so a consumer's `ps-*`, `pe-*` or `px-*` class replaces it.
  */

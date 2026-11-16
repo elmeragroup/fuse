@@ -16,13 +16,13 @@ import type { DateInputScope } from "./date-input-scope";
 
 /**
  * The instant an input names a value's zone at: the value's own, or `null` for today while it shows
- * no value, or a time on the stand-in day, which names no day anyone chose. The name the segments
- * write (`useFieldZoneName`) and the name pasted text must carry (`date-input-paste.ts`) both read
- * it, so the input reads back the text it writes.
+ * no value, or a time on the stand-in day, which names no day anyone chose. Both the name the
+ * segments write, through `useFieldZoneName`, and the name pasted text must carry, in
+ * `date-input-paste.ts`, read it, so the input reads back the text it writes.
  *
  * @param value - The value shown, or `null` for none.
  * @param scope - The input's scope.
- * @returns The instant in epoch milliseconds, or `null` for today (see `todayInstant`).
+ * @returns The instant in epoch milliseconds, or `null` for today; see `todayInstant`.
  */
 export function zoneNamingInstant(value: TemporalValue | null, scope: DateInputScope): number | null {
   return value === null || onStandInDay(scope) ? null : formatInstant(value);
@@ -41,13 +41,15 @@ export function todayInstant(): number {
 /**
  * The zone's name a field's segments and description write.
  *
- * The clock is read once the input has mounted, never while rendering, so the server and the
- * hydrating render write the same fixed instant's name (`EMPTY_ZONE_INSTANT`), and only by a field
- * that writes a zone name and names it for today (`todayInstant`). The name read is kept, `null`
- * while it is the fixed instant's, so a clock read that changes no name renders nothing again.
+ * The hook reads the clock once the input has mounted, never while rendering, so the server and
+ * the hydrating render write the same fixed instant's name, `EMPTY_ZONE_INSTANT`. Only a field that
+ * writes a zone name and names it for today, through `todayInstant`, reads the clock. The hook
+ * keeps the name it read, `null` while it is the fixed instant's, so a clock read that changes no
+ * name renders nothing again.
  *
  * @param format - The field's format.
- * @param instant - The instant the field names its zone at (`zoneNamingInstant`), or `null` for today.
+ * @param instant - The instant the field names its zone at, from `zoneNamingInstant`, or `null` for
+ *   today.
  * @returns The name, such as "GMT+2"; empty for a field that writes none.
  */
 export function useFieldZoneName(format: FieldFormat, instant: number | null): string {

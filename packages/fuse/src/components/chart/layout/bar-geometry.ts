@@ -22,7 +22,7 @@ const BAR_LIMIT = 100;
  *
  * @param model - The Root's model.
  * @param orientation - Root's orientation.
- * @returns "bars" for 100 slots or fewer or for horizontal bars, else "path".
+ * @returns `bars` for 100 slots or fewer or for horizontal bars, else `path`.
  */
 export function barForm(model: CartesianModel, orientation: "vertical" | "horizontal"): "bars" | "path" {
   if (orientation === "horizontal") return "bars";
@@ -30,7 +30,7 @@ export function barForm(model: CartesianModel, orientation: "vertical" | "horizo
 }
 
 /**
- * The look a series' bars draw in a form. The path form knows the "default" and "gradient" looks
+ * The look a series' bars draw in a form. The path form knows the `default` and `gradient` looks
  * only, so every other look draws the default one there.
  *
  * @param variant - The look the series' config names.
@@ -81,7 +81,10 @@ function stackOthers(model: CartesianModel, series: SeriesModel): readonly Serie
   return model.series.filter((other) => other !== series && keys.has(other.key));
 }
 
-/** Whether an extent reaches farthest out on its side of zero among the other series' extents at a slot. */
+/**
+ * Whether an extent reaches farthest out on its side of zero among the other series' extents at a
+ * slot.
+ */
 function outermost(extent: readonly [number, number], others: readonly SeriesModel[], slot: number): boolean {
   const negative = isNegative(extent);
   return others.every((other) => {
@@ -107,7 +110,10 @@ export function isStackTop(model: CartesianModel, series: SeriesModel, slot: num
   return outermost(extent, stackOthers(model, series), slot);
 }
 
-/** The floor place of a series' extent that is its stack's outer segment or not, as `floorPlaces` reads it. */
+/**
+ * The floor place of a series' extent that is its stack's outer segment or not, as `floorPlaces`
+ * reads it.
+ */
 function placeOf(series: SeriesModel, extent: readonly [number, number], top: boolean): StackPlace {
   return series.stack === undefined || (top && extent[0] !== extent[1]) ? "outer" : "inner";
 }
@@ -210,8 +216,8 @@ export type BarGeometry = readonly [
  * @param cell - The cell.
  * @param metrics - The bar spacing.
  * @param sub - The Bar's sub-band.
- * @param seam - "cut" ends a stack's inner segment a seam short at its far end, as drawn bars do,
- *   and "whole" keeps the full extent, as the active overlay does.
+ * @param seam - `cut` ends a stack's inner segment a seam short at its far end, as drawn bars do,
+ *   and `whole` keeps the full extent, as the active overlay does.
  * @returns The geometry, its span on the device pixel grid and its base and tip unsnapped.
  */
 export function barGeometry(
@@ -264,7 +270,7 @@ function apart(at: number): number {
 }
 
 /**
- * Hold a decimated column's two ends apart where its projection rounds one onto the other, as
+ * Holds a decimated column's two ends apart where its projection rounds one onto the other, as
  * `projectedEnds` does for a bar: its upper end moves up for a column above zero, and its lower end
  * down for one below it. Every column has length in value, as `bucketColumns` drops the rest.
  *
@@ -328,7 +334,7 @@ export function plainRect(frame: PlotFrame, geometry: BarGeometry): PlotRect {
  * The rectangle a bar's drawn geometry stands for, every edge on the device pixel grid: its plain
  * rectangle, and for the owner of its stack side's pixel floor, from `settleFloors` in each frame,
  * the floor `floorBody` adds from its base toward its tip. Any other segment keeps its plain snap.
- * A segment's base is its inner neighbour's tip, so both snap it alike and the segments keep
+ * A segment's base is its inner neighbor's tip, so both snap it alike and the segments keep
  * tiling. The owner's pixel outlasts its seam: the floor reads the segment's whole length, so a
  * seam that takes all of a segment with length leaves the floor its pixel, and a stack with length
  * never draws nothing.
@@ -381,7 +387,7 @@ export type BucketColumn = {
   readonly x1: number;
   readonly top: number;
   readonly bottom: number;
-  /** The slot whose reading the column draws, which picks its colour step and quality. */
+  /** The slot whose reading the column draws, which picks its color step and quality. */
   readonly slot: number;
   /**
    * The domain slot the column's bucket starts at, whose key names the column across updates, so a
@@ -433,7 +439,7 @@ function sidesOf(model: CartesianModel, series: SeriesModel): StackSides {
  * `DECIMATE_ABOVE` slots, where every slot up to it draws its own entry. The window splits into M4
  * buckets by slot index, each split into the BarGroup's sub-bands. A loose series draws each bucket's
  * column from its lowest negative extent to its highest positive extent, and the column takes the
- * slot of its larger extreme, so its colour step and quality are that reading's. A stacked series
+ * slot of its larger extreme, so its color step and quality are that reading's. A stacked series
  * draws the segment of the bucket's slot with the largest total magnitude on each side of zero.
  *
  * @param model - The Root's model.
@@ -539,11 +545,11 @@ export function rectsPath(rects: readonly PlotRect[]): string {
 }
 
 /**
- * The entrance delay step of the bar at a position. "left" counts up from the first bar, "right"
- * from the last, "center" outward from the middle and "edges" inward from both ends. The step
+ * The entrance delay step of the bar at a position. `left` counts up from the first bar, `right`
+ * from the last, `center` outward from the middle and `edges` inward from both ends. The step
  * multiplies `--chart-stagger`.
  *
- * @param intro - Root's `data-intro`, "left" by default.
+ * @param intro - Root's `data-intro`, which defaults to `left`.
  * @param position - The bar's place in the window, from 0.
  * @param count - The window's slot count.
  * @returns The step, 0 for the first bar to grow.

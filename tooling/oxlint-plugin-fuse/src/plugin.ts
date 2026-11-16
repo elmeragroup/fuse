@@ -4,6 +4,7 @@ import { chartDemoTable } from "./rules/chart-demo-table.ts";
 import { containerSurface } from "./rules/container-surface.ts";
 import { declaredDensityRole } from "./rules/declared-density-role.ts";
 import { definedPropsWiring } from "./rules/defined-props-wiring.ts";
+import { jsdocVoice } from "./rules/jsdoc-voice.ts";
 import { motionSafeTransform } from "./rules/motion-safe-transform.ts";
 import { namespaceIndexExports } from "./rules/namespace-index-exports.ts";
 import { noBaseUiPreviewMenu } from "./rules/no-base-ui-preview-menu.ts";
@@ -40,6 +41,7 @@ const plugin: Plugin = {
     "container-surface": containerSurface,
     "declared-density-role": declaredDensityRole,
     "defined-props-wiring": definedPropsWiring,
+    "jsdoc-voice": jsdocVoice,
     "motion-safe-transform": motionSafeTransform,
     "namespace-index-exports": namespaceIndexExports,
     "no-base-ui-preview-menu": noBaseUiPreviewMenu,

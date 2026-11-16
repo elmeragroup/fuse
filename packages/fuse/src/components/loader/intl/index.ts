@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Loader's own dictionary: it owns the `loader.*` keys. */
+/** Loader's own dictionary, with the `loader.*` keys. */
 export const loaderStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

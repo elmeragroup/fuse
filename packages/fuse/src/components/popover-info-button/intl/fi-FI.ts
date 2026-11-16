@@ -1,4 +1,4 @@
-/** Default localized copy for popoverInfoButton.moreInformation. */
+/** Default localized copy for `popoverInfoButton.moreInformation`. */
 export const fiFI = {
   moreInformation: "Lisätietoja",
 };

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The clock's Now: a hand at Root's `now`, to the minute, with a ping at its tip and an optional
- * label centred on the hand just inside the rim. The first paint draws it at rest.
+ * The clock's Now, a hand at Root's `now`, to the minute, with a ping at its tip and an optional
+ * label centered on the hand just inside the rim. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";
 
@@ -37,7 +37,7 @@ export type ClockChartNowProps = ChartLayerProps & {
 /**
  * A hand at Root's `now`, to the minute, with a ping at its tip and an optional label on the hand
  * just inside the rim. The label shows only at the widths from which it keeps clear of the hole and
- * its centre text, and otherwise the hand and its dot mark Now alone, as the centre names the slot.
+ * its center text. Otherwise the hand and its dot mark Now alone, as the center names the slot.
  * It draws nothing when `now` lies outside the cycle.
  *
  * @beta

@@ -23,11 +23,11 @@ function serverDocumentHidden(): boolean {
 }
 
 /**
- * The element that has keyboard focus in `doc`, followed down through open shadow roots, or null.
+ * The element that has keyboard focus in `doc`, followed down through open shadow roots, or `null`.
  * The browser's `:focus-visible` heuristic says whether focus arrived by keyboard: it matches
  * after Tab, an arrow key or a programmatic focus that follows keyboard use, and on a text field
  * however it was focused, and not after a click on a button, which is a control press and stops
- * rotation on its own. It is read on the focused element itself, since a shadow host does not
+ * rotation on its own. The check reads it on the focused element itself, since a shadow host does not
  * match `:focus-visible` for focus inside its shadow root.
  */
 function keyboardFocusedElement(doc: Document): Element | null {
@@ -37,11 +37,11 @@ function keyboardFocusedElement(doc: Document): Element | null {
 
 /**
  * Whether a mouse or pen is over `root` now, by the engine's own `:hover`, for hover that began
- * before the Root could listen, such as while a server-rendered page hydrates. Only where the
- * primary pointer can hover: a touch screen's tap leaves `:hover` on what it tapped, which mobile
- * WebKit keeps until the next tap elsewhere, so where the primary pointer cannot hover,
- * `:hover` does not say a pointer is over the carousel. `(hover: hover)` asks that of the
- * primary pointer; `(any-hover: hover)` would also hold on a tablet with a trackpad attached,
+ * before the Root could listen, such as while a server-rendered page hydrates. It reads `:hover`
+ * only where the primary pointer can hover. A touch screen's tap leaves `:hover` on what it
+ * tapped, which mobile WebKit keeps until the next tap elsewhere, so where the primary pointer
+ * cannot hover, `:hover` does not say a pointer is over the carousel. `(hover: hover)` asks that of
+ * the primary pointer; `(any-hover: hover)` would also hold on a tablet with a trackpad attached,
  * where a finger's tap still sets a `:hover` no pointer would ever clear, and `(pointer: fine)`
  * asks about precision, not hover.
  */
@@ -51,8 +51,8 @@ function hoveredNow(root: HTMLElement): boolean {
 }
 
 /**
- * Whether keyboard focus is inside `root` now: the focused element, followed out of any shadow
- * root, is `root` or inside it, and matches `:focus-visible`.
+ * Whether keyboard focus is inside `root` now. It is when the focused element, followed out of any
+ * shadow root, is `root` or inside it, and matches `:focus-visible`.
  */
 function keyboardFocusInside(root: HTMLElement): boolean {
   const focused = keyboardFocusedElement(root.ownerDocument);
@@ -61,7 +61,7 @@ function keyboardFocusInside(root: HTMLElement): boolean {
 
 /**
  * Whether `element`, which the Root's focus event recorded, still has keyboard focus. Removing a
- * focused element blurs it without a blur the Root can hear: React suppresses its synthetic blur
+ * focused element blurs it without a blur the Root can observe. React suppresses its synthetic blur
  * during the commit that removes it, and Firefox fires none on removal, so the record can outlive
  * the focus. The element must still be in the document and focused in its own root, which covers
  * a shadow root and a same-origin frame, and still match `:focus-visible`.
@@ -75,8 +75,8 @@ function stillKeyboardFocused(element: Element | null): boolean {
  * it. `playing` is the APG example's `hasUserActivatedPlay`: the user pressed the rotation control
  * to start it, so focus and hover no longer stop or pause it until they press it again.
  *
- * `unread` comes first: an Autoplay mounted, and the Root has not yet read whether keyboard focus
- * is already inside it, so nothing rotates. Mounting an Autoplay returns to it; the Root's next
+ * `unread` comes first. It means an Autoplay mounted and the Root has not yet read whether keyboard
+ * focus is already inside it, so nothing rotates. Mounting an Autoplay returns to it; the Root's next
  * layout effect reads the Root and settles it as `stopped` or `auto`. Changing the delay keeps
  * the choice.
  */
@@ -84,22 +84,22 @@ type RotationChoice = "unread" | "auto" | "playing" | "stopped";
 
 /** What the Root reads from its rotation. */
 export type Rotation = {
-  /** A `Carousel.Autoplay` is mounted and nothing stopped it. */
+  /** Whether a `Carousel.Autoplay` is mounted and nothing stopped it. */
   readonly rotating: boolean;
-  /** The pages advance now: rotating, not paused by hover and not hidden. */
+  /** Whether the pages advance now, which they do while rotating, not paused by hover and not hidden. */
   readonly running: boolean;
-  /** Start rotation, when a `Carousel.Autoplay` is mounted. */
+  /** Starts rotation, when a `Carousel.Autoplay` is mounted. */
   readonly play: () => void;
-  /** Stop rotation until `play`. */
+  /** Stops rotation until `play`. */
   readonly stop: () => void;
-  /** Mount a `Carousel.Autoplay`, which resets the choice. The returned function unmounts it. */
+  /** Mounts a `Carousel.Autoplay`, which resets the choice. The returned function unmounts it. */
   readonly mount: () => () => void;
-  /** Set how long each page shows, in ms. It keeps the user's choice. */
+  /** Sets how long each page shows, in milliseconds. It keeps the user's choice. */
   readonly setDelay: (delay: number) => void;
   /** The Root's element, which an Autoplay mounting late reads hover and focus from. */
   readonly root: RefObject<HTMLElement | null>;
   /**
-   * The Root's handlers: hover pauses rotation, and keyboard focus stops it. Focus and blur also
+   * The Root's handlers. Hover pauses rotation, and keyboard focus stops it. Focus and blur also
    * track which element in the Root's React tree has keyboard focus, for an Autoplay mounting late.
    */
   readonly rootHandlers: {
@@ -120,11 +120,11 @@ export type Rotation = {
  * order, so keeping it would leave the slides moving for a keyboard user who tabs in. So:
  *
  * - it starts on mount unless the user prefers reduced motion, and until the user chooses, it
- *   follows that preference; an Autoplay starts from what is already so, whether it mounts with
- *   the Root or after it: paused if a mouse or pen is over the Root, even since before
- *   hydration where the primary pointer can hover, and stopped if keyboard
- *   focus is inside it, an `autoFocus` field's and a portal's from a slide included; focus a mouse
- *   press moved in is not keyboard focus, so it does not stop rotation;
+ *   follows that preference; an Autoplay starts from the current hover and focus, whether it
+ *   mounts with the Root or after it. It is paused if a mouse or pen is over the Root, even since
+ *   before hydration where the primary pointer can hover, and stopped if keyboard focus is inside
+ *   it, an `autoFocus` field's and a portal's from a slide included; focus a mouse press moved in
+ *   is not keyboard focus, so it does not stop rotation;
  * - keyboard focus on any element in the carousel, the rotation control included, stops it, and
  *   the rotation control then reads "Start"; that is focus anywhere in its React tree, a portal,
  *   one into a same-origin frame, or an open shadow root included;
@@ -135,11 +135,11 @@ export type Rotation = {
  * - it pauses while the document is hidden;
  * - any other user action, a control press or an interaction with the viewport, stops it, which
  *   the Root does through `stop`;
- * - every `delay` ms it advances a page, from the last page back to the first.
+ * - every `delay` milliseconds it advances a page, from the last page back to the first.
  *
  * @param index - The current page.
  * @param pageCount - The page count; one page or none never rotates.
- * @param advance - Change the page by rotation.
+ * @param advance - Changes the page by rotation.
  * @returns The rotation's state and controls.
  */
 export function useCarouselRotation(

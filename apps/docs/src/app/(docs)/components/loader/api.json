@@ -42,7 +42,7 @@
           "type": "\"default\" | undefined",
           "shortType": null,
           "defaultValue": "\"default\"",
-          "description": "The colour. `default` is the only value.",
+          "description": "The color. `default` is the only value.",
           "required": false
         }
       ]

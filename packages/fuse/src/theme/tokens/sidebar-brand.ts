@@ -36,9 +36,9 @@ function contrast(foreground: Oklch.Oklch, background: Oklch.Oklch): number {
 }
 
 /**
- * The brand color at the first lightness, stepping away from the sidebar's, that reaches the
- * text floor on the sidebar. Each step keeps the hue and the chroma the sRGB gamut allows,
- * and is measured as its `oklch()` literal reads back, so the emitted value is the one that
+ * The brand color at the first lightness, stepping away from the sidebar's, that reaches the text
+ * floor on the sidebar. Each step keeps the hue and the chroma the sRGB gamut allows. The function
+ * measures each step as its `oklch()` literal reads back, so the emitted value is the one that
  * passed.
  */
 function readableTone(brand: Oklch.Oklch, sidebar: Oklch.Oklch): Oklch.Oklch {
@@ -62,17 +62,17 @@ function readableTone(brand: Oklch.Oklch, sidebar: Oklch.Oklch): Oklch.Oklch {
 export type SidebarBrandPair = Pick<TokenContract, "sidebar-brand" | "sidebar-brand-foreground">;
 
 /**
- * The sidebar's brand pair for one composed theme. `--brand` stays the brand's identity
- * everywhere else. On the sidebar the brand sets text and fills behind text, so both roles
- * must clear 4.5:1 there. A brand that already does keeps the `var(--brand)` alias; another
- * takes the first tone, stepped in lightness away from the sidebar, that does. The foreground
- * is the brand's own foreground when it passes on that tone, then white, then the sidebar's
- * foreground, then the sidebar itself, which passes by the tone's construction.
+ * The sidebar's brand pair for one composed theme. `--brand` stays the brand's identity everywhere
+ * else. On the sidebar the brand sets text and fills behind text, so both roles must clear 4.5:1
+ * there. A brand that already does keeps the `var(--brand)` alias. Another brand takes the first
+ * tone, stepped in lightness away from the sidebar, that does. The foreground is the brand's own
+ * foreground when it passes on that tone, then white, then the sidebar's foreground, then the
+ * sidebar itself, which passes by the tone's construction.
  *
  * @param tokens - Every layer-assigned role of one composed theme in one scheme.
- * @returns The `sidebar-brand` and `sidebar-brand-foreground` values, computed from the
- *   roles their `DERIVED_ROLES` entries name.
- * @throws When no lightness of the brand reaches the floor on the sidebar, a defect in the
+ * @returns The `sidebar-brand` and `sidebar-brand-foreground` values, computed from the roles their
+ *   `DERIVED_ROLES` entries name.
+ * @throws When no lightness of the brand reaches the floor on the sidebar, which is a defect in the
  *   palettes.
  */
 export function readableSidebarBrand(tokens: LayerTokens): SidebarBrandPair {

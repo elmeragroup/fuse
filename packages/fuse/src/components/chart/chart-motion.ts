@@ -19,15 +19,15 @@ export type MarkValues = readonly number[];
 export type MarkWriter = (values: MarkValues) => void;
 
 /**
- * What one of a mark's numbers measures: CSS pixels from the plot's left edge, "x", or from its top
- * edge, "y", or a size the plot's box does not scale, such as a seam, a weight or a rule's width.
+ * What one of a mark's numbers measures: CSS pixels from the plot's left edge, `"x"`, or from its top
+ * edge, `"y"`, or a size the plot's box does not scale, such as a seam, a weight or a rule's width.
  */
 export type ValueAxis = "x" | "y" | "size";
 
 /**
  * How a resize maps the slot axis: a number there moves from the old slot grid's first band
  * start, `from`, to the new one's, `to`, and its distance from that start scales by `ratio`, the
- * new band pitch over the old. The grid gives bands whole device pixels, so slot centres move by
+ * new band pitch over the old. The grid gives bands whole device pixels, so slot centers move by
  * this map and not by the plot's ratio.
  */
 export type SlotMap = {
@@ -54,15 +54,15 @@ export type PlotScale = {
 export const SAME_PLOT: PlotScale = { x: 1, y: 1 };
 
 /**
- * How a mark reaches its target. "snap" draws it at once, as a pointer step, a range step and
- * reduced motion do. "move" tweens from what the mark last drew, as a data update does, and
- * restarts every other running tween with it. "settle" retargets a running tween on its own clock
+ * How a mark reaches its target. `"snap"` draws it at once, as a pointer step, a range step and
+ * reduced motion do. `"move"` tweens from what the mark last drew, as a data update does, and
+ * restarts every other running tween with it. `"settle"` retargets a running tween on its own clock
  * and otherwise snaps, as a resize or a re-render does, so a box that resizes during an update never
  * cuts the update short. It carries the resize's scale, which maps every running tween into the new
- * box, so each mark keeps its place on the axes. "enter" tweens from a start of its own after a
- * delay, as the entrance does, and waits at that start while the loop holds. "join" draws the
+ * box, so each mark keeps its place on the axes. `"enter"` tweens from a start of its own after a
+ * delay, as the entrance does, and waits at that start while the loop holds. `"join"` draws the
  * follower from the marks at its leads' anchors, as a follower stepping onto a bar mid-update
- * does: in every frame the loop moves those marks first, each on its own clock and delay, then
+ * does. In every frame the loop moves those marks first, each on its own clock and delay, then
  * writes the follower from what they drew, one lead's numbers after another's, and when they all
  * rest it rests. A join whose leads say how to read their marks' rest rests where those marks
  * rest, under reduced motion too, so a follower lands on its bars inside a BarGroup's sub-band and
@@ -73,10 +73,10 @@ export type Placement =
   | {
       readonly kind: "move";
       /**
-       * "keep" carries a running tween's velocity into the move, so a target that changes while
-       * the mark moves bends its course instead of turning it at once: the mark leaves from where
-       * and how fast it moves on a critically damped spring that rests on the new target, with no
-       * bounce, by the end of the update's duration. A mark at rest moves on the update curve.
+       * `"keep"` carries a running tween's velocity into the move, so a target that changes while
+       * the mark moves bends its course instead of turning it at once. The mark leaves from where it
+       * is, at the speed it moves, on a critically damped spring that rests on the new target, with
+       * no bounce, by the end of the update's duration. A mark at rest moves on the update curve.
        */
       readonly momentum?: "keep";
       /**
@@ -93,21 +93,21 @@ export type Placement =
       readonly from: MarkValues;
       readonly delay: number;
       /**
-       * How long the entrance moves the mark, in milliseconds, the update's 480 ms by default. The
+       * How long the entrance moves the mark, in milliseconds. Defaults to the update's 480 ms. The
        * polar entrance runs over `--chart-intro`, 1 s.
        */
       readonly duration?: number;
       /**
-       * "linear" moves the numbers at a steady pace, as a progress the mark's writer eases itself,
-       * such as the clock entrance's. The update curve by default.
+       * `"linear"` moves the numbers at a steady pace, as a progress the mark's writer eases itself,
+       * such as the clock entrance's. Defaults to the update curve.
        */
       readonly curve?: "linear";
     };
 
 /**
  * One mark a follower joins. A lead either reads the follower's numbers from that mark's, or lends
- * only its clock: the follower's own numbers for it then move from what the follower drew to its
- * target on that mark's progress, as a mark on a slot that a decimated column stands for does.
+ * only its clock. The follower's own numbers for that lead then move from what the follower drew to
+ * its target on that mark's progress, as a mark on a slot that a decimated column stands for does.
  */
 export type JoinLead =
   | {
@@ -136,7 +136,7 @@ export type JoinLead =
 export type FrameOwner = { readonly frame: "root" | "panel" | "loop" };
 
 /**
- * Make the token of one measured frame.
+ * Makes the token of one measured frame.
  *
  * @param frame - What draws in the frame.
  * @returns A token no other frame holds.
@@ -207,7 +207,7 @@ export type MotionBatch = {
 /** Root's animation loop. */
 export type ChartMotion = {
   /**
-   * Draw a mark at its target. The mark's id stays the same across renders, so a later placement
+   * Draws a mark at its target. The mark's id stays the same across renders, so a later placement
    * finds what it drew.
    */
   readonly place: (
@@ -217,7 +217,7 @@ export type ChartMotion = {
     placement: Placement,
     mark?: MarkInfo
   ) => void;
-  /** Forget a mark that left the plot. */
+  /** Forgets a mark that left the plot. */
   readonly forget: (id: string) => void;
   /**
    * The numbers a mark drew last, or null for a mark the loop does not hold, so a path can align
@@ -226,7 +226,7 @@ export type ChartMotion = {
   readonly drawn: (id: string) => MarkValues | null;
   /**
    * The numbers the mark at an anchor rests on once its tween ends, or null when no mark holds the
-   * anchor, so an active dot can ride through the bars' far ends where they rest.
+   * anchor, so an active dot can track the bars' far ends where they rest.
    */
   readonly restAt: (anchor: string) => MarkValues | null;
   /**
@@ -235,11 +235,11 @@ export type ChartMotion = {
    * to build it again.
    */
   readonly restRevision: () => number;
-  /** Draw every moving mark at its target at once, as a range step does. */
+  /** Draws every moving mark at its target at once, as a range step does. */
   readonly finish: () => void;
-  /** Follow the reader's motion preference. Reduced motion snaps every placement. */
+  /** Follows the user's motion preference. Reduced motion snaps every placement. */
   readonly setReduced: (reduced: boolean) => void;
-  /** Whether the loop follows the reader's reduced-motion preference, as `setReduced` last set it. */
+  /** Whether the loop follows the user's reduced-motion preference, as `setReduced` last set it. */
   readonly reduced: () => boolean;
   /**
    * Whether the loop draws every update at once: under reduced motion, and while Root's entrance
@@ -247,30 +247,30 @@ export type ChartMotion = {
    */
   readonly snaps: () => boolean;
   /**
-   * Hold the loop while Root's entrance waits for its plot to come into view. An entrance placed
+   * Holds the loop while Root's entrance waits for its plot to come into view. An entrance placed
    * meanwhile waits at its first frame and asks for no frame, and every other placement snaps.
    */
   readonly wait: () => void;
-  /** End the hold. The entrances that waited start on the clock of the first frame after it. */
+  /** Ends the hold. The entrances that waited start on the clock of the first frame after it. */
   readonly play: () => void;
   /** How many marks the loop holds, which falls back as marks unmount. */
   readonly size: () => number;
   /** Whether any mark still tweens, so the baseline and every other coordinate may be moving. */
   readonly running: () => boolean;
   /**
-   * Visit each mark that tweens, or waits for the entrance, and each joined follower, with its
+   * Visits each mark that tweens, or waits for the entrance, and each joined follower, with its
    * writer, the numbers it lands on, the numbers it shows now, what each number measures, and the
    * numbers its tween's route ends on. A reader can draw each where it lands and back in one task.
    */
   readonly eachLanding: (visit: LandingVisit) => void;
   /**
-   * Tell a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
-   * resize's remapping. A write outside a batch, such as a placement's, stands alone. It returns
-   * the party's leave, for a party that ends before its loop does.
+   * Tells a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
+   * resize's remapping. A write outside a batch, such as a placement's, stands alone. It returns a
+   * function that removes the party, for a party that ends before its loop does.
    */
   readonly batches: (party: MotionBatch) => () => void;
   /**
-   * Write a batch of marks outside the loop's own frames, as a reader that draws each mark where it
+   * Writes a batch of marks outside the loop's own frames, as a reader that draws each mark where it
    * lands and back does, so the parties `batches` tells settle once for the batch.
    *
    * @param writes - The writes.
@@ -289,7 +289,7 @@ type Tween = {
   readonly delay: number;
   /** How long the tween runs, the update's duration when undefined. */
   readonly duration?: number;
-  /** "linear" for a steady pace, the update curve when undefined. */
+  /** `"linear"` for a steady pace, the update curve when undefined. */
   readonly curve?: "linear";
   /** The spring a momentum tween moves on in place of its curve. Undefined for a curve's tween. */
   readonly spring?: MomentumSpring;
@@ -385,7 +385,7 @@ function restOf(mark: Mark): MarkValues {
 }
 
 /**
- * Map a mark's numbers into a resized box. Every number is a pixel from the plot's left or top edge
+ * Maps a mark's numbers into a resized box. Every number is a pixel from the plot's left or top edge
  * or a size, and the scales map pixels from an edge affinely, so a tween mapped this way draws in
  * every frame what the old tween drew, mapped: interpolation commutes with an affine map. A mark
  * with more numbers than axes repeats its declaration, as a path declares one vertex's axes for all.
@@ -399,7 +399,7 @@ function axisAt(axes: readonly ValueAxis[], index: number): ValueAxis {
   return axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size");
 }
 
-/** Map one number that measures `axis` into a resized box. */
+/** Maps one number that measures `axis` into a resized box. */
 function mapped(value: number, axis: ValueAxis, scale: PlotScale): number {
   const { slot } = scale;
   if (axis === "size") return value;
@@ -407,7 +407,7 @@ function mapped(value: number, axis: ValueAxis, scale: PlotScale): number {
 }
 
 /**
- * Map a running tween into a resized box: its start, target and rest, and a momentum spring's
+ * Maps a running tween into a resized box: its start, target and rest, and a momentum spring's
  * velocity and span, which measure in the same units and so take the same map, its velocity by the
  * map's slope. The spring's frequency is per millisecond and stays, so the mapped spring draws in
  * every frame what the old one drew, mapped.
@@ -505,13 +505,13 @@ function retargeted(tween: Tween, drawn: MarkValues, target: MarkValues, eased: 
 }
 
 /**
- * Create a Root's animation loop. The marks move as one group. Every mark a commit places starts
+ * Creates a Root's animation loop. The marks move as one group. Every mark a commit places starts
  * on one clock, a data update restarts every running tween together from what it drew, and a
  * resize retargets running tweens on the clock they share, so marks with equal numbers, such as a
  * bar's top and a guide at its value, draw equal numbers in every frame.
  *
  * @param host - The clock and the frame scheduler.
- * @param reducedAtStart - Whether the reader asked for reduced motion when Root mounted.
+ * @param reducedAtStart - Whether the user asked for reduced motion when Root mounted.
  * @param rejoin - Called when a mark leaves while a follower draws from it, so each follower joins
  *   what still draws its series, as Root repaints its followers.
  * @returns The loop.
@@ -536,7 +536,7 @@ export function createChartMotion(
   const moving = new Set<Mark>();
   // The joined followers, which every frame writes after the marks they follow.
   const following = new Set<Mark>();
-  /** Hold a mark under its id, in place of the one it replaces. */
+  /** Holds a mark under its id, in place of the one it replaces. */
   const hold = (id: string, mark: Mark): void => {
     const old = marks.get(id);
     if (old !== undefined) {
@@ -551,7 +551,7 @@ export function createChartMotion(
   const anchors = new Map<string, string>();
   // Grows whenever a mark under an anchor comes, goes or rests on new numbers.
   let revision = 0;
-  /** Forget the anchor a mark names, unless another mark has named it since. */
+  /** Forgets the anchor a mark names, unless another mark has named it since. */
   const leave = (id: string, anchor: string | undefined): void => {
     if (anchor !== undefined && anchors.get(anchor) === id) anchors.delete(anchor);
   };
@@ -577,7 +577,7 @@ export function createChartMotion(
   };
 
   /**
-   * Write a joined follower from what its leads drew, a resting lead's rest where it reads one, and
+   * Writes a joined follower from what its leads drew, a resting lead's rest where it reads one, and
    * its own rest once no lead moves or a lead left.
    */
   const project = (mark: Mark): void => {
@@ -628,7 +628,7 @@ export function createChartMotion(
     return false;
   };
 
-  /** Write every joined follower after the marks it follows moved. */
+  /** Writes every joined follower after the marks it follows moved. */
   const projectAll = (): void => {
     for (const mark of following) project(mark);
   };
@@ -679,7 +679,7 @@ export function createChartMotion(
     if (running) handle = host.requestFrame(step);
   };
 
-  /** Draw a mark at its target at once. */
+  /** Draws a mark at its target at once. */
   const snap = (
     id: string,
     target: MarkValues,
@@ -693,7 +693,7 @@ export function createChartMotion(
     write(target);
   };
 
-  /** Start a tween and draw its first numbers before the browser paints. */
+  /** Starts a tween and draws its first numbers before the browser paints. */
   const run = (
     id: string,
     write: MarkWriter,
@@ -726,7 +726,7 @@ export function createChartMotion(
     return leaving(mark.drawn, tween, at, target, velocity);
   };
 
-  /** Place a mark: the body of `place`, once the mark's anchor names it. */
+  /** Places a mark. It is the body of `place`, run once the mark's anchor names it. */
   const placeMark = (
     id: string,
     target: MarkValues,

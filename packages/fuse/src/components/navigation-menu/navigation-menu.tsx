@@ -11,7 +11,7 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { navigationMenuVariants } from "./navigation-menu-variants";
 
-/** Resolved once at module scope; the Trigger and Link resolve their slots per call. */
+/** The recipe's slots, resolved once at module scope. The Trigger and Link resolve theirs per call. */
 const slots = navigationMenuVariants();
 
 type PositionerProps = ComponentProps<typeof NavigationMenuPrimitive.Positioner>;
@@ -72,8 +72,8 @@ type NavigationMenuPopupPlacementProps = OverlayContainerProps & {
 /** An inline Root renders no popup, so the popup placement props cannot reach it. */
 type NavigationMenuInlineProps = {
   /**
-   * Renders no popup. The open item's content shows in a `NavigationMenu.Viewport` that you place
-   * inside this Root, beside its `NavigationMenu.List`. Use it for a submenu in a
+   * Whether the Root renders no popup. Place a `NavigationMenu.Viewport` inside this Root, beside
+   * its `NavigationMenu.List`, to show the open item's content. Use it for a submenu in a
    * `NavigationMenu.Content` that swaps the panel beside its list as the pointer moves down it.
    * The arrow keys move focus between its triggers, and Enter or Space shows the focused
    * trigger's content. Its triggers have no caret. Pass `defaultValue` to open the first item
@@ -143,7 +143,7 @@ export function NavigationMenuRoot<Value = unknown>({
   );
 }
 
-/** The list of top-level items. Renders a `<ul>`. */
+/** The list of top-level items. It renders a `<ul>`. */
 export function NavigationMenuList({
   className,
   ...props
@@ -161,7 +161,7 @@ export function NavigationMenuList({
   );
 }
 
-/** One top-level entry: a trigger with its content, or a single link. Renders an `<li>`. */
+/** One top-level entry: a trigger with its content, or a single link. It renders an `<li>`. */
 export function NavigationMenuItem({
   className,
   ...props
@@ -215,7 +215,7 @@ export function NavigationMenuContent({
   /**
    * The item's links, or a nested `NavigationMenu.Root` for a submenu. Lay several links out in a
    * plain `<ul>`, such as a grid. In the popup, the links and the triggers of a nested Root round
-   * with the popup's corner. Give a block of your own `rounded-inner` to do the same.
+   * with the popup's corner. Give a custom block `rounded-inner` to do the same.
    */
   children?: ContentPrimitiveProps["children"];
 }): ReactElement {
@@ -236,10 +236,10 @@ export function NavigationMenuLink({
   className,
   ...props
 }: Omit<LinkPrimitiveProps, "active" | "render" | "children"> & {
-  /** Marks the link to the current page, which sets `aria-current="page"`. */
+  /** Whether the link points to the current page, which sets `aria-current="page"`. */
   active?: LinkPrimitiveProps["active"];
   /**
-   * Your router's link element, such as `<NextLink href="/pricing" />`, for client-side routing.
+   * The router's link element, such as `<NextLink href="/pricing" />`, for client-side routing.
    * The link keeps its `active` state and `aria-current`.
    */
   render?: LinkPrimitiveProps["render"];
@@ -284,7 +284,7 @@ export function NavigationMenuIndicator({
   ...props
 }: Omit<IndicatorPrimitiveProps, "children"> & {
   /**
-   * The arrow. Unset, it is a small triangle. Place the indicator inside a
+   * The arrow. Defaults to a small triangle. Place the indicator inside a
    * `NavigationMenu.Trigger`, where it shows only while that item is open.
    */
   children?: IndicatorPrimitiveProps["children"];

@@ -7,11 +7,11 @@
  * draws one of three ways:
  *
  * - a solid stroke whose dash carries the value, round-capped inside the value's angle;
- * - a role list's colours along the sweep, as 6° segments a mask reveals up to the value;
+ * - a role list's colors along the sweep, as 6° segments a mask reveals up to the value;
  * - `variant="dotted"`: 40 dots per sweep, of which the value's whole share fills, a mask
  *   revealing them over the faint dots of the rest.
  *
- * An estimated ring paints a hatch of its own colour, a missing one draws nothing, and a ring past
+ * An estimated ring paints a hatch of its own color, a missing one draws nothing, and a ring past
  * its maximum fills the sweep with `data-over-max`. The active ring scales to 1.03 and the rings
  * outside it to 1.02 on a spring, and the rest dim, with no React commit.
  */
@@ -47,7 +47,7 @@ export type RadialChartBarProps = ChartLayerProps & {
   variant?: "default" | "dotted";
 };
 
-/** The rings' hover spring (the Motion table's 400/25), sampled once. */
+/** The rings' hover spring, the Motion table's 400/25, sampled once. */
 const HOVER = springEasing(CHART_SPRINGS.pop);
 
 /** The degrees one gradient segment spans. */
@@ -56,12 +56,12 @@ const SEGMENT = 6;
 /** What a ring's writer reads beside its numbers. */
 type RingLook = { readonly frame: RingFrame; readonly key: string; readonly place: RingPlace };
 
-/** Hand a ring's angle this frame to the chart's frame, which paints it with the measured floor. */
+/** Hands a ring's angle this frame to the chart's frame, which paints it with the measured floor. */
 function writeRing(node: SVGPathElement, look: RingLook, values: MarkValues): void {
   look.frame.record(look.key, node, values, look.place);
 }
 
-/** The colour a role list paints at a share of the sweep, its base at the start and its tip at the end. */
+/** The color a role list paints at a share of the sweep, its base at the start and its tip at the end. */
 function paintAt(stops: readonly string[], share: number): string {
   const ordered = stops.toReversed();
   if (ordered.length < 2) return ordered[0] ?? "currentColor";

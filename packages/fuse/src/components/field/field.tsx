@@ -19,7 +19,7 @@ import { fieldLegendVariants, fieldVariants } from "./field-variants";
 
 /** How a `Field.Set` collects the description elements it holds. */
 type DescriptionRegistry = {
-  /** Track a mounted description element; the returned function stops tracking it. */
+  /** Tracks a mounted description element; the returned function stops tracking it. */
   readonly add: (element: HTMLElement) => () => void;
 };
 
@@ -34,7 +34,7 @@ const DescriptionOwnerContext = createContext<DescriptionOwner | null>(null);
 
 const fieldDescriptionOwner: DescriptionOwner = { _tag: "field" };
 
-/** The props of `Field.Root`. */
+/** Props for `Field.Root`. */
 type FieldRootProps = ComponentProps<typeof FieldPrimitive.Root> &
   VariantProps<typeof fieldVariants> & {
     /**
@@ -67,7 +67,7 @@ export function FieldRoot({ className, orientation = "vertical", ...props }: Fie
 
 type FieldsetRootProps = ComponentProps<typeof FieldsetPrimitive.Root>;
 
-/** The props of `Field.Set`. */
+/** Props for `Field.Set`. */
 type FieldSetProps = Omit<FieldsetRootProps, "aria-describedby" | "disabled"> & {
   /**
    * The ids of elements that describe the set. Outside a `Field.Root`, the set adds the ids of the
@@ -76,7 +76,7 @@ type FieldSetProps = Omit<FieldsetRootProps, "aria-describedby" | "disabled"> & 
    */
   "aria-describedby"?: FieldsetRootProps["aria-describedby"];
   /**
-   * Disables every field in the set. A set inside a disabled set is disabled too. It also
+   * Whether every field in the set is disabled. A set inside a disabled set is disabled too. It also
    * disables the parts that are not a field themselves, such as a date picker's trigger and
    * calendar.
    */
@@ -147,7 +147,7 @@ export function FieldSet({
 
 type FieldsetLegendProps = ComponentProps<typeof FieldsetPrimitive.Legend>;
 
-/** The props of `Field.Legend`. */
+/** Props for `Field.Legend`. */
 type FieldLegendProps = Omit<FieldsetLegendProps, "render"> & {
   /**
    * The text size, also written as `data-variant`. `legend` titles the set at a fixed 16px on a
@@ -155,7 +155,7 @@ type FieldLegendProps = Omit<FieldsetLegendProps, "render"> & {
    */
   variant?: "legend" | "label";
   /**
-   * Replaces the rendered element, a `div` by default. In a grid `Field.Set`, pass
+   * The element to render in place of the default `div`. In a grid `Field.Set`, pass
    * `render={<legend />}`: the browser keeps a fieldset's first `legend` out of the grid, so the
    * first field takes the first cell, and the legend still names the set. A `div` legend takes
    * the first cell itself.
@@ -215,7 +215,7 @@ const fieldErrorClassName = fieldVariants().error();
 
 type FieldLabelPrimitiveProps = ComponentProps<typeof FieldPrimitive.Label>;
 
-/** The props of `Field.Label`. */
+/** Props for `Field.Label`. */
 type FieldLabelProps = Omit<FieldLabelPrimitiveProps, "children"> & {
   /**
    * The label text. With a `Checkbox` as a direct child, the label is a choice row with a pointer
@@ -260,7 +260,7 @@ export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control
 
 type FieldDescriptionPrimitiveProps = ComponentProps<typeof FieldPrimitive.Description>;
 
-/** The props of `Field.Description`. */
+/** Props for `Field.Description`. */
 type FieldDescriptionProps = Omit<FieldDescriptionPrimitiveProps, "children"> & {
   /**
    * The supporting text. Inside a `Field.Root` it describes the root's control. Inside a
@@ -374,7 +374,7 @@ export function FieldSeparator({
 
 type FieldErrorPrimitiveProps = ComponentProps<typeof FieldPrimitive.Error>;
 
-/** The props of `Field.Error`. */
+/** Props for `Field.Error`. */
 type FieldErrorProps = Omit<FieldErrorPrimitiveProps, "children"> & {
   /**
    * The message. Children always show, so render the part only while the field is in error, or
@@ -382,7 +382,7 @@ type FieldErrorProps = Omit<FieldErrorPrimitiveProps, "children"> & {
    * field's own message, and nothing while it has none: an error `Form` holds under the field's
    * name, a `validate` result on `Field.Root`, or the browser's constraint message, which is in
    * the browser's language. Several messages render as a list. To localize the message, pass
-   * children or a `validate` that returns your copy. Place the part directly after the control,
+   * children or a `validate` that returns localized copy. Place the part directly after the control,
    * ahead of any `Field.Description`, as the labeled composites do.
    */
   children?: FieldErrorPrimitiveProps["children"];

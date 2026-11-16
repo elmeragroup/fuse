@@ -21,14 +21,14 @@ const MESSAGES = {
 } as const;
 
 /**
- * The ways a palette's parts can be composed wrong. Each is a defect in the consumer's tree, so
+ * The ways a consumer can compose a palette's parts wrong. Each is a defect in the consumer's tree, so
  * the part throws while rendering, and the message names the fix.
  */
 export type CommandCompositionRule = keyof typeof MESSAGES;
 
 /**
- * A part throws it when the consumer composes a palette's parts in a way that cannot work, such
- * as `Command.Page` outside a Root with a stack. Its message starts with the part that threw and
+ * The error a part throws when the consumer composes a palette's parts in a way that cannot work,
+ * such as `Command.Page` outside a Root with a stack. Its message starts with the part that threw and
  * names the fix.
  */
 export class CommandCompositionError extends Error {

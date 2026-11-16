@@ -23,11 +23,11 @@ import { alertDialogVariants } from "./alert-dialog-variants";
 import { alertDialogStrings } from "./intl";
 
 /**
- * Runs Base UI's alert-dialog mode, which is always modal and ignores backdrop clicks, so a
- * stray pointer cannot dismiss a confirmation the user must answer. Escape still closes it. Its
- * props type omits `modal` and `disablePointerDismissal`, so neither can be turned back on.
- * Trigger and Content render through the public Dialog parts, which read the same root
- * context, so they keep Dialog's self focus ring and its other behaviour with
+ * The alert dialog's root, in Base UI's alert-dialog mode. That mode is always modal and ignores
+ * backdrop clicks, so a stray pointer cannot dismiss a confirmation the user must answer. Escape
+ * still closes it. Its props type omits `modal` and `disablePointerDismissal`, so neither can be
+ * turned back on. Trigger and Content render through the public Dialog parts, which read the same
+ * root context, so they keep Dialog's self focus ring and its other behavior with
  * `role="alertdialog"`.
  */
 export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitive.Root>): ReactElement {
@@ -37,8 +37,8 @@ export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitiv
 }
 
 /**
- * Opens the alert dialog. It passes its own `data-slot`, which wins because Dialog's parts
- * write theirs before they spread the rest.
+ * The button that opens the alert dialog. It passes its own `data-slot`, which wins because
+ * Dialog's parts write theirs before they spread the rest.
  */
 export function AlertDialogTrigger(props: ComponentProps<typeof AlertDialogPrimitive.Trigger>): ReactElement {
   return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
@@ -48,8 +48,8 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   /** The question the dialog asks, rendered in a `Dialog.Title`. */
   title: string;
   /**
-   * The icon at the end of the title's first line. Unset, a `destructive` dialog shows
-   * WarningOctagon and a `neutral` one shows Info.
+   * The icon at the end of the title's first line. Defaults to WarningOctagon for a `destructive`
+   * dialog and Info for a `neutral` one.
    */
   icon?: ReactNode;
   /**
@@ -66,25 +66,25 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   children: ReactNode;
   /** The action button's label. */
   actionLabel: string;
-  /** The cancel button's label. Unset, it reads `alertDialog.cancel` from the locale dictionary. */
+  /** The cancel button's label. Defaults to `alertDialog.cancel` from the locale dictionary. */
   cancelLabel?: string;
   /**
-   * Runs when the action button is clicked. The dialog stays open unless
-   * `isAutomaticallyCloseOnActionEnabled` is set, so close it yourself when the action is done.
+   * Called when the action button is clicked. The dialog stays open unless
+   * `isAutomaticallyCloseOnActionEnabled` is set, so close it when the action is done.
    */
   onAction?: () => void;
-  /** Runs when the cancel button is clicked. Cancel always closes the dialog. */
+  /** Called when the cancel button is clicked. Cancel always closes the dialog. */
   onCancel?: () => void;
   /**
-   * Shows the action button as pending, as Button's `isPending` does. It sets `data-pending` and
-   * blocks clicks. Cancel stays enabled.
+   * Whether the action button shows as pending, as Button's `isPending` does. It sets
+   * `data-pending` and blocks clicks. Cancel stays enabled.
    */
   isPerformingAction?: boolean;
-  /** Disables the action button. Cancel stays enabled. */
+  /** Whether the action button is disabled. Cancel stays enabled. */
   isActionDisabled?: boolean;
   /**
-   * Closes the dialog when the action button is clicked. Leave it off for an action that can
-   * fail, and close the dialog from `onAction` once the action succeeds.
+   * Whether the dialog closes when the action button is clicked. Leave it off for an action that
+   * can fail, and close the dialog from `onAction` once the action succeeds.
    */
   isAutomaticallyCloseOnActionEnabled?: boolean;
 };

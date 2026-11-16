@@ -8,8 +8,8 @@ import { separatorClass } from "../separator/separator-class";
  * `@elmeragroup/fuse/toolbar`, and the workspace-only recipe catalog re-exports it for the Figma
  * component sync. Buttons, links and inputs take the look of the control they render.
  *
- * - `root` is the bar: the Toolbar shell, which rounds, pads and publishes `--inner-corner`, on a
- *   bordered popover fill, its items 4px apart in a row, or a column when vertical.
+ * - `root` is the bar, the Toolbar shell, which rounds, pads and publishes `--inner-corner`, on a
+ *   bordered popover fill, with its items 4px apart in a row, or a column when vertical.
  * - `group` lays its items out 4px apart in a row, or a column in a vertical toolbar.
  * - `separator` is Separator's hairline across the toolbar, 4px short of the items' edges at each
  *   end.

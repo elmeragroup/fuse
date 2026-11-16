@@ -5,7 +5,7 @@ import type { RefObject } from "react";
 
 type ResetControl = HTMLInputElement | HTMLTextAreaElement;
 
-/** One committed subscription; a fresh object per effect run, so its identity is the token. */
+/** One committed subscription. Each effect run makes a fresh object, so its identity is the token. */
 type Subscriber = {
   readonly element: RefObject<ResetControl | null>;
   readonly onReset: RefObject<(() => void) | null>;
@@ -57,29 +57,28 @@ function subscribe(root: Node, subscriber: Subscriber): () => void {
 }
 
 /**
- * Package-private native form-reset subscription for uncontrolled field composites, and for a
- * control whose DOM a reset empties under a controlled value, such as FileUpload's posted files.
- * Observable only through those composites, never a public export. `onReset` is a
- * required `(() => void) | null`: each caller states the ownership decision explicitly,
- * so omitting the argument is a type error rather than a silent opt-out. The latest
- * callback is held in a ref and published in a layout effect, so a suspended or discarded
- * render cannot clear a committed subscription while identity changes do not resubscribe.
+ * Subscribes a control to native form reset. The hook is package-private, for uncontrolled field
+ * composites and for a control whose DOM a reset empties under a controlled value, such as
+ * FileUpload's posted files. It is observable only through those composites, never as a public
+ * export. `onReset` is a required `(() => void) | null`. Each caller states the ownership decision
+ * explicitly, so omitting the argument is a type error rather than a silent opt-out. The hook holds
+ * the latest callback in a ref and publishes it in a layout effect, so a suspended or discarded
+ * render cannot clear a committed subscription, and identity changes do not resubscribe.
  *
- * The native `reset` event bubbles to the control's root with the form as its target.
- * `reset` is not composed, so a document listener never sees a control inside a shadow
- * root; subscribe on `element.current.getRootNode()` instead — the document or the
- * enclosing shadow root. The root is resolved once, on the first commit; the document
- * fallback covers a control that attaches later in the light DOM, while one that first
- * appears inside a shadow root after this effect has run is not covered.
+ * The native `reset` event bubbles to the control's root with the form as its target. `reset` is
+ * not composed, so a document listener never sees a control inside a shadow root. The hook
+ * subscribes on `element.current.getRootNode()` instead, which is the document or the enclosing
+ * shadow root. It resolves the root once, on the first commit. The document fallback covers a
+ * control that attaches later in the light DOM. It does not cover a control that first appears
+ * inside a shadow root after this effect has run.
  *
- * Every checked control subscribes, as do the text fields, so a table with a checkbox
- * per row holds many subscriptions: they share one capture listener per root, added with
- * the root's first subscriber and removed with its last. That listener resolves each association at event
- * time: a callback runs when the resetting form is whatever `element.current.form` is at
- * that moment, so a control that moves between forms or changes its `form` attribute is
- * followed without a resubscribe, and a reset on any other form is ignored. The listener
- * is registered in capture phase, so a form that stops propagation during dispatch cannot
- * hide its own reset.
+ * Every checked control subscribes, as do the text fields, so a table with a checkbox per row holds
+ * many subscriptions. They share one capture listener per root, added with the root's first
+ * subscriber and removed with its last. That listener resolves each association at event time. A
+ * callback runs when the resetting form is whatever `element.current.form` is at that moment, so the
+ * hook follows a control that moves between forms or changes its `form` attribute without a
+ * resubscribe, and ignores a reset on any other form. The listener registers in the capture phase,
+ * so a form that stops propagation during dispatch cannot hide its own reset.
  */
 export function useFormReset(element: RefObject<ResetControl | null>, onReset: (() => void) | null): void {
   const onResetRef = useRef(onReset);

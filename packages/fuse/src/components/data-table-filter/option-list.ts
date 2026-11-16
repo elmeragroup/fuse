@@ -154,7 +154,7 @@ function labelMatches(
 export type OptionMatches = {
   readonly pinned: readonly FilterOption[];
   readonly rest: readonly FilterOption[];
-  /** More options match than the list shows, so it shows its "type to narrow" row. */
+  /** Whether more options match than the list shows, so it shows its "type to narrow" row. */
   readonly more: boolean;
 };
 
@@ -224,7 +224,7 @@ export function currentOrder(order: OptionOrder, options: readonly FilterOption[
 /**
  * The options a list's Select all adds: every option the query matches that is not picked yet,
  * in the list's order and past the list's row cap. With an empty query that is every option not
- * picked yet. A picked value is skipped before its label is matched, and the walk stops at
+ * picked yet. The walk skips a picked value before it matches its label, and it stops at
  * `limit`, so asking whether any is left costs one match on a large field.
  *
  * @param order - The list's order.

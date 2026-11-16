@@ -373,7 +373,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Content after the inline-end addon inside the InputGroup, such as an `InputGroup.Addon` of your own.",
+          "description": "Content after the inline-end addon inside the InputGroup, such as a consumer's `InputGroup.Addon`.",
           "required": false
         },
         {
@@ -400,7 +400,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the component should ignore user interaction. Disables the input and its caret and clear buttons. `disabled` on `Autocomplete.Root` or `Field.Root` disables the input too.",
+          "description": "Whether the component should ignore user interaction. Whether the input and its caret and clear buttons are disabled. `disabled` on `Autocomplete.Root` or `Field.Root` disables the input too.",
           "required": false
         },
         {
@@ -429,7 +429,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders `Autocomplete.Clear` in the inline-end addon. It shows while the input holds text, and the caret hides while it shows.",
+          "description": "Whether the input renders `Autocomplete.Clear` in the inline-end addon. It shows while the input holds text, and the caret hides while it shows.",
           "required": false
         },
         {
@@ -438,7 +438,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders the caret button in the inline-end addon. The list opens as the user types, so the field has no caret unless you pass this. The caret hides while the group holds a clear button.",
+          "description": "Whether the input renders the caret button in the inline-end addon. The list opens as the user types, so the field has no caret unless this is set. The caret hides while the group holds a clear button.",
           "required": false
         },
         {
@@ -680,7 +680,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -860,7 +860,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLDivElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs on a click, and on Enter while the item is highlighted. Use it to capture the picked item, such as to fill another field from it, since `onValueChange` receives only the text.",
+          "description": "Called on a click, and on Enter while the item is highlighted. Use it to capture the picked item, such as to fill another field from it, since `onValueChange` receives only the text.",
           "required": false
         },
         {

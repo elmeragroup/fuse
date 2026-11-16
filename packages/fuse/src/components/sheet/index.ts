@@ -1,6 +1,6 @@
 /**
- * Server-visible namespace for `Sheet`.
- * The implementation stays a client module; this file has no directive,
+ * The `Sheet` namespace, readable on the server.
+ * The implementation stays a client module. This file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
 import {

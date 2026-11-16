@@ -439,7 +439,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the clear button that `showClear` renders. Unset, it is the locale dictionary's `clear` string.",
+          "description": "The accessible name of the clear button that `showClear` renders. Defaults to the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -448,7 +448,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the component should ignore user interaction. Disables the input and its caret and clear buttons. `disabled` on `Combobox.Root` or `Field.Root` disables the input too.",
+          "description": "Whether the component should ignore user interaction. Whether the input and its caret and clear buttons are disabled. `disabled` on `Combobox.Root` or `Field.Root` disables the input too.",
           "required": false
         },
         {
@@ -477,7 +477,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Renders `Combobox.Clear` in the inline-end addon. It shows while an item is selected, and the caret hides while it shows.",
+          "description": "Whether the input renders `Combobox.Clear` in the inline-end addon. It shows while an item is selected, and the caret hides while it shows.",
           "required": false
         },
         {
@@ -486,7 +486,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Renders the caret button in the inline-end addon. The caret hides while the group holds a clear button. Pass `false` for a search input inside `Combobox.Content`.",
+          "description": "Whether the input renders the caret button in the inline-end addon. The caret hides while the group holds a clear button. Pass `false` for a search input inside `Combobox.Content`.",
           "required": false
         },
         {
@@ -519,7 +519,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the caret button that `showTrigger` renders. Unset, it is the locale dictionary's `toggle` string.",
+          "description": "The accessible name of the caret button that `showTrigger` renders. Defaults to the locale dictionary's `toggle` string.",
           "required": false
         }
       ]
@@ -640,7 +640,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the icon-only clear button. An `aria-label` wins over it. Unset, the name is the locale dictionary's `clear` string.",
+          "description": "The accessible name of the icon-only clear button. An `aria-label` wins over it. Defaults to the locale dictionary's `clear` string.",
           "required": false
         },
         {
@@ -717,7 +717,7 @@
           "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "The element, ref or virtual element the popup positions against and takes its minimum width from. Pass the ref from `useComboboxAnchor()` that you put on `Combobox.Chips` or another element. It sets `data-external-anchor` on the popup. Unset, the popup anchors to `Combobox.Input`'s field box, or to `Combobox.Trigger` when the input sits in the popup.",
+          "description": "The element, ref or virtual element the popup positions against and takes its minimum width from. Pass the ref from `useComboboxAnchor()` that sits on `Combobox.Chips` or another element. It sets `data-external-anchor` on the popup. Defaults to `Combobox.Input`'s field box, or to `Combobox.Trigger` when the input sits in the popup.",
           "required": false
         },
         {
@@ -737,7 +737,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -1258,7 +1258,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The accessible name of the remove button. Unset, it is the dictionary's `removeItem` string with the chip's text children, or else with `itemToStringLabel(value)`. When neither gives text, it is the localized \"Remove\" string with no trailing space.",
+          "description": "The accessible name of the remove button. Defaults to the dictionary's `removeItem` string with the chip's text children, or else with `itemToStringLabel(value)`. When neither gives text, it is the localized \"Remove\" string with no trailing space.",
           "required": false
         },
         {
@@ -1278,7 +1278,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Renders the chip's remove button, an `X`.",
+          "description": "Whether the chip renders its remove button, an `X`.",
           "required": false
         },
         {

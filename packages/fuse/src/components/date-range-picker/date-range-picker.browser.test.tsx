@@ -652,7 +652,7 @@ describe("DateRangePicker dateValue presets and the pane's checked key", () => {
   } as const;
 
   /**
-   * An open range picker on October 1–3 with three `dateValue` presets, logging the picker's and
+   * An open range picker on October 1 to 3 with three `dateValue` presets, logging the picker's and
    * the pane's changes. `paneKey` fixes a controlled pane's key, which its parent never changes.
    */
   function Rules({

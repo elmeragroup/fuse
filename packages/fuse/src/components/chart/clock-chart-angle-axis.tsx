@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The clock's AngleAxis: the cycle's hours, weekdays or months past the rim, each centred on its
+ * The clock's AngleAxis, the cycle's hours, weekdays or months past the rim, each centered on its
  * ray 6 px out, thinned by stride to the dial's width. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";
@@ -21,7 +21,7 @@ import { labelWidth } from "./layout/label-width";
  */
 export type ClockChartAngleAxisProps = ChartLayerProps & {
   /**
-   * The label format. The cycle's own, hours, weekdays or months, is the default. The labels thin
+   * The label format. Defaults to the cycle's own: hours, weekdays or months. The labels thin
    * by one stride for the whole dial. Each label follows its slot, so on a 25-hour day 06 sits at
    * 100.8° and the repeated 02 labels once.
    */
@@ -29,10 +29,10 @@ export type ClockChartAngleAxisProps = ChartLayerProps & {
 };
 
 /**
- * The cycle's labels past the rim: hours on their slot's start round a day, weekdays and months
- * centred on their span. They never rotate, they thin by stride as the dial narrows, keeping the
- * cycle's first, by the widths of the text they print, a `format`'s included, and they take the
- * frame's gutter beside the dial.
+ * The cycle's labels past the rim, with hours on their slot's start round a day, and weekdays and
+ * months centered on their span. They never rotate. They thin by stride as the dial narrows, by the
+ * widths of the text they print, a `format`'s included, and keep the cycle's first label. They take
+ * the frame's gutter beside the dial.
  *
  * @beta
  */

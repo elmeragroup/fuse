@@ -131,7 +131,7 @@
           "type": "((event: MouseEvent<HTMLTableRowElement, MouseEvent>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input, radio, slider, editable region or other interactive or focusable element in the row do not press it, nor does the click that ends a text selection reaching into the row, nor a click inside a portal the row renders, such as an open menu. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
+          "description": "Called when the user presses the row. It makes the whole row clickable without changing its role. The `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input, radio, slider, editable region or other interactive or focusable element in the row do not press it, nor does the click that ends a text selection reaching into the row, nor a click inside a portal the row renders, such as an open menu. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
           "required": false
         },
         {
@@ -232,7 +232,7 @@
           "type": "readonly number[] | undefined",
           "shortType": null,
           "defaultValue": "DEFAULT_PAGE_SIZES",
-          "description": "The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100. Picking one calls `table.setPageSize` and keeps the page index; reset the index in `onPaginationChange` if your data needs that.",
+          "description": "The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100. Picking one calls `table.setPageSize` and keeps the page index. Reset the index in `onPaginationChange` when the data needs that.",
           "required": false
         },
         {
@@ -259,7 +259,7 @@
           "type": "PaginationSource",
           "shortType": null,
           "defaultValue": null,
-          "description": "The paginated table, from `useTable` with `rowPaginationFeature`. Registering that feature alone pages the rows ten at a time. Keep the table's `data` stable between renders: TanStack resets the page index when `data` changes identity.",
+          "description": "The paginated table, from `useTable` with `rowPaginationFeature`. Registering that feature alone pages the rows ten at a time. Keep the table's `data` stable between renders, since TanStack resets the page index when `data` changes identity.",
           "required": true
         },
         {
@@ -327,7 +327,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -336,7 +336,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -356,7 +356,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -365,7 +365,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -405,7 +405,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -588,7 +588,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"outline\"",
-          "description": "The trigger button's look. Defaults to `\"outline\"`.",
+          "description": "The trigger button's look.",
           "required": false,
           "values": [
             "default",
@@ -1050,7 +1050,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The trigger's accessible name, distinct per row, such as \"Actions for order 4711\". Pass it when you render the menu outside `actionsColumn`, which builds it from the row's name.",
+          "description": "The trigger's accessible name, distinct per row, such as \"Actions for order 4711\". Pass it when the menu renders outside `actionsColumn`, which builds it from the row's name.",
           "required": true
         },
         {
@@ -1255,7 +1255,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The ISO 4217 currency code, such as `\"NOK\"`. Required: there is no sensible default.",
+          "description": "The ISO 4217 currency code, such as `\"NOK\"`. It is required, since no default fits every amount.",
           "required": true
         },
         {

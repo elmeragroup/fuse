@@ -43,7 +43,7 @@ type TooltipDismissal = { readonly reason: string; readonly event: Event };
 /**
  * Whether a dismissal Base UI reports belongs to the chart instead. A press on the chart itself
  * picks or pins a datum, so it never closes the tooltip from outside. Every other dismissal, such as
- * a press outside the chart or Escape with focus elsewhere, takes the store's one dismissal.
+ * a press outside the chart or Escape with focus elsewhere, runs the store's `dismiss`.
  *
  * @param details - Base UI's dismissal details.
  * @param chart - The chart Root's element, or null before it mounts.
@@ -82,10 +82,10 @@ export function viewportSize(): PlaceSize {
 }
 
 /**
- * The popup's corner and padding, and its fill per variant. Frosted glass lets the plot show through a translucent popover
- * fill and blurs it. It sits on the utilities layer with the overlay fill it replaces, so the
- * class merge drops the opaque fill. A translucent fill keeps the surface beneath it, so frosted
- * glass also drops the popover `--surface` the overlay fill states.
+ * The popup's corner and padding, and its fill per variant. Frosted glass lets the plot show
+ * through a translucent popover fill and blurs it. It sits on the utilities layer with the overlay
+ * fill it replaces, so the class merge drops the opaque fill. A translucent fill keeps the surface
+ * beneath it, so frosted glass also drops the popover `--surface` the overlay fill states.
  */
 const tooltipPopup = tv({
   // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
@@ -101,7 +101,7 @@ const tooltipPopup = tv({
 });
 
 /**
- * Mark the popup with `data-scrolls` while its content overflows it. Under touch the popup lets
+ * Marks the popup with `data-scrolls` while its content overflows it. Under touch the popup lets
  * taps and scrubs through to the plot, except while it scrolls, when it takes the finger so a drag
  * scrolls it. Content that grows inside a popup at its height cap, or at a height a consumer set,
  * leaves the popup's size alone, so the observer follows each of the popup's children as well.

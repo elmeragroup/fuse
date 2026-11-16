@@ -8,24 +8,23 @@ import { decorativeSvgProps } from "./bespoke-svg";
 /**
  * Props for every curated Phosphor icon.
  *
- * `title` is the only naming prop: a nonempty title renders `role="img"` and a
- * `<title>`; an omitted or empty title renders the icon decorative
- * (`aria-hidden="true"`, `focusable="false"`). An untitled icon stays
- * `aria-hidden` even with `aria-label`; name it with `title`. Caller
- * `aria-hidden` or `role` still override the defaults.
+ * `title` is the only naming prop. A nonempty title renders `role="img"` and a `<title>`. An
+ * omitted or empty title renders the icon decorative, with `aria-hidden="true"` and
+ * `focusable="false"`. An untitled icon stays `aria-hidden` even with `aria-label`, so name it
+ * with `title`. A caller's `aria-hidden` or `role` still overrides the defaults.
  */
 export type ElmeraIconProps = Omit<ComponentProps<typeof Check>, "alt" | "weight"> & {
-  /** Accessible name. Omit it, or pass an empty string, for a decorative icon. */
+  /** The accessible name. Omit it, or pass an empty string, for a decorative icon. */
   title?: string;
   /**
-   * Glyph weight. Defaults to `"bold"`; `"regular"` draws a thinner stroke and `"fill"`
-   * marks a selected or active state.
+   * The glyph weight. `"regular"` draws a thinner stroke than `"bold"`, and `"fill"` marks a
+   * selected or active state.
    */
   weight?: "regular" | "bold" | "fill";
 };
 
 /**
- * Wrap a Phosphor SSR icon in the public icon adapter.
+ * Wraps a Phosphor SSR icon in the public icon adapter.
  *
  * @param Icon - The Phosphor SSR icon to render.
  * @param name - The public display name.

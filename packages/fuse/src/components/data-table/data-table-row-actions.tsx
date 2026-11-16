@@ -18,7 +18,7 @@ export type DataTableRowActionsProps = Omit<
 > & {
   /**
    * The trigger's accessible name, distinct per row, such as "Actions for order 4711". Pass it when
-   * you render the menu outside `actionsColumn`, which builds it from the row's name.
+   * the menu renders outside `actionsColumn`, which builds it from the row's name.
    */
   label: string;
   /** The menu's items: `DropdownMenu.Item`, including `variant="destructive"`, and separators. */
@@ -26,9 +26,10 @@ export type DataTableRowActionsProps = Omit<
 };
 
 /**
- * A row's actions menu: a ghost icon button holding the `DotsThree` icon, named by `label`, that
- * opens `children` in a `DropdownMenu` aligned to the trigger's end. Props other than `label` and
- * `children` land on the trigger. Clicks inside the open menu do not press a pressable row.
+ * A row's actions menu. Its trigger is a ghost icon button with the `DotsThree` icon, named by
+ * `label`, that opens `children` in a `DropdownMenu` aligned to the trigger's end. Props other than
+ * `label` and `children` land on the trigger. Clicks inside the open menu do not press a pressable
+ * row.
  */
 export function DataTableRowActions({ label, children, ...props }: DataTableRowActionsProps): ReactElement {
   return (
@@ -46,8 +47,8 @@ export function DataTableRowActions({ label, children, ...props }: DataTableRowA
 }
 
 /**
- * Package-private header of the `actionsColumn` column: the localized word "Actions", visually
- * hidden, so the `<th>` has a name without visible text. Its `data-slot` shrinks the column.
+ * The package-private header of the `actionsColumn` column. It renders the localized word "Actions",
+ * visually hidden, so the `<th>` has a name without visible text. Its `data-slot` shrinks the column.
  */
 export function RowActionsHeader(): ReactElement {
   const strings = useLocalizedStrings(dataTableStrings);
@@ -59,8 +60,8 @@ export function RowActionsHeader(): ReactElement {
 }
 
 /**
- * Package-private cell of the `actionsColumn` column: `DataTable.RowActions`, right-aligned, whose
- * label the locale dictionary builds from the row's name.
+ * The package-private cell of the `actionsColumn` column. It renders `DataTable.RowActions`,
+ * right-aligned, whose label the locale dictionary builds from the row's name.
  */
 export function RowActionsCell({ name, children }: { name: string; children: ReactNode }): ReactElement {
   const strings = useLocalizedStrings(dataTableStrings);

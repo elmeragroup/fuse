@@ -17,8 +17,8 @@ import type { ChartTableProps } from "./chart-table-body";
 /**
  * The series table of a radar's or a clock's model, built once per model.
  *
- * @throws When the model holds items, a defect: `usePolarContext` admits the part under a series
- *   family only.
+ * @throws When the model holds items, which is a defect, since `usePolarContext` admits the part
+ *   under a series family only.
  */
 function useSeriesTable(part: string, family: "radar" | "clock"): ChartTableModel {
   const { table } = usePolarContext(part, [family]).model;

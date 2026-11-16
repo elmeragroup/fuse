@@ -24,7 +24,7 @@ const contentRowClass = cn(
 );
 
 /**
- * The box and type of a bar trigger and of a link directly in a horizontal List. It is the md
+ * The box and type of a bar trigger and of a link directly in a horizontal List. It is the `md`
  * control size, so a bar that mixes links and triggers lines up with other controls.
  */
 const barBoxClass = cn(
@@ -37,7 +37,7 @@ const barBoxClass = cn(
 );
 
 /**
- * NavigationMenu's part classes, one slot per rendered part.
+ * `NavigationMenu`'s part classes, one slot per rendered part.
  *
  * The popup animates its size and position through transitions on the `--popup-*` and
  * `--positioner-*` variables Base UI writes, not through the `data-open` keyframes the
@@ -45,13 +45,13 @@ const barBoxClass = cn(
  *
  * Base UI measures the popup inside the positioner, which caps it at the available width.
  * The popup and the content also cap at the available height and width, so a panel larger
- * than the space under the trigger scrolls inside the content instead of being clipped by
- * the viewport.
+ * than the space under the trigger scrolls inside the content instead of the viewport clipping
+ * it.
  *
  * Only Root and List write `data-orientation`; the trigger's `orientation` axis and the link's
  * `box` axis come from their parts.
  *
- * The central reduced-motion rule keeps only opacity and colour transitions, which turns
+ * The central reduced-motion rule keeps only opacity and color transitions, which turns
  * the resize, the slide and the caret rotation off together.
  */
 export const navigationMenuVariants = tv({

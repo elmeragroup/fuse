@@ -44,7 +44,7 @@
           "type": "\"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\" | \"chart-6\" | \"chart-7\" | \"chart-8\" | \"chart-other\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"chart-1\"",
-          "description": "The line's paint. The badge prints in its on-colour role.",
+          "description": "The line's paint. The badge prints in its on-color role.",
           "required": false,
           "values": [
             "chart-1",
@@ -138,7 +138,7 @@
           "type": "readonly LiveLineChartPoint[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The readings, oldest first. Append each reading as it arrives, and drop older ones as the feed grows, keeping at least the window's worth. The chart draws only the window, and the table and the description cover one window back from the latest reading. A reading out of order sorts by time. Of readings that share a time the last wins, so a feed corrects its latest reading by sending it again. Readings stamped ahead of the browser's clock move the window's end ahead with them. Under reduced motion the window does not scroll, and each new reading redraws it once, ending at the clock. Every cell is serialisable, so a server component can pass it.",
+          "description": "The readings, oldest first. Append each reading as it arrives, and drop older ones as the feed grows, keeping at least the window's worth. The chart draws only the window, and the table and the description cover one window back from the latest reading. A reading out of order sorts by time. Of readings that share a time the last wins, so a feed corrects its latest reading by sending it again. Readings stamped ahead of the browser's clock move the window's end ahead with them. Under reduced motion the window does not scroll, and each new reading redraws it once, ending at the clock. Every cell is serializable, so a server component can pass it.",
           "required": true
         },
         {
@@ -156,7 +156,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value's name, such as \"Spotpris\", which the tooltip, the options and the table print. The plot's option reads the active reading's time, then its value after this name.",
+          "description": "The value's name, such as `\"Spotpris\"`, which the tooltip, the options and the table print. The plot's option reads the active reading's time, then its value after this name.",
           "required": false
         },
         {
@@ -174,7 +174,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no color for the cut-outs to match.",
           "required": false
         },
         {
@@ -192,7 +192,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The IANA zone of the market the readings describe, such as \"Europe/Oslo\", which every time prints in. The time axis puts its ticks on round times in this zone. LocaleProvider's `timeZone` by default.",
+          "description": "The IANA zone of the market the readings describe, such as `\"Europe/Oslo\"`, which every time prints in. The time axis puts its ticks on round times in this zone. Defaults to `LocaleProvider`'s `timeZone`.",
           "required": false
         },
         {
@@ -201,7 +201,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest value, which the line runs to at the window's right edge, the live dot marks and the badge prints. The latest reading's value by default. Pass it when the value ticks faster than readings arrive. It takes the readings' bound, a finite number within ±1e15. The badge rolls its digits to each new value, and under reduced motion changes them at once.",
+          "description": "The latest value, which the line runs to at the window's right edge, the live dot marks and the badge prints. Defaults to the latest reading's value. Pass it when the value ticks faster than readings arrive. It takes the readings' bound, a finite number within ±1e15. The badge rolls its digits to each new value, and under reduced motion changes them at once.",
           "required": false
         },
         {
@@ -219,7 +219,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "DEFAULT_WINDOW_MS",
-          "description": "The window's length in milliseconds, which scrolls with the clock so its right edge is always now. `30_000` by default.",
+          "description": "The window's length in milliseconds, which scrolls with the clock so its right edge is always now. Defaults to `30_000`.",
           "required": false
         }
       ]
@@ -322,7 +322,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. Root's `valueFormat` by default.",
+          "description": "The tick label format. Defaults to Root's `valueFormat`.",
           "required": false
         },
         {
@@ -331,7 +331,7 @@
           "type": "\"end\" | \"start\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"start\"",
-          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. With a `Badge`, keep it at \"start\", since the badge takes the end column.",
+          "description": "`\"start\"` draws the axis at the left edge and `\"end\"` at the right. With a `Badge`, keep it at `\"start\"`, since the badge takes the end column.",
           "required": false,
           "values": [
             "end",
@@ -398,7 +398,7 @@
           "type": "\"gradient\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
-          "description": "The fill. \"gradient\" fades from the line's paint to nothing at the plot's bottom edge, and \"solid\" fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over the fill.",
+          "description": "The fill. `\"gradient\"` fades from the line's paint to nothing at the plot's bottom edge, and `\"solid\"` fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over the fill.",
           "required": false,
           "values": [
             "gradient",
@@ -429,7 +429,7 @@
           "type": "LiveLineChartCurve | undefined",
           "shortType": "Union",
           "defaultValue": "\"monotone\"",
-          "description": "The curve through the readings. \"monotone\" never overshoots a reading. Every curve it takes stays between the readings around each segment, so the line stays in the plot.",
+          "description": "The curve through the readings. `\"monotone\"` never overshoots a reading. Every curve it takes stays between the readings around each segment, so the line stays in the plot.",
           "required": false,
           "values": [
             "basis",
@@ -483,7 +483,7 @@
           "type": "\"default\" | \"ping\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ping\"",
-          "description": "The dot's look. \"ping\" sends a ring out from the dot once a cycle, which stops while Root is `paused` and under reduced motion. \"default\" draws the dot alone.",
+          "description": "The dot's look. `\"ping\"` sends a ring out from the dot once a cycle, which stops while Root is `paused` and under reduced motion. `\"default\"` draws the dot alone.",
           "required": false,
           "values": [
             "default",
@@ -577,7 +577,7 @@
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The popup's surface. \"frosted\" lets the plot show through.",
+          "description": "The popup's surface. `\"frosted\"` lets the plot show through.",
           "required": false,
           "values": [
             "default",

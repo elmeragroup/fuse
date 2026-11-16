@@ -22,7 +22,7 @@ const NEUTRAL_ROLES = [
   "right-panel",
 ] as const;
 
-/** The chroma band of a grey tinted with a hue, as issue #433 sets it. */
+/** The chroma band of a gray tinted with a hue, as issue #433 sets it. */
 const TINT_CHROMA = { min: 0.005, max: 0.02 } as const;
 
 /** How far a tinted neutral's hue may sit from the brand hue, in degrees. */
@@ -34,7 +34,7 @@ function hueDistance(left: number, right: number): number {
   return Math.min(distance, 360 - distance);
 }
 
-/** A ramp step's colour, following the alias a single-colour brand's palette 2 step holds. */
+/** A ramp step's color, following the alias a single-color brand's palette 2 step holds. */
 function stepColor(tokens: TokenContract, name: (typeof BRAND_RAMP_TOKEN_NAMES)[number]): Oklch.Oklch {
   return tokenOklch(tokenLiteral(tokens, name));
 }
@@ -95,13 +95,13 @@ describe("brand neutral ramp", () => {
   });
 });
 
-/** One brand's curated colours: palette 1's seed, and palette 2's where the brand has one. */
+/** One brand's curated colors: palette 1's seed, and palette 2's where the brand has one. */
 type CuratedSeeds = { readonly "1": string; readonly "2"?: string };
 
 /**
- * The colours each brand curates, copied from where design set them, independent of the ramp
+ * The colors each brand curates, copied from where design set them, independent of the ramp
  * recipe. Palette 1 is each brand's light `feature` literal, with Fjordkraft company's teal for
- * its segment and `fkab`. Palette 2 is a brand's second colour, which only Telinet (its green, its
+ * its segment and `fkab`. Palette 2 is a brand's second color, which only Telinet (its green, its
  * light `feature-foreground` before #432) and Gudbrandsdal Energi (its orange, its dark
  * `secondary`) have.
  */
@@ -115,12 +115,12 @@ const CURATED_SEEDS = new Map<string, CuratedSeeds>([
   ["ngfi", { "1": "oklch(0.496237 0.0877084 169.5466991)" }],
 ]);
 
-/** The chroma under which a step is too grey for its hue to be read. */
+/** The chroma under which a step is too gray for its hue to be read. */
 const HUE_CHROMA_FLOOR = 0.02;
 
 /**
  * The midtone steps, where every palette is chromatic: each must show the seed's hue, so a
- * palette that lost its colour fails rather than skipping every step.
+ * palette that lost its color fails rather than skipping every step.
  */
 const MIDTONE_STEPS: ReadonlySet<string> = new Set(["400", "500", "600", "700"]);
 

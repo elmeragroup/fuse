@@ -15,7 +15,7 @@ import type { ChartDomProps } from "./chart-types";
 export type ChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
   /** The mark the placeholder sketches. */
   variant?: "bar" | "line" | "area";
-  /** The loader's name. The dictionary's "Laster diagram" is the default. */
+  /** The loader's name. Defaults to the dictionary's "Laster diagram". */
   label?: string;
 };
 
@@ -60,7 +60,7 @@ export function ChartSkeleton({ variant = "bar", label, ...props }: ChartSkeleto
  * measures the plot and draws the marks. It is a Fuse Loader in the plot's middle, which CSS keeps
  * hidden for a moment, so a fast hydration shows nothing. Root never reads its children, so it
  * sketches no mark of its own, and the axes, the legend and the table around it are already
- * final. Each chart already has its name and its table, so the wait is not announced.
+ * final. Each chart already has its name and its table, so the placeholder announces no wait.
  */
 export function PlotLoader(): ReactElement {
   return <Loader aria-hidden="true" label="" />;

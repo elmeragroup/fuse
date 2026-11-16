@@ -10,30 +10,29 @@ import type { ButtonProps } from "../button/button";
 import { overlayCloseStrings } from "./intl";
 
 /**
- * Package-private close-button rendering shared by every overlay family:
- * one canonical close affordance instead of
- * per-overlay hand-rolled markup. Sheet reuses it verbatim.
+ * The package-private close button every overlay family shares, so no overlay writes its own close
+ * markup. Sheet reuses it unchanged.
  *
- * Meant for the overlay's `Close` part `render` prop:
+ * Pass it to the `render` prop of the overlay's `Close` part, as in
  * `<Dialog.Close render={<OverlayCloseButton />} />`.
  */
 
 export type OverlayCloseButtonProps = Omit<ButtonProps, "aria-label" | "children" | "variant" | "size"> & {
   /**
-   * Accessible name override. Defaults to the shared `close` row for the active locale,
-   * so a host that already resolved a `closeLabel` passes it through here.
+   * The accessible name. Defaults to the shared `close` row for the active locale. A host that
+   * already resolved a `closeLabel` passes it here.
    */
   label?: string;
   /**
-   * Extra classes merged last. The corner affordance is this component plus
-   * `overlayCornerCloseClass`; an in-flow host passes its header-row classes instead.
+   * Extra classes, merged last. The corner close button is this component with
+   * `overlayCornerCloseClass`, and an in-flow host passes its header-row classes instead.
    */
   className?: string;
 };
 
 /**
- * The canonical dismiss control: a ghost `icon-sm` Button with an expanded hit area and
- * an accessible name resolved from the shared overlay dictionary unless `label` wins.
+ * The shared dismiss control, a ghost `icon-sm` Button with an expanded hit area. Its accessible
+ * name comes from the shared overlay dictionary unless `label` sets one.
  */
 export function OverlayCloseButton({ label, className, ...props }: OverlayCloseButtonProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
@@ -50,19 +49,19 @@ export function OverlayCloseButton({ label, className, ...props }: OverlayCloseB
   );
 }
 
-/** Props for the footer close action, a labelled outline Button. */
+/** Props for the footer close action, a labeled outline Button. */
 export type OverlayFooterCloseButtonProps = Omit<
   ButtonProps,
   "aria-label" | "children" | "variant" | "size"
 > & {
-  /** Visible close copy, already resolved by the host from the shared overlay dictionary. */
+  /** The visible close text, which the host has already resolved from the shared overlay dictionary. */
   label: string;
 };
 
 /**
- * Footer close action: outline Button carrying the resolved label as visible children.
- * Forwards the rest of the Button surface, so a host's `render` prop can inject its own
- * close behavior the same way the corner affordance does.
+ * The footer close action, an outline Button with the resolved label as its visible children. It
+ * forwards the rest of the Button props, so a host's `render` prop can inject its own close behavior
+ * the same way the corner close button does.
  */
 export function OverlayFooterCloseButton({ label, ...props }: OverlayFooterCloseButtonProps): ReactElement {
   return (

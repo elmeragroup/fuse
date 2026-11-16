@@ -2,7 +2,7 @@
  * A date-time that Fuse joins itself. Each engine's CLDR joins a date and a time in its own way.
  * Node 26 prints an en-US medium date-time as `Oct 18, 2026, 12:00 AM` where WebKit prints
  * `Oct 18, 2026 at 12:00 AM`, so a server-rendered label would fail hydration in Safari. Fuse
- * formats each half through Intl and joins them with CLDR 48's pattern, as it already owns the
+ * formats each half through Intl and joins them with CLDR 48's pattern, as it already supplies the
  * range separator.
  */
 import { cached, dateTimeFormat } from "../internal/intl-cache";
@@ -65,11 +65,11 @@ function joinLength(date: Intl.DateTimeFormatOptions): JoinLength {
 }
 
 /**
- * Format an instant with Intl date-time options, joining a date half and a time half with
+ * Formats an instant with Intl date-time options, joining a date half and a time half with
  * CLDR 48's pattern in en, nb, sv and fi. Options with only date fields or only time fields, a
  * weekday alone with a time, which CLDR prints through one skeleton, and every other language print
- * Intl's own output. The result keeps Intl's spaces, so a caller that
- * needs one string on every engine maps them with `canonicalSpaces`.
+ * Intl's own output. The result keeps Intl's spaces, so a caller that needs one string on every
+ * engine maps them with `canonicalSpaces`.
  *
  * @param locale - The BCP 47 locale.
  * @param options - The date and time format options, including any `timeZone`.
@@ -85,10 +85,10 @@ export function formatDateTime(locale: string, options: Intl.DateTimeFormatOptio
 }
 
 /**
- * `formatToParts` of an instant, joined as {@link formatDateTime} joins it: the date half's parts,
- * a literal part holding Fuse's CLDR 48 separator, then the time half's parts, or Intl's own parts
- * where Fuse takes Intl's output. A field laying out segments uses it, so its literals match the
- * text the field's validation copy prints in every engine.
+ * `formatToParts` of an instant, joined as {@link formatDateTime} joins it. The parts are the date
+ * half's parts, a literal part holding Fuse's CLDR 48 separator, then the time half's parts, or
+ * Intl's own parts where Fuse takes Intl's output. A field laying out segments uses it, so its
+ * literals match the text the field's validation copy prints in every engine.
  *
  * @param locale - The BCP 47 locale.
  * @param options - The date and time format options, including any `timeZone`.
@@ -111,8 +111,8 @@ export function formatDateTimeToParts(
 }
 
 /**
- * How one locale and set of options format: Intl's whole output, or a date half and a time half
- * with the separator between them.
+ * How one locale and set of options format, either as Intl's whole output or as a date half and a
+ * time half with the separator between them.
  */
 type JoinPlan = {
   readonly whole: Intl.DateTimeFormat;
@@ -131,7 +131,7 @@ function planOf(locale: string, options: Intl.DateTimeFormatOptions): JoinPlan {
   return cached(plans, locale, options, () => buildPlan(locale, options));
 }
 
-/** Split and resolve the plan of a locale and options. */
+/** Splits and resolves the plan of a locale and options. */
 function buildPlan(locale: string, options: Intl.DateTimeFormatOptions): JoinPlan {
   const whole = dateTimeFormat(locale, options);
   // A zone name belongs to the time, and Intl rejects it beside `dateStyle`. The hour cycle only

@@ -44,7 +44,7 @@
           "type": "TConfig & ChartScatterFieldCheck<TConfig>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "One entry per series, keyed by the values of the `seriesKey` column. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its colour is a role, never a scale, a role list or a threshold. Write it `as const satisfies ChartConfig`. The legend lists the keys in config order, and JavaScript orders keys that read as integers, such as \"2026\", first and ascending, so name a year's series, such as `thisYear`.",
+          "description": "One entry per series, keyed by the values of the `seriesKey` column. Each entry is a `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its color is a role, never a scale, a role list or a threshold. Write it `as const satisfies ChartConfig`. The legend lists the keys in config order, and JavaScript orders keys that read as integers, such as \"2026\", first and ascending, so name a year's series, such as `thisYear`.",
           "required": true
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values and repeated points are valid, and every one draws. A row whose x or y is null or undefined has no point. Every cell is serialisable, so a server component passes it. On a data update the axes glide to fit the new points over the chart's update time. They move at once under reduced motion and when the chart holds more than 5,000 points.",
+          "description": "Long rows, one per point: an x, a y and the series the point belongs to. Repeated x values and repeated points are valid, and every one draws. A row whose x or y is null or undefined has no point. Every cell is serializable, so a server component passes it. On a data update the axes glide to fit the new points over the chart's update time. They move at once under reduced motion and when the chart holds more than 5,000 points.",
           "required": true
         },
         {
@@ -89,7 +89,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no color for the cut-outs to match.",
           "required": false
         },
         {
@@ -663,7 +663,7 @@
           "type": "\"dot\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ring\"",
-          "description": "The mark on the active point. \"ring\" draws a ring around the point in its series' colour. \"dot\" draws a filled dot inside a ring of the surface the chart rests on, `--surface`, for a series a Line draws alone.",
+          "description": "The mark on the active point. \"ring\" draws a ring around the point in its series' color. \"dot\" draws a filled dot inside a ring of the surface the chart rests on, `--surface`, for a series a Line draws alone.",
           "required": false,
           "values": [
             "dot",
@@ -685,7 +685,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Without children, a TooltipLabel over one row for x and one for y, each with its name and a TooltipValue.",
+          "description": "Without children, the tooltip renders a TooltipLabel over one row for x and one for y, each with its name and a TooltipValue.",
           "required": false
         },
         {
@@ -782,7 +782,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. Root's `xFormat`, or the series' config `format` over Root's `valueFormat`, by default.",
+          "description": "The value format. Defaults to Root's `xFormat`, or to the series' config `format` over Root's `valueFormat`.",
           "required": false
         },
         {

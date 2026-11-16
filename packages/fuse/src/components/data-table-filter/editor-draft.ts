@@ -15,9 +15,9 @@ export type DraftValues = {
 };
 
 /**
- * A text, number or date editor's operator and values until they commit, and whether a person
+ * A text, number or date editor's operator and values until they commit, and whether a user
  * has edited the values. A seeded draft, such as a new range over the facet range, is not edited
- * until someone changes it, and an operator change keeps the flag.
+ * until the user changes it, and an operator change keeps the flag.
  */
 export type EditorDraft = DraftValues & { readonly edited: boolean };
 
@@ -83,7 +83,7 @@ export function draftSays(kind: FilterKind, draft: DraftValues, filter: FilterVa
  *
  * @param kind - The field's kind.
  * @param draft - The draft.
- * @returns The values, or undefined while a position is incomplete.
+ * @returns The values, or `undefined` while a position is incomplete.
  */
 export function completeValues(
   kind: FilterKind,
@@ -112,7 +112,7 @@ export function completeValues(
 }
 
 /**
- * The one write a draft settles into against the applied filter, or undefined when it writes
+ * The one write a draft settles into against the applied filter, or `undefined` when it writes
  * nothing. A draft nobody edited writes nothing without an applied filter. An emptied text
  * removes the filter. An incomplete or reversed range writes nothing, so
  * the last valid filter stays. A new number range across the whole known range filters nothing,
@@ -123,7 +123,7 @@ export function completeValues(
  * @param draft - The draft.
  * @param applied - The applied filter, if any.
  * @param range - The field's known number range, if any.
- * @returns The write, an operator and its values or no values to remove the filter, or undefined.
+ * @returns The write, an operator and its values or no values to remove the filter, or `undefined`.
  */
 export function draftWrite(
   kind: FilterKind,

@@ -22,16 +22,16 @@ const dropdownMenuCheckableItemClassName = dropdownMenuSlots.checkableItem();
 const dropdownMenuItemIndicatorClassName = dropdownMenuSlots.itemIndicator();
 const dropdownMenuSeparatorClassName = dropdownMenuSlots.separator();
 
-/** Renders the menu popup in a portal. `DropdownMenu.Content` renders one for you. */
+/** The portal the menu popup renders in. `DropdownMenu.Content` renders one itself. */
 export function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
 
 /**
- * The one menu popup. Content and SubContent are the same
- * `Portal > Positioner > Popup` with different defaults, a different `data-slot`, and a
- * different popup-chrome extra. SubContent calls this helper directly, keeping one popup
- * and one class string. Both callers resolve their own positioner defaults.
+ * The one menu popup. Content and SubContent are the same `Portal > Positioner > Popup` with
+ * different defaults, a different `data-slot`, and a different popup-chrome extra. SubContent calls
+ * this helper directly, so the menu keeps one popup and one class string. Both callers resolve their
+ * own positioner defaults.
  */
 function DropdownMenuPopup({
   className,
@@ -67,12 +67,12 @@ function DropdownMenuPopup({
   );
 }
 
-/** Holds the menu's open state and connects its trigger to its popup. */
+/** The menu's root, which holds its open state and connects its trigger to its popup. */
 export function DropdownMenuRoot(props: ComponentProps<typeof MenuPrimitive.Root>): ReactElement {
   return <MenuPrimitive.Root {...props} />;
 }
 
-/** Opens the menu. It renders a plain `button`; pass `render` to render another element. */
+/** The button that opens the menu. It renders a plain `button`; pass `render` to render another element. */
 export function DropdownMenuTrigger({
   className,
   ...props
@@ -130,7 +130,7 @@ type DropdownMenuGroupProps = ComponentProps<typeof MenuPrimitive.Group> & {
   children?: ReactNode;
 };
 
-/** Groups related items. */
+/** A group of related items. */
 export function DropdownMenuGroup(props: DropdownMenuGroupProps): ReactElement {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
@@ -143,7 +143,7 @@ export type DropdownMenuLabelProps = ComponentProps<typeof MenuPrimitive.GroupLa
   inset?: boolean;
 };
 
-/** Names the items of the `DropdownMenu.Group` it sits in. */
+/** The label that names the items of the `DropdownMenu.Group` it sits in. */
 export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProps): ReactElement {
   return (
     <MenuPrimitive.GroupLabel
@@ -161,7 +161,7 @@ export type DropdownMenuItemProps = ComponentProps<typeof MenuPrimitive.Item> & 
    * items that start with an icon. It sets `data-inset`.
    */
   inset?: boolean;
-  /** The item's colour. `destructive` paints it in the `error` colour, for an action such as Delete. */
+  /** The item's color. `destructive` paints it in the `error` color, for an action such as Delete. */
   variant?: "default" | "destructive";
 };
 
@@ -231,9 +231,9 @@ export function DropdownMenuCheckboxItem({
 }
 
 /**
- * Narrows the group's selected value to one string union. Base UI types `value` and
- * `onValueChange` as `any`. The generic ties the group's three props together, but not the
- * items. `RadioItem.value` stays `any`, so only the runtime checks an item's value.
+ * Props for `DropdownMenu.RadioGroup`. They narrow the group's selected value to one string union.
+ * Base UI types `value` and `onValueChange` as `any`. The generic ties the group's three props
+ * together, but not the items. `RadioItem.value` stays `any`, so only the runtime checks an item's value.
  */
 export type DropdownMenuRadioGroupProps<T extends string> = Omit<
   ComponentProps<typeof MenuPrimitive.RadioGroup>,
@@ -257,11 +257,11 @@ export type DropdownMenuRadioGroupProps<T extends string> = Omit<
         defaultValue?: T;
       }
   ) & {
-    /** Runs when the selection changes, with the new value as `T` and Base UI's change details. */
+    /** Called when the selection changes, with the new value as `T` and Base UI's change details. */
     onValueChange?: (value: T, eventDetails: MenuRadioGroupChangeEventDetails) => void;
   };
 
-/** Groups radio items, of which one is selected. */
+/** A group of radio items, of which one is selected. */
 export function DropdownMenuRadioGroup<T extends string>(
   props: DropdownMenuRadioGroupProps<T>
 ): ReactElement {
@@ -324,7 +324,7 @@ export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"sp
   );
 }
 
-/** Holds a submenu's open state. Escape in the submenu closes the parent menu too. */
+/** A submenu's root, which holds its open state. Escape in the submenu closes the parent menu too. */
 export function DropdownMenuSub(props: ComponentProps<typeof MenuPrimitive.SubmenuRoot>): ReactElement {
   return <MenuPrimitive.SubmenuRoot closeParentOnEsc {...props} />;
 }

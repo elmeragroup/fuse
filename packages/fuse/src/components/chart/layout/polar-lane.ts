@@ -1,6 +1,6 @@
 /**
  * Where a polar tooltip rests. The popup sits in a side lane beside the dial,
- * outside the labels past the rim and inside the Root's figure, with its vertical centre on the
+ * outside the labels past the rim and inside the Root's figure, with its vertical center on the
  * active ray's height at the rim. A ray right of 12 o'clock takes the right lane and a ray left of
  * it the left, and a popup keeps its lane until the ray is 20° past 12 or 6 o'clock on the other
  * side. When neither side lane fits beside the dial inside the viewport, the popup sits below the
@@ -25,14 +25,14 @@ export type LaneBox = {
 export type LaneSide = "right" | "left" | "bottom" | "top";
 
 /**
- * The dial in client pixels: its centre, its outer radius, and how far below the centre its drawing
+ * The dial in client pixels: its center, its outer radius, and how far below the center its drawing
  * ends, the radius for a full dial and 0 for a semicircle on its flat edge.
  */
 export type LaneDial = { readonly centre: LanePoint; readonly radius: number; readonly bottom?: number };
 
 /**
  * Where a popup rests: the lane it takes, its box there, the widest it may be in that lane, and the
- * box its middle stays inside as it rides the hand, the figure less any controls below it.
+ * box its middle stays inside as it follows the hand, the figure less any controls below it.
  */
 export type LaneRest = {
   readonly side: LaneSide;
@@ -52,7 +52,7 @@ const SWITCH = Math.sin((20 * Math.PI) / 180);
  * goes right. A popup already in a lane keeps it until the ray reaches 20° into the other half.
  *
  * @param angle - The ray's angle in degrees from 12 o'clock, clockwise.
- * @param current - The lane the popup is in, or null when it opens.
+ * @param current - The lane the popup is in, or `null` when it opens.
  * @returns The lane.
  */
 export function laneSide(angle: number, current: "right" | "left" | null): "right" | "left" {
@@ -63,14 +63,14 @@ export function laneSide(angle: number, current: "right" | "left" | null): "righ
 }
 
 /**
- * The height a side lane's popup centres on for a ray: the ray's rim point, clamped so the popup
+ * The height a side lane's popup centers on for a ray: the ray's rim point, clamped so the popup
  * stays inside its bounds.
  *
  * @param angle - The ray's angle in degrees.
  * @param dial - The dial.
  * @param height - The popup's height.
  * @param bounds - The box the popup stays inside.
- * @returns The popup's vertical centre, in client pixels.
+ * @returns The popup's vertical center, in client pixels.
  */
 export function laneY(angle: number, dial: LaneDial, height: number, bounds: LaneBox): number {
   const y = dial.centre.y - dial.radius * Math.cos((angle * Math.PI) / 180);
@@ -122,9 +122,9 @@ export type LaneInput = {
   /** The side lane `laneSide` chose. */
   readonly side: "right" | "left";
   readonly dial: LaneDial;
-  /** The union of the labels past the rim, or null for none. */
+  /** The union of the labels past the rim, or `null` for none. */
   readonly labels: LaneBox | null;
-  /** The union of the Root's own controls, its legend and table toggle, or null for none. */
+  /** The union of the Root's own controls, its legend and table toggle, or `null` for none. */
   readonly controls: LaneBox | null;
   /** The popup's size. */
   readonly size: PlaceSize;
@@ -140,7 +140,7 @@ export type LaneInput = {
   readonly viewportLeft: number;
   /** The visible area's right edge, the visual viewport's, which every lane stays left of. */
   readonly viewportRight: number;
-  /** The chart's title, the element its Root's `aria-labelledby` names and its Headline, or null. */
+  /** The chart's title, the element its Root's `aria-labelledby` names and its Headline, or `null`. */
   readonly title: LaneBox | null;
   /**
    * The side the popup last showed, kept across closes, so a popup that reopens starts from it. A
@@ -153,26 +153,27 @@ export type LaneInput = {
 /**
  * Where the popup rests for a ray. Every lane is a candidate, in order: its side lane, the other side
  * lane, the bottom lane below the Root's controls, the bottom lane below the rim, and the top lane.
- * A side lane is a candidate only when its room holds the popup's widest content and `LANE_PAD`
- * (`laneNeed`). Each candidate has a span, the vertical interval it may use: its own bounds, less
- * any controls, cut to the viewport. It fits only when its span holds the popup's height, so a popup
- * that fits anywhere rests inside the viewport and clear of the controls; a span that controls
- * cut below the popup's height, or to nothing, as a side legend can, never takes it.
- * The popup takes the bottom or top lane it last showed (`keep`, kept across closes, so a reopened
- * popup starts from it) while that lane fits, so a re-measure on scroll or resize moves no popup
- * whose lane still fits, and otherwise the first candidate that fits. Where none fits, it takes the
- * candidate that shows the most of its height inside its own span, the earlier on a tie.
+ * A side lane is a candidate only when its room holds the popup's widest content and `LANE_PAD`,
+ * as `laneNeed` measures. Each candidate has a span, the vertical interval it may use: its own
+ * bounds, less any controls, cut to the viewport. It fits only when its span holds the popup's
+ * height, so a popup that fits anywhere rests inside the viewport and clear of the controls; a span
+ * that controls cut below the popup's height, or to nothing, as a side legend can, never takes it.
+ * The popup takes the bottom or top lane it last showed, `keep`, while that lane fits, and
+ * otherwise the first candidate that fits. `keep` lasts across closes, so a reopened popup starts
+ * from it, and a re-measure on scroll or resize moves no popup whose lane still fits. Where none
+ * fits, it takes the candidate that shows the most of its height inside its own span, the earlier
+ * on a tie.
  *
  * - A side lane's inner edge sits one gap outside the further of the rim and the labels. Across, its
  *   span runs from there to the figure's outer side, both cut to the visible area's sides, so a pan
  *   that hides the inner edge moves the popup's near side to the visible edge; its room is that
- *   span's width. Its popup centres on the ray's rim height, clamped into its bounds: the Root's
+ *   span's width. Its popup centers on the ray's rim height, clamped into its bounds: the Root's
  *   figure, less any controls under it, cut to the viewport.
  * - The bottom lane's top sits one gap below the labels and the controls, so the popup never covers
  *   the legend or the table toggle a pointer reaches for next, or one gap below the rim, each moved
  *   down to the viewport's top when the dial is scrolled above it. Its span runs from there to the
  *   viewport's bottom.
- * - The bottom and top lanes centre on the dial, inside the figure cut to the visible area's sides,
+ * - The bottom and top lanes center on the dial, inside the figure cut to the visible area's sides,
  *   or inside the visible area alone where that cut is narrower than the popup's floor, and a side
  *   lane's room ends at the cut too, so a pinch zoom that narrows the visible area keeps every lane
  *   in it.
@@ -305,7 +306,7 @@ export function laneRest(input: LaneInput): LaneRest {
  * @param a - A corner.
  * @param b - Another corner.
  * @param c - The third corner.
- * @returns True inside or on an edge.
+ * @returns `true` when the point lies inside the triangle or on an edge.
  */
 export function inTriangle(point: LanePoint, a: LanePoint, b: LanePoint, c: LanePoint): boolean {
   const cross = (p: LanePoint, q: LanePoint, r: LanePoint) =>

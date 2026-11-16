@@ -5,7 +5,7 @@
 const LINE_PX = 40;
 
 /**
- * Below this many pixels from an end, the strip counts as at that end. `scrollWidth` and
+ * The distance in pixels from an end below which the strip counts as at that end. `scrollWidth` and
  * `clientWidth` round a fractional box, and a right-to-left box snaps `scrollLeft` to whole
  * pixels, so its end can sit a pixel short of the range they give.
  */
@@ -69,7 +69,7 @@ function inlineScrollOf(strip: HTMLElement): InlineScroll {
 /**
  * A ref callback that lets a vertical mouse wheel scroll a sideways strip. React's `onWheel` is
  * passive and cannot keep the page from scrolling, so the listener is native. A turn the strip
- * cannot take scrolls the page as usual, and a turn a descendant already cancelled stays cancelled.
+ * cannot take scrolls the page as usual, and a turn a descendant already canceled stays canceled.
  * The jump is instant, as a native wheel scroll is.
  *
  * @param strip - The strip, a horizontal scroll box.

@@ -35,9 +35,9 @@ export type ChartBarProps = ChartLayerProps & {
    * `unknown-key`. A bar fills its band less a 25 % gap. In a vertical chart with more than 100
    * domain slots a series draws its bars as one path, which draws every look but "gradient" as
    * "default". A series whose look the path cannot draw warns `bar-variant-needs-html` in
-   * development. A horizontal chart always draws separate bars. The tinted looks, "hatched", "striped", "gradient",
-   * "duotone" and "duotone-reverse", fill most of a bar with a pale tint of the series colour, so
-   * pair them with a Legend or a Table.
+   * development. A horizontal chart always draws separate bars. The tinted looks, "hatched",
+   * "striped", "gradient", "duotone" and "duotone-reverse", fill most of a bar with a pale tint of
+   * the series color, so pair them with a Legend or a Table.
    *
    * With a config `qualityKey`, an estimated reading draws a dashed outline over a lighter fill and
    * a missing one a short dashed tick at the baseline, and the option and the table add the quality
@@ -48,13 +48,13 @@ export type ChartBarProps = ChartLayerProps & {
    */
   dataKey: string;
   /**
-   * The slots to emphasise. `"now"` selects the slot of this series that contains Root's `now`, so
-   * an hourly bar on a quarter-hour chart emphasises its whole hour. `"max"` and `"min"` compare the
+   * The slots to emphasize. `"now"` selects the slot of this series that contains Root's `now`, so
+   * an hourly bar on a quarter-hour chart emphasizes its whole hour. `"max"` and `"min"` compare the
    * drawn value, the stack total for a stacked bar, and select every tied slot. An x string on a
    * time axis throws `x-type-mismatch`.
    */
   emphasis?: ChartDatum;
-  /** The word the option appends to an emphasised slot. The dictionary's "uthevet" is the default. */
+  /** The word the option appends to an emphasized slot. Defaults to the dictionary's "uthevet". */
   emphasisLabel?: string;
 };
 
@@ -110,7 +110,7 @@ function emphasisSlots(
  * One series' bars. Outside a BarGroup each bar fills its band, and series that share a `stack` id
  * stack in it. Inside a BarGroup the bar takes its series' sub-band. Up to 100 domain slots each
  * bar is its own SVG element that moves to its new geometry on a data update. Above 100 the series
- * draws one SVG path per colour step, which snaps to new data until the path tween lands. A chart
+ * draws one SVG path per color step, which snaps to new data until the path tween lands. A chart
  * draws each series with one Bar, and a second Bar on the same `dataKey` throws
  * `series-drawn-twice` once it mounts, in either form.
  *

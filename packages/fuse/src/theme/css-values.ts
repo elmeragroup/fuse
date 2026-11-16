@@ -1,9 +1,9 @@
 /**
  * These readers parse two kinds of CSS value. Exporters translate the values a theme token holds
  * into design-tool units, and components read lengths from computed style. Each reader returns
- * `undefined` when the value is not in its form, so a caller can try the forms a token kind
- * allows and report the value when none fits. Colors are read by `@elmeragroup/color`, which
- * owns every color notation.
+ * `undefined` when the value is not in its form, so a caller can try the forms a token kind allows
+ * and report the value when none fits. `@elmeragroup/color` reads colors, and it handles every
+ * color notation.
  */
 
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
@@ -29,8 +29,8 @@ export function cssVarReference(value: string): string | undefined {
 }
 
 /**
- * Read a `rem` or `px` length as pixels, with `rem` at the 16px root unless the caller passes
- * the document's root font size.
+ * Reads a `rem` or `px` length as pixels, with `rem` at the 16px root unless the caller passes the
+ * document's root font size.
  *
  * @param value - A single `rem` or `px` length with no surrounding whitespace.
  * @param rootFontSize - The root font size in px, which one `rem` equals.
@@ -49,8 +49,8 @@ export function cssLengthToPx(value: string, rootFontSize = ROOT_FONT_PX): numbe
 export type RemLength = `${number}rem`;
 
 /**
- * Read a `rem` length as pixels, with `rem` at the 16px root. The type admits only a number
- * before the unit, so the conversion always has a result.
+ * Reads a `rem` length as pixels, with `rem` at the 16px root. The type admits only a number before
+ * the unit, so the conversion always has a result.
  *
  * @param length - A `rem` length.
  * @returns The length in pixels.
@@ -60,13 +60,13 @@ export function remToPx(length: RemLength): number {
 }
 
 /**
- * Read a numeric font weight. CSS Fonts 4 takes any `<number>` from 1 to 1000 inclusive,
- * fractions included, so `450.5` is a weight. The reader accepts only the plain decimal that
- * token modules write: digits with an optional fraction. It refuses the keywords: `bolder` and
- * `lighter` depend on the parent's weight, and `normal` and `bold` would give a weight a second
- * spelling. It also refuses the rarer `<number>` spellings CSS allows, a sign, an exponent such
- * as `4e2` and `calc()`, and a unit or trailing text, such as `400px`, which
- * `Number.parseFloat` would read past.
+ * Reads a numeric font weight. CSS Fonts 4 takes any `<number>` from 1 to 1000 inclusive, fractions
+ * included, so `450.5` is a weight. The reader accepts only the plain decimal that token modules
+ * write: digits with an optional fraction. It refuses the keywords. `bolder` and `lighter` depend
+ * on the parent's weight, and `normal` and `bold` would give a weight a second spelling. It also
+ * refuses the rarer `<number>` spellings CSS allows, which are a sign, an exponent such as `4e2`,
+ * and `calc()`. It refuses a unit or trailing text, such as `400px`, which `Number.parseFloat`
+ * would read past.
  *
  * @param value - A token's CSS value.
  * @returns The weight, or `undefined` when the value is not a plain number from 1 to 1000.

@@ -23,9 +23,9 @@ export const OWN_CLICK_SELECTOR = [
 
 /**
  * Elements a click on a pressable region, such as a table row or a drop zone, must not also
- * press the region through: the shared own-click set, plus the ARIA widgets Fuse renders as
- * non-native elements (Base UI's checkbox and radio spans, a slider thumb, a date segment) that
- * such a region can hold. The slider's track has no role, so its control is named by slot.
+ * press the region through. They are the shared own-click set, plus the ARIA widgets Fuse renders
+ * as non-native elements that such a region can hold: Base UI's checkbox and radio spans, a slider
+ * thumb and a date segment. The slider's track has no role, so its control is named by slot.
  */
 const INTERACTIVE_DESCENDANT = [
   OWN_CLICK_SELECTOR,
@@ -62,8 +62,8 @@ function isElementNode(node: Node): node is Element {
  * Whether a click on a pressable region, such as a table row or a drop zone, presses it. React
  * bubbles a click from portalled content, such as an open menu or a dialog, to the region that
  * owns it in the React tree, though its DOM sits outside the region; such a click never presses
- * it. Inside the region, an {@link INTERACTIVE_DESCENDANT} owns its click, and a click that ends
- * a text selection reaching into the region (a drag to copy an order number) selects, not
+ * it. Inside the region, an {@link INTERACTIVE_DESCENDANT} owns its click. A click that ends a text
+ * selection reaching into the region, such as a drag to copy an order number, selects rather than
  * presses. The checks read node types, so a target from another realm counts too.
  *
  * @param target - The click's target.

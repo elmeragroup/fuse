@@ -44,7 +44,7 @@ export type PolarTableInput =
 /** The polar families. */
 export type PolarFamily = "pie" | "radial" | "radar" | "clock";
 
-/** A ray from the centre, in degrees and in units of the outer radius. */
+/** A ray from the center, in degrees and in units of the outer radius. */
 export type PolarRay = { readonly angle: number; readonly radius: number };
 
 /** What a polar family hands its Root: its geometry, its words, its pick, its table and its readout. */
@@ -58,14 +58,14 @@ export type PolarModel = {
   readonly keys: readonly string[];
   /** Whether no datum draws, which Empty shows and which leaves the listbox out. */
   readonly empty: boolean;
-  /** The generated description, spoken text. */
+  /** The generated description, as spoken text. */
   readonly description: string;
   /**
    * Which key help the family reads: the pie and radial map, the cartesian map a radar shares, or
    * the clock's, whose PageUp and PageDown move one label unit.
    */
   readonly instructions: "polar" | "cartesian" | "clock";
-  /** The listbox's orientation: "vertical" for pie and radial, "horizontal" for radar (section 9.3). */
+  /** The listbox's orientation, "vertical" for pie and radial and "horizontal" for radar, per section 9.3. */
   readonly orientation: "horizontal" | "vertical";
   /** Whether the arrows wrap past the last option: a pie's and a radar's do, a radial chart's rings do not. */
   readonly wrap: boolean;
@@ -84,7 +84,7 @@ export type PolarModel = {
     emphasis: { readonly [key: string]: EmphasisEntry }
   ) => string;
   /**
-   * The option and series under a point, in units of the outer radius from the centre, or null
+   * The option and series under a point, in units of the outer radius from the center, or null
    * where nothing picks.
    *
    * @param point - The point.
@@ -100,7 +100,7 @@ export type PolarModel = {
       readonly painted?: PaintedAngles | undefined;
       /** The series the pointer holds, which a series pick keeps unless another is clearly nearer. */
       readonly near?: number | null | undefined;
-      /** Whether the held series stays while it has a reading, as it does just after it changed. */
+      /** Whether the held series stays while it has a reading, as it does a moment after it changes. */
       readonly nearFirm?: boolean | undefined;
     }
   ) => PointerSlot | null;
@@ -112,7 +112,7 @@ export type PolarModel = {
   readonly selectable: readonly string[];
   /** What the family's Table builds the rows it lists from, which only a Table part reads. */
   readonly table: PolarTableInput;
-  /** Build the family's readout over the kernel, once per model. */
+  /** Builds the family's readout over the kernel, once per model. */
   readonly readout: (kernel: PolarKernel) => ChartReadout;
   /** The data rules the rows broke, with their production fallback already applied. */
   readonly issues: readonly PolarIssue[];
@@ -122,7 +122,7 @@ export type PolarModel = {
 
 /**
  * What a family's marks draw: a pie's slices or a radial chart's rings, each with the numbers its
- * centre prints, a radar's spokes and series, or a clock's slots and series.
+ * center prints, a radar's spokes and series, or a clock's slots and series.
  */
 export type PolarDrawing =
   | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
@@ -233,7 +233,7 @@ export type RadarDrawing = {
   readonly count: number;
   /** Each spoke's label. */
   readonly labels: readonly FormattedText[];
-  /** The radius domain, its minimum at the centre and its maximum at the rim. */
+  /** The radius domain, its minimum at the center and its maximum at the rim. */
   readonly domain: readonly [number, number];
   /** The ring values, the domain's own ticks. */
   readonly ticks: readonly number[];
@@ -244,7 +244,7 @@ export type RadarDrawing = {
   readonly format: ValueFormat;
 };
 
-/** The numbers a centre prints, per item and with nothing active (CONTRACT section 8.13). */
+/** The numbers a center prints, per item and with nothing active, per CONTRACT section 8.13. */
 export type CentreModel = {
   /** An item's visible label from config, Other's for the folded slice, or null past the items. */
   readonly label: (index: number) => string | null;
@@ -274,7 +274,7 @@ export type RadialRing = {
   /** The category's place among the config keys, which selection and highlight name, or -1. */
   readonly series: number;
   readonly quality: "estimated" | "corrected" | "missing" | undefined;
-  /** The ring's place: its centre line's radius, its band and its stroke at the default fill. */
+  /** The ring's place: its center line's radius, its band and its stroke at the default fill. */
   readonly band: RingBand;
   /** The angle its value fills at rest, never past the sweep. */
   readonly angle: number;
@@ -295,7 +295,7 @@ export type PieSlice = {
   /** The item's key, a category or `OTHER_KEY`. */
   readonly key: string;
   readonly label: FormattedText;
-  /** The colour role the slice paints with, which decides whether its label fits inside. */
+  /** The color role the slice paints with, which decides whether its label fits inside. */
   readonly role: string;
   /** The slice's paint, the consumer's per-key property first. */
   readonly paint: string;
@@ -396,7 +396,7 @@ export type PolarContextValue = {
 export const PolarContext = createContext<PolarContextValue | null>(null);
 
 /**
- * Read the enclosing polar Root.
+ * Reads the enclosing polar Root.
  *
  * @param part - The calling part's display name, which the error names.
  * @param families - The families the part belongs to.
@@ -459,10 +459,10 @@ export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
 }
 
 /**
- * The numbers a pie's or a radial chart's centre prints.
+ * The numbers a pie's or a radial chart's center prints.
  *
  * @param model - The Root's model.
- * @returns The centre's numbers, or null under a family with no centre.
+ * @returns The center's numbers, or null under a family with no center.
  */
 export function centreOf(model: PolarModel): CentreModel | null {
   return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.centre : null;

@@ -36,7 +36,7 @@ function inkOf(label: HTMLElement): TextMetrics | null {
 }
 
 /**
- * Write a label's ink size and the offset that puts its ink's middle where its box's middle is, or,
+ * Writes a label's ink size and the offset that puts its ink's middle where its box's middle is, or,
  * for a label drawn on a chip, the chip's own size, since the chip is what sits on the ray.
  */
 function writeInk(label: Element, by: "ink" | "box"): void {
@@ -75,10 +75,10 @@ function writeInk(label: Element, by: "ink" | "box"): void {
 }
 
 /**
- * Measure the labels in a layer and write each one's ink, or its chip's box, again whenever any of
+ * Measures the labels in a layer and writes each one's ink, or its chip's box, again whenever any of
  * them changes size, as a web font that loads does.
  *
- * @param by - "ink" for bare text, "box" for a label drawn on a chip.
+ * @param by - `"ink"` for bare text, `"box"` for a label drawn on a chip.
  * @returns The ref for the layer.
  */
 export function useLabelWidths(by: "ink" | "box" = "ink"): RefObject<HTMLDivElement | null> {

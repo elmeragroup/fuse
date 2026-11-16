@@ -3,10 +3,10 @@
 /**
  * The pie's slices. Each slice is a mark of its own on the Root's loop, so it sweeps in on its own
  * stagger, tweens to new data and pops on its own, and the pie's frame paints every slice of a
- * frame together through the rim floor. An estimated slice paints a hatch of its own colour,
- * and a missing one draws no arc (section 8.7). A slice that leaves collapses as a ghost: to
- * Other's seam when it folds into Other, which grows as it takes the slice in, and to its own
- * seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
+ * frame together through the rim floor. An estimated slice paints a hatch of its own color,
+ * and a missing one draws no arc, as section 8.7 defines. A slice that leaves collapses as a ghost.
+ * It collapses to Other's seam when it folds into Other, which grows as it takes the slice in, and to
+ * its own seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
  * until the chart comes into view.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -46,7 +46,7 @@ type SectorLook = {
   readonly order: number;
 };
 
-/** Hand a slice's angles this frame to the pie's frame, which paints the pie together. */
+/** Hands a slice's angles this frame to the pie's frame, which paints the pie together. */
 function writeSector(node: SVGPathElement, look: SectorLook, values: MarkValues): void {
   look.frame.record(look.key, node, values, { pad: look.pad, order: look.order, kind: "slice" });
 }

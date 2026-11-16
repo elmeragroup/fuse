@@ -45,8 +45,8 @@ export function formatChartValue(
  * @param interval - The slot length.
  * @param options - The locale, the IANA zone of the data's market and an optional format.
  * @returns The visual and spoken label, with canonical spaces.
- * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset meets a day or longer
- * interval. Each is a configuration defect.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone, or a range preset meets a day or
+ *   longer interval. Each is a configuration defect.
  * @beta
  */
 export function formatChartSlot(

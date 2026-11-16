@@ -26,19 +26,19 @@ import { pathNumber } from "./layout/rounding";
  */
 export type GaugeChartRulerProps = ChartLayerProps & {
   /**
-   * Where the ruler sits. "inside" draws it inside the track, and "outside" at the rim, where the
+   * Where the ruler sits. `inside` draws it inside the track, and `outside` at the rim, where the
    * dial makes room for it and its labels.
    */
   variant?: "inside" | "outside";
   /**
-   * The intervals between `min` and `max`, a whole number of 1 or more. By default the domain's
+   * The intervals between `min` and `max`, a whole number of 1 or more. Defaults to the domain's
    * round step for about five majors, each split by the step's leading digit, so 0 to 5 kWh takes
    * 25, a tick each 0.2 kWh.
    */
   ticks?: number;
   /** How many intervals one major tick spans, a whole number of 1 or more. Set it with `ticks`. */
   majorEvery?: number;
-  /** The labels' number format, without its unit. Root's `valueFormat` by default. */
+  /** The labels' number format, without its unit. Defaults to Root's `valueFormat`. */
   format?: ValueFormat;
 };
 
@@ -64,8 +64,8 @@ function rulerDrawing(layer: HTMLDivElement, { marks }: RulerLayout): GaugeDrawi
 /**
  * The ruler: a tick each interval from `min` to `max`, a longer one and a label at each major, and
  * each tick and label the fill has passed in the foreground role, the rest muted. Labels print the
- * number alone in Root's locale, since the centre names the unit. "inside" hangs the ticks in from
- * inside the track; "outside" stands them at the rim, outside a `Zone` band, with the labels past
+ * number alone in Root's locale, since the center names the unit. `inside` hangs the ticks in from
+ * inside the track; `outside` stands them at the rim, outside a `Zone` band, with the labels past
  * them.
  *
  * @beta

@@ -14,18 +14,18 @@ import type { XFormat } from "./chart-types";
 export type AxisRecord = {
   /** The axis's format, or undefined while no axis names one. */
   readonly format: () => XFormat | undefined;
-  /** Record the axis's format, undefined when it unmounts. */
+  /** Records the axis's format, undefined when it unmounts. */
   readonly setFormat: (format: XFormat | undefined) => void;
   /** A number that changes whenever the axis's tick nodes may have changed. */
   readonly ticks: () => number;
-  /** Note that the axis mounted, unmounted or rendered its ticks again. */
+  /** Records that the axis mounted, unmounted or rendered its ticks again. */
   readonly touchTicks: () => void;
-  /** Listen for a change of either. The result stops listening. */
+  /** Listens for a change of either. The result stops listening. */
   readonly subscribe: (listener: () => void) => () => void;
 };
 
 /**
- * Create Root's record of its x axis.
+ * Creates Root's record of its x axis.
  *
  * @returns The record, holding no format at tick generation 0.
  */
@@ -62,7 +62,7 @@ const NO_FORMAT = (): undefined => undefined;
 const NO_TICKS = (): number => 0;
 
 /**
- * Read the x axis's format, rendering again when it changes. The server reads none.
+ * Reads the x axis's format, rendering again when it changes. The server reads none.
  *
  * @param record - Root's record.
  * @returns The axis's format, or undefined.
@@ -72,7 +72,7 @@ export function useAxisFormat(record: AxisRecord): XFormat | undefined {
 }
 
 /**
- * Read the generation of the x axis's tick nodes, rendering again when it changes.
+ * Reads the generation of the x axis's tick nodes, rendering again when it changes.
  *
  * @param record - Root's record.
  * @returns The generation.

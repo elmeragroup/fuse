@@ -21,7 +21,7 @@ export type DataTableColumnToggleProps<TColumn extends VisibilityColumnSource> =
   ComponentProps<typeof DropdownMenuTrigger>,
   "children" | "render"
 > & {
-  /** The trigger button's look. Defaults to `"outline"`. */
+  /** The trigger button's look. */
   variant?: ButtonProps["variant"];
   /** The table, from `useTable` with `columnVisibilityFeature`. */
   table: ColumnToggleSource<TColumn>;

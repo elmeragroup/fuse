@@ -19,11 +19,11 @@ export type DomainGlide = {
   readonly get: () => ScatterDomains;
   readonly subscribe: (listener: () => void) => () => void;
   /**
-   * Move to new domains: at once under "snap", or from where they draw now over the update's
-   * duration under "glide", which a second call mid-glide retargets from where it has got to.
+   * Moves to new domains: at once under `"snap"`, or from where they draw now over the update's
+   * duration under `"glide"`, which a second call mid-glide retargets from where it has reached.
    */
   readonly to: (target: ScatterDomains, how: "snap" | "glide") => void;
-  /** Stop a running glide where it is. */
+  /** Stops a running glide where it is. */
   readonly stop: () => void;
 };
 
@@ -42,7 +42,7 @@ function same(a: ScatterDomains, b: ScatterDomains): boolean {
 }
 
 /**
- * Create a Root's domain glide.
+ * Creates a Root's domain glide.
  *
  * @param initial - The domains the chart first draws under.
  * @param host - The clock and the frame scheduler.

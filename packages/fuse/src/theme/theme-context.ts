@@ -17,10 +17,10 @@ export const ThemeContext = createContext<Theme | undefined>(undefined);
 type ResolvedTheme = { theme: Theme; attributes: ThemeAttributes };
 
 /**
- * Resolves a theme input once per axis change, so a production pinned-segment coercion warns
- * once per axis change and equal inline theme literals keep their identity. An invalid theme
- * throws its validation error at the calling boundary; a caller that has more hooks renders
- * them in a child component, so the throw never changes its hook order.
+ * Resolves a theme input once per axis change, so a production pinned-segment coercion warns once
+ * per axis change and equal inline theme literals keep their identity. An invalid theme throws its
+ * validation error at the calling boundary. A caller with more hooks renders them in a child
+ * component, so the throw never changes its hook order.
  *
  * @param theme - The untyped host theme input.
  * @returns The validated theme and its attributes.

@@ -19,14 +19,14 @@ import { firstOperator } from "./filter-fields";
 import { allowsManyValues, canAddOptionValues, findFilter } from "./filter-model";
 import { currentOrder, pickedValues, unpickedMatches } from "./option-list";
 
-/** The props of `DataTableFilter.ValuesFooter`. */
+/** Props for `DataTableFilter.ValuesFooter`. */
 export type DataTableFilterValuesFooterProps = ComponentProps<"div"> & {
   /**
    * The actions: `DataTableFilter.SelectAllValues`, `DataTableFilter.ClearValues` and
    * `DataTableFilter.Done`. Render the footer as one shared component in `FieldList`'s children,
    * for the add menu's submenus, and in `OptionEditor`'s children, for a chip's popover. It stays
    * in view below the scrolling list. Select all picks every option, past the 50 shown rows, or
-   * every option the search matches, beside the values already picked; a boolean or
+   * every option the search matches, beside the values already picked. A boolean or
    * single-select field leaves it out. Clear all removes only that field's filter and keeps the
    * list open. Done closes the list.
    */
@@ -69,16 +69,19 @@ export function DataTableFilterValuesFooter({
   );
 }
 
-/** The props of `DataTableFilter.SelectAllValues`, `ClearValues` and `Done`: a Fuse Button's. */
+/**
+ * Props for `DataTableFilter.SelectAllValues`, `ClearValues` and `Done`, which take a Fuse Button's
+ * props.
+ */
 export type DataTableFilterValuesActionProps = LabelButtonProps;
 
 /**
- * Picks every option the list's field offers now, past the 50 rows the list shows, beside the
- * values already picked, including options the host added while the list is open. With a search
- * it picks every option the search matches. It is disabled, and stays focusable, once every option
- * in its scope is picked, and while the chip's operator cannot hold that many values, such as
- * `is not` on a field that allows `is any of` but not `is none of`. It renders nothing on a boolean
- * or a single-select field. Children replace its label, "Select all".
+ * The button that picks every option the list's field offers now, past the 50 rows the list shows,
+ * beside the values already picked, including options the host added while the list is open. With a
+ * search it picks every option the search matches. It is disabled, and stays focusable, once every
+ * option in its scope is picked, and while the chip's operator cannot hold that many values, such
+ * as `is not` on a field that allows `is any of` but not `is none of`. It renders nothing on a
+ * boolean or a single-select field. Children replace its label, "Select all".
  */
 export function DataTableFilterSelectAllValues({
   children,
@@ -124,9 +127,9 @@ export function DataTableFilterSelectAllValues({
 }
 
 /**
- * Removes the filter of the list's field only, and the list stays open with focus on it. It is
- * disabled while the field has no filter, and stays focusable. `DataTableFilter.Clear` removes
- * every filter instead. Children replace its label, "Clear all".
+ * The button that removes the filter of the list's field only. The list stays open with focus on
+ * it. It is disabled while the field has no filter, and stays focusable. `DataTableFilter.Clear`
+ * removes every filter instead. Children replace its label, "Clear all".
  */
 export function DataTableFilterClearValues({
   children,
@@ -154,10 +157,10 @@ export function DataTableFilterClearValues({
 }
 
 /**
- * Closes the list's overlay, the add menu or the value popover, and focus goes where that overlay
- * returns it: the Trigger, or the chip's Value. Picks have applied already. It sits at the
- * footer's inline end. Disabled, it stays focusable, as the other actions do. Children replace its
- * label, "Done".
+ * The button that closes the list's overlay, the add menu or the value popover. Focus goes where
+ * that overlay returns it: the Trigger, or the chip's Value. Picks have applied already. It sits at
+ * the footer's inline end. Disabled, it stays focusable, as the other actions do. Children replace
+ * its label, "Done".
  */
 export function DataTableFilterDone({
   className,

@@ -2,9 +2,10 @@
  * The momentum spring a moving mark leaves on when its target changes, so the loop's `move` with
  * `momentum: "keep"` bends the mark's course instead of turning it at once. Each number moves on a
  * critically damped spring, `x(t) = to + (c₁ + c₂·t)·e^(−ωt)` with `c₁ = from − to` and
- * `c₂ = v₀ + ω·c₁`, which starts at `from` moving at `v₀` and never bounces. Its frequency is chosen
- * per number so it never shows a value its course does not reach: it never passes its target, and it
- * never leaves its span, the values the mark already moved between. `chart-motion.ts` schedules it.
+ * `c₂ = v₀ + ω·c₁`, which starts at `from` moving at `v₀` and never bounces. This module picks its
+ * frequency per number so it never shows a value its course does not reach. It never passes its
+ * target, and it never leaves its span, the values the mark already moved between.
+ * `chart-motion.ts` schedules it.
  */
 import { CHART_UPDATE_MS } from "./motion";
 import { criticalStep } from "./spring";
@@ -24,7 +25,7 @@ export type NumberSpring = {
   readonly span: Span;
 };
 
-/** A momentum tween's spring: one per number the mark moves, in the order of its start and target. */
+/** A momentum tween's spring, one per number the mark moves, in the order of its start and target. */
 export type MomentumSpring = readonly NumberSpring[];
 
 /** Where a tween's numbers are at one time, and how fast each moves, in its units per millisecond. */
@@ -33,7 +34,7 @@ export type MomentumPoint = { readonly values: number[]; readonly velocity: numb
 /** A momentum move's spring and how long it takes to settle, in milliseconds. */
 export type MomentumMove = { readonly spring: MomentumSpring; readonly duration: number };
 
-/** What a number's spring is chosen as: its angular frequency and the velocity it leaves with. */
+/** The course picked for a number's spring: its angular frequency and the velocity it leaves with. */
 type Course = { readonly omega: number; readonly velocity: number };
 
 /**
@@ -43,10 +44,13 @@ type Course = { readonly omega: number; readonly velocity: number };
  */
 const MOMENTUM_SETTLE = 9.2334;
 
-/** A frame at 60 frames a second, in milliseconds, which a turning spring keeps its way through. */
+/**
+ * A frame at 60 frames a second, in milliseconds. A turning spring aims to keep its old direction
+ * for this long, unless its span needs a stiffer spring.
+ */
 const FRAME_MS = 1000 / 60;
 
-/** The longest a momentum move may take to settle, in milliseconds: twice the update's. */
+/** The longest a momentum move may take to settle, in milliseconds, twice the update's duration. */
 const MOMENTUM_LONGEST = 2 * CHART_UPDATE_MS;
 
 /** The angular frequency that settles within the update's duration, per millisecond. */
@@ -66,10 +70,10 @@ function excursion(distance: number, speed: number, omega: number): number {
  * One number's momentum spring, which never shows a value its course does not reach. Moving toward
  * its target, it stiffens until its velocity is no more than `ω` times the way left, so it settles
  * onto the target without passing it, however short the way. Moving away, it softens until its
- * deceleration takes at least a frame to turn it, so it never stops dead in one frame, and no softer
- * than settles in twice the update's duration; then it stiffens until it turns back before it
- * leaves its span, the values the mark already moved between, which wins over the frame, and a
- * number at the edge of its span stops there.
+ * deceleration takes at least a frame to turn it, so it never stops dead in one frame. It grows no
+ * softer than a spring that settles in twice the update's duration. Then it stiffens until it turns
+ * back before it leaves its span, the values the mark already moved between. The span wins over the
+ * frame, and a number at the edge of its span stops there.
  */
 function numberSpring(from: number, to: number, speed: number, span: Span): Course {
   const ahead = to - from;
@@ -103,8 +107,8 @@ function numberSpring(from: number, to: number, speed: number, span: Span): Cour
 }
 
 /**
- * The span a number moves within: the span the tween it takes over moved within, widened to that
- * tween's start, its target and where the number shows.
+ * The span a number moves within. It is the span the tween it takes over moved within, widened to
+ * that tween's start, its target and where the number shows.
  *
  * @param from - The replaced tween's start.
  * @param to - The replaced tween's target.
@@ -117,8 +121,8 @@ export function spanAround(from: number, to: number, drawn: number, known: Span 
 }
 
 /**
- * The spring a moving mark leaves on toward its targets, and how long it takes to settle: the
- * update's duration, or longer for a softened turn, never longer than twice it.
+ * The spring a moving mark leaves on toward its targets, and how long it takes to settle. The
+ * duration is the update's, or longer for a softened turn, and never longer than twice it.
  *
  * @param move - Where each number shows, its target, its velocity and its span.
  * @returns The spring and its duration.
@@ -168,8 +172,8 @@ export function springAt(
 }
 
 /**
- * A spring's share of the way from rest at a progress through its duration, as a curve's eased
- * progress reads, which a resize's retarget reads.
+ * A spring's share of the way from rest at a progress through its duration, in the form of a
+ * curve's eased progress. A resize's retarget reads it.
  *
  * @param progress - The share of its duration, 0 to 1.
  * @returns The share of the way.

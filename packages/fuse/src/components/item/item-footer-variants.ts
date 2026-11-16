@@ -29,7 +29,7 @@ const itemFooterClipClass = cn("relative -m-1 overflow-clip p-1");
 
 /**
  * The `Item.Footer` recipe: `root` is the footer's grid and `content` the element inside it that
- * holds the footer's children, by the footer's `mode`. Package-private: not on the
+ * holds the footer's children, by the footer's `mode`. It is package-private and not on the
  * `@elmeragroup/fuse/item` facade. The workspace-only recipe catalog re-exports it for the Figma
  * component sync.
  */

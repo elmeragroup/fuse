@@ -88,11 +88,11 @@ export type ChartRoof = {
    * show.
    */
   readonly read: (view: RoofView) => RoofProfile;
-  /** Read the series marks again on the next read, after a commit, an opening or a landing. */
+  /** Reads the series marks again on the next read, after a commit, an opening or a landing. */
   readonly forget: () => void;
   /**
-   * Watch what the Root's series marks draw, and call `changed` once after each batch of DOM changes
-   * that alters it:
+   * Watches what the Root's series marks draw, and calls `changed` once after each batch of DOM
+   * changes that alters it:
    *
    * - any attribute of a mark or its layer, such as new geometry for a new curve, a transform, a
    *   style or class, or a variant or quality a stylesheet strokes apart;
@@ -105,8 +105,9 @@ export type ChartRoof = {
    * `--chart-marker-x` or `--chart-marker-y`, which the loop writes each frame too. On Root, its
    * ancestors and its wrappers only style and class count, since Root's data attributes follow the
    * pointer. A style change counts unless it only moves a private `--_` property or
-   * `--chart-active-x`, which parts write as they draw and as the pointer moves. The active bar's overlay, the active dots and Root's data attributes lie outside
-   * the watch, so a slot step changes nothing it sees. The roof's own read draws the moving marks
+   * `--chart-active-x`, which parts write as they draw and as the pointer moves. The active bar's
+   * overlay, the active dots and Root's data attributes lie outside the watch, so a slot step
+   * changes nothing it sees. The roof's own read draws the moving marks
    * where they land and back, which the watch skips, since that read measured every change made
    * before it.
    *
@@ -116,7 +117,7 @@ export type ChartRoof = {
 };
 
 /**
- * Create a Root's roof.
+ * Creates a Root's roof.
  *
  * @returns The roof.
  */
@@ -239,7 +240,7 @@ function sameDrawingStyle(before: string | null, after: string | null, tweening:
  * loop takes from there to the route's end, at the route's end and where they rest, and every
  * shape drawn counts. The loop writes each frame as a fraction of that same route, so every curve,
  * slide and bridge the marks paint lies among the shapes drawn, up to the gap between two
- * neighbouring fractions, which the profile adds as a margin. A box or a dot, whose edges move in
+ * neighboring fractions, which the profile adds as a margin. A box or a dot, whose edges move in
  * straight lines, counts as one box around where it shows, where its route ends and where it rests,
  * which holds every place it passes.
  */
@@ -385,7 +386,7 @@ function routeRoof(view: RoofView): RoofProfile | null {
 
 /** A canvas of plot pixels that the paths of some layers draw onto, one state after another. */
 type PathRaster = {
-  /** Draw the paths as they are now, over what earlier draws left. */
+  /** Draws the paths as they are now, over what earlier draws left. */
   readonly draw: () => void;
   /** The profile of everything drawn so far, read once. */
   readonly read: () => RoofProfile;
@@ -504,7 +505,7 @@ function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
 }
 
 /**
- * How far an active dot reaches from the centre it rides the line on, beyond the gap a popup keeps
+ * How far an active dot reaches from the center it rides the line on, beyond the gap a popup keeps
  * above the roof, in CSS pixels: its radius at the widest a ring animation scales it, as a ping
  * ring's does, plus half its stroke. A default, ring or halo dot reaches 5 to 8 px and fits inside
  * the 8 px gap, so only a ping ring, at 10 px, raises the roof. The roof reads it once for each

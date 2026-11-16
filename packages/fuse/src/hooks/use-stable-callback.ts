@@ -3,7 +3,7 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 
 /**
- * A stable callback that calls the latest render's `callback`, for a context a memo keeps: a
+ * A stable callback that calls the latest render's `callback`, for a context a memo keeps. A
  * gesture always reaches the render it happened in.
  *
  * @template A - The arguments.

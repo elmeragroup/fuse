@@ -370,6 +370,7 @@ export default defineConfig({
     {
       files: ["packages/fuse/src/**/*.{ts,tsx}"],
       rules: {
+        "fuse/jsdoc-voice": "error",
         "elmera/no-primitive-colors": "error",
         "elmera/no-tailwind-dark-variant": "error",
         "elmera/enforce-variant-standard": "error",

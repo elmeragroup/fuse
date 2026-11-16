@@ -1,24 +1,25 @@
 /**
- * A live line chart's clock: the one frame loop that scrolls its window and eases its value domain
+ * A live line chart's clock, the one frame loop that scrolls its window and eases its value domain
  * and its live tip. Each frame the window ends at the wall clock, led by as much as the readings'
  * stamps run ahead of it, so the line moves at the pace of time itself, never in jumps of one
  * reading. A new reading or a domain that no longer fits starts a glide from what the frame shows
  * to the new target, on the live curve over the update duration, so the domain and the tip never
- * snap. A domain eases inward more slowly, over `LIVE_CONTRACT_MS`. Readings are known by their
- * time: a new latest reading glides from where the line ended, the tip's shown value, to its own
- * value, and a corrected reading still on its way, or the one the line ended on, from where it
- * showed, each on its own glide that a newer reading never restarts, so every glide ends within the
- * update duration of its start. Root's `value`, the tip, glides apart from the readings on the same
- * curve. The domain a frame shows is the domain's glide widened at once to every value the frame
- * draws, so no mark leaves the plot whatever the feed does: a domain eases inward, and outward only
- * as far as no drawn value already took it. Parts subscribe and write the frame to the DOM
- * themselves, so React commits nothing while the line scrolls.
+ * snap. A domain eases inward more slowly, over `LIVE_CONTRACT_MS`.
+ *
+ * The clock keys readings by their time. A new latest reading glides from where the line ended, the
+ * tip's shown value, to its own value. A corrected reading still on its way, or the one the line
+ * ended on, glides from where it showed. Each is on its own glide that a newer reading never
+ * restarts, so every glide ends within the update duration of its start. Root's `value`, the tip,
+ * glides apart from the readings on the same curve. The domain a frame shows is the domain's glide
+ * widened at once to every value the frame draws, so no mark leaves the plot whatever the feed does.
+ * A domain eases inward, and outward only as far as no drawn value already took it. Parts subscribe
+ * and write the frame to the DOM themselves, so React commits nothing while the line scrolls.
  *
  * The loop runs only while the chart is live, shown and subscribed, and requestAnimationFrame stops
  * in a hidden tab, so a chart in a background tab or scrolled out of view costs no frames. On its
  * return, as after a pause or under a new window length, the first frame draws the wall clock's
  * window at rest, every reading it missed on its own value. Under reduced motion the clock is
- * still: no loop runs, each feed redraws once at the wall clock, and the domain and the tip snap. A
+ * still. No loop runs, each feed redraws once at the wall clock, and the domain and the tip snap. A
  * paused clock holds its frame until it resumes. The clock takes its wall clock and frames from its
  * host and reads no browser API itself.
  */
@@ -41,8 +42,8 @@ export type LiveClockHost = MotionHost & { readonly epoch: () => number };
 /** What a frame draws. */
 export type LiveFrame = {
   /**
-   * The feed the frame draws, the same object until the clock takes another, which every readout
-   * that names a reading reads, so a paused chart names what it shows. `span` indexes its readings.
+   * The feed the frame draws, the same object until the clock takes another. Every readout that
+   * names a reading reads it, so a paused chart names what it shows. `span` indexes its readings.
    */
   readonly feed: LiveFeed;
   /** The clock, the window's end, in epoch milliseconds. */
@@ -73,8 +74,8 @@ export type LiveFeed = {
 };
 
 /**
- * How the clock runs: "live" scrolls frame by frame, "still" redraws once per feed at the wall
- * clock with no motion, for reduced motion, and "paused" holds its frame until it runs again.
+ * How the clock runs. `live` scrolls frame by frame, `still` redraws once per feed at the wall
+ * clock with no motion, for reduced motion, and `paused` holds its frame until it runs again.
  */
 export type LiveMode = "live" | "still" | "paused";
 
@@ -82,20 +83,20 @@ export type LiveMode = "live" | "still" | "paused";
 export type LiveClock = {
   /** The frame as it shows now. The same object until it changes. */
   readonly get: () => LiveFrame;
-  /** Subscribe to every new frame. The loop runs only while something subscribes. */
+  /** Subscribes a listener to every new frame. The loop runs only while something subscribes. */
   readonly subscribe: (listener: () => void) => () => void;
-  /** Take new readings, a new tip or a new duration. */
+  /** Takes new readings, a new tip or a new duration. */
   readonly feed: (feed: LiveFeed) => void;
-  /** Change how the clock runs. */
+  /** Changes how the clock runs. */
   readonly setMode: (mode: LiveMode) => void;
-  /** Whether the chart is in view, which the loop needs to run. */
+  /** Sets whether the chart is in view, which the loop needs to run. */
   readonly setVisible: (visible: boolean) => void;
 };
 
 /** A value's update glide, started at a frame-clock time. */
 type Glide = { readonly from: number; readonly to: number; readonly at: number };
 
-/** The domain's update glide: both ends on one glide. */
+/** The domain's update glide, with both ends on one glide. */
 type DomainGlide = {
   readonly from: readonly [number, number];
   readonly to: readonly [number, number];
@@ -135,7 +136,10 @@ function resting(domain: readonly [number, number]): DomainGlide {
 /** The domain of a chart with no reading. */
 const EMPTY_DOMAIN: readonly [number, number] = [0, 1];
 
-/** What the last frame drew: the latest reading, which tells a new reading from a corrected one, and the tip's glide. */
+/**
+ * What the last frame drew. It is the latest reading, which tells a new reading from a corrected one,
+ * and the tip's glide.
+ */
 type Drawn = { readonly newest: LivePoint; readonly tip: Glide };
 
 /**
@@ -144,7 +148,10 @@ type Drawn = { readonly newest: LivePoint; readonly tip: Glide };
  */
 const LEAD_HALF_LIFE_MS = 10_000;
 
-/** How far the window's end leads the wall clock, decaying from `from` toward `to` since `at`, all in epoch milliseconds. */
+/**
+ * How far the window's end leads the wall clock, decaying from `from` toward `to` since `at`, all in
+ * epoch milliseconds.
+ */
 type Lead = { readonly from: number; readonly to: number; readonly at: number };
 
 function leadAt(lead: Lead, epoch: number): number {
@@ -155,9 +162,9 @@ function leadAt(lead: Lead, epoch: number): number {
 type Composed = { readonly at: number; readonly duration: number };
 
 /**
- * Create a chart's clock. Its first frame rests at the latest reading, which the server and a
+ * Creates a chart's clock. Its first frame rests at the latest reading, which the server and a
  * hydrating render read too, and it moves once its owner sets a mode. A clock first set to
- * "paused" holds that frame.
+ * `paused` holds that frame.
  *
  * @param host - The frames, the frame clock and the wall clock.
  * @param initial - The first feed.
@@ -184,7 +191,7 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
   let lead: Lead = { from: measuredLead(host.epoch()), to: measuredLead(host.epoch()), at: host.epoch() };
 
   /**
-   * Measure the lead of a new feed: a larger lead shows at once, and the shown lead decays toward a
+   * Measures the lead of a new feed. A larger lead shows at once, and the shown lead decays toward a
    * smaller one, so a feed whose stamps run ahead of the browser's clock scrolls at the wall clock's
    * pace instead of holding at each reading.
    */
@@ -199,13 +206,13 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
   };
 
   /**
-   * Move every glide on toward the feed: the clock's one change of state between frames. Every
+   * Moves every glide on toward the feed, the clock's one change of state between frames. Every
    * reading still on its way, and the one the last frame ended on, moves from where it shows to its
    * value now, so a correction that arrives with a newer reading glides too, and a new reading grows
-   * out of where the line ended. A glide that has ended or shows its target already, a reading the
-   * feed dropped, and one before the window's entering reading, which no frame draws, leave. No
-   * glide restarts on a newer reading, so at most the readings of one update duration glide,
-   * however fast they arrive.
+   * out of where the line ended. The clock drops a glide that has ended or already shows its target,
+   * the glide of a reading the feed dropped, and the glide of one before the window's entering
+   * reading, which no frame draws. No glide restarts on a newer reading, so at most the readings of
+   * one update duration glide, however fast they arrive.
    */
   const retarget = (
     last: Drawn,
@@ -326,7 +333,7 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
     return Math.max(frame.now, epoch + leadAt(lead, epoch), latest() ?? Number.NEGATIVE_INFINITY);
   };
 
-  /** Redraw the feed at the wall clock with no motion, as a still clock and a first reading do. */
+  /** Redraws the feed at the wall clock with no motion, as a still clock and a first reading do. */
   const redraw = (): void => {
     show(compose(wallNow(), host.now(), false));
   };

@@ -1,9 +1,10 @@
 import type { ReactElement, ReactNode } from "react";
 
-/** `Show` takes the condition and the children it renders. */
+/** Props for `Show`: the condition and the children it renders. */
 export type ShowProps = {
   /**
-   * The render condition, a strict boolean. Coerce it yourself, as in `items.length > 0`.
+   * The render condition, a strict boolean. Coerce other values to a boolean first, as in
+   * `items.length > 0`.
    */
   when: boolean;
   /**

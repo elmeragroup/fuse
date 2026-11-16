@@ -23,10 +23,10 @@ type LevelRoleClasses = {
 /**
  * The theme roles of levels 1 to 3. Levels 4 to 6 have none and keep the recipe's default size,
  * line height and weight. Each fallback is the neutral value the role defaults to, so a host
- * without `themes.css` keeps the scale these levels had before the roles: h1 text-2xl, h2 text-lg
- * and h3 text-base at the snug 1.375 ratio, all at 500. `oxfmt` sorts the classes inside one
- * string, so the leading is its own `cn` argument to stay after the size: tailwind-merge drops a
- * line height that a later font size follows.
+ * without `themes.css` keeps the scale these levels had before the roles: h1 `text-2xl`, h2
+ * `text-lg` and h3 `text-base` at the snug 1.375 ratio, all at 500. `oxfmt` sorts the classes
+ * inside one string, so the leading is its own `cn` argument to stay after the size. tailwind-merge
+ * drops a line height that a later font size follows.
  * These merge over the recipe's size and font arms, so `headingVariants()` alone keeps the
  * level-free scale.
  */
@@ -57,7 +57,7 @@ function levelRoleClasses(level: HeadingLevel): LevelRoleClasses | undefined {
   }
 }
 
-/** `Heading` takes a native heading's props plus the recipe axes and the outline `level`. */
+/** Props for `Heading`, which takes a native heading's props plus the recipe axes and the outline `level`. */
 export type HeadingProps = useRender.ComponentProps<"h2"> &
   Omit<VariantProps<typeof headingVariants>, "size" | "font"> & {
     /**

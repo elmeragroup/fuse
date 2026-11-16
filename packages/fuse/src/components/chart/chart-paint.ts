@@ -13,12 +13,12 @@ import { ChartCompositionError } from "./layout/errors";
 import type { Reading } from "./layout/readings";
 import type { StackOffset } from "./layout/stack";
 
-/** The scale a colour names, or undefined for every other colour. */
+/** The scale a color names, or undefined for every other color. */
 function scaleOf(color: ChartColor): ChartScale | undefined {
   return color === "chart-seq" || color === "chart-diverging" ? color : undefined;
 }
 
-/** The roles a colour paints with: a role, a list's roles, a threshold's two sides, or none for a scale. */
+/** The roles a color paints with: a role, a list's roles, a threshold's two sides, or none for a scale. */
 function rolesOf(color: ChartColor): readonly string[] {
   if (isRoleList(color)) return color;
   if (isThresholdColor(color)) return [color.below.color, color.above.color];
@@ -42,13 +42,13 @@ export function nonFiniteThresholds(config: ChartConfig): readonly string[] {
 
 /**
  * The error of one layout that mixes a sentiment role with a categorical role, which D4 forbids,
- * because a reader would take the categorical hue for a judgement. Each layout checks its own
+ * because a reader would take the categorical hue for a judgment. Each layout checks its own
  * keys: a Panel its `series`, and Root's default layout every config key when it draws.
  *
  * @param part - The layout's owner, `Chart.Root` or `Chart.Panel`.
  * @param config - The Root's config.
  * @param keys - The config keys the layout covers.
- * @returns The error, or null for a layout of one colour family.
+ * @returns The error, or null for a layout of one color family.
  */
 export function colourFamilyError(
   part: string,
@@ -71,15 +71,15 @@ export function colourFamilyError(
 }
 
 /**
- * The error of a Line or Area coloured by a scale or a threshold whose values draw stacked. Both
+ * The error of a Line or Area colored by a scale or a threshold whose values draw stacked. Both
  * split the series' own values along the value axis, and a stacked or expanded path draws at other
  * values, so no single gradient can paint it by value. Bars take either on a stack, because each
  * bar paints its own value.
  *
  * @param part - `Chart.Line` or `Chart.Area`.
- * @param color - The series colour.
+ * @param color - The series color.
  * @param stacked - Whether the series is in a stack of two or more keys.
- * @param stackOffset - Root's stack offset, which under "expand" redraws even a lone series.
+ * @param stackOffset - Root's stack offset, which under `"expand"` redraws even a lone series.
  * @returns The error, or null for a path that draws its own values.
  */
 export function stackedScaleError(
@@ -120,7 +120,7 @@ export type SeriesPaint = {
    * first stop, a scale's middle step or a threshold's `below` side.
    */
   readonly base: string;
-  /** The role list's colour stops from the tip to the base, or undefined for every other colour. */
+  /** The role list's color stops from the tip to the base, or undefined for every other color. */
   readonly stops: readonly string[] | undefined;
   /**
    * The step paints, lowest first: a scale's 7, or a threshold's `below` and `above`. Undefined
@@ -199,7 +199,7 @@ function buildPaint(key: string, color: ChartColor, series: SeriesModel | undefi
   };
 }
 
-/** What tells two colours' paints apart: a threshold's number and roles, never its labels. */
+/** What tells two colors' paints apart: a threshold's number and roles, never its labels. */
 function paintId(color: ChartColor): string {
   if (isRoleList(color)) return color.join(",");
   if (isThresholdColor(color)) {
@@ -209,11 +209,11 @@ function paintId(color: ChartColor): string {
 }
 
 /**
- * A series' paint, every stop with the consumer's `--chart-color-<key>` first. It is built once per
- * series model, key and colour, so a pointer step that reads it only looks up the active value.
+ * A series' paint, every stop with the consumer's `--chart-color-<key>` first. The function builds it
+ * once per series model, key and color, so a pointer step that reads it only looks up the active value.
  *
  * @param key - The series key.
- * @param color - The series colour.
+ * @param color - The series color.
  * @param series - The series, whose readings a scale bins.
  * @returns The paint.
  */
@@ -233,7 +233,7 @@ export function seriesPaintOf(key: string, color: ChartColor, series: SeriesMode
  *
  * @param paint - The series paint.
  * @param value - The value.
- * @returns A CSS colour with the consumer override first.
+ * @returns A CSS color with the consumer override first.
  */
 export function valuePaint(paint: SeriesPaint, value: number): string | undefined {
   return paint.bins === undefined ? undefined : paint.ramp?.[paint.bins(value) - 1];
@@ -245,7 +245,7 @@ export function valuePaint(paint: SeriesPaint, value: number): string | undefine
  *
  * @param paint - The series paint.
  * @param reading - The slot's reading, if any.
- * @returns A CSS colour with the consumer override first.
+ * @returns A CSS color with the consumer override first.
  */
 export function readingPaint(paint: SeriesPaint, reading: Reading | undefined): string | undefined {
   return reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;

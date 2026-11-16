@@ -23,7 +23,7 @@ const { root: groupRoot, separator: groupSeparator, item: groupItem } = itemGrou
 /** The enclosing group's variant, or `undefined` outside `Item.Group`. */
 const ItemGroupContext = createContext<ItemGroupVariant | undefined>(undefined);
 
-/** `Item.Group` takes a native `div`'s props and the group's `variant`. */
+/** Props for `Item.Group`. It takes a native `div`'s props and the group's `variant`. */
 type ItemGroupProps = ComponentProps<"div"> & {
   /**
    * The group's look. `compact` draws the rows as one connected list: no gap, tighter rows, flush
@@ -61,10 +61,10 @@ export function ItemGroup({ className, variant = "default", ...props }: ItemGrou
   );
 }
 
-/** `Item.Separator` takes Separator's props. */
+/** Props for `Item.Separator`. It takes Separator's props. */
 type ItemSeparatorProps = Omit<ComponentProps<typeof Separator>, "aria-hidden"> & {
   /**
-   * Hides the rule from assistive technology. Inside `Item.Group` it defaults to `true`, because
+   * Whether the rule is hidden from assistive technology. Inside `Item.Group` it defaults to `true`, because
    * a list may own only list items. Pass `false` to expose the rule there. Outside a group it is
    * a `separator`.
    */
@@ -104,18 +104,21 @@ function renderedVisibility(element: ReactElement): Visibility {
   return definedProps({ hidden: props.hidden, "aria-hidden": props["aria-hidden"] });
 }
 
-/** `Item.Root` takes a native `div`'s props, `render` and the row's `variant` and `size`. */
+/**
+ * Props for `Item.Root`. It takes a native `div`'s props, `render` and the row's `variant` and
+ * `size`.
+ */
 type ItemRootPartProps = Omit<useRender.ComponentProps<"div">, "render" | "aria-disabled"> &
   VariantProps<typeof itemVariants> & {
     /**
-     * Replaces the host `div`, such as `render={<a href="/orders" />}` for a link row or
+     * The element that replaces the host `div`, such as `render={<a href="/orders" />}` for a link row or
      * `render={<button type="button" />}` for a button row. Inside `Item.Group` the rendered
      * element keeps its own role inside a list item wrapper. An explicit `role` on the row
      * replaces that and skips the wrapper.
      */
     render?: useRender.ComponentProps<"div">["render"];
     /**
-     * Marks an unavailable row. A link row takes no `disabled`, so mark it `aria-disabled="true"`.
+     * Whether the row is unavailable. A link row takes no `disabled`, so mark it `aria-disabled="true"`.
      * Any row marked so dims with the `not-allowed` cursor. A `render` row also drops its hover
      * fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click
      * neither opens a new tab nor runs `onAuxClick`. A plain row keeps the clicks of the controls

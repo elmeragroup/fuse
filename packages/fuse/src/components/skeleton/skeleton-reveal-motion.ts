@@ -1,22 +1,23 @@
 /**
- * The pane swap of a `SkeletonReveal`, ported from skullet's fades
- * (https://github.com/lochie/skullet, MIT, Lochie Axon). When the pane on screen changes, the
- * outgoing pane pops out of flow, pinned to the box it had, inert and above the incoming one, so
- * the incoming pane lays out at once. The root then eases its height from the outgoing pane's to
- * the incoming one's with `overflow: clip` while the ease runs, and the incoming content's own
- * surfaces (cards, borders, fills) appear whole at once inside that clip. Only its pieces of text
- * and media fade in while the skeleton's bones fade out, so no surface of the old height lingers
- * and snaps once the fade ends.
+ * The pane swap of a `SkeletonReveal`, ported from skullet's fades at
+ * https://github.com/lochie/skullet, by Lochie Axon under the MIT license. When the pane on screen
+ * changes, the outgoing pane pops out of flow, pinned to the box it had, inert and above the
+ * incoming one, so the incoming pane lays out at once. The root then eases its height from the
+ * outgoing pane's to the incoming one's with `overflow: clip` while the ease runs, and the incoming
+ * content's own surfaces, such as cards, borders and fills, appear whole at once inside that clip.
+ * Only its pieces of text and media fade in while the skeleton's bones fade out, so no surface of
+ * the old height lingers and snaps once the fade ends.
  *
  * `RevealMotion` owns every fade it starts, so a swap reports whether its panes completed or were
- * cancelled, and disposing it on unmount stops them all; the root's height ease is the
- * `RootHeight` in `skeleton-reveal-height.ts`, which it hands each swap's height change to. Inline lengths it writes are local
- * layout pixels: a client rect is divided by the root's transform scale, so a reveal under a
- * scaled ancestor pins and eases at its own size. Every size it reads comes from the one reader in
- * `skeleton-geometry.ts`, which the bones are measured with too.
+ * canceled, and disposing it on unmount stops them all. The `RootHeight` in
+ * `skeleton-reveal-height.ts` runs the root's height ease, and `RevealMotion` hands it each swap's
+ * height change. The inline lengths it writes are in local layout pixels. It divides a client rect
+ * by the root's transform scale, so a reveal under a scaled ancestor pins and eases at its own size.
+ * Every size it reads comes from the one reader in `skeleton-geometry.ts`, which the bones are
+ * measured with too.
  *
- * Reduced motion keeps Fuse's central rule: the height changes at once and nothing staggers, while
- * the opacity fades stay.
+ * Reduced motion follows Fuse's central rule. The height changes at once and nothing staggers,
+ * while the opacity fades stay.
  */
 import { isText, windowOf } from "../../internal/dom-node";
 import { localHeight, scaleOf } from "./skeleton-geometry";
@@ -37,7 +38,7 @@ export type PaneKind = "skeleton" | "content";
 /** How an animated step ended: it ran to its end, or something stopped it first. */
 export type MotionOutcome = "completed" | "cancelled";
 
-/** Where a pane stood within its root before it left, in local pixels: what it is pinned to. */
+/** Where a pane stood within its root before it left, in local pixels, which is what it is pinned to. */
 type PaneBox = {
   readonly top: number;
   readonly left: number;
@@ -56,7 +57,7 @@ const BONE_SLOT = "skeleton-reveal-bone";
 /** The attribute on a bone holding the computed font size of the text it stands for, in pixels. */
 export const BONE_FONT_SIZE_ATTRIBUTE = "data-font-size";
 
-/** Completed only when every step completed. */
+/** The steps' combined outcome, `completed` only when every step completed. */
 function allCompleted(outcomes: readonly Promise<MotionOutcome>[]): Promise<MotionOutcome> {
   return Promise.all(outcomes).then((results) =>
     results.every((result) => result === "completed") ? "completed" : "cancelled"
@@ -71,8 +72,9 @@ function allCompleted(outcomes: readonly Promise<MotionOutcome>[]): Promise<Moti
  * @returns The pane's box relative to the root's padding box, in local fractional pixels, so a
  *   shrink-to-fit pane does not rewrap as it leaves and a scaled reveal keeps its size. In a root
  *   that scrolls, the box is where the pane stands in the scrolled content, as an absolutely
- *   positioned child of it is placed: its scroll offset is added back, and since a right-to-left
- *   root scrolls by a negative `scrollLeft` from its start edge, the same sum holds there too.
+ *   positioned child of it is placed. The function adds its scroll offset back, and since a
+ *   right-to-left root scrolls by a negative `scrollLeft` from its start edge, the same sum holds
+ *   there too.
  */
 function boxOf(pane: HTMLElement, root: HTMLElement): PaneBox {
   const scale = scaleOf(root);
@@ -106,7 +108,10 @@ function popOut(pane: HTMLElement, box: PaneBox, layer: number): void {
   pane.setAttribute(EXITING_ATTRIBUTE, "");
 }
 
-/** A row or card of incoming content: its box, read once, and the largest text size of its pieces. */
+/**
+ * A row or card of incoming content, with its box, read once, and the largest text size of its
+ * pieces.
+ */
 type SequenceUnit = { readonly rect: DOMRect; size: number };
 
 /** Whether an element holds text of its own, not only inside its child elements. */
@@ -116,7 +121,7 @@ function hasOwnText(element: Element): boolean {
 
 /**
  * What a reveal brings in one by one: every element holding text or media of its own. A piece is
- * what its fade animates, so it must draw a box: an element with `display: contents`, such as the
+ * what its fade animates, so it must draw a box. An element with `display: contents`, such as the
  * pane's own fieldset, draws none, and its text fades with the nearest boxed element around it,
  * which takes the whole of that element's content as one piece. An element that renders nothing,
  * with `display: none` or a hidden input, is no piece, and neither is anything inside it.
@@ -150,7 +155,10 @@ function piecesOf(root: Element): Element[] {
   });
 }
 
-/** A row of a list or a card of a grid: the piece's nearest ancestor with two or more siblings like it. */
+/**
+ * A row of a list or a card of a grid, which is the piece's nearest ancestor with two or more
+ * siblings like it.
+ */
 function unitOf(piece: Element, root: Element): Element {
   for (
     let element: Element | null = piece;
@@ -176,7 +184,7 @@ function fontSizeOf(element: Element): number {
   return Number.parseFloat(windowOf(element).getComputedStyle(element).fontSize) || 16;
 }
 
-/** An element's computed opacity, or null when the computed value is not a number. */
+/** An element's computed opacity, or `null` when the computed value is not a number. */
 function opacityOf(element: Element): number | null {
   const opacity = Number.parseFloat(windowOf(element).getComputedStyle(element).opacity);
   return Number.isNaN(opacity) ? null : opacity;
@@ -197,7 +205,7 @@ type SequenceTiming = {
 
 /**
  * Times a sequence against the incoming content's own box, read before the root's height ease
- * starts: the ease clips the root to the outgoing height, which is not where the pieces land.
+ * starts, since the ease clips the root to the outgoing height, which is not where the pieces land.
  */
 function sequenceTiming(
   content: HTMLElement,
@@ -251,7 +259,7 @@ function sequenceTiming(
 
 /** What the root knew about the skeleton that is leaving, for the planner. */
 export type SkeletonHistory = {
-  /** Milliseconds the skeleton was up; `Infinity` for a server-rendered one. */
+  /** How long the skeleton was up, in milliseconds, or `Infinity` for a server-rendered one. */
   readonly shownMs: number;
   /** Whether wheel, touch or key input arrived within the planner's input window. */
   readonly recentInput: boolean;
@@ -271,25 +279,28 @@ export type PaneSwap = {
   readonly incoming: SwapPane;
   /** The pane that was. */
   readonly leaving: SwapPane;
-  /** For content replacing a skeleton: how the skeleton loaded. */
+  /** How the skeleton loaded, for content replacing a skeleton. */
   readonly history: SkeletonHistory;
 };
 
-/** The swap's two halves, each settling once its pane has, completed or cancelled. */
+/** The swap's two halves, each settling once its pane has, as `completed` or `cancelled`. */
 export type SwapProgress = {
-  /** The incoming pane has arrived, or its arrival was stopped. */
+  /** Settles once the incoming pane has arrived, or its arrival was stopped. */
   readonly entered: Promise<MotionOutcome>;
-  /** The leaving pane can be removed. */
+  /** Settles once the leaving pane can be removed. */
   readonly exited: Promise<MotionOutcome>;
 };
 
-/** Reduced motion keeps the fades but nothing staggers, as the central rule zeroes delays. */
+/**
+ * The plan under reduced motion, which keeps the fades but staggers nothing, as the central rule
+ * zeroes delays.
+ */
 function underPreference(plan: RevealPlan, reducedMotion: boolean): RevealPlan {
   return reducedMotion && plan.kind === "sequence" ? { kind: "together", durationMs: plan.durationMs } : plan;
 }
 
 /**
- * The motion of one `SkeletonReveal`: every animation it starts is its own, so it can tell a
+ * The motion of one `SkeletonReveal`. It tracks every animation it starts, so it can tell a
  * completed reveal from a stopped one and stop them all when the reveal unmounts.
  */
 export class RevealMotion {
@@ -297,24 +308,25 @@ export class RevealMotion {
   readonly #animations = new Map<Animation, Element>();
   /**
    * Holds that keep a frozen target at the opacity it showed, by the leaving pane they were made
-   * for. An inline style cannot: a CSS animation of the element's own, such as a pulse, outranks
-   * inline style in the cascade, while an animation started here composites above it. A hold is
+   * for. An inline style cannot do that, since a CSS animation of the element's own, such as a
+   * pulse, outranks inline style in the cascade, while an animation started here composites above
+   * it. A hold is
    * released by that ownership, not by where its target is now, so one whose element its own
    * component removed before the pane finished leaving goes with the pane all the same.
    */
   readonly #holds = new Map<Animation, Element>();
   #disposed = false;
   /**
-   * The kind of every pane a swap has handled, as the component rendered it. Weak, and only looked
-   * up, so a pane React has removed takes its ghost and bones with it.
+   * The kind of every pane a swap has handled, as the component rendered it. The map is weak and
+   * only looked up, so a pane React has removed takes its ghost and bones with it.
    */
   readonly #kinds = new WeakMap<HTMLElement, PaneKind>();
   /** How many panes have left, so each one stacks over those before it. */
   #left = 0;
   /**
-   * The pane on screen and its box, and the root's own height, kept current by `track`: a swap
-   * pins the leaving pane to that box and eases the root from that height, the one it really
-   * had, whatever its own styles made of the pane's.
+   * The pane on screen and its box, and the root's own height, kept current by `track`. A swap
+   * pins the leaving pane to that box and eases the root from that height, the one it had on
+   * screen, whatever its own styles made of the pane's.
    */
   #current: {
     readonly pane: HTMLElement;
@@ -344,8 +356,8 @@ export class RevealMotion {
   }
 
   /**
-   * Brings in the skeleton a reveal mounts with on the client: `smart` holds it back so a fast
-   * load never flashes one, while its space stays reserved.
+   * Brings in the skeleton a reveal mounts with on the client. The `smart` mode holds it back so a
+   * fast load never flashes one, while its space stays reserved.
    *
    * @param skeleton - The skeleton pane.
    * @param mode - The reveal mode.
@@ -356,7 +368,7 @@ export class RevealMotion {
   }
 
   /**
-   * Swaps the pane on screen: pops the leaving pane out, eases the root's height, and fades the
+   * Swaps the pane on screen. It pops the leaving pane out, eases the root's height, and fades the
    * two panes as the plan decides.
    *
    * @param swap - The root, the two panes and what the planner needs.
@@ -469,7 +481,10 @@ export class RevealMotion {
     observer.observe(pane);
   }
 
-  /** Stops every animation this owner started and the root's height ease. Idempotent. */
+  /**
+   * Stops every animation this owner started and the root's height ease. Calling it again does
+   * nothing.
+   */
   dispose(): void {
     this.#disposed = true;
     this.#current?.observer.disconnect();
@@ -499,8 +514,8 @@ export class RevealMotion {
 
   /**
    * Fades an element in over `durationMs` after `delayMs`, from the opacity it is handed to its
-   * own. The animation gives only its first keyframe, pinned at offset 0 (a lone keyframe would
-   * otherwise be the last), so the browser ends it at the element's underlying opacity: a disabled
+   * own. The animation gives only its first keyframe, pinned at offset 0, since a lone keyframe
+   * would otherwise be the last. So the browser ends it at the element's underlying opacity: a disabled
    * button's half, a hidden icon's zero, or whatever a transition or animation of the element's own
    * shows at each moment, which the fade follows rather than fights. It ends where the element
    * already is, so nothing snaps when the fade lets go.
@@ -569,7 +584,10 @@ export class RevealMotion {
     }
   }
 
-  /** Content still fading out as content lands again: what the new pane takes over from. */
+  /**
+   * The highest opacity of content still fading out as content lands again, which the new pane
+   * takes over from.
+   */
   #takeOver(root: HTMLElement, leaving: HTMLElement): number {
     let from = 0;
     for (const pane of root.querySelectorAll<HTMLElement>(`:scope > [${EXITING_ATTRIBUTE}]`)) {
@@ -589,7 +607,7 @@ export class RevealMotion {
     }
   }
 
-  /** Brings content's pieces in: its own surfaces show at once, its text and media fade. */
+  /** Brings content's pieces in. Its own surfaces show at once, and its text and media fade. */
   #contentIn(
     content: HTMLElement,
     contentPieces: readonly Element[],
@@ -608,7 +626,10 @@ export class RevealMotion {
     );
   }
 
-  /** Takes a skeleton away: its ghost's surfaces go at once, its bones fade as the plan times them. */
+  /**
+   * Takes a skeleton away. Its ghost's surfaces go at once, and its bones fade as the plan times
+   * them.
+   */
   #skeletonOut(
     skeleton: HTMLElement,
     durationMs: number,

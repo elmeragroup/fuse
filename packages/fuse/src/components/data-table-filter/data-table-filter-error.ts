@@ -20,13 +20,13 @@ const MESSAGES = {
     "opens DataTableFilter.ValueContent, but this DataTableFilter.Root renders none. Render <DataTableFilter.ValueContent /> beside the Bar.",
 } as const;
 
-/** The ways the filter's parts can be composed wrong. */
+/** The ways the consumer can compose the filter's parts wrong. */
 export type DataTableFilterCompositionRule = keyof typeof MESSAGES;
 
 /**
- * A part throws it when the consumer composes the filter's parts in a way that cannot work, such
- * as `DataTableFilter.Value` outside a chip. Its message starts with the part that threw and names
- * the fix. A Trigger or a Value whose overlay is missing throws it in development only.
+ * The error a part throws when the consumer composes the filter's parts in a way that cannot work,
+ * such as `DataTableFilter.Value` outside a chip. Its message starts with the part that threw and
+ * names the fix. A Trigger or a Value whose overlay is missing throws it in development only.
  */
 export class DataTableFilterCompositionError extends Error {
   override readonly name = "DataTableFilterCompositionError";

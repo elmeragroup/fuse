@@ -2,7 +2,7 @@ import { controlMetrics } from "../../styles/control-size";
 import { tv } from "../../styles/tv";
 
 /**
- * A segmented `ToggleGroup.Item`'s inset at each toggle size — module-private, never a
+ * A segmented `ToggleGroup.Item`'s inset at each toggle size. It is module-private and never a
  * facade export. Each size takes the control size's icon inset on both sides in place of
  * the label inset, so the joined segments sit tighter than free-standing toggles.
  * `"default"` is the md control size.
@@ -22,7 +22,7 @@ export const segmentedItemInset = tv({
 });
 
 /**
- * The module-private recipe for the ToggleGroup root and the group's own classes on each item. It
+ * The module-private recipe for `ToggleGroup.Root` and the group's own classes on each item. It
  * is not exported from `@elmeragroup/fuse/toggle-group`, and the workspace-only recipe catalog
  * re-exports it for the Figma component sync. An item adds `toggleVariants` after its slot, and
  * {@link segmentedItemInset} after that in a segmented group.
@@ -30,10 +30,10 @@ export const segmentedItemInset = tv({
  * - `root` lays the items out in a row, or a stretched column when vertical, `--gap` spacing units
  *   apart. The root writes `--gap` from `spacing` in its inline style. At spacing 0 the outline
  *   variant's shadow moves from the items to the root.
- * - `item` keeps its size in the row and raises a focused item over its neighbours. At spacing 0
- *   it joins the segmented control: the items square off their inner corners, round the outer
+ * - `item` keeps its size in the row and raises a focused item over its neighbors. At spacing 0
+ *   it joins the segmented control. The items square off their inner corners, round the outer
  *   ones, drop their own shadow and press scale, and outline items share one border between
- *   neighbours.
+ *   neighbors.
  */
 export const toggleGroupVariants = tv({
   slots: {

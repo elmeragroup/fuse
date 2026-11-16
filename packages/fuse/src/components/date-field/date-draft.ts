@@ -114,7 +114,7 @@ export function segmentLimits(type: EditableSegmentType, hourCycle: HourCycle): 
  *
  * @param hour - The hour, 0 to 23.
  * @param hourCycle - The cycle.
- * @returns The day period (`null` under `h23`) and the hour in that cycle.
+ * @returns The day period and the hour in that cycle. The day period is `null` under `h23`.
  */
 export function toHourCycle(hour: number, hourCycle: HourCycle): readonly [DayPeriod | null, number] {
   if (hourCycle === "h23") {
@@ -228,7 +228,7 @@ export function clearSegment(draft: DateDraft, type: EditableSegmentType): DateD
 }
 
 /**
- * `value + amount`, wrapping inside `min..max`. Rounded, it first steps one and then snaps to the
+ * `value + amount`, wrapping inside `min` to `max`. Rounded, it first steps one and then snaps to the
  * next multiple of `amount` in the step's direction, so 2026 pages up by five to 2030.
  */
 function cycleValue(value: number, amount: number, min: number, max: number, round: boolean): number {
@@ -330,8 +330,8 @@ function cycleHour(
 }
 
 /**
- * A wall clock's instants in a zone: the earlier and the later one, which differ for a wall time
- * the zone repeats (the night the clocks go back) and are the one instant of any other. In a
+ * A wall clock's instants in a zone: the earlier and the later one. They differ for a wall time
+ * the zone repeats, on the night the clocks go back, and are the one instant of any other. In a
  * skipped wall time both resolve outside it, the earlier before the gap and the later after it.
  *
  * @param wallClock - The wall clock.
@@ -363,8 +363,8 @@ function instantOnDay(
 /**
  * A zoned value's hour stepped through the day's real hours, as `@internationalized/date`'s
  * `cycleZoned` does: the step counts whole hours since the epoch, wrapping between the day's first
- * and last hour (that half of the day under a 12-hour cycle), so a repeated hour is visited twice
- * and a skipped hour never.
+ * and last hour, or that half of the day's under a 12-hour cycle. The step visits a repeated hour
+ * twice and a skipped hour never.
  *
  * @param value - The value.
  * @param amount - Hours to step, negative to go back.

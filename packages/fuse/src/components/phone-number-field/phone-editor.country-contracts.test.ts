@@ -35,7 +35,7 @@ const parses = parseCounter();
 
 /**
  * Unit under test: `PhoneEditor` and `createCountryAnnouncer` under a controlled `countryCode`, as
- * the hook drives them. Oracle: contracts (i)–(xi) below, read through the independent number
+ * the hook drives them. Oracle: contracts (i) to (xi) below, read through the independent number
  * decoder in `test/phone-number-oracle.ts`, and for (vii) the parse cost of the #586 editor frozen
  * in `test/phone-base`.
  *

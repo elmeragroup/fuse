@@ -1,4 +1,4 @@
-/** Directive-free so a server component renders it; see `partitionSubSections` for why. */
+/** This module has no directive, so a server component renders it. See `partitionSubSections` for why. */
 import { Children } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
@@ -20,8 +20,8 @@ export function hasSubSectionContent(children: ReactNode): boolean {
 /**
  * A band below the row's label row, outside the label. The row moves its direct
  * `SelectionItem.SubSection` children out of the label, whether a client or a server component
- * wrote them. In a client component a Fragment, wrapper or HOC hides the part from the row, and
- * it stays inside the label, where a click toggles the control. A SubSection with no children
+ * wrote them. In a client component a Fragment, wrapper or higher-order component hides the part from
+ * the row, and it stays inside the label, where a click toggles the control. A SubSection with no children
  * renders nothing.
  */
 export function SelectionItemSubSection({

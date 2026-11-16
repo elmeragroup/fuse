@@ -3,26 +3,27 @@ import { controlMd } from "./control-size-md";
 import { tv } from "./tv";
 
 /**
- * Control size: the size × fit mapping of the density-owned control metrics (`--control-*`
- * in `fuse.css`, mirrored by `theme/tokens/density-metrics.ts`) onto a control. Button,
+ * Control size: the size × fit mapping of the density-owned control metrics onto a control. The
+ * metrics are the `--control-*` variables in `fuse.css`, which `theme/tokens/density-metrics.ts`
+ * mirrors. Button,
  * Toggle and ToggleGroup, and RadioIconButton take their size classes from
  * {@link controlSize}. Select's trigger takes its label from {@link controlLabel}, and a
  * segmented ToggleGroup item takes its inset from the {@link controlMetrics} slots. Controls
  * without a size axis take the md parts from `control-size-md.ts`, and the text-entry field
  * boxes take their `"default"` and `"sm"` sizes from `field-size.ts`.
  *
- * Two rules live here and nowhere else. xs and sm set a fixed `text-xs` / `text-sm` that
- * does not follow density, while md and lg bind the density's `--control-text` /
- * `--control-leading` pair. The icon edge (`has-data-[icon=inline-*]`) swaps the label inset
+ * Two rules live here and nowhere else. xs and sm set a fixed `text-xs` or `text-sm` that
+ * does not follow density, while md and lg bind the density's `--control-text` and
+ * `--control-leading` pair. The icon edge, `has-data-[icon=inline-*]`, swaps the label inset
  * for the tighter icon inset on the side a `data-icon="inline-start"` or `"inline-end"`
  * child sits.
  *
  * Apart from the icon edge, every size class is an unprefixed utility, so a consumer's
- * `className` utility of the same family (`h-12`, `px-3`) replaces it through tailwind-merge.
+ * `className` utility of the same family, such as `h-12` or `px-3`, replaces it through
+ * tailwind-merge.
  *
- * The recipe paints size only. The state face (`state-face.ts`) is a separate fragment,
+ * The recipe paints size only. The state face in `state-face.ts` is a separate fragment,
  * and each control recipe composes both.
-
  */
 
 /** A control size. Each has one metric per sized family in `DENSITY_METRICS`. */
@@ -110,7 +111,7 @@ type ControlLabelOptions = {
   /**
    * Whether the label maps a `data-icon="inline-start"` or `"inline-end"` child onto the
    * icon edge. `"omit"` is for a control that has never tightened its inset around an
-   * icon child, as Select's trigger.
+   * icon child, such as Select's trigger.
    */
   readonly iconEdge: "include" | "omit";
 };
@@ -157,8 +158,8 @@ function fitsOf(size: ControlSize): readonly ControlSizeCell[] {
 }
 
 /**
- * The size × fit recipe. Every class depends on both axes (a `square` takes the size's
- * square and none of its label parts), so each axis value paints nothing alone and each
+ * The size × fit recipe. Every class depends on both axes. A `square` takes the size's
+ * square and none of its label parts, so each axis value paints nothing alone and each
  * cell is a compound variant assembled from the {@link controlMetrics} slots. Pass both
  * axes: a call without them paints no size.
  *

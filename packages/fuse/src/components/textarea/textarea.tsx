@@ -3,18 +3,18 @@ import type { ComponentProps, ReactElement } from "react";
 import { cn } from "../../styles/cn";
 import { textareaVariants } from "./textarea-class";
 
-/** The props of {@link Textarea}. */
+/** Props for {@link Textarea}. */
 export type TextareaProps = Omit<ComponentProps<"textarea">, "aria-label"> & {
   /**
-   * The control size, also written as `data-size`. `default` is the md control size, and `sm`
-   * the sm one. The size sets the inline inset and the text size. At both sizes the box is at
-   * least 64px tall and grows with its text.
+   * The control size, which the textarea also writes as `data-size`. `default` is the md control
+   * size, and `sm` the sm one. The size sets the inline inset and the text size. At both sizes the
+   * box is at least 64px tall and grows with its text.
    */
   size?: "sm" | "default";
   /**
    * The textarea's name when no visible label names it. For a visible label, put it in a
    * `Field.Root` with a `Field.Label` and pass it to `Field.Control`'s `render`, as in
-   * `<Field.Control render={<Textarea />} />`. A bare `Textarea` in a root is not wired to it.
+   * `<Field.Control render={<Textarea />} />`. Field does not wire a bare `Textarea` in a root.
    */
   "aria-label"?: ComponentProps<"textarea">["aria-label"];
 };

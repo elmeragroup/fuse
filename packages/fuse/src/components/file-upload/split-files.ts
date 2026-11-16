@@ -38,9 +38,10 @@ export type SplitResult = {
 };
 
 /**
- * Decide which entries reach `onSelect` and which reach `onReject`. It rejects a folder with
- * `"directory"`, an unreadable entry with `"unreadable"` and a file that fails `accept` with `"type"`. When `multiple` is off and more
- * than one file is left, it rejects every one of them with `"count"`.
+ * Decides which entries reach `onSelect` and which reach `onReject`. It rejects a folder with
+ * `"directory"`, an unreadable entry with `"unreadable"` and a file that fails `accept` with
+ * `"type"`. When `multiple` is off and more than one file is left, it rejects every one of them
+ * with `"count"`.
  *
  * @param entries - The entries in input order.
  * @param options - The parsed `accept` rule and whether the Root takes several files.

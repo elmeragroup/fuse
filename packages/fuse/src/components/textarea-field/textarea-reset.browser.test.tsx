@@ -10,8 +10,8 @@ import { formNamed, renderThemed as render } from "../../../test/themed-browser-
 
 /**
  * The reset listener's plumbing (button vs programmatic path, cancel, unmount) is proved in
- * `use-form-reset.browser.test.tsx`; these cases prove the textarea composite's own state
- * — the counter and the notified value — follows the native control.
+ * `use-form-reset.browser.test.tsx`; these cases prove the textarea composite's own state,
+ * the counter and the notified value, follows the native control.
  */
 for (const defaultValue of ["Original", ""]) {
   it(`synchronizes the counter on reset for default ${JSON.stringify(defaultValue)}`, async () => {

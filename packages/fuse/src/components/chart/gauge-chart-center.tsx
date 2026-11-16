@@ -2,7 +2,7 @@
 
 /**
  * The text in a gauge's middle: the reading, whose digits roll, and lines of text beside it. The
- * centre is plot output, hidden from readers, who read the same value from the meter.
+ * center is plot output, hidden from readers, who read the same value from the meter.
  */
 import type { ReactElement, ReactNode } from "react";
 
@@ -19,7 +19,7 @@ import { formatValueRun } from "./format/value-format";
  * @beta
  */
 export type GaugeChartCenterProps = ChartLayerProps & {
-  /** The centre's content, such as `CenterValue` over a `CenterLabel`. */
+  /** The center's content, such as `CenterValue` over a `CenterLabel`. */
   children?: ReactNode;
 };
 
@@ -29,7 +29,7 @@ export type GaugeChartCenterProps = ChartLayerProps & {
  * @beta
  */
 export type GaugeChartCenterValueProps = ChartLayerProps & {
-  /** The value format. Root's `valueFormat` by default. */
+  /** The value format. Defaults to Root's `valueFormat`. */
   format?: ValueFormat;
 };
 
@@ -39,7 +39,7 @@ export type GaugeChartCenterValueProps = ChartLayerProps & {
  * @beta
  */
 export type GaugeChartCenterLabelProps = ChartLayerProps & {
-  /** The label text, such as "kWh this hour". */
+  /** The label text, such as `kWh this hour`. */
   children?: ReactNode;
 };
 
@@ -98,8 +98,8 @@ export function GaugeChartCenterValue({
 }
 
 /**
- * A text line in the centre, such as what the reading measures. It is left out of a centre narrower
- * than 4rem, and when the lines overflow the centre.
+ * A text line in the center, such as what the reading measures. It is left out of a center narrower
+ * than 4rem, and when the lines overflow the center.
  *
  * @beta
  */

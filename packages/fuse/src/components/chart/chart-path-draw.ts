@@ -55,9 +55,9 @@ export type PathLook = {
 /**
  * Where a path's numbers land: vertices on the crosshair's column, and cell edges, plain step
  * risers and values on device pixels, each moved by the stroke's parity, so a stroked step's runs
- * and risers cover whole device pixels at any width. A riser of an odd width takes the pixels just past its cell
- * edge, inside the band of the run it starts. An Area strokes nothing, so its fill edges stay on
- * the cell edges.
+ * and risers cover whole device pixels at any width. A riser of an odd width takes the pixels just
+ * past its cell edge, inside the band of the run it starts. An Area strokes nothing, so its fill
+ * edges stay on the cell edges.
  *
  * @param look - The path's look.
  * @returns The placement for `linePaths` and `areaPaths`.
@@ -97,7 +97,7 @@ export function topologyAt<S extends Counted>(moving: S | null, topology: S, cou
 /** How far the clip rectangles reach past the plot, so a stroke or a cap at the edge keeps its paint. */
 const CLIP_MARGIN = 16;
 
-/** Fill a clip path with one rectangle per span along the slot axis, reusing its rectangles. */
+/** Fills a clip path with one rectangle per span along the slot axis, reusing its rectangles. */
 function fillClip(clip: Element, frame: PlotFrame, spans: readonly Span[]): void {
   const vertical = frame.orientation === "vertical";
   const across = (vertical ? frame.box.height : frame.box.width) + 2 * CLIP_MARGIN;
@@ -116,15 +116,15 @@ function fillClip(clip: Element, frame: PlotFrame, spans: readonly Span[]): void
 }
 
 /**
- * Write the path data of a frame onto a series group: the solid path and its marked twin, which
+ * Writes the path data of a frame onto a series group: the solid path and its marked twin, which
  * dashes or hatches the spans, each clipped to its side of them. A path without spans draws whole.
  *
  * @param group - The series group, which holds both clip paths and both paths.
  * @param look - The path's look.
  * @param d - The path data.
  * @param spans - The spans the twin draws, sorted and disjoint.
- * @param mode - "replace" draws the twin in place of the solid path over the spans, as a Line
- *   dashes them, and "overlay" draws it over the whole path, as an Area hatches them.
+ * @param mode - `"replace"` draws the twin in place of the solid path over the spans, as a Line
+ *   dashes them, and `"overlay"` draws it over the whole path, as an Area hatches them.
  * @param dots - An Area's lone readings, which its dot and dashed dot twin draw, each clipped to
  *   its side of the spans as a Line's dots are.
  */
@@ -274,7 +274,7 @@ type VertexTopology = {
  * its base, so a slide moves its first number.
  *
  * @param stride - `LINE_STRIDE` or `AREA_STRIDE`.
- * @param slot - The distance from one slot's centre to the next along the slot axis.
+ * @param slot - The distance from one slot's center to the next along the slot axis.
  * @returns The kind.
  */
 export function seriesPathKind(stride: number, slot: number): PathKind<PathTopology, VertexTopology> {
@@ -348,7 +348,7 @@ type RouteVertex<T> = {
 };
 
 /**
- * Decide how a data update moves a path, and lay its route out from what the path drew. The mode
+ * Decides how a data update moves a path, and lays its route out from what the path drew. The mode
  * reads off the window's slots, and the route joins the vertices the loop holds with the new ones
  * by key. A vertex in both tweens from where it drew. A new vertex starts on the old path at its
  * slot, where a decimated path drew no vertex, or slides in from beyond the edge, or grows out of
@@ -445,7 +445,7 @@ export function pathStep<S extends Counted, T>(
 }
 
 /**
- * The distance from one slot's centre to the next along the slot axis.
+ * The distance from one slot's center to the next along the slot axis.
  *
  * @param frame - The layout's frame.
  * @param xScale - Root's x scale.
@@ -456,7 +456,7 @@ export function slotStep(frame: PlotFrame, xScale: "band" | "point"): number {
 }
 
 /**
- * A window position's unsnapped centre along the slot axis, where a vertex rests.
+ * A window position's unsnapped center along the slot axis, where a vertex rests.
  *
  * @param frame - The layout's frame.
  * @param xScale - Root's x scale.
@@ -500,7 +500,7 @@ export type PathCommit<L extends { readonly moving: { current: S | null } }, S e
 };
 
 /**
- * Place a series path for a commit, the one placement Lines, Areas and path-form Bars share. A
+ * Places a series path for a commit, the one placement Lines, Areas and path-form Bars share. A
  * data update tweens the path's route from what it drew, or crossfades it, and records the route
  * for the marks attached to the series. Under reduced motion an update snaps to its rest and
  * records no route. Every other commit places the rest as the classifier asks, and a resize keeps a

@@ -300,7 +300,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The message. Children always show, so render the part only while the field is in error, or pass `match` to show them for one validity state. Without children, the part shows the field's own message, and nothing while it has none: an error `Form` holds under the field's name, a `validate` result on `Field.Root`, or the browser's constraint message, which is in the browser's language. Several messages render as a list. To localize the message, pass children or a `validate` that returns your copy. Place the part directly after the control, ahead of any `Field.Description`, as the labeled composites do.",
+          "description": "The message. Children always show, so render the part only while the field is in error, or pass `match` to show them for one validity state. Without children, the part shows the field's own message, and nothing while it has none: an error `Form` holds under the field's name, a `validate` result on `Field.Root`, or the browser's constraint message, which is in the browser's language. Several messages render as a list. To localize the message, pass children or a `validate` that returns localized copy. Place the part directly after the control, ahead of any `Field.Description`, as the labeled composites do.",
           "required": false
         },
         {
@@ -517,7 +517,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables every field in the set. A set inside a disabled set is disabled too. It also disables the parts that are not a field themselves, such as a date picker's trigger and calendar.",
+          "description": "Whether every field in the set is disabled. A set inside a disabled set is disabled too. It also disables the parts that are not a field themselves, such as a date picker's trigger and calendar.",
           "required": false
         },
         {
@@ -571,7 +571,7 @@
           "type": "ComponentRenderFn<HTMLProps, FieldsetLegendState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the rendered element, a `div` by default. In a grid `Field.Set`, pass `render={<legend />}`: the browser keeps a fieldset's first `legend` out of the grid, so the first field takes the first cell, and the legend still names the set. A `div` legend takes the first cell itself.",
+          "description": "The element to render in place of the default `div`. In a grid `Field.Set`, pass `render={<legend />}`: the browser keeps a fieldset's first `legend` out of the grid, so the first field takes the first cell, and the legend still names the set. A `div` legend takes the first cell itself.",
           "required": false
         },
         {

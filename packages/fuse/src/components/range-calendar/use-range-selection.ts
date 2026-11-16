@@ -87,7 +87,10 @@ export type RangeSelection = {
   readonly invalid: boolean;
 };
 
-/** The range view of each store state, and the description of each value, each kept for the last one asked. */
+/**
+ * The range view of each store state, and the description of each value, each kept for the last
+ * one asked.
+ */
 type RangeViews = {
   /** The view of a state. */
   readonly of: (state: RangeCalendarState) => RangeView;

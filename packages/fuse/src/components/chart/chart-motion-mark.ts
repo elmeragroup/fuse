@@ -57,7 +57,7 @@ export type MotionMark<T extends Element, A extends readonly ValueAxis[]> = {
   readonly node: () => T | null;
   /** The numbers the loop drew last for this mark, or null before its first placement. */
   readonly drawn: () => MarkValues | null;
-  /** Draw the mark at a target through the loop, one number per declared axis. */
+  /** Draws the mark at a target through the loop, one number per declared axis. */
   readonly place: (target: MarkTuple<A>, placement: Placement, anchor?: string) => void;
 };
 
@@ -79,7 +79,7 @@ export function useFirstDraw<V>(make: () => V, key?: string): V {
 }
 
 /**
- * Register a mark with Root's loop for as long as it is mounted. The mark draws in the frame of the
+ * Registers a mark with Root's loop for as long as it is mounted. The mark draws in the frame of the
  * nearest layout, Root's default one or its Panel's, so a resize of that frame alone maps its tween.
  *
  * @param motion - Root's loop.
@@ -164,9 +164,9 @@ export function useMotionMark<
 }
 
 /**
- * How a mark reaches the geometry of a commit: "move" for a data update, "snap" for its first draw,
+ * How a mark reaches the geometry of a commit: `move` for a data update, `snap` for its first draw,
  * a range step or a change of the mark's coordinate space, each of which lays the mark out anew,
- * and "settle" for a resize or any other commit, which lets a running update finish.
+ * and `settle` for a resize or any other commit, which lets a running update finish.
  */
 export type CommitMotion = "move" | "snap" | "settle";
 
@@ -201,7 +201,7 @@ function scaleOf(
 }
 
 /**
- * Track the commits a mark has drawn, so its layout effect can tell a data update from a resize.
+ * Tracks the commits a mark has drawn, so its layout effect can tell a data update from a resize.
  *
  * @param update - Root's current update.
  * @param plot - Root's current measurement.

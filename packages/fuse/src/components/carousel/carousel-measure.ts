@@ -1,22 +1,22 @@
 /**
  * The carousel engine's measurement: one read of a scroll-snap viewport and its slides, converted
  * to the viewport's scroll coordinates. It reads the DOM, keeps nothing and reports only what it
- * found; what to do with a reading, cache it, retry it or accept it, is the engine's
- * (`carousel-engine.ts`).
+ * found. The engine in `carousel-engine.ts` decides what to do with a reading: cache it, retry it or
+ * accept it.
  *
  * Every length is in the viewport's scroll coordinates, the space of `scrollLeft`, `clientWidth`
  * and `scrollWidth`. A transform on an ancestor, such as `scale(0.5)`, scales the boxes
  * `getBoundingClientRect` reports but not the scroll range, so a measurement divides each box by
  * the viewport's painted size over its layout size, per axis. That keeps sub-pixel slide widths,
- * which the integer `offsetLeft` and `offsetWidth` would round. A rotated or skewed ancestor is not
- * supported: a box's bounds are then not a scaled copy of its layout.
+ * which the integer `offsetLeft` and `offsetWidth` would round. The measurement does not support a
+ * rotated or skewed ancestor, since a box's bounds are then not a scaled copy of its layout.
  *
  * While a transform animates, a box is painted where the animation is when it is read, and WebKit
  * samples a running animation afresh at each layout read in a task, so a slow read can find the
  * viewport at one scale and the slides at another. A measurement therefore reads every style first
  * and then every box back to back, between two reads of the viewport's box. When the viewport's
- * box moved between them by enough to put a position off by `STEADY`, the reading is unsteady
- * (`steady`). The painted boxes stay the one geometry throughout: they keep sub-pixel starts, and
+ * box moved between them by enough to put a position off by `STEADY`, the reading is unsteady, as
+ * `steady` decides. The painted boxes stay the one geometry throughout: they keep sub-pixel starts, and
  * they include every border and transform between the viewport and a slide, and a transform on a
  * slide itself, such as a hover scale, as the browser's snap areas do.
  */
@@ -30,10 +30,13 @@ export type CarouselOrientation = "horizontal" | "vertical";
 /** A box's layout size, in the viewport's scroll coordinates. */
 export type Size = { readonly width: number; readonly height: number };
 
-/** A box as `getClientRects` paints it, in viewport px. */
+/** A box as `getClientRects` paints it, in viewport pixels. */
 type PaintedBox = Pick<DOMRectReadOnly, "top" | "right" | "bottom" | "left" | "width" | "height">;
 
-/** Painted over layout size, per axis: 1 without a transform, 0.5 under `scale(0.5)`. */
+/**
+ * The painted size over the layout size, per axis, such as 1 without a transform and 0.5 under
+ * `scale(0.5)`.
+ */
 type Scale = { readonly x: number; readonly y: number };
 
 /** A usable reading of the viewport and its slides, in scroll coordinates. */
@@ -52,11 +55,11 @@ export type CarouselReading = {
 };
 
 /**
- * What one measurement found. `no-box`: the viewport has no layout box, as under `display: none`.
- * `non-finite`: the painted boxes convert to no finite scroll geometry, as when the viewport is
- * scaled to nothing, under `scale(0)`, where no box says where anything is. `geometry`: a reading,
- * `steady` when the viewport's box held still while the slides were read, so the reading is one
- * picture of them.
+ * What one measurement found. It is `no-box` when the viewport has no layout box, as under
+ * `display: none`. It is `non-finite` when the painted boxes convert to no finite scroll geometry,
+ * as when the viewport is scaled to nothing, under `scale(0)`, where no box says where anything is.
+ * It is `geometry` for a reading, `steady` when the viewport's box held still while the slides
+ * were read, so the reading is one picture of them.
  */
 export type CarouselMeasurement =
   | { readonly kind: "no-box" }
@@ -65,11 +68,11 @@ export type CarouselMeasurement =
 
 /**
  * The boxes a measurement read are one picture when an animating transform can have moved them by
- * less than this, in scroll px, while it read them.
+ * less than this, in scroll pixels, while it read them.
  */
 const STEADY = 0.5;
 
-/** A computed length in px, resolving a percentage against `basis` and `auto` to `0`. */
+/** A computed length in pixels, resolving a percentage against `basis` and `auto` to `0`. */
 function lengthOf(value: string, basis: number): number {
   const parsed = Number.parseFloat(value);
   if (Number.isNaN(parsed)) {
@@ -142,8 +145,8 @@ function scaleOf(painted: PaintedBox, layoutSize: Size): Scale | null {
  * Whether the viewport's box held still enough between its reads before and after the slides'
  * that a move of that size would put no position off by `STEADY`. A shift moves every box
  * alike; a change of scale moves each box by its distance from the scroll origin times the
- * change, and no slide starts past the scroll range's length. Both are painted px, so they are
- * divided by the scale. It judges the endpoints only: two reads that agree cannot prove that each
+ * change, and no slide starts past the scroll range's length. Both are in painted pixels, so the
+ * check divides them by the scale. It judges the endpoints only: two reads that agree cannot prove that each
  * slide read between them saw the same sample, as when a sample returns to an earlier one.
  *
  * @param scale - The painted over layout size along the axis, from `before`.
@@ -167,7 +170,7 @@ function steady(
   return (shift + growth * scrollSize) / scale < STEADY;
 }
 
-/** Where the viewport's scroll origin is painted, and what converts painted px to scroll px. */
+/** Where the viewport's scroll origin is painted, and what converts painted pixels to scroll pixels. */
 type PaintFrame = {
   readonly orientation: CarouselOrientation;
   readonly rtl: boolean;
@@ -188,8 +191,8 @@ type ViewportClient = {
 };
 
 /**
- * The frame of a viewport painted as `box` at `scale`: its padding box's start edge on screen,
- * from which the scroll origin is `scrolled` px back.
+ * The frame of a viewport painted as `box` at `scale`, which is its padding box's start edge on
+ * screen. The scroll origin is `scrolled` pixels back from it.
  */
 function frameOf(
   orientation: CarouselOrientation,
@@ -236,13 +239,13 @@ function placeBox(frame: PaintFrame, box: PaintedBox): PlacedBox {
 }
 
 /**
- * Read the layout, once: the viewport's style and each slide's, then the viewport's box and each
- * slide's, between two reads of the viewport's box. A slide without a layout box, such as one a
- * host rule hides, takes no place in the reading: the user cannot reach it.
+ * Reads the layout once. It reads the viewport's style and each slide's, then the viewport's box
+ * and each slide's, between two reads of the viewport's box. A slide without a layout box, such as
+ * one a host rule hides, takes no place in the reading, since the user cannot reach it.
  *
  * @param viewport - The scroll-snap container.
  * @param orientation - The axis it scrolls on.
- * @param members - The mounted slides; the connected ones are read, in document order.
+ * @param members - The mounted slides. The measurement reads the connected ones, in document order.
  * @returns What the measurement found.
  */
 export function measureCarousel(

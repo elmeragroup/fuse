@@ -51,7 +51,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The panel's content. A Table inside a panel is a plain table. When the only child is a `Table.Root` or `VerticalTable.Body` element, written directly here, the panel drops its padding. The table then runs to the panel's edges and clips to its corners, and its first and last columns pad, so their text stays on the panel's inset. Anything else keeps the padding, including text beside the table and a component of your own that renders a table.",
+          "description": "The panel's content. A Table inside a panel is a plain table. When the only child is a `Table.Root` or `VerticalTable.Body` element, written directly here, the panel drops its padding. The table then runs to the panel's edges and clips to its corners, and its first and last columns pad, so their text stays on the panel's inset. Anything else keeps the padding, including text beside the table and a consumer's own component that renders a table.",
           "required": false
         },
         {

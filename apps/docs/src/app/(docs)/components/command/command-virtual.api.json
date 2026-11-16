@@ -26,7 +26,7 @@
           "type": "((index: number) => number) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "A row's height before the virtualizer measures it. It defaults to the document density's row height, which a single-line `Command.Item` takes, and follows a change of density.",
+          "description": "A row's height before the virtualizer measures it. Defaults to the document density's row height, which a single-line `Command.Item` takes, and follows a change of density.",
           "required": false
         },
         {

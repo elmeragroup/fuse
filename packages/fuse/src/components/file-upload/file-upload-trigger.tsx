@@ -19,7 +19,7 @@ import { useFileUploadTriggerFocus } from "./file-upload-field";
 
 type FileUploadTriggerBaseProps = useRender.ComponentProps<"button">;
 
-/** `FileUpload.Trigger` takes a `button`'s props plus Base UI's `render`. */
+/** Props for `FileUpload.Trigger`, a `button` with Base UI's `render`. */
 export type FileUploadTriggerProps = Omit<
   FileUploadTriggerBaseProps,
   "render" | "id" | "aria-describedby" | "aria-invalid" | "children"
@@ -50,7 +50,7 @@ export type FileUploadTriggerProps = Omit<
    */
   "aria-describedby"?: FileUploadTriggerBaseProps["aria-describedby"];
   /**
-   * Marks the button invalid. Unset, an invalid Field marks it `aria-invalid` while it is
+   * Whether the button is invalid. Unset, an invalid Field marks it `aria-invalid` while it is
    * enabled. While it is set, the Trigger paints the shared invalid border and ring, the one
    * invalid face of the FileUpload, so an enclosing `FileUpload.Dropzone` keeps its dashed
    * border.
@@ -67,7 +67,7 @@ function idList(...lists: readonly (string | undefined)[]): string | undefined {
 /**
  * The button that opens the picker. It is disabled while the Root is disabled or its own
  * `disabled` is set. Inside a `Field.Root`, it is the Field's control, as `Select.Trigger` is,
- * and it is named by its own text and then the label, as `DatePicker.Trigger` is, so the visible
+ * and its own text and then the label name it, as they name `DatePicker.Trigger`, so the visible
  * text stays in the name.
  *
  * As on `Select.Trigger`, a blur of the Trigger marks the Field touched and, in the Field's

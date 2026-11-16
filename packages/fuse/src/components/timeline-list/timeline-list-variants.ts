@@ -1,5 +1,5 @@
 /**
- * Module-private slotted recipe. The public entry does not export it, because no other
+ * The module-private recipe for TimelineList's parts. The public entry does not export it, because no other
  * component borrows it.
  *
  * The geometry follows the reference design. Tokens replace its raw palette, with `bg-border`

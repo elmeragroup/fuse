@@ -8,7 +8,7 @@ import { isThemeDevelopment } from "./validate-theme";
 
 type DocumentBrandSnapshot = ReadonlyArray<readonly [ThemeAttributeName, string | null]>;
 
-/** True below the ThemeProvider that owns the document's brand attributes. */
+/** Whether a component renders below the `ThemeProvider` that writes the document's brand attributes. */
 export const DocumentWriterContext = createContext(false);
 
 function readSnapshot(root: Element): DocumentBrandSnapshot {
@@ -46,8 +46,8 @@ function write(root: Element, attributes: ThemeAttributes): void {
 /**
  * Keeps the document element's brand attributes on a resolved theme. The first commit warns in
  * development when server-rendered attributes disagree, then writes them. Every later commit
- * restores attributes that differ, so host code that overwrote them is corrected even when
- * only color-scheme props changed; a later commit whose document already matches writes nothing.
+ * restores attributes that differ, so it corrects host code that overwrote them, even when only
+ * color-scheme props changed. A later commit whose document already matches writes nothing.
  *
  * @param attributes - The validated theme's `data-theme-*` attributes.
  */

@@ -10,7 +10,7 @@ import { booleanLabel } from "./option-list";
 
 /** A summary and the whole value it may shorten. */
 export type FilterSummary = {
-  /** What the chip shows. */
+  /** The text the chip shows. */
   readonly text: string;
   /** The whole value, which the chip also states when `text` is shortened. */
   readonly full: string;
@@ -28,7 +28,7 @@ export type SummaryStrings = {
   readonly no: string;
 };
 
-/** Option labels a summary shows before "+N". */
+/** The number of option labels a summary shows before "+N". */
 const VISIBLE_OPTIONS = 2;
 
 function utcDay(iso: string): Date {

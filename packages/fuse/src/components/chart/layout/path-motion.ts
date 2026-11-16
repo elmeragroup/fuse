@@ -1,17 +1,17 @@
 /**
  * How a path reaches new data, after `.scratch/charts-v1/reviews/motion-decision.md` and ticket
- * 06's F10. Root's loop moves every path on one clock, and this module only decides the mode from
- * the window's slots, never from the vertices a decimated path happens to draw, so `pathStep` in
- * `chart-path-draw.ts` lays out each vertex's route for that mode. Slot keys come from
+ * 06's F10. Root's loop moves every path on one clock. This module only decides the mode, from the
+ * window's slots and never from the vertices a decimated path happens to draw. `pathStep` in
+ * `chart-path-draw.ts` then lays out each vertex's route for that mode. Slot keys come from
  * `pairSlotKeys`, which keeps a slot's key across updates and pairs slots by position when an
- * update shares no slot at the same interval, so the four modes read off the keys and the slot
+ * update shares no slot at the same interval. The four modes read off the keys and the slot
  * identities alone.
  *
- * 1. The window holds the same keys: each vertex tweens from its old place to its new one.
- * 2. The window shifts by whole slots, keeps its length and shares a slot, as an append that drops
- *    the first reading does: the path slides along the axis. A vertex that leaves slides out past
- *    the plot's edge, and one that arrives slides in from beyond the other edge.
- * 3. The update shares no slot but keeps the grid, so the keys pair by position: each vertex tweens
+ * 1. When the window holds the same keys, each vertex tweens from its old place to its new one.
+ * 2. When the window shifts by whole slots, keeps its length and shares a slot, as an append that
+ *    drops the first reading does, the path slides along the axis. A vertex that leaves slides out
+ *    past the plot's edge, and one that arrives slides in from beyond the other edge.
+ * 3. When the update shares no slot but keeps the grid, the keys pair by position. Each vertex tweens
  *    from the old vertex at its position, and the shorter window pads with its end vertex, so extra
  *    vertices grow out of the end or shrink into it.
  * 4. Any other change of slots crossfades the old path into the new one.
@@ -27,8 +27,9 @@ export type PathSlots = {
 };
 
 /**
- * How a path reaches new data: a route of vertices for the loop, with how many slots the window
- * moved along the axis, positive when it starts later and 0 unless it slides, or a crossfade.
+ * How a path reaches new data, either a route of vertices for the loop or a crossfade. A route
+ * carries `by`, how many slots the window moved along the axis. It is positive when the window starts
+ * later, and 0 unless the path slides.
  */
 export type PathMotion =
   | { readonly mode: "tween" | "slide" | "pair"; readonly by: number }
@@ -36,7 +37,7 @@ export type PathMotion =
 
 /**
  * How far a window of the same length moved along the axis, in slots: positive when the new window
- * starts later, as an append that drops the first reading does. Null unless every key the two
+ * starts later, as an append that drops the first reading does. It is null unless every key the two
  * windows share sits that many slots apart and every other new key is new.
  *
  * Keys are unique within a window, so the shared keys are one run that the first key of one window
@@ -61,7 +62,7 @@ function shiftOf(previous: readonly string[], next: readonly string[]): number |
 }
 
 /**
- * Decide how a path reaches new data.
+ * Decides how a path reaches new data.
  *
  * @param previous - The slots of the window the path rests on now.
  * @param next - The slots of the new data's window.

@@ -4,7 +4,7 @@
  * row, and the model keeps one walk order over every series, by x, then y, then series in config
  * order, then row. A point's id is its place in the concatenation of the sorted series, so every
  * structure that follows a point, the walk, the spatial index and the marks, shares one number.
- * The domains are d3-niced extents with no baseline: a scatter usually leaves 0 out.
+ * The domains are d3-niced extents with no baseline, because a scatter usually leaves 0 out.
  */
 import type { ChartRow } from "../chart-types";
 import type { PointShares } from "./point-index";
@@ -100,7 +100,7 @@ function coordinate(cell: ChartRow[string]): number | null | undefined {
 }
 
 /**
- * Build the model of a scatter chart. A null or undefined x or y skips its row quietly, since the
+ * Builds the model of a scatter chart. A null or undefined x or y skips its row quietly, since the
  * row has no point. A cell that is not a finite number within ±1e15 and a series cell that names
  * no config key skip the row too, and report an issue, which Root throws in development.
  *
@@ -208,8 +208,8 @@ function inPointOrder(rows: Uint32Array, xAt: Float64Array, yAt: Float64Array): 
 type WalkOrder = Pick<ScatterModel, "order" | "rank">;
 
 /**
- * Merge the sorted series into the all-series order, by x, then y, then series, then row, and
- * each point's place in it. A chart has few series, so each step scans every series' head.
+ * Merges the sorted series into the all-series order, by x, then y, then series, then row, and
+ * records each point's place in it. A chart has few series, so each step scans every series' head.
  */
 function mergeOrder(series: readonly ScatterSeries[], count: number): WalkOrder {
   const order = new Uint32Array(count);

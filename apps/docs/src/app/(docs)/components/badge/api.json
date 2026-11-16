@@ -40,7 +40,7 @@
           "type": "\"accent\" | \"card\" | \"default\" | \"destructive\" | \"info\" | \"muted\" | \"outline\" | \"outline-destructive\" | \"outline-info\" | \"outline-secondary\" | \"outline-success\" | \"outline-warning\" | \"secondary\" | \"soft-destructive\" | \"soft-info\" | \"soft-success\" | \"soft-warning\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The fill and text colour. The status colours come filled, as `soft-*` on a tinted surface, and as `outline-*` in the border and text. `destructive` draws the theme's error colour.",
+          "description": "The fill and text color. The status colors come filled, as `soft-*` on a tinted surface, and as `outline-*` in the border and text. `destructive` draws the theme's error color.",
           "required": false,
           "values": [
             "accent",

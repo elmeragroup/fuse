@@ -19,7 +19,7 @@ import {
   inputGroupRootVariants,
 } from "./input-group-variants";
 
-/** The props of `InputGroup.Root`. */
+/** Props for `InputGroup.Root`. */
 export type InputGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
   /**
    * The control size, also written as `data-size`. `default` is the md control size, and `sm`
@@ -36,7 +36,7 @@ export type InputGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
   children?: ComponentProps<"div">["children"];
 };
 
-/** The props of `InputGroup.Addon`. */
+/** Props for `InputGroup.Addon`. */
 export type InputGroupAddonProps = Omit<ComponentProps<"div">, "children"> &
   VariantProps<typeof inputGroupAddonVariants> & {
     /**
@@ -61,8 +61,8 @@ type LabelInputGroupButtonSize = Exclude<InputGroupButtonSize, IconInputGroupBut
 
 type InputGroupButtonBase = Omit<ComponentProps<typeof Button>, "size" | "type"> & {
   /**
-   * The native button type. It defaults to `button`, so an addon button submits the surrounding
-   * form only when you pass `submit`.
+   * The native button type. An addon button submits the surrounding form only when it is
+   * `submit`.
    */
   type?: "button" | "submit" | "reset";
 };
@@ -83,21 +83,21 @@ export type InputGroupButtonProps =
       size: IconInputGroupButtonSize;
       "aria-label": string;
     });
-/** The props of `InputGroup.Text`. */
+/** Props for `InputGroup.Text`. */
 export type InputGroupTextProps = ComponentProps<"span">;
 /**
- * `Input`'s props without its field size: the group's input reads the size of the group around it,
- * and keeps the native numeric `size` attribute.
+ * Props for `InputGroup.Input`, which are `Input`'s props without its field size. The group's input
+ * reads the size of the group around it, and keeps the native numeric `size` attribute.
  */
 export type InputGroupInputProps = Omit<InputControlProps, "aria-label"> & {
   /**
    * The input's name when no visible label names it. For a visible label, put the group in a
-   * `Field.Root` with a `Field.Label`. The root also marks the input invalid, and the group
+   * `Field.Root` with a `Field.Label`. The `Field.Root` also marks the input invalid, and the group
    * paints the invalid look from it.
    */
   "aria-label"?: InputControlProps["aria-label"];
 };
-/** The props of `InputGroup.Textarea`. */
+/** Props for `InputGroup.Textarea`. */
 export type InputGroupTextareaProps = Omit<ComponentProps<"textarea">, "aria-label"> & {
   /**
    * The textarea's name. A `Field.Root` around the group does not wire the textarea to its
@@ -212,9 +212,9 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
 }
 
 /**
- * `InputGroup.Input`'s look on a plain `<input>`, for a primitive that wires the Field itself,
- * such as Base UI's `Combobox.Input`. `InputGroup.Input` renders `Field.Control`, which would
- * name the input after the Field and submit its text beside the primitive's own hidden input.
+ * `InputGroup.Input`'s look on a plain `<input>`, for a Base UI part that wires the Field itself,
+ * such as `Combobox.Input`. `InputGroup.Input` renders `Field.Control`, which would name the input
+ * after the Field and submit its text beside the part's own hidden input.
  */
 export function InputGroupPlainInput({ className, ...props }: ComponentProps<"input">): ReactElement {
   return (

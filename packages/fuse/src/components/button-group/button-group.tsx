@@ -11,20 +11,20 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { buttonGroupVariants } from "./button-group-variants";
 
-/** The props of `ButtonGroup.Root`: a native `div`'s props plus the recipe's `orientation`. */
+/** Props for `ButtonGroup.Root`, a native `div`'s props plus the recipe's `orientation`. */
 export type ButtonGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
   /** The axis the segments join along. */
   orientation?: VariantProps<typeof buttonGroupVariants>["orientation"];
   /**
    * The segments: Buttons, `ButtonGroup.Text`, fields and nested groups. A child with a
    * `data-slot` joins the group, which squares its inner corners and merges the borders it shares
-   * with its neighbours. A filled Button, `default` or `secondary`, shows no seam against its
-   * neighbour, so put a `ButtonGroup.Separator` between filled Buttons.
+   * with its neighbors. A filled Button, `default` or `secondary`, shows no seam against its
+   * neighbor, so put a `ButtonGroup.Separator` between filled Buttons.
    */
   children?: ReactNode;
 };
 
-/** The props of `ButtonGroup.Separator`: Separator's props with the hairline's axis. */
+/** Props for `ButtonGroup.Separator`, Separator's props with the hairline's axis. */
 export type ButtonGroupSeparatorProps = Omit<
   ComponentProps<typeof Separator>,
   "orientation" | "className"

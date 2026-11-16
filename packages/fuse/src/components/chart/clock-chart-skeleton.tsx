@@ -12,12 +12,12 @@ import type { ChartDomProps } from "./chart-types";
  * @beta
  */
 export type ClockChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
-  /** The loader's name. The dictionary's "Laster diagram" is the default. */
+  /** The loader's name. Defaults to the dictionary's "Laster diagram". */
   label?: string;
 };
 
 /**
- * A loading placeholder that renders in place of `ClockChart.Root`, for example as a Suspense
+ * A loading placeholder that renders in place of `ClockChart.Root`, such as a Suspense
  * fallback. One Fuse Skeleton annulus sketches the dial, and one Fuse Loader names the wait.
  *
  * @beta

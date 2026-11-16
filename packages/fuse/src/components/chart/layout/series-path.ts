@@ -2,7 +2,7 @@
  * The vertices a Line or an Area draws for one series, in data units, after CONTRACT sections 8.6,
  * 8.7 and 8.12. Every slot of the effective window is a vertex, so a path keeps one vertex per slot
  * key across updates and a reading that appears grows out of the line it joins. A slot with no
- * reading still holds a value, interpolated from its neighbours, which only a tween reads; the
+ * reading still holds a value, interpolated from its neighbors, which only a tween reads; the
  * vertex's state keeps it out of the drawn path. Above `DECIMATE_ABOVE` slots the window keeps, for
  * each pixel column, the M4 slots of every boundary its stack draws, shared by every member, and
  * both slots of every change of state, quality, projection or stack side, so a gap, a dash and a
@@ -33,7 +33,7 @@ export type PathVertex = {
   /** The value an Area fills down to: 0, or the inner end of a stacked series. */
   readonly base: number;
   readonly state: VertexState;
-  /** The reading's quality, "measured" for a slot without a reading. */
+  /** The reading's quality, `"measured"` for a slot without a reading. */
   readonly quality: ReadingQuality;
   /** Whether the slot lies at or after config `projectedFrom`. */
   readonly projected: boolean;
@@ -108,7 +108,7 @@ export function windowSlots(model: CartesianModel, keys: readonly string[]): Pat
 
 /**
  * The resolution a path lays out at: none for a window of `DECIMATE_ABOVE` slots or fewer, which
- * keeps every slot at any width, else the whole pixel columns M4 splits the window into, as
+ * keeps every slot at any width, and otherwise the whole pixel columns M4 splits the window into, as
  * `m4Indexes` rounds them. Two widths in one bucket count share one path.
  *
  * @param model - Root's model.
@@ -141,7 +141,7 @@ function isFilled(values: readonly (number | null)[]): values is readonly number
 }
 
 /**
- * Fill the values of slots without a reading: linearly between the readings around them, and with
+ * Fills the values of slots without a reading: linearly between the readings around them, and with
  * the nearest reading's value before the first and after the last. A series with no reading lies
  * at 0.
  */
@@ -212,7 +212,7 @@ const QUALITY_LOOK = { measured: 0, estimated: 1, corrected: 2 } as const;
 
 /**
  * The slots a window draws: all of them up to `DECIMATE_ABOVE`. Above it a series in a stack plans
- * its slots with every member, so neighbouring areas draw one shared boundary. Each member keeps
+ * its slots with every member, so neighboring areas draw one shared boundary. Each member keeps
  * each pixel column's M4 slots of both ends its vertices draw, which are the stack's cumulative
  * boundaries, and the slots on both sides of every change in what a vertex draws as, so a gap, a
  * dash, a projected tail and a sign change keep their edges.
@@ -289,13 +289,13 @@ function drawnSlots(
 }
 
 /**
- * Lay out one series' path over the effective window.
+ * Lays out one series' path over the effective window.
  *
  * @param model - Root's model.
  * @param series - The series.
  * @param keys - The key each domain slot renders under, from Root's update.
  * @param resolution - The whole pixel columns a decimated window splits into, as `pathResolution`
- *   normalises them. Without it a decimated window keeps M4's default 500 buckets.
+ *   normalizes them. Without it a decimated window keeps M4's default 500 buckets.
  * @returns The vertices, empty for an empty window.
  */
 export function seriesPath(
@@ -349,14 +349,14 @@ const shared = new WeakMap<
 
 /**
  * One series' path, laid out once per model, update keys and resolution, so a Line, an Area and
- * the Dots on one series share it, M4 pass and all. Each series keeps its path at one resolution,
+ * the Dots on one series share it, M4 pass included. Each series keeps its path at one resolution,
  * which a resize replaces, so a drag across many widths holds one path per series.
  *
  * @param model - Root's model.
  * @param series - The series, one of the model's.
  * @param keys - The key each domain slot renders under, from Root's update.
  * @param columns - The plot's length along the slot axis in pixel columns, which `pathResolution`
- *   normalises.
+ *   normalizes.
  * @returns The path `seriesPath` lays out.
  */
 export function seriesPathOf(

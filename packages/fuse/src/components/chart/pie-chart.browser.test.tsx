@@ -22,7 +22,10 @@ import { PieChart } from "./pie-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
 import { useChartPoint } from "./use-chart-point";
 
-/** Shares of 100, so slice i spans its value as a share of 360°: 0–180, 180–288, 288–342 and 342–360. */
+/**
+ * Shares of 100, so slice i spans its value as a share of 360°: 0 to 180, 180 to 288, 288 to 342
+ * and 342 to 360.
+ */
 const HALVES = [
   { part: "strom", kr: 50 },
   { part: "nettleie", kr: 30 },

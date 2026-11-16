@@ -28,8 +28,8 @@ const DEFAULT_PAGE_SIZES: readonly number[] = [10, 25, 50, 100];
 export type DataTablePaginationProps = Omit<ComponentProps<"div">, "children"> & {
   /**
    * The paginated table, from `useTable` with `rowPaginationFeature`. Registering that feature
-   * alone pages the rows ten at a time. Keep the table's `data` stable between renders: TanStack
-   * resets the page index when `data` changes identity.
+   * alone pages the rows ten at a time. Keep the table's `data` stable between renders, since
+   * TanStack resets the page index when `data` changes identity.
    */
   table: PaginationSource;
   /**
@@ -41,8 +41,8 @@ export type DataTablePaginationProps = Omit<ComponentProps<"div">, "children"> &
   total?: PaginationTotal;
   /**
    * The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50,
-   * 100. Picking one calls `table.setPageSize` and keeps the page index; reset the index in
-   * `onPaginationChange` if your data needs that.
+   * 100. Picking one calls `table.setPageSize` and keeps the page index. Reset the index in
+   * `onPaginationChange` when the data needs that.
    */
   pageSizes?: readonly number[];
   /** Label of the rows-per-page select. Defaults to the locale dictionary. */
@@ -81,8 +81,8 @@ function pageSizeChoices(pageSizes: readonly number[], current: number): number[
  * table. The page status is a polite `role="status"` region, so each page change is announced, and
  * an unavailable move stays focusable with `aria-disabled`, so focus never drops when a press
  * reaches the first or last page. Changing the page size calls `table.setPageSize` and keeps the
- * page index; resetting to the first page on a size change is the state owner's job, for example
- * in `onPaginationChange`.
+ * page index. Reset to the first page on a size change in the state owner, such as in
+ * `onPaginationChange`.
  */
 export function DataTablePagination({
   table,

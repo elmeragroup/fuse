@@ -27,7 +27,7 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  * - `trigger` sizes an icon the consumer puts in `Combobox.Trigger` beside the caret to 16px.
  * - `inputTrigger` is the caret button `Combobox.Input` renders in its trailing addon. It hides
  *   while the group holds a clear button, and keeps no pressed fill while the popup is open.
- * - `caret` draws CaretDown as the shared trigger caret (`triggerCaretClass`), and turns it half a
+ * - `caret` draws CaretDown as the shared trigger caret, `triggerCaretClass`, and turns it half a
  *   turn while the popup is open.
  * - `content` is the shared timed popup on the listbox shell. It is at least the anchor's width:
  *   `Combobox.Input`'s whole field box, or an external anchor such as `Combobox.Chips`. A search
@@ -38,7 +38,7 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  * - `list` is the listbox list shell, which pads the rows and publishes their corner, scrolling
  *   below 252px or the available height less 36px.
  * - `item` is the shared menu row with room for the trailing check, highlighted by Base UI's
- *   `data-highlighted`, which recolours its descendants.
+ *   `data-highlighted`, which recolors its descendants.
  * - `itemIndicator` is the shared trailing check slot at 16px.
  * - `label` is the shared group label and `separator` the shared hairline.
  * - `empty` is a row: the row inset pads it, and its text stays fixed. It shows while the popup
@@ -74,16 +74,16 @@ export const comboboxVariants = tv({
 /**
  * The module-private recipe for the chips field, `Combobox.Chips`, and the chips in it.
  *
- * - `chips` is the field box, on the shared field chrome (`field-box.ts`). It reads its min height, inset, type and gap from the field size it
- *   writes (`field-size.ts`), and counts its border in its height (`box-border`, as every field box
- *   chrome has) in a preflight-free host too. Its row gap keeps the remove buttons' 24px targets
- *   on wrapped rows apart. It writes `--chip-h`, the one chip height, which
- *   `chip` reads and the sm padding subtracts.
+ * - `chips` is the field box, on the shared field chrome in `field-box.ts`. It reads its min height,
+ *   inset, type and gap from the field size it writes through `field-size.ts`. It counts its border
+ *   in its height with `box-border`, as every field box chrome does, in a preflight-free host too.
+ *   Its row gap keeps the remove buttons' 24px targets on wrapped rows apart. It writes `--chip-h`,
+ *   the one chip height, which `chip` reads and the sm padding subtracts.
  * - `chip` is one chip, `--chip-h` tall.
  *
  * `size` is `"default"`, the md control size, or `"sm"`, the sm control size. The default box
  * keeps the row padding of its shell. An sm box is too short for that padding around a chip, so
- * it centres one row of chips in its height instead: the height less the chip and the 1px borders,
+ * it centers one row of chips in its height instead: the height less the chip and the 1px borders,
  * halved. The size's padding is an unprefixed utility after the shell's, so a consumer's `py-*`
  * replaces it through tailwind-merge.
  */

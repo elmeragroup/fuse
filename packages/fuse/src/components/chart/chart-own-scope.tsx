@@ -33,13 +33,13 @@ import {
 } from "./chart-scope-contexts";
 
 /**
- * A Root starts its own scope, so an outer chart's row, legend side, Tooltip and the index its closing popup holds, Headline, Crosshair,
- * Marker or ActiveValueLine, an outer Root of any family with its readout, selection, layout and
- * plots, or an outer clock Marker never reaches a part of this one, such as a sparkline in a legend
- * item or a pie in a tooltip. A part of another family under this Root therefore throws
- * `part-outside-root`, as it does alone. This chart's own Tooltip, Headline, Crosshair, Marker and
- * ActiveValueLine set theirs again for their children, and the Root provides its own contexts
- * inside it. A BarGroup's and a Table row's contexts stay out, because a Root can't sit in a
+ * A Root starts its own scope. An outer chart's row, legend side, Tooltip and the index its closing
+ * popup holds, Headline, Crosshair, Marker or ActiveValueLine, an outer Root of any family with its
+ * readout, selection, layout and plots, or an outer clock Marker never reaches a part of this one,
+ * such as a sparkline in a legend item or a pie in a tooltip. A part of another family under this
+ * Root therefore throws `part-outside-root`, as it does alone. This chart's own Tooltip, Headline,
+ * Crosshair, Marker and ActiveValueLine set theirs again for their children, and the Root provides
+ * its own contexts inside it. A BarGroup's and a Table row's contexts stay out, because a Root can't sit in a
  * BarGroup's aria-hidden plot layer or inside a table row.
  *
  * @param props - The Root's tree.

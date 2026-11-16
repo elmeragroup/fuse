@@ -6,14 +6,13 @@
 import { tv } from "../../styles/tv";
 
 /**
- * Menu-row slots shared by Select, Combobox, and DropdownMenu. The *highlight* face is
- * deliberately not on `item`: base-ui publishes it as `focus:` on menu items and
- * `data-highlighted:` on listbox options, so each family passes its own as the extra
- * `cn` argument. A row reads the row metrics: it is at least `--row-h` tall and pads with
- * `--row-px` and `--row-py`, and a multi-line row grows. A row with a trailing indicator adds
- * `indicatorRoom`, and an inset row or label adds `inset`, both the row inset plus a 16px
- * indicator or icon and its 8px gap. A row is an inner part: it rounds with `rounded-inner`,
- * from the `--inner-corner` its family's padded popup part publishes.
+ * Menu-row slots shared by Select, Combobox and DropdownMenu. The highlight face is not on `item`,
+ * because Base UI publishes it as `focus:` on menu items and `data-highlighted:` on listbox options,
+ * so each family passes its own as the extra `cn` argument. A row reads the row metrics. It is at
+ * least `--row-h` tall, pads with `--row-px` and `--row-py`, and grows when its text wraps. A row
+ * with a trailing indicator adds `indicatorRoom`, and an inset row or label adds `inset`, both the
+ * row inset plus a 16px indicator or icon and its 8px gap. A row is an inner part, so it rounds
+ * with `rounded-inner`, from the `--inner-corner` its family's padded popup part publishes.
  */
 const overlayMenuVariants = tv({
   slots: {
@@ -29,7 +28,7 @@ const overlayMenuVariants = tv({
     indicatorRoom: "pr-[calc(var(--row-px)+1.5rem)]",
     /** The start padding of an inset row or label, which lines its text up with rows that start with an icon. */
     inset: "data-inset:pl-[calc(var(--row-px)+1.5rem)]",
-    /** The hairline rule between option groups, shared by Select, Combobox, and DropdownMenu. */
+    /** The hairline rule between option groups, shared by Select, Combobox and DropdownMenu. */
     separator: "-mx-(--surface-pad-sm) my-1 h-px bg-border",
     groupLabel: "text-xs px-(--row-px) py-1.5 text-muted-foreground",
   },

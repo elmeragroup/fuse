@@ -68,14 +68,14 @@ export function restingPoint(
 }
 
 /**
- * Draw a point mark's centre from its numbers, on the column of the slot's crosshair and the device
+ * Draws a point mark's center from its numbers, on the column of the slot's crosshair and the device
  * pixel of its value, as the path's vertex draws.
  *
  * @param frame - The layout's frame.
  * @param xScale - Root's x scale.
  * @param along - The unsnapped coordinate along the slot axis.
  * @param across - The unsnapped coordinate along the value axis.
- * @returns The centre as SVG `cx` and `cy`.
+ * @returns The center as SVG `cx` and `cy`.
  */
 export function pointCentre(
   frame: PlotFrame,
@@ -112,8 +112,8 @@ const FOLLOWS = {
 
 /**
  * Which drawing of a series its attached marks sit on: the first in `FOLLOWS` order that draws the
- * series, or undefined when none does. Attaching and an active dot's ride both read it, so a dot
- * rides the drawing it joins.
+ * series, or undefined when none does. Attaching and an active dot's move along its line both read
+ * it, so a dot moves along the drawing it joins.
  *
  * @param context - Root's context.
  * @param series - The series.
@@ -211,7 +211,7 @@ export type AttachedCopy = {
    */
   readonly outgoing?: (kept: Element, before: MarkValues, update: ChartUpdate) => Element | null;
   /**
-   * Bring the kept copy up to what the live node shows after a pointer or key step, which keeps no
+   * Brings the kept copy up to what the live node shows after a pointer or key step, which keeps no
    * new copy, such as an active dot's paint at its new slot. A later crossfade then fades out what
    * showed just before its update.
    */
@@ -225,7 +225,7 @@ const shownTexts = new WeakMap<
 >();
 
 /**
- * Note the text a label rendered under an update, in its layout effect, so a crossfade that copies
+ * Records the text a label rendered under an update, in its layout effect, so a crossfade that copies
  * the label's mark can fade out the text it showed before the update.
  *
  * @param node - The label's node, or null before it mounts.
@@ -240,7 +240,7 @@ export function noteShownText(node: Element | null, text: string, update: ChartU
 }
 
 /**
- * Copy a mark that holds value labels as it showed before an update: a deep copy of the live node
+ * Copies a mark that holds value labels as it showed before an update: a deep copy of the live node
  * whose labels take the text they showed before it.
  *
  * @param live - The mark's live node.
@@ -261,7 +261,7 @@ export function copyBefore(live: Element, update: ChartUpdate): Element {
 }
 
 /**
- * Place an attached mark. When the path commit it follows crossfades the path, the mark crossfades
+ * Places an attached mark. When the path commit it follows crossfades the path, the mark crossfades
  * with it, once: the copy it kept of how it last showed, its pills' old text included, fades out
  * where the loop last drew it, in an element beside the live one, and the mark lands on its new
  * place and fades in. A pointer or key step never starts one. Otherwise it takes its placement.
@@ -345,11 +345,11 @@ function attachedPlacement(placement: Placement, join: FollowerJoin | undefined)
 
 /** An attached mark's registration, its outgoing element, and how it places. */
 export type AttachedMark<T extends Element, A extends readonly ValueAxis[], O extends Element> = {
-  /** Pass it as the live node's `ref`. */
+  /** The live node's `ref`. */
   readonly ref: RefCallback<T>;
   /** The live node. */
   readonly node: () => T | null;
-  /** Pass it as the `ref` of the empty element beside the live one, which the old drawing fades out in. */
+  /** The `ref` of the empty element beside the live one, which the old drawing fades out in. */
   readonly outgoingRef: RefObject<O | null>;
   /**
    * The numbers the loop drew last for the mark: after `attach`, where what it joins placed it, such
@@ -357,7 +357,7 @@ export type AttachedMark<T extends Element, A extends readonly ValueAxis[], O ex
    */
   readonly drawn: () => MarkValues | null;
   /**
-   * Place the mark for a paint. It asks the commit classifier first, so the classifier sees every
+   * Places the mark for a paint. It asks the commit classifier first, so the classifier sees every
    * commit, then places the target through what the mark joins, or stops for a null target, as a
    * mark that hides does.
    */
@@ -369,7 +369,7 @@ export type AttachedMark<T extends Element, A extends readonly ValueAxis[], O ex
 };
 
 /**
- * Register a mark that sits on a series' drawn point, as Dots, a Marker, the active dot and the
+ * Registers a mark that sits on a series' drawn point, as Dots, a Marker, the active dot and the
  * value followers do: its motion mark, its follower placement, the element its crossfade fades out
  * in and the copy it keeps for it.
  *

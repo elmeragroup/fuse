@@ -13,11 +13,11 @@ import type { ChartDomProps, ValueFormat } from "./chart-types";
  * @beta
  */
 export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
-  /** A config stack id. The first stack id in config order is the default. */
+  /** A config stack id. Defaults to the first stack id in config order. */
   stack?: string;
-  /** The row's label. The dictionary's "Totalt" is the default. */
+  /** The row's label. Defaults to the dictionary's "Totalt". */
   label?: string;
-  /** The total's format. The stack's first series' format is the default. */
+  /** The total's format. Defaults to the stack's first series' format. */
   format?: ValueFormat;
 };
 

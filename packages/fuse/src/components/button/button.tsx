@@ -26,17 +26,17 @@ type ButtonPrimitiveProps = Omit<ComponentProps<typeof ButtonPrimitive>, "classN
 type ButtonSharedProps = ButtonPrimitiveProps & {
   /**
    * The label and icons. Mark a leading icon with `data-icon="inline-start"` and a trailing one
-   * with `data-icon="inline-end"`, and that side takes the narrower icon padding. Your own icon
-   * components must pass `data-icon` through to the element they render. An SVG without a
-   * `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class
-   * opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox`
-   * clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and
-   * `height`, or restore the `viewBox`.
+   * with `data-icon="inline-end"`, and that side takes the narrower icon padding. A custom icon
+   * component must pass `data-icon` through to the element it renders. An SVG without a `size-*`
+   * class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out,
+   * `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at
+   * that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or
+   * restore the `viewBox`.
    */
   children?: ReactNode;
   /**
-   * The fill and text colour. The theme sets the `outline` border. `link` looks like an inline
-   * text link.
+   * The fill and text color. The theme sets the `outline` border. `link` looks like an inline text
+   * link.
    */
   variant?: VariantProps<typeof buttonVariants>["variant"];
   /**
@@ -46,50 +46,50 @@ type ButtonSharedProps = ButtonPrimitiveProps & {
    */
   className?: string;
   /**
-   * Makes the button look and announce disabled while it stays interactive. It stamps
+   * Whether the button looks and announces disabled while it stays interactive. It stamps
    * `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work,
-   * and a Tooltip on the button still opens. Use it for an action that explains on activation
-   * why it is unavailable.
+   * and a Tooltip on the button still opens. Use it for an action that explains on activation why
+   * it is unavailable.
    */
   isVisuallyDisabled?: boolean;
   /**
-   * Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and
-   * `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result
-   * arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy`
-   * announces nothing, so say what is happening in the label, such as "Saving", or in a
-   * `role="status"` region outside the button. Put a label that changes with the state in its
-   * own element, such as `<span>{label}</span>`: page translation replaces a bare text child
-   * with its own nodes, so React's update to the old text node never shows.
+   * Whether an action is in flight. A pending button blocks activation, dims, and stamps
+   * `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it
+   * when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order.
+   * `aria-busy` announces nothing, so say what is happening in the label, such as "Saving", or in a
+   * `role="status"` region outside the button. Put a label that changes with the state in its own
+   * element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its
+   * own nodes, so React's update to the old text node never shows.
    */
   isPending?: boolean;
   /**
-   * What a pending button shows in its leading icon position. When you omit it, a spinner shows
-   * there and the button's leading and bare icons hide, while a `data-icon="inline-end"` icon
-   * stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows
-   * nothing and hides nothing, so the call site draws its own pending state. Fade that content
-   * with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the
+   * What a pending button shows in its leading icon position. Without it, a spinner shows there and
+   * the button's leading and bare icons hide, while a `data-icon="inline-end"` icon stays. A node
+   * replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides
+   * nothing, so the call site draws its own pending state. Fade that content with
+   * `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the
    * accessible name, and give an overlay no `data-icon`.
    */
   pendingIndicator?: ReactNode;
   /** Pixels added to every side of the hit rect when predicting pointer intent. */
   predictionZoneSize?: number;
   /**
-   * Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching.
-   * Browsers without pointer prediction never fire it.
+   * Called once when the pointer's predicted path enters the inflated hit rect, for prefetching.
+   * Browsers without pointer prediction never call it.
    */
   onIntent?: () => void;
 };
 
 /**
- * The props of a button with a visible label, at a label size. A wrapper that supplies its own
- * label types its props as `Omit<LabelButtonProps, "children">`.
+ * Props for a `Button` with a visible label, at a label size. A wrapper that supplies its own label
+ * types its props as `Omit<LabelButtonProps, "children">`.
  */
 export type LabelButtonProps = ButtonSharedProps & {
   /** The height and padding. The `icon*` sizes are square and require an `aria-label`. */
   size?: LabelButtonSize;
 };
 
-/** The props of a square icon-only button: an `icon*` size and the `aria-label` that names it. */
+/** Props for a square icon-only `Button`: an `icon*` size and the `aria-label` that names it. */
 export type IconButtonProps = ButtonSharedProps & {
   /** The height and padding. The `icon*` sizes are square and require an `aria-label`. */
   size: IconButtonSize;
@@ -97,14 +97,14 @@ export type IconButtonProps = ButtonSharedProps & {
 };
 
 /**
- * `LabelButtonProps | IconButtonProps`. `Omit` on this union collapses it and lets an icon size
- * through without its name. Omit from {@link LabelButtonProps} or {@link IconButtonProps}
- * instead, or distribute the omit over the union.
+ * Props for `Button`, the union `LabelButtonProps | IconButtonProps`. `Omit` on this union
+ * collapses it and lets an icon size through without its name. Omit from {@link LabelButtonProps}
+ * or {@link IconButtonProps} instead, or distribute the omit over the union.
  */
 export type ButtonProps = LabelButtonProps | IconButtonProps;
 
 /**
- * Triggers an action. `children` lists the icon rules. To render a link, pass
+ * A button that triggers an action. `children` lists the icon rules. To render a link, pass
  * `render={<a href="…" />}` and `nativeButton={false}`.
  */
 export function Button({

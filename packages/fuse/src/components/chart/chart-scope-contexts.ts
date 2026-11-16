@@ -4,9 +4,10 @@
  * The contexts every Root's own scope resets. The first say where a shared readout part sits: its
  * template row, its legend side, a live readout, a Crosshair, a Headline, or a datum. The rest are
  * what a Root provides for its own parts: the cartesian Root's model, layout, plots and plot reads,
- * the scatter Root's model and plot, and the live line Root's readings and plot. They live in a light leaf, so each Root's scope resets them
- * without importing the readout hooks or another family's Root, and a part under a nested Root of
- * another family reaches no outer Root's context and throws `part-outside-root`, as it does alone.
+ * the scatter Root's model and plot, and the live line Root's readings and plot. They live in a light
+ * leaf, so each Root's scope resets them without importing the readout hooks or another family's
+ * Root. A part under a nested Root of another family reaches no outer Root's context and throws
+ * `part-outside-root`, as it does alone.
  */
 import { createContext } from "react";
 
@@ -59,7 +60,7 @@ export const ChartDatumContext = createContext<{ readonly key: string; readonly 
 );
 
 /**
- * How many chart Roots enclose the next one: 0 outside every Root. Each Root writes its own depth on
+ * How many chart Roots enclose the next one, 0 outside every Root. Each Root writes its own depth on
  * its figure, so a hover rule bound to the nearest Root picks that Root out by its depth, which no
  * other Root on the chain shares, and the hover restyles only the parts it styles.
  */

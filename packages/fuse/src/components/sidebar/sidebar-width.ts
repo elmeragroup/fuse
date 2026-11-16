@@ -1,5 +1,5 @@
 /**
- * Sidebar's rail widths. Runtime-free, so the `@elmeragroup/fuse/sidebar` facade re-exports them
+ * Sidebar's rail widths. They are runtime-free, so the `@elmeragroup/fuse/sidebar` facade re-exports them
  * from here and a Node script reads them without loading the client component.
  */
 

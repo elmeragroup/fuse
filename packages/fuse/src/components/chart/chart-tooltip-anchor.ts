@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Where a cartesian tooltip rests. On a vertical chart the popup centres on the active slot, held
+ * Where a cartesian tooltip rests. On a vertical chart the popup centers on the active slot, held
  * inside the chart Root's box, and rests 8 px above the highest mark under its own width: bars,
  * stack tops, line and area strokes between readings, and dots. A step that raises it raises it over
  * the whole span it travels, and a step that would lower it by 16 px or less keeps its height. Under

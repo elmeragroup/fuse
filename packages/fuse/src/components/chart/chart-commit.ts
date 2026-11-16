@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * How Root classifies each change of its model, the one owner of `ChartUpdate`. Each render hands
- * the classifier Root's model and the inputs it came from, and the classifier keeps the commit it
- * saw last, so it tells a data update from a range step, a Panel's registration from either, and
- * decides which keys glide between two domains and whether the update relays the plot. Marks read
- * the result through Root's context and compare its identity to tell an update from a re-render.
+ * How Root classifies each change of its model. This module is the one place that builds a
+ * `ChartUpdate`. Each render hands the classifier Root's model and the inputs it came from, and the
+ * classifier keeps the commit it saw last, so it tells a data update from a range step, a Panel's
+ * registration from either, and decides which keys glide between two domains and whether the update
+ * relays the plot. Marks read the result through Root's context and compare its identity to tell an
+ * update from a re-render.
  */
 import { useState } from "react";
 

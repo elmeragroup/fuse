@@ -2,7 +2,7 @@
  * The measured plot of a scatter chart under its two value domains, and the paths its marks draw.
  * x runs left to right and y bottom to top, both linear. Every point lands on whole device pixels
  * from the layer's origin, as `plot-frame.ts` snaps a cartesian mark: a dot of an even device-pixel
- * diameter centres on a pixel edge and an odd one on a pixel's middle, so its round cap covers
+ * diameter centers on a pixel edge and an odd one on a pixel's middle, so its round cap covers
  * whole pixels. A series' points draw as one path of zero-length subpaths, `M x y h0` each, whose
  * round caps are the dots, so 100 000 points cost one element per series.
  */
@@ -35,7 +35,7 @@ export type ScatterFrame = {
 export type PlotPoint = { readonly x: number; readonly y: number };
 
 /**
- * The curves `ScatterChart.Line` takes: `ChartCurve` without "monotone-y", which has no meaning over
+ * The curves `ScatterChart.Line` takes: `ChartCurve` without `"monotone-y"`, which has no meaning over
  * an x-sorted series.
  *
  * @beta
@@ -102,7 +102,7 @@ function axisSnap(box: PlotBox, edge: number, diameter: number): AxisSnap {
 }
 
 /**
- * Snap a coordinate measured from the layer's origin to the device pixel edge the browser gives a
+ * Snaps a coordinate measured from the layer's origin to the device pixel edge the browser gives a
  * box edge at its page position, as `plot-frame.ts` snaps every cartesian mark.
  */
 function snapped(snap: AxisSnap, edge: number, at: number): number {
@@ -110,14 +110,14 @@ function snapped(snap: AxisSnap, edge: number, at: number): number {
 }
 
 /**
- * Where a dot's centre lands: on whole device pixels from the layer's origin, half a device pixel
- * past them for a dot an odd number of device pixels across.
+ * Where a dot's center lands. It lands on whole device pixels from the layer's origin, and half a
+ * device pixel past them for a dot an odd number of device pixels across.
  *
  * @param frame - The frame.
  * @param x - The x value.
  * @param y - The y value.
  * @param diameter - The dot's diameter, as `dotDiameter` rounds it.
- * @returns The centre in CSS pixels from the plot's top left.
+ * @returns The center in CSS pixels from the plot's top left.
  */
 export function dotCentre(frame: ScatterFrame, x: number, y: number, diameter: number): PlotPoint {
   const { box } = frame;

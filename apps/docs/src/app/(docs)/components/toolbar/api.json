@@ -18,7 +18,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The toolbar's name, such as \"Invoice\". Give every toolbar one.",
+          "description": "The toolbar's name, such as `\"Invoice\"`. Give every toolbar one.",
           "required": false
         },
         {
@@ -27,7 +27,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The items: `Toolbar.Button`, `Toolbar.Link`, `Toolbar.Input`, `Toolbar.Group` and `Toolbar.Separator`. A `ToggleGroup` joins the toolbar's arrow-key order instead of keeping its own. The bar publishes `--inner-corner`, so a block of your own with `rounded-inner` rounds with it. For a bar that only switches between options, use `ToggleGroup` on its own.",
+          "description": "The items: `Toolbar.Button`, `Toolbar.Link`, `Toolbar.Input`, `Toolbar.Group` and `Toolbar.Separator`. A `ToggleGroup` joins the toolbar's arrow-key order instead of keeping its own. The bar publishes `--inner-corner`, so a block inside it with `rounded-inner` rounds with it. For a bar that only switches between options, use `ToggleGroup` on its own.",
           "required": false
         },
         {
@@ -47,7 +47,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables every button and input in the bar. They stay in the arrow-key order, so a keyboard user still finds them. A `Toolbar.Link` cannot be disabled.",
+          "description": "Whether every button and input in the bar is disabled. They stay in the arrow-key order, so a keyboard user still finds them. A `Toolbar.Link` cannot be disabled.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the button. It stays focusable, so the arrow keys still reach it, unless `focusableWhenDisabled` is `false`.",
+          "description": "Whether the button is disabled. It stays focusable, so the arrow keys still reach it, unless `focusableWhenDisabled` is `false`.",
           "required": false
         },
         {
@@ -294,7 +294,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The group's name, such as \"File\".",
+          "description": "The group's name, such as `\"File\"`.",
           "required": false
         },
         {
@@ -314,7 +314,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables every button and input in the group. They stay in the arrow-key order. A `Toolbar.Link` cannot be disabled.",
+          "description": "Whether every button and input in the group is disabled. They stay in the arrow-key order. A `Toolbar.Link` cannot be disabled.",
           "required": false
         },
         {

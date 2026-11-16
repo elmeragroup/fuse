@@ -13,35 +13,35 @@ import { verticalTableCellText } from "./vertical-table-cell-text";
 import { VerticalTableHeader } from "./vertical-table-header";
 import { VerticalTableKey } from "./vertical-table-key";
 
-/** `Table.Root` takes a native `table`'s props. */
+/** Props for `Table.Root`, a native `table`'s props. */
 export type TableRootProps = ComponentProps<"table">;
-/** `Table.Header` takes a native `thead`'s props. */
+/** Props for `Table.Header`, a native `thead`'s props. */
 export type TableHeaderProps = ComponentProps<"thead">;
-/** `Table.Body` takes a native `tbody`'s props. */
+/** Props for `Table.Body`, a native `tbody`'s props. */
 export type TableBodyProps = ComponentProps<"tbody">;
-/** `Table.Footer` takes a native `tfoot`'s props. */
+/** Props for `Table.Footer`, a native `tfoot`'s props. */
 export type TableFooterProps = ComponentProps<"tfoot">;
-/** `Table.Row` takes a native `tr`'s props. */
+/** Props for `Table.Row`, a native `tr`'s props. */
 export type TableRowProps = ComponentProps<"tr"> & {
   /**
-   * The row's cells. The table never marks a row selected: set `data-state="selected"` on the row
-   * when your row model selects it, and the row takes the muted fill.
+   * The row's cells. The table never marks a row selected. Set `data-state="selected"` on the row
+   * when the row model selects it, and the row takes the muted fill.
    */
   children?: ComponentProps<"tr">["children"];
 };
-/** `Table.Head` takes a native `th`'s props. */
+/** Props for `Table.Head`, a native `th`'s props. */
 export type TableHeadProps = ComponentProps<"th">;
-/** `Table.Cell` takes a native `td`'s props. */
+/** Props for `Table.Cell`, a native `td`'s props. */
 export type TableCellProps = ComponentProps<"td">;
-/** `Table.Caption` takes a native `caption`'s props. */
+/** Props for `Table.Caption`, a native `caption`'s props. */
 export type TableCaptionProps = ComponentProps<"caption">;
 
 /** One key/value row of `VerticalTable.Body`'s `data`. */
 export type VerticalTableItem = {
   /**
    * The row's identity, used as its React key. Set it when the list can be filtered, reordered
-   * or have rows inserted, so a stateful `value` (an open popover, an uncontrolled input) stays
-   * with its own item. Defaults to the item's position.
+   * or have rows inserted, so a stateful `value`, such as an open popover or an uncontrolled input,
+   * stays with its own item. Defaults to the item's position.
    */
   id?: string | number;
   /** The key cell's content. */
@@ -56,7 +56,7 @@ export type VerticalTableItem = {
   text?: "default" | "truncate";
 };
 
-/** `VerticalTable.Root` takes a native `div`'s props and the facts sheet's look. */
+/** Props for `VerticalTable.Root`, a native `div`'s props and the facts sheet's look. */
 export type VerticalTableRootProps = ComponentProps<"div"> & {
   /**
    * The facts sheet's look. `"default"` draws a bordered box in the `panel` fill.
@@ -68,7 +68,7 @@ export type VerticalTableRootProps = ComponentProps<"div"> & {
 
 export type { VerticalTableHeaderProps } from "./vertical-table-header";
 
-/** `VerticalTable.Body` takes a native `div`'s props, the rows as data and the inner table's props. */
+/** Props for `VerticalTable.Body`, a native `div`'s props, the rows as data and the inner table's props. */
 export type VerticalTableBodyProps = ComponentProps<"div"> & {
   /**
    * Key/value rows rendered before `children`. Each item becomes a `VerticalTable.Row` with a
@@ -76,24 +76,24 @@ export type VerticalTableBodyProps = ComponentProps<"div"> & {
    */
   data?: VerticalTableItem[];
   /**
-   * The inner `Table.Root`'s props. Put association attributes such as `aria-labelledby` here:
-   * the Body's own props, `aria-*` included, stay on the wrapper `div`. A `className` here merges
+   * The inner `Table.Root`'s props. Put association attributes such as `aria-labelledby` here,
+   * since the Body's own props, `aria-*` included, stay on the wrapper `div`. A `className` here merges
    * with `table-fixed`.
    */
   tableProps?: TableRootProps;
 };
 
-/** `VerticalTable.Row` takes a native `tr`'s props, its text weight and whether it hides. */
+/** Props for `VerticalTable.Row`, a native `tr`'s props, its text weight and whether it hides. */
 export type VerticalTableRowProps = ComponentProps<"tr"> & {
   /** The text weight of the row's `VerticalTable.Key` and `VerticalTable.Value`. */
   fontWeight?: "normal" | "bold";
-  /** Hides the row. */
+  /** Whether the row is hidden. */
   isHidden?: boolean;
 };
 
 export type { VerticalTableKeyProps } from "./vertical-table-key";
 
-/** `VerticalTable.Value` takes a native `td`'s props, its text wrapping and a loading state. */
+/** Props for `VerticalTable.Value`, a native `td`'s props, its text wrapping and a loading state. */
 export type VerticalTableValueProps = ComponentProps<"td"> & {
   /** `"truncate"` clips text that overflows the cell; `"default"` wraps it. */
   text?: "default" | "truncate";
@@ -102,7 +102,7 @@ export type VerticalTableValueProps = ComponentProps<"td"> & {
 };
 
 /**
- * A semantic `<table>` in a container that scrolls sideways. The compound is server-safe: it owns
+ * A semantic `<table>` in a container that scrolls sideways. The compound is server-safe. It has
  * no state, no handlers and no browser APIs. `VerticalTable.Header` and `VerticalTable.Key` are
  * client `useRender` parts, so a host can pick another outline level or a row-header cell without
  * turning this module into a client boundary.

@@ -1,7 +1,7 @@
 /**
  * Unit under test: Sparkline's CSS-only hover and its entrance, in chart.css, over the markup the
  * hook-free component writes. Oracles: the image's own box, worked by hand. Three values own a
- * third of its width each, centred at a sixth, a half and five sixths; [2, 6, 4] spans [2, 6], so 6
+ * third of its width each, centered at a sixth, a half and five sixths; [2, 6, 4] spans [2, 6], so 6
  * sits at the top edge and 4 halfway down. The hover dim is the chart's 0.45.
  */
 import { afterEach, describe, expect, it } from "vitest";

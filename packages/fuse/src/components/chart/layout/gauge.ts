@@ -3,7 +3,7 @@
  * notches and the ruler's ticks fall, and the radii every layer draws at. Every angle here is an
  * offset in degrees from the sweep's start, along the sweep's direction, so a clockwise and a
  * counter-clockwise sweep need no special case. Every radius is a share of the radius the layer
- * draws at: the stylesheet scales the track's layers in by the room a Zone band or an outside Ruler
+ * draws at. The stylesheet scales the track's layers in by the room a Zone band or an outside Ruler
  * takes at the rim, so the radii here never depend on which parts a chart renders.
  */
 import { tickIncrement } from "d3-array";
@@ -46,7 +46,7 @@ export const GAUGE_RADII = {
   ringInner: 0.975,
   /** A Sector reaches this radius, inside the notches and a gap. */
   sector: 0.8,
-  /** A Sector starts at this radius, outside the centre's text, which it never runs under. */
+  /** A Sector starts at this radius, outside the center's text, which it never runs under. */
   sectorInner: 0.6,
   /** The outermost ring of Dots, the step between rings and between dots, and a dot's radius. */
   dotsOuter: 0.76,
@@ -128,7 +128,7 @@ export function gaugeAngle(sweep: Sweep, offset: number): number {
 export type NotchLayout = {
   /** One notch's angular width in degrees. */
   readonly width: number;
-  /** The angle from one notch's centre to the next one's, a notch and a gap. */
+  /** The angle from one notch's center to the next one's, a notch and a gap. */
   readonly step: number;
   /** One notch's corner radius, in units of the layer's radius. */
   readonly corner: number;
@@ -145,8 +145,8 @@ export type DialPixels = {
 /**
  * The notches' layout. Every gap is the same whole number of device pixels, 2 CSS pixels rounded and
  * at least one device pixel, measured at the notches' inner edge, where a gap is narrowest, and the
- * notches share what the gaps leave of the sweep, so every notch is as wide as every other: the
- * bars rule. A full turn holds a gap after its last notch too, so the gap where the turn closes is
+ * notches share what the gaps leave of the sweep, so every notch is as wide as every other. That is
+ * the bars rule. A full turn holds a gap after its last notch too, so the gap where the turn closes is
  * as wide as every other.
  *
  * @param sweep - The sweep.
@@ -170,7 +170,7 @@ export function notchLayout(sweep: Sweep, count: number, pixels: DialPixels): No
 }
 
 /**
- * The offset of notch `index`'s centre from the sweep's start.
+ * The offset of notch `index`'s center from the sweep's start.
  *
  * @param layout - The notches' layout.
  * @param index - The notch, 0 at the start.
@@ -259,7 +259,7 @@ export function rulerTicks(domain: GaugeDomain, sweep: Sweep, spacing: RulerSpac
  * @param sweep - The sweep.
  * @param from - One end of the range.
  * @param to - The other end.
- * @returns The start and end offsets, the start first, or null where the range covers no arc.
+ * @returns The start and end offsets, the start first, or `null` where the range covers no arc.
  */
 export function rangeOffsets(
   domain: GaugeDomain,
@@ -275,7 +275,7 @@ export function rangeOffsets(
 /** One ring of Dots: its radius and each dot's offset along the sweep. */
 export type DotRing = { readonly radius: number; readonly offsets: readonly number[] };
 
-/** The most rings Dots draws, which keeps the innermost clear of the centre's text. */
+/** The most rings Dots draws, which keeps the innermost clear of the center's text. */
 export const MAX_DOT_RINGS = 6;
 
 /**
@@ -303,7 +303,7 @@ export function dotRings(sweep: Sweep, rings: number): readonly DotRing[] {
 }
 
 /**
- * Whether the reading has reached a mark at an offset, as a ruler's tick and a dot light: a reading
+ * Whether the reading has reached a mark at an offset, as a ruler's tick and a dot light. A reading
  * above `min` reaches every mark at or behind it, and one at `min` reaches none.
  *
  * @param mark - The mark's offset in degrees.
@@ -330,15 +330,15 @@ export function rimBand(inner: number): GaugeBand {
 /**
  * The path of a band from the sweep's start to an offset, clamped to the sweep, and at least one
  * device pixel of arc at the band's rim for any offset above 0, so a value just above `min` still
- * draws: a sector of the annulus whose ends are radial lines on the two angles, their corners
+ * draws. The path is a sector of the annulus whose ends are radial lines on the two angles, their corners
  * rounded inside them, so the band ends on the reading's angle at every radius, as the needle, the
- * notches and the sector do. A round cap would end there on the band's centre line only, and short
+ * notches and the sector do. A round cap would end there on the band's center line only, and short
  * of it at its edges.
  *
  * @param offset - The offset in degrees from the sweep's start.
  * @param band - The band's radii and corner.
  * @param sweep - The sweep.
- * @param pixels - The measured dial, or null where nothing measures, as on the server, which keeps
+ * @param pixels - The measured dial, or `null` where nothing measures, as on the server, which keeps
  *   no pixel floor.
  * @returns The path data, empty at an offset of 0.
  */

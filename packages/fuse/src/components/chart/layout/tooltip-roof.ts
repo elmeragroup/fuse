@@ -77,8 +77,8 @@ export function box(x: number, y: number, width: number, height: number): MarkPi
 /**
  * The piece of an upright ellipse.
  *
- * @param cx - The centre's x.
- * @param cy - The centre's y.
+ * @param cx - The center's x.
+ * @param cy - The center's y.
  * @param rx - The radius along x.
  * @param ry - The radius along y.
  * @returns The piece, none for an empty ellipse.

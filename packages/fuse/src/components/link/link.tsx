@@ -30,12 +30,12 @@ export type LinkProps = Omit<useRender.ComponentProps<"a">, "href" | "target" | 
   /**
    * The link text. Name the destination, as in "Read the invoice help articles", not "click
    * here". An inline SVG after the text, marked `data-icon="inline-end"`, draws one `em` square in
-   * the link's colour and stays on the last word's line. Mark one before the text
+   * the link's color and stays on the last word's line. Mark one before the text
    * `data-icon="inline-start"`.
    */
   children?: ReactNode;
   /**
-   * Your router's link element, with its own destination prop, such as
+   * The router's link element, with its own destination prop, such as
    * `<NextLink href="/invoices/1042" />` or React Router's `<RouterLink to="/invoices/1042" />`.
    * Link merges its classes, `data-slot` and props onto it, and the router handles the click. A
    * `className` on the element, a string or a state callback, merges after Link's classes and
@@ -43,14 +43,14 @@ export type LinkProps = Omit<useRender.ComponentProps<"a">, "href" | "target" | 
    */
   render?: useRender.ComponentProps<"a">["render"];
   /**
-   * The text colour. `default` takes the colour of the text around it, so a link in an error
-   * message is the error colour. The others set a text role. Some themes set `primary` to the
-   * text colour, so keep the underline wherever colour is the only other difference.
+   * The text color. `default` takes the color of the text around it, so a link in an error
+   * message is the error color. The others set a text role. Some themes set `primary` to the
+   * text color, so keep the underline wherever color is the only other difference.
    */
   variant?: LinkVariantProps["variant"];
   /**
-   * How a reader tells the link from its sentence. `always` underlines at rest in a dimmed line
-   * and draws it in the full colour under the pointer. Keep it in running text, where nothing
+   * How a user tells the link from its sentence. `always` underlines at rest in a dimmed line
+   * and draws it in the full color under the pointer. Keep it in running text, where nothing
    * else marks the link. `hover` underlines only under the pointer, for a place that already
    * reads as links, such as a row of footer links. `none` never underlines and fades the text
    * under the pointer, for a link a container marks, such as a card's title.

@@ -62,14 +62,14 @@ export type RadarChartRootProps<
     /**
      * The radius maximum. The niced maximum of the data is the default. A `max` at or above the
      * data maximum ends the domain at `max`, and when the data exceeds `max` the niced data maximum
-     * wins, so no reading is clamped. The centre is 0, or the niced minimum when a value is negative,
+     * wins, so no reading is clamped. The center is 0, or the niced minimum when a value is negative,
      * and then the grid draws a zero ring.
      */
     max?: number;
     /** The spoke that is active before any pointer or key moves. */
     defaultActiveName?: TRow[TNameKey];
     /**
-     * "none" turns off the entrance, in which each series grows from the centre the first time the
+     * "none" turns off the entrance, in which each series grows from the center the first time the
      * chart comes into view.
      */
     "data-intro"?: "none";

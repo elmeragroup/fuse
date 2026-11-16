@@ -1,10 +1,10 @@
 /**
- * Module-private slot recipe. Not exported from the public entry, since there is no proven
- * recipe-borrowing use; the workspace-only recipe catalog re-exports it for the Figma component
- * sync.
+ * The Alert slot recipe. It is module-private, and the public entry does not export it, since no
+ * recipe-borrowing use is proven. The workspace-only recipe catalog re-exports it for the Figma
+ * component sync.
  *
- * `variant` is the status axis only. Item supplies `variant="outline"` / `size="sm"`
- * underneath; this recipe is not a control size. The `media` and `title` slots add to Item.Media's
+ * `variant` is the status axis only. Item supplies `variant="outline"` and `size="sm"`
+ * underneath, so this recipe is not a control size. The `media` and `title` slots add to Item.Media's
  * and Item.Title's own classes.
  */
 import { tv } from "../../styles/tv";

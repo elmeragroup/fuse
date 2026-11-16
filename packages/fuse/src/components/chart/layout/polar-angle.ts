@@ -1,12 +1,12 @@
 /**
  * The polar angle convention of CONTRACT section 8.5, which every polar family draws and picks in.
  * Angles are degrees from 12 o'clock, and positive angles run clockwise, d3-shape's frame in
- * degrees. A point at angle a and radius r sits at `(r·sin a, −r·cos a)` from the centre, in screen
+ * degrees. A point at angle a and radius r sits at `(r·sin a, −r·cos a)` from the center, in screen
  * coordinates whose y grows downward. Degrees turn into radians only at a d3-shape call.
  */
 import { ChartCompositionError } from "./errors";
 
-/** A point in screen coordinates from the centre, x right and y down. */
+/** A point in screen coordinates from the center, x right and y down. */
 export type PolarPoint = { readonly x: number; readonly y: number };
 
 /**
@@ -24,7 +24,7 @@ export type Sweep = {
   readonly direction: 1 | -1;
 };
 
-/** A box in units of the outer radius, from the centre, x right and y down. */
+/** A box in units of the outer radius, from the center, x right and y down. */
 export type SweepBox = {
   readonly left: number;
   readonly top: number;
@@ -56,10 +56,10 @@ export function toDegrees(radians: number): number {
 }
 
 /**
- * The point at an angle and a radius from the centre.
+ * The point at an angle and a radius from the center.
  *
  * @param angle - Degrees from 12 o'clock, clockwise.
- * @param radius - The distance from the centre.
+ * @param radius - The distance from the center.
  * @returns The point, x right and y down.
  */
 export function polarPoint(angle: number, radius: number): PolarPoint {
@@ -111,7 +111,7 @@ export function turnOf(angle: number): number {
 }
 
 /**
- * The angle of a pointer offset from the centre, normalised to `[0, 360)`. The exact centre reads 0,
+ * The angle of a pointer offset from the center, normalized to `[0, 360)`. The exact center reads 0,
  * because `atan2(0, −0)` is π and would read 180.
  *
  * @param dx - The offset to the right, in any unit.
@@ -142,7 +142,7 @@ export function isFullTurn(sweep: Sweep): boolean {
  *
  * @param angle - Degrees, in any turn.
  * @param sweep - The sweep.
- * @returns The offset in degrees, 0 to the sweep's width, or null when the angle lies outside it.
+ * @returns The offset in degrees, 0 to the sweep's width, or `null` when the angle lies outside it.
  */
 export function angleInSweep(angle: number, sweep: Sweep): number | null {
   const raw = (angle - sweep.start) * sweep.direction;
@@ -153,8 +153,8 @@ export function angleInSweep(angle: number, sweep: Sweep): number | null {
 }
 
 /**
- * The tight box around a sweep's outer arc and its centre, in units of the outer radius, so a
- * semicircle gets a 2:1 cell and a full circle a square one. The box always holds the centre,
+ * The tight box around a sweep's outer arc and its center, in units of the outer radius, so a
+ * semicircle gets a 2:1 cell and a full circle a square one. The box always holds the center,
  * which a pie's slices and a gauge's hub reach, so its aspect ratio is a pure function of the
  * angles and the server's markup is final at any width.
  *

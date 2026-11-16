@@ -26,7 +26,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged after the card's own. A border colour class replaces the card's edge colour, a shadow size class such as `shadow-md` replaces its shadow, and a shadow colour class tints the shadow. To recolour the edge or shadow of many cards, set `--card-border` or `--card-shadow` on the `ThemeScope` or another element around them. A `bg-*` class that changes the fill should set `--surface` and `--surface-muted-foreground` to match, as in `className=\"bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]\"`, so a chart inside cuts its seams out of the new fill.",
+          "description": "Extra classes, merged after the card's own. A border color class replaces the card's edge color, a shadow size class such as `shadow-md` replaces its shadow, and a shadow color class tints the shadow. To recolor the edge or shadow of many cards, set `--card-border` or `--card-shadow` on the `ThemeScope` or another element around them. A `bg-*` class that changes the fill should set `--surface` and `--surface-muted-foreground` to match, as in `className=\"bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]\"`, so a chart inside cuts its seams out of the new fill.",
           "required": false
         },
         {
@@ -142,7 +142,7 @@
           "type": "CardTitleLevel | undefined",
           "shortType": null,
           "defaultValue": "3",
-          "description": "The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. The default `3` suits a card in a page section. Set the level that fits the card's place in the outline.",
+          "description": "The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. `3` suits a card in a page section. Set the level that fits the card's place in the outline.",
           "required": false
         },
         {
@@ -305,7 +305,7 @@
           "type": "Booleanish | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an unavailable section. A link takes no `disabled`, so mark it `aria-disabled=\"true\"`. The section dims and drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click opens no new tab.",
+          "description": "Whether the section is unavailable. A link takes no `disabled`, so mark it `aria-disabled=\"true\"`. The section dims and drops its hover fill, and a click or Enter neither follows the link nor runs `onClick`. A middle-click opens no new tab.",
           "required": false
         },
         {
@@ -323,7 +323,7 @@
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Replaces the host `<button type=\"button\">`. `render={<a href=\"/terms\" />}` makes the section a link. To make it a trigger, pass it to the trigger's `render`, as with `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>Change plan</Dialog.Trigger>`.",
+          "description": "The element that replaces the host `<button type=\"button\">`. `render={<a href=\"/terms\" />}` makes the section a link. To make it a trigger, pass it to the trigger's `render`, as with `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>Change plan</Dialog.Trigger>`.",
           "required": false
         }
       ]
@@ -343,7 +343,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The section's icon, sized to `size-5`. Put the media first in a `Card.Section` or `Card.SectionButton`. The section becomes two columns, the icon centred on the section's height beside the content. In a `Card.Section`, put the content in a `Card.Content`. In a `Card.SectionButton`, put it in a plain `span`, because a button holds phrasing content only.",
+          "description": "The section's icon, sized to `size-5`. Put the media first in a `Card.Section` or `Card.SectionButton`. The section becomes two columns, the icon centered on the section's height beside the content. In a `Card.Section`, put the content in a `Card.Content`. In a `Card.SectionButton`, put it in a plain `span`, because a button holds phrasing content only.",
           "required": false
         }
       ]

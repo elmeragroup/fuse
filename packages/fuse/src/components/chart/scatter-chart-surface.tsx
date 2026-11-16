@@ -87,7 +87,7 @@ export function pickPoint(
 }
 
 /**
- * A touch or pen tap at a client point, wherever it lands, the plot or the popup over it: it
+ * A touch or pen tap at a client point, wherever it lands, the plot or the popup over it. It
  * records the input, picks the point under it through `pickPoint` in the current model and drawn
  * frame, and presses it.
  *
@@ -104,7 +104,7 @@ export function tapPoint(
 }
 
 /**
- * Record the pointer's position and type, then pick the point under it through `pickPoint`, as
+ * Records the pointer's position and type, then picks the point under it through `pickPoint`, as
  * every pointer event the plot or its popup acts on does.
  *
  * @param context - The Root.

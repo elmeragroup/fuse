@@ -48,8 +48,8 @@ function judge(interval: Interval, period: Interval, lists: Lists): SlotJudgemen
 }
 
 /**
- * For each fine start, the index of the first fine start of the coarse slot whose start it follows:
- * the coarse slot holds every fine start from its own start up to the next coarse start.
+ * For each fine start, the index of the first fine start of the coarse slot whose start it follows.
+ * The coarse slot holds every fine start from its own start up to the next coarse start.
  */
 function groupedBy(fine: readonly number[], coarse: readonly number[]): number[] {
   return fine.map((start) => {

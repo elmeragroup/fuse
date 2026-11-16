@@ -47,7 +47,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The list's Items. Wrap each term and its details in a `DescriptionList.Item`, the `<div>` HTML allows around one name-value group. Do not mix Items with bare terms and details: HTML forbids it, the inline layout styles cells only inside an Item, and rules fall between Items.",
+          "description": "The list's Items. Wrap each term and its details in a `DescriptionList.Item`, the `<div>` HTML allows around one name-value group. Do not mix Items with bare terms and details. HTML forbids it, the inline layout styles cells only inside an Item, and rules fall between Items.",
           "required": false
         },
         {
@@ -65,7 +65,7 @@
           "type": "\"inline\" | \"responsive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"responsive\"",
-          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items. `inline` is for label and value rows in receipts, order summaries and price boxes. Each Item shares its own row between its term and details, with the details at the end of the row. When the two do not fit on one line, both wrap within the row. Only when the term's longest word and the details' longest word cannot share the row does the details move under its term, and a word wider than the whole row then breaks in the details. Inline rows take the label type, follow density as field labels do, space with the small surface gap and have no rules. The term is not muted: add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to stress it. To group rows, use one inline list per group. Consecutive inline lists space with the large surface gap. A colour class on a term or details wins in both layouts. To override the inline cells' padding, sizing and alignment, use a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. To override an inline Item's row, wrap and gap, use a `[:where([data-layout=inline])>&]:` class.",
+          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items. `inline` is for label and value rows in receipts, order summaries and price boxes. Each Item shares its own row between its term and details, with the details at the end of the row. When the two do not fit on one line, both wrap within the row. Only when the term's longest word and the details' longest word cannot share the row does the details move under its term, and a word wider than the whole row then breaks in the details. Inline rows take the label type, follow density as field labels do, space with the small surface gap and have no rules. The term is not muted: add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to stress it. To group rows, use one inline list per group. Consecutive inline lists space with the large surface gap. A color class on a term or details wins in both layouts. To override the inline cells' padding, sizing and alignment, use a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. To override an inline Item's row, wrap and gap, use a `[:where([data-layout=inline])>&]:` class.",
           "required": false,
           "values": [
             "inline",
@@ -109,7 +109,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The term. It wraps at its spaces and hyphens, so a hyphenated label such as \"Målepunkt-ID\" can split at the hyphen beside a long value. Write it with a non-breaking hyphen, U+2011, to keep it whole.",
+          "description": "The term. It wraps at its spaces and hyphens, so a hyphenated label such as `Målepunkt-ID` can split at the hyphen beside a long value. Write it with a non-breaking hyphen, U+2011, to keep it whole.",
           "required": false
         }
       ]

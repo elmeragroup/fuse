@@ -21,7 +21,7 @@ const FUSE_FIRST = ['@import "./fuse.css";', '@import "tailwindcss/utilities.css
 );
 
 /**
- * The classes the boxes below spell. They are plain elements, not Cards: Card colours its edge
+ * The classes the boxes below spell. They are plain elements, not Cards: Card colors its edge
  * with the `border-card-border` utility, so it would pass without the base-layer default.
  */
 const CANDIDATES = ["border", "border-primary"];

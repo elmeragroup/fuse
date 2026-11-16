@@ -120,7 +120,7 @@ describe("pressed face", () => {
     )
   );
 
-  /** A toggle's fill and text colour once its colour transition has finished. */
+  /** A toggle's fill and text color once its color transition has finished. */
   async function faceOf(name: string): Promise<{ fill: string; text: string }> {
     const toggle = roleNamed("button", name);
     await Promise.all(toggle.getAnimations().map((animation) => animation.finished));

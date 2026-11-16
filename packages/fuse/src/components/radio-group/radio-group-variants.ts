@@ -5,14 +5,14 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 /**
- * Runtime-free recipe. Size axis for `RadioIconButton`; default `icon`. Not exported from
- * `@elmeragroup/fuse/radio-group`; the workspace-only recipe catalog re-exports it for the Figma
- * component sync.
+ * Runtime-free recipe for `RadioIconButton`'s size axis, which defaults to `icon`. It is not
+ * exported from `@elmeragroup/fuse/radio-group`. The workspace-only recipe catalog re-exports it
+ * for the Figma component sync.
  *
  * Each size is the control-size recipe's `square`, like Button's icon sizes. `icon-xxs` and
- * `icon-xs` share the `xs` square and differ only by glyph size, which stays local. Svg sizes apply only to
- * `svg:not([class*='size-'])`. The base carries the shared self focus ring. The radio root is a
- * <span>, which never matches `:disabled`, so the state face keys off Base UI's `data-disabled`
+ * `icon-xs` share the `xs` square and differ only by glyph size, which stays local. SVG sizes
+ * apply only to `svg:not([class*='size-'])`. The base carries the shared self focus ring. The radio
+ * root is a `<span>`, which never matches `:disabled`, so the state face keys off Base UI's `data-disabled`
  * and `data-invalid` attributes, plus a consumer's `aria-invalid`. Hover and press sit behind the
  * `enabled-*` gate, so a disabled button neither repaints nor scales under the pointer.
  */
@@ -42,8 +42,8 @@ export const radioIconButtonVariants = tv({
 });
 
 /**
- * Runtime-free recipe for `RadioGroupItem`'s circle, its indicator and the dot inside. Not
- * exported from `@elmeragroup/fuse/radio-group`; the workspace-only recipe catalog re-exports
+ * Runtime-free recipe for `RadioGroupItem`'s circle, its indicator and the dot inside. It is not
+ * exported from `@elmeragroup/fuse/radio-group`. The workspace-only recipe catalog re-exports
  * it for the Figma component sync.
  *
  * - `root` is the 16px circle. It carries the `peer` marker for a sibling's `peer-*` styles, the
@@ -72,14 +72,14 @@ export const radioVariants = tv({
 });
 
 /**
- * Runtime-free recipe for `Radio`, the labelled row. Not exported from
- * `@elmeragroup/fuse/radio-group`; the workspace-only recipe catalog re-exports it for the Figma
+ * Runtime-free recipe for `Radio`, the labeled row. It is not exported from
+ * `@elmeragroup/fuse/radio-group`. The workspace-only recipe catalog re-exports it for the Figma
  * component sync.
  *
  * - `root` is the row's `Field.Item`.
  * - `label` is the `Field.Label` around the circle and the content, the whole row's click target.
  * - `content` keeps the label's flex row for its children, so text and a badge stay 8px apart and
- *   centred. It dims from the circle's `data-disabled` through `peer`, so the circle, which dims
+ *   centered. It dims from the circle's `data-disabled` through `peer`, so the circle, which dims
  *   itself, is not dimmed twice.
  */
 export const radioRowVariants = tv({

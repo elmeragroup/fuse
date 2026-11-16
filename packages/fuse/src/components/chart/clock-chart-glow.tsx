@@ -19,9 +19,9 @@ export type ClockChartGlowProps = ChartLayerProps & {
 };
 
 /**
- * Wraps clock marks and glows them: a series of one paint casts its colour as a line's or a bar's
- * glow does, and a series painted by value glows through a filter that blurs its own pixels, so each
- * halo takes its mark's step.
+ * A wrapper that glows the clock marks inside it. A series of one paint casts its color as a line's
+ * or a bar's glow does. A series painted by value glows through a filter that blurs its own pixels,
+ * so each halo takes its mark's step.
  *
  * @beta
  */

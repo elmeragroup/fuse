@@ -15,7 +15,7 @@ export type { Interval, TimePreset } from "./format/time-format";
 export type { ChartFractionDigits, ValueFormat } from "./format/value-format";
 
 /**
- * Every value a data cell may hold. Flight serialises each of these, and none is a function.
+ * Every value a data cell may hold. Flight serializes each of these, and none is a function.
  *
  * @beta
  */
@@ -165,7 +165,7 @@ export type ChartSequentialRole = `chart-seq-${1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type ChartDivergingRole = `chart-diverging-${1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 
 /**
- * A role that says a value is favourable or unfavourable. A layout never mixes it with a
+ * A role that says a value is favorable or unfavorable. A layout never mixes it with a
  * categorical role.
  *
  * @beta
@@ -173,7 +173,7 @@ export type ChartDivergingRole = `chart-diverging-${1 | 2 | 3 | 4 | 5 | 6 | 7}`;
 export type ChartSentimentRole = "chart-sentiment-positive" | "chart-sentiment-negative";
 
 /**
- * Every chart colour role, plus `chart-other` for the folded Other slice and its kin.
+ * Every chart color role, plus `chart-other` for the folded Other slice and its kin.
  *
  * @beta
  */
@@ -185,7 +185,7 @@ export type ChartRole =
   | "chart-other";
 
 /**
- * A scale, whose colour follows the value. Root bins each value into the scale's 7 steps. A bar
+ * A scale, whose color follows the value. Root bins each value into the scale's 7 steps. A bar
  * paints its step, and a line or area paints a gradient along the value axis, so a line or area
  * takes a scale only where it draws its own values. On a stacked series, or under
  * `stackOffset="expand"`, `Chart.Line` and `Chart.Area` throw `scale-colour-on-stack`.
@@ -208,10 +208,10 @@ export type ChartThresholdSide = {
 };
 
 /**
- * A colour that splits a series at one value, such as a spot price in one colour above the
+ * A color that splits a series at one value, such as a spot price in one color above the
  * period's average and in another below it. A value above `threshold` paints `above.color`, and a
  * value at or below it paints `below.color`. A bar paints its side, and a line or an area paints a
- * gradient along the value axis with one hard stop at the threshold, so a riser changes colour
+ * gradient along the value axis with one hard stop at the threshold, so a riser changes color
  * where it crosses it. A threshold outside the drawn values paints the whole series in one side.
  *
  * The legend shows one entry per side, above first, each with the side's label and swatch, and a
@@ -253,8 +253,8 @@ export type ChartThresholdColor = {
  * One role, a list of two or more roles, a scale or a threshold. A role list is a decorative
  * gradient that never follows the value. It runs along the category axis on lines and areas, from
  * the baseline to the tip on bars, along the bisector on slices and along the sweep on rings. Use a
- * scale when the colour must follow the value in steps, or a threshold when it must change at one
- * value. No CSS string passes, so set `--chart-color-<key>` on Root for a colour outside the
+ * scale when the color must follow the value in steps, or a threshold when it must change at one
+ * value. No CSS string passes, so set `--chart-color-<key>` on Root for a color outside the
  * roles.
  *
  * @beta
@@ -266,14 +266,14 @@ export type ChartColor =
   | readonly [ChartRole, ChartRole, ...ChartRole[]];
 
 /**
- * The roles a pie or radial category takes. A category is never favourable and has no sign.
+ * The roles a pie or radial category takes. A category is never favorable and has no sign.
  *
  * @beta
  */
 export type ChartPolarRole = ChartCategoricalRole | ChartSequentialRole | "chart-other";
 
 /**
- * The colour roles a gauge's fill, its zones and its other reading layers take: a categorical role,
+ * The color roles a gauge's fill, its zones and its other reading layers take: a categorical role,
  * or a sentiment role for a reading that is good or bad. Each reads against the surface at 3:1 or
  * more in every theme, which the dimmer track beneath the fill relies on.
  *
@@ -332,12 +332,12 @@ export type ChartSeriesConfig = {
   color: ChartColor;
   /**
    * The look of the series' bars, and of its legend swatches inside the chart, so the server draws
-   * both alike. "default" by default. In a vertical chart with more than 100 domain slots a series
+   * both alike. Defaults to "default". In a vertical chart with more than 100 domain slots a series
    * draws its bars as one path, which knows the "default" and "gradient" looks only, so every other
    * look draws the default one there, its swatches too, and warns `bar-variant-needs-html` in
    * development. A horizontal chart always draws separate bars. The tinted looks, which are
    * "hatched", "striped", "gradient", "duotone" and "duotone-reverse", fill most of a bar with a
-   * pale tint of the series colour, so a series relies on the bar's 1 px edge in the full colour
+   * pale tint of the series color, so a series relies on the bar's 1 px edge in the full color
    * and on the legend for its identity. Pair them with a Legend or a Table. It sets the bars' look
    * only: a Line takes its look and an Area its hatching as props. Cartesian config only.
    */
@@ -348,7 +348,7 @@ export type ChartSeriesConfig = {
   icon?: ReactElement;
   /** Series with the same stack id stack together. Cartesian config only. */
   stack?: string;
-  /** How a missing reading draws. "gap" is the default, and no option draws a missing reading as 0. */
+  /** How a missing reading draws. Defaults to "gap", and no option draws a missing reading as 0. */
   missing?: "gap" | "connect";
   /**
    * From this x on, the series draws as a projection. An x string on a time axis throws
@@ -359,7 +359,7 @@ export type ChartSeriesConfig = {
    * The row column that holds each reading's `ChartQuality`. Write a missing reading as its
    * quality `"missing"`, with the value null or whatever the meter sent, because Fuse ignores the
    * value then. A null value with no quality column reads as missing inside the series' run of
-   * readings too. Write the config `as const satisfies ChartConfig` so a misspelt literal fails the
+   * readings too. Write the config `as const satisfies ChartConfig` so a misspelled literal fails the
    * type, because plain `satisfies` widens it.
    *
    * @example
@@ -491,15 +491,15 @@ export type ChartFigureProps = Omit<
 > & {
   /**
    * Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the
-   * opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim
-   * off.
+   * opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the
+   * dim off.
    *
    * Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and
    * the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as
    * Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the
-   * fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set
+   * fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set
    * `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A
-   * translucent tint keeps the surface beneath it, and an image or a gradient has no colour for
+   * translucent tint keeps the surface beneath it, and an image or a gradient has no color for
    * the cut-outs to match.
    */
   style?: ChartStyle;
@@ -536,66 +536,70 @@ export type ChartIntro = "left" | "right" | "center" | "edges" | "none";
  * @beta
  */
 export type ChartStyleVars = {
-  /** The cartesian plot height, on Root or a Panel. `12.5rem` by default. */
+  /** The cartesian plot height, on Root or a Panel. Defaults to `12.5rem`. */
   "--chart-plot-height"?: string;
-  /** One category row of a horizontal bar chart. `2rem` by default. */
+  /** One category row of a horizontal bar chart. Defaults to `2rem`. */
   "--chart-row-height"?: string;
-  /** The largest width of the aspect-locked polar cell. `12.5rem` by default. */
+  /** The largest width of the aspect-locked polar cell. Defaults to `12.5rem`. */
   "--chart-polar-size"?: string;
-  /** The line stroke width. `2px` by default. */
+  /** The line stroke width. Defaults to `2px`. */
   "--chart-stroke"?: string;
   /**
-   * The gap between categories, as a share of one slot. 25 % by default. Every slot takes the same
+   * The gap between categories, as a share of one slot. Defaults to 25 %. Every slot takes the same
    * whole device pixels, the plot's leftover pixels split between both ends, and the gap rounds to
    * whole device pixels, at least one, so every bar of a chart is the same width and every gap the
    * same. A slot of one device pixel has no gap, and `0` leaves none.
    */
   "--chart-band-gap"?: string;
   /**
-   * The gap between grouped bars. `2px` by default. It rounds to whole device pixels, at least
+   * The gap between grouped bars. Defaults to `2px`. It rounds to whole device pixels, at least
    * one, and every bar of the group takes the same whole device pixels, so every gap inside a
    * group is the same width and every grouped bar too.
    */
   "--chart-bar-gap"?: string;
-  /** The surface-coloured gap between stacked segments. `2px` by default. */
+  /** The surface-colored gap between stacked segments. Defaults to `2px`. */
   "--chart-bar-seam"?: string;
-  /** The rounded end of a bar. The radius role by default. */
+  /** The rounded end of a bar. Defaults to the radius role. */
   "--chart-bar-radius"?: string;
   /**
-   * The line crosshair's width. `1px` by default, the hairline every rule draws. It rounds down to
+   * The line crosshair's width. Defaults to `1px`, the hairline every rule draws. It rounds down to
    * whole device pixels, at least one, and never grows wider than the slot's band.
    */
   "--chart-crosshair-width"?: string;
-  /** The area fill opacity. `0.1` by default. */
+  /** The area fill opacity. Defaults to `0.1`. */
   "--chart-area-opacity"?: number | string;
-  /** The opacity of marks outside the active item. `0.45` by default, and `1` turns dimming off. */
+  /** The opacity of marks outside the active item. Defaults to `0.45`, and `1` turns dimming off. */
   "--chart-hover-dim"?: number | string;
-  /** A ring's stroke as a fraction of its band, which also sets the gap to the next ring. `0.7` by default. */
+  /**
+   * A ring's stroke as a fraction of its band, which also sets the gap to the next ring. Defaults to
+   * `0.7`.
+   */
   "--chart-ring-fill"?: number | string;
   /**
    * The width of the stroke between adjacent slices, painted in `--surface`.
-   * `--chart-bar-seam` by default.
+   * Defaults to `--chart-bar-seam`.
    */
   "--chart-slice-seam"?: string;
   /**
    * How far the active slice moves out along its bisector, on the pointer, a key and touch alike.
-   * `8px` by default, and `0` turns the pop off. The pie leaves this much room around its dial, and
+   * Defaults to `8px`, and `0` turns the pop off. The pie leaves this much room around its dial, and
    * the pick reads the slices where they rest, so the pop never moves a target.
    */
   "--chart-slice-pop"?: string;
   /**
-   * The colour of the opaque fill an element sits on. A chart's cut-outs read it, so they part
-   * overlapping marks in the colour around them: dot rings and halos, ring-dot holes, pie and ghost
+   * The color of the opaque fill an element sits on. A chart's cut-outs read it, so they part
+   * overlapping marks in the color around them: dot rings and halos, ring-dot holes, pie and ghost
    * seams, isometric bar faces, reference-label halos, hollow legend swatches and the polar radius,
    * Now and value chips. They fall back to the page, `--background`, where nothing sets it.
    *
-   * Card, `Frame.Panel`, the cells of a framed Table, the default Alert, the bordered VerticalTable box, the outline Item, the card Accordion,
-   * Calendar, Dialog, AlertDialog, Sheet, Popover and the other anchored popups state their fill
-   * here, so a chart inside one needs nothing. Set it on an element of your own that paints another opaque fill around a
-   * chart, beside that fill and its muted text, `--surface-muted-foreground`, such as
+   * Card, `Frame.Panel`, the cells of a framed Table, the default Alert, the bordered VerticalTable
+   * box, the outline Item, the card Accordion, Calendar, Dialog, AlertDialog, Sheet, Popover and the
+   * other anchored popups state their fill here, so a chart inside one needs nothing. Set it on a
+   * consumer's element that paints another opaque fill around a chart, beside that fill and its
+   * muted text, `--surface-muted-foreground`, such as
    * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`
    * or a `style` typed as {@link ChartStyle}. A translucent tint, such as a hovered row, keeps the
-   * surface beneath it, and an image or a gradient is no colour a cut-out can match.
+   * surface beneath it, and an image or a gradient is no color a cut-out can match.
    */
   "--surface"?: string;
   /**
@@ -737,7 +741,7 @@ export type ChartSeriesConfigCheck<TConfig, TRow> = string extends keyof TConfig
     };
 
 /**
- * Pie and radial config takes no cartesian field and only `ChartPolarColor`, so a colour union or a
+ * Pie and radial config takes no cartesian field and only `ChartPolarColor`, so a color union or a
  * `ChartColor` that may hold anything else fails too. A widened config skips the check.
  *
  * @template TConfig - The config the Root infers.
@@ -764,7 +768,7 @@ export type ChartPolarFieldCheck<TConfig> = string extends keyof TConfig
 
 /**
  * Radar config takes no stack, projection or series interval, and only a role or a role list as its
- * colour, never a scale or a threshold, nor a union or a `ChartColor` that may hold one. A widened
+ * color, never a scale or a threshold, nor a union or a `ChartColor` that may hold one. A widened
  * config skips the check.
  *
  * @template TConfig - The config the Root infers.
@@ -786,8 +790,8 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig
     };
 
 /**
- * Scatter config takes no field that needs slots or bars, and its colours are single roles: a point
- * has no category axis for a role list to run along, and a scale would colour by y, which the y
+ * Scatter config takes no field that needs slots or bars, and its colors are single roles: a point
+ * has no category axis for a role list to run along, and a scale would color by y, which the y
  * axis already shows. A widened config, whose keys are plain strings, passes.
  *
  * @template TConfig - The config, with its literal keys.
@@ -814,16 +818,16 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig
     };
 
 /**
- * The cycle a clock dial runs once round: a day from midnight, an ISO week from Monday 00:00, or a
- * year from 1 January, in Root's zone.
+ * The cycle a clock dial runs once around: a day from midnight, an ISO week from Monday 00:00, or a
+ * year from January 1, in Root's zone.
  *
  * @beta
  */
 export type ChartClockCycle = "day" | "week" | "year";
 
 /**
- * The intervals that nest in a clock cycle: quarter-hours or hours round a day, hours or days round
- * a week, and hours, days or months round a year. A week never nests in a year.
+ * The intervals that nest in a clock cycle: quarter-hours or hours around a day, hours or days
+ * around a week, and hours, days or months around a year. A week never nests in a year.
  *
  * @template TCycle - The dial's cycle.
  * @beta

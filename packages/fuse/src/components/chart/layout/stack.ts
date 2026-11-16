@@ -21,7 +21,7 @@ export type StackResult = {
 };
 
 /**
- * Stack series slot by slot.
+ * Stacks series slot by slot.
  *
  * A null reading adds 0, so the other parts keep their place, and its extent is null so the
  * segment draws nothing. Under `"expand"` a slot whose parts sum to 0 in magnitude gives every

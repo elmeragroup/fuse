@@ -13,7 +13,7 @@ import { CHART_WORDS } from "./words";
 import type { ChartWords } from "./words";
 
 /**
- * The length of one period. `"second"` serves live power, whose feeds sample every few seconds.
+ * The length of one period. `"second"` is for live power, whose feeds sample every few seconds.
  *
  * @beta
  */
@@ -119,7 +119,7 @@ export type WallClock = {
 
 const SECOND = 1_000;
 const MINUTE = 60_000;
-/** A day's length in ms, which a clock change can shorten or lengthen by an hour. */
+/** A day's length in milliseconds, which a clock change can shorten or lengthen by an hour. */
 export const DAY = 86_400_000;
 
 /** The length of each sub-day interval in minutes. A range preset needs one of these. */
@@ -198,7 +198,7 @@ type OffsetSpan = { readonly from: number; readonly to: number; readonly offset:
 /**
  * What Fuse has read of one zone: the Intl formatter that reads its wall clock, and the spans of
  * one offset it has read, sorted and disjoint. A zone changes its offset a few times a year, so
- * neighbouring days merge into a few spans per year, and a wall clock is the UTC fields of the
+ * neighboring days merge into a few spans per year, and a wall clock is the UTC fields of the
  * instant moved by its span's offset, with no Intl read.
  */
 type ZoneOffsets = {
@@ -262,7 +262,7 @@ function readOffset(zone: ZoneOffsets, instant: number): number {
   return wallTime(readWallClock(zone.format, instant)) - Math.floor(instant / SECOND) * SECOND;
 }
 
-/** Add a span to a zone's sorted spans, merged with each neighbour it touches at the same offset. */
+/** Adds a span to a zone's sorted spans, merged with each neighbor it touches at the same offset. */
 function learn(zone: ZoneOffsets, span: OffsetSpan): void {
   if (span.from >= span.to) return;
   const { spans } = zone;
@@ -281,7 +281,7 @@ function learn(zone: ZoneOffsets, span: OffsetSpan): void {
 }
 
 /**
- * Read the offsets of the UTC day that holds an instant: one Intl read at each end, and where the
+ * Reads the offsets of the UTC day that holds an instant: one Intl read at each end, and where the
  * two differ, a bisection to the second for the change between them.
  */
 function learnDay(zone: ZoneOffsets, instant: number): number {
@@ -335,7 +335,7 @@ export function offsetAt(instant: number, timeZone: string): number {
 }
 
 /**
- * Read the wall clock of an instant in a zone: the UTC fields of the instant moved by the zone's
+ * The wall clock of an instant in a zone, as the UTC fields of the instant moved by the zone's
  * offset there.
  *
  * @param instant - The instant, epoch milliseconds.
@@ -357,7 +357,7 @@ export function wallClock(instant: number, timeZone: string): WallClock {
 
 /**
  * Whether another instant shows the same wall clock, as both 02:00 hours of an Oslo fall-back day
- * do. The twin lies one offset change away, so each neighbouring day's offset names a candidate.
+ * do. The twin lies one offset change away, so each neighboring day's offset names a candidate.
  * `wall` is the instant's own wall clock, which the label has read already.
  */
 function isRepeatedWallTime(instant: number, timeZone: string, wall: WallClock): boolean {
@@ -523,7 +523,7 @@ function clockLabel(
 }
 
 /**
- * Format one time slot for one locale.
+ * Formats one time slot for one locale.
  *
  * The 24-hour locales write `00–01` to `23–24`, and en-US writes `12 – 1 AM` to `11 PM – 12 AM`.
  * In a `full` label, a clock preset on a repeated fall-back hour appends the CLDR short zone name,
@@ -536,7 +536,7 @@ function clockLabel(
  * @param preset - The format.
  * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
  * @returns The visual and spoken labels, with canonical spaces.
- * @throws {RangeError} When `timeZone` is not an IANA zone, a range preset gets a day or longer
+ * @throws {RangeError} When `timeZone` is not an IANA zone, or a range preset gets a day or longer
  * interval. Each is a configuration defect.
  */
 export function formatTime(
@@ -694,7 +694,7 @@ function startIn(
 }
 
 /**
- * Format the slot that contains `at` with a preset or with Intl date options. Intl options write
+ * Formats the slot that contains `at` with a preset or with Intl date options. Intl options write
  * one form, so their spoken text repeats the visual text. Options with date and time fields join
  * their halves through `formatDateTime`, so every engine writes the same join.
  *
@@ -705,7 +705,7 @@ function startIn(
  * @param format - A preset, or Intl date options whose own zone `timeZone` replaces.
  * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
  * @returns The visual and spoken labels of the slot start, with canonical spaces.
- * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset gets a day or longer
+ * @throws A `RangeError` when `timeZone` is not an IANA zone, or a range preset gets a day or longer
  * interval.
  */
 export function formatSlot(
@@ -720,7 +720,7 @@ export function formatSlot(
 }
 
 /**
- * Format an instant as it is, with no flooring to its slot's start, as a live reading's time
+ * Formats an instant as it is, with no flooring to its slot's start, as a live reading's time
  * prints: a preset reads the instant as the start of a slot of `interval`, and Intl options print
  * every field they name, fractional seconds included. Intl options write one form, so their spoken
  * text repeats the visual text, and options with date and time fields join their halves through
@@ -733,7 +733,7 @@ export function formatSlot(
  * @param format - A preset, or Intl date options whose own zone `timeZone` replaces.
  * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
  * @returns The visual and spoken labels, with canonical spaces.
- * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset gets a day or longer
+ * @throws A `RangeError` when `timeZone` is not an IANA zone, or a range preset gets a day or longer
  * interval.
  */
 export function formatInstant(

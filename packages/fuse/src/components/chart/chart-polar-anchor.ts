@@ -2,13 +2,13 @@
 
 /**
  * Where a polar tooltip rests. The popup sits in a side lane beside the dial, outside the labels
- * past the rim and inside the Root's figure, centred on the active ray's height at the rim, or below
+ * past the rim and inside the Root's figure, centered on the active ray's height at the rim, or below
  * or above the dial, and every lane stays inside the viewport where any lane can hold it
  * (`laneRest`). The scene is measured again on a resize of the figure, the popup or the viewport and
  * on any scroll, once per frame, so a scroll or a resize moves the popup to a lane that fits. A step
  * moves it with the Root's angle follower: the popup rests at the target ray's height and shows the
  * follower's height through a vertical `translate`, so the popup, the hand and the dots move as one.
- * A change of lane fades the popup in over 120 ms instead of travelling, and so does a step that
+ * A change of lane fades the popup in over 120 ms instead of traveling, and so does a step that
  * leaps across the dial faster than the pointer's pace. A side lane takes the popup only when its
  * room holds the popup's content, so no value is cut; the positioner takes the lane's width, and
  * the popup fills it, so new text never makes Base UI place it again. A popup stays transparent
@@ -181,9 +181,9 @@ function contentWidth(popup: HTMLElement | null): number {
 
 /**
  * The scene a lane reads, measured on resize ticks and never per pointer move, relative to the
- * dial's centre: the outer radius, a pie's popped slice included, the labels past the rim, the
- * Root's own controls, the figure's box, the viewport's top and bottom, the chart's title, the popup's size and its widest
- * content's max-content width.
+ * dial's center: the outer radius, a pie's popped slice included, the labels past the rim, the
+ * Root's own controls, the figure's box, the viewport's top and bottom, the chart's title, the
+ * popup's size and its widest content's max-content width.
  */
 type Scene = {
   readonly radius: number;
@@ -215,7 +215,7 @@ type LaneNow = {
    */
   readonly bounds: LaneBox;
   readonly holds: boolean;
-  /** Whether the popup rides the ray's height at all, as a clock's and a radar's do. */
+  /** Whether the popup follows the ray's height, as a clock's and a radar's do. */
   readonly turns: boolean;
   /**
    * The popup's size, read once per step in that frame's animation callback, when its content has
@@ -225,11 +225,11 @@ type LaneNow = {
 };
 
 /**
- * Place the popup in its lane. Base UI puts the popup's corner at the lane's anchor: a side lane's
+ * Places the popup in its lane. Base UI puts the popup's corner at the lane's anchor: a side lane's
  * top at the dial's height, the bottom or top lane's left at its bounds' left, the figure cut to
  * the visible area. The positioner's own `translate`, which composes with the `transform` Base UI
- * writes and which no open or close animation touches, then centres it by its own size in CSS, so
- * new text keeps it centred in the same frame: a side lane's popup on the height of the ray at the
+ * writes and which no open or close animation touches, then centers it by its own size in CSS, so
+ * new text keeps it centered in the same frame: a side lane's popup on the height of the ray at the
  * follower's angle, so it moves with the hand and the dots, and the bottom lane's on the dial, each
  * clamped into the figure by the size measured last. A pie's or a radial chart's side lane rests at
  * the dial's height. Reduced motion snaps the follower, so the popup shows the target's height at
@@ -325,7 +325,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const ray = active === null ? null : model.ray(active, near);
   const angle = ray?.angle ?? null;
   const surfaceOf = useCallback(() => document.getElementById(`${kernel.id}-surface`), [kernel.id]);
-  /** The dial's centre and CSS pixels per unit of the outer radius, in client pixels. */
+  /** The dial's center and CSS pixels per unit of the outer radius, in client pixels. */
   const dialOf = useCallback((): { readonly centre: ClientPoint; readonly scale: number } | null => {
     const rect = surfaceOf()?.getBoundingClientRect();
     const width = box.right - box.left;

@@ -63,7 +63,7 @@ function nestedFigure(host: HTMLElement): HTMLElement {
   return figure;
 }
 
-/** A box's centre in client pixels. */
+/** A box's center in client pixels. */
 function centreOf(rect: DOMRect): [number, number] {
   return [rect.left + rect.width / 2, rect.top + rect.height / 2];
 }

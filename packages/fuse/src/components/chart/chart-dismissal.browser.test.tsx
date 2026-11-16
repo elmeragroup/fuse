@@ -62,7 +62,7 @@ function activeValue(host: HTMLElement): string | null {
 
 const ROWS = ["a", "b", "c"].map((name, index) => ({ name, v: index + 1 }));
 
-/** The element over a bar's centre, which is the plot's pointer target, and that point inside it. */
+/** The element over a bar's center, which is the plot's pointer target, and that point inside it. */
 function over(_host: HTMLElement, bar: HTMLElement): [Element, { position: { x: number; y: number } }] {
   const rect = bar.getBoundingClientRect();
   const x = rect.left + rect.width / 2;

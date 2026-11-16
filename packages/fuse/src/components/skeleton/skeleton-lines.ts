@@ -1,12 +1,15 @@
 /**
- * The pure half of drawing text as bones: line fragments in, one bar per visual line out.
- * `Range.getClientRects` reports one rect per fragment, and a line of text breaks into several
- * wherever an inline element (a link, a `strong`, a time) starts or ends. Fragments that share a
+ * The pure half of drawing text as bones. It takes line fragments and returns one bar per visual
+ * line. `Range.getClientRects` reports one rect per fragment, and a line of text breaks into several
+ * wherever an inline element, such as a link, a `strong` or a time, starts or ends. Fragments that share a
  * line and sit closer than `LINE_GAP` of their font size merge, so one line reads as one bar while
  * two columns of text a gutter apart stay two.
  */
 
-/** Of the font size: wider than a word space, narrower than a column gutter. */
+/**
+ * The widest gap that still joins two fragments, as a fraction of the font size. It is wider than a
+ * word space and narrower than a column gutter.
+ */
 const LINE_GAP = 0.4;
 
 /** One fragment of a line of text, in the bones layer's pixels. */
@@ -18,7 +21,7 @@ export type LineFragment = {
   readonly bottom: number;
   /** The computed font size of the text, in pixels. */
   readonly fontSize: number;
-  /** Where the bar is drawn within the line box: the font's ascender down to its descender. */
+  /** Where the bar is drawn within the line box, from the font's ascender down to its descender. */
   readonly barTop: number;
   readonly barBottom: number;
 };
@@ -44,7 +47,10 @@ type OpenLine = {
   barBottom: number;
 };
 
-/** Whether a fragment continues an open line: half its height overlaps, and the gap is small. */
+/**
+ * Whether a fragment continues an open line, which it does when half its height overlaps and the
+ * gap is small.
+ */
 function continues(line: OpenLine, fragment: LineFragment): boolean {
   const overlap = Math.min(line.bottom, fragment.bottom) - Math.max(line.top, fragment.top);
   const shorter = Math.min(line.bottom - line.top, fragment.bottom - fragment.top);

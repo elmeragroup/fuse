@@ -15,16 +15,16 @@ import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../sty
  * the NumberField or Button beside it at both densities. The track, indicator and thumb are
  * pixel-fixed: a 4px track and a 16px thumb. The thumb sets its own box sizing and px sizes,
  * so a host without preflight or with a root font under 16px still paints it at 16px, and its
- * `::after` is a 24px square centred on it, the target floor in px as `control-size.ts` floors
+ * `::after` is a 24px square centered on it, the target floor in px as `control-size.ts` floors
  * the xs box with `max(var(--control-h-xs),24px)`. The md control height always clears it.
  *
- * The thumb is the whole control a person operates, so it carries the data-target state face:
- * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts:
- * the unfilled track takes the field-border tone `input`, the edge every field box shows, and
+ * The thumb is the whole control a person operates, so it carries the data-target state face.
+ * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts.
+ * The unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
  * The thumb sits on top of the track and indicator, so it keeps the face's `not-allowed`
- * cursor but cancels its `opacity-50` on both disabled arms: a translucent thumb lets the
- * indicator show through its centre. A disabled thumb keeps its opaque `bg-background` fill
+ * cursor but cancels its `opacity-50` on both disabled arms, because a translucent thumb lets the
+ * indicator show through its center. A disabled thumb keeps its opaque `bg-background` fill
  * and draws its border in the muted foreground, the same tone as the disabled indicator.
  * The thumb also hosts the within-target focus ring for the range input Base UI nests in it,
  * and the focused invalid face, a solid `--error` line inside the halo, while the thumb is

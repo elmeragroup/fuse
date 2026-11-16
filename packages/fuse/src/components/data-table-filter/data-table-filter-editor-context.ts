@@ -23,26 +23,27 @@ export type EditorContextValue = {
   readonly filter: FilterValue | undefined;
   /** The draft, which follows the applied filter whenever that changes to something it does not say. */
   readonly draft: EditorDraft;
-  /** A person's change: replaces the draft's values, marks it edited, and opens a new session. */
+  /** Applies a user's change. It replaces the draft's values, marks it edited, and opens a new session. */
   readonly setDraft: (draft: DraftValues) => void;
-  /** A person's change derived from the latest draft, which an earlier change in the event set. */
+  /** Applies a user's change derived from the latest draft, which an earlier change in the event set. */
   readonly updateDraft: (change: (current: DraftValues) => DraftValues) => void;
   /**
-   * A control's commit, such as a NumberField's blur: derives the draft and settles it, in the
+   * Derives the draft and settles it on a control's commit, such as a NumberField's blur, in the
    * editor's current session only. After a Clear or a Remove ended the session, it does nothing.
    */
   readonly commitDraft: (change: (current: DraftValues) => DraftValues) => void;
   /**
-   * Commits the draft in one write, if it writes anything, and consumes it: a second call for the
-   * same draft writes nothing, and so does any call after a Clear or a Remove ended the session. Every exit path goes through it: a typing pause, Enter, Escape, a
-   * blur, an outside press, Tab out, Back, and a move to another field.
+   * Commits the draft in one write, if it writes anything, and consumes it. A second call for the
+   * same draft writes nothing, and so does any call after a Clear or a Remove ended the session.
+   * Every exit path goes through it: a typing pause, Enter, Escape, a blur, an outside press, Tab
+   * out, Back, and a move to another field.
    */
   readonly settle: () => void;
   /** Changes the operator, converting the current draft, and settles the pair in one write. */
   readonly changeOperator: (operator: FilterOperator) => void;
   /** The key `useFocusRequest` matches when another chip's Value moves the popover here. */
   readonly focusKey: string;
-  /** In the add menu, goes back to the field list. Undefined in the value popover. */
+  /** In the add menu, goes back to the field list. It is `undefined` in the value popover. */
   readonly back: (() => void) | undefined;
   /** Whether a key belongs to an IME composition, which must neither apply nor dismiss. */
   readonly isComposing: (event: KeyboardEvent) => boolean;
@@ -59,7 +60,7 @@ type CompositionGuard = {
  * Tracks IME composition inside the editor. A key pressed while composing confirms the
  * composition, not the editor. Safari fires `compositionend` before the keydown that ends the
  * composition, with `isComposing` already false, so the guard stays up for 5 ms after it, as Base
- * UI's dismissal does (`useDismiss.ts`).
+ * UI's dismissal does in `useDismiss.ts`.
  *
  * @returns The composition handlers for the editor's element, and the key test.
  */
@@ -90,7 +91,7 @@ export function useCompositionGuard(): CompositionGuard {
   return { onCompositionStart, onCompositionEnd, isComposing };
 }
 
-/** Provided by `DataTableFilter.Editor` for its kind editors. */
+/** The editor that `DataTableFilter.Editor` provides for its kind editors. */
 export const EditorContext = createContext<EditorContextValue | null>(null);
 
 /**

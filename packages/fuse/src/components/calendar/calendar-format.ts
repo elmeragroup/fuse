@@ -72,9 +72,10 @@ export function formatMonth(locale: string, month: Temporal.PlainYearMonth): str
 /**
  * How each locale joins the two ends of a range: CLDR's interval fallback pattern, `{0} – {1}` in
  * en-US and `{0}–{1}` in the Nordic locales. Fuse joins the ends itself rather than calling
- * `Intl.DateTimeFormat#formatRange`, whose shortening differs by engine (Firefox writes fi-FI's
- * October–December 2026 as "loka–joulukuu 2026", Chromium and WebKit as "lokakuu
- * 2026–joulukuu 2026"). A locale added to `SupportedLocale` fails to compile here until it has one.
+ * `Intl.DateTimeFormat#formatRange`, whose shortening differs by engine. Firefox writes fi-FI's
+ * October to December 2026 as `loka–joulukuu 2026`, and Chromium and WebKit as
+ * `lokakuu 2026–joulukuu 2026`. A locale added to `SupportedLocale` fails to compile here until it has a
+ * separator.
  */
 const RANGE_SEPARATOR = {
   "en-US": " – ",
@@ -85,11 +86,11 @@ const RANGE_SEPARATOR = {
 
 /**
  * The visible months as one range, such as `October – December 2026` in en-US, or one month's
- * name when only one shows. It writes the same text in every engine: each end is the locale's own
- * month name, with its year (`{ month: "long", year: "numeric" }`), or, for a start in the end's
- * year, the stand-alone month name alone (`{ month: "long" }`), so a shared year is written once,
- * joined by the locale's `RANGE_SEPARATOR`. Its spaces are no-break spaces, so a server and a
- * browser whose Intl data space a month and year differently still hydrate alike.
+ * name when only one shows. It writes the same text in every engine. Each end is the locale's own
+ * month name with its year, from `{ month: "long", year: "numeric" }`. A start in the end's year
+ * takes the stand-alone month name alone, from `{ month: "long" }`, so the range writes a shared
+ * year once. The locale's `RANGE_SEPARATOR` joins the ends. Its spaces are no-break spaces, so a
+ * server and a browser whose Intl data space a month and year differently still hydrate alike.
  *
  * @param locale - A locale Fuse supports.
  * @param start - The first visible month.
@@ -138,14 +139,14 @@ export function formatWeekdayName(locale: string, date: Temporal.PlainDate): str
 
 /**
  * A day's full name without its year, as a range writes its start when the end already writes
- * that year: `Monday, October 5` in en-US. It is the full name's parts with the year and the
- * literal that joins it to the rest left out, so the weekday keeps the case the full date gives it
- * (fi-FI "maanantaina 5. lokakuuta", where a year-less pattern writes "maanantai"). `RangeCalendar`
- * formats each end on its own and joins them with its own word ("to"), as React Aria does. React
- * Aria splits `Intl.DateTimeFormat#formatRangeToParts` instead, whose shared parts differ between
- * engines (a shared month dropped in some locales, Chromium's zero-padded sv-SE days), so this
- * keeps the month on both ends and writes the same text in every engine. The en-US text matches
- * React Aria's, which the parity harness pins (D-3-19).
+ * that year: `Monday, October 5` in en-US. It takes the full name's parts and leaves out the year
+ * and the literal that joins it to the rest, so the weekday keeps the case the full date gives it.
+ * In fi-FI it writes "maanantaina 5. lokakuuta", where a year-less pattern writes "maanantai".
+ * `RangeCalendar` formats each end on its own and joins them with its own word, "to", as React Aria
+ * does. React Aria splits `Intl.DateTimeFormat#formatRangeToParts` instead, whose shared parts
+ * differ between engines: some locales drop a shared month, and Chromium zero-pads sv-SE days.
+ * This function keeps the month on both ends and writes the same text in every engine. The en-US
+ * text matches React Aria's, which the parity harness pins as D-3-19.
  *
  * @param locale - The locale.
  * @param date - The day.

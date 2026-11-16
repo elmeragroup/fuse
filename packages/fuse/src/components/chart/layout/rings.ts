@@ -7,7 +7,7 @@ import { toDegrees } from "./polar-angle";
 
 /** One ring's place, in the unit of the outer radius it was laid out in. */
 export type RingBand = {
-  /** The radius of the ring's centre line. */
+  /** The radius of the ring's center line. */
   readonly radius: number;
   /** The ring's stroke width. */
   readonly width: number;
@@ -28,7 +28,7 @@ export type RingFrame = {
 
 /**
  * Each ring's place. The rings split the band from the hole to the rim evenly, the first ring
- * outermost, and each draws a centred stroke of `fill` of its band, so a pick band reaches the
+ * outermost, and each draws a centered stroke of `fill` of its band, so a pick band reaches the
  * middle of the gaps on both sides.
  *
  * @param count - The ring count.
@@ -46,11 +46,11 @@ export function ringBands(count: number, frame: RingFrame): readonly RingBand[] 
 }
 
 /**
- * The ring a pointer's distance from the centre falls in, by radius band.
+ * The ring a pointer's distance from the center falls in, by radius band.
  *
- * @param distance - The pointer's distance from the centre, in the bands' unit.
+ * @param distance - The pointer's distance from the center, in the bands' unit.
  * @param bands - Each ring's place.
- * @returns The ring's index, or null inside the hole and past the rim.
+ * @returns The ring's index, or `null` inside the hole and past the rim.
  */
 export function ringAt(distance: number, bands: readonly RingBand[]): number | null {
   for (let index = 0; index < bands.length; index += 1) {
@@ -62,9 +62,9 @@ export function ringAt(distance: number, bands: readonly RingBand[]): number | n
 
 /** One ring's value against its maximum. */
 export type RingFill = {
-  /** The maximum it fills against, or null when it has none above 0. */
+  /** The maximum it fills against, or `null` when it has none above 0. */
   readonly max: number | null;
-  /** The value over its maximum, unclamped, or null for a missing value or no maximum. */
+  /** The value over its maximum, unclamped, or `null` for a missing value or no maximum. */
   readonly share: number | null;
   /** Whether an explicit maximum lies below the value. */
   readonly over: boolean;
@@ -80,10 +80,10 @@ export type RingMaxima =
   | { readonly kind: "rows"; readonly maxima: readonly (number | null)[] };
 
 /**
- * Each ring's fill. Under "largest" every ring fills against the largest value, so the largest ring
+ * Each ring's fill. Under `"largest"` every ring fills against the largest value, so the largest ring
  * fills the sweep. Under an explicit maximum, a value above it is over and draws the full sweep.
  *
- * @param values - Each ring's value, or null for a missing one.
+ * @param values - Each ring's value, or `null` for a missing one.
  * @param maxima - What each ring fills against.
  * @returns Each ring's fill.
  */
@@ -119,7 +119,7 @@ export function ringAngle(fill: RingFill, width: number): number {
 }
 
 /**
- * How a ring's stroke draws its value along a centre-line track whose `pathLength` is the sweep's
+ * How a ring's stroke draws its value along a center-line track whose `pathLength` is the sweep's
  * width in degrees: the dash's start and length in those units, and its cap.
  */
 export type RingStroke = {
@@ -127,13 +127,13 @@ export type RingStroke = {
   readonly start: number;
   /** The dash's length in degrees. */
   readonly length: number;
-  /** "round" caps sit inside the value's angle, "butt" draws a short arc at its true length. */
+  /** `"round"` caps sit inside the value's angle, and `"butt"` draws a short arc at its true length. */
   readonly cap: "round" | "butt" | "none";
 };
 
-/** What a ring's stroke measures in: its centre line's radius, its stroke width and the device pixel ratio. */
+/** What a ring's stroke measures in: its center line's radius, its stroke width and the device pixel ratio. */
 export type RingPixels = {
-  /** The centre line's radius in CSS pixels. */
+  /** The center line's radius in CSS pixels. */
   readonly radius: number;
   /** The stroke width in CSS pixels. */
   readonly width: number;
@@ -144,7 +144,7 @@ export type RingPixels = {
 /**
  * A ring's stroke for a filled angle. Round caps sit inside the value's angle, so the drawn extent
  * equals it. An arc shorter than its stroke width draws butt caps at its true length. A non-zero
- * value keeps one device pixel of arc along its centre line, and 0 draws nothing.
+ * value keeps one device pixel of arc along its center line, and 0 draws nothing.
  *
  * @param angle - The filled angle in degrees, as `ringAngle` gives it.
  * @param pixels - The ring's radius, stroke width and the device pixel ratio.

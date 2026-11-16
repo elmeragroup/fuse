@@ -39,7 +39,7 @@ const SAMPLES = 400;
 const LONGEST = 5000;
 
 /**
- * The spring's position at `t` seconds, released from rest at 0 towards 1.
+ * The spring's position at `t` seconds, released from rest at 0 toward 1.
  *
  * @param spring - The spring's stiffness and damping, mass 1.
  * @param t - Seconds since release.
@@ -69,10 +69,10 @@ export type CriticalState = {
 };
 
 /**
- * A critically damped spring of mass 1 in closed form, `x(t) = (x₀ + (v₀ + ω·x₀)·t)·e^(−ωt)`: it
+ * A critically damped spring of mass 1 in closed form, `x(t) = (x₀ + (v₀ + ω·x₀)·t)·e^(−ωt)`. It
  * leaves `x0` from its target at `v0` and settles onto the target without a bounce. Every
- * critically damped motion in the charts steps through it, whatever its unit of time: `omega`, `v0`
- * and `t` need only share one.
+ * critically damped motion in the charts steps through it, whatever its unit of time, since
+ * `omega`, `v0` and `t` need only share one.
  *
  * @param x0 - The offset from the target at release.
  * @param v0 - The velocity at release.

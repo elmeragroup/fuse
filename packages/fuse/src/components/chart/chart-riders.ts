@@ -12,7 +12,7 @@ import type { Track } from "./layout/ride";
 /** A Root's active dots and the bar tracks they ride. */
 export type ChartRiders = {
   /**
-   * Register the track an active dot's layer rides, for as long as the layer stays and rides the
+   * Registers the track an active dot's layer rides, for as long as the layer stays and rides the
    * same series.
    *
    * @returns A function that forgets the registration.
@@ -28,7 +28,7 @@ export type ChartRiders = {
 };
 
 /**
- * Create a Root's rider registry.
+ * Creates a Root's rider registry.
  *
  * @returns The registry.
  */

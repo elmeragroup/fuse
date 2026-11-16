@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * A gauge's needle: a pointer that floats inside the track, clear of the centre's text, and turns
- * to the offset the Root's loop shows in every frame, so it rides the same sweep as the fill.
+ * A gauge's needle: a pointer that floats inside the track, clear of the center's text, and turns
+ * to the offset the Root's loop shows in every frame, so it follows the same sweep as the fill.
  */
 import { useRef } from "react";
 import type { ReactElement } from "react";
@@ -24,7 +24,7 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartNeedleProps = ChartLayerProps & {
-  /** The needle's shape, a "line" with round ends or a slim "triangle". */
+  /** The needle's shape, a `line` with round ends or a slim `triangle`. */
   variant?: "line" | "triangle";
 };
 
@@ -42,14 +42,14 @@ function needleDrawing(hand: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawin
   };
 }
 
-/** The needle's points at 12 o'clock, its base nearer the centre. */
+/** The needle's points at 12 o'clock, its base nearer the center. */
 const BASE = -GAUGE_RADII.needleBase;
 const TIP = -GAUGE_RADII.needleTip;
 const HALF = GAUGE_RADII.needleHalfWidth;
 
 /**
- * The needle, in the foreground role. It floats from inside the track toward the centre, clear of
- * the centre's text, and turns with the fill in every frame of the entrance and of an update. A
+ * The needle, in the foreground role. It floats from inside the track toward the center, clear of
+ * the center's text, and turns with the fill in every frame of the entrance and of an update. A
  * reading past either end rests on that end. It hides while the chart has no reading.
  *
  * @beta

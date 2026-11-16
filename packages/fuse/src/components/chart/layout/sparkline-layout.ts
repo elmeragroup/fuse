@@ -45,8 +45,8 @@ export type SparklinePoint = { readonly x: number; readonly y: number };
  *
  * - linear, bump, step-before and step-after join each pair of readings from those two alone, so
  *   one each side draws the span exactly;
- * - monotone and basis shape a span's ends from the readings either side of it, and the centred
- *   step ends a path's last reading at its centre rather than at the next step, so they take two
+ * - monotone and basis shape a span's ends from the readings either side of it, and the centered
+ *   step ends a path's last reading at its center rather than at the next step, so they take two
  *   each side to draw the span through the full line's own commands;
  * - the natural spline shapes each span from every reading. A reading's pull on a span shrinks by
  *   a factor of about 2 - √3, a quarter, per reading between them, so a reading past four away
@@ -76,7 +76,7 @@ export type SparklineReading = SparklinePoint & {
 /**
  * A line's or an area's reading, with the segment of the line its hover re-strokes at full
  * strength: a path through the readings around it, in viewBox units, which its band clips to the
- * span from the centre of the cell before it to the centre of the cell after it. Each reading
+ * span from the center of the cell before it to the center of the cell after it. Each reading
  * carries its own segment, so hover needs no script and no id, at the cost of the path data of the
  * readings its curve's reach takes in.
  */
@@ -97,7 +97,7 @@ type SparklineFrame = {
   readonly zero: number | null;
   /** The flat reference line's height, or null. */
   readonly reference: number | null;
-  /** The emphasised value's dot, or null. */
+  /** The emphasized value's dot, or null. */
   readonly dot: SparklinePoint | null;
 };
 
@@ -116,9 +116,9 @@ export type SparklineLayout =
       readonly stroke: string;
       /**
        * Where 0 sits down the view box, in percent: 100 under positive values, 0 over negative
-       * ones, and between for values on both sides. An area fades toward it. The view box, not the
-       * fill's own box, so the place holds when a lone reading or the reference reaches past the
-       * readings that draw fill.
+       * ones, and between for values on both sides. An area fades toward it. It measures against
+       * the view box, not the fill's own box, so the place holds when a lone reading or the
+       * reference reaches past the readings that draw fill.
        */
       readonly fillZero: number;
       readonly readings: readonly SparklinePathReading[];
@@ -205,7 +205,7 @@ function topologyOf(values: readonly (number | null)[]): PathTopology {
 }
 
 /**
- * Lay a Sparkline out.
+ * Lays a Sparkline out.
  *
  * @param input - The values and the look.
  * @returns The marks, the rules, the dot and each reading's hover geometry.

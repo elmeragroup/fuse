@@ -17,7 +17,7 @@ const comboboxSlots = comboboxVariants();
  *   while the group holds a clear button, and keeps no pressed fill while the popup is open.
  * - `content` is the shared timed popup on the listbox shell, as wide as its anchor. Base UI
  *   anchors it to the input's whole field box, so it lines up with the field's edges.
- * - `item` is the shared menu row, highlighted by Base UI's `data-highlighted`, which recolours
+ * - `item` is the shared menu row, highlighted by Base UI's `data-highlighted`, which recolors
  *   its descendants. A suggestion is never selected, so the row keeps no room for a check.
  * - `empty` is a row for the empty list's states, such as loading, an error or no results. Base
  *   UI keeps it mounted as a live region and renders its children only while the list is empty,

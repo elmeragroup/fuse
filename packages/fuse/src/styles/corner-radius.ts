@@ -71,8 +71,8 @@ export const fieldCornerClass = cn(
 );
 
 /**
- * The corner of a compact button that sits in a toolbar, the xs Toggle. Branded themes round it with `rounded-md` capped at 10px, and
- * neutral themes with `--radius`.
+ * The corner of a compact button that sits in a toolbar, the xs Toggle. Branded themes round it
+ * with `rounded-md` capped at 10px, and neutral themes with `--radius`.
  */
 export const compactCornerClass = cn(
   "rounded-[min(--theme(--radius-md),max(10px,var(--radius)-1000*var(--radius-step,0px)))]"

@@ -31,7 +31,7 @@ export type ChartCrosshairProps = ChartLayerProps & {
    */
   variant?: "line" | "band";
   /**
-   * The ends of the line that fade out, over 10% of the plot each. "top" is the
+   * The ends of the line that fade out, over 10% of the plot each. `"top"` is the
    * end at the value axis's maximum, the right end under `orientation="horizontal"`. A band never
    * fades.
    */
@@ -46,7 +46,7 @@ export type ChartCrosshairProps = ChartLayerProps & {
  * so a pointer move renders nothing in React. The band covers the same pixel columns as the
  * focused option and the tooltip's anchor. The line glides from slot to slot on a spring that
  * quickens with the pointer, so it keeps up with a fast sweep and eases after a slow one, unless the
- * reader prefers reduced motion, and fades at both ends by default. Active dots glide with it.
+ * user prefers reduced motion, and fades at both ends by default. Active dots glide with it.
  *
  * @beta
  */

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The radar's AngleAxis: a label per spoke past the rim, centred on its spoke 6 px out, thinned by a
- * stride that divides the spoke count. The first paint draws it at rest, and only a chart
+ * The radar's AngleAxis, a label per spoke past the rim, centered on its spoke 6 px out and thinned
+ * by a stride that divides the spoke count. The first paint draws it at rest, and only a chart
  * nothing painted before fades its labels in as the entrance starts.
  */
 import type { ReactElement } from "react";
@@ -24,7 +24,7 @@ import { spokeLabelFit } from "./radar-chart-dial";
 export type RadarChartAngleAxisProps = ChartLayerProps;
 
 /**
- * The spoke labels, one per row, each centred on its spoke past the rim, its nearest edge 6 px out.
+ * The spoke labels, one per row, each centered on its spoke past the rim, its nearest edge 6 px out.
  * They never rotate, and they take the frame's gutter beside the dial.
  *
  * @beta

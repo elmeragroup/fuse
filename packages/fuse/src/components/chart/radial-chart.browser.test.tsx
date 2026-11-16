@@ -49,7 +49,7 @@ const BUDGET_CONFIG = {
   car: { label: "Elbil", color: "chart-3", format: energy },
 } as const satisfies ChartConfig;
 
-/** The rings' centre lines: three bands of 0.7 / 3 from the rim inward. */
+/** The rings' center lines: three bands of 0.7 / 3 from the rim inward. */
 const RADII = [1 - 0.7 / 6, 1 - 0.7 / 2, 1 - (5 * 0.7) / 6];
 
 function Budgets({

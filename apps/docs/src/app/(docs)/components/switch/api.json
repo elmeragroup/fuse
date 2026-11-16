@@ -159,7 +159,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The size of the track and thumb, also written as `data-size`. `default` is a 32px by 18.4px track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since the switch takes no control size.",
+          "description": "The size of the track and thumb, which the Switch also writes as `data-size`. `default` is a 32px by 18.4px track, and `sm` a 24px by 14px one. The pixel sizes stay the same at both densities, since the switch takes no control size.",
           "required": false,
           "values": [
             "default",

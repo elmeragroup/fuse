@@ -2,7 +2,7 @@ import type { IsoWeekday } from "./week-info";
 
 /**
  * The weeks a month's day grid shows: every week that holds one of the month's days, each seven
- * days long from `firstDay`. The first and last week include the neighbouring months' days that
+ * days long from `firstDay`. The first and last week include the neighboring months' days that
  * share them, so a month spans four to six weeks.
  *
  * @param month - The month.

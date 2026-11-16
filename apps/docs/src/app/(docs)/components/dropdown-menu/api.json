@@ -432,7 +432,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {
@@ -717,7 +717,7 @@
           "type": "\"default\" | \"destructive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The item's colour. `destructive` paints it in the `error` colour, for an action such as Delete.",
+          "description": "The item's color. `destructive` paints it in the `error` color, for an action such as Delete.",
           "required": false,
           "values": [
             "default",
@@ -993,7 +993,7 @@
           "type": "((value: T, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs when the selection changes, with the new value as `T` and Base UI's change details.",
+          "description": "Called when the selection changes, with the new value as `T` and Base UI's change details.",
           "required": false
         },
         {
@@ -1536,7 +1536,7 @@
           "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The element the overlay renders into. Unset, it is the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
+          "description": "The element the overlay renders into. Defaults to the nearest enclosing `ThemeScope` element, so the overlay keeps the theme of the place that opened it.",
           "required": false
         },
         {

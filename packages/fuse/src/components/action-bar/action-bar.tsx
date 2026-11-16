@@ -23,7 +23,7 @@ const slots = actionBarVariants();
 /** The count the parts inside the bar read. While the bar leaves, it keeps the last count above zero. */
 const ActionBarCountContext = createContext(0);
 
-/** The props of `ActionBar.Root`: Base UI's toolbar root, horizontal only, plus the selection size. */
+/** Props for `ActionBar.Root`, Base UI's toolbar root, horizontal only, plus the selection size. */
 export type ActionBarRootProps = Omit<
   ComponentProps<typeof ToolbarPrimitive.Root>,
   "orientation" | "aria-label" | "children"
@@ -55,19 +55,20 @@ export type ActionBarRootProps = Omit<
   children?: ComponentProps<typeof ToolbarPrimitive.Root>["children"];
 };
 
-/** The props of `ActionBar.Count`. */
+/** Props for `ActionBar.Count`. */
 export type ActionBarCountProps = Omit<ComponentProps<"span">, "children"> & {
   /** Text that replaces the count, "3 selected" in the reader's locale. */
   children?: ComponentProps<"span">["children"];
 };
 
-/** The props of `ActionBar.Clear`: a toolbar button. */
+/** Props for `ActionBar.Clear`, a toolbar button. */
 export type ActionBarClearProps = Omit<
   ComponentProps<typeof ToolbarPrimitive.Button>,
   "onClick" | "aria-label" | "children"
 > & {
   /**
-   * Empty the selection here. Clear clears nothing itself, and the bar leaves once `count` is zero.
+   * Called when the user presses Clear. Empty the selection here. Clear clears nothing itself, and
+   * the bar leaves once `count` is zero.
    */
   onClick?: ComponentProps<typeof ToolbarPrimitive.Button>["onClick"];
   /**
@@ -80,7 +81,7 @@ export type ActionBarClearProps = Omit<
   children?: ComponentProps<typeof ToolbarPrimitive.Button>["children"];
 };
 
-/** The props of `ActionBar.Button`: a toolbar button. */
+/** Props for `ActionBar.Button`, a toolbar button. */
 export type ActionBarButtonProps = Omit<ComponentProps<typeof ToolbarPrimitive.Button>, "children"> & {
   /**
    * An icon marked `data-icon="inline-start"`, then the words in `ActionBar.ButtonLabel`. While the
@@ -90,10 +91,10 @@ export type ActionBarButtonProps = Omit<ComponentProps<typeof ToolbarPrimitive.B
   children?: ComponentProps<typeof ToolbarPrimitive.Button>["children"];
 };
 
-/** The props of `ActionBar.ButtonLabel`. */
+/** Props for `ActionBar.ButtonLabel`. */
 export type ActionBarButtonLabelProps = ComponentProps<"span">;
 
-/** The props of `ActionBar.Separator`: Base UI's toolbar separator. */
+/** Props for `ActionBar.Separator`, Base UI's toolbar separator. */
 export type ActionBarSeparatorProps = ComponentProps<typeof ToolbarPrimitive.Separator>;
 
 function isInside(container: HTMLElement | null, node: EventTarget | null): boolean {
@@ -207,7 +208,7 @@ export function ActionBarCount({ className, children, ...props }: ActionBarCount
   );
 }
 
-/** The button that clears the selection: an extra-small ghost icon button with an X. */
+/** The button that clears the selection, an extra-small ghost icon button with an X. */
 export function ActionBarClear({
   "aria-label": ariaLabel,
   children,

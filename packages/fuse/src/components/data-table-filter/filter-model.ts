@@ -92,8 +92,8 @@ type OperatorSpec<K extends FilterKind> = {
   /** The operator an option filter moves to when its value count drops to one. */
   readonly singular?: FilterOperator<K>;
   /**
-   * Offered only to a field that lists it in `operators`, so a server that implements a field's
-   * defaults never receives it.
+   * Whether only a field that lists the operator in `operators` offers it, so a server that
+   * implements a field's defaults never receives it.
    */
   readonly optIn?: true;
 };
@@ -102,8 +102,8 @@ type OperatorTable = { readonly [K in FilterKind]: { readonly [O in FilterOperat
 
 /**
  * The operator graph: each operator's target, its negation, whether it is negated and, for option
- * kinds, its sibling when the value count crosses one. An `optIn` operator is offered only to a
- * field that lists it. Key order is menu order. `satisfies` makes a missing operator, a sibling
+ * kinds, its sibling when the value count crosses one. Only a field that lists an `optIn` operator
+ * offers it. Key order is menu order. `satisfies` makes a missing operator, a sibling
  * from another kind or an unknown target a type error.
  */
 export const OPERATORS = {
@@ -292,7 +292,7 @@ export type OperatorPolicy = {
   readonly kind: FilterKind;
   readonly operators?: readonly FilterOperator[] | undefined;
   readonly options?: readonly { readonly value: string }[] | undefined;
-  /** A boolean toggle allows only `is` and admits only `true`. */
+  /** Whether a boolean field is a toggle, which allows only `is` and admits only `true`. */
   readonly toggle?: boolean | undefined;
 };
 
@@ -387,7 +387,7 @@ export function allowedOperators(field: OperatorPolicy): readonly FilterOperator
  * @param field - The field.
  * @param base - The current operator, or the one a new filter starts with.
  * @param count - The value count after the change.
- * @returns The operator, or undefined when the field allows none for that count.
+ * @returns The operator, or `undefined` when the field allows none for that count.
  */
 function operatorForCount(
   field: OperatorPolicy,
@@ -553,7 +553,7 @@ export function isFilterValue(value: unknown): value is FilterValue {
  * reordered list is a change the host made. A host that parses its filters again, such as from the
  * URL, hands over equal copies, which this treats as no change.
  *
- * @param left - One filter value, or undefined for none.
+ * @param left - One filter value, or `undefined` for none.
  * @param right - The other.
  * @returns Whether they are equal.
  */
@@ -577,7 +577,7 @@ export function filterValuesEqual(left: FilterValue | undefined, right: FilterVa
  *
  * @param state - The filter state.
  * @param id - The column id.
- * @returns The filter, or undefined.
+ * @returns The filter, or `undefined`.
  */
 export function findFilter(state: DataTableFilterState, id: string): FilterValue | undefined {
   return state.find((entry) => entry.id === id)?.value;
@@ -620,8 +620,8 @@ export function removeFilter(state: DataTableFilterState, id: string): DataTable
 /**
  * Ticks or unticks one option. The first tick creates the filter from `start`. The operator then
  * follows the count among the operators the field allows, and unticking the last value removes
- * the filter. A field that allows no multi-value operator for the current one is single-select:
- * a second tick replaces the first, and an untick that leaves values no allowed operator holds,
+ * the filter. A field that allows no multi-value operator for the current one is single-select.
+ * A second tick replaces the first, and an untick that leaves values no allowed operator holds,
  * such as a multi-selection applied before the field turned single-select, removes the filter.
  *
  * @param state - The filter state.
@@ -713,7 +713,7 @@ function optionOperatorFor(
 /**
  * Whether `setOptionValues` can write the filter's admitted values plus `added` new ones, under
  * the field's current operator, or `start` for a new filter. Under `isNot` on a field that allows
- * `isAnyOf` but not `isNoneOf`, a second value cannot be added, though the same field can hold it
+ * `isAnyOf` but not `isNoneOf`, it cannot add a second value, though the same field can hold it
  * under `is`. A list's Select all asks this before it offers a press.
  *
  * @param state - The filter state.
@@ -893,12 +893,12 @@ type AdmittedPart = {
 /**
  * The part of an applied filter its field still admits, which an edit starts from: its option
  * values that are still options, and its operator when the field still allows it. A filter
- * applied before the config changed stays visible until a person edits it, and then the edit
+ * applied before the config changed stays visible until the user edits it, and then the edit
  * drops what the config left out, all in that edit's one write.
  *
  * @param field - The field.
  * @param current - The applied filter, if any.
- * @returns Its admitted values and operator, or undefined without a filter of the field's kind.
+ * @returns Its admitted values and operator, or `undefined` without a filter of the field's kind.
  */
 function admittedPart(field: OperatorPolicy, current: FilterValue | undefined): AdmittedPart | undefined {
   if (current?.kind !== field.kind) {
@@ -924,7 +924,7 @@ function admittedPart(field: OperatorPolicy, current: FilterValue | undefined): 
  * @param field - The field.
  * @param operator - The operator the field has left out.
  * @param values - The values.
- * @returns The write, or undefined when the field allows nothing.
+ * @returns The write, or `undefined` when the field allows nothing.
  */
 function reconcileOperator(
   field: OperatorPolicy,

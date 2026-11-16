@@ -20,11 +20,11 @@ import { boxPercent, parseSweep, sweepBox } from "./layout/polar-angle";
  * @beta
  */
 export type GaugeChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
-  /** The sweep's start, as on Root. −135 by default. A non-finite angle throws `invalid-sweep`. */
+  /** The sweep's start, as on Root. Defaults to −135. A non-finite angle throws `invalid-sweep`. */
   startAngle?: number;
-  /** The sweep's end, as on Root. 135 by default. */
+  /** The sweep's end, as on Root. Defaults to 135. */
   endAngle?: number;
-  /** The loader's name. The dictionary's "Laster diagram" is the default. */
+  /** The loader's name. Defaults to the dictionary's `Laster diagram`. */
   label?: string;
 };
 
@@ -36,7 +36,7 @@ export type GaugeChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 export type GaugeChartEmptyProps = ChartDomProps<"div">;
 
 /**
- * A loading placeholder that renders in place of `GaugeChart.Root`, for example as a Suspense
+ * A loading placeholder that renders in place of `GaugeChart.Root`, such as a Suspense
  * fallback. One Fuse Skeleton band sketches the track over Root's sweep, in the box Root keeps, and
  * one Fuse Loader names the wait.
  *
@@ -82,7 +82,7 @@ export function GaugeChartSkeleton({
 
 /**
  * Fuse Empty in the cell while Root's value is null. Its default children are the dictionary's
- * "Ingen data for perioden". While Root has a reading it renders nothing.
+ * `Ingen data for perioden`. While Root has a reading it renders nothing.
  *
  * @beta
  */

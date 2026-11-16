@@ -2,7 +2,7 @@
  * The polar path writers. Each turns numbers in degrees and in the caller's radius unit into SVG
  * path data through d3-shape, which takes radians, and keeps `PATH_DIGITS` digits, so the server's
  * markup and the loop's last frame write the same string. A slice and a clock wedge are d3 arcs, and
- * a ring is a stroked centre-line track. The radar's and the clock's curves have their own writers,
+ * a ring is a stroked center-line track. The radar's and the clock's curves have their own writers,
  * in `radar.ts` and `clock-path.ts`.
  */
 import { arc as d3Arc } from "d3-shape";
@@ -18,11 +18,11 @@ export type ArcSpec = {
   /** Degrees from 12 o'clock, clockwise. */
   readonly startAngle: number;
   readonly endAngle: number;
-  /** Degrees d3 takes out of the arc's two seams, 0 by default. */
+  /** Degrees d3 takes out of the arc's two seams. Defaults to 0. */
   readonly padAngle?: number;
-  /** The radius the pad's width is measured at, d3's `sqrt(inner² + outer²)` by default. */
+  /** The radius d3 measures the pad's width at. Defaults to d3's `sqrt(inner² + outer²)`. */
   readonly padRadius?: number;
-  /** The corner radius, clamped as d3 clamps it, 0 by default. */
+  /** The corner radius, clamped as d3 clamps it. Defaults to 0. */
   readonly cornerRadius?: number;
 };
 
@@ -83,17 +83,17 @@ export function arcWriter(
  * inside label sits.
  *
  * @param spec - The arc.
- * @returns The centroid's x and y from the centre.
+ * @returns The centroid's x and y from the center.
  */
 export function arcCentroid(spec: ArcSpec): readonly [number, number] {
   return generatorOf(spec).centroid(inputOf(spec));
 }
 
 /**
- * A ring's centre-line track over a sweep, the path a ring strokes its value along. A full turn
+ * A ring's center-line track over a sweep, the path a ring strokes its value along. A full turn
  * draws as two half arcs, because one arc command cannot close a circle.
  *
- * @param radius - The centre line's radius.
+ * @param radius - The center line's radius.
  * @param sweep - The sweep.
  * @returns The path data.
  */

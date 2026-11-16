@@ -9,7 +9,7 @@ import defaultMetadata from "libphonenumber-js/metadata.min.json";
 import { flagAssets } from "../../flags";
 import type { FlagAssetCode } from "../../flags";
 
-/** Product/compliance exclusion copied from the reference. */
+/** The product and compliance exclusions, copied from the reference. */
 const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
   "AF",
   "BY",
@@ -41,7 +41,7 @@ const PRODUCT_EXCLUDED_COUNTRY_CODES = new Set<CountryCode>([
   "ZW",
 ]);
 
-// The four libphonenumber@1.13.13 codes with no packaged flag SVG — AC, BQ, EH, TA — are not
+// The four libphonenumber@1.13.13 codes with no packaged flag SVG, AC, BQ, EH and TA, are not
 // listed here: `isPhoneCountryCode` filters on the flag manifest itself, so a fifth code
 // appearing upstream needs no edit. The picker suites assert their absence from an
 // independent list in test/phone-picker-contract.ts.
@@ -155,7 +155,10 @@ function parsePhoneInput(
   return { phoneNumber: asYouType.getNumber(), formatted };
 }
 
-/** Digits entered with their own `+` prefix carry an identity independent of the picker country. */
+/**
+ * Whether the digits start with their own `+` prefix, which gives them an identity independent of
+ * the picker country.
+ */
 function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
@@ -209,7 +212,7 @@ function formatOutputValue(
 }
 
 /**
- * The two display switches, passed as one object so the call site cannot transpose them
+ * The two display switches, passed as one object so the call site cannot transpose them.
  */
 type PhoneDisplayOptions = {
   international: boolean;
@@ -267,7 +270,7 @@ function normalizeInternationalPrefix(input: string): string {
   return input;
 }
 
-/** Country from an already-normalized `+` international number. */
+/** The country of an already-normalized `+` international number. */
 function detectCountryFromInput(input: string, metadata: MetadataJson): CountryCode | undefined {
   if (!hasInternationalDigits(input)) {
     return undefined;
@@ -279,8 +282,8 @@ export type ProcessedPhoneInput = {
   digits: string;
   country: PhoneNumberCountry;
   /**
-   * The digits are the national number libphonenumber parsed from an international entry, not
-   * what was typed. They carry no trunk prefix, so they display as that national number, in
+   * Whether the digits are the national number libphonenumber parsed from an international entry,
+   * not what the user typed. They carry no trunk prefix, so they display as that national number, in
    * the national format under `formatOnType`, rather than as typed.
    */
   parsedNational?: boolean;
@@ -328,7 +331,7 @@ export function processInputWithDetection({
  * One libphonenumber parse of a number written with its own `+` prefix. libphonenumber reads
  * an international number without its default country, so the parse is the same in every
  * country: a snapshot of the same input in any country reuses it, and its country is the one
- * the prefix detects. Read-only; it comes from {@link resolvePhoneFieldValues}.
+ * the prefix detects. It is read-only and comes from {@link resolvePhoneFieldValues}.
  */
 export type InternationalReading = {
   /**
@@ -345,8 +348,8 @@ export type InternationalReading = {
   /**
    * The parse itself, which a snapshot of the same input reuses. Only the same input: one with the
    * same canonical number written otherwise, as its national number behind the calling code,
-   * can parse differently, since libphonenumber strips a trunk prefix once per parse
-   * ("+4600701234567" keeps a 0 that "+460701234567" loses).
+   * can parse differently, since libphonenumber strips a trunk prefix once per parse, so
+   * "+4600701234567" keeps a 0 that "+460701234567" loses.
    */
   readonly parsed: Readonly<ParsedPhoneInput>;
 };

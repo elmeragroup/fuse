@@ -9,7 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { spanVariants } from "./span-variants";
 
-/** `Span` takes a native span's props plus the recipe axes and `render`. */
+/** Props for `Span`: a native span's props, the recipe axes and `render`. */
 export type SpanProps = ComponentPropsWithoutRef<"span"> &
   Omit<VariantProps<typeof spanVariants>, "leading" | "weight"> & {
     /**
@@ -19,7 +19,7 @@ export type SpanProps = ComponentPropsWithoutRef<"span"> &
     leading?: VariantProps<typeof spanVariants>["leading"];
     /** The font weight. `bold` renders at the medium weight, which caps body text weight. */
     weight?: VariantProps<typeof spanVariants>["weight"];
-    /** Replaces the host `span`. */
+    /** The element that replaces the host `span`. */
     render?: useRender.RenderProp;
   };
 

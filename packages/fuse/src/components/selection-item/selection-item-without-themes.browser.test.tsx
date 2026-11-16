@@ -35,7 +35,7 @@ function DisabledRows({ prefix, style }: { prefix: string; style?: CSSProperties
   );
 }
 
-/** The fill, the stripe alphas, the title's painted opacity and its colour of a prefix's two rows. */
+/** The fill, the stripe alphas, the title's painted opacity and its color of a prefix's two rows. */
 function disabledLooks(
   prefix: string
 ): readonly { fill: string; stripes: number[]; title: number; text: string }[] {

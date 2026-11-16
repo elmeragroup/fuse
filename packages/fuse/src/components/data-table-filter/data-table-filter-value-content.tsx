@@ -52,22 +52,23 @@ import { OperatorOptions, useOperatorItems } from "./operator-options";
 import { isListField } from "./option-list";
 
 /**
- * The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's, except `initialFocus` and
- * `finalFocus`, since the Root decides where focus goes as the popover opens and closes.
+ * Props for `DataTableFilter.ValueContent`, which takes Base UI Popover Popup's props except
+ * `initialFocus` and `finalFocus`, since the Root decides where focus goes as the popover opens and
+ * closes.
  */
 export type DataTableFilterValueContentProps = Omit<
   ComponentProps<typeof PopoverPrimitive.Popup>,
   "children" | "initialFocus" | "finalFocus"
 > & {
-  /** Replaces the editor. `useDataTableFilter().state.editing` names the edited field. */
+  /** The content that replaces the editor. `useDataTableFilter().state.editing` names the edited field. */
   children?: ReactNode;
 };
 
 /**
- * The value popover every chip's Value opens, anchored below the whole chip at a fixed width. It
- * is named by the editor's title. Focus moves to the editor's first control as it opens and back
- * to the chip's Value as it closes. A ghost chip's focus goes to its neighbour instead, since the
- * ghost leaves. A press on another chip's Value moves the popover there: it glides, its height
+ * The value popover every chip's Value opens, anchored below the whole chip at a fixed width. The
+ * editor's title names it. Focus moves to the editor's first control as it opens and back to the
+ * chip's Value as it closes. A ghost chip's focus goes to its neighbor instead, since the ghost
+ * leaves. A press on another chip's Value moves the popover there. The popover glides, its height
  * morphs and the editors cross-fade.
  */
 export function DataTableFilterValueContent({
@@ -176,17 +177,17 @@ export function DefaultEditor(): ReactElement {
   );
 }
 
-/** The props of `DataTableFilter.Editor`. */
+/** Props for `DataTableFilter.Editor`. */
 export type DataTableFilterEditorProps = ComponentProps<"div"> & {
   /**
    * The kind editors, such as `DataTableFilter.OptionEditor` and `DataTableFilter.DateEditor`.
-   * Each renders only for its own kinds, so list one for every kind your fields use.
+   * Each renders only for its own kinds, so list one for every kind the Root's fields use.
    */
   children?: ComponentProps<"div">["children"];
 };
 
 /**
- * A field's editor in whichever overlay renders it: the value popover for a chip, or the add menu
+ * A field's editor in whichever overlay renders it, the value popover for a chip or the add menu
  * in place of its field list. Its header holds the field's name and, for text, number and date
  * fields, the operator. In the add menu it also starts with a Back button, it is a group named by
  * its title, and it keeps every key but Tab from the menu. A move to another field mounts it fresh.
@@ -224,9 +225,9 @@ export function DataTableFilterEditor({
 
 /**
  * Keeps keys typed in the menu's in-place editor inside it. The menu popup's own handlers would
- * take them otherwise. Its list navigation prevents Home and End and moves its highlight on the
- * arrows (`useListNavigation.ts`), its dismissal closes the whole menu on Escape
- * (`useDismiss.ts`), and the toolbar relay takes the rest. All of them sit on the popup or the
+ * take them otherwise. Its list navigation, in `useListNavigation.ts`, prevents Home and End and
+ * moves its highlight on the arrows. Its dismissal, in `useDismiss.ts`, closes the whole menu on
+ * Escape, and the toolbar relay takes the rest. All of them sit on the popup or the
  * document, so a stop at the editor reaches them first. A popup inside the editor, such as the
  * operator's Select, stops its own Escape before this sees it. Escape goes back to the field list.
  * Tab passes, so focus moves on and leaves the menu as it does from the search.

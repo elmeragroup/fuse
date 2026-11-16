@@ -1,13 +1,14 @@
 /**
  * The marker `@elmeragroup/fuse/temporal-polyfill` sets on `globalThis` once it has run, and the
- * one read of whether the host has a Temporal. A registry symbol, so two copies of Fuse in one
- * page agree on it. Its own module, so the polyfill entry carries nothing else of the Temporal core.
+ * one read of whether the host has a Temporal. It is a registry symbol, so two copies of Fuse in
+ * one page agree on it. It has its own module, so the polyfill entry carries nothing else of the
+ * Temporal core.
  */
 export const TEMPORAL_INSTALL_MARKER: unique symbol = Symbol.for("@elmeragroup/fuse/temporal");
 
 /**
- * The Temporal on `globalThis` as it stands now. The value, not `in`: a host that removed Temporal
- * by setting it to `undefined` or `null` lacks it too.
+ * The Temporal on `globalThis` as it stands now. It reads the value, not `in`, so a host that
+ * removed Temporal by setting it to `undefined` or `null` lacks it too.
  *
  * @returns `globalThis.Temporal`, or `undefined` when the host has none.
  */

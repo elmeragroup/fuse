@@ -15,7 +15,7 @@ const compiledCssPath = join(here, "../../dist/styles.css");
  * Utilities spelled in this file and nowhere under `dist/`. They are the probe: with
  * Tailwind's automatic source detection on, scanning the package would pick them up from
  * this very test and emit them; with `source(none)` plus the dist glob they stay out.
- * Role-token utilities only — a raw palette class here would trip `no-primitive-colors`.
+ * Role-token utilities only. A raw palette class here would trip `no-primitive-colors`.
  */
 const SRC_ONLY_CLASSES = ["mb-4", "border-inherit", "min-w-xl", "ms-1"] as const;
 

@@ -11,21 +11,21 @@ import { withinFocusRingControlClass } from "../../styles/utils";
  * Figma component sync.
  *
  * - `group` is the field box around the input, the denomination and the steppers. `size` writes
- *   the field size on it (`field-size.ts`), `"default"` the md control size and `"sm"` the sm one,
- *   and the box reads its height from it. `isMuted` gives it the muted fill of a disabled or
+ *   the field size on it through `field-size.ts`, `"default"` the md control size and `"sm"` the sm
+ *   one, and the box reads its height from it. `isMuted` gives it the muted fill of a disabled or
  *   read-only field.
  * - `input` fills the group's height and the width the denomination and steppers leave, with the
  *   field's inset and text-entry type.
  * - `denomination` is the muted unit suffix between the input and the steppers, inset by the xs
- *   control padding (`--control-px-xs`).
+ *   control padding, `--control-px-xs`.
  * - `steppers` is the full-height row that holds the two steppers.
  * - `stepper` is one stepper. It is a part of the control, not a whole control: the group's
  *   within-target state face dims the disabled field once, steppers included. A stepper disabled
  *   on its own at a bound keeps the part look, a muted fill and glyph with the `not-allowed`
  *   cursor, and its hover fill sits behind the `enabled-hover:` gate. Each stepper is a
  *   full-height column `--control-h-xs` wide, floored at 24px for a host root below 16px, so its
- *   target meets the 24px floor at both densities (stacked steppers cannot fit two 24px targets
- *   in the dense control height).
+ *   target meets the 24px floor at both densities. Stacked steppers cannot fit two 24px targets in
+ *   the dense control height.
  */
 export const numberFieldVariants = tv({
   slots: {

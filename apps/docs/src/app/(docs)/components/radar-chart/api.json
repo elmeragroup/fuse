@@ -62,7 +62,7 @@
           "type": "\"none\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"none\" turns off the entrance, in which each series grows from the centre the first time the chart comes into view.",
+          "description": "\"none\" turns off the entrance, in which each series grows from the center the first time the chart comes into view.",
           "required": false
         },
         {
@@ -98,7 +98,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The radius maximum. The niced maximum of the data is the default. A `max` at or above the data maximum ends the domain at `max`, and when the data exceeds `max` the niced data maximum wins, so no reading is clamped. The centre is 0, or the niced minimum when a value is negative, and then the grid draws a zero ring.",
+          "description": "The radius maximum. The niced maximum of the data is the default. A `max` at or above the data maximum ends the domain at `max`, and when the data exceeds `max` the niced data maximum wins, so no reading is clamped. The center is 0, or the niced minimum when a value is negative, and then the grid draws a zero ring.",
           "required": false
         },
         {
@@ -134,7 +134,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no color for the cut-outs to match.",
           "required": false
         }
       ]
@@ -368,7 +368,7 @@
           "type": "\"default\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"ring\" draws each dot hollow, in a ring of the series' colour.",
+          "description": "The dot's look. \"ring\" draws each dot hollow, in a ring of the series' color.",
           "required": false,
           "values": [
             "default",
@@ -564,7 +564,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centers it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbor lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -577,7 +577,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Without children, TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
+          "description": "The popup's content. Without children, the popup shows TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
           "required": false
         },
         {
@@ -629,7 +629,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
+          "description": "The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {
@@ -711,7 +711,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -953,7 +953,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a `\"start\"` or `\"end\"` legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -1055,7 +1055,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -1143,7 +1143,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The group's name. The dictionary's \"Serier\" is the default.",
+          "description": "The group's name. Defaults to the dictionary's `Serier`.",
           "required": false
         },
         {
@@ -1203,7 +1203,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The toggle's content. The series' swatch and label by default.",
+          "description": "The toggle's content. Defaults to the series' swatch and label.",
           "required": false
         },
         {
@@ -1248,7 +1248,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the generated caption, the chart name and the period.",
+          "description": "The table's caption, in place of the generated one, which names the chart and the period.",
           "required": false
         },
         {
@@ -1275,7 +1275,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "description": "The hide button's text, in place of the dictionary's \"Skjul tabell\".",
           "required": false
         },
         {
@@ -1284,7 +1284,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
+          "description": "The show button's text, in place of the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -1302,7 +1302,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the first column's header, which the interval picks.",
+          "description": "The first column's header, in place of the one the interval picks.",
           "required": false
         }
       ]

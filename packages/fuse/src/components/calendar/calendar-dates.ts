@@ -24,7 +24,7 @@ export type DayBounds = {
 export type VisibleMonths = {
   /** The first visible month. */
   readonly start: Temporal.PlainYearMonth;
-  /** How many months show, from 1. */
+  /** The number of visible months, at least 1. */
   readonly count: number;
 };
 
@@ -96,7 +96,7 @@ export type DayRules = {
  * Why a day fails the calendar's rules, or `null` when the user may select it: before the first
  * selectable day (`"rangeUnderflow"`), after the last (`"rangeOverflow"`), or refused by
  * `isDateUnavailable` (`"unavailable"`). `checkBounds`'s own words map onto `ValidityState`'s here,
- * the one place the calendar names them. The bounds are checked first, so `isDateUnavailable` only
+ * the one place the calendar names them. The function checks the bounds first, so `isDateUnavailable` only
  * sees days inside them.
  *
  * @param date - The day.
@@ -119,19 +119,22 @@ export function dayValidationError(
 
 /** Where a day of the grid stands against the Root's props. */
 export type DayStatus = {
-  /** Outside the bounds, in a neighbouring month, or in a disabled calendar: never focusable. */
+  /**
+   * Whether the day is outside the bounds, in a neighboring month, or in a disabled calendar, so it
+   * never takes focus.
+   */
   readonly disabled: boolean;
-  /** Refused by `isDateUnavailable`: focusable, never selectable. */
+  /** Whether `isDateUnavailable` refuses the day, which the user may focus but never select. */
   readonly unavailable: boolean;
 };
 
 /**
  * Where a day of the grid stands: disabled when the calendar is, when it belongs to a
- * neighbouring month or when it falls outside the bounds, and otherwise unavailable when
+ * neighboring month or when it falls outside the bounds, and otherwise unavailable when
  * `isDateUnavailable` refuses it, by `dayValidationError`'s one check.
  *
  * @param date - The day.
- * @param outsideMonth - Whether the day belongs to a neighbouring month.
+ * @param outsideMonth - Whether the day belongs to a neighboring month.
  * @param settings - The rules and whether the calendar is disabled.
  * @returns The status.
  */
@@ -160,11 +163,11 @@ export type OpenedView = {
 
 /**
  * Where a calendar opens on a day: focus on the day clamped to the bounds, and the months
- * `initialVisibleMonths` centres on it. A Root opened on its value, on today, or re-aligned after
+ * `initialVisibleMonths` centers on it. A Root opened on its value, on today, or re-aligned after
  * its bounds or month count change opens the same way.
  *
  * @param day - The value's day, or today.
- * @param count - How many months show.
+ * @param count - The number of visible months.
  * @param bounds - The first and last selectable days.
  * @returns The focused day and the visible months.
  */
@@ -202,8 +205,8 @@ export function showsDay(visible: VisibleMonths, date: Temporal.PlainDate): bool
 /**
  * A first visible month moved so the view stays inside the bounds where it can: not before the
  * first selectable day's month, and not so late that the last selectable day's month leaves the
- * view's end empty. React Aria's `constrainStart`; the maximum wins when the bounds span fewer
- * months than the view.
+ * view's end empty. It matches React Aria's `constrainStart`, and the maximum wins when the bounds
+ * span fewer months than the view.
  */
 function constrainStart(start: Temporal.PlainYearMonth, count: number, bounds: DayBounds) {
   const { PlainYearMonth } = temporal();
@@ -224,12 +227,12 @@ function constrainStart(start: Temporal.PlainYearMonth, count: number, bounds: D
 }
 
 /**
- * The months a calendar opens on: the focused day's month centred in the view, as React Aria's
- * default `selectionAlignment="center"` does (one month before it at three months, none before it
- * at one or two), then kept inside the bounds.
+ * The months a calendar opens on: the focused day's month centered in the view, as React Aria's
+ * default `selectionAlignment="center"` does, then kept inside the bounds. That puts one month
+ * before it at three months, and none before it at one or two.
  *
  * @param focused - The day focus starts on, already inside the bounds.
- * @param count - How many months show.
+ * @param count - The number of visible months.
  * @param bounds - The first and last selectable days.
  * @returns The visible months.
  */
@@ -245,11 +248,11 @@ export function initialVisibleMonths(
 }
 
 /**
- * The months that show a day's month first, then kept inside the bounds: React Aria's
- * `alignStart`. A range too long for the centred view opens this way, on its first month.
+ * The months that show a day's month first, then kept inside the bounds. It matches React Aria's
+ * `alignStart`. A range too long for the centered view opens this way, on its first month.
  *
  * @param day - The day whose month leads, already inside the bounds.
- * @param count - How many months show.
+ * @param count - The number of visible months.
  * @param bounds - The first and last selectable days.
  * @returns The visible months.
  */
@@ -369,8 +372,9 @@ function plainMove(key: string, direction: () => "ltr" | "rtl"): FocusMove | und
 }
 
 /**
- * Whether a month button may page: the month just past the view in that direction holds a
- * selectable day. React Aria's `isNextVisibleRangeInvalid` and `isPreviousVisibleRangeInvalid`.
+ * Whether a month button may page: the month just past the view in that direction contains a
+ * selectable day. It mirrors React Aria's `isNextVisibleRangeInvalid` and
+ * `isPreviousVisibleRangeInvalid`.
  *
  * @param visible - The visible months.
  * @param step - `1` for the next page, `-1` for the previous.

@@ -35,7 +35,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The chart's parts, painted in the order you write them. Root never inspects them, so a server component can compose them.",
+          "description": "The chart's parts, painted in their source order. Root never inspects them, so a server component can compose them.",
           "required": false
         },
         {
@@ -44,7 +44,7 @@
           "type": "TConfig & ChartSeriesConfigCheck<TConfig, TRow>",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig` with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`, `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type. Series that share a `stack` id stack in one column. A series `interval` coarser than Root's, such as hourly usage under quarter-hour prices, draws each value across the Root slots of its own slot, and the option, the tooltip and the table name that slot. Fuse never sums or averages. A `color` is a role, a list of two or more roles, a scale or a threshold. A role list is a decorative gradient that never follows the value. A scale, \"chart-seq\" or \"chart-diverging\", bins each value into 7 steps, and the diverging scale centres them on 0, so a negative value takes a mirrored step below the solid zero line. A bar paints its step, and a Line or Area paints a gradient along the value axis. A threshold, `{ threshold, below, above }`, paints `above` on values above `threshold` and `below` on values at or below it, and the legend lists both sides. A line and its fill change colour where they cross the threshold, and a bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip, the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under `stackOffset=\"expand\"`, throws `scale-colour-on-stack` for a scale or a threshold. Set `--chart-color-<key>` on Root for a colour outside the roles.",
+          "description": "One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig` with a required `label` and `color` and an optional `format`, `icon`, `barVariant`, `stack`, `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelled literal `qualityKey` fails the type. Series that share a `stack` id stack in one column. A series `interval` coarser than Root's, such as hourly usage under quarter-hour prices, draws each value across the Root slots of its own slot, and the option, the tooltip and the table name that slot. Fuse never sums or averages. A `color` is a role, a list of two or more roles, a scale or a threshold. A role list is a decorative gradient that never follows the value. A scale, \"chart-seq\" or \"chart-diverging\", bins each value into 7 steps, and the diverging scale centers them on 0, so a negative value takes a mirrored step below the solid zero line. A bar paints its step, and a Line or Area paints a gradient along the value axis. A threshold, `{ threshold, below, above }`, paints `above` on values above `threshold` and `below` on values at or below it, and the legend lists both sides. A line and its fill change color where they cross the threshold, and a bar, the active dot, the markers and the tooltip swatch paint their own side. The tooltip, the table and spoken text keep the series' own label. Fuse computes no threshold, so pass the same number to a `ReferenceLine` to show it. A stacked Line or Area, or one under `stackOffset=\"expand\"`, throws `scale-colour-on-stack` for a scale or a threshold. Set `--chart-color-<key>` on Root for a color outside the roles.",
           "required": true
         },
         {
@@ -53,7 +53,7 @@
           "type": "readonly TRow[]",
           "shortType": null,
           "defaultValue": null,
-          "description": "The rows, one per slot or category. Every cell is serialisable, so a server component passes it. The plot keeps its height and draws no mark until the browser measures it, and a loading icon fades in at its middle if that takes more than a moment.",
+          "description": "The rows, one per slot or category. Every cell is serializable, so a server component passes it. The plot keeps its height and draws no mark until the browser measures it, and a loading icon fades in at its middle if that takes more than a moment.",
           "required": true
         },
         {
@@ -366,7 +366,7 @@
           "type": "ChartStyle | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice, 0.45 by default, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a fill of your own, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no colour for the cut-outs to match.",
+          "description": "Inline styles, with every public chart custom property typed. `--chart-hover-dim` is the opacity of the marks outside the active slot or slice. It defaults to 0.45, and 1 turns the dim off. Dot rings, seams and label halos paint `--surface`, the opaque fill the chart rests on, and the muted text on them reads `--surface-muted-foreground`. Fuse's opaque containers, such as Card, Frame.Panel, Alert, Dialog and Popover, set both, and the page's `--background` is the fallback. On a consumer's own fill, set both beside it: with `background: var(--muted)`, set `--surface: var(--muted)` and `--surface-muted-foreground: var(--muted-foreground)`. A translucent tint keeps the surface beneath it, and an image or a gradient has no color for the cut-outs to match.",
           "required": false
         },
         {
@@ -590,7 +590,7 @@
           "type": "\"dashed\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"solid\"",
-          "description": "The line style. \"solid\" matches the Figma `Chart` component.",
+          "description": "The line style. `solid` matches the Figma `Chart` component.",
           "required": false,
           "values": [
             "dashed",
@@ -621,7 +621,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. The interval's tick preset is the default. A tick that starts a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under `format=\"hour-range\"`. A calendar preset or Intl options format them as given.",
+          "description": "The tick label format. Defaults to the interval's tick preset. A tick that starts a coarser calendar unit, such as a month start on a long axis of hours, names that unit. A clock preset can't name a day, so those ticks keep their unit's default preset, such as `okt` under `format=\"hour-range\"`. A calendar preset or Intl options format them as given.",
           "required": false
         },
         {
@@ -679,7 +679,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The tick label format. The layout's first series' `format` is the default. Tick labels keep the format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the tooltip and the table print.",
+          "description": "The tick label format. Defaults to the layout's first series' `format`. Tick labels keep the format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the tooltip and the table print.",
           "required": false
         },
         {
@@ -737,7 +737,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the bars draw, in the look its config's `barVariant` names. An unknown key throws `unknown-key`. A bar fills its band less a 25 % gap. In a vertical chart with more than 100 domain slots a series draws its bars as one path, which draws every look but \"gradient\" as \"default\". A series whose look the path cannot draw warns `bar-variant-needs-html` in development. A horizontal chart always draws separate bars. The tinted looks, \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series colour, so pair them with a Legend or a Table. With a config `qualityKey`, an estimated reading draws a dashed outline over a lighter fill and a missing one a short dashed tick at the baseline, and the option and the table add the quality word after the value. A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A second update during the move starts from where each bar is drawn. A change of `xRange` alone snaps, and reduced motion snaps every update.",
+          "description": "The series the bars draw, in the look its config's `barVariant` names. An unknown key throws `unknown-key`. A bar fills its band less a 25 % gap. In a vertical chart with more than 100 domain slots a series draws its bars as one path, which draws every look but \"gradient\" as \"default\". A series whose look the path cannot draw warns `bar-variant-needs-html` in development. A horizontal chart always draws separate bars. The tinted looks, \"hatched\", \"striped\", \"gradient\", \"duotone\" and \"duotone-reverse\", fill most of a bar with a pale tint of the series color, so pair them with a Legend or a Table. With a config `qualityKey`, an estimated reading draws a dashed outline over a lighter fill and a missing one a short dashed tick at the baseline, and the option and the table add the quality word after the value. A data update moves each bar that stays to its new geometry over 480 ms, fades in the bars it adds and drops the bars that leave. A second update during the move starts from where each bar is drawn. A change of `xRange` alone snaps, and reduced motion snaps every update.",
           "required": true
         },
         {
@@ -746,7 +746,7 @@
           "type": "ChartDatum | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slots to emphasise. `\"now\"` selects the slot of this series that contains Root's `now`, so an hourly bar on a quarter-hour chart emphasises its whole hour. `\"max\"` and `\"min\"` compare the drawn value, the stack total for a stacked bar, and select every tied slot. An x string on a time axis throws `x-type-mismatch`.",
+          "description": "The slots to emphasize. `\"now\"` selects the slot of this series that contains Root's `now`, so an hourly bar on a quarter-hour chart emphasizes its whole hour. `\"max\"` and `\"min\"` compare the drawn value, the stack total for a stacked bar, and select every tied slot. An x string on a time axis throws `x-type-mismatch`.",
           "required": false
         },
         {
@@ -755,7 +755,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The word the option appends to an emphasised slot. The dictionary's \"uthevet\" is the default.",
+          "description": "The word the option appends to an emphasized slot. Defaults to the dictionary's \"uthevet\".",
           "required": false
         },
         {
@@ -836,7 +836,7 @@
           "type": "ChartCurve | undefined",
           "shortType": null,
           "defaultValue": "\"monotone\"",
-          "description": "The d3 curve through the readings. \"monotone\" stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. \"monotone-y\" is d3's monotoneY, monotone along screen y in either orientation. \"step-after\" and \"step-before\" run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
+          "description": "The d3 curve through the readings. `monotone` stays monotone along the category axis, so it runs along x, and along y under `orientation=\"horizontal\"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either orientation. `step-after` and `step-before` run each reading across its whole cell, so the last hour of a day keeps its run. They need `xScale=\"band\"` and throw `step-curve-needs-cells` under `\"point\"`.",
           "required": false,
           "values": [
             "basis",
@@ -874,7 +874,7 @@
           "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The line's look. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last year.",
+          "description": "The line's look. `dashed` dashes the whole line, `flowing` runs its dashes along it, which reduced motion stops, and `quiet` draws a thin, faint line for a reference series such as last year.",
           "required": false,
           "values": [
             "dashed",
@@ -945,7 +945,7 @@
           "type": "\"dotted\" | \"gradient\" | \"gradient-reverse\" | \"hatched\" | \"lines\" | \"solid\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
-          "description": "The fill's look. \"gradient\" fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
+          "description": "The fill's look. \"gradient\" fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series color.",
           "required": false,
           "values": [
             "dotted",
@@ -998,7 +998,7 @@
           "type": "\"default\" | \"halo\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" is a filled dot inside a ring of the surface the chart rests on, `--surface`. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
+          "description": "The dot's look. `default` is a filled dot inside a ring of `--surface`, the color the chart rests on. `ring` is a hollow ring and `halo` a dot inside a faint halo of its color.",
           "required": false,
           "values": [
             "default",
@@ -1150,7 +1150,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -1195,7 +1195,7 @@
           "type": "\"both\" | \"bottom\" | \"none\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"both\"",
-          "description": "The ends of the line that fade out, over 10% of the plot each. \"top\" is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
+          "description": "The ends of the line that fade out, over 10% of the plot each. `\"top\"` is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
           "required": false,
           "values": [
             "both",
@@ -1250,7 +1250,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label format. The `format` of the chart's `Chart.XAxis` is the default, so the pill prints what the ticks print, and without one the interval's tick preset or the category itself. Write the part inside a `Chart.Crosshair`. The tick labels under the pill fade out, and each part of the label, such as the day, rolls to its new value while a part that keeps its value, such as the month, stays still. A horizontal chart renders no pill.",
+          "description": "The label format. Defaults to the `format` of the chart's `Chart.XAxis`, so the pill prints what the ticks print, and without one the interval's tick preset or the category itself. Write the part inside a `Chart.Crosshair`. The tick labels under the pill fade out, and each part of the label, such as the day, rolls to its new value while a part that keeps its value, such as the month, stays still. A horizontal chart renders no pill.",
           "required": false
         },
         {
@@ -1572,7 +1572,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -1647,7 +1647,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The total's format. The stack's first series' format is the default.",
+          "description": "The total's format. Defaults to the stack's first series' format.",
           "required": false
         },
         {
@@ -1656,7 +1656,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The row's label. The dictionary's \"Totalt\" is the default.",
+          "description": "The row's label. Defaults to the dictionary's \"Totalt\".",
           "required": false
         },
         {
@@ -1676,7 +1676,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "A config stack id. The first stack id in config order is the default.",
+          "description": "A config stack id. Defaults to the first stack id in config order.",
           "required": false
         },
         {
@@ -1775,7 +1775,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The group's name. The dictionary's \"Periode\" is the default.",
+          "description": "The group's name. Defaults to the dictionary's \"Periode\".",
           "required": false
         },
         {
@@ -1802,7 +1802,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Joined to the group name for the end thumb. The dictionary's \"til\" is the default.",
+          "description": "The end thumb's name, joined to the group name. Defaults to the dictionary's \"til\".",
           "required": false
         },
         {
@@ -1811,7 +1811,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The thumbs' value text format. Root's label preset is the default. For intervals finer than a day, the `date` preset's spoken form leads the slot's spoken label. The year appears when the domain spans more than one calendar year in Root's zone.",
+          "description": "The thumbs' value text format. Defaults to Root's label preset. For intervals finer than a day, the `date` preset's spoken form leads the slot's spoken label. The year appears when the domain spans more than one calendar year in Root's zone.",
           "required": false
         },
         {
@@ -1820,7 +1820,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest window, in slots. `2` by default.",
+          "description": "The smallest window, in slots. Defaults to `2`.",
           "required": false
         },
         {
@@ -1829,7 +1829,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Joined to the group name for the start thumb. The dictionary's \"fra\" is the default.",
+          "description": "The start thumb's name, joined to the group name. Defaults to the dictionary's \"fra\".",
           "required": false
         },
         {
@@ -1847,7 +1847,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The pan window's name. The dictionary's \"Flytt periode\" is the default.",
+          "description": "The pan window's name. Defaults to the dictionary's \"Flytt periode\".",
           "required": false
         }
       ]
@@ -1903,7 +1903,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The loader's name. The dictionary's \"Laster diagram\" is the default.",
+          "description": "The loader's name. Defaults to the dictionary's \"Laster diagram\".",
           "required": false
         },
         {
@@ -2017,7 +2017,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"point\"",
-          "description": "Where the popup rests on a vertical chart. \"point\" centres it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbour lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centers it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbor lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",
@@ -2030,7 +2030,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Without children, TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
+          "description": "The popup's content. Without children, the popup shows TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
           "required": false
         },
         {
@@ -2082,7 +2082,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
+          "description": "The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {
@@ -2164,7 +2164,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -2406,7 +2406,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
+          "description": "Where the legend sits around the plot. In a polar chart narrower than 30rem, a `\"start\"` or `\"end\"` legend moves under the dial, so the dial keeps its size.",
           "required": false,
           "values": [
             "bottom",
@@ -2508,7 +2508,7 @@
           "type": "ValueFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The value format. The series' config `format` is the default.",
+          "description": "The value format. Defaults to the series' config `format`.",
           "required": false
         },
         {
@@ -2596,7 +2596,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The group's name. The dictionary's \"Serier\" is the default.",
+          "description": "The group's name. Defaults to the dictionary's `Serier`.",
           "required": false
         },
         {
@@ -2656,7 +2656,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The toggle's content. The series' swatch and label by default.",
+          "description": "The toggle's content. Defaults to the series' swatch and label.",
           "required": false
         },
         {
@@ -2701,7 +2701,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the generated caption, the chart name and the period.",
+          "description": "The table's caption, in place of the generated one, which names the chart and the period.",
           "required": false
         },
         {
@@ -2728,7 +2728,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "description": "The hide button's text, in place of the dictionary's \"Skjul tabell\".",
           "required": false
         },
         {
@@ -2737,7 +2737,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
+          "description": "The show button's text, in place of the dictionary's \"Vis som tabell\". The button shows the table and moves focus to it. While collapsed the table stays out of the Tab order and stays in the accessibility tree. Past 500 rows it pages, by calendar period on a time axis, so a year of hours reads as 53 ISO weeks, and by 500 rows otherwise.",
           "required": false
         },
         {
@@ -2755,7 +2755,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the first column's header, which the interval picks.",
+          "description": "The first column's header, in place of the one the interval picks.",
           "required": false
         }
       ]

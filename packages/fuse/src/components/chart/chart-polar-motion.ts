@@ -28,7 +28,7 @@ export type PolarWriter<T extends Element, L> = (node: T, look: L, values: MarkV
 export type PolarMark<T extends Element> = {
   /** The ref to pass to the mark's node. */
   readonly ref: RefCallback<T>;
-  /** Place the mark's numbers for this commit. */
+  /** Places the mark's numbers for this commit. */
   readonly place: (target: MarkValues, placement: Placement) => void;
   /** The node the mark renders now, or null before it mounts. */
   readonly node: () => T | null;
@@ -37,7 +37,7 @@ export type PolarMark<T extends Element> = {
 };
 
 /**
- * Register a polar mark with its Root's loop for as long as it is mounted. The loop draws into
+ * Registers a polar mark with its Root's loop for as long as it is mounted. The loop draws into
  * whichever node the mark renders now, in the latest look.
  *
  * @param motion - The Root's loop.
@@ -102,7 +102,7 @@ export type PolarCommitSource = {
 };
 
 /**
- * Track the commits a polar mark draws, so its layout effect knows how to reach each one. The
+ * Tracks the commits a polar mark draws, so its layout effect knows how to reach each one. The
  * mark's first draw in the Root's first commit plays the entrance, or snaps without one. A mark
  * that first draws in a data update enters: it grows from its start on the update's clock, as its
  * key is new. A later data update moves it from what it drew, and any other commit lets a running
@@ -206,7 +206,7 @@ export function introPace(figure: Element | null, update: PolarUpdate): IntroPac
 export type GhostWriter = (path: SVGPathElement, values: MarkValues) => void;
 
 /**
- * Collapse a leaving item into a ghost: a path in `layer` that tweens from what the item drew
+ * Collapses a leaving item into a ghost: a path in `layer` that tweens from what the item drew
  * to its collapsed numbers on the update's clock, then leaves the DOM. A second update while it
  * collapses starts from where it shows, as every tween does.
  *

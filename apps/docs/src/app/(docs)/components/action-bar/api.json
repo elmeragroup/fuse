@@ -192,7 +192,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Empty the selection here. Clear clears nothing itself, and the bar leaves once `count` is zero.",
+          "description": "Called when the user presses Clear. Empty the selection here. Clear clears nothing itself, and the bar leaves once `count` is zero.",
           "required": false
         },
         {

@@ -18,7 +18,7 @@ export const TOOLTIP_EDGE = 8;
 /**
  * How far a popup beside the column reaches over the column's edge. The positioner rounds the
  * popup's place to whole device pixels, which can leave a strip up to half a pixel wide between
- * the popup and its column. That strip belongs to the neighbouring slot, so a pointer that
+ * the popup and its column. That strip belongs to the neighboring slot, so a pointer that
  * crossed to the popup through it would change the slot it reads. Vertical placements need no
  * overlap, since a pointer that crosses to them stays on the column's own slot.
  */
@@ -79,7 +79,7 @@ export type PopupPlace = { readonly left: number; readonly bottom: number };
 
 /** What a popup's resting place over the plot depends on, in plot pixels. */
 export type RoofInput = {
-  /** The active slot's centre along x. */
+  /** The active slot's center along x. */
   readonly centre: number;
   /** The popup's width. */
   readonly width: number;
@@ -99,10 +99,11 @@ export type RoofInput = {
 };
 
 /**
- * Where a popup rests over a vertical plot. It centres on the active slot, held inside the chart
+ * Where a popup rests over a vertical plot. It centers on the active slot, held inside the chart
  * Root's box unless it is wider than the box, then inside the viewport's edges unless it is wider
- * than they leave, and rests `ROOF_GAP` above the roof under its own width at that place. A step that raises it raises it over the whole span it sweeps from its old place, so its
- * path clears the marks as well as its end. A step that would lower it by `SINK_SLACK` or less
+ * than they leave, and rests `ROOF_GAP` above the roof under its own width at that place. A step
+ * that raises it raises it over the whole span it sweeps from its old place, so its path clears the
+ * marks as well as its end. A step that would lower it by `SINK_SLACK` or less
  * keeps its old height.
  *
  * @param input - The slot, the popup, the box, the marks and the last resting place.

@@ -18,7 +18,7 @@ import { sliderVariants } from "./slider-variants";
 
 /**
  * The shape of a slider's value: a single number, or one number per thumb for a range. A range
- * holds at least two numbers, since base-ui treats a one-number array as a single value.
+ * holds at least two numbers, since Base UI treats a one-number array as a single value.
  */
 export type SliderValue = number | readonly [number, number, ...number[]];
 
@@ -41,9 +41,9 @@ export type SliderProps<Value extends SliderValue = number> = {
    * its own validation error instead.
    */
   errorMessage?: ReactNode;
-  /** Marks the field invalid, so the thumb shows the invalid face. */
+  /** Whether the field is invalid, so the thumb shows the invalid face. */
   isInvalid?: boolean;
-  /** Disables the slider, so the thumb shows the disabled face. */
+  /** Whether the slider is disabled, so the thumb shows the disabled face. */
   isDisabled?: boolean;
   /**
    * The value, for a controlled slider. `Value` is a `number`, or an array of at least two
@@ -90,7 +90,10 @@ export type SliderProps<Value extends SliderValue = number> = {
    * announces for each thumb. The locale comes from the provider.
    */
   formatOptions?: Intl.NumberFormatOptions;
-  /** Shows the formatted value at the end of the label row. A range joins its values with an en dash. */
+  /**
+   * Whether the label row shows the formatted value at its end. A range joins its values with an
+   * en dash.
+   */
   showValue?: boolean;
   /**
    * Accessible names of a range's thumbs, by index. Defaults to the locale dictionary's

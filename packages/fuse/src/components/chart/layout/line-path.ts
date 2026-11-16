@@ -25,7 +25,7 @@ import type { ChartCurve } from "../chart-types";
 import { pathNumber } from "./rounding";
 import type { PathVertex, VertexState } from "./series-path";
 
-/** What a path's vertices are, beyond where they lie: the topology a writer draws them in. */
+/** The topology a writer draws a path's vertices in, beyond where they lie. */
 export type PathTopology = {
   /** How many vertices the topology describes. */
   readonly count: number;
@@ -56,7 +56,7 @@ export type PathPlacement = {
   /** Places a vertex along the slot axis, snapped onto the column the slot's crosshair draws in. */
   readonly along: (at: number) => number;
   /**
-   * The span a step run takes around its own slot's centre, from cell edge to cell edge over the
+   * The span a step run takes around its own slot's center, from cell edge to cell edge over the
    * slot's Root cells, snapped.
    */
   readonly run: (centre: number, cells: number) => readonly [number, number];
@@ -68,8 +68,9 @@ export type PathPlacement = {
   /** Snaps a coordinate along the value axis, or passes it through. */
   readonly across: (at: number) => number;
   /**
-   * How a lone reading's dot draws: "arc" as a ring the round stroke fills, or "cap" as a subpath of
-   * no length whose round cap the stroke draws, which keeps its topology in a stretched viewBox.
+   * How a lone reading's dot draws. `arc` draws it as a ring the round stroke fills, and `cap` as a
+   * subpath of no length whose round cap the stroke draws, which keeps its topology in a stretched
+   * viewBox.
    */
   readonly lone?: "arc" | "cap";
   /**
@@ -117,7 +118,7 @@ export const AREA_STRIDE = 3;
  * A topology from laid-out vertices.
  *
  * @param vertices - The series path's vertices.
- * @param missing - Config `missing`.
+ * @param missing - The config's `missing`.
  * @returns The topology.
  */
 export function topologyOf(vertices: readonly PathVertex[], missing: "gap" | "connect"): PathTopology {
@@ -139,7 +140,7 @@ export function topologyOf(vertices: readonly PathVertex[], missing: "gap" | "co
  *
  * @param vertices - The vertices.
  * @param stride - `LINE_STRIDE` or `AREA_STRIDE`.
- * @param along - A window position's centre along the slot axis.
+ * @param along - A window position's center along the slot axis.
  * @param across - A value's coordinate along the value axis.
  * @returns The numbers the loop tweens.
  */
@@ -208,7 +209,7 @@ function runsOf(topology: PathTopology): number[][] {
   return runs;
 }
 
-/** Sort spans and merge the ones that touch. */
+/** The spans, sorted, with the ones that touch merged. */
 function merged(spans: Span[]): Span[] {
   const sorted = spans.filter(([start, end]) => end > start).toSorted((a, b) => a[0] - b[0]);
   const out: [number, number][] = [];
@@ -326,9 +327,8 @@ function stepLine(
 }
 
 /**
- * A plain step's points through a run, d3's curveStep with its risers placed by the placement:
- * each vertex's value runs to the riser halfway to the next vertex, and the last runs to its own
- * vertex.
+ * A plain step's points through a run, d3's `curveStep` with the placement's risers. Each vertex's
+ * value runs to the riser halfway to the next vertex, and the last runs to its own vertex.
  */
 function stepPoints(run: readonly number[], read: Reader, at: (index: number) => number): [number, number][] {
   const points: [number, number][] = [];
@@ -400,8 +400,8 @@ export function linePaths(
 }
 
 /**
- * An Area's top edge as a Line's path data: the same curve through the same tops, with each run's
- * subpath and each lone reading's dot, and nothing of the base the area closes to.
+ * An Area's top edge as a Line's path data. It draws the same curve through the same tops, with
+ * each run's subpath and each lone reading's dot, and nothing of the base the area closes to.
  *
  * @param values - The Area's numbers, `AREA_STRIDE` per vertex.
  * @param topology - The topology of those vertices.

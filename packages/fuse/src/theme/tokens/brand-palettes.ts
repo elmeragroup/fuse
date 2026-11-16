@@ -7,52 +7,51 @@ import { NEUTRAL_RING, WHITE } from "./primitives";
 export type PaletteBrandCode = Exclude<BrandCode, "fkab">;
 
 /**
- * The roles every branded theme shares, whatever its brand. Corners are not a palette role:
- * `theme/corners/corners.ts` owns each identity's corner set. The outline Button
- * draws the customer-facing reference's outline, a 2px ring in the text color, which every
- * brand shares. A selection row draws no outer edge: its resting edge is a zero-alpha colour, not
- * a `transparent` keyword, which the token format does not read, and keeps the 1px border so the
- * rows' joins and insets stay. A checked row keeps that resting edge, as the customer-facing radio
- * card does, and the faint `bg-muted` tint, which design keeps, so its control is the clear
- * cue. `RadioIconButton` is a button, not a row, so it keeps its `border-primary` checked edge
- * rather than reading the selection roles. Stacked rows keep a grey `--border` separator
- * between them, checked or not. A disabled selection row keeps the card fill of an
- * enabled row and draws no stripes, so it is not a grey panel among the white rows; its title
- * greys to the muted foreground, and its control dims at 50%, as in every theme. A selection
- * row's title takes the medium weight of that radio card, so it matches the group legend and
- * `CheckboxCard` titles around it. The neutral identity keeps the 1px
+ * The roles every branded theme shares, whatever its brand. Corners are not a palette role, and
+ * `theme/corners/corners.ts` defines each identity's corner set. The outline Button draws the
+ * customer-facing reference's outline, a 2px ring in the text color, which every brand shares. A
+ * selection row draws no outer edge. Its resting edge is a zero-alpha color, not a `transparent`
+ * keyword, which the token format does not read, and it keeps the 1px border so the rows' joins and
+ * insets stay. A checked row keeps that resting edge, as the customer-facing radio card does, and
+ * the faint `bg-muted` tint, which design keeps, so its control is the clear cue. `RadioIconButton`
+ * is a button, not a row, so it keeps its `border-primary` checked edge rather than reading the
+ * selection roles. Stacked rows keep a gray `--border` separator between them, checked or not. A
+ * disabled selection row keeps the card fill of an enabled row and draws no stripes, so it is not a
+ * gray panel among the white rows. Its title takes the muted foreground, and its control dims at
+ * 50%, as in every theme. A selection row's title takes the medium weight of that radio card, so it
+ * matches the group legend and `CheckboxCard` titles around it. The neutral identity keeps the 1px
  * `--border` hairline, the `--border` row edge and divider, the `--primary` box around a checked
  * row, the muted, striped disabled row and the regular row title.
  *
- * A Card and a `card` Accordion item draw no edge either, and Card casts no shadow: a white card
- * stands on the page tint by its fill alone, as the customer-facing order flows draw it. The zero-alpha
- * edge keeps the 1px border, so the cards' inner corners and layout stay, and the zero-alpha
- * shadow keeps Card's `shadow-xs` geometry, so a brand can tint it back. A card is a container,
- * not a control, so the faint step off the page, about 1.05:1 in the weakest light brands, is no
- * 1.4.11 shortfall, and a card on a `card`-coloured surface, such as a nested Card, has no
- * boundary at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
- * so both keep `--border` and the plain `shadow-xs`. Both roles are light-only, so dark cards
- * draw neither edge nor shadow; whether they should keep an edge is an open design question.
- * The line between a Card's stacked sections takes the page tint, `--background`, so it reads as
- * a gap between segments of the card rather than a drawn rule.
+ * A Card and a `card` Accordion item draw no edge either, and Card casts no shadow. A white card
+ * stands apart from the page tint by its fill alone, as the customer-facing order flows draw it.
+ * The zero-alpha edge keeps the 1px border, so the cards' inner corners and layout stay, and the
+ * zero-alpha shadow keeps Card's `shadow-xs` geometry, so a brand can tint it back. A card is a
+ * container, not a control, so the faint step off the page, about 1.05:1 in the weakest light
+ * brands, is no WCAG 1.4.11 shortfall. A card on a `card`-colored surface, such as a nested Card,
+ * has no boundary at all. `CheckboxCard` is a control and the TextField `card` box is a field
+ * boundary, so both keep `--border` and the plain `shadow-xs`. Both roles are light-only, so dark
+ * cards draw neither edge nor shadow. Whether they should keep an edge is an open design question.
+ * The line between a Card's stacked sections takes the page tint, `--background`, so it reads as a
+ * gap between segments of the card rather than a drawn rule.
  *
- * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
- * text colour, so card-coloured fields and selection rows inside it stand apart as they do on
- * the page. The anchored popups keep the white popover: their highlighted rows need the
- * `accent`-on-`popover` step, which the faint branded accent cannot take on the page tint. The
- * dark sheets keep the popover pair, which `DARK_DEFAULTS` restates.
+ * A light modal, such as Dialog, AlertDialog or Sheet, fills with the page tint and takes the
+ * page's text color, so card-colored fields and selection rows inside it stand apart as they do on
+ * the page. The anchored popups keep the white popover. Their highlighted rows need the
+ * `accent`-on-`popover` step, which the faint branded accent cannot take on the page tint. The dark
+ * sheets keep the popover pair, which `DARK_DEFAULTS` restates.
  *
- * The layer names the neutral focus ring so every branded light rule declares `--ring`
- * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To
- * tune one brand's ring:
+ * The layer names the neutral focus ring, so every branded light rule declares `--ring` and
+ * restates the `--sidebar-ring` alias, and a nested scope gets its own theme's ring. To tune one
+ * brand's ring:
  *
- * - Light: add `ring` to the brand's entry in {@link BRAND_PALETTES}. A segment delta in
- *   `segment-sheets.ts` layers on top of it, so the ring carries through unless the delta
- *   names its own.
- * - Dark: add `ring` to the brand's sheet in `brand-dark-palettes.ts`, and to each of the
- *   brand's segment dark sheets in `segment-sheets.ts`, such as fkas-company's, since a
- *   segment sheet replaces the brand's dark sheet. A sheet without `ring` keeps the dark
- *   default's neutral ring.
+ * - In light, add `ring` to the brand's entry in {@link BRAND_PALETTES}. A segment delta in
+ *   `segment-sheets.ts` layers on top of it, so the ring carries through unless the delta names its
+ *   own.
+ * - In dark, add `ring` to the brand's sheet in `brand-dark-palettes.ts`, and to each of the
+ *   brand's segment dark sheets in `segment-sheets.ts`, such as fkas-company's, since a segment
+ *   sheet replaces the brand's dark sheet. A sheet without `ring` keeps the dark default's neutral
+ *   ring.
  *
  * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
@@ -109,16 +108,16 @@ export const BRANDED_IDENTITY_LAYER = {
  * Each brand's light palette. Every `muted-foreground` is opaque, so it keeps one contrast per
  * surface, and `contrast-matrix.test.ts` holds it to 4.5:1 on `background`, `muted`, `card` and
  * `card-soft`. Where a brand sheet set the foreground at 70% alpha, the role is an opaque tone of
- * the foreground: its hue, mixed in OKLCH toward white until it measures on a white card what
- * the 70% value measured. Telinet (`fkse`) stops darker, at a tone that clears 4.5:1 on `muted`,
- * 4.56:1 on the brand neutral ramp's step 100.
- * Nordic Green Energy keeps its sheet's opaque on-surface-variant.
+ * the foreground: its hue, mixed in OKLCH toward white until it measures on a white card what the
+ * 70% value measured. Telinet, `fkse`, stops darker, at a tone that clears 4.5:1 on `muted`, at
+ * 4.56:1 on the brand neutral ramp's step 100. Nordic Green Energy keeps its sheet's opaque
+ * on-surface-variant.
  *
- * `feature` seeds the brand ramps (`brand-ramp-layer.ts`), so it stays a colour literal here and
- * in every segment delta, never an alias. The other brand tones stay curated literals too: they
- * are the brand's own hand-tuned values, and a ramp step at a shared lightness would move them.
- * Telinet's `feature-foreground` is the one role that points at a brand palette, because its
- * green is the colour that seeds palette 2.
+ * `feature` seeds the brand ramps in `brand-ramp-layer.ts`, so it stays a color literal here and in
+ * every segment delta, never an alias. The other brand tones stay curated literals too. They are
+ * the brand's own hand-tuned values, and a ramp step at a shared lightness would move them.
+ * Telinet's `feature-foreground` is the one role that points at a brand palette, because its green
+ * is the color that seeds palette 2.
  */
 export const BRAND_PALETTES = {
   fkas: {
@@ -252,9 +251,9 @@ export const BRAND_PALETTES = {
 } as const satisfies Record<PaletteBrandCode, TokenLayer>;
 
 /**
- * fkab is a permanent alias of fkas, resolved by each accessor that reads a per-brand table, such
- * as `paletteLayers` and `cornersOf`. Every palette table and accessor takes `PaletteBrandCode`, so
- * an unresolved brand cannot reach one.
+ * The brand whose palette a brand uses. `fkab` is a permanent alias of `fkas`, and each accessor
+ * that reads a per-brand table, such as `paletteLayers` and `cornersOf`, resolves it. Every palette
+ * table and accessor takes `PaletteBrandCode`, so an unresolved brand cannot reach one.
  */
 export function paletteBrand(brand: BrandCode): PaletteBrandCode {
   return brand === "fkab" ? "fkas" : brand;

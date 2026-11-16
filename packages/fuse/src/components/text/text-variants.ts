@@ -1,9 +1,9 @@
 /**
- * PUBLIC recipe. Span and other package modules borrow it from
+ * The public recipe. Span and other package modules borrow it from
  * `@elmeragroup/fuse/text`. `size` is a type-scale axis, not a control
  * size. It does not read `--control-*`.
  *
- * Colour (`variant`) and alignment (`align`) come from the package-private
+ * Color, `variant`, and alignment, `align`, come from the package-private
  * `typographyFragments` recipe through `extend`. This recipe adds `success` and
  * `justify`. `destructive` keeps its old value name for consumer compatibility, but the
  * class is `text-error`. `weight: "bold"` maps to `font-medium` on purpose, to cap the

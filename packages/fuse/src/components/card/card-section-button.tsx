@@ -10,14 +10,14 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { cardSectionVariants } from "./card-variants";
 
-/** `Card.SectionButton` takes a native button's props and `render`. */
+/** Props for `Card.SectionButton`, a native button's props and `render`. */
 export type CardSectionButtonProps = Omit<
   useRender.ComponentProps<"button">,
   "render" | "children" | "aria-disabled"
 > & {
   /**
-   * Replaces the host `<button type="button">`. `render={<a href="/terms" />}` makes the section a
-   * link. To make it a trigger, pass it to the trigger's `render`, as with `Button`:
+   * The element that replaces the host `<button type="button">`. `render={<a href="/terms" />}` makes
+   * the section a link. To make it a trigger, pass it to the trigger's `render`, as with `Button`:
    * `<Dialog.Trigger render={<Card.SectionButton />}>Change plan</Dialog.Trigger>`.
    */
   render?: useRender.ComponentProps<"button">["render"];
@@ -28,7 +28,7 @@ export type CardSectionButtonProps = Omit<
    */
   children?: useRender.ComponentProps<"button">["children"];
   /**
-   * Marks an unavailable section. A link takes no `disabled`, so mark it `aria-disabled="true"`.
+   * Whether the section is unavailable. A link takes no `disabled`, so mark it `aria-disabled="true"`.
    * The section dims and drops its hover fill, and a click or Enter neither follows the link nor
    * runs `onClick`. A middle-click opens no new tab.
    */

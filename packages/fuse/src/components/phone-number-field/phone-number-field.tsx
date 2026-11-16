@@ -57,7 +57,8 @@ export type PhoneNumberFieldProps = {
    */
   defaultValue?: string;
   /**
-   * Proposes a number in `outputFormat`. A controlled field shows it once the parent accepts it.
+   * Called with a proposed number in `outputFormat`. A controlled field shows it once the parent
+   * accepts it.
    * The field calls it only when the proposal differs from the number the parent holds: `value`,
    * compared exactly, or the output an uncontrolled field already shows. So deleting a separator,
    * which keeps the number, calls nothing, while a parent that stores another form of the number,
@@ -108,7 +109,7 @@ export type PhoneNumberFieldProps = {
    */
   countryCode?: Extract<CountryCode, FlagAssetCode>;
   /**
-   * Your own or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps
+   * Custom or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps
    * the international identity of the number shown. A shallow copy, such as `{ ...metadata }`
    * written in a render, is the same metadata and replaces nothing. To limit the picker, pass
    * `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It
@@ -116,7 +117,7 @@ export type PhoneNumberFieldProps = {
    */
   metadata?: MetadataJson;
   /**
-   * The countries the picker offers, as ISO codes. Every country by default. The metadata still
+   * The countries the picker offers, as ISO codes. Defaults to every country. The metadata still
    * parses every number. Detection only selects a listed country, so a number from another one
    * stays in international form beside the selected country, as with trimmed metadata. With one
    * country, the field shows its flag and dial code as plain text instead of a picker. The field
@@ -127,25 +128,25 @@ export type PhoneNumberFieldProps = {
    */
   countries?: readonly Extract<CountryCode, FlagAssetCode>[];
   /**
-   * Picks the country from a `+` or `00` prefix as the user types or pastes. Pass `false` to keep
-   * the selected country.
+   * Whether the field picks the country from a `+` or `00` prefix as the user types or pastes.
+   * Pass `false` to keep the selected country.
    */
   autoDetectCountry?: boolean;
   /**
-   * Keeps the typed digits and international prefixes in the display. An accepted national draft
-   * stays national.
+   * Whether the display keeps the typed digits and international prefixes. An accepted national
+   * draft stays national.
    */
   international?: boolean;
   /**
-   * Keeps the digits when the country changes. Otherwise a country change clears them, and calls
-   * `onChange` with `""` unless the parent already holds `""`.
+   * Whether the digits stay when the country changes. Otherwise a country change clears them, and
+   * calls `onChange` with `""` unless the parent already holds `""`.
    */
   preserveOnCountryChange?: boolean;
   /** The format `onChange` reports and the hidden input submits. */
   outputFormat?: "e164" | "international" | "national" | "raw";
   /**
-   * Formats the display as the user types. A national entry keeps the trunk prefix it was typed
-   * with, so a Swedish "0701234567" shows "070-123 45 67", and one typed without it stays
+   * Whether the field formats the display as the user types. A national entry keeps the trunk prefix
+   * it was typed with, so a Swedish "0701234567" shows "070-123 45 67", and one typed without it stays
    * ungrouped. A number detected from a `+` or `00` prefix shows in the national format.
    */
   formatOnType?: boolean;
@@ -171,16 +172,19 @@ export type PhoneNumberFieldProps = {
   placeholder?: string;
   /** Content at the end of the field box, such as a button that acts on the number. */
   endContent?: ReactNode;
-  /** Marks the field invalid, with the invalid look on the field box. */
+  /** Whether the field is invalid, with the invalid look on the field box. */
   isInvalid?: boolean;
-  /** Disables editing, the country picker, and both the visible and the hidden input. */
+  /**
+   * Whether the field is disabled: editing, the country picker, and both the visible and the hidden
+   * input.
+   */
   isDisabled?: boolean;
   /**
-   * Blocks edits, paste and country changes. The field stays focusable and still submits, with
-   * the muted read-only fill.
+   * Whether the field blocks edits, paste and country changes. The field stays focusable and still
+   * submits, with the muted read-only fill.
    */
   isReadOnly?: boolean;
-  /** Makes the number input required, so the browser's constraint check blocks an empty submit. */
+  /** Whether the number input is required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
   /**
    * The name the number submits under, from a hidden input. The visible input takes
@@ -211,7 +215,7 @@ export type PhoneNumberFieldProps = {
   container?: OverlayContainerProps["container"];
   /** The number input's `id`. */
   id?: ComponentProps<"input">["id"];
-  /** Focuses the number input when the field mounts. */
+  /** Whether the number input takes focus when the field mounts. */
   autoFocus?: ComponentProps<"input">["autoFocus"];
   /** Called when the number input loses focus. */
   onBlur?: ComponentProps<"input">["onBlur"];
@@ -228,7 +232,7 @@ export type PhoneNumberFieldProps = {
   /** The ids of the elements that describe the number input. */
   "aria-describedby"?: ComponentProps<"input">["aria-describedby"];
   /**
-   * Marks the number input required for screen readers only. It does not validate, so an empty
+   * Whether screen readers announce the number input as required. It does not validate, so an empty
    * field still submits. Use `isRequired` for the browser's constraint check, and this for a rule
    * a schema can relax.
    */
@@ -297,12 +301,11 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
 
 /**
  * The field box, an InputGroup named as the field. Its two tab stops, the country picker and the
- * number, together make one value, and the group's name is what puts the picker's "Select
- * country" in its field's context, as when a form has a mobile and a work number (WAI-ARIA APG:
- * a group of related controls is named). It takes the name the number input takes: the
- * consumer's `aria-labelledby`, else the Field label's id, with `aria-label` for a field with
- * neither. It renders inside `Field.Root` to read the label's id, and above the picker's own
- * labelable scope.
+ * number, together make one value, and the group's name is what puts the picker's "Select country" in
+ * its field's context, as when a form has a mobile and a work number. The WAI-ARIA APG asks for a name
+ * on a group of related controls. It takes the name the number input takes: the consumer's
+ * `aria-labelledby`, else the Field label's id, with `aria-label` for a field with neither. It renders
+ * inside `Field.Root` to read the label's id, and above the picker's own labelable scope.
  */
 function PhoneFieldGroup({
   "aria-label": ariaLabel,

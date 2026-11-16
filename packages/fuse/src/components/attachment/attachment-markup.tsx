@@ -11,7 +11,7 @@ const styles = attachmentVariants();
 
 type AttachmentMediaVariantProps = Pick<VariantProps<typeof attachmentVariants>, "variant">;
 
-/** `Attachment.Media` takes a native `div`'s props plus its `variant`. */
+/** Props for `Attachment.Media`, a native `div`'s props plus its `variant`. */
 export type AttachmentMediaProps = ComponentProps<"div"> &
   AttachmentMediaVariantProps & {
     /**
@@ -43,7 +43,7 @@ export function AttachmentMedia({
   );
 }
 
-/** `Attachment.AspectRatio` takes `AspectRatio`'s props. */
+/** Props for `Attachment.AspectRatio`, the same as `AspectRatio`'s props. */
 export type AttachmentAspectRatioProps = AspectRatioProps;
 
 /**
@@ -67,13 +67,13 @@ export function AttachmentContent({ className, ...props }: ComponentProps<"div">
 
 /**
  * The file name on one truncated line. While the root's `state` is `uploading` or `processing`
- * a highlight sweeps across it; under reduced motion it stays solid text.
+ * a highlight sweeps across it. Under reduced motion it stays solid text.
  */
 export function AttachmentTitle({ className, ...props }: ComponentProps<"span">): ReactElement {
   return <span data-slot="attachment-title" className={cn(styles.title(), className)} {...props} />;
 }
 
-/** `Attachment.Description` takes a native `span`'s props. */
+/** Props for `Attachment.Description`, a native `span`'s props. */
 type AttachmentDescriptionProps = Omit<ComponentProps<"span">, "children"> & {
   /**
    * The detail, such as the size, the progress or the reason an upload failed, such as "Upload

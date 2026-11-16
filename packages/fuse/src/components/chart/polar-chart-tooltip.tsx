@@ -3,7 +3,7 @@
 /**
  * The polar families' Tooltip parts. Each is the shared tooltip body over the polar anchor, which
  * rests the popup in a lane beside, below or above the dial, and shows the active slice's, ring's
- * or spoke's label and rows by default. Where a popup may go is one rule for every family: like
+ * or spoke's label and rows by default. Where a popup may go is one rule for every family. Like
  * `Chart.Tooltip`'s, it may reach past its chart's box, below or above the figure, and it stays
  * inside the viewport, but it never covers its own dial, its labels or its title.
  */

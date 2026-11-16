@@ -33,7 +33,7 @@ export type DataTableCurrencyProps = CellClassName &
   NumberFormatOptions & {
     /** The amount to format for the active locale. */
     value: number;
-    /** The ISO 4217 currency code, such as `"NOK"`. Required: there is no sensible default. */
+    /** The ISO 4217 currency code, such as `"NOK"`. It is required, since no default fits every amount. */
     currency: string;
   };
 
@@ -86,8 +86,7 @@ export function DataTableCurrency({
 }
 
 /**
- * A date, formatted for the active locale. `dateStyle` defaults to `"medium"`, and `timeZone` to
- * the `LocaleProvider` zone.
+ * A date, formatted for the active locale. `timeZone` defaults to the `LocaleProvider` zone.
  */
 export function DataTableDate({
   value,
@@ -104,8 +103,8 @@ export function DataTableDate({
 }
 
 /**
- * A date and time, formatted for the active locale. `dateStyle` defaults to `"medium"`,
- * `timeStyle` to `"short"` and `timeZone` to the `LocaleProvider` zone.
+ * A date and time, formatted for the active locale. `timeZone` defaults to the `LocaleProvider`
+ * zone.
  */
 export function DataTableDateTime({
   value,

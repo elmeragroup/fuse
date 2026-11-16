@@ -167,11 +167,11 @@ function periodSlots(period: readonly [number, number], interval: Interval, time
 }
 
 /**
- * Place time-axis rows on their slots.
+ * Places time-axis rows on their slots.
  *
- * - A cell that is not a valid instant is `invalid-x`, and the row is dropped.
+ * - A cell that is not a valid instant is `invalid-x`, and the axis drops the row.
  * - An instant that is not a slot start is `off-grid-x`, and the row moves to the slot that holds it.
- * - A row outside `period` is `row-outside-period`, and the row is dropped.
+ * - A row outside `period` is `row-outside-period`, and the axis drops the row.
  * - A second row on a slot is `duplicate-x`, and the first row in data order wins.
  *
  * @param xs - Each row's x cell, in data order.
@@ -182,7 +182,7 @@ export function placeTimeRows(xs: readonly ChartScalar[], options: TimeAxisOptio
   return placeInstants(xs.map(instantOf), options);
 }
 
-/** Place time-axis rows by each row's instant, as `placeTimeRows` reads them. */
+/** Places time-axis rows by each row's instant, as `placeTimeRows` reads them. */
 function placeInstants(cells: readonly number[], options: TimeAxisOptions): PlacedRows {
   const { interval, timeZone, period } = options;
   const issues: RowIssue[] = [];
@@ -259,7 +259,7 @@ function mapRows(
 }
 
 /**
- * Place category rows in data order. A cell that is not a string is `invalid-x`, and a repeated
+ * Places category rows in data order. A cell that is not a string is `invalid-x`, and a repeated
  * category is `duplicate-x`, where the first row wins.
  *
  * @param xs - Each row's x cell, in data order.
@@ -321,7 +321,7 @@ function sameCells(a: PlacedCells, b: PlacedCells): boolean {
 }
 
 /**
- * Place rows without memory, as `placeTimeRows` and `placeCategoryRows` do.
+ * Places rows without memory, as `placeTimeRows` and `placeCategoryRows` do.
  *
  * @param xs - Each row's x cell, in data order.
  * @param time - A time axis's interval, zone and period, or undefined for a category axis.
@@ -335,7 +335,7 @@ export function placeRows(xs: readonly ChartScalar[], time: TimeAxisOptions | un
  * A row placer that hands back its last placement while the rows' x cells and the axis read the
  * same. A placement reads only the instant or the category of each row's x and the axis's
  * interval, zone and period, so a data update that keeps every x keeps the domain object, and the
- * work that reads only the domain, such as the x ticks and the slot keys, is not done again.
+ * work that reads only the domain, such as the x ticks and the slot keys, does not run again.
  *
  * @returns A placer with its own memory of one placement.
  */

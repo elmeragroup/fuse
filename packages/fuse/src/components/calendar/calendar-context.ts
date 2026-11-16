@@ -21,14 +21,14 @@ export type CalendarSharedState = {
    * show before its first effect reads the clock.
    */
   readonly visible: VisibleMonths | null;
-  /** The day the grid's single tab stop is on, always inside `visible`. `null` with `visible`. */
+  /** The day the grid's single tab stop is on, always inside `visible`. It is `null` while `visible` is. */
   readonly focused: Temporal.PlainDate | null;
   /** Today in the Root's time zone, or `null` before the first effect, as on the server. */
   readonly today: Temporal.PlainDate | null;
   /**
-   * Whether DOM focus follows `focused`: set by a keyboard move, so the focused day's button takes
-   * focus once it renders, also after its month remounts; cleared by a month button press and by
-   * focus leaving the calendar.
+   * Whether DOM focus follows `focused`. A keyboard move sets it, so the focused day's button takes
+   * focus once it renders, also after its month remounts. A month button press and focus leaving
+   * the calendar clear it.
    */
   readonly focusRequest: boolean;
   /** Whether keyboard focus is on a day, which quiets the visible-range live region. */
@@ -43,7 +43,7 @@ export type CalendarSharedState = {
 
 /**
  * Every day flag, in the order `dayFlags` writes them. The `CalendarDayFlag` union is read from
- * this list, so the order holds every flag by construction.
+ * this list, so the list includes every flag by construction.
  */
 const DAY_FLAGS = [
   "selected",
@@ -61,8 +61,8 @@ const DAY_FLAGS = [
  *
  * - `selected`: the day is part of the value; the gridcell is `aria-selected`.
  * - `selection-start` / `selection-end`: the first or last day of a range value or preview.
- * - `in-range`: a day between a range's ends, them included.
- * - `highlighted`: a day inside a range that is being chosen, as the pointer or focus previews it.
+ * - `in-range`: a day between a range's ends, including the ends.
+ * - `highlighted`: a day inside a range the user is choosing, as the pointer or focus previews it.
  * - `invalid`: the selection fails validation on this day; the button is `aria-invalid`.
  *
  * Calendar reports only `selected` and `invalid`; RangeCalendar reports the rest.
@@ -81,7 +81,7 @@ export type CalendarDayFlags = string & { readonly [dayFlagsBrand]: true };
 /**
  * A day's flags in their fixed order, as one primitive.
  *
- * @param flags - The flags that hold, in any order, repeats allowed.
+ * @param flags - The flags that hold, in any order, with repeats allowed.
  * @returns The flags.
  */
 export function dayFlags(flags: Iterable<CalendarDayFlag>): CalendarDayFlags {
@@ -101,9 +101,9 @@ export type CalendarDayFlagState = {
   readonly selectionStart: boolean;
   /** Whether the day is the last of a range value or preview. */
   readonly selectionEnd: boolean;
-  /** Whether the day lies between a range's ends, them included. */
+  /** Whether the day lies between a range's ends, including the ends. */
   readonly inRange: boolean;
-  /** Whether the day lies inside a range that is being chosen. */
+  /** Whether the day lies inside a range the user is choosing. */
   readonly highlighted: boolean;
   /** Whether the selection fails validation on this day. */
   readonly invalid: boolean;
@@ -121,8 +121,8 @@ const DAY_FLAG_FIELDS = {
 
 /**
  * A day's flags as the booleans of its render state: `selected`, `selectionStart`,
- * `selectionEnd`, `inRange`, `highlighted` and `invalid`. The one decoder of `CalendarDayFlags`;
- * the gridcell calls it once per day and shares the result with its button.
+ * `selectionEnd`, `inRange`, `highlighted` and `invalid`. It is the only decoder of
+ * `CalendarDayFlags`, and the gridcell calls it once per day and shares the result with its button.
  *
  * @param flags - The day's flags.
  * @returns One boolean for each flag.
@@ -163,28 +163,28 @@ export const DAY_FLAG_STATE_ATTRIBUTES: Readonly<Record<keyof CalendarDayFlagSta
  *   with its button. `createSelectionOwner` subscribes it per day on the owner's own store, so a
  *   change re-renders only the days whose flags change, and the server and hydration read the
  *   store's initial state.
- * - `select` takes a press or Enter/Space on a day the user may select: inside the bounds, in its
+ * - `select` takes a press or Enter or Space on a day the user may select: inside the bounds, in its
  *   own month, not refused by `isDateUnavailable`, in a calendar neither disabled nor read-only.
  * - `hover` takes the pointer entering a day that is not disabled, for a preview that follows
  *   the pointer.
  *
- * A disabled day (out of bounds, in a neighbouring month, a disabled calendar) never reaches
- * `select` or `hover`, and the parts drop its flags.
+ * A disabled day, one out of bounds, in a neighboring month or in a disabled calendar, never
+ * reaches `select` or `hover`, and the parts drop its flags.
  */
 export type CalendarSelectionOwner = {
   /** The flags of one day, as a hook. Call it unconditionally, once per render. */
   readonly useDayFlags: (date: Temporal.PlainDate, iso: string) => CalendarDayFlags;
-  /** Select a day the user pressed or chose with Enter or Space. */
+  /** Selects a day the user pressed or chose with Enter or Space. */
   readonly select: (
     date: Temporal.PlainDate,
     reason: CalendarValueChangeReason,
     event: Event,
     trigger: Element
   ) => void;
-  /** The pointer entered a day that is not disabled. */
+  /** Called when the pointer enters a day that is not disabled. */
   readonly hover: (date: Temporal.PlainDate, event: PointerEvent) => void;
   /**
-   * Words a day's name starts with, or `""`, as a hook each day button calls once per render like
+   * The words a day's name starts with, or `""`, as a hook each day button calls once per render like
    * `useDayFlags`. RangeCalendar names its range's ends with the whole range ("Selected Range:
    * …"); Calendar's is always `""`.
    */
@@ -192,7 +192,7 @@ export type CalendarSelectionOwner = {
   /**
    * The id of the text that says what selecting the tab-stop day does, which that day's button
    * points `aria-describedby` at while it is selectable. RangeCalendar's says whether a press
-   * starts or finishes a range; Calendar has none, `undefined`.
+   * starts or finishes a range. Calendar has none, so its id is `undefined`.
    */
   readonly dayDescriptionId: string | undefined;
   /**
@@ -210,11 +210,12 @@ export type CalendarSelectionOwner = {
  */
 export type CalendarSelectionModel<S> = Omit<CalendarSelectionOwner, "useDayFlags" | "useDayNamePrefix"> & {
   /**
-   * The flags of one day in a state. Pure, and cheap: it runs for every day on each store change.
+   * The flags of one day in a state. It is pure and cheap, because it runs for every day on each
+   * store change.
    * It gets the day both as this runtime's PlainDate and as its ISO text, so it never parses one.
    */
   readonly dayFlags: (state: S, date: Temporal.PlainDate, iso: string) => CalendarDayFlags;
-  /** The words one day's name starts with in a state, or `""`; pure and cheap like `dayFlags`. */
+  /** The words one day's name starts with in a state, or `""`. It is pure and cheap, like `dayFlags`. */
   readonly dayNamePrefix: (state: S, date: Temporal.PlainDate, iso: string) => string;
 };
 
@@ -260,7 +261,7 @@ export type CalendarSettings = {
   readonly readOnly: boolean;
   /** The weekday each grid row starts on. */
   readonly firstDay: IsoWeekday;
-  /** How many months show. */
+  /** The number of months the calendar shows. */
   readonly visibleMonths: number;
   /** How the month buttons and keyboard page a multi-month view. */
   readonly pageBehavior: CalendarPageBehavior;
@@ -270,19 +271,20 @@ export type CalendarSettings = {
   readonly ariaLabelledBy: string | undefined;
 };
 
-/** The navigation the shared parts ask a Root to do. Stable for the Root's lifetime. */
+/** The navigation the shared parts ask a Root to do. It stays stable for the Root's lifetime. */
 export type CalendarActions = {
-  /** Keyboard focus landed on a day's button. */
+  /** Called when keyboard focus lands on a day's button. */
   readonly focusDay: (date: Temporal.PlainDate) => void;
   /**
-   * Focus left the day `left` for `next`, the blur's related target. Leaving the calendar's days
-   * for anything else, a month button included, clears `gridFocused` and drops any pending focus
-   * request. With no related target, the decision waits a frame for a remounted day to take focus.
+   * Called when focus leaves the day `left` for `next`, the blur's related target. Leaving the
+   * calendar's days for anything else, including a month button, clears `gridFocused` and drops any
+   * pending focus request. With no related target, the decision waits a frame for a remounted day
+   * to take focus.
    */
   readonly blurTo: (left: Element, next: Element | null) => void;
-  /** Move focus by a key. */
+  /** Moves focus by a key. */
   readonly move: (move: FocusMove, event: Event, trigger: Element) => void;
-  /** Page the view with a month button. */
+  /** Pages the view with a month button. */
   readonly page: (step: 1 | -1, event: Event, trigger: Element) => void;
 };
 
@@ -302,7 +304,7 @@ export type CalendarRootContextValue = {
 export type CalendarMonthContextValue = {
   /** The month the grid shows. */
   readonly month: Temporal.PlainYearMonth;
-  /** The id of the `MonthHeading`'s name, which the grid points at. The `Month` owns it. */
+  /** The id of the `Calendar.MonthHeading`'s name, which the grid points at. `Calendar.Month` creates it. */
   readonly headingId: string;
 };
 
@@ -312,11 +314,14 @@ export type CalendarDayContextValue = {
   readonly date: Temporal.PlainDate;
   /** The day as ISO text, the key every per-day answer reads. */
   readonly iso: string;
-  /** Whether the day belongs to a neighbouring month, which the grid shows but never activates. */
+  /** Whether the day belongs to a neighboring month, which the grid shows but never activates. */
   readonly outsideMonth: boolean;
-  /** Whether the day cannot take focus: out of bounds, in a neighbouring month, or the calendar is disabled. */
+  /**
+   * Whether the day cannot take focus: out of bounds, in a neighboring month, or the calendar is
+   * disabled.
+   */
   readonly disabled: boolean;
-  /** Whether `isDateUnavailable` refuses the day: focusable, never selectable. */
+  /** Whether `isDateUnavailable` refuses the day, which the user may focus but never select. */
   readonly unavailable: boolean;
   /** The selection owner's flags for the day, decoded once by the cell; none hold on a disabled day. */
   readonly flags: CalendarDayFlagState;

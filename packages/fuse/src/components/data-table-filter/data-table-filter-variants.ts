@@ -14,7 +14,7 @@ export const dataTableFilterVariants = tv({
     bar: "@container/dtf-bar min-w-0 flex-1",
     /** surface. One line that never wraps, so the bar keeps its height whatever the filter count. */
     barRow: "flex min-w-0 items-start gap-(--surface-gap-sm)",
-    /** control. A square icon button at every width, or a consumer's labelled one. */
+    /** control. A square icon button at every width, or a consumer's labeled one. */
     trigger: "shrink-0",
     /** control. A label at full width, a square icon button after the strip in a narrow bar. */
     clear: "shrink-0 @max-[36rem]/dtf-bar:aspect-square @max-[36rem]/dtf-bar:px-0",
@@ -28,10 +28,10 @@ export const dataTableFilterVariants = tv({
      * fade only while chips hide past them. Both scroll paddings, 2rem, are wider than the 1.5rem
      * fade, so a segment scrolled into view never lands under it. The 2px padding gives the focus
      * ring room inside the scroll box, and the matching negative margin keeps the chips where they
-     * would sit without it. Where the end fade is static, the end padding widens to the fade.
-     * Under a coarse pointer the block padding grows to half the gap between a chip and 44px,
-     * because the scroll box clips on both axes and would cut each segment's 44px reach. No
-     * snapping, which would pull a focused segment back under a fade.
+     * would sit without it. Where the end fade is static, the end padding widens to the fade. Under
+     * a coarse pointer the block padding grows to half the gap between a chip and 44px, because the
+     * scroll box clips on both axes and would cut each segment's 44px reach. It does not snap,
+     * since snapping would pull a focused segment back under a fade.
      */
     chips:
       "-m-0.5 no-scrollbar flex scroll-fade-inline scroll-px-8 gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
@@ -44,13 +44,13 @@ export const dataTableFilterVariants = tv({
     /**
      * control. A chip's button: square inside, the last one rounding its end with the chip's
      * corner less the 1px border, a hairline before each, and raised while focused so its ring
-     * paints over the neighbour. It replaces Button's corner, so it zeroes Button's branded label
+     * paints over the neighbor. It replaces Button's corner, so it zeroes Button's branded label
      * floor and keeps the control inset. Under a coarse pointer each reaches 44px tall through
-     * `hit-area-*`, vertically only, so neighbouring hit areas never overlap.
+     * `hit-area-*`, vertically only, so neighboring hit areas never overlap.
      */
     segment:
       "h-full rounded-none border-0 border-s border-s-border [--button-px-floor:0px] last:rounded-e-[calc(var(--radius-md)-1px)] focus-visible:relative focus-visible:z-10 pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))] pointer-coarse:[--hit-area-l:0px] pointer-coarse:[--hit-area-r:0px]",
-    /** control. Static text, the field's icon and name. Not focusable. */
+    /** control. Static text, the field's icon and name. It is not focusable. */
     subject:
       "font-medium flex items-center gap-(--control-gap-sm) px-(--control-px-sm) whitespace-nowrap select-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
     /** control. The operator reads quieter than the subject and the value. */
@@ -64,7 +64,7 @@ export const dataTableFilterVariants = tv({
     /**
      * The search group above an option list. The group is a field box that publishes its own
      * inner corner, so the wrapper captures the popup's inner corner and hands it to the group as
-     * its `--field-corner`, which keeps the group's addons concentric too. 44px tall under a
+     * its `--field-corner`, which keeps the group's addons concentric too. It is 44px tall under a
      * coarse pointer.
      */
     search:
@@ -77,11 +77,11 @@ export const dataTableFilterVariants = tv({
      * `transition-[height,width]`.
      */
     menu: "ease-out box-border flex max-h-[min(24rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-hidden transition-[height,width] duration-100 data-[step=editor]:max-h-[min(32rem,var(--available-height))] data-[step=editor]:w-max",
-    /** layout. A menu list: it scrolls inside the popup, never the page. */
+    /** layout. A menu list, which scrolls inside the popup, never the page. */
     list: "-mx-(--surface-pad-sm) mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--surface-pad-sm) [&_[role=group][hidden]]:hidden",
     /**
      * row. A menu row lights on `data-highlighted`, not on focus, since a filtering menu keeps real
-     * focus in its search and moves a virtual highlight. 44px tall under a coarse pointer.
+     * focus in its search and moves a virtual highlight. It is 44px tall under a coarse pointer.
      */
     row: "data-highlighted:bg-accent data-highlighted:text-accent-foreground pointer-coarse:min-h-11",
     /** row. A field row stays lit while its value submenu is open. */
@@ -97,8 +97,8 @@ export const dataTableFilterVariants = tv({
     /** The empty state of a menu list. */
     empty: "text-sm px-(--row-px) py-2 text-muted-foreground",
     /**
-     * surface. The status under a menu list that shows only its first matches. A status, so a
-     * screen reader hears it appear, and outside the list, so it is never an item.
+     * surface. The status under a menu list that shows only its first matches. It is a status, so a
+     * screen reader hears it appear, and it sits outside the list, so it is never an item.
      */
     narrowHint:
       "text-xs -mx-(--surface-pad-sm) mt-1 shrink-0 border-t border-border px-[calc(var(--row-px)+var(--surface-pad-sm))] pt-1.5 pb-0.5 text-muted-foreground empty:hidden",
@@ -119,7 +119,7 @@ export const dataTableFilterVariants = tv({
      * surface. The value popover, one popup for every chip's editor, as wide as the editor.
      *
      * It stays in flow on every side. With a Viewport inside, Base UI writes `position: absolute;
-     * bottom: 0` on a top-side popup while it measures (`usePopupAutoResize.ts`). The positioner
+     * bottom: 0` on a top-side popup while it measures, in `usePopupAutoResize.ts`. The positioner
      * then collapses, Floating UI finds room below and flips the popup. The `!` beats that inline
      * style.
      *
@@ -128,8 +128,8 @@ export const dataTableFilterVariants = tv({
      * writes the new size a frame after the move, so under reduced motion the size follows the
      * content and the move lands in one frame. It caps at 32rem or the room the viewport leaves,
      * and the Viewport and the editor shrink with it, so a tall editor's body scrolls under its
-     * header. No padding, so it publishes its rows' real 4px inset instead of the popover shell's
-     * padded corner.
+     * header. It has no padding, so it publishes its rows' real 4px inset instead of the popover
+     * shell's padded corner.
      */
     content:
       "ease-out relative! bottom-auto! flex h-[var(--popup-height,auto)] max-h-[min(32rem,var(--available-height))] w-[var(--popup-width,max-content)] max-w-(--available-width) flex-col overflow-clip p-0 transition-[height,width] [--shell-inner:max(0px,--theme(--radius-md)-0.25rem)] motion-reduce:h-auto motion-reduce:w-max",
@@ -184,11 +184,11 @@ export const dataTableFilterVariants = tv({
     presets: "flex flex-wrap gap-(--surface-pad-sm)",
     /**
      * layout. A date editor with its presets beside the slot, as the date pickers set their preset
-     * pane beside the calendar. No padding, so the divider runs from the header to the popup's
-     * edge. The presets and the slot carry their own insets.
+     * pane beside the calendar. It has no padding, so the divider runs from the header to the
+     * popup's edge. The presets and the slot carry their own insets.
      */
     dateBeside: "flex",
-    /** The presets beside the slot: a column of ghost toggles behind the divider. */
+    /** The presets beside the slot, a column of ghost toggles behind the divider. */
     presetsBeside: "shrink-0 gap-(--surface-pad-sm) rounded-none border-e border-border p-(--surface-pad-sm)",
     /**
      * control. A preset in the column, the date pickers' preset face: start-aligned, rounding with
@@ -219,16 +219,16 @@ export const dataTableFilterVariants = tv({
     /** The option editor's empty state. */
     editorEmpty: "flex empty:hidden",
     /**
-     * surface. The status under a list that shows only its first matches. A status, so a screen
-     * reader hears it appear, and outside the list, so it is never an option.
+     * surface. The status under a list that shows only its first matches. It is a status, so a
+     * screen reader hears it appear, and it sits outside the list, so it is never an option.
      */
     editorNarrowHint:
       "text-xs shrink-0 border-t border-border px-(--surface-pad-md) pt-1.5 pb-2 text-muted-foreground empty:hidden",
     /**
-     * surface. The values footer under a value list: its actions in one row behind a hairline that
-     * matches the menu separator, outside the scrolling list, so it stays in view at the popup's
-     * height cap. In a value submenu it reaches across the menu shell's padding and sits on the
-     * shell's bottom padding. In the value popover, which has no padding, it pads itself.
+     * surface. The values footer under a value list. Its actions sit in one row behind a hairline
+     * that matches the menu separator, outside the scrolling list, so it stays in view at the
+     * popup's height cap. In a value submenu it reaches across the menu shell's padding and sits on
+     * the shell's bottom padding. In the value popover, which has no padding, it pads itself.
      */
     valuesFooter:
       "-mx-(--surface-pad-sm) mt-1 flex shrink-0 items-center gap-(--surface-gap-sm) border-t border-border px-(--surface-pad-sm) pt-(--surface-pad-sm) in-data-[slot=data-table-filter-option-editor]:mx-0 in-data-[slot=data-table-filter-option-editor]:pb-(--surface-pad-sm)",

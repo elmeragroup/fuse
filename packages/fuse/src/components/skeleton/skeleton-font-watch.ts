@@ -1,14 +1,15 @@
 /**
- * Package-private. Tells a skeleton when the fonts its ghost may use change, which a font-set event
- * does not always tell: no engine fires one when a face that already loaded is added to the
+ * Tells a skeleton when the fonts its ghost may use change, which a font-set event does not always
+ * tell. It is package-private. No engine fires one when a face that already loaded is added to the
  * document, `new FontFace(…).load()` then `document.fonts.add(face)` as MDN shows it, and WebKit
  * can leave `loadingdone` out for a face that loads in the set. The set itself does tell. One frame
  * loop per document compares its faces, each by identity and status, with the frame before, only
- * while a skeleton watches it, and calls each watcher on a change. Counting faces would not do: a
- * host swapping its brand face for another loaded one in one task keeps the count and the status.
+ * while a skeleton watches it, and calls each watcher on a change. Counting faces would not work,
+ * since a host swapping its brand face for another loaded one in one task keeps the count and the
+ * status.
  *
- * Cost: the set holds the page's `@font-face` rules and the faces scripts added, a few dozen at
- * most, so a frame reads that many references and strings, stopping at the first difference, and
+ * The set holds the page's `@font-face` rules and the faces scripts added, a few dozen at most, so
+ * a frame reads that many references and strings, stopping at the first difference, and
  * allocates nothing unless the set changed. That is negligible beside a frame's layout and paint.
  */
 import { windowOf } from "../../internal/dom-node";
@@ -52,7 +53,7 @@ function changedSince(fonts: FontFaceSet, seen: FontSetSnapshot): boolean {
  *
  * @param node - A node in the document to watch, which may be a same-origin frame's.
  * @param onChange - Called once per change.
- * @returns Stops the watch; the frame loop stops with the document's last watcher.
+ * @returns A function that stops the watch. The frame loop stops with the document's last watcher.
  */
 export function watchFontSet(node: Node, onChange: () => void): () => void {
   const view = windowOf(node);

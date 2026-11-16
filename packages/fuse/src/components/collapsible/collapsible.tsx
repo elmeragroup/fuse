@@ -12,7 +12,7 @@ type CollapsiblePanelProps = ComponentProps<typeof CollapsiblePrimitive.Panel>;
 
 /**
  * One section that opens and closes, built on Base UI's collapsible. It adds no styles except the
- * shared height transition on `Content` (`styles/panel-height.ts`). Accordion is the styled
+ * shared height transition on `Content`, from `styles/panel-height.ts`. Accordion is the styled
  * version.
  */
 export function CollapsibleRoot(props: ComponentProps<typeof CollapsiblePrimitive.Root>): ReactElement {

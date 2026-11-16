@@ -23,12 +23,12 @@ import { pathNumber } from "./layout/rounding";
  * @beta
  */
 export type GaugeChartDotsProps = ChartLayerProps & {
-  /** The dots' colour role. */
+  /** The dots' color role. */
   color?: ChartGaugeRole;
   /** How many rings of dots, 1 to 6, the outermost just inside the track. */
   rings?: number;
   /**
-   * The rings' look. "even" draws every ring alike, and "fade" each ring fainter toward the centre.
+   * The rings' look. `even` draws every ring alike, and `fade` each ring fainter toward the center.
    */
   variant?: "even" | "fade";
 };
@@ -53,7 +53,7 @@ function dotsDrawing(layer: SVGGElement, { rings }: DotsLayout): GaugeDrawing {
 /**
  * Concentric rings of dots inside the track, each as far from the next as the rings are apart.
  * A dot lights once the reading reaches it, every ring along the same sweep, and the rest stay
- * faint. `variant="fade"` dims each ring further toward the centre. It sweeps with the fill in
+ * faint. `variant="fade"` dims each ring further toward the center. It sweeps with the fill in
  * every frame, so a gauge may draw it alone, without a Track or a Fill.
  *
  * @beta

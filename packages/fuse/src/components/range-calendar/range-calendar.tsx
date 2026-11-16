@@ -72,14 +72,14 @@ type RootElementProps = Omit<
 
 type RootClassName = useRender.ComponentProps<"div", RangeCalendarRootState>["className"];
 
-/** `RangeCalendar.Root` takes a `div`'s props, Base UI's `render` and the calendar's own. */
+/** Props for `RangeCalendar.Root`: a `div`'s props, Base UI's `render` and the calendar's own. */
 export type RangeCalendarRootProps = RootElementProps &
   CalendarViewProps & {
     /**
      * The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any
      * implementation. A range given in reverse shows the earlier day first. A server component
      * cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a
-     * `TypeError`: build the value in a client component. `null` selects nothing.
+     * `TypeError`. Build the value in a client component. `null` selects nothing.
      *
      * The range's first and last day buttons start their names with the whole range, such as
      * "Selected Range: Monday, October 12 to Friday, October 16, 2026", and every selected day's
@@ -136,12 +136,12 @@ export type RangeCalendarRootProps = RootElementProps &
      * The parts, Calendar's under the same names: a `RangeCalendar.Header` with
      * `RangeCalendar.DecrementMonth`, `RangeCalendar.VisibleRangeHeading` and
      * `RangeCalendar.IncrementMonth`, then `RangeCalendar.Months`. The Root's first element child
-     * is a hidden prompt, so your first part is not its `:first-child`.
+     * is a hidden prompt, so the first part in `children` is not its `:first-child`.
      */
     children?: RootElementProps["children"];
     /**
-     * Days the user may focus but not select, given the anchored day while a range is being chosen
-     * (`null` otherwise), so the available days can depend on the first day picked. Once a range is
+     * Days the user may focus but not select, given the anchored day while a range is being chosen,
+     * or `null` otherwise, so the available days can depend on the first day picked. Once a range is
      * anchored it can reach only the run of available days around the anchor, looked for up to
      * `visibleMonths` months each way: the days past the nearest unavailable day are disabled until
      * the range completes. An unavailable day further from the anchor is not looked for, as in React
@@ -156,7 +156,7 @@ type PresentEnds = { readonly start: TemporalValue; readonly end: TemporalValue 
 
 /**
  * A range prop's ends, the same object, once both are present. Only an absent range selects
- * nothing: a range missing an end reaches the prop past its types, from plain JavaScript, so it
+ * nothing. A range missing an end reaches the prop past its types, from plain JavaScript, so it
  * throws on every render rather than clearing the selection.
  *
  * @param ends - The ends `useRangeProp` read.
@@ -189,8 +189,8 @@ function sameRange(a: DayRange | null, b: DayRange | null): boolean {
 
 /**
  * A calendar that selects a range of days, on the same parts as Calendar. It is a `group`. A host
- * without native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once. Today is marked from
- * the first client effect on; a server render marks no today. The Root's first element child is
+ * without native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once. The calendar marks today
+ * from the first client effect on; a server render marks no today. The Root's first element child is
  * a hidden prompt the days' `aria-describedby` points at.
  *
  * @throws TypeError naming the prop and the fix when a range end, `minValue` or `maxValue` is a

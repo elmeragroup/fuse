@@ -7,12 +7,13 @@ function getServerSnapshot(): boolean {
 }
 
 /**
- * Package-private media-query probe, the one owner of `matchMedia` outside `theme/`.
- * Snapshot is `mql.matches`, so a non-hydrating client first render already reports the
- * real value. Server snapshot is `false`, so SSR and hydration report a non-match until
- * the client reads the query; write `query` so that `false` is the safe default.
+ * Whether a media query matches. The hook is a package-private probe, and the one owner of
+ * `matchMedia` outside `theme/`. Its snapshot is `mql.matches`, so a non-hydrating client first
+ * render already reports the real value. Its server snapshot is `false`, so server rendering and
+ * hydration report a non-match until the client reads the query. Write `query` so that `false` is
+ * the safe default.
  *
- * @param query - A media query; keep it a module constant so the subscription is stable.
+ * @param query - A media query. Keep it a module constant so the subscription is stable.
  * @returns Whether the query matches now.
  */
 export function useMediaQuery(query: string): boolean {

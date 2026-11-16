@@ -16,7 +16,7 @@ export const sidebarSurfaceShellClass = cn(
 /**
  * A Sidebar header, footer or group: the row inset, `--row-px`, so their content edges line up
  * with each other and with the rows inside. In the icon rail it keeps 8px at both densities,
- * which centres the 32px icon buttons in the 48px rail. It publishes only inside the floating
+ * which centers the 32px icon buttons in the 48px rail. It publishes only inside the floating
  * Sidebar's rounded surface, where it pads with the small surface tier, `--surface-pad-sm`.
  */
 export const sidebarSectionShellClass = cn(

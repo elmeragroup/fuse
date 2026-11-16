@@ -12,10 +12,11 @@ import type { AutocompleteRootProps } from "../autocomplete/autocomplete";
 import { FieldFrame } from "../field/field-frame";
 
 /**
- * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as
- * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`), the ones it
- * redeclares with its own docs and the Root's types (`value`, `onValueChange`, `filter`,
- * `itemToStringValue`), or leaves to the compound: `inline`, since it always renders the popup.
+ * The Root props the field takes over. It names `items`, `filteredItems`, `name` and `children`
+ * itself, and names `disabled` as `isDisabled`, `required` as `isRequired` and `readOnly` as
+ * `isReadOnly`. It redeclares `value`, `onValueChange`, `filter` and `itemToStringValue` with its
+ * own docs and the Root's types. It leaves `inline` to the compound, since it always renders the
+ * popup.
  */
 type AutocompleteFieldOwnedRootProps =
   | "items"
@@ -32,8 +33,9 @@ type AutocompleteFieldOwnedRootProps =
   | "itemToStringValue";
 
 /**
- * `AutocompleteField` takes the field's props, the input's `placeholder`, `showTrigger`,
- * `showClear` and `ref`, and `Autocomplete.Root`'s other props, which it forwards to the Root.
+ * Props for `AutocompleteField`. It takes the field's props, the input's `placeholder`,
+ * `showTrigger`, `showClear` and `ref`, and `Autocomplete.Root`'s other props, which it forwards to
+ * the Root.
  *
  * @template Items - The `items` array, flat or of groups.
  * @template Filtered - The `filteredItems` array, flat or of groups.
@@ -54,19 +56,19 @@ export type AutocompleteFieldProps<
   description?: string;
   /**
    * The error message, rendered as `Field.Error` under the input, ahead of the description,
-   * while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it,
-   * the field shows its own error, such as one `Form` holds under its `name` or the required
-   * message.
+   * while it is truthy. Pass `isInvalid` with it, so the field marks the input invalid too.
+   * Without it, the field shows its own error, such as one `Form` holds under its `name` or the
+   * required message.
    */
   errorMessage?: ReactNode;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field shows as invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Makes the input required, so an empty submit is blocked with the required message. */
+  /** Whether the input is required, so the field blocks an empty submit with the required message. */
   isRequired?: boolean;
-  /** Disables the field, the input and its buttons. */
+  /** Whether the field, the input and its buttons are disabled. */
   isDisabled?: boolean;
   /**
-   * Makes the input read-only, with the muted read-only fill. The input stays focusable and its
+   * Whether the input is read-only, with the muted read-only fill. The input stays focusable and its
    * popup still opens to show the suggestions, but picking one, typing and the clear button change
    * nothing. The text still submits under `name`.
    */
@@ -91,8 +93,8 @@ export type AutocompleteFieldProps<
   /**
    * The function that matches items against the text. For a search that runs elsewhere, such as
    * a register lookup on a server, pass `filter={null}` and the results as `items`, and the list
-   * shows them as given. Keep the request and its state in your component, pass the empty list's
-   * states as `Autocomplete.Empty`'s children and the rest as `status`.
+   * shows them as given. Keep the request and its state in the app's component. Pass the empty
+   * list's states as `Autocomplete.Empty`'s children and the rest as `status`.
    */
   filter?: AutocompleteRootProps<ItemValue>["filter"];
   /**
@@ -103,14 +105,14 @@ export type AutocompleteFieldProps<
   /** The text the empty input shows. */
   placeholder?: string;
   /**
-   * Renders the caret button, which opens the whole list for browsing. The list opens as the user
-   * types, so the field has no caret unless you pass this. The caret hides while the clear button
-   * shows. Its name is the locale dictionary's `toggle` string.
+   * Whether the field renders the caret button, which opens the whole list for browsing. The list
+   * opens as the user types, so the field has no caret unless this is set. The caret hides while
+   * the clear button shows. Its name is the locale dictionary's `toggle` string.
    */
   showTrigger?: boolean;
   /**
-   * Renders a button that empties the input while it holds text. Its name is the locale
-   * dictionary's `clear` string.
+   * Whether the field renders a button that empties the input while it holds text. Its name is the
+   * locale dictionary's `clear` string.
    */
   showClear?: boolean;
   /**
@@ -162,13 +164,13 @@ export type AutocompleteFieldProps<
  * points at; a `ref` goes to the input. Use the `Autocomplete` namespace for a custom layout,
  * such as a label row with an info button or a horizontal field.
  *
- * Server-renderable: it owns no state, and its parts are client modules.
+ * It is server-renderable. It keeps no state, and its parts are client modules.
  *
  * @template Items - The `items` array, flat or of groups.
  * @template Filtered - The `filteredItems` array, flat or of groups.
  * @template ItemValue - One item of `items`, which `itemToStringValue` receives. `items` decides
- * it; without `items`, `filteredItems` does; when neither is given, an annotated callback such as
- * `itemToStringValue` sets it.
+ * it. Without `items`, `filteredItems` decides it, and when neither is given, an annotated callback
+ * such as `itemToStringValue` sets it.
  */
 export function AutocompleteField<
   Items extends readonly unknown[] = readonly never[],

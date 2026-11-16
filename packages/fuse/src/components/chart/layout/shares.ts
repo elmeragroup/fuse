@@ -4,7 +4,7 @@
  */
 
 /**
- * Round a set of shares by the largest-remainder method.
+ * Rounds a set of shares by the largest-remainder method.
  *
  * Each share is a part's magnitude over the sum of every part's magnitude. The method floors every
  * share to `digits` fraction digits, then gives one unit of the last digit to the shares with the

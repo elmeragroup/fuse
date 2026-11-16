@@ -20,7 +20,7 @@ import { liveValueText } from "./live-line-chart-text";
  */
 export type LiveLineChartLineProps = ChartLayerProps & {
   /**
-   * The curve through the readings. "monotone" never overshoots a reading. Every curve it takes
+   * The curve through the readings. `"monotone"` never overshoots a reading. Every curve it takes
    * stays between the readings around each segment, so the line stays in the plot.
    */
   curve?: LiveLineChartCurve;
@@ -35,8 +35,8 @@ export type LiveLineChartAreaProps = ChartLayerProps & {
   /** The curve through the readings. Pass the Line's curve, so the fill's edge meets the line. */
   curve?: LiveLineChartCurve;
   /**
-   * The fill. "gradient" fades from the line's paint to nothing at the plot's bottom edge, and
-   * "solid" fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over
+   * The fill. `"gradient"` fades from the line's paint to nothing at the plot's bottom edge, and
+   * `"solid"` fills at `--chart-area-opacity`. Mount the Area before the Line, so the line paints over
    * the fill.
    */
   variant?: "gradient" | "solid";
@@ -49,8 +49,8 @@ export type LiveLineChartAreaProps = ChartLayerProps & {
  */
 export type LiveLineChartLiveDotProps = ChartLayerProps & {
   /**
-   * The dot's look. "ping" sends a ring out from the dot once a cycle, which stops while Root is
-   * `paused` and under reduced motion. "default" draws the dot alone.
+   * The dot's look. `"ping"` sends a ring out from the dot once a cycle, which stops while Root is
+   * `paused` and under reduced motion. `"default"` draws the dot alone.
    */
   variant?: "ping" | "default";
 };
@@ -73,7 +73,7 @@ type LivePathPart = {
 };
 
 /**
- * Mark a layer `data-intro="fade"` while it draws something, so its first drawing after none fades
+ * Marks a layer `data-intro="fade"` while it draws something, so its first drawing after none fades
  * in on the update tokens rather than replacing the loader in one frame. Reduced motion draws it at
  * once.
  */

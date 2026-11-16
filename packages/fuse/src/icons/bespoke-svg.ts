@@ -9,15 +9,19 @@ export type LogoProps = BespokeSvgProps & {
 };
 
 /**
- * Accessible name is only a nonempty `title` prop (role=img + a prop-driven
- * `<title>`). Omitted or empty title renders decorative (`aria-hidden`).
+ * The naming props of a bespoke SVG: `role="img"` for a nonempty `title`, which the asset renders
+ * as a prop-driven `<title>`, or `aria-hidden` and `focusable="false"` for an omitted or empty
+ * `title`, which makes the asset decorative. A nonempty `title` prop is the only accessible name.
  * Never ship a static `<title>`.
- * Fixed-palette artwork is permitted for illustrations (multi-color hex or
- * theme fill classes). Bespoke assets are server-safe: no hooks, no
- * "use client". Referenced clip-path / mask / gradient ids are namespaced
- * statically per asset (e.g. `signing-clip`); two instances of the SAME asset
- * share identical defs by construction, so first-in-DOM wins harmlessly —
- * the namespace exists to prevent CROSS-asset collisions.
+ *
+ * Illustrations may use fixed-palette artwork, in multi-color hex or theme fill classes. Bespoke
+ * assets are server-safe, with no hooks and no "use client". Each asset namespaces the clip-path,
+ * mask and gradient ids it references with a static prefix, such as `signing-clip`. Two instances
+ * of the same asset share identical defs, so the first in the DOM wins with no visible difference.
+ * The namespace prevents collisions between different assets.
+ *
+ * @param title - The accessible name, or `undefined` for a decorative asset.
+ * @returns The ARIA props to spread on the `<svg>`.
  */
 export function decorativeSvgProps(title: string | undefined) {
   if (title) {

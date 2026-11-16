@@ -2,11 +2,11 @@
 
 /**
  * The SVG paint servers a Bar's looks need. A pattern or gradient paints its content in the
- * colours it was defined with, never the colours of the bar that uses it, so each look gets one
- * server per distinct bar paint, and a series coloured by a scale or a threshold gets one per colour
+ * colors it was defined with, never the colors of the bar that uses it, so each look gets one
+ * server per distinct bar paint, and a series colored by a scale or a threshold gets one per color
  * step it draws. A plain fill needs no server, and `chart.css` paints it from `--_paint`.
  * Each server's content names its paint through `--chart-fill` or `--chart-stop`, which
- * `chart.css` reads, so no colour sits in an inline style.
+ * `chart.css` reads, so no color sits in an inline style.
  */
 import type { ReactElement } from "react";
 
@@ -182,7 +182,7 @@ export function BarFills({
  * The two role-list gradients of a series, from the bar's tip, the list's first role, to its base.
  * A negative bar's tip is its far end below zero, so it takes the reversed one.
  *
- * @param props - The id prefix, the colour stops and the orientation.
+ * @param props - The id prefix, the color stops and the orientation.
  * @returns The gradients, for a `defs` element.
  */
 export function ListFills({

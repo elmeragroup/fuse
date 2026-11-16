@@ -7,9 +7,9 @@ import { cn } from "../../styles/cn";
 import { LoaderDefaultLabel } from "./loader-default-label";
 import { loaderVariants } from "./loader-variants";
 
-/** `Loader` takes a native `div`'s props, the recipe's axes and the announced `label`. */
+/** Props for `Loader`. It takes a native `div`'s props, the recipe's axes and the announced `label`. */
 export type LoaderProps = HTMLAttributes<HTMLDivElement> & {
-  /** The colour. `default` is the only value. */
+  /** The color. `default` is the only value. */
   variant?: VariantProps<typeof loaderVariants>["variant"];
   /** The spinner's size. The padding around it stays the same. */
   size?: VariantProps<typeof loaderVariants>["size"];

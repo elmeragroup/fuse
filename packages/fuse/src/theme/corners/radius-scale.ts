@@ -1,10 +1,9 @@
 /**
  * The radius rungs `fuse.css` derives from the theme's `--radius` and `--radius-step` in its
  * `@theme` block, such as `--radius-md: calc(var(--radius) - var(--radius-step, 0px))`. The CSS
- * keeps the arithmetic. The corner set gives `--radius` and `--radius-step` (`corners.ts`).
- * The resolved theme catalog reads the step counts here to compute each rung in px for
- * tooling without `calc()`, and `radius-scale-css.test.ts` requires `fuse.css` to declare
- * exactly these CSS values.
+ * keeps the arithmetic. The corner set in `corners.ts` gives `--radius` and `--radius-step`. The
+ * resolved theme catalog reads the step counts here to compute each rung in px for tooling without
+ * `calc()`, and `radius-scale-css.test.ts` requires `fuse.css` to declare exactly these CSS values.
  */
 
 /** The derived radius custom properties, without their leading dashes, in `fuse.css` order. */

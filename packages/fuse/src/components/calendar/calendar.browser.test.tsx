@@ -1,6 +1,6 @@
 /**
  * Unit under test: the Calendar parts in Chromium, through their roles and names. Oracles: the
- * React Aria Calendar's behaviour (day names, grid names, keyboard targets, bound naming and
+ * React Aria Calendar's behavior (day names, grid names, keyboard targets, bound naming and
  * clamping, today naming), React Aria's
  * `react-stately` paging rules worked out by hand for the multi-month cases, and printed 2026
  * calendars. Every scenario runs under a clock frozen at local noon on June 15, 2030, outside
@@ -735,7 +735,7 @@ describe("Calendar visibleMonths", () => {
 });
 
 describe("Calendar selected day face", () => {
-  /** A day button's painted fill and text colour. */
+  /** A day button's painted fill and text color. */
   function face(name: string) {
     const style = getComputedStyle(roleNamed("button", name));
     return { fill: style.backgroundColor, text: style.color };

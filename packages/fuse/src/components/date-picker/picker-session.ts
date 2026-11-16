@@ -78,7 +78,7 @@ export function heldFor<V, R extends string = string>(
 }
 
 /**
- * Hold a selection over the committed value.
+ * Holds a selection over the committed value.
  *
  * @template V - What the picker holds.
  * @param state - The session.
@@ -93,7 +93,7 @@ export function hold<V, R extends string = string>(
 }
 
 /**
- * Drop the held selection.
+ * Drops the held selection.
  *
  * @template V - What the picker holds.
  * @param state - The session.
@@ -106,7 +106,7 @@ export function release<V, R extends string = string>(
 }
 
 /**
- * Follow a new committed value: a selection made over another value is dropped for good.
+ * Follows a new committed value: a selection made over another value is dropped for good.
  *
  * @template V - What the picker holds.
  * @param state - The session.
@@ -121,7 +121,7 @@ export function rebase<V, R extends string = string>(
 }
 
 /**
- * Apply an open change, dropping the held selection on close: a close either committed it or, for a
+ * Applies an open change, dropping the held selection on close: a close either committed it or, for a
  * half-typed range, leaves it to the inputs that show it.
  *
  * @template V - What the picker holds.

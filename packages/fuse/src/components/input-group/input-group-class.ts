@@ -4,9 +4,9 @@ import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 
 /**
- * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings, the
- * disabled dim and the disabled and read-only fills, so the control contributes nothing but
- * its own box. The focus-visible and state-face neutralizations come from the shared within
+ * The chrome stripped off the embedded control. The Root draws the border, radius, shadow, rings,
+ * the disabled dim and the disabled and read-only fills, so the control adds nothing but its own
+ * box. The focus-visible and state-face neutralizations come from the shared within
  * adapters, never a local literal.
  */
 export const inputGroupControlClass = cn(

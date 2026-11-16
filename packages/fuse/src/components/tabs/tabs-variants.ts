@@ -2,7 +2,7 @@ import { tabsListShellClass } from "../../styles/inner-corner/tabs";
 /**
  * The public recipe, exported from `@elmeragroup/fuse/tabs`.
  *
- * A horizontal list takes the `md` control height (`h-(--control-h-md)`). A vertical one stays
+ * A horizontal list takes the `md` control height, `h-(--control-h-md)`. A vertical one stays
  * `h-fit`. The list's 4px track padding, which leaves room for a trigger's focus ring, and
  * its corner come from its inner-corner shell, which publishes the corner its triggers
  * round with. It is not `--control-px-*`. The recipe has no `size` axis.

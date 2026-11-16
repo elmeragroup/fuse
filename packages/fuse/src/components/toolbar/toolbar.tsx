@@ -15,17 +15,19 @@ type LinkPrimitiveProps = ComponentProps<typeof ToolbarPrimitive.Link>;
 type InputPrimitiveProps = ComponentProps<typeof ToolbarPrimitive.Input>;
 type GroupPrimitiveProps = ComponentProps<typeof ToolbarPrimitive.Group>;
 
-/** The props of `Toolbar.Root`: Base UI's toolbar root, with `orientation`, `loopFocus` and `disabled`. */
+/**
+ * Props for `Toolbar.Root`, Base UI's toolbar root with `orientation`, `loopFocus` and `disabled`.
+ */
 export type ToolbarRootProps = Omit<
   RootPrimitiveProps,
   "aria-label" | "children" | "orientation" | "loopFocus" | "disabled"
 > & {
-  /** The toolbar's name, such as "Invoice". Give every toolbar one. */
+  /** The toolbar's name, such as `"Invoice"`. Give every toolbar one. */
   "aria-label"?: RootPrimitiveProps["aria-label"];
   /**
    * The items: `Toolbar.Button`, `Toolbar.Link`, `Toolbar.Input`, `Toolbar.Group` and
    * `Toolbar.Separator`. A `ToggleGroup` joins the toolbar's arrow-key order instead of keeping its
-   * own. The bar publishes `--inner-corner`, so a block of your own with `rounded-inner` rounds with
+   * own. The bar publishes `--inner-corner`, so a block inside it with `rounded-inner` rounds with
    * it. For a bar that only switches between options, use `ToggleGroup` on its own.
    */
   children?: RootPrimitiveProps["children"];
@@ -40,13 +42,16 @@ export type ToolbarRootProps = Omit<
    */
   loopFocus?: RootPrimitiveProps["loopFocus"];
   /**
-   * Disables every button and input in the bar. They stay in the arrow-key order, so a keyboard
+   * Whether every button and input in the bar is disabled. They stay in the arrow-key order, so a keyboard
    * user still finds them. A `Toolbar.Link` cannot be disabled.
    */
   disabled?: RootPrimitiveProps["disabled"];
 };
 
-/** The props of `Toolbar.Button`: Base UI's toolbar button, with `render`, `disabled` and `focusableWhenDisabled`. */
+/**
+ * Props for `Toolbar.Button`, Base UI's toolbar button with `render`, `disabled` and
+ * `focusableWhenDisabled`.
+ */
 export type ToolbarButtonProps = Omit<ButtonPrimitiveProps, "render" | "disabled"> & {
   /**
    * The control that shows the button, such as `<Button variant="ghost" size="sm" />` or
@@ -56,13 +61,13 @@ export type ToolbarButtonProps = Omit<ButtonPrimitiveProps, "render" | "disabled
    */
   render?: ButtonPrimitiveProps["render"];
   /**
-   * Disables the button. It stays focusable, so the arrow keys still reach it, unless
+   * Whether the button is disabled. It stays focusable, so the arrow keys still reach it, unless
    * `focusableWhenDisabled` is `false`.
    */
   disabled?: ButtonPrimitiveProps["disabled"];
 };
 
-/** The props of `Toolbar.Link`: Base UI's toolbar link, an anchor with `render`. */
+/** Props for `Toolbar.Link`, Base UI's toolbar link, an anchor with `render`. */
 export type ToolbarLinkProps = Omit<LinkPrimitiveProps, "className"> & {
   /**
    * Classes for the anchor, which has no styles of its own, such as
@@ -71,7 +76,10 @@ export type ToolbarLinkProps = Omit<LinkPrimitiveProps, "className"> & {
   className?: LinkPrimitiveProps["className"];
 };
 
-/** The props of `Toolbar.Input`: Base UI's toolbar input, with `render`, `disabled` and `focusableWhenDisabled`. */
+/**
+ * Props for `Toolbar.Input`, Base UI's toolbar input with `render`, `disabled` and
+ * `focusableWhenDisabled`.
+ */
 export type ToolbarInputProps = Omit<InputPrimitiveProps, "render"> & {
   /**
    * The control that shows the input, such as `<Input aria-label="Search" />`. Unset, it is a
@@ -81,18 +89,21 @@ export type ToolbarInputProps = Omit<InputPrimitiveProps, "render"> & {
   render?: InputPrimitiveProps["render"];
 };
 
-/** The props of `Toolbar.Group`: Base UI's toolbar group, with `disabled`. */
+/** Props for `Toolbar.Group`, Base UI's toolbar group with `disabled`. */
 export type ToolbarGroupProps = Omit<GroupPrimitiveProps, "aria-label" | "disabled"> & {
-  /** The group's name, such as "File". */
+  /** The group's name, such as `"File"`. */
   "aria-label"?: GroupPrimitiveProps["aria-label"];
   /**
-   * Disables every button and input in the group. They stay in the arrow-key order. A
+   * Whether every button and input in the group is disabled. They stay in the arrow-key order. A
    * `Toolbar.Link` cannot be disabled.
    */
   disabled?: GroupPrimitiveProps["disabled"];
 };
 
-/** The props of `Toolbar.Separator`: Base UI's toolbar separator, perpendicular to the toolbar by default. */
+/**
+ * Props for `Toolbar.Separator`, Base UI's toolbar separator, perpendicular to the toolbar by
+ * default.
+ */
 export type ToolbarSeparatorProps = ComponentProps<typeof ToolbarPrimitive.Separator>;
 
 /**

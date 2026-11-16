@@ -116,7 +116,7 @@ function focusableSegments(root: Element | null): HTMLElement[] {
   return [...(root?.querySelectorAll<HTMLElement>(SEGMENT_SELECTOR) ?? [])];
 }
 
-/** Focus the last segment before `target`, then back over empty ones, as React Aria's field press. */
+/** Focuses the last segment before `target`, then back over empty ones, as React Aria's field press. */
 function focusBefore(root: Element, target: EventTarget): void {
   const list = focusableSegments(root);
   const before =
@@ -137,7 +137,7 @@ function focusBefore(root: Element, target: EventTarget): void {
 }
 
 /**
- * Focus the segment `direction` places from `from` among the Root's focusable segments; past the
+ * Focuses the segment `direction` places from `from` among the Root's focusable segments; past the
  * first or last, the nearest segment of the input beside this one, when a control owns both.
  */
 function focusSibling(
@@ -670,9 +670,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
 }
 
 /**
- * A segment's React key: a unit or the zone's name by its type, which appears once, so a unit keeps
- * its element (and focus) when a granularity change adds or removes others around it, and a removed
- * unit unmounts rather than turning into its neighbour; a literal by its place.
+ * A segment's React key: a unit or the zone's name by its type, which appears once, and a literal
+ * by its place. A unit keeps its element and focus when a granularity change adds or removes others
+ * around it, and a removed unit unmounts rather than turning into its neighbor.
  */
 function segmentKey(segment: DateInputSegmentData): string {
   return segment.type === "literal" ? `literal-${String(segment.index)}` : segment.type;

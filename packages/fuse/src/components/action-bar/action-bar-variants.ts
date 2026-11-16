@@ -11,7 +11,8 @@ const toolbar = toolbarVariants();
  * component sync.
  *
  * - `positioner` spans the bottom of the nearest positioned ancestor, `--action-bar-offset` up from
- *   its bottom edge (Root's `offset`) and 16px in from each side, and centres the bar in it. It lets the pointer through to the content beside the bar, and it is
+ *   its bottom edge and 16px in from each side, and centers the bar in it. `--action-bar-offset`
+ *   is Root's `offset`. It lets the pointer through to the content beside the bar, and it is
  *   the `action-bar` query container that `buttonLabel` reads, since the bar itself shrinks to its
  *   items. Its layer is `actionBarLayer`, above the content's sticky headers and scrollbars and
  *   below the overlay layer, so a menu or dialog the bar opens covers it.

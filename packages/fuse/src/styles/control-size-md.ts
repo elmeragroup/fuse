@@ -1,7 +1,7 @@
 import { tv } from "./tv";
 
 /**
- * The md row of the control size (see `control-size.ts`), resolved once at module scope for
+ * The md row of the control size in `control-size.ts`, resolved once at module scope for
  * the controls that have no size axis, such as Tabs triggers and Pagination links. The
  * text-entry field boxes size through `field-size.ts` instead, whose `"default"` size reads the
  * same md metrics. `controlMetrics` reads its md row from here, so each md literal has one owner.
@@ -22,7 +22,7 @@ import { tv } from "./tv";
  * `.text-sm`, so a recipe class left beside the consumer's would still win the cascade. An
  * arbitrary property never reaches the merge, because tailwind-merge puts it in no
  * font-size or line-height group, so `cn` kept both. The `length:` hint is required,
- * because a bare variable on the `text` utility could also be a colour.
+ * because a bare variable on the `text` utility could also be a color.
  */
 export const controlMd = tv({
   slots: {

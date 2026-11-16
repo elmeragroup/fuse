@@ -14,7 +14,7 @@ const styles = attachmentVariants();
 
 type AttachmentTriggerBaseProps = useRender.ComponentProps<"button">;
 
-/** `Attachment.Trigger` takes a `button`'s props plus Base UI's `render`. */
+/** Props for `Attachment.Trigger`, a `button`'s props plus Base UI's `render`. */
 export type AttachmentTriggerProps = Omit<AttachmentTriggerBaseProps, "render" | "aria-label"> & {
   /**
    * The element to render, a `<button type="button">` by default, so it never submits a form it

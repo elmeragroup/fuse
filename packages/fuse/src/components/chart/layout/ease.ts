@@ -1,6 +1,7 @@
 /**
- * A CSS `cubic-bezier()` timing function in JS, so the chart's rAF tween moves on the same curve
- * that `chart.css` names. The curve's x runs from time, so a progress needs x inverted first.
+ * A CSS `cubic-bezier()` timing function in JavaScript, so the chart's `requestAnimationFrame`
+ * tween moves on the same curve that `chart.css` names. The curve's x runs from time, so a progress
+ * needs x inverted first.
  */
 
 /** The four control values of a CSS `cubic-bezier(x1, y1, x2, y2)`. */

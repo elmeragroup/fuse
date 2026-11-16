@@ -24,7 +24,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Focuses the input when the field mounts, but not when a form reset remounts it.",
+          "description": "Whether the input takes focus when the field mounts, but not when a form reset remounts it.",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The decrease stepper's own word, which its name follows with the field's name, as in \"Decrease Quantity\". It defaults to the locale's word.",
+          "description": "The decrease stepper's own word, which its name follows with the field's name, as in \"Decrease Quantity\". Defaults to the locale's word.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The increase stepper's own word, which its name follows with the field's name, as in \"Increase Quantity\". It defaults to the locale's word.",
+          "description": "The increase stepper's own word, which its name follows with the field's name, as in \"Increase Quantity\". Defaults to the locale's word.",
           "required": false
         },
         {
@@ -114,7 +114,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Disables the field, with the muted fill.",
+          "description": "Whether the field is disabled, with the muted fill.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the field invalid, with the invalid look on the field box.",
+          "description": "Whether the field is invalid, with the invalid look on the field box.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a spinner at the end of the label row. The row shows even without `label`.",
+          "description": "Whether a spinner shows at the end of the label row. The row shows even without `label`.",
           "required": false
         },
         {
@@ -141,7 +141,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the field read-only, with the muted fill.",
+          "description": "Whether the field is read-only, with the muted fill.",
           "required": false
         },
         {
@@ -150,7 +150,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Makes the field required, so the browser's constraint check blocks an empty submit.",
+          "description": "Whether the field is required, so the browser's constraint check blocks an empty submit.",
           "required": false
         },
         {
@@ -159,7 +159,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Shows a check at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
+          "description": "Whether a check shows at the end of the label row, in place of the `isPending` spinner. The row shows even without `label`.",
           "required": false
         },
         {

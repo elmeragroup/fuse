@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** PhoneNumberField's own dictionary: it owns the `phoneNumberField.*` keys. */
+/** PhoneNumberField's own dictionary. It defines the `phoneNumberField.*` keys. */
 export const phoneNumberFieldStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

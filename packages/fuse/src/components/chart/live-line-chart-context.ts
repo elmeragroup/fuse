@@ -5,7 +5,7 @@
  * measured plot, and the hooks a part reads the shown feed and draws a frame through. The readings
  * reach parts only through the clock, so every part names what the plot shows. The root context
  * changes with the props, never with the clock or the pointer, so a frame renders
- * nothing in React: each part writes it to the DOM itself.
+ * nothing in React. Each part writes the frame to the DOM itself.
  */
 import { use, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
@@ -37,32 +37,32 @@ export type LiveStore = {
   /** The active reading, or null. */
   readonly active: () => LiveActive | null;
   readonly subscribe: (listener: () => void) => () => void;
-  /** Show a reading, or none. */
+  /** Shows a reading, or none. */
   readonly activate: (active: LiveActive | null) => void;
   /** Where the pointer rests across the plot, 0 to 1, or null while it is away. */
   readonly pointer: () => number | null;
   /**
-   * Record where the pointer rests, by its client x over the plot's client box, or null when it
-   * leaves, and tell every subscriber, so the crosshair follows a pointer that stays nearest one
+   * Records where the pointer rests, by its client x over the plot's client box, or null when it
+   * leaves, and tells every subscriber, so the crosshair follows a pointer that stays nearest one
    * reading. Either ends a dismissal.
    */
   readonly point: (at: LivePointerAt | null) => void;
   /**
-   * Place a resting pointer again over the plot's new client box, as after the plot resizes under
-   * it, and tell every subscriber when its share changes. It ends no dismissal.
+   * Places a resting pointer again over the plot's new client box, as after the plot resizes under
+   * it, and tells every subscriber when its share changes. It ends no dismissal.
    */
   readonly reproject: (box: LivePlotBox) => void;
   /**
-   * Whether Escape dismissed the readout, which a pointer resting on the plot does not undo: only a
+   * Whether Escape dismissed the readout. A pointer resting on the plot does not undo it. Only a
    * pointer that moves or leaves, or a key step, ends it.
    */
   readonly dismissed: () => boolean;
-  /** Let go of the active reading until the pointer moves or leaves, or a key steps. */
+  /** Lets go of the active reading until the pointer moves or leaves, or a key steps. */
   readonly dismiss: () => void;
 };
 
 /**
- * Create a Root's store.
+ * Creates a Root's store.
  *
  * @returns The store, with no reading active and no pointer.
  */
@@ -127,12 +127,12 @@ export type LiveLineRootContextValue = {
   readonly reduced: boolean;
   /** Whether Root is `paused`, under which the live dot sends out no ping. */
   readonly paused: boolean;
-  /** Say a message through Root's status region, such as the table's page. */
+  /** Says a message through Root's status region, such as the table's page. */
   readonly announce: (text: string) => void;
 };
 
 /**
- * Read the enclosing live line Root.
+ * Reads the enclosing live line Root.
  *
  * @param part - The calling part's display name, which the error names.
  * @returns The Root's context.
@@ -165,8 +165,8 @@ function geometryOf(frame: LiveFrame, plot: ChartPlot): LiveGeometry {
 }
 
 /**
- * Draw every frame of the clock into the plot: in every commit of the part once the plot is
- * measured, then on each frame the clock shows, in the order the parts mounted. The drawing writes
+ * Draws every frame of the clock into the plot. It draws in every commit of the part once the plot
+ * is measured, then on each frame the clock shows, in the order the parts mounted. The drawing writes
  * the DOM directly, so a frame renders nothing in React. A frame carries the readings it was
  * composed from, so a part reads its span from the frame, never from a newer render. A readout
  * part that draws from the store as well passes `"readout"`, and draws the shown frame again on
@@ -207,8 +207,8 @@ export function useLiveFrame(
 }
 
 /**
- * The feed the plot shows, as a part renders it: Root's latest feed once the clock takes it, and
- * the feed it held while paused. Every readout that names a reading, its value or the latest value
+ * The feed the plot shows, as a part renders it. It is Root's latest feed once the clock takes it,
+ * and the feed it held while paused. Every readout that names a reading, its value or the latest value
  * reads it, so the words never name a reading the plot doesn't show. It changes only when the
  * clock takes a feed, never as the window scrolls.
  *

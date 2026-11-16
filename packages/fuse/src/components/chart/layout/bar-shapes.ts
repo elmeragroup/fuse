@@ -51,17 +51,17 @@ const DEPTH = 10;
 const CAP = 2;
 const CAP_GAP = 2;
 
-/** The expandable look's resting strip, a share of the bar centred in it. */
+/** The expandable look's resting strip, a share of the bar centered in it. */
 const STRIP = 0.12;
 
-/** Split a rectangle into its span along the slot axis and its span along the value axis. */
+/** Splits a rectangle into its span along the slot axis and its span along the value axis. */
 function axes(rect: PlotRect, orientation: "vertical" | "horizontal") {
   return orientation === "vertical"
     ? { along: [rect.x, rect.width] as const, across: [rect.y, rect.height] as const }
     : { along: [rect.y, rect.height] as const, across: [rect.x, rect.width] as const };
 }
 
-/** Join a span along the slot axis and one along the value axis into a rectangle. */
+/** Joins a span along the slot axis and one along the value axis into a rectangle. */
 function join(
   along: readonly [number, number],
   across: readonly [number, number],

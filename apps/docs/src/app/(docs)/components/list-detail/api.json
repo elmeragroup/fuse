@@ -115,7 +115,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The Sheet's corner close button's accessible name. Unset, it reads `overlay.close` from the locale dictionary. It applies below the breakpoint only.",
+          "description": "The Sheet's corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary. It applies below the breakpoint only.",
           "required": false
         },
         {
@@ -135,7 +135,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shows the Sheet's corner close button. It applies below the breakpoint only.",
+          "description": "Whether the Sheet shows its corner close button. It applies below the breakpoint only.",
           "required": false
         },
         {

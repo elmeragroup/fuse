@@ -3,7 +3,7 @@
 /**
  * How a datum selector picks a series' slots, the one owner Bar `emphasis` and Marker `at` share.
  * A keyword picks among the series' values in the window, and explicit x values resolve to their
- * Root slots. Both then normalise through the series' own slots, so a coarse series' hour takes one
+ * Root slots. Both then normalize through the series' own slots, so a coarse series' hour takes one
  * pick, at its first Root slot, however many of its quarters a selector names or ties.
  */
 import type { ChartRootContextValue } from "./chart-context";

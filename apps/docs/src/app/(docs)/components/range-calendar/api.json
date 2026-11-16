@@ -27,7 +27,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid is then named by those elements and its month heading.",
+          "description": "The ids of the elements that name the calendar, in place of `aria-label`. Each grid then takes its name from those elements and its month heading.",
           "required": false
         },
         {
@@ -36,7 +36,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The parts, Calendar's under the same names: a `RangeCalendar.Header` with `RangeCalendar.DecrementMonth`, `RangeCalendar.VisibleRangeHeading` and `RangeCalendar.IncrementMonth`, then `RangeCalendar.Months`. The Root's first element child is a hidden prompt, so your first part is not its `:first-child`.",
+          "description": "The parts, Calendar's under the same names: a `RangeCalendar.Header` with `RangeCalendar.DecrementMonth`, `RangeCalendar.VisibleRangeHeading` and `RangeCalendar.IncrementMonth`, then `RangeCalendar.Months`. The Root's first element child is a hidden prompt, so the first part in `children` is not its `:first-child`.",
           "required": false
         },
         {
@@ -103,7 +103,7 @@
           "type": "((date: PlainDate, anchor: PlainDate | null) => boolean) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Days the user may focus but not select, given the anchored day while a range is being chosen (`null` otherwise), so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep the function's identity stable across renders, since every day re-renders when it changes.",
+          "description": "Days the user may focus but not select, given the anchored day while a range is being chosen, or `null` otherwise, so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep the function's identity stable across renders, since every day re-renders when it changes.",
           "required": false
         },
         {
@@ -181,7 +181,7 @@
           "type": "RangeCalendarValue | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any implementation. A range given in reverse shows the earlier day first. A server component cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a `TypeError`: build the value in a client component. `null` selects nothing. The range's first and last day buttons start their names with the whole range, such as \"Selected Range: Monday, October 12 to Friday, October 16, 2026\", and every selected day's name ends in \" selected\". The focused day is described as \"Click to start selecting date range\", and as \"Click to finish selecting date range\" while a range is open. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
+          "description": "The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any implementation. A range given in reverse shows the earlier day first. A server component cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a `TypeError`. Build the value in a client component. `null` selects nothing. The range's first and last day buttons start their names with the whole range, such as \"Selected Range: Monday, October 12 to Friday, October 16, 2026\", and every selected day's name ends in \" selected\". The focused day is described as \"Click to start selecting date range\", and as \"Click to finish selecting date range\" while a range is open. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
           "required": false
         },
         {
@@ -190,7 +190,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "1",
-          "description": "How many months show side by side, wrapping onto new rows when the host is narrow. Pick it from the viewport in the host, such as one month on a phone and two on a desktop; the server renders the count the host passes there. A whole number from 1: a fraction truncates, and anything below 1 or not a finite number shows one month, with a warning in development. Arrow keys move focus from one month's grid into the next without paging.",
+          "description": "How many months show side by side, wrapping onto new rows when the host is narrow. Pick it from the viewport in the host, such as one month on a phone and two on a desktop; the server renders the count the host passes there. Pass a whole number from 1. A fraction truncates, and anything below 1 or not a finite number shows one month, with a warning in development. Arrow keys move focus from one month's grid into the next without paging.",
           "required": false
         }
       ]
@@ -281,7 +281,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -290,7 +290,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -310,7 +310,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
+          "description": "Called before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
           "required": false
         },
         {
@@ -319,7 +319,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -328,7 +328,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -384,7 +384,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -452,7 +452,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -461,7 +461,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -481,7 +481,7 @@
           "type": "((event: BaseUIEvent<MouseEvent<HTMLButtonElement, MouseEvent>>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Runs before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
+          "description": "Called before the page changes. Call `event.preventBaseUIHandler()` in it to stop the change. The button is disabled, and stays focusable, when no page lies that way within the bounds.",
           "required": false
         },
         {
@@ -490,7 +490,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -499,7 +499,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -555,7 +555,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -617,7 +617,7 @@
           "type": "((month: PlainYearMonth, index: number) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Renders one visible month, normally a `Calendar.Month` keyed by `month.toString()`. Called for each month from the first, `visibleMonths` times. Defaults to a `Calendar.Month` with its `MonthHeading`, visually hidden in a one-month view, and a `DayGrid` with the weekday row and the weeks, which is also how a server component renders the months, since a function cannot cross to the client.",
+          "description": "Renders one visible month, normally a `Calendar.Month` keyed by `month.toString()`. Called for each month from the first, `visibleMonths` times. Defaults to a `Calendar.Month` with its `Calendar.MonthHeading`, visually hidden in a one-month view, and a `Calendar.DayGrid` with the weekday row and the weeks, which is also how a server component renders the months, since a function cannot cross to the client.",
           "required": false
         },
         {
@@ -827,7 +827,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Replaces the weekday's label: the locale's short name where it fits a column (\"Mon\"), its narrow form otherwise.",
+          "description": "Replaces the weekday's label: the locale's short name where it fits a column, such as \"Mon\", and its narrow form otherwise.",
           "required": false
         },
         {

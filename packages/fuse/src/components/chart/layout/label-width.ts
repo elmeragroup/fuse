@@ -1,8 +1,8 @@
 /**
  * A label's width estimate, as CONTRACT section 8.11 uses it to thin x ticks. The server formats
  * every label, then sums the Roboto advance widths of its characters at the 12 px label size,
- * because Roboto is the sans font of every brand and chart text never follows density. No label is
- * measured in the browser, so the server and every engine pick the same ticks. A fit that must hold
+ * because Roboto is the sans font of every brand and chart text never follows density. Nothing
+ * measures a label in the browser, so the server and every engine pick the same ticks. A fit that must hold
  * under whatever font the page renders reads `label-bound.ts` instead.
  */
 
@@ -50,7 +50,7 @@ export function advanceOf(character: string): number {
 }
 
 /**
- * Estimate a label's width at 12 px.
+ * A label's estimated width at 12 px.
  *
  * @param label - The visual label.
  * @returns Its width in CSS pixels.

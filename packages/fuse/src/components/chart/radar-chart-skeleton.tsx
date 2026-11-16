@@ -17,7 +17,7 @@ export type RadarChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 };
 
 /**
- * A loading placeholder that renders in place of `RadarChart.Root`, for example as a Suspense
+ * A loading placeholder that renders in place of `RadarChart.Root`, such as a Suspense
  * fallback. One Fuse Skeleton hexagon sketches the polygons, and one Fuse Loader names the wait.
  *
  * @beta

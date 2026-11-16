@@ -44,7 +44,7 @@ export type ChartActiveValueProps = ChartLayerProps & {
    * the slot that contains Root's `now`.
    */
   fallback?: ChartFallback;
-  /** The value format. The series' config `format` is the default. */
+  /** The value format. Defaults to the series' config `format`. */
   format?: ValueFormat;
 };
 
@@ -67,7 +67,7 @@ function cellAt(context: ChartRootContextValue, dataKey: string, slot: number | 
 }
 
 /**
- * The value at the active slot, or the `fallback` value when nothing is active, "last" by default.
+ * The value at the active slot, or the `fallback` value when nothing is active.
  * Inside a Headline it is exposed text, with a visually hidden spoken twin wherever the spoken form
  * differs, such as a negative price. Anywhere else it is plot output that readers skip.
  *
@@ -121,7 +121,7 @@ export function ChartActiveValue({
 /**
  * How a value follower joins what it marks: the bar at its series and slot, or a Bar's columns in
  * the path form, and the series' line where no Bar draws it, so every coordinate it draws is the
- * bar's or the vertex's, at rest and in a tween. Inside a BarGroup it centres over its own bar, as
+ * bar's or the vertex's, at rest and in a tween. Inside a BarGroup it centers over its own bar, as
  * a Marker does.
  */
 function joinValue(
@@ -156,7 +156,7 @@ function joinValue(
 /** What a value follower's writer reads: the frame it draws in, or null before Root measures it. */
 type FollowerLook = { readonly frame: PlotFrame | null };
 
-/** Draw ActiveValue at the loop's numbers: its centre along the slot axis and its tip. */
+/** Draws ActiveValue at the loop's numbers, its center along the slot axis and its tip. */
 function drawValue(span: HTMLSpanElement, look: FollowerLook, values: MarkValues): void {
   const { frame } = look;
   if (frame === null) return;
@@ -171,7 +171,7 @@ const valueRule = partsCache((box) =>
   box.querySelector<SVGLineElement>(':scope > svg > [data-slot="chart-active-value-rule"]')
 );
 
-/** Draw the active value line at the loop's number, the tip, across the whole plot. */
+/** Draws the active value line at the loop's number, the tip, across the whole plot. */
 function drawValueLine(box: HTMLDivElement, look: FollowerLook, values: MarkValues): void {
   const { frame } = look;
   if (frame === null) return;

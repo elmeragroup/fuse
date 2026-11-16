@@ -4,9 +4,10 @@ import { createContext, useCallback, useContext, useLayoutEffect, useState } fro
 import type { ReactNode } from "react";
 
 /**
- * Ref attachment and chip layout effects are interleaved during a React commit.
- * Collect membership changes first, then order the complete roster in the single
- * subscriber's synchronous follow-up render, before paint.
+ * Creates the registry that numbers the chips in document order. React interleaves ref attachment
+ * and chip layout effects during a commit, so the registry collects membership changes first. It
+ * then orders the complete roster in the single subscriber's synchronous follow-up render, before
+ * paint.
  */
 export function createChipIndexRegistry() {
   const elements = new Map<HTMLElement, (index: number) => void>();
@@ -59,7 +60,10 @@ export function useChipIndex() {
   return { ref, index };
 }
 
-/** Selection changes also invalidate order when memoized chips skip rendering. */
+/**
+ * A component that renders nothing and invalidates the chip order when the selection changes, as
+ * memoized chips skip rendering.
+ */
 export function ChipIndexCommit({ selected }: { selected: ReactNode }): null {
   const registry = useContext(ChipIndexContext);
   const [version, setVersion] = useState(0);

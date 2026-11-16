@@ -1,7 +1,7 @@
 /**
  * The radar's layout: the radius domain, where each spoke and vertex sits, the zero polygon, the
  * per-edge quadrilaterals an Area fills, and the spoke and series a pointer picks. CONTRACT section
- * 8.4 gives the domain and the negatives: the radius is a value axis, the centre is the domain's
+ * 8.4 gives the domain and the negatives: the radius is a value axis, the center is the domain's
  * minimum, and a fill always encodes distance from 0.
  */
 import { linearScale, scaleTicks } from "./linear-scale";
@@ -20,8 +20,8 @@ const TICK_COUNT = 5;
  * domain at `max`, and when a value passes `max` the niced data maximum wins, so no reading is
  * clamped.
  *
- * @param values - Every drawn value of every series. Non-finite values are skipped.
- * @param max - Root's `max`, or undefined.
+ * @param values - Every drawn value of every series. The domain skips non-finite values.
+ * @param max - Root's `max`, or `undefined`.
  * @returns The domain and its ticks.
  */
 export function radarDomain(values: Iterable<number>, max: number | undefined): ValueDomain {
@@ -34,7 +34,7 @@ export function radarDomain(values: Iterable<number>, max: number | undefined): 
 }
 
 /**
- * The radius of a value: the domain's minimum sits at the centre and its maximum at `outer`.
+ * The radius of a value: the domain's minimum sits at the center and its maximum at `outer`.
  *
  * @param domain - The radius domain.
  * @param outer - The outer radius.
@@ -60,9 +60,9 @@ export function spokeAngle(index: number, count: number): number {
 /**
  * Each spoke's vertex for one series.
  *
- * @param values - The series' value per spoke, null for a missing one.
+ * @param values - The series' value per spoke, `null` for a missing one.
  * @param radiusOf - The value-to-radius map.
- * @returns Each spoke's vertex, null for a missing value.
+ * @returns Each spoke's vertex, `null` for a missing value.
  */
 export function radarVertices(
   values: readonly (number | null)[],
@@ -92,7 +92,7 @@ export function zeroPolygon(count: number, zero: number): readonly PolarPoint[] 
  * polygon fills both of its triangles, so the fill always reads distance from 0. A missing spoke
  * removes both edges beside it. Two spokes make one edge, and one spoke none.
  *
- * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param vertices - The series' vertex per spoke, `null` for a missing one.
  * @param zero - The zero polygon.
  * @returns Each edge's four corners: zero and vertex on the first spoke, then vertex and zero on the next.
  */
@@ -140,7 +140,7 @@ export function polygonsPath(polygons: readonly (readonly PolarPoint[])[]): stri
 
 /**
  * The spoke nearest a pointer's angle, by angular distance, a tie going to the lower index, so the
- * exact centre, whose angle reads 0, picks spoke 0.
+ * exact center, whose angle reads 0, picks spoke 0.
  *
  * @param angle - The pointer's angle, as `pointerAngle` gives it.
  * @param count - The spoke count, at least 1.
@@ -167,9 +167,9 @@ export function spokeAt(angle: number, count: number): number {
  * the clock's dot does in a gap. An angle on a present vertex's spoke lands on
  * that vertex, and a lone vertex is the whole polygon.
  *
- * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param vertices - The series' vertex per spoke, `null` for a missing one.
  * @param angle - The angle in degrees from 12 o'clock, in any turn.
- * @returns The point, or null on a break or when no vertex is present.
+ * @returns The point, or `null` on a break or when no vertex is present.
  */
 export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: number): PolarPoint | null {
   const count = vertices.length;
@@ -203,7 +203,7 @@ function edgeCount(count: number): number {
  * dashes, and one that touches a missing spoke draws nothing. Consecutive edges of one kind join
  * into one run, and a ring whose every edge is plain, or every edge marked, closes.
  *
- * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param vertices - The series' vertex per spoke, `null` for a missing one.
  * @param marked - Whether each spoke's reading is estimated.
  * @returns The plain runs' path and the marked runs' path, each empty for none.
  */
@@ -257,7 +257,7 @@ export function radarEdges(vertices: readonly (PolarPoint | null)[], marked: rea
  * The Area's quadrilaterals, split by quality: a quadrilateral beside an estimated spoke is
  * marked, and hatches. A missing spoke removes both beside it, as `radarQuads` does.
  *
- * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param vertices - The series' vertex per spoke, `null` for a missing one.
  * @param zero - The zero polygon.
  * @param marked - Whether each spoke's reading is estimated.
  * @returns The plain quadrilaterals' path and the marked ones', each empty for none.
@@ -283,10 +283,10 @@ export function radarAreas(
 }
 
 /**
- * The vertices no edge reaches: a reading whose neighbours on both sides are missing, or the only
+ * The vertices no edge reaches: a reading whose neighbors on both sides are missing, or the only
  * spoke. The Line draws each as a dot.
  *
- * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param vertices - The series' vertex per spoke, `null` for a missing one.
  * @returns The lone vertices.
  */
 export function loneVertices(vertices: readonly (PolarPoint | null)[]): readonly PolarPoint[] {
@@ -302,7 +302,7 @@ export function loneVertices(vertices: readonly (PolarPoint | null)[]): readonly
 /**
  * Dots as one path of zero-length subpaths, whose round caps draw each dot at the stroke's width.
  *
- * @param points - The dots' centres.
+ * @param points - The dots' centers.
  * @returns The path data, empty for none.
  */
 export function dotsPath(points: readonly PolarPoint[]): string {

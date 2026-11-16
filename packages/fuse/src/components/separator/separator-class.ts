@@ -1,7 +1,7 @@
 import { cn } from "../../styles/cn";
 
 /**
- * The Separator hairline, a 1px line in the border colour across its orientation. A vertical line
+ * The Separator hairline, a 1px line in the border color across its orientation. A vertical line
  * stretches along its flex row. Separator and Toolbar.Separator draw it.
  */
 export const separatorClass = cn(

@@ -37,15 +37,15 @@ export type AttachmentState = "idle" | "uploading" | "processing" | "error" | "d
 
 type AttachmentRootVariantProps = Pick<VariantProps<typeof attachmentVariants>, "size" | "orientation">;
 
-/** `Attachment.Root` takes a native `div`'s props plus the lifecycle and layout props. */
+/** Props for `Attachment.Root`, a native `div`'s props plus the lifecycle and layout props. */
 export type AttachmentRootProps = ComponentProps<"div"> &
   AttachmentRootVariantProps & {
     /**
-     * The upload lifecycle, written to `data-state`. Your app picks and uploads the files, and
+     * The upload lifecycle, written to `data-state`. The app picks and uploads the files, and
      * sets `state` as the upload moves on. It only styles: `idle` dashes the border, `uploading`
      * and `processing` sweep a highlight across the title and dim image media, and `error` tints
      * the border, the media and the description with the error role. Under reduced motion, the
-     * title stays still. The error state is a colour, so say the state, and the reason an upload
+     * title stays still. The error state is a color, so say the state, and the reason an upload
      * failed, in words in `Attachment.Description`.
      */
     state?: AttachmentState;
@@ -95,7 +95,7 @@ export function AttachmentRoot({
 
 type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root>;
 
-/** `Attachment.Group` takes Base UI ScrollArea Root's props; its accessible name goes on the list. */
+/** Props for `Attachment.Group`, Base UI ScrollArea Root's props. Its accessible name goes on the list. */
 export type AttachmentGroupProps = Omit<
   ScrollAreaRootProps,
   "aria-label" | "aria-labelledby" | "children"

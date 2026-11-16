@@ -85,7 +85,7 @@ const GROUPS: ReadonlyArray<GroupFixture> = [
 
 type LabeledFixture = {
   readonly name: string;
-  /** Renders the composite labelled "Field" with a description, in error when given one. */
+  /** Renders the composite labeled "Field" with a description, in error when given one. */
   readonly render: (errorMessage?: string) => ReactElement;
 };
 

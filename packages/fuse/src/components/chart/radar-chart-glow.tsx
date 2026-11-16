@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The radar's Glow: it wraps radar marks, and the stylesheet glows their drawn layer, each series
- * in its own colour.
+ * The radar's Glow. It wraps radar marks, and the stylesheet glows their drawn layer, each series
+ * in its own color.
  */
 import type { ReactElement, ReactNode } from "react";
 
@@ -20,8 +20,8 @@ export type RadarChartGlowProps = ChartLayerProps & {
 };
 
 /**
- * Wraps radar marks and glows their drawn layer: each wrapped series casts its own colour, blurred
- * as `Chart.Glow` blurs a line.
+ * A wrapper that glows the drawn layer of the radar marks inside it. Each wrapped series casts its
+ * own color, blurred as `Chart.Glow` blurs a line.
  *
  * @beta
  */

@@ -30,7 +30,7 @@ import type {
 export type ChartLegendProps = ChartDomProps<"ul"> & {
   /**
    * Where the legend sits around the plot. In a polar chart narrower than
-   * 30rem, a "start" or "end" legend moves under the dial, so the dial keeps its size.
+   * 30rem, a `"start"` or `"end"` legend moves under the dial, so the dial keeps its size.
    */
   side?: "top" | "bottom" | "start" | "end";
 };
@@ -61,7 +61,7 @@ export type ChartLegendValueProps = ChartDomProps<"span"> & {
    * the slot that contains Root's `now`.
    */
   fallback?: ChartFallback;
-  /** The value format. The series' config `format` is the default. */
+  /** The value format. Defaults to the series' config `format`. */
   format?: ValueFormat;
 };
 
@@ -83,7 +83,7 @@ export type ChartLegendShareProps = ChartDomProps<"span"> & {
  * @beta
  */
 export type ChartLegendToggleGroupProps = ChartLayerProps & {
-  /** The group's name. The dictionary's "Serier" is the default. */
+  /** The group's name. Defaults to the dictionary's `Serier`. */
   "aria-label"?: string;
   /** Where the group sits around the plot. */
   side?: ChartLegendProps["side"];
@@ -104,14 +104,14 @@ export type ChartLegendToggleGroupProps = ChartLayerProps & {
 export type ChartLegendToggleProps = ChartLayerProps & {
   /** The series the toggle selects. An unknown key throws `unknown-key`. */
   dataKey: string;
-  /** The toggle's content. The series' swatch and label by default. */
+  /** The toggle's content. Defaults to the series' swatch and label. */
   children?: ReactNode;
 };
 
 /**
- * A static list of the series, "bottom" by default, as Figma's `Chart` places it. Without children,
+ * A static list of the series. Its default `side` matches where Figma's `Chart` places it. Without children,
  * one LegendItem per config key, or per kept category and then one Other item in a folded pie. A
- * series coloured by a threshold has two entries, its `above` side first, each with the side's
+ * series colored by a threshold has two entries, its `above` side first, each with the side's
  * label and swatch. The list is visible text, so screen readers read it, and its swatches are
  * decoration.
  *
@@ -139,8 +139,8 @@ export function ChartLegend({
 }
 
 /**
- * The legend entries of one series: one per side of a threshold colour, the upper side first as
- * the value axis reads, or one entry with no side for every other colour.
+ * The legend entries of one series: one per side of a threshold color, the upper side first as
+ * the value axis reads, or one entry with no side for every other color.
  */
 function entrySides(readout: ChartReadout, key: string): readonly (ChartThresholdSide | null)[] {
   return readout.item(key)?.sides ?? [null];
@@ -197,7 +197,7 @@ function LegendEntry({
 
 /**
  * One legend entry. With a `dataKey`, that series' entries: one item, or one per side of a threshold
- * colour, above first. Without one, a template rendered once per legend entry, as TooltipItems is.
+ * color, above first. Without one, a template rendered once per legend entry, as TooltipItems is.
  * Inside a threshold side's item, a Swatch or a SeriesLabel of its series shows the side's paint
  * and label, while a LegendValue and a LegendShare print the whole series' value and share.
  *
@@ -234,9 +234,9 @@ export function ChartLegendItem({
 }
 
 /**
- * The series' value at the active slot, or the `fallback` value when nothing is active, "last" by
- * default. In pie and radial charts it is the category's value. It renders once per change of the
- * active slot, never on a pointer move inside one slot.
+ * The series' value at the active slot, or the `fallback` value when nothing is active. In pie and
+ * radial charts it is the category's value. It renders once per change of the active slot, never on
+ * a pointer move inside one slot.
  *
  * @beta
  */
@@ -287,7 +287,7 @@ export function ChartLegendShare({
 /**
  * A Fuse ToggleGroup that edits Root's `selectedKey`. Root owns the value and the change callback,
  * so the group takes no `value`, `multiple` or `disabled` of its own. Each toggle selects a series,
- * so a series coloured by a threshold keeps one toggle, its swatch split between the two sides and
+ * so a series colored by a threshold keeps one toggle, its swatch split between the two sides and
  * its label the series' own. One toggle is pressed at a time, and pressing the pressed toggle clears
  * the selection. While the group is mounted, Enter on the plot's option and a plot click select a
  * series too. Each change announces the selection through Root's status region.

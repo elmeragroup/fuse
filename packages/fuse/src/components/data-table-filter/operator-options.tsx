@@ -16,9 +16,9 @@ import { operatorChoices } from "./filter-model";
 export type OperatorItem = { readonly value: FilterOperator; readonly label: string };
 
 /**
- * The operators a field's Select lists, labelled: the chip's own choices, so an applied operator
- * the config has since left out still shows its label as the current choice. A current operator
- * the config left out before it was ever applied keeps its label too.
+ * The operators a field's Select lists, with labels. They are the chip's own choices, so an applied
+ * operator the config has since left out still shows its label as the current choice. A current
+ * operator the config left out before it was ever applied keeps its label too.
  *
  * @param part - The calling part's name, for the error outside a Root.
  * @param field - The field.

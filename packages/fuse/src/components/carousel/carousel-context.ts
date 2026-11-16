@@ -8,18 +8,18 @@ import type { CarouselOrientation, CarouselSnapshot } from "./carousel-engine";
 export type CarouselIndexChangeReason =
   /** A swipe, wheel turn, keyboard scroll or focus scroll of the viewport. */
   | "scroll"
-  /** `Carousel.Previous`. */
+  /** A press of `Carousel.Previous`. */
   | "previous"
-  /** `Carousel.Next`. */
+  /** A press of `Carousel.Next`. */
   | "next"
-  /** A `Carousel.Indicator`. */
+  /** A press of a `Carousel.Indicator`. */
   | "indicator"
   /** Rotation under `Carousel.Autoplay`. */
   | "autoplay"
-  /** `useCarousel().actions`, from a custom control. */
+  /** A call to `useCarousel().actions`, from a custom control. */
   | "action";
 
-/** The reasons a press or an action gives: neither the viewport's scroll nor rotation. */
+/** The reasons a press or an action gives, which exclude the viewport's scroll and rotation. */
 export type CarouselControlReason = Exclude<CarouselIndexChangeReason, "scroll" | "autoplay">;
 
 /** What `onIndexChange` receives beside the new page. */
@@ -33,19 +33,20 @@ export type CarouselState = {
   /** The current page, from 0. */
   readonly index: number;
   /**
-   * How many pages the viewport scrolls through: one per distinct snap position, so six slides
-   * showing three at a time make four pages. It is 0 until the viewport is measured after mount.
+   * How many pages the viewport scrolls through, one per distinct snap position. Six slides
+   * showing three at a time make four pages. It is 0 until the Root measures the viewport after
+   * mount.
    */
   readonly pageCount: number;
-  /** A page before the current one exists. */
+  /** Whether a page before the current one exists. */
   readonly canPrevious: boolean;
   /**
-   * A page after the current one exists. Before the first measurement it is `true`, so a
-   * server-rendered Next does not paint disabled and then enable.
+   * Whether a page after the current one exists. Before the first measurement it is `true`, so a
+   * server-rendered `Carousel.Next` does not paint disabled and then enable.
    */
   readonly canNext: boolean;
   /**
-   * A mounted `Carousel.Autoplay` rotates the pages, unless the user or reduced motion stopped
+   * Whether a mounted `Carousel.Autoplay` rotates the pages. The user or reduced motion can stop
    * it. Keyboard focus inside the carousel stops it. Rotation still pauses while the pointer is
    * over the carousel or the document is hidden.
    */
@@ -54,15 +55,15 @@ export type CarouselState = {
 
 /** What a part or a custom control can do. */
 export type CarouselActions = {
-  /** Scroll to a page. A page past either end scrolls to that end. It stops rotation. */
+  /** Scrolls to a page. A page past either end scrolls to that end. It stops rotation. */
   readonly goTo: (index: number) => void;
-  /** Scroll to the previous page. It stops rotation. */
+  /** Scrolls to the previous page. It stops rotation. */
   readonly previous: () => void;
-  /** Scroll to the next page. It stops rotation. */
+  /** Scrolls to the next page. It stops rotation. */
   readonly next: () => void;
-  /** Start rotation under a mounted `Carousel.Autoplay`. */
+  /** Starts rotation under a mounted `Carousel.Autoplay`. */
   readonly play: () => void;
-  /** Stop rotation until `play` starts it again. */
+  /** Stops rotation until `play` starts it again. */
   readonly stop: () => void;
 };
 
@@ -76,15 +77,18 @@ export type CarouselMeta = {
 export type CarouselWiring = {
   /** The Viewport's ref, which the Root's engine measures and scrolls. */
   readonly setViewport: (element: HTMLElement | null) => void;
-  /** Track a mounted Slide. The returned function stops tracking it. */
+  /** Tracks a mounted Slide. The returned function stops tracking it. */
   readonly registerSlide: (element: HTMLElement) => () => void;
-  /** Change the page for a control's reason. A control press stops rotation. */
+  /** Changes the page for a control's reason. A control press stops rotation. */
   readonly navigate: (index: number, reason: CarouselControlReason) => void;
-  /** Mount `Carousel.Autoplay`. The returned function unmounts it. */
+  /** Mounts `Carousel.Autoplay`. The returned function unmounts it. */
   readonly mountAutoplay: () => () => void;
-  /** Set the rotation's delay, in ms, keeping the user's choice to play or stop. */
+  /** Sets the rotation's delay, in milliseconds. It keeps the user's choice to play or stop. */
   readonly setAutoplayDelay: (delay: number) => void;
-  /** `off` while the pages rotate, so a screen reader is not interrupted; `polite` otherwise. */
+  /**
+   * The slides' `aria-live` value: `off` while the pages rotate, so a screen reader is not
+   * interrupted, and `polite` otherwise.
+   */
   readonly live: "off" | "polite";
 };
 
@@ -102,7 +106,7 @@ export const CarouselContext = createContext<CarouselContextValue | null>(null);
 /**
  * The Root's last measurement: the slides in document order, their numbers, the pages and the
  * slides in view. Every slide number, indicator name and inert slide reads it, so they always agree.
- * `null` before the first measurement. Private to the parts.
+ * It is `null` before the first measurement. Private to the parts.
  *
  * It is a context of its own, apart from {@link CarouselContext}, because it changes on every
  * change to the slides in view, about twice per slide a scroll passes, while `state`, `actions`,
@@ -137,7 +141,7 @@ export function useCarouselContext(part: string): CarouselContextValue {
 
 /**
  * The enclosing `Carousel.Root`'s state, actions and configuration, for a custom control such as
- * a thumbnail strip or a page count of your own. `state` has `index`, `pageCount`, `canPrevious`,
+ * a thumbnail strip or a custom page count. `state` has `index`, `pageCount`, `canPrevious`,
  * `canNext` and `rotating`. `actions` has `goTo`, `previous`, `next`, `play` and `stop`. `meta`
  * has `orientation`. The result keeps its identity until one of them changes.
  *

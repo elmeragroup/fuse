@@ -49,8 +49,8 @@ function daily(
 
 const composition = (rule: string) => ({ name: "ChartCompositionError", rule });
 /**
- * A threshold colour split at 2, which every threshold case paints with. Its roles are categorical,
- * so it shares a layout with the categorical series and breaks no colour-family rule.
+ * A threshold color split at 2, which every threshold case paints with. Its roles are categorical,
+ * so it shares a layout with the categorical series and breaks no color-family rule.
  */
 const SPLIT = {
   threshold: 2,

@@ -13,11 +13,11 @@ import { textareaFieldVariants } from "./textarea-field-variants";
 
 const slots = textareaFieldVariants();
 
-/** The props of {@link TextareaField}. */
+/** Props for {@link TextareaField}. */
 export type TextareaFieldProps = {
   /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */
   label?: string;
-  /** The textarea's name when there is no `label`. */
+  /** The textarea's accessible name when there is no `label`. */
   "aria-label"?: ComponentProps<"textarea">["aria-label"];
   /** Supporting text, rendered as `Field.Description`. */
   description?: string;
@@ -38,11 +38,11 @@ export type TextareaFieldProps = {
    * the label row, including for `0`.
    */
   maxLength?: number;
-  /** Makes the textarea required, so the browser's constraint check blocks an empty submit. */
+  /** Whether the textarea is required, so the browser's constraint check blocks an empty submit. */
   isRequired?: boolean;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field is marked invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Disables the field and the textarea. */
+  /** Whether the field and the textarea are disabled. */
   isDisabled?: boolean;
   /** Extra classes for the field's root. */
   className?: string;

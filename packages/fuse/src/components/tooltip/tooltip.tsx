@@ -25,14 +25,14 @@ const TooltipDescriptionContext = createContext<TooltipDescription | null>(null)
 
 export type TooltipProviderProps = Omit<ComponentProps<typeof TooltipPrimitive.Provider>, "delay"> & {
   /**
-   * The open delay for every tooltip in the group, in milliseconds. It defaults to `0`, where
-   * Base UI's own default is 600ms. Once one tooltip in the group has opened, the next one
-   * opens without the delay if the first closed less than `timeout` ago, 400ms by default.
+   * The open delay for every tooltip in the group, in milliseconds. Base UI's own default is
+   * 600ms. Once one tooltip in the group has opened, the next one opens without the delay if the
+   * first closed less than `timeout` ago, which defaults to 400ms.
    */
   delay?: number;
 };
 
-/** Groups tooltips so they share an open delay. */
+/** A group of tooltips that share an open delay. */
 export function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
   return <TooltipPrimitive.Provider delay={delay} {...props} />;
 }
@@ -46,7 +46,7 @@ export type TooltipRootProps = ComponentProps<typeof TooltipPrimitive.Root> & {
   delay?: number;
 };
 
-/** Holds one tooltip's open state and connects its trigger to its popup. */
+/** One tooltip's root, which holds its open state and connects its trigger to its popup. */
 export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement {
   const generatedId = useId();
   const [mountedId, setMountedId] = useState<string | null>(null);
@@ -66,9 +66,9 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
 }
 
 /**
- * Opens the tooltip on hover and focus. It renders a plain `button`; pass `render` to render
- * another element. While the tooltip is mounted, the trigger's `aria-describedby` names it,
- * after any ids you pass.
+ * The element that opens the tooltip on hover and focus. It renders a plain `button`. Pass
+ * `render` to render another element. While the tooltip is mounted, the trigger's
+ * `aria-describedby` names it, after any ids the consumer passes.
  */
 export function TooltipTrigger({
   "aria-describedby": describedBy,
@@ -94,7 +94,10 @@ export function TooltipTrigger({
 
 export type TooltipContentProps = Omit<ComponentProps<typeof TooltipPrimitive.Popup>, "id"> &
   Omit<OverlayPositionerProps<ComponentProps<typeof TooltipPrimitive.Positioner>>, "side"> & {
-    /** The popup's id, which the trigger's `aria-describedby` names while the popup is mounted. Unset, it is a generated id. */
+    /**
+     * The popup's id, which the trigger's `aria-describedby` names while the popup is mounted.
+     * Defaults to a generated id.
+     */
     id?: ComponentProps<typeof TooltipPrimitive.Popup>["id"];
     /** The side of the trigger the popup opens on. */
     side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];

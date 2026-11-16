@@ -157,8 +157,8 @@ export function parseTemporal(text: string): Result<TemporalValue, TemporalInput
  * the clipboard's zone skips on its own date still reads as written. Temporal's `PlainTime.from`.
  *
  * @param text - ISO text.
- * @returns The time, or `TemporalInputError` for text with no time (a date alone) and for a UTC
- *   time (`Z`), which names an instant rather than a wall time.
+ * @returns The time, or `TemporalInputError` for text with no time, such as a date alone, and for
+ *   a UTC time, `Z`, which names an instant rather than a wall time.
  */
 export function parseWallTime(text: string): Result<Temporal.PlainTime, TemporalInputError> {
   try {

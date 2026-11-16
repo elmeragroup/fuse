@@ -7,10 +7,10 @@ import type { ComboboxRootProps } from "../combobox/combobox";
 import { FieldFrame } from "../field/field-frame";
 
 /**
- * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as
- * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`) or leaves to
- * the compound: `multiple`, since the field takes one selection, and `inline`, since it always
- * renders the popup.
+ * The Root props the field names itself or leaves to the compound. It names `items`,
+ * `filteredItems`, `name`, `disabled` as `isDisabled`, `required` as `isRequired`, `readOnly` as
+ * `isReadOnly` and `children`. It leaves `multiple`, since the field takes one selection, and
+ * `inline`, since it always renders the popup.
  */
 type ComboboxFieldOwnedRootProps =
   | "items"
@@ -24,8 +24,9 @@ type ComboboxFieldOwnedRootProps =
   | "children";
 
 /**
- * `ComboboxField` takes the field's props, the input's `placeholder`, `showTrigger`, `showClear`
- * and `ref`, and `Combobox.Root`'s other props for one selection, which it forwards to the Root.
+ * Props for `ComboboxField`. It takes the field's props, the input's `placeholder`, `showTrigger`,
+ * `showClear` and `ref`, and `Combobox.Root`'s other props for one selection, which it forwards to
+ * the Root.
  *
  * @template Items - The `items` array, flat or of groups.
  * @template Filtered - The `filteredItems` array, flat or of groups.
@@ -47,19 +48,19 @@ export type ComboboxFieldProps<
   description?: string;
   /**
    * The error message, rendered as `Field.Error` under the input, ahead of the description,
-   * while it is truthy. Pass `isInvalid` with it, so the input is marked invalid too. Without it,
+   * while it is truthy. Pass `isInvalid` with it, so the field marks the input invalid too. Without it,
    * the field shows its own error, such as one `Form` holds under its `name` or the required
    * message.
    */
   errorMessage?: ReactNode;
-  /** Marks the field invalid, with the invalid look. */
+  /** Whether the field shows as invalid, with the invalid look. */
   isInvalid?: boolean;
-  /** Makes a selection required, so an empty submit is blocked with the required message. */
+  /** Whether a selection is required, so the field blocks an empty submit with the required message. */
   isRequired?: boolean;
-  /** Disables the field, the input and its buttons. */
+  /** Whether the field, the input and its buttons are disabled. */
   isDisabled?: boolean;
   /**
-   * Makes the combobox read-only, with the muted read-only fill. The input stays focusable and its
+   * Whether the combobox is read-only, with the muted read-only fill. The input stays focusable and its
    * popup still opens to show the options, but choosing one, typing and the clear button change
    * nothing. The value still submits under `name`.
    */
@@ -72,9 +73,12 @@ export type ComboboxFieldProps<
   name?: string;
   /** The text the empty input shows. */
   placeholder?: string;
-  /** Renders the caret button that opens the list. It hides while the clear button shows. */
+  /**
+   * Whether the field renders the caret button that opens the list. It hides while the clear button
+   * shows.
+   */
   showTrigger?: boolean;
-  /** Renders a button that clears the selection while there is one. */
+  /** Whether the field renders a button that clears the selection while there is one. */
   showClear?: boolean;
   /** Extra classes for the field's root. */
   className?: string;
@@ -86,8 +90,8 @@ export type ComboboxFieldProps<
    */
   ref?: Ref<HTMLInputElement>;
   /**
-   * The options: a flat array, or an array of groups that each carry their own `items`. Nullish
-   * entries are not supported. With object items, the item type sets the value's type and what
+   * The options: a flat array, or an array of groups that each carry their own `items`. Do not pass
+   * nullish entries. With object items, the item type sets the value's type and what
    * `itemToStringLabel` and `itemToStringValue` receive. The field takes one selection, which
    * `value`, `defaultValue` and `onValueChange` hold. For multiple selection or chips, compose
    * `Field.Root` and the `Combobox` parts.
@@ -96,8 +100,8 @@ export type ComboboxFieldProps<
   /**
    * The options the list shows, for filtering outside the list, such as with Base UI's
    * `useFilter()` hook. When given, the list shows these and does not filter `items` itself.
-   * With `items` also given, this array keeps its own flat or grouped structure. Nullish entries
-   * are not supported, as in `items`.
+   * With `items` also given, this array keeps its own flat or grouped structure. Do not pass
+   * nullish entries, as in `items`.
    */
   filteredItems?: (Filtered & NoInfer<ListItems<Filtered, Value>>) | undefined;
   /**
@@ -113,16 +117,16 @@ export type ComboboxFieldProps<
  * options, then the error and the description, laid out like `TextField`, with the label 4px from
  * the input. The input fills the field's width, and the selected option is the value. The props
  * the field does not name itself go to `Combobox.Root`, including `id`, which the label points
- * at; a `ref` goes to the input. Single selection; use the `Combobox` namespace for multiple
- * selection, chips or a custom layout, such as a label row with an info button or a horizontal
- * field.
+ * at. A `ref` goes to the input. The field takes one selection. Use the `Combobox` namespace for
+ * multiple selection, chips or a custom layout, such as a label row with an info button or a
+ * horizontal field.
  *
  * Server-renderable: it owns no state, and its parts are client modules.
  *
  * @template Items - The `items` array, flat or of groups.
  * @template Filtered - The `filteredItems` array, flat or of groups.
  * @template Value - One item of `items`, which is the selected value and what
- * `itemToStringValue` receives. `items` decides it; without `items`, `filteredItems` does; when
+ * `itemToStringValue` receives. `items` decides it. Without `items`, `filteredItems` does. When
  * neither is given, `value`, `defaultValue` or an annotated callback sets it.
  */
 export function ComboboxField<

@@ -35,23 +35,23 @@ export type ChartLineProps = ChartLayerProps & {
    */
   dataKey: string;
   /**
-   * The line's look. "dashed" dashes the whole line, "flowing" runs its
-   * dashes along it, which reduced motion stops, and "quiet" draws a thin, faint line for a
+   * The line's look. `dashed` dashes the whole line, `flowing` runs its
+   * dashes along it, which reduced motion stops, and `quiet` draws a thin, faint line for a
    * reference series such as last year.
    */
   variant?: "default" | "dashed" | "flowing" | "quiet";
   /**
    * The d3 curve through the readings.
-   * "monotone" stays monotone along the category axis, so it runs along x, and along y under
-   * `orientation="horizontal"`. "monotone-y" is d3's monotoneY, monotone along screen y in either
-   * orientation. "step-after" and "step-before" run each reading across
+   * `monotone` stays monotone along the category axis, so it runs along x, and along y under
+   * `orientation="horizontal"`. `monotone-y` is d3's `monotoneY`, monotone along screen y in either
+   * orientation. `step-after` and `step-before` run each reading across
    * its whole cell, so the last hour of a day keeps its run. They need `xScale="band"` and throw
-   * `step-curve-needs-cells` under "point".
+   * `step-curve-needs-cells` under `"point"`.
    */
   curve?: ChartCurve;
 };
 
-/** Draw a line's frame from the loop's numbers: its path, and the dashed twin over its spans. */
+/** Draws a line's frame from the loop's numbers: its path, and the dashed twin over its spans. */
 function drawLine(group: SVGGElement, look: PathLook | null, values: MarkValues): void {
   if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / LINE_STRIDE);
@@ -59,7 +59,7 @@ function drawLine(group: SVGGElement, look: PathLook | null, values: MarkValues)
   writePath(group, look, line, dashed, "replace");
 }
 
-/** The width a line strokes its solid path in, which a consumer's --chart-stroke or the look sets. */
+/** The width a line strokes its solid path in, which a consumer's `--chart-stroke` or the look sets. */
 function readStroke(group: SVGGElement): number {
   const solid = group.querySelector('[data-part="solid"]');
   return solid === null ? 0 : Number.parseFloat(getComputedStyle(solid).strokeWidth) || 0;

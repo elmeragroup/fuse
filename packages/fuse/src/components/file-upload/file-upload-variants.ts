@@ -7,7 +7,7 @@ import { tv } from "../../styles/tv";
 /**
  * The FileUpload recipe, one slot per styled part. The Trigger takes no slot: like
  * `Dialog.Trigger` it is a plain button with the focus ring, and `render={<Button />}` gives it
- * a size. Package-private: the facade exports the parts, not the recipe.
+ * a size. The recipe is package-private, and the facade exports the parts, not the recipe.
  */
 export const fileUploadVariants = tv({
   slots: {

@@ -48,7 +48,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the requested desktop open state. When you pass it, the Provider keeps no state of its own. At `bounds=\"page\"` it still writes the cookie on every change.",
+          "description": "Called with the requested desktop open state. When it is passed, the Provider keeps no state of its own. At `bounds=\"page\"` it still writes the cookie on every change.",
           "required": false
         },
         {
@@ -57,7 +57,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the requested Sheet state when the Trigger, the shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it. When you pass it, the Provider keeps no Sheet state of its own, and the host decides.",
+          "description": "Called with the requested Sheet state when the Trigger, the shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it. When it is passed, the Provider keeps no Sheet state of its own, and the host decides.",
           "required": false
         },
         {
@@ -66,7 +66,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The desktop open state, for a Sidebar you control.",
+          "description": "The desktop open state, for a controlled Sidebar.",
           "required": false
         },
         {
@@ -184,7 +184,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. Your own icon components must pass `data-icon` through to the element they render. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
+          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. A custom icon component must pass `data-icon` through to the element it renders. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
           "required": false
         },
         {
@@ -213,7 +213,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Whether an action is in flight. A pending button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`. Page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -222,7 +222,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
+          "description": "Whether the button looks and announces disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -242,7 +242,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
+          "description": "Called once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never call it.",
           "required": false
         },
         {
@@ -251,7 +251,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
+          "description": "What a pending button shows in its leading icon position. Without it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -338,7 +338,7 @@
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "description": "The fill and text color. The theme sets the `outline` border. `link` looks like an inline text link.",
           "required": false,
           "values": [
             "default",
@@ -428,7 +428,7 @@
           "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Extra classes, merged after the line's own. A vertical line stretches to the height of its flex row. For a shorter one, add `data-vertical:h-4 data-vertical:self-auto` and centre the row with `items-center`. The line's own `data-vertical:self-stretch` wins over `self-center`, so `h-4 self-center` leaves the line at the top of the row.",
+          "description": "Extra classes, merged after the line's own. A vertical line stretches to the height of its flex row. For a shorter one, add `data-vertical:h-4 data-vertical:self-auto` and center the row with `items-center`. The line's own `data-vertical:self-stretch` wins over `self-center`, so `h-4 self-center` leaves the line at the top of the row.",
           "required": false
         },
         {
@@ -591,7 +591,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the current item. The row gets `data-active` and the accent fill. Pass `aria-current=\"page\"` on its link yourself.",
+          "description": "Whether the row is the current item. The row gets `data-active` and the accent fill. Sidebar sets no `aria-current`, so pass `aria-current=\"page\"` on its link.",
           "required": false
         },
         {
@@ -625,7 +625,7 @@
           "type": "string | TooltipContentProps | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The label to show beside the collapsed icon rail. The row becomes the tooltip's trigger, so one element is the row, your `render` element and the trigger. The tooltip opens to the right and only while the desktop rail is collapsed. A string is short for `{ children }`.",
+          "description": "The label to show beside the collapsed icon rail. The row becomes the tooltip's trigger, so one element is the row, the `render` element and the trigger. The tooltip opens to the right and only while the desktop rail is collapsed. A string is short for `{ children }`.",
           "required": false
         },
         {
@@ -634,7 +634,7 @@
           "type": "\"default\" | \"outline\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The row style. `outline` gives the row a fill and a 1px ring in the sidebar border colour.",
+          "description": "The row style. `outline` gives the row a fill and a 1px ring in the sidebar border color.",
           "required": false,
           "values": [
             "default",
@@ -670,7 +670,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Hides the action from 768px up until its menu item is hovered or holds focus, or the action has `aria-expanded`, so an open dropdown keeps it in view.",
+          "description": "Whether the action hides from 768px up until its menu item is hovered or holds focus, or the action has `aria-expanded`, so an open dropdown keeps it in view.",
           "required": false
         }
       ]
@@ -700,7 +700,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Draws a square icon placeholder before the text bar.",
+          "description": "Whether the skeleton draws a square icon placeholder before the text bar.",
           "required": false
         }
       ]
@@ -750,7 +750,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Marks the current item. The row gets `data-active` and the accent fill.",
+          "description": "Whether the row is the current item. The row gets `data-active` and the accent fill.",
           "required": false
         },
         {

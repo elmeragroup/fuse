@@ -40,8 +40,8 @@ function knownPageCount(pageCount: number): number {
 }
 
 /**
- * Resolve the controls for a page. The total is the only source of Next and Last: TanStack's
- * `getCanNextPage()` reads the `-1` unknown-count sentinel as "always another page".
+ * Resolves the controls for a page. The total is the only source of Next and Last, because
+ * TanStack's `getCanNextPage()` reads the `-1` unknown-count sentinel as "always another page".
  *
  * @param pageIndex - The zero-based current page index.
  * @param total - The known page count or the unknown total's `hasMore`.

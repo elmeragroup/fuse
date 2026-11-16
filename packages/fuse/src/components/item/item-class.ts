@@ -1,6 +1,7 @@
 /**
  * The class strings of Item's parts without an axis: `Item.Content`, `Item.Description`,
- * `Item.Actions` and `Item.Header`. Package-private: not on the `@elmeragroup/fuse/item` facade.
+ * `Item.Actions` and `Item.Header`. They are package-private and not on the `@elmeragroup/fuse/item`
+ * facade.
  * The workspace-only recipe catalog re-exports them for the Figma component sync.
  */
 import { cn } from "../../styles/cn";
@@ -18,7 +19,7 @@ export const itemContentClass = cn(
 /** `Item.Description`: the shared description face, clamped to two lines. */
 export const itemDescriptionClass = cn(ITEM_DESCRIPTION_CLASSES, "line-clamp-2");
 
-/** `Item.Actions`: the row's trailing controls, centred on the row. */
+/** `Item.Actions`: the row's trailing controls, centered on the row. */
 export const itemActionsClass = cn("flex items-center gap-2");
 
 /** `Item.Header`: a full-width line above the row's media and content. */

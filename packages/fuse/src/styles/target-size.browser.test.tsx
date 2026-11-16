@@ -16,8 +16,8 @@ import { DENSITIES } from "../theme/density";
 /**
  * Unit under test: the 24px target floor (WCAG 2.5.8) the control sizes own, on the smallest
  * targets Fuse draws: an icon-only inline Button, a NumberField's steppers inside the field box
- * and a Combobox chip's remove button, at both densities and at the 16px root and a 14px host root. Oracle: the
- * criterion's 24px square around each target's centre, which `test/target-size.ts` measures.
+ * and a Combobox chip's remove button, at both densities and at the 16px root and a 14px host root.
+ * Oracle: the criterion's 24px square around each target's center, which `test/target-size.ts` measures.
  */
 describe("the 24px target floor", () => {
   it("holds for the smallest targets at both densities and both host roots", () => {

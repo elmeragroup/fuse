@@ -30,7 +30,7 @@ export function bucketEdges(count: number, buckets: number = BUCKETS): number[] 
  * and highest reading, in x order, so a spike or a negative low stays visible. Ties keep the first
  * occurrence. A window of 2,000 slots or fewer keeps every slot with a reading.
  *
- * @param values - The series' readings in the window, null where it has none.
+ * @param values - The series' readings in the window, `null` where it has none.
  * @param buckets - How many buckets a decimated window splits into, 500 by default.
  * @returns The kept slot indexes, ascending.
  */

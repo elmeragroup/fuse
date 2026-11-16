@@ -31,13 +31,13 @@ export type LiveLineChartCrosshairProps = ChartLayerProps;
  * @beta
  */
 export type LiveLineChartTooltipProps = ChartLayerProps & {
-  /** The popup's surface. "frosted" lets the plot show through. */
+  /** The popup's surface. `"frosted"` lets the plot show through. */
   variant?: "default" | "frosted";
 };
 
 /**
  * A vertical line across the plot and a ring on the line. Under a pointer the line stands at the
- * pointer's x and the ring rides the line there as the window scrolls under it, with no ring past
+ * pointer's x and the ring follows the line there as the window scrolls under it, with no ring past
  * either end of the line, and a key puts both on the reading it steps to. Neither glides. They
  * move with the pointer, and a key step lands at once.
  *
@@ -81,8 +81,8 @@ export function LiveLineChartCrosshair({ className, style }: LiveLineChartCrossh
 }
 
 /**
- * What opened the tooltip, which holds while it stays open: a key opens it at once, with no
- * entrance, and a pointer with the popup's fade and zoom.
+ * What opened the tooltip, kept while it stays open. A key opens it at once, with no entrance, and
+ * a pointer opens it with the popup's fade and zoom.
  */
 function useOpenedBy(active: LiveActive | null, open: boolean): LiveActive["source"] | null {
   const [opened, setOpened] = useState<LiveActive["source"] | null>(null);

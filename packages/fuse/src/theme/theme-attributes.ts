@@ -23,13 +23,13 @@ export function attributesOfValidatedTheme(theme: ThemeInput): ThemeAttributes {
 /**
  * Validates a theme and returns the `data-theme-*` attributes to spread on an element.
  *
- * A segment a pinned brand does not allow throws in development. In production it is
- * coerced to the brand's pinned segment with a `console.warn`.
+ * A segment a pinned brand does not allow throws in development. In production, `themeAttributes`
+ * coerces it to the brand's pinned segment and calls `console.warn`.
  *
  * @param theme - The theme to stamp.
  * @returns The attributes that stamp the validated theme on an element.
- * @throws When `theme` has an unknown or missing axis, or in development a segment its
- *   brand is not pinned to.
+ * @throws When `theme` has an unknown or missing axis, or, in development, a segment its brand is
+ *   not pinned to.
  */
 export function themeAttributes(theme: ThemeInput): ThemeAttributes {
   return attributesOfValidatedTheme(validateTheme(theme));

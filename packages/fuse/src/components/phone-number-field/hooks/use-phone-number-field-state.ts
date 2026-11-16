@@ -20,12 +20,12 @@ import type { PhoneNumberCountry } from "../phone-engine";
 /** The editor's props, the field's two callbacks and the number input it restores the caret in. */
 export type UsePhoneNumberFieldStateOptions = PhoneEditorProps & {
   /**
-   * Receives an output value that differs from the value the parent holds: a user proposal's, or
-   * one a `countryCode` change steered, as a pick that clears the digits.
+   * Called with an output value that differs from the value the parent holds: a user proposal's,
+   * or one a `countryCode` change steered, such as a pick that clears the digits.
    */
   onChange?: (value: string) => void;
   /**
-   * Receives the countries the notice contract in `phone-country-notices.ts` announces. A
+   * Called with the countries the notice contract in `phone-country-notices.ts` announces. A
    * proposal that moves the country calls it before `onChange`.
    */
   onCountryChange?: (country: PhoneNumberCountry) => void;
@@ -45,15 +45,15 @@ export type UsePhoneNumberFieldStateReturn = Pick<
   /** Proposes a picked country. */
   selectCountry: (code: CountryCode | undefined) => void;
   /**
-   * Native form-reset handler: restores `defaultValue`, or clears the digits in the visible
-   * country without one; null when the parent owns `value`.
+   * The native form-reset handler, which restores `defaultValue`, or clears the digits in the
+   * visible country without one. It is `null` when the parent controls `value`.
    */
   onReset: (() => void) | null;
 };
 
 /**
- * React adapter for the phone editor: holds its state, folds props in during render, sends
- * `onChange` and `onCountryChange`, and puts an edit's caret back.
+ * The React adapter for the phone editor. It holds the editor's state, folds props in during
+ * render, sends `onChange` and `onCountryChange`, and puts an edit's caret back.
  */
 export function usePhoneNumberFieldState({
   onChange,

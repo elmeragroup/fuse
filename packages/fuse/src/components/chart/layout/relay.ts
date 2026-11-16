@@ -1,14 +1,15 @@
 /**
  * Whether a data update relays the plot. A bar or a missing tick that a data update mounts draws at
  * its target at once, so a mark that stays and shares a coordinate with it must draw its target at
- * once too, or the two part for the length of the tween. That happens when the update switches the
- * bars between their element and path forms, which replaces every bar, when it mounts a mark while
- * its layout's value axis moves or a tween still glides that layout's marks from an earlier domain,
- * either of which moves the baseline the layout's bars stand on, or when it mounts a stacked segment in a slot where a segment of another series stays, whose
- * edges it shares. Such an update snaps every mark of the Root. Only element-form bars draw at their
- * target at once, so a model's series count only where a mounted Bar draws them, and only while
- * the bars draw as elements on both sides of the update. Path-form columns and the vertices of
- * lines and areas route every arrival, so they never relay but on a switch of form.
+ * once too, or the two part for the length of the tween. That happens in three cases. The update
+ * switches the bars between their element and path forms, which replaces every bar. It mounts a mark
+ * while its layout's value axis moves or a tween still glides that layout's marks from an earlier
+ * domain, either of which moves the baseline the layout's bars stand on. Or it mounts a stacked
+ * segment in a slot where a segment of another series stays, whose edges it shares. Such an update
+ * snaps every mark of the Root. Only element-form bars draw at their target at once, so a model's
+ * series count only where a mounted Bar draws them, and only while the bars draw as elements on
+ * both sides of the update. Path-form columns and the vertices of
+ * lines and areas route every arrival, so they relay only on a switch of form.
  */
 import { barForm } from "./bar-geometry";
 import type { CartesianModel } from "./cartesian-model";
@@ -50,7 +51,7 @@ function marksOf({ model, keys }: Omit<KeyedModel, "domains">, bars: ReadonlySet
 }
 
 /**
- * Decide whether a data update relays the plot.
+ * Whether a data update relays the plot.
  *
  * @param previous - The model the marks draw now, and its slot keys.
  * @param next - The update's model, and its slot keys.

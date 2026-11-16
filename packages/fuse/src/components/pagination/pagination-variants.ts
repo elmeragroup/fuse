@@ -1,13 +1,12 @@
 /**
- * The public recipe, exported from `@elmeragroup/fuse/pagination`. It sets layout only. Colours,
+ * The public recipe, exported from `@elmeragroup/fuse/pagination`. It sets layout only. Colors,
  * radius, the focus ring and the control box come from Button's public `buttonVariants`.
  *
  * `direction` is not a consumer prop. It has no recipe default, because Previous and Next pass
  * it themselves, as ConfirmButton and TimelineList pass theirs.
  *
- * `pl-2.5` / `pr-2.5` are reviewed chevron-side layout literals, not a
- * control-box size axis. The ellipsis is the md control square, so it matches its sibling
- * links at either density.
+ * `pl-2.5` and `pr-2.5` are reviewed chevron-side layout literals, not a control-box size axis.
+ * The ellipsis is the md control square, so it matches its sibling links at either density.
  */
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";

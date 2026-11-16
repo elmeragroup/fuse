@@ -40,7 +40,7 @@ export type BarDraw = {
   readonly rect: PlotRect;
   readonly quality: string | undefined;
   readonly time: string | undefined;
-  /** The bar's own paint, a scale step or the greyed paint of emphasis. The series paint otherwise. */
+  /** The bar's own paint, a scale step or the grayed paint of emphasis. The series paint otherwise. */
   readonly paint: string | undefined;
   /**
    * The paint server the bar fills from on either side of its base, as `url(#…)`, or undefined for
@@ -147,7 +147,7 @@ function sameFill(fill: string | undefined): SideFills {
   return { positive: fill, negative: fill };
 }
 
-/** A greyed paint, a quarter of the way to the muted text role, for the bars emphasis leaves out. */
+/** A grayed paint, a quarter of the way to the muted text role, for the bars emphasis leaves out. */
 function greyed(paint: string): string {
   return `color-mix(in oklab, ${paint} 75%, var(--muted-foreground))`;
 }
@@ -225,14 +225,14 @@ export function fillPlot(frame: PlotFrame): FillPlot {
 }
 
 /**
- * The centre of the missing tick on the zero line. The tick is `tickWidth` wide, whole device
+ * The center of the missing tick on the zero line. The tick is `tickWidth` wide, whole device
  * pixels, and the zero line's snapped pixel edge, where the bars' bases draw, lies inside it, half
- * its pixels from its near edge, rounded down: on its centre wherever its pixels are even.
+ * its pixels from its near edge, rounded down: on its center wherever its pixels are even.
  *
  * @param frame - The frame the series draws in.
  * @param zero - Where the zero line lies along the value axis, unsnapped, the frame's own by
  *   default. A tween hands its frame's number, which snaps here, as a bar's base snaps.
- * @returns The tick's centre along the value axis.
+ * @returns The tick's center along the value axis.
  */
 export function missingTickAt(frame: PlotFrame, zero: number = valueAt(frame, 0)): number {
   const { dpr } = frame.box;
@@ -260,7 +260,7 @@ export function tickEnds(frame: PlotFrame, span: readonly [number, number], zero
 }
 
 /**
- * Lay out one series in the element form: a bar per reading and a tick per missing reading.
+ * Lays out one series in the element form: a bar per reading and a tick per missing reading.
  *
  * @param input - The series, its frame and spacing, its look and paint.
  * @returns The bars, the paint servers they need and the missing ticks.
