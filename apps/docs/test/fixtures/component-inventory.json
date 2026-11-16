@@ -1759,5 +1759,15 @@
       "tooltip-root-delay.tsx",
       "tooltip-controlled.tsx"
     ]
+  },
+  "tour": {
+    "title": "Tour",
+    "demos": [
+      "tour-demo.tsx",
+      "tour-guided.tsx",
+      "tour-checklist.tsx",
+      "tour-beacon.tsx",
+      "tour-html-target.tsx"
+    ]
   }
 }

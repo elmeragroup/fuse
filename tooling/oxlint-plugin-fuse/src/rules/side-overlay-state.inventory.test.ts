@@ -41,6 +41,10 @@ const EXEMPT = new Map([
     "A tooltip shows only while pointed at: the press that flips the window moves hover and focus off its trigger.",
   ],
   ["Toast.Viewport", "Its toasts sit in the Dashboard's own viewport and dismiss themselves."],
+  [
+    "Tour.Popup",
+    "A tour run opens it, not a prop, and the run ends on Escape, Close or a press outside a Spotlight; the landing windows render no tour.",
+  ],
 ]);
 
 /**

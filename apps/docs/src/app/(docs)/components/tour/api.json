@@ -1,0 +1,869 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "tour",
+  "parts": [
+    {
+      "name": "Tour.Provider",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-provider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "autoStartCooldownMs",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "The time `useAutoStartTour` keeps between tours, in milliseconds: a tour waits this long after the user last saw a step of another tour, in this visit or an earlier one.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The app. The Provider renders no element, and a run renders nothing in it.",
+          "required": false
+        },
+        {
+          "name": "initialRecords",
+          "origin": "declared",
+          "type": "TourRecords | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Records a server already read, so a finished tour answers its status from the first render and the server HTML matches. Read them from the tour cookie in a Server Component: `initialRecords={parseTourCookie((await cookies()).get(TOUR_COOKIE_NAME)?.value)}`. Keep the cookie current from `storage`: a `write` that also passes `serializeTourCookie(records)` to a Server Action, which sets the cookie under `TOUR_COOKIE_NAME`.",
+          "required": false
+        },
+        {
+          "name": "onError",
+          "origin": "declared",
+          "type": "((error: TourError) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with each error the tour caught: a storage call, a part, a callback or the tour's own. The tour never throws into the page. Without it, a development build logs a warning.",
+          "required": false
+        },
+        {
+          "name": "onEvent",
+          "origin": "declared",
+          "type": "((event: TourEvent) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when a run starts, shows a step, passes over a step, or ends, and when storage fails.",
+          "required": false
+        },
+        {
+          "name": "storage",
+          "origin": "declared",
+          "type": "TourStorage | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Where the tour keeps its records. The Provider reads it once, when it mounts. Defaults to `localTourStorage()`. A storage holds functions, so a Server Component cannot pass one; render the Provider from a client module to set it.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Target",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-target.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step's description. It overrides the definition's.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "step",
+          "origin": "declared",
+          "type": "NoInfer<S>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step this element is the target of.",
+          "required": true
+        },
+        {
+          "name": "title",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step's title, which names the popup. It overrides the definition's.",
+          "required": false
+        },
+        {
+          "name": "tour",
+          "origin": "declared",
+          "type": "TourDefinition<S>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour the step belongs to.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Tour.Beacon",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-beacon.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Defines a string value that labels the current element. The beacon's accessible name. Defaults to the locale dictionary's \"Show tip\".",
+          "required": false
+        },
+        {
+          "name": "step",
+          "origin": "declared",
+          "type": "NoInfer<S> | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step the beacon is the element of. Defaults to the tour's first step.",
+          "required": false
+        },
+        {
+          "name": "tour",
+          "origin": "declared",
+          "type": "TourDefinition<S>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour the beacon starts, usually a tour of one step.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Tour.Popup",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-popup.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "align",
+          "origin": "declared",
+          "type": "Align | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How the popup lines up with the step's element along that side.",
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
+        },
+        {
+          "name": "alignOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The popup's shift along the side it opens on, in pixels.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The popup's parts, such as `Tour.Title`, `Tour.Description` and `Tour.Footer`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "collisionAvoidance",
+          "origin": "declared",
+          "type": "CollisionAvoidance | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How the popup avoids the viewport edge: whether it flips or shifts, per axis.",
+          "required": false
+        },
+        {
+          "name": "collisionPadding",
+          "origin": "declared",
+          "type": "Padding | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The space the popup keeps from the viewport edge, in pixels. Pass an object, such as `{ top: 64 }`, to clear a sticky header. Defaults to Base UI's `5`.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The element the popup renders into. Defaults to the nearest enclosing `ThemeScope` element, so the popup keeps the theme of the place the tour runs in.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is opened. By default, focus moves to the first tabbable element inside the popup, except when the popover is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "modal",
+          "origin": "declared",
+          "type": "\"trap-focus\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Whether the popup holds focus and blocks the page. Leave it `false` for a coachmark, which keeps the page usable: a press outside the popup and focus leaving it do not end the run. Pass `\"trap-focus\"` with a `Tour.Spotlight`, and put a `Tour.Close` in the popup, so Base UI holds focus in the popup while the dim blocks the page.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "Side | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The side of the step's element the popup opens on.",
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
+        },
+        {
+          "name": "sideOffset",
+          "origin": "declared",
+          "type": "number | OffsetFunction | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The gap between the step's element and the popup, in pixels.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "tour",
+          "origin": "declared",
+          "type": "TourDefinition",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour whose steps the popup shows. A popup shows nothing for another tour's run.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Tour.Header",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Tour.Progress",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Tour.Close",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 285,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverCloseState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's accessible name. Defaults to `overlay.close` from the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverCloseState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverCloseState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Spotlight",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "padding",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "8",
+          "description": "The space the lit hole leaves around the step's element, in pixels.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Ring",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "padding",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "4",
+          "description": "The space the ring leaves around the step's element, in pixels.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Title",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverTitleState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverTitleState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverTitleState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Description",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverDescriptionState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverDescriptionState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverDescriptionState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Footer",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "Tour.Skip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's label. Defaults to the locale dictionary's.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Prev",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's label. Defaults to the locale dictionary's.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Tour.Next",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The button's label. Defaults to the locale dictionary's.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "useTour",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-provider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "content",
+          "origin": "declared",
+          "type": "{ readonly [K in S]?: TourDefinitionStep | undefined; }",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Plain-string words for steps no component carries, by step id.",
+          "required": true
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour's id, unique among the tours under one `Tour.Provider`.",
+          "required": true
+        },
+        {
+          "name": "priority",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rank among auto-started tours that are due at once. The highest starts.",
+          "required": true
+        },
+        {
+          "name": "steps",
+          "origin": "declared",
+          "type": "readonly S[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step ids in the order the tour shows them, without duplicates.",
+          "required": true
+        },
+        {
+          "name": "targetTimeoutMs",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long a step waits for its element before the tour skips it, in milliseconds.",
+          "required": true
+        },
+        {
+          "name": "version",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The definition's version. A record written against another version loses its progress.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "useAutoStartTour",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-provider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "content",
+          "origin": "declared",
+          "type": "{ readonly [x: string]: TourDefinitionStep | undefined; }",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Plain-string words for steps no component carries, by step id.",
+          "required": true
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour's id, unique among the tours under one `Tour.Provider`.",
+          "required": true
+        },
+        {
+          "name": "priority",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rank among auto-started tours that are due at once. The highest starts.",
+          "required": true
+        },
+        {
+          "name": "steps",
+          "origin": "declared",
+          "type": "readonly string[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step ids in the order the tour shows them, without duplicates.",
+          "required": true
+        },
+        {
+          "name": "targetTimeoutMs",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long a step waits for its element before the tour skips it, in milliseconds.",
+          "required": true
+        },
+        {
+          "name": "version",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The definition's version. A record written against another version loses its progress.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "useTourStep",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-provider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "content",
+          "origin": "declared",
+          "type": "{ readonly [K in S]?: TourDefinitionStep | undefined; }",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Plain-string words for steps no component carries, by step id.",
+          "required": true
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour's id, unique among the tours under one `Tour.Provider`.",
+          "required": true
+        },
+        {
+          "name": "priority",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rank among auto-started tours that are due at once. The highest starts.",
+          "required": true
+        },
+        {
+          "name": "steps",
+          "origin": "declared",
+          "type": "readonly S[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step ids in the order the tour shows them, without duplicates.",
+          "required": true
+        },
+        {
+          "name": "targetTimeoutMs",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long a step waits for its element before the tour skips it, in milliseconds.",
+          "required": true
+        },
+        {
+          "name": "version",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The definition's version. A record written against another version loses its progress.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "useTourStepDone",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/tour/tour-provider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "content",
+          "origin": "declared",
+          "type": "{ readonly [K in S]?: TourDefinitionStep | undefined; }",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Plain-string words for steps no component carries, by step id.",
+          "required": true
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tour's id, unique among the tours under one `Tour.Provider`.",
+          "required": true
+        },
+        {
+          "name": "priority",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rank among auto-started tours that are due at once. The highest starts.",
+          "required": true
+        },
+        {
+          "name": "steps",
+          "origin": "declared",
+          "type": "readonly S[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The step ids in the order the tour shows them, without duplicates.",
+          "required": true
+        },
+        {
+          "name": "targetTimeoutMs",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How long a step waits for its element before the tour skips it, in milliseconds.",
+          "required": true
+        },
+        {
+          "name": "version",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The definition's version. A record written against another version loses its progress.",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -76,6 +76,7 @@ export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
     "chart",
     "Chart's marks, axes and Panels compose under one Root in paint order, and the typed chart names are aliases of it.",
   ],
+  ["tour", "A tour's definition, Provider, targets and Popup render apart, and none is a prop of another."],
 ]);
 
 const FRONTMATTER_FENCE = "---";
