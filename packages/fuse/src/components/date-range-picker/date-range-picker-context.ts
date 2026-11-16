@@ -69,8 +69,8 @@ export type DateRangePickerRootContextValue = {
   readonly describedBy: string | undefined;
   readonly hasPresets: boolean;
   /**
-   * The fallback for a part the Root could not see among its children: the part announces itself
-   * after mount.
+   * Registers a part with the Root and returns its unregistration. The Label and Description
+   * register on mount, and the Error while it shows.
    */
   readonly registerPart: (part: RangePart) => () => void;
   readonly inputChange: (
