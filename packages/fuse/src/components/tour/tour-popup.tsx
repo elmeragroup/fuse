@@ -5,6 +5,8 @@ import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
+import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
@@ -25,6 +27,7 @@ import { TourHighlight } from "./tour-highlight";
 import { useTourController } from "./tour-provider";
 import type { TourShownStep } from "./tour-session";
 import { tourVariants } from "./tour-variants";
+import { useTourGlide } from "./use-tour-glide";
 
 const slots = tourVariants();
 
@@ -192,7 +195,8 @@ export type TourPopupProps = ComponentProps<typeof PopoverPrimitive.Popup> & {
  * another overlay, such as a tooltip, closes on the same press. The Arrow keys move between steps
  * while focus is on the popup and not in a text field, and the forward key does nothing on the last
  * step. When the run ends, focus returns to the element focused before the popup opened, unless the
- * user moved it.
+ * user moved it. Between steps the popup glides from one element to the next, unless the user asks
+ * for reduced motion.
  *
  * @beta
  */
@@ -230,6 +234,7 @@ function TourPopupRoot({
   className,
   children,
   onKeyDown: consumerKeyDown,
+  ref,
   ...props
 }: TourPopupProps & {
   readonly controller: TourController;
@@ -254,6 +259,9 @@ function TourPopupRoot({
     [controller, tour, view, parts]
   );
   const centered = anchor !== null && anchor.contextElement === undefined;
+  const [popup, setPopup] = useState<HTMLElement | null>(null);
+  const popupRef = useMergedRefs<HTMLElement>(setPopup, ref);
+  useTourGlide(popup, shown === null ? "" : tourStepKey(shown.tourId, shown.stepId), useReducedMotion());
 
   const onKeyDown: NonNullable<TourPopupProps["onKeyDown"]> = (event) => {
     consumerKeyDown?.(event);
@@ -346,6 +354,7 @@ function TourPopupRoot({
             {...definedProps({ collisionPadding, collisionAvoidance })}
             className={overlayPositionerClass}>
             <PopoverPrimitive.Popup
+              ref={popupRef}
               data-slot="tour-popup"
               data-placement={centered ? "center" : "target"}
               className={mergeClassName(className, slots.popup())}

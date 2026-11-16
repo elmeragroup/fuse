@@ -190,6 +190,15 @@ const overlayPopupVariants = tv({
      */
     resize: "motion-safe:transition-[opacity,scale,translate,height,width]",
     /**
+     * The glide between two anchors, for an anchored popup that keeps its place on screen while its
+     * anchor changes and then eases to the new one, as `Tour.Popup` does between steps. While the
+     * popup carries `data-gliding`, the `translate` the anchor slot already transitions takes 300ms
+     * on an ease-in-out curve instead of the timing rung. It sits under `motion-safe:`, so a
+     * reduced-motion user sees the popup move at once.
+     */
+    glide:
+      "motion-safe:data-gliding:duration-300 motion-safe:data-gliding:ease-[cubic-bezier(0.77,0,0.175,1)]",
+    /**
      * The shared popup timing rung. {@link overlayTimedPopupClass} folds it in for the timed
      * anchored popups, {@link overlayModalPopupClass} for the modals and
      * {@link overlayBackdropMotionClass} for the backdrop. Tooltip ships motion untimed, on
@@ -281,6 +290,14 @@ export const overlayTimedPopupClass = cn(
  * `width` added to the open and close transitions, under `motion-safe:` with the rest.
  */
 export const overlayResizingPopupClass = cn(overlayTimedPopupClass, overlayPopupSlots.resize());
+
+/**
+ * The timed popup class for an anchored popup that glides from one anchor to the next, as
+ * `Tour.Popup` does between steps. It is {@link overlayTimedPopupClass} with the transition timing
+ * the popup takes while it carries `data-gliding`, under `motion-safe:` with the rest. The transition
+ * list stays the anchor slot's, which already holds `translate`.
+ */
+export const overlayGlidingPopupClass = cn(overlayTimedPopupClass, overlayPopupSlots.glide());
 
 /**
  * The face of the two modals, Dialog and `Command.Content`. It is the surface with the `lg`

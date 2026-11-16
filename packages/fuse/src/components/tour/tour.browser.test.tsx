@@ -1366,6 +1366,49 @@ describe("Tour.Beacon", () => {
   });
 });
 
+describe("Tour glide", () => {
+  it("pins the popup where it was when the step changes, then releases it at the next step's element", async () => {
+    renderThemed(
+      <Tour.Provider storage={memoryTourStorage()}>
+        <Starter tour={welcome} />
+        <Tour.Target tour={welcome} step="usage" title="Usage">
+          Usage card
+        </Tour.Target>
+        <div style={{ marginInlineStart: 240, marginBlockStart: 160 }}>
+          <PriceButton />
+        </div>
+        <Tour.Popup tour={welcome} sideOffset={12}>
+          <Tour.Title />
+          <Tour.Next />
+        </Tour.Popup>
+      </Tour.Provider>
+    );
+    await userEvent.click(roleNamed("button", "Take the tour"));
+    await dialogNamed("Welcome");
+    await userEvent.click(roleNamed("button", "Next"));
+    const dialog = await dialogNamed("Usage");
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+
+    const pins: string[] = [];
+    const observer = new MutationObserver(() => {
+      pins.push(dialog.style.translate);
+    });
+    observer.observe(dialog, { attributes: true, attributeFilter: ["style"] });
+    await userEvent.click(roleNamed("button", "Next"));
+    await dialogNamed("Price");
+    const price = roleNamed("button", "Price");
+    // Unit under test: the popup's place after the glide. Oracle: the price button's box with the
+    // bottom side and 12px offset, and no translate left on the popup.
+    await vi.waitFor(() => {
+      expect(dialog.style.translate).toBe("");
+      expect(dialog).not.toHaveAttribute("data-gliding");
+      expect(dialog.getBoundingClientRect().top).toBeCloseTo(price.getBoundingClientRect().bottom + 12, 0);
+    });
+    observer.disconnect();
+    expect(pins.some((pin) => pin !== "")).toBe(true);
+  });
+});
+
 describe("Tour re-renders", () => {
   it("renders an unrelated child once, a Target as it becomes and stops being shown, and another tour's Popup only on step changes", async () => {
     const commits = { unrelated: 0, target: 0, otherPopup: 0 };

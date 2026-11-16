@@ -2,7 +2,7 @@ import { cn } from "../../styles/cn";
 import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
-import { overlayLayer, overlayTimedPopupClass } from "../overlay/overlay-classes";
+import { overlayGlidingPopupClass, overlayLayer } from "../overlay/overlay-classes";
 
 /** The primary-color ring around a step's element, which every highlight of the element shares. */
 const tourOutlineClass = cn("ring-2 ring-primary");
@@ -10,8 +10,8 @@ const tourOutlineClass = cn("ring-2 ring-primary");
 /**
  * The module-private recipe for the tour popup and its parts.
  *
- * - `popup` is the shared timed popup on the Popover shell, as `Popover.Content` is, 320px wide or
- *   the viewport less 32px, with its parts 12px apart.
+ * - `popup` is the shared gliding popup on the Popover shell, `Popover.Content`'s timed popup with
+ *   the glide between steps, 320px wide or the viewport less 32px, with its parts 12px apart.
  * - `header` sets the progress at the start and the close button at the end.
  * - `progress` is the muted count with its dots; `dot` marks the shown step in the primary color.
  * - `title` and `description` match Popover's.
@@ -30,7 +30,7 @@ export const tourVariants = tv({
   slots: {
     popup: [
       selfFocusRingClass,
-      overlayTimedPopupClass,
+      overlayGlidingPopupClass,
       popoverShellClass,
       "text-sm flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-3",
     ],
