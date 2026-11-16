@@ -177,6 +177,28 @@ export function openView(day: Temporal.PlainDate, count: number, bounds: DayBoun
 }
 
 /**
+ * Where a calendar opens on a range. It opens as `openView` opens on the range's start, or on the
+ * range's first month for a range too long for that view, as React Aria aligns it.
+ *
+ * @param start - The range's first day.
+ * @param end - The range's last day.
+ * @param count - How many months show.
+ * @param bounds - The first and last selectable days.
+ * @returns The focused day and the visible months.
+ */
+export function openRangeView(
+  start: Temporal.PlainDate,
+  end: Temporal.PlainDate,
+  count: number,
+  bounds: DayBounds
+): OpenedView {
+  const opened = openView(start, count, bounds);
+  return showsDay(opened.visible, end)
+    ? opened
+    : { ...opened, visible: startAlignedMonths(opened.focused, count, bounds) };
+}
+
+/**
  * The last visible month.
  *
  * @param visible - The visible months.

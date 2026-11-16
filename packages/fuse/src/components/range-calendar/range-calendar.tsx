@@ -14,7 +14,7 @@ import { temporal } from "../../temporal/temporal";
 import type { TemporalValue } from "../../temporal/temporal-value";
 import { CalendarRootContext, createSelectionOwner } from "../calendar/calendar-context";
 import type { CalendarRootContextValue } from "../calendar/calendar-context";
-import { boundDay, showsDay, startAlignedMonths } from "../calendar/calendar-dates";
+import { boundDay, openRangeView, openView } from "../calendar/calendar-dates";
 import {
   useCalendarBounds,
   useCalendarSettings,
@@ -25,6 +25,7 @@ import type { CalendarViewProps, RangePropEnds } from "../calendar/calendar-inpu
 import { createCalendarStore, useCalendarSelector } from "../calendar/calendar-store";
 import { calendarVariants } from "../calendar/calendar-variants";
 import { initialSharedState, useCalendarNavigation } from "../calendar/use-calendar-navigation";
+import { useViewFollowsValue } from "../calendar/use-view-follows-value";
 import { rangeCalendarStrings } from "./intl";
 import { anchoredBounds, orderedRange, unavailableFor } from "./range-selection";
 import type {
@@ -237,14 +238,12 @@ export function RangeCalendarRoot({
 
   const [store] = useState(() => {
     const initial = controlled ? value : dayRange(defaultEnds);
-    const shared = initialSharedState(initial?.start ?? null, { bounds, visibleMonths });
-    const { focused } = shared;
-    let { visible } = shared;
-    // A range too long for the centered view opens on its first month, as React Aria aligns it.
-    if (initial !== null && focused !== null && visible !== null && !showsDay(visible, initial.end)) {
-      visible = startAlignedMonths(focused, visibleMonths, bounds);
-    }
-    return createCalendarStore<RangeCalendarState>({ ...shared, visible, value: initial, anchor: null });
+    const view = initial === null ? null : openRangeView(initial.start, initial.end, visibleMonths, bounds);
+    return createCalendarStore<RangeCalendarState>({
+      ...initialSharedState(view),
+      value: initial,
+      anchor: null,
+    });
   });
 
   // While a range is being chosen the anchor narrows the selectable days, so the Root re-renders
@@ -291,6 +290,23 @@ export function RangeCalendarRoot({
     settings,
     timeZone,
     onVisibleRangeChange,
+    rootRef
+  );
+  // In a picker, the view follows the range. A standalone calendar's view stays, as above. Either end
+  // in view counts as shown. A new range drops a range the user is choosing, which it replaces,
+  // whether or not the view moves.
+  useViewFollowsValue(
+    store,
+    (current) => {
+      const kept = current.anchor === null ? current : { ...current, anchor: null };
+      const range = current.value;
+      if (range !== null) {
+        const view = openRangeView(range.start, range.end, visibleMonths, bounds);
+        return { days: [range.start, range.end], kept, view };
+      }
+      const { today } = current;
+      return today === null ? null : { days: [today], kept, view: openView(today, visibleMonths, bounds) };
+    },
     rootRef
   );
 

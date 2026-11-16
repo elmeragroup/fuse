@@ -18,6 +18,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
+import { CalendarViewFollowContext } from "../calendar/use-view-follows-value";
 import { SEGMENT_SELECTOR } from "../date-field/date-input-context";
 import { datePickerVariants } from "../date-picker/date-picker-variants";
 import { datePickerStrings } from "../date-picker/intl";
@@ -384,16 +385,17 @@ export function DateRangePickerCalendar({
 }: DateRangePickerCalendarProps): ReactElement {
   const root = useRangeRootContext("DateRangePicker.Calendar");
   return (
-    <RangeCalendarRoot
-      key={root.calendarKey}
-      {...definedProps(props)}
-      commitBehavior={commitBehavior ?? (root.hasPresets ? "reset" : "select")}
-      value={root.calendarRange}
-      onValueChange={root.selectRange}
-      {...root.calendarSettings}
-      className={cn(styles.calendar(), className)}>
-      {children ?? <DefaultCalendarChildren />}
-    </RangeCalendarRoot>
+    <CalendarViewFollowContext value={root.viewFollow}>
+      <RangeCalendarRoot
+        {...definedProps(props)}
+        commitBehavior={commitBehavior ?? (root.hasPresets ? "reset" : "select")}
+        value={root.calendarRange}
+        onValueChange={root.selectRange}
+        {...root.calendarSettings}
+        className={cn(styles.calendar(), className)}>
+        {children ?? <DefaultCalendarChildren />}
+      </RangeCalendarRoot>
+    </CalendarViewFollowContext>
   );
 }
 

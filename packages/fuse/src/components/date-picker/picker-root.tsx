@@ -443,20 +443,29 @@ export function usePickerRootElement(options: PickerRootElementOptions): ReactEl
 }
 
 /**
- * The calendar's view key. Calendar keeps its view when its controlled value changes, so a value
- * that came from anywhere but the calendar itself, such as typing or a preset the parent maps to a
- * value, changes the key and the calendar remounts on it, so the calendar shows the new value's month. A
- * value the calendar made is marked as picked first and keeps the key, so the calendar under focus
- * stays.
+ * The count of the committed value's changes that came from anywhere but the picker's own
+ * calendar and popup: typing, a preset, the parent or a form reset. The calendar's view follows
+ * each new count; see `use-view-follows-value.ts`. The picker first marks a value it made, either a
+ * picked day or a time edited in the popup, as picked. That value keeps the count, so the view stays
+ * on the months the user paged to. A parent that answers a pick with another value makes a new count.
  *
- * @param basis - The committed value's key.
- * @returns `[key, markPicked]`, where `markPicked` takes the key of a value the calendar made.
+ * @param basis - The committed value's full ISO string, including its time.
+ * @returns `[changes, markPicked]`. Call `markPicked` with the key of a value the picker made, in the
+ *   same update as the commit that makes it. The next change of `basis` uses up the mark, and the
+ *   next mark replaces it.
  */
-export function useCalendarViewKey(basis: string): readonly [number, (picked: string) => void] {
+export function useOutsideChanges(basis: string): readonly [number, (picked: string) => void] {
   const [picked, setPicked] = useState<string | null>(null);
-  const [view, setView] = useState({ basis, key: 0 });
-  if (view.basis !== basis) {
-    setView({ basis, key: basis === picked ? view.key : view.key + 1 });
+  const [seen, setSeen] = useState({ basis, changes: 0 });
+  if (seen.basis !== basis) {
+    setSeen({ basis, changes: basis === picked ? seen.changes : seen.changes + 1 });
+    // The next change uses up the mark, whatever value it brings, and render timing cannot expire
+    // it. A parent may accept a pick one or more renders late, through a transition, a deferred
+    // value or a server round-trip. Such a delayed acceptance looks the same as a declined pick
+    // followed by an identical outside update, so both keep the view.
+    if (picked !== null) {
+      setPicked(null);
+    }
   }
-  return [view.key, setPicked] as const;
+  return [seen.changes, setPicked] as const;
 }

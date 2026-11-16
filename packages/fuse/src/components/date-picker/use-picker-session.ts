@@ -54,8 +54,8 @@ export type PickerSession<V, R extends string> = {
   /** The held selection over the current committed value, or `null`. */
   readonly held: PickerHeld<V, R> | null;
   /**
-   * The form-reset generation. The calendars key their view by it so the view starts over, and a
-   * range's end uses it to recognize the commit that renders a reset.
+   * The form-reset generation. The calendars' views start over by it, and a range's end uses it to
+   * recognize the commit that renders a reset.
    */
   readonly generation: number;
   /** Opens or closes the popup as one transaction; see `usePickerSession`. */
@@ -83,11 +83,11 @@ export type PickerSession<V, R extends string> = {
  *   selection the same way, after the fact.
  * - A held selection belongs to the committed value it was made over: once that value changes it is
  *   gone for good, so restoring the old value never resurrects it.
- * - A native form reset drops the held selection, bumps `generation` and calls `onReset`. The Root
- *   keys its calendar by `generation`, so the view starts over even when the value is unchanged.
- *   In the same task, the reset also resets every input registered with `resetOwner`. Each input
- *   drops its draft and shown validity and takes the value that `onReset` puts back as the reset's
- *   own change, which validates nothing.
+ * - A native form reset drops the held selection, bumps `generation` and calls `onReset`. The
+ *   calendar's view starts over by `generation`, even when the value is unchanged. In the same task,
+ *   the reset also resets every input registered with `resetOwner`. Each input drops its draft and
+ *   shown validity and takes the value that `onReset` puts back as the reset's own change, which
+ *   validates nothing.
  *
  * @template V - What the picker holds.
  * @template R - The gestures that make a selection.

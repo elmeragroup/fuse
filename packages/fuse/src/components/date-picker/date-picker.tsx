@@ -16,6 +16,8 @@ import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import { useTemporalProp } from "../calendar/calendar-input";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
+import { CalendarViewFollowContext } from "../calendar/use-view-follows-value";
+import type { CalendarViewFollow } from "../calendar/use-view-follows-value";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import { valueError } from "../date-field/date-input-validation";
@@ -42,7 +44,7 @@ import {
 import type { EndpointDraft } from "./picker-draft";
 import { PickerDateInput } from "./picker-input";
 import {
-  useCalendarViewKey,
+  useOutsideChanges,
   usePickerRoot,
   usePickerRootElement,
   usePickerRules,
@@ -235,7 +237,8 @@ type DatePickerRootContextValue = {
   readonly value: TemporalValue | null;
   /** The day the picker holds: a day picked in an empty picker, else the value's, from `endDay`. */
   readonly calendarDay: Temporal.PlainDate | null;
-  readonly calendarKey: string;
+  /** What the calendar's view follows; see `use-view-follows-value.ts`. */
+  readonly viewFollow: CalendarViewFollow;
   readonly inputSettings: PickerInputSettings;
   readonly calendarSettings: PickerCalendarSettings;
   readonly timeSettings: PickerTimeSettings | null;
@@ -316,8 +319,8 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
   // SAFETY: the picker checks values of its resolved kind, which is `T`'s.
   const unavailable = isDateUnavailable as ((value: TemporalValue) => boolean) | undefined;
 
-  // The calendar's view follows a value that came from anywhere but the calendar itself.
-  const [viewKey, markPicked] = useCalendarViewKey(iso);
+  // The calendar's view follows a value that came from anywhere but the picker itself.
+  const [outsideChanges, markPicked] = useOutsideChanges(iso);
   // Worked out before the session, so a commit it makes while the popup closes reads this render's.
   const rules = usePickerRules(OWNER, minValue, maxValue, unavailable);
   // The picker's empty input takes this kind, as `date-input-kind.ts` describes, so the picker warns
@@ -383,7 +386,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       if (!commit(next, origin.reason, origin.event, origin.trigger)) {
         return false;
       }
-      // The calendar made this value: a close the parent cancels keeps it mounted under focus.
+      // The calendar made this value, so a close that the parent cancels keeps the view where it is.
       markPicked(next.toString());
       return true;
     },
@@ -492,7 +495,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
         details.cancel();
         return;
       }
-      // The popup made this value: the calendar under it stays mounted on its month.
+      // The popup made this value, so the calendar under it stays on its month.
       markPicked(value.toString());
     }
   );
@@ -504,7 +507,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       value,
       // Worked out here, so a time value's day, a new object each time, keeps the context.
       calendarDay: endDay(draft),
-      calendarKey: `${generation}:${viewKey}`,
+      viewFollow: { resets: generation, changes: outsideChanges },
       inputSettings,
       calendarSettings,
       timeSettings,
@@ -520,7 +523,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       value,
       draft,
       generation,
-      viewKey,
+      outsideChanges,
       inputSettings,
       calendarSettings,
       timeSettings,
@@ -596,15 +599,16 @@ export type DatePickerCalendarProps = Omit<CalendarRootProps, PickerOwnedCalenda
 export function DatePickerCalendar({ className, children, ...props }: DatePickerCalendarProps): ReactElement {
   const root = useDatePickerRootContext("DatePicker.Calendar");
   return (
-    <CalendarRoot
-      key={root.calendarKey}
-      {...definedProps(props)}
-      value={root.calendarDay}
-      onValueChange={root.selectDay}
-      {...root.calendarSettings}
-      className={cn(styles.calendar(), className)}>
-      {children ?? <DefaultCalendarChildren />}
-    </CalendarRoot>
+    <CalendarViewFollowContext value={root.viewFollow}>
+      <CalendarRoot
+        {...definedProps(props)}
+        value={root.calendarDay}
+        onValueChange={root.selectDay}
+        {...root.calendarSettings}
+        className={cn(styles.calendar(), className)}>
+        {children ?? <DefaultCalendarChildren />}
+      </CalendarRoot>
+    </CalendarViewFollowContext>
   );
 }
 

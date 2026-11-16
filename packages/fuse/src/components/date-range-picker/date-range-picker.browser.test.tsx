@@ -16,6 +16,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
 import type { ParentHandle } from "../../../test/parent-handle";
@@ -59,6 +60,51 @@ function segmentTexts(): string[] {
     .getByRole("spinbutton")
     .elements()
     .map((element) => element.textContent);
+}
+
+/** Today for the tests that pin it: September 15, 2026, away from every day they name. */
+const AWAY_TODAY = "2026-09-15T12:00:00";
+
+function range(start: string, end: string): DateRangePickerValue<Temporal.PlainDate> {
+  return { start: Temporal.PlainDate.from(start), end: Temporal.PlainDate.from(end) };
+}
+
+/** The state of the test parent in `ParentRange`: the range and the one day it refuses. */
+type RangeParent = {
+  readonly value: DateRangePickerValue<Temporal.PlainDate> | null;
+  readonly unavailable?: string;
+};
+
+/** A controlled field whose parent a test sets, logging each range the field commits. */
+function ParentRange({
+  parent,
+  values,
+  initial,
+  visibleMonths,
+}: {
+  readonly parent: ParentHandle<RangeParent>;
+  readonly values: string[];
+  readonly initial: RangeParent;
+  readonly visibleMonths?: number;
+}): ReactElement {
+  const [state, setState] = useState(initial);
+  useEffect(() => {
+    parent.bind(setState);
+  }, [parent]);
+  const { unavailable } = state;
+  return (
+    <DateRangePickerField
+      label="Period"
+      {...definedProps({ visibleMonths })}
+      shouldCloseOnSelect={false}
+      value={state.value}
+      isDateUnavailable={(day) => day.toString() === unavailable}
+      onChange={(next) => {
+        values.push(next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`);
+        setState((current) => ({ ...current, value: next }));
+      }}
+    />
+  );
 }
 
 /** A field that logs each committed range, with the reason and the validation error, and can cancel. */
@@ -327,6 +373,91 @@ describe("DateRangePicker calendar", () => {
     await userEvent.click(roleNamed("button", "Calendar Period"));
     await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
     await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+  });
+
+  it("shows the months of a range the parent sets while the calendar has focus, and keeps them for a range picked in the second month", async () => {
+    freezeToday(AWAY_TODAY);
+    const parent = parentHandle<RangeParent>();
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <ParentRange
+          parent={parent}
+          values={values}
+          initial={{ value: range("2026-10-05", "2026-10-09") }}
+          visibleMonths={2}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await expect
+      .element(page.getByRole("button", { name: /Monday, October 5, 2026 selected$/u }))
+      .toHaveFocus();
+
+    parent.set({ value: range("2027-02-10", "2027-02-12") });
+    await expect.element(page.getByRole("grid", { name: "February 2027", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("grid", { name: "March 2027", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: /Wednesday, February 10, 2027 selected$/u }))
+      .toHaveFocus();
+
+    await pickDay("Wednesday, March 3, 2027");
+    await pickDay("Friday, March 5, 2027");
+    await expect.poll(() => values).toEqual(["2027-03-03..2027-03-05"]);
+    await expect.element(page.getByRole("grid", { name: "February 2027", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: /Friday, March 5, 2027 selected$/u }))
+      .toHaveFocus();
+  });
+
+  it("drops a range being chosen when the parent sets a range in the visible month", async () => {
+    freezeToday(AWAY_TODAY);
+    const parent = parentHandle<RangeParent>();
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <ParentRange parent={parent} values={values} initial={{ value: range("2026-10-05", "2026-10-09") }} />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await pickDay("Tuesday, October 20, 2026");
+    await expect.element(page.getByRole("button", { name: /^Wednesday, October 21, 2026/u })).toHaveFocus();
+
+    parent.set({ value: range("2026-10-10", "2026-10-12") });
+    await expect
+      .element(page.getByRole("button", { name: /Saturday, October 10, 2026 selected$/u }))
+      .toBeVisible();
+    // Enter on the focused day starts a range there, rather than completing one from October 20.
+    await userEvent.keyboard("{Enter}");
+    await expect.element(page.getByRole("button", { name: /^Thursday, October 22, 2026/u })).toHaveFocus();
+    expect(values).toEqual([]);
+  });
+
+  it("shows the month of a range the parent sets with new availability while a range is being chosen", async () => {
+    freezeToday(AWAY_TODAY);
+    const parent = parentHandle<RangeParent>();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <ParentRange
+          parent={parent}
+          values={[]}
+          initial={{ value: range("2026-10-05", "2026-10-09"), unavailable: "2026-10-25" }}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    // The anchor on October 20 bounds the range at October 24, before the unavailable 25th.
+    await pickDay("Tuesday, October 20, 2026");
+    await expect.element(page.getByRole("button", { name: /^Wednesday, October 21, 2026/u })).toHaveFocus();
+
+    parent.set({ value: range("2026-12-10", "2026-12-12"), unavailable: "2026-10-26" });
+    await expect.element(page.getByRole("grid", { name: "December 2026", exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: /Thursday, December 10, 2026 selected$/u }))
+      .toHaveFocus();
   });
 
   it("drops a half-picked range, rather than completing it, when focus moves to a preset", async () => {

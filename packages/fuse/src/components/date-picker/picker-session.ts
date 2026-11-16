@@ -9,9 +9,9 @@
 //   as a draft DateInput keeps over its committed value. `finalizeOnClose` marks a selection the
 //   close commits.
 // - `open` is the popup's own open state, read while the parent does not own it.
-// - `generation` counts form resets. The calendars key their view by it, so the view starts over,
-//   and a range's end recognizes a reset's commit by it. The inputs reset themselves through the
-//   session; see `date-input-reset.ts`.
+// - `generation` counts form resets. The calendars' views start over by it, in
+//   `use-view-follows-value.ts`, and a range's end recognizes a reset's commit by it. The inputs
+//   reset themselves through the session; see `date-input-reset.ts`.
 
 /** Where a held selection came from, reported again when the close commits it. */
 export type PickerHeldOrigin<R extends string = string> = {

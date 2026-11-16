@@ -38,7 +38,7 @@ import type {
 } from "../date-picker/picker-change-details";
 import type { DatePickerClassName } from "../date-picker/picker-class-name";
 import {
-  useCalendarViewKey,
+  useOutsideChanges,
   usePickerRoot,
   usePickerRootElement,
   usePickerRules,
@@ -356,8 +356,8 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
   // SAFETY: the picker checks values of its resolved kind, which is `T`'s.
   const unavailable = isDateUnavailable as ((value: TemporalValue) => boolean) | undefined;
 
-  // The calendar's view follows a range set from anywhere but the calendar itself.
-  const [viewKey, markPicked] = useCalendarViewKey(committedKey);
+  // The calendar's view follows a range set from anywhere but the picker itself.
+  const [outsideChanges, markPicked] = useOutsideChanges(committedKey);
   // The rules are worked out before the session, so a commit it makes while the popup closes reads
   // this render's.
   const rules = usePickerRules(OWNER, minValue, maxValue, unavailable);
@@ -421,7 +421,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       if (!commitRange(range, origin.reason, origin.event, origin.trigger)) {
         return false;
       }
-      // The calendar made this range: a close the parent cancels keeps it mounted under focus.
+      // The calendar made this range, so a close that the parent cancels keeps the view where it is.
       markPicked(rangeKey(range));
       return true;
     },
@@ -649,7 +649,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
         details.cancel();
         return;
       }
-      // The popup made this range: the calendar under it stays mounted on its months.
+      // The popup made this range, so the calendar under it stays on its months.
       if (applied !== null) {
         markPicked(rangeKey(applied));
       }
@@ -692,8 +692,8 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     (): DateRangePickerRootContextValue => ({
       ends,
       calendarRange,
-      calendarKey: `${generation}:${viewKey}`,
       generation,
+      viewFollow: { resets: generation, changes: outsideChanges },
       endpointLabelledBy,
       inputSettings,
       calendarSettings,
@@ -719,7 +719,7 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
       ends,
       calendarRange,
       generation,
-      viewKey,
+      outsideChanges,
       endpointLabelledBy,
       inputSettings,
       calendarSettings,
