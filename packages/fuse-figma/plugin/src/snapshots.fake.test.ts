@@ -23,6 +23,7 @@ function exportFrom(file: FakeFigma, pageKeys: readonly string[], progress: Snap
 }
 
 const BADGE = inventoryPage("badge");
+const ITEM = inventoryPage("item");
 const KBD = inventoryPage("kbd");
 
 describe("Export snapshots from an applied file", () => {
@@ -63,6 +64,7 @@ describe("Export snapshots from an applied file", () => {
       ])
     );
     const [instance] = first?.instances ?? [];
+    // Button has no BOOLEAN property, so its instances export no `booleans`.
     expect(new Set(Object.keys(instance ?? {}))).toEqual(new Set(["key", "variant", "box", "image"]));
     expect(instance?.key).toBe(
       "preview/button/neutral-fkas-private-light/button/variant=default,size=default,state=rest,icon=none"
@@ -74,6 +76,24 @@ describe("Export snapshots from an applied file", () => {
     expect(instance?.image?.renderBounds).toEqual(instance?.box);
     expect(instance?.image?.png).toMatch(/^[A-Za-z0-9+/]+=*$/);
     expect(first?.instances[70]?.variant).toBe("icon-button/variant=default,size=icon,state=rest");
+  });
+
+  it("exports each instance's BOOLEAN values, with the one an Item preview instance sets off its default", async () => {
+    const snapshot = await exportFrom(file, [pageKey(ITEM)], () => Effect.void);
+    const [preview] = snapshot.previews;
+    const instances = preview?.instances ?? [];
+    // Item's Media and Actions and Item link's Media start true. A preview places each set's cells at
+    // the defaults, then one instance with each property off, whose key ends in the value it sets.
+    expect(instances[0]?.booleans).toEqual({ Media: true, Actions: true });
+    expect(
+      instances
+        .filter((instance) => /\/\w+=(true|false)$/u.test(instance.key))
+        .map((instance) => [instance.key.slice(instance.key.lastIndexOf("/") + 1), instance.booleans])
+    ).toEqual([
+      ["Media=false", { Media: false, Actions: true }],
+      ["Actions=false", { Media: true, Actions: false }],
+      ["Media=false", { Media: false }],
+    ]);
   });
 
   it("exports the density a Badge or Kbd preview pins, though none of their layers binds density", async () => {

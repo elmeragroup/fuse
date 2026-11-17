@@ -239,7 +239,7 @@ describe("the plugin bundle", () => {
     const before = plugin.posted.length;
     expect((await plugin.ask("snapshots", "snapshots")).kind).toBe("snapshots");
     const total = kit.previews.reduce(
-      (sum, preview) => sum + preview.groups.reduce((count, group) => count + group.variants.length, 0),
+      (sum, preview) => sum + preview.groups.reduce((count, group) => count + group.instances.length, 0),
       0
     );
     expect(plugin.posted.slice(before)).toEqual([

@@ -3,6 +3,12 @@
  * bundle can take it without the spec builder's Node imports.
  */
 
+/** The BOOLEAN property that shows a menu row's icon, which starts false. */
+export const DROPDOWN_MENU_ICON_PROPERTY = "Icon";
+
+/** The BOOLEAN property that hides a menu row's shortcut, which starts true. */
+export const DROPDOWN_MENU_SHORTCUT_PROPERTY = "Shortcut";
+
 /** The sub trigger's text, the default of its `Label` property: the docs Submenu demo's. */
 export const DROPDOWN_MENU_SUB_TRIGGER_TEXT = "Share";
 

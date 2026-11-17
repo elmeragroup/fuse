@@ -788,6 +788,17 @@ export type ModeRef = {
   readonly mode: string;
 };
 
+/**
+ * One instance a preview group places: the variant it shows, and the BOOLEAN properties it sets off
+ * their defaults, so a preview shows each part a property hides or shows in its other state too.
+ */
+export type PreviewInstanceSpec = {
+  /** The variant's key. */
+  readonly variant: string;
+  /** The BOOLEAN values the instance sets by property name, or undefined for every default. */
+  readonly booleans?: Readonly<Record<string, boolean>>;
+};
+
 /** The instances of one component set in a preview frame, which start on a row of their own. */
 export type PreviewGroupSpec = {
   /** The preview's key, `/` and the set's key. */
@@ -795,9 +806,22 @@ export type PreviewGroupSpec = {
   /** The set's name. */
   readonly name: string;
   readonly componentSet: string;
-  /** The variant keys the group places, in order. */
-  readonly variants: readonly string[];
+  /** The instances the group places, in order. */
+  readonly instances: readonly PreviewInstanceSpec[];
 };
+
+/**
+ * The key of a preview's instance: the preview's key, `/` and the variant's key, then `/` and each
+ * BOOLEAN value it sets, as `Name=true`, in the order the instance names them.
+ *
+ * @param previewKey - The preview's key.
+ * @param instance - The instance.
+ * @returns The key, such as `preview/alert/neutral-fkas-private-light/alert/variant=default,described=false/Action=true`.
+ */
+export function previewInstanceKey(previewKey: string, instance: PreviewInstanceSpec): string {
+  const values = Object.entries(instance.booleans ?? {}).map(([name, value]) => `${name}=${String(value)}`);
+  return [`${previewKey}/${instance.variant}`, ...(values.length === 0 ? [] : [values.join(",")])].join("/");
+}
 
 /**
  * A frame of instances that pins one theme, to check bound values render. It holds a group for

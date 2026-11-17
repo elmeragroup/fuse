@@ -7,10 +7,12 @@
  * - `Breadcrumb ellipsis` is the 20px box around DotsThree: 1 cell. Its copy is visually hidden, so
  *   the kit draws no text for it.
  * - `Breadcrumb separator` is the `<li>` around the CaretRight it draws by default, at 14px: 1 cell.
- * - `Breadcrumb trail` is the docs Basic demo's trail, `Home`, `Quick start` and the current page,
- *   and the Ellipsis demo's, which puts the ellipsis after `Home`: 2 cells. The list is its root,
- *   and each entry an item frame around an instance of the part's set, with a separator instance
- *   between the entries.
+ * - `Breadcrumb trail` is the docs Basic demo's trail, `Home`, `Quick start` and the current page:
+ *   1 cell. Its `Ellipsis` BOOLEAN property shows the Ellipsis demo's ellipsis after `Home`, with its
+ *   separator. Showing it changes no style outside the two, as the capture of the trail with and
+ *   without it showed, so it is a property rather than an axis. The list is its root, and each entry
+ *   an item frame around an instance of the part's set, with a separator instance between the
+ *   entries.
  *
  * Every part sits in `Breadcrumb.List`, and a link, the page and the ellipsis sit in a
  * `Breadcrumb.Item` inside it. The list sets the type and the text color each part inherits.
@@ -24,7 +26,7 @@ import type {
   SetManifest,
 } from "../capture/manifest";
 import type { Cell } from "./component-spec";
-import type { AxisSpec } from "./kit-spec";
+import type { AxisSpec, BooleanPropertySpec } from "./kit-spec";
 
 /** The text every link cell shows, the first link of the docs Basic demo. */
 export const BREADCRUMB_LINK_LABEL = "Home";
@@ -161,39 +163,43 @@ export const BREADCRUMB_SEPARATOR_MANIFEST: SetManifest = partManifest({
 /** The text of the trail's second link, the docs Basic demo's. The compare renderer renders it. */
 export const BREADCRUMB_TRAIL_LINK_LABEL = "Quick start";
 
-/** Whether a trail cell shows the ellipsis, as the docs Ellipsis demo does. */
-const collapsed = (cell: Cell): boolean => cell.ellipsis === "true";
-
 /**
- * An entry of the trail: a `Breadcrumb.Item` around an instance of a part's set, in the cells the
- * instance's `shownIn` names.
+ * The BOOLEAN property that shows the trail's ellipsis and its separator, as the docs Ellipsis demo
+ * does. It starts false, as the Basic demo's trail has none.
  */
-function entryManifest(inner: InstanceManifest): PartManifest {
-  return {
+export const BREADCRUMB_ELLIPSIS_PROPERTY = "Ellipsis";
+
+const ELLIPSIS: BooleanPropertySpec = { name: BREADCRUMB_ELLIPSIS_PROPERTY, defaultValue: false };
+
+/** An entry of the trail: a `Breadcrumb.Item` around an instance of a part's set. */
+function entryManifest(inner: InstanceManifest, optional?: BooleanPropertySpec): PartManifest {
+  const entry: PartManifest = {
     key: `${inner.key}-item`,
     slot: "breadcrumb-item",
-    shownIn: inner.shownIn,
+    shownIn: () => true,
     label: undefined,
     iconsFor: () => [],
-    parts: [{ ...inner, shownIn: () => true }],
+    parts: [inner],
   };
+  return optional === undefined ? entry : { ...entry, optional };
 }
 
 /** The separator after an entry, an instance of the separator's set. */
-function separatorManifest(key: string, shownIn: (cell: Cell) => boolean = () => true): InstanceManifest {
-  return {
+function separatorManifest(key: string, optional?: BooleanPropertySpec): InstanceManifest {
+  const separator: InstanceManifest = {
     kind: "instance",
     key: `${key}-separator`,
     of: BREADCRUMB_SEPARATOR_MANIFEST,
     cell: () => ({ state: "rest" }),
-    shownIn,
+    shownIn: () => true,
   };
+  return optional === undefined ? separator : { ...separator, optional };
 }
 
 /**
  * The trail's manifest, which the capture-backed build reads with `captures/breadcrumb-trail.json`:
- * the docs Basic demo's trail, and the Ellipsis demo's at `ellipsis=true`. `Breadcrumb.List` holds
- * `Home`, `Quick start` and the current page, each in its item, with a separator between them. The
+ * the docs Basic demo's trail, and the Ellipsis demo's where `Ellipsis` is on. `Breadcrumb.List`
+ * holds `Home`, `Quick start` and the current page, each in its item, with a separator between them. The
  * links and the page are exposed, so a designer retypes them from the trail's panel.
  */
 export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
@@ -201,8 +207,8 @@ export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
   name: "Breadcrumb trail",
   api: { page: "breadcrumb", parts: ["Breadcrumb.List"] },
   slot: "breadcrumb-list",
-  axes: [{ name: "ellipsis", values: ["false", "true"] }],
-  columnAxis: "ellipsis",
+  axes: [{ name: "state", values: ["rest"] }],
+  columnAxis: "state",
   label: undefined,
   iconsFor: () => [],
   parts: [
@@ -215,14 +221,17 @@ export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
       exposed: true,
     }),
     separatorManifest("home"),
-    entryManifest({
-      kind: "instance",
-      key: "ellipsis",
-      of: BREADCRUMB_ELLIPSIS_MANIFEST,
-      cell: () => ({ state: "rest" }),
-      shownIn: collapsed,
-    }),
-    separatorManifest("ellipsis", collapsed),
+    entryManifest(
+      {
+        kind: "instance",
+        key: "ellipsis",
+        of: BREADCRUMB_ELLIPSIS_MANIFEST,
+        cell: () => ({ state: "rest" }),
+        shownIn: () => true,
+      },
+      ELLIPSIS
+    ),
+    separatorManifest("ellipsis", ELLIPSIS),
     entryManifest({
       kind: "instance",
       key: "quick-start",

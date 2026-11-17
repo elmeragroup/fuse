@@ -3,6 +3,9 @@
  * them. Hiding a part's layer hides every layer inside it.
  */
 import { KitUnmappable } from "./build-errors";
+import { possibleCells } from "./component-spec";
+import type { Cell, ComponentDefinition, PartDefinition } from "./component-spec";
+import { allPartsOf, partsOf } from "./definition-parts";
 import type { BooleanPropertySpec } from "./kit-spec";
 
 /** An optional part, as the set's properties need it. */
@@ -38,4 +41,69 @@ export function booleanPropertiesOf(
     }
   }
   return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
+}
+
+/**
+ * A definition's optional parts and icons, depth first, each with the property it hides behind.
+ *
+ * @param definition - The definition.
+ * @param cells - Its cells, whose icons the icon slots list.
+ * @param nameOf - The layer name of a frame part, which an error names.
+ * @returns The parts.
+ */
+export function optionalParts(
+  definition: ComponentDefinition,
+  cells: readonly Cell[],
+  nameOf: (part: PartDefinition) => string
+): readonly OptionalPart[] {
+  const parts = allPartsOf(definition).flatMap((part): OptionalPart[] =>
+    part.optional === undefined
+      ? []
+      : [{ name: "kind" in part ? part.of.slot : nameOf(part), property: part.optional }]
+  );
+  // An icon is an `<svg>` with no slot, listed once by its key however many cells show it.
+  const icons = new Map(
+    [definition, ...partsOf(definition)].flatMap((box) =>
+      cells.flatMap((cell) => box.iconsFor(cell).map((slot) => [slot.key, slot] as const))
+    )
+  );
+  return [
+    ...parts,
+    ...[...icons.values()].flatMap((slot): OptionalPart[] =>
+      slot.optional === undefined ? [] : [{ name: slot.name, property: slot.optional }]
+    ),
+  ];
+}
+
+/**
+ * The BOOLEAN properties a set lists, each with its default, as the build gives the set them.
+ *
+ * @param definition - The set's definition.
+ * @returns The properties, in the order the set lists them.
+ * @throws When two parts give one property two defaults, as {@link booleanPropertiesOf} says.
+ */
+export function setBooleanProperties(definition: ComponentDefinition): readonly BooleanPropertySpec[] {
+  return booleanPropertiesOf(
+    definition.name,
+    optionalParts(definition, possibleCells(definition), (part) => part.key)
+  );
+}
+
+/**
+ * The BOOLEAN properties that are on for an instance of a set: each at the value the instance gives
+ * it, or else at its default.
+ *
+ * @param definition - The set's definition.
+ * @param values - The instance's BOOLEAN values by property name, or undefined for the defaults.
+ * @returns The names of the properties that are on.
+ */
+export function propertiesOn(
+  definition: ComponentDefinition,
+  values: Readonly<Record<string, boolean>> | undefined
+): ReadonlySet<string> {
+  return new Set(
+    setBooleanProperties(definition)
+      .filter(({ name, defaultValue }) => values?.[name] ?? defaultValue)
+      .map(({ name }) => name)
+  );
 }

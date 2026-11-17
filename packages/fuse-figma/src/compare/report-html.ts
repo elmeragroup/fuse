@@ -10,6 +10,14 @@ import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
 import type { PreviewTheme } from "./preview-theme.ts";
 import type { CompareReport, ReportRow } from "./run-compare.ts";
 
+/** An instance's BOOLEAN values after its variant key, such as ` · Action=true`, or nothing for none. */
+function booleansText(row: ReportRow): string {
+  const entries = Object.entries(row.booleans ?? {});
+  return entries.length === 0
+    ? ""
+    : ` · ${escape(entries.map(([name, value]) => `${name}=${String(value)}`).join(", "))}`;
+}
+
 function escape(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -78,7 +86,7 @@ function cellSection(row: ReportRow, rank: number): string {
       : `tolerant ${percent(verdict.tolerantPercent)} (${String(row.pixels.tolerant)} px), raw ${percent(verdict.rawPercent)} (${String(row.pixels.raw)} px)`,
   ].join(" · ");
   return `<section class="cell" data-preview="${escape(row.preview)}" data-flagged="${verdict.flags.length > 0 ? "yes" : "no"}"${data}>
-<h3><span class="rank">#${String(rank)}</span> ${escape(row.variant)} ${flags}${note}</h3>
+<h3><span class="rank">#${String(rank)}</span> ${escape(row.variant)}${booleansText(row)} ${flags}${note}</h3>
 <p>${facts}</p>
 <div class="pictures">${picture(row.images.figma, "Figma", row)}${picture(row.images.browser, "Browser", row)}${picture(row.images.diff, "Diff", row)}</div>
 </section>`;

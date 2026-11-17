@@ -18,6 +18,7 @@ import type {
   PreviewSnapshot,
 } from "../../src/compare/snapshot.ts";
 import type { ModeRef } from "../../src/components/kit-spec.ts";
+import { propertyName } from "./component-properties.ts";
 import { KitNotApplied, LayerConflict } from "./errors.ts";
 import { keyOf } from "./identity.ts";
 import { FigmaPlugin } from "./services.ts";
@@ -93,14 +94,18 @@ const resolvedModes = Effect.fnUntraced(function* (figma: PluginAPI, page: PageN
 
 /**
  * The variant an instance shows. The main component's key names it, and an instance whose main
- * component carries no key falls back on the variant part of its own key.
+ * component carries no key falls back on the variant part of its own key: the set's key and the
+ * axes after the preview's key, before any BOOLEAN values.
  */
 function variantOf(instance: InstanceNode, previewKey: string): Effect.Effect<string> {
   return Effect.map(
     Effect.promise(() => instance.getMainComponentAsync()),
     (main) => {
       const fromMain = main === null ? "" : keyOf(main);
-      return fromMain === "" ? keyOf(instance).slice(previewKey.length + 1) : fromMain;
+      const [set = "", axes = ""] = keyOf(instance)
+        .slice(previewKey.length + 1)
+        .split("/");
+      return fromMain === "" ? `${set}/${axes}` : fromMain;
     }
   );
 }
@@ -130,13 +135,19 @@ const snapshotInstance = Effect.fnUntraced(function* (
             )
           ),
         };
+  const booleans = Object.fromEntries(
+    Object.entries(instance.componentProperties).flatMap(([id, property]) =>
+      // A BOOLEAN property's value is `true` or `false`.
+      property.type === "BOOLEAN" ? [[propertyName(id), property.value === true] as const] : []
+    )
+  );
   const snapshot: InstanceSnapshot = {
     key: keyOf(instance),
     variant: yield* variantOf(instance, previewKey),
     box: rect(box),
     image,
   };
-  return snapshot;
+  return Object.keys(booleans).length === 0 ? snapshot : { ...snapshot, booleans };
 });
 
 /**

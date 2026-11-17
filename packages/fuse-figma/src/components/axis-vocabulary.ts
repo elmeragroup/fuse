@@ -160,7 +160,6 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
       ["open", "Whether the part the trigger opens is open."],
       ["armed", "Whether a Confirm button's first press armed it, so the next press confirms."],
       ["described", "Whether the Item or Alert shows a description under its title."],
-      ["ellipsis", "Whether a Breadcrumb trail collapses its middle crumbs into an ellipsis."],
       ["collapsed", "Whether the Sidebar is collapsed to its icon rail."],
     ] as const
   ).map(([name, draws]): readonly [string, FigmaAxis] => [name, { values: BOOLEAN_VALUES, draws }]),

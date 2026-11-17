@@ -23,9 +23,11 @@ import { Lightning } from "../../../fuse/dist/icons.js";
 import { Item } from "../../../fuse/dist/item.js";
 import type { Cell } from "../components/component-spec.ts";
 import {
+  ITEM_ACTIONS_PROPERTY,
   ITEM_ACTIONS_TEXT,
   ITEM_DESCRIPTION_TEXT,
   ITEM_LINK_TITLE_TEXT,
+  ITEM_MEDIA_PROPERTY,
   ITEM_PREVIEW_WIDTH,
   ITEM_TITLE_TEXT,
   itemLinkLook,
@@ -54,37 +56,45 @@ function host(row: ReactElement): ReactElement {
   return createElement("div", { style: { width: `${ITEM_PREVIEW_WIDTH}px` } }, row);
 }
 
-/** An `item` cell: the Basic demo's row at the cell's variant, size, media and description. */
+/**
+ * An `item` cell: the Basic demo's row at the cell's variant, size, media and description, with the
+ * media where `Media` is on and the actions where `Actions` is.
+ */
 export const item: CellRendering = {
-  element: (cell: Cell) => {
+  element: (cell: Cell, turnedOn: ReadonlySet<string>) => {
     const look = itemLook(cell);
     return host(
       createElement(
         Item.Root,
         { variant: look.variant, size: look.size },
-        media(look),
+        turnedOn.has(ITEM_MEDIA_PROPERTY) ? media(look) : null,
         createElement(
           Item.Content,
           null,
           createElement(Item.Title, null, ITEM_TITLE_TEXT),
           look.described ? createElement(Item.Description, null, ITEM_DESCRIPTION_TEXT) : null
         ),
-        createElement(Item.Actions, null, createElement("span", null, ITEM_ACTIONS_TEXT))
+        turnedOn.has(ITEM_ACTIONS_PROPERTY)
+          ? createElement(Item.Actions, null, createElement("span", null, ITEM_ACTIONS_TEXT))
+          : null
       )
     );
   },
 };
 
-/** An `item-link` cell: the As a link demo's row at the cell's variant, unavailable where disabled. */
+/**
+ * An `item-link` cell: the As a link demo's row at the cell's variant, unavailable where disabled,
+ * with the media where `Media` is on.
+ */
 export const itemLink: CellRendering = {
-  element: (cell: Cell) => {
+  element: (cell: Cell, turnedOn: ReadonlySet<string>) => {
     const look = itemLinkLook(cell);
     const disabled = cell.state === "disabled" ? { "aria-disabled": "true" } : {};
     return host(
       createElement(
         Item.Root,
         { variant: look.variant, render: createElement("a", { href: "#order", ...disabled }) },
-        media(look),
+        turnedOn.has(ITEM_MEDIA_PROPERTY) ? media(look) : null,
         createElement(Item.Content, null, createElement(Item.Title, null, ITEM_LINK_TITLE_TEXT))
       )
     );

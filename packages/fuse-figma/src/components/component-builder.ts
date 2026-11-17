@@ -34,7 +34,7 @@ import type {
 } from "./component-spec";
 import type { CoverageRow, RecordedRow } from "./coverage";
 import { normalizeCss } from "./css-values";
-import { allPartsOf, framePartsOf, instanceRootSlotOf, instancingSlots, partsOf } from "./definition-parts";
+import { framePartsOf, instanceRootSlotOf, instancingSlots } from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
@@ -46,8 +46,7 @@ import type {
   VariantSpec,
 } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
-import { booleanPropertiesOf } from "./optional-parts";
-import type { OptionalPart } from "./optional-parts";
+import { booleanPropertiesOf, optionalParts } from "./optional-parts";
 import { placeRoot } from "./placement";
 import { PaintedInstances } from "./stacking";
 
@@ -116,7 +115,7 @@ export function buildComponentSet(
     );
   };
   const cells = possibleCells(definition);
-  const optional = optionalParts(definition, cells);
+  const optional = optionalParts(definition, cells, partName);
   const booleans = booleanPropertiesOf(definition.name, optional);
   const cascade = setCascade(definition, context, record, captured, inner);
   // A root clips only where some cell's root casts a shadow, whose spread Figma draws only from a
@@ -316,33 +315,6 @@ function textProperties(definition: ComponentDefinition): readonly TextPropertyS
     }
   }
   return [...named].map(([name, { defaultValue }]) => ({ name, defaultValue }));
-}
-
-/**
- * A definition's optional parts and icons, depth first, each with the property it hides behind.
- *
- * @param definition - The definition.
- * @param cells - Its cells, whose icons the icon slots list.
- * @returns The parts.
- */
-function optionalParts(definition: ComponentDefinition, cells: readonly Cell[]): readonly OptionalPart[] {
-  const parts = allPartsOf(definition).flatMap((part): OptionalPart[] =>
-    part.optional === undefined
-      ? []
-      : [{ name: "kind" in part ? part.of.slot : partName(part), property: part.optional }]
-  );
-  // An icon is an `<svg>` with no slot, listed once by its key however many cells show it.
-  const icons = new Map(
-    [definition, ...partsOf(definition)].flatMap((box) =>
-      cells.flatMap((cell) => box.iconsFor(cell).map((slot) => [slot.key, slot] as const))
-    )
-  );
-  return [
-    ...parts,
-    ...[...icons.values()].flatMap((slot): OptionalPart[] =>
-      slot.optional === undefined ? [] : [{ name: slot.name, property: slot.optional }]
-    ),
-  ];
 }
 
 /**
