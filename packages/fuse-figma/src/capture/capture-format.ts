@@ -111,8 +111,8 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   lineFits: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * A grid with one column whose column is its content box's width, and whose items' least widths
-   * fit that width with a fifth to spare, so an `auto` column stays as wide as the grid.
+   * A grid with one column whose column is its content box's width, with its items' least widths
+   * at least a pixel inside it, so an `auto` column stays as wide as the grid.
    */
   trackFits: Schema.optionalKey(Schema.Literal(true)),
   /**

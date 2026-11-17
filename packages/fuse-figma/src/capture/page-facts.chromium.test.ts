@@ -202,9 +202,10 @@ describe("a one-line ellipsis the capture measures with room", () => {
 /**
  * Unit under test: the page function's `trackFits` on a one-column grid. Oracle: Chromium's own
  * column, read through `getComputedStyle` beside the fact. A 256px grid whose flex-column item holds
- * a 200px box keeps a 256px column, with the item's least width under four fifths of it. One whose
- * item holds a 240px box keeps a 256px column too, but its least width leaves no fifth to spare, and
- * one whose item holds a 400px box widens its column to 400px, past the grid.
+ * a 200px or a 254px box keeps a 256px column with at least a pixel to spare, so the fact holds. One
+ * whose item holds a 255.5px box keeps a 256px column with less than a pixel to spare, so it does
+ * not, and one whose item holds a 400px box widens its column to 400px, past the grid. The boxes
+ * hold no text, so their widths are the same on every platform.
  */
 describe("a one-column grid's column the capture measures as fitting", () => {
   /** The grid's column as Chromium resolves it, and whether the page function records `trackFits`. */
@@ -223,9 +224,10 @@ describe("a one-column grid's column the capture measures as fitting", () => {
 
   it.each([
     [200, "256px", true],
-    [240, "256px", false],
+    [254, "256px", true],
+    [255.5, "256px", false],
     [400, "400px", false],
-  ])("with a %ipx box in its item, a %s column holds it: %s", async (inner, column, fits) => {
+  ])("with a %spx box in its item, a %s column holds it: %s", async (inner, column, fits) => {
     expect(await measure(inner)).toEqual({ column, fits });
   });
 });
