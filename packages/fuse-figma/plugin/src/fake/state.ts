@@ -87,6 +87,10 @@ export type FileState = {
   readonly variables: ReadonlyMap<string, VariableState>;
   /** The hash of each image the file stores (rule 22). */
   readonly images: Set<string>;
+  /** The local text styles, in the order the file made them (rule 59). */
+  readonly textStyles: TextStyleState[];
+  /** The number the next text style's id takes. */
+  nextStyle: number;
   /**
    * Whether `children` leaves out the hidden layers inside instances, as the plugin can ask with
    * `figma.skipInvisibleInstanceChildren` (rule 25). Each run starts with false.
@@ -97,6 +101,31 @@ export type FileState = {
    * below the classes creates nodes without importing them.
    */
   readonly makeNode: (type: NodeType) => Made;
+};
+
+/** What the fake holds for a local text style (rule 59). */
+export type TextStyleState = {
+  readonly id: string;
+  name: string;
+  description: string;
+  font: FontName;
+  fontSize: number;
+  lineHeight: LineHeight;
+  letterSpacing: LetterSpacing;
+  textCase: TextCase;
+  textDecoration: TextDecoration;
+  textWrapStyle: TextWrapStyle;
+  leadingTrim: LeadingTrim;
+  paragraphIndent: number;
+  paragraphSpacing: number;
+  listSpacing: number;
+  hangingPunctuation: boolean;
+  hangingList: boolean;
+  /** The id of the variable each bound field binds. */
+  readonly bindings: Map<VariableBindableTextField, string>;
+  /** Each shared plugin data entry, by namespace and key joined with `SHARED_DATA_SEPARATOR`. */
+  readonly sharedData: Map<string, string>;
+  removed: boolean;
 };
 
 /**

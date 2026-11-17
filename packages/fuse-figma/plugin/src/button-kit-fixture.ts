@@ -99,6 +99,7 @@ export const KIT: KitSpec = {
     },
   ],
   previews: [],
+  textStyles: [],
 };
 
 /** An axis that fills the room its parent's auto layout gives the layer. */

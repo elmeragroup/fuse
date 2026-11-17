@@ -119,7 +119,8 @@ export function fontKey(font: FontNameInput): string {
   return `${font.family}${SHARED_DATA_SEPARATOR}${font.style ?? ""}`;
 }
 
-function fontLoaded(file: FileState, font: FontName): boolean {
+/** Whether the run loaded a font, or every style of its family (rule 7). */
+export function fontLoaded(file: FileState, font: FontName): boolean {
   return file.loadedFonts.has(fontKey(font)) || file.loadedFonts.has(fontKey({ family: font.family }));
 }
 
@@ -197,7 +198,7 @@ const WEIGHT_STYLES: ReadonlyMap<number, string> = new Map([
 const WEIGHTED_STYLES: ReadonlySet<string> = new Set(WEIGHT_STYLES.values());
 
 /** The style a font takes for a bound weight (rule 10). */
-function weightedStyle(font: FontName, weight: number): string {
+export function weightedStyle(font: FontName, weight: number): string {
   const style = WEIGHT_STYLES.get(weight);
   if (style === undefined) {
     throw new Error(`The fake Figma file does not model the font weight ${weight}.`);

@@ -14,6 +14,12 @@ export const PLUGIN_DATA_NAMESPACE = "fuse";
 /** The shared plugin data entry that holds a node's key. */
 export const PLUGIN_DATA_KEY = "key";
 
+/**
+ * The prefix of every text style's key. The plugin deletes a keyed style the kit dropped only when
+ * its key has this prefix.
+ */
+export const TEXT_STYLE_KEY_PREFIX = "text-style/";
+
 /** A variable the sync owns, found by its collection and variable name. */
 export type VariableRef = {
   readonly collection: string;
@@ -900,6 +906,42 @@ export type PageSpec = {
   readonly name: string;
 };
 
+/** The Figma style of each font weight a recipe reaches, such as `Medium` for 500. */
+export const FONT_WEIGHT_STYLES: ReadonlyMap<number, string> = new Map([
+  [400, "Regular"],
+  [500, "Medium"],
+  [600, "SemiBold"],
+  [700, "Bold"],
+]);
+
+/** A font weight: bound to a FLOAT variable, or a literal Figma style such as `Medium`. */
+export type FontWeightSpec =
+  | { readonly kind: "variable"; readonly variable: VariableRef }
+  | { readonly kind: "literal"; readonly style: string };
+
+/**
+ * A local text style the plugin keeps in the file, built from the Text, Heading or Span recipe. The
+ * plugin finds it by `key` in shared plugin data, so a designer can rename it. It sets every field a
+ * Figma text style applies: these from the recipe, and the rest to Figma's defaults.
+ */
+export type TextStyleSpec = {
+  /** The style's key, such as `text-style/text/sm/medium`. */
+  readonly key: string;
+  /** The style's name, whose `/` segments Figma shows as folders, such as `Text/sm/medium`. */
+  readonly name: string;
+  /** What the style draws, which Figma shows beside it. */
+  readonly description: string;
+  readonly fontFamily: StringSpec;
+  readonly fontWeight: FontWeightSpec;
+  readonly fontSize: NumberSpec;
+  readonly lineHeight: LineHeightSpec;
+  /** Letter spacing as a percent of the font size, 0 where the recipe sets none. */
+  readonly letterSpacing: LetterSpacingSpec;
+  readonly textCase: "ORIGINAL" | "UPPER" | "LOWER" | "TITLE";
+  readonly textDecoration: "NONE" | "UNDERLINE" | "STRIKETHROUGH";
+  readonly textWrapStyle: "AUTO" | "BALANCE" | "PRETTY";
+};
+
 /** Everything the plugin reconciles, on the pages it lists. */
 export type KitSpec = {
   /** The kit's pages, in the order the plugin creates them. */
@@ -910,6 +952,8 @@ export type KitSpec = {
   readonly icons: IconLibrarySpec;
   readonly componentSets: readonly ComponentSetSpec[];
   readonly previews: readonly PreviewSpec[];
+  /** The local text styles, in the order the plugin creates them. */
+  readonly textStyles: readonly TextStyleSpec[];
 };
 
 /**

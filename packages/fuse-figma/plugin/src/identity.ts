@@ -2,7 +2,8 @@
  * How the plugin finds the nodes it owns. Each node it creates carries a key in shared
  * plugin data, so a designer can rename a layer and the next run still finds it. A node
  * without a key is matched by name once, then gets the key. A node with a key the spec does
- * not list belongs to the kit and may be deleted. A node without a key is never deleted.
+ * not list belongs to the kit and may be deleted. A node without a key is never deleted. The same
+ * rules hold for a local text style, which carries its key the same way.
  */
 
 import { Effect } from "effect";
@@ -15,22 +16,30 @@ import type { Target } from "./plan.ts";
 import type { PlanServices } from "./services.ts";
 
 /**
- * The key a node carries.
- *
- * @param node - Any node.
- * @returns The key, or an empty string for a node the kit does not own.
+ * What the plugin can own: a node or a local style, which has a name and a type and carries shared
+ * plugin data.
  */
-export function keyOf(node: BaseNode): string {
+export type Keyed = Pick<BaseNode, "name" | "getSharedPluginData" | "setSharedPluginData"> & {
+  readonly type: string;
+};
+
+/**
+ * The key a node or style carries.
+ *
+ * @param node - Any node or style.
+ * @returns The key, or an empty string for one the kit does not own.
+ */
+export function keyOf(node: Keyed): string {
   return node.getSharedPluginData(PLUGIN_DATA_NAMESPACE, PLUGIN_DATA_KEY);
 }
 
 /**
- * Give a node its key.
+ * Give a node or style its key.
  *
- * @param node - The node.
+ * @param node - The node or style.
  * @param key - The key from the spec.
  */
-export function setKey(node: BaseNode, key: string): void {
+export function setKey(node: Keyed, key: string): void {
   node.setSharedPluginData(PLUGIN_DATA_NAMESPACE, PLUGIN_DATA_KEY, key);
 }
 
@@ -61,9 +70,9 @@ export function placeOwned<Node extends SceneNode>(
  * Children indexed once for a walk that looks up many specs among them: the keyed ones by key,
  * and the ones without a key by name, each list in layer order.
  */
-export type Siblings = {
-  readonly byKey: ReadonlyMap<string, readonly BaseNode[]>;
-  readonly unkeyedByName: ReadonlyMap<string, readonly BaseNode[]>;
+export type Siblings<Item extends Keyed = BaseNode> = {
+  readonly byKey: ReadonlyMap<string, readonly Item[]>;
+  readonly unkeyedByName: ReadonlyMap<string, readonly Item[]>;
 };
 
 /**
@@ -72,9 +81,9 @@ export type Siblings = {
  * @param children - The children, in layer order.
  * @returns The index.
  */
-export function indexSiblings(children: ReadonlyArray<BaseNode>): Siblings {
-  const byKey = new Map<string, BaseNode[]>();
-  const unkeyedByName = new Map<string, BaseNode[]>();
+export function indexSiblings<Item extends Keyed>(children: ReadonlyArray<Item>): Siblings<Item> {
+  const byKey = new Map<string, Item[]>();
+  const unkeyedByName = new Map<string, Item[]>();
   for (const node of children) {
     const key = keyOf(node);
     const [index, entry] = key === "" ? [unkeyedByName, node.name] : [byKey, key];
@@ -100,21 +109,23 @@ export function indexSiblings(children: ReadonlyArray<BaseNode>): Siblings {
  * @param key - The key from the spec.
  * @param name - The name to fall back on.
  * @param accept - Narrows a match to the node type the spec needs.
+ * @param noun - What a child is in messages, `layer` unless given, such as `text style`.
  * @returns The child, or undefined when the parent has none. The Effect records the key it writes
  *   onto a name match, and fails with `LayerConflict` for copies of the key or a keyed node of
  *   another type.
  */
-export const findOwned = Effect.fnUntraced(function* <Node extends BaseNode>(
-  siblings: Siblings,
+export const findOwned = Effect.fnUntraced(function* <Item extends Keyed, Node extends Item>(
+  siblings: Siblings<Item>,
   where: string,
   key: string,
   name: string,
-  accept: (node: BaseNode) => node is Node
+  accept: (node: Item) => node is Node,
+  noun = "layer"
 ): Effect.fn.Return<Node | undefined, LayerConflict, Plan> {
   const keyed = siblings.byKey.get(key) ?? [];
   if (keyed.length > 1) {
     return yield* new LayerConflict({
-      message: `${where} holds ${keyed.length} layers with the key ${key}. Delete the copies, then run the plugin again.`,
+      message: `${where} holds ${keyed.length} ${noun}s with the key ${key}. Delete the copies, then run the plugin again.`,
       key,
     });
   }
@@ -122,7 +133,7 @@ export const findOwned = Effect.fnUntraced(function* <Node extends BaseNode>(
   if (match !== undefined) {
     if (!accept(match)) {
       return yield* new LayerConflict({
-        message: `${where}: the layer with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`,
+        message: `${where}: the ${noun} with the key ${key} is a ${match.type}. Delete it, then run the plugin again.`,
         key,
       });
     }
@@ -130,7 +141,7 @@ export const findOwned = Effect.fnUntraced(function* <Node extends BaseNode>(
   }
   const named = siblings.unkeyedByName.get(name)?.find((node): node is Node => accept(node));
   if (named !== undefined) {
-    change(yield* Plan, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
+    change(yield* Plan, where, `adopt the ${noun} named ${name} as ${key}`, () => setKey(named, key));
   }
   return named;
 });
@@ -142,7 +153,10 @@ export const findOwned = Effect.fnUntraced(function* <Node extends BaseNode>(
  * @param keep - The keys the spec lists.
  * @returns The children whose key is set and not in `keep`.
  */
-export function staleOwned(siblings: ReadonlyArray<SceneNode>, keep: ReadonlySet<string>): SceneNode[] {
+export function staleOwned<Item extends Keyed>(
+  siblings: ReadonlyArray<Item>,
+  keep: ReadonlySet<string>
+): Item[] {
   return siblings.filter((node) => {
     const key = keyOf(node);
     return key !== "" && !keep.has(key);

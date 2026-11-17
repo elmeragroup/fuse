@@ -18,7 +18,8 @@
  * from `styles/`, since `Command.List` adds the list's to the list recipe to pad its rows and publish
  * their corner, and `Command.Content` adds the palette's after the modal popup face, which comes along
  * from `overlay/`. The overlay corner close position comes along from `overlay/`, which Dialog
- * and Sheet add to their close button.
+ * and Sheet add to their close button. The Text and Span recipes and Heading's class function, which
+ * merges the level's theme roles over the Heading recipe, come along for the sync's text styles.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -45,6 +46,8 @@ export { fieldLegendVariants, fieldVariants } from "./field/field-variants";
 export { fieldFrameVariants } from "./field/field-frame-variants";
 export { fileUploadVariants } from "./file-upload/file-upload-variants";
 export { inputClass, inputVariants } from "./input/input-class";
+export { headingClass, THEMED_HEADING_LEVELS } from "./heading/heading-class";
+export { headingVariants } from "./heading/heading-variants";
 export { inputGroupInputControlClass } from "./input-group/input-group-class";
 export {
   inputGroupAddonVariants,
@@ -95,10 +98,12 @@ export {
 } from "./sidebar/sidebar-variants";
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
+export { spanVariants } from "./span/span-variants";
 export { switchVariants } from "./switch/switch-variants";
 export { textareaVariants } from "./textarea/textarea-class";
 export { textareaFieldVariants } from "./textarea-field/textarea-field-variants";
 export { textFieldVariants } from "./text-field/text-field-variants";
+export { textVariants } from "./text/text-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { toggleGroupVariants } from "./toggle-group/toggle-group-variants";
 export { toolbarVariants } from "./toolbar/toolbar-variants";

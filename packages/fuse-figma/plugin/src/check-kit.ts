@@ -20,6 +20,7 @@ import type {
   KitSpec,
   NumberSpec,
   StringSpec,
+  TextStyleSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
 import { FileNotSynced } from "./errors.ts";
@@ -121,13 +122,30 @@ function rootRefs(root: ComponentRootSpec): BoundRef[] {
   return [...boxRefs(root), ...walkLayers(root).flatMap(layerRefs)];
 }
 
+/** The variables a text style binds. */
+function textStyleRefs(style: TextStyleSpec): BoundRef[] {
+  return [
+    ...boundString(style.fontFamily),
+    ...(style.fontWeight.kind === "variable"
+      ? [{ ref: style.fontWeight.variable, type: "FLOAT" as const }]
+      : []),
+    ...boundNumber(style.fontSize),
+    ...(style.lineHeight.kind === "percent" ? [] : boundNumber(style.lineHeight)),
+  ];
+}
+
 /**
- * Every variable the run binds: the sets', the icon library's glyph color, and the background
- * the previews and the library paint.
+ * Every variable the run binds: the sets', the icon library's glyph color, the background the
+ * previews and the library paint, and the text styles'.
  */
 function boundRefs(kit: KitSpec): BoundRef[] {
   const refs = kit.componentSets.flatMap((set) => set.variants.flatMap((variant) => rootRefs(variant.root)));
-  return [...refs, ...boundColor(kit.icons.color), { ref: PREVIEW_BACKGROUND, type: "COLOR" }];
+  return [
+    ...refs,
+    ...boundColor(kit.icons.color),
+    { ref: PREVIEW_BACKGROUND, type: "COLOR" },
+    ...kit.textStyles.flatMap(textStyleRefs),
+  ];
 }
 
 /**

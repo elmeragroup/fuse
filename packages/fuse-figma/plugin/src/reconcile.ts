@@ -28,6 +28,7 @@ import type { Target } from "./plan.ts";
 import { placePageContents, planPreviews } from "./previews.ts";
 import { currentRun, FigmaPlugin, GlyphFont, Kit, runPlugin } from "./services.ts";
 import type { PlanServices } from "./services.ts";
+import { planTextStyles } from "./text-styles.ts";
 import { kitVariablesLayer } from "./variables.ts";
 
 /** What a run changed, or would change, and what it could not represent. */
@@ -104,6 +105,7 @@ const planKit = Effect.fnUntraced(function* (kit: KitSpec) {
     throw new Error("The kit lists no page.");
   }
   planRetiredPages(run, pages.retired, first.node);
+  yield* planTextStyles(kit.textStyles);
   return first.node;
 });
 

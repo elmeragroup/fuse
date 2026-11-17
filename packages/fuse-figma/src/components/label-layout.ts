@@ -11,31 +11,20 @@ import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-siz
 import type { Holder, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { Cell, LabelDefinition } from "./component-spec";
-import {
-  describeNumber,
-  evaluateLength,
-  evaluateNumber,
-  inFont,
-  normalizeCss,
-  readColor,
-  readNumber,
-  splitTopLevel,
-} from "./css-values";
+import { evaluateLength, evaluateNumber, inFont, normalizeCss, readColor, splitTopLevel } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
   CounterAlignSpec,
-  LetterSpacingSpec,
-  LineHeightSpec,
   NumberSpec,
-  StringSpec,
   TextAlignSpec,
   TextLayerSpec,
   TextSizingSpec,
 } from "./kit-spec";
 import type { CoverageNote, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+import { readType } from "./typography";
 
 /**
  * Where a native control sets its text within the text's box, which no class says, as an `<input>`
@@ -96,14 +85,6 @@ export type LabelScope = {
    */
   readonly ellipsisFits: boolean;
 };
-
-/** The Figma style of each Roboto weight a recipe reaches. */
-const FONT_STYLES = new Map([
-  [400, "Regular"],
-  [500, "Medium"],
-  [600, "SemiBold"],
-  [700, "Bold"],
-]);
 
 /** The text properties a label reads, which a box without a label drops. */
 const TEXT_PROPERTIES = [
@@ -396,59 +377,13 @@ export function inertClamp(style: LayerStyle): string | undefined {
 export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope): MappedLabel {
   const { style } = holder;
   const { color, variables, path } = scope;
-  const fontSize = style.read(
-    "font-size",
-    (value) => readNumber(value, variables),
-    describeNumber,
-    style.feed("fontSize", path)
-  );
-  const lineHeight = style.read(
-    "line-height",
-    (value): LineHeightSpec | undefined => {
-      const bound = variables.lookup(value);
-      if (bound !== undefined) {
-        return { kind: "variable", variable: bound };
-      }
-      const number = evaluateNumber(value);
-      if (number === undefined) {
-        return undefined;
-      }
-      if (/px|rem|%/.test(value)) {
-        return { kind: "literal", value: number };
-      }
-      // A unitless line height multiplies the font size: pixels over a literal size, and a percent of
-      // a size a variable sets per mode, which a Figma line height in percent follows (PH).
-      if (fontSize?.kind === "literal") {
-        return { kind: "literal", value: number * fontSize.value };
-      }
-      return fontSize === undefined ? undefined : { kind: "percent", value: number * 100 };
-    },
-    describeLineHeight,
-    style.feed("lineHeight", path)
-  );
-  const fontFamily = style.read(
-    "font-family",
-    (value): StringSpec | undefined => {
-      const bound = variables.lookup(value);
-      return bound === undefined ? undefined : { kind: "variable", variable: bound };
-    },
-    (spec) => ({
-      outcome: "bound",
-      detail: spec.kind === "variable" ? `${spec.variable.collection} / ${spec.variable.name}` : spec.value,
-    }),
-    style.feed("fontFamily", path)
-  );
-  const weight = style.read(
-    "font-weight",
-    (value) => {
-      const number = evaluateNumber(value);
-      return number === undefined ? undefined : FONT_STYLES.get(number);
-    },
-    (fontStyle) => ({ outcome: "literal", detail: `font style ${fontStyle}` }),
-    style.feed("fontStyle", path)
-  );
+  const { fontFamily, fontSize, lineHeight, fontWeight, letterSpacing } = readType(style, variables, path);
+  if (fontWeight?.kind === "variable") {
+    throw new KitUnmappable({
+      message: `${scope.variant}: the label's weight binds ${fontWeight.variable.name}, and a text layer holds a literal style`,
+    });
+  }
   const underline = readUnderline(style, fontSize, variables, path);
-  const letterSpacing = readLetterSpacing(style, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new KitUnmappable({
       message: `${scope.variant}: the label needs a font family, size, line height and color`,
@@ -478,7 +413,7 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     characters,
     textProperty: label.textProperty,
     fontFamily,
-    fontStyle: weight ?? "Regular",
+    fontStyle: fontWeight?.style ?? "Regular",
     fontSize,
     lineHeight,
     color,
@@ -538,66 +473,6 @@ function readOverflowWrap(holder: Holder, layout: LabelLayout): void {
 
 /** The `overflow-wrap` values that break a word wider than its line (CSS Text 3 §5.5). */
 const BREAKS_WORDS: ReadonlySet<string> = new Set(["break-word", "anywhere"]);
-
-/** What became of a line height, for the coverage table. */
-function describeLineHeight(spec: LineHeightSpec): CoverageNote {
-  return spec.kind === "percent"
-    ? { outcome: "literal", detail: `lines ${spec.value}% of the font size apart` }
-    : describeNumber(spec);
-}
-
-/** Why an `em` spacing a label inherits from an element of another font size has no Figma form. */
-const SPACED_ELSEWHERE =
-  "the label inherits this em spacing from an element of another font size, where CSS computes it";
-
-/**
- * Read `letter-spacing` in `em`, a share of the font size, as Figma's percent of it: `-0.025em`, which
- * `tracking-tight` sets, is -2.5%. CSS computes an `em` spacing where it is declared (CSS Text 4
- * §8.2), and a child inherits that length, so the percent holds only where the label's font size is
- * the declaring element's. An inherited spacing at another size, and any other unit, stay unmapped.
- *
- * @param style - The label's box's style.
- * @returns The spacing, or undefined where none maps.
- */
-function readLetterSpacing(style: LayerStyle, path: readonly string[]): LetterSpacingSpec | undefined {
-  // `normal` is the font's own spacing (CSS Text 3 §8.2), which a Figma text layer draws unset.
-  if (normalizeCss(style.resolved("letter-spacing") ?? "") === "normal") {
-    style.mark(
-      "letter-spacing",
-      "dropped",
-      "normal spacing is the font's own, which Figma draws by default",
-      style.feed("letterSpacing", path)
-    );
-    return undefined;
-  }
-  const declared = style.resolvedWhereDeclared("letter-spacing", "font-size");
-  const own = style.resolved("font-size");
-  const sameSize = declared !== undefined && own !== undefined && sameLength(declared, own);
-  const spacing = style.read(
-    "letter-spacing",
-    (value): LetterSpacingSpec | "elsewhere" | undefined => {
-      const ems = /^(-?\d*\.?\d+)em$/.exec(normalizeCss(value))?.[1];
-      if (ems === undefined) {
-        return undefined;
-      }
-      return sameSize ? { unit: "PERCENT", value: Number(ems) * 100 } : "elsewhere";
-    },
-    (read): CoverageNote =>
-      read === "elsewhere"
-        ? { outcome: "unmapped", detail: SPACED_ELSEWHERE }
-        : { outcome: "literal", detail: `letters ${read.value}% of the font size apart` },
-    style.feed("letterSpacing", path)
-  );
-  return spacing === "elsewhere" ? undefined : spacing;
-}
-
-/** Whether two computed lengths are the same: the same value, or the same number of pixels. */
-function sameLength(left: string, right: string): boolean {
-  const pixels = evaluateLength(left);
-  return (
-    normalizeCss(left) === normalizeCss(right) || (pixels !== undefined && pixels === evaluateLength(right))
-  );
-}
 
 /**
  * Where a native control's placement puts the label in its box. The label hugs its height, so the

@@ -41,6 +41,7 @@ import type {
   PageSpec,
   PreviewSpec,
 } from "./kit-spec";
+import { buildTextStyles } from "./text-styles";
 import { compileUtilities } from "./utility-css";
 
 /** A theme the previews pin: Fjordkraft private in one identity, color scheme and density. */
@@ -451,6 +452,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     icons,
     componentSets: built.map((set) => set.componentSet),
     previews,
+    textStyles: yield* buildTextStyles(variables),
   };
   yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
   const kit: BuiltKit = { spec, coverage: built.flatMap((set) => set.coverage) };
