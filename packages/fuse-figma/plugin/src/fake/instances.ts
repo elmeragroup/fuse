@@ -583,7 +583,8 @@ export function setProperties(
     values.push([name, value]);
   }
   const target = owner === main ? main : variantWith(owner, variant);
-  write(state, "set properties");
+  // The log names each property set, as `Label#12:3`, so a test can tell which values a run wrote.
+  write(state, `set properties ${values.map(([id]) => id).join(", ")}`);
   for (const [id, value] of values) {
     state.propertyValues.set(id, value);
   }
