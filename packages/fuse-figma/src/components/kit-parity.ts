@@ -107,7 +107,12 @@ export const KIT_PARITY = {
     kind: "composed",
     from: ["label", "input-group", "combobox-popup", "combobox-item", "field-description", "field-error"],
   },
-  command: { kind: "sets", sets: ["command-item", "command-list", "command-palette", "command-dialog-open"] },
+  command: {
+    kind: "partial",
+    sets: ["command-item", "command-list", "command-palette", "command-dialog-open"],
+    missing: "The `Command.Empty` message, `Command.Status`, and `Command.Back` on a nested page.",
+    issue: MISSING_SETS,
+  },
   "command-virtual": { kind: "excluded", reason: "It draws Command's look, which Command's sets hold." },
   "confirm-button": {
     kind: "partial",
@@ -202,8 +207,10 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   pagination: {
-    kind: "sets",
+    kind: "partial",
     sets: ["pagination-link", "pagination-edge", "pagination-ellipsis", "pagination-row"],
+    missing: "Every link `size` other than `icon`, and every edge `size` other than `default`.",
+    issue: MISSING_SETS,
   },
   // No Input group form holds the country trigger, and the Combobox popup leaves out the search
   // field the country list opens with.
@@ -301,5 +308,11 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   toolbar: { kind: "sets", sets: ["toolbar"] },
-  tooltip: { kind: "sets", sets: ["tooltip-content", "tooltip-open"] },
+  tooltip: {
+    kind: "partial",
+    sets: ["tooltip-content", "tooltip-open"],
+    missing: "The `bottom`, `left`, `right`, `inline-start` and `inline-end` sides.",
+    issue: MISSING_SETS,
+  },
+  tour: { kind: "issue", issue: MISSING_SETS },
 } as const satisfies Readonly<Record<string, KitParityRow>>;
