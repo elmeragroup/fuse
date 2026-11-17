@@ -47,7 +47,7 @@ import {
   sizingOn,
   turnOf,
 } from "./layout.ts";
-import { hiddenByProperty, markOverride, noteOverride, shown } from "./overrides.ts";
+import { isHidden, markOverride, noteOverride, shown } from "./overrides.ts";
 import {
   heldColorBindings,
   storeEffect,
@@ -289,12 +289,17 @@ class FakeSceneNode extends FakeBaseNode {
     state.rotation = rotation;
   }
 
-  /**
-   * Rule 25: false for a layer a BOOLEAN property hides, and true for every other layer, since no
-   * probe wrote `visible`.
-   */
+  /** False for a layer a BOOLEAN property or a write of `visible` hides, as `isHidden` says. */
   get visible(): boolean {
-    return !hiddenByProperty(live(this));
+    return !isHidden(live(this));
+  }
+
+  /** Hide or show the layer; on an instance's sublayer the write overrides its main layer's (rule 37). */
+  set visible(value: boolean) {
+    const state = live(this);
+    write(state, "visible");
+    state.hidden = !value;
+    markOverride(state, "visible");
   }
 
   get layoutPositioning(): FrameNode["layoutPositioning"] {
@@ -510,13 +515,13 @@ class FakeSceneNode extends FakeBaseNode {
 /** The members of frames, components, component sets and instances. */
 class FakeFrameLikeNode extends FakeSceneNode {
   /**
-   * An instance lists every sublayer, and leaves out one a BOOLEAN property hides only while
+   * An instance lists every sublayer, and leaves out a hidden one only while
    * `figma.skipInvisibleInstanceChildren` is set (rule 25).
    */
   get children(): ReadonlyArray<SceneNode> {
     const state = live(this);
     const skipped = (child: NodeState): boolean =>
-      state.file.skipInvisibleInstanceChildren && child.mirrorOf !== undefined && hiddenByProperty(child);
+      state.file.skipInvisibleInstanceChildren && child.mirrorOf !== undefined && isHidden(child);
     return childrenOf(state)
       .filter((child) => !skipped(child))
       .map(sceneOf);

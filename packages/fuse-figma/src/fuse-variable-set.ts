@@ -187,6 +187,10 @@ type ColorTokenName = Extract<TokenEntry, { readonly kind: "color" }>["name"];
 const ROLE_TINTS = [
   ["primary", 80],
   ["muted", 50],
+  // A Frame's `bg-muted/72` fill.
+  ["muted", 72],
+  // A RangeCalendar day between the range's ends, `data-in-range:bg-primary/20`.
+  ["primary", 20],
   ["error", 5],
   ["error", 10],
   ["error", 20],
@@ -333,6 +337,40 @@ const FORMULA_VARIABLES = [
       "The corner of a field box, such as Input or Textarea: radius in neutral themes, and radius-field in branded ones. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
   {
+    name: "radius-calendar",
+    reads: "theme",
+    formula:
+      "clamp(var(--radius) - 1000 * var(--radius-step, 0px), 4px, var(--radius) + 1000 * var(--radius-step, 0px))",
+    length: (scheme: ResolvedScheme) => {
+      const radius = scheme.tokens.radius.value;
+      const reach = 1000 * scheme.tokens["radius-step"].value;
+      return Math.max(radius - reach, Math.min(4, radius + reach));
+    },
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner of a Calendar and a RangeCalendar: radius in neutral themes, and 4px in branded ones. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "radius-inner/lg-pad-4px",
+    reads: "theme",
+    // `max(var(--spacing), 4px)` at Tailwind's 0.25rem spacing.
+    formula: "max(0px, var(--radius) - max(0.25rem, 4px))",
+    length: (scheme) => Math.max(0, scheme.rungs["radius-lg"].value - 4),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-lg shell padded 4px, such as a Tabs trigger in its list: radius-lg less 4px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "radius-inner/field-border",
+    reads: "theme",
+    formula:
+      "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px)",
+    length: (scheme) => Math.max(0, fieldCorner(scheme) - 1),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside the 1px border of a field box, such as the calendar trigger of a DatePicker: the field box corner less 1px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
     name: "radius-inner/lg-pad-8px",
     reads: "theme",
     // `2 * var(--spacing)` at Tailwind's 0.25rem spacing.
@@ -386,6 +424,34 @@ const FORMULA_VARIABLES = [
     scopes: ["CORNER_RADIUS"],
     description:
       "The corner inside a radius-xl shell with a 1px border, padded with surface-pad-md, such as a card Accordion item with the xl radius: radius-xl less 1px and surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/md-border-pad-md",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - 1px - var(--surface-pad-md))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-md"].value - 1 - metric("surface-pad-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-md shell with a 1px border, padded with surface-pad-md, such as the media of a default or sm Attachment: radius-md less 1px and surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/md-border-pad-row",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - 1px - var(--row-px))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-md"].value - 1 - metric("row-px")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-md shell with a 1px border, padded with row-px, such as the media of an xs Attachment: radius-md less 1px and row-px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
+    name: "radius-inner/field-border-pad-md",
+    reads: "theme and density",
+    formula:
+      "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px - var(--control-px-md))",
+    length: (scheme, metric) => Math.max(0, fieldCorner(scheme) - 1 - metric("control-px-md")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside the 1px border of a field box, padded with control-px-md, such as a DateField segment: the field box corner less 1px and control-px-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
   },
   {
     name: "radius-inner/lg-pad-sm",
@@ -482,6 +548,35 @@ const FORMULA_VARIABLES = [
     scopes: ["WIDTH_HEIGHT"],
     description:
       "The height inside the 1px borders of the md field box, control-h-md less 2px, which the h-full of a Number field stepper fills. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "frame-bar-inset",
+    reads: "density",
+    // `--frame-text-inset` less the gutter Frame's `--frame-overhang` of 0px.
+    formula: "calc(calc(1px + var(--surface-pad-lg)) - 0px)",
+    length: (metric) => 1 + metric("surface-pad-lg"),
+    scopes: ["GAP"],
+    description:
+      "The padding across the header and footer of a Frame panel in the gutter layout, which lines their text up with the text of the panel: 1px plus surface-pad-lg. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "frame-bar-inset-flush",
+    reads: "density",
+    // `--frame-text-inset` less the flush Frame's `--frame-overhang` of 1px.
+    formula: "calc(calc(1px + var(--surface-pad-lg)) - 1px)",
+    length: (metric) => metric("surface-pad-lg"),
+    scopes: ["GAP"],
+    description:
+      "The padding across the header and footer of a Frame panel in the flush layout, whose 1px overhang the inset takes back: surface-pad-lg. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "frame-bar-py",
+    reads: "density",
+    formula: "calc(var(--surface-pad-lg) / 2)",
+    length: (metric) => metric("surface-pad-lg") / 2,
+    scopes: ["GAP"],
+    description:
+      "The padding above and below the header and footer of a Frame panel: half of surface-pad-lg. Figma variables cannot compute, so the sync writes the result for each density.",
   },
   {
     name: "command-text-px",

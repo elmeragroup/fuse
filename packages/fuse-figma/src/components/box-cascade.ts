@@ -136,6 +136,10 @@ export type BoxCascade = {
 export type MeasuredBox = {
   readonly fitsOneLine: string | undefined;
   readonly underMaxHeight: string | undefined;
+  /** The box is as wide with its `max-width` 24px lower, so the maximum never narrows it. */
+  readonly underMaxWidth: boolean;
+  /** The box's flex line leaves room for its items' auto margins along it in every mode. */
+  readonly freeAlongMain: boolean;
   readonly widest: boolean;
   readonly holdsWidest: boolean;
   /** The box's line box adds no height or baseline offset to its one inline-level child. */

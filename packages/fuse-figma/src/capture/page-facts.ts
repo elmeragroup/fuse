@@ -4,8 +4,39 @@
  */
 import type { CDPSession } from "playwright";
 
+import { BRAND_CODES, BRANDS, THEME_IDENTITIES, themeAxisAttributes } from "@elmeragroup/fuse/theme-catalog";
+import type { Density } from "@elmeragroup/fuse/theme-catalog";
+
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
+
+/**
+ * A mode a designer can pick for a kit frame, as the page stamps it: the density on `<html>`, and
+ * the theme's `data-theme-*` attributes on `<body>`. The color scheme moves nothing a fact measures,
+ * so the page keeps its own.
+ */
+export type PageMode = {
+  readonly root: Readonly<Record<"data-density", Density>>;
+  readonly body: ReturnType<typeof themeAxisAttributes>;
+};
+
+/** The densities the role metrics follow, which change the type and the lengths of a box. */
+const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
+
+/**
+ * Every density with every legal theme: each identity and brand, with each segment the brand
+ * allows. A fact that must hold wherever a designer puts the kit is measured in each.
+ */
+export const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
+  THEME_IDENTITIES.flatMap((identity) =>
+    BRAND_CODES.flatMap((brand) =>
+      BRANDS[brand].segments.map((segment): PageMode => ({
+        root: { "data-density": density },
+        body: themeAxisAttributes({ identity, brand, segment }),
+      }))
+    )
+  )
+);
 
 /**
  * Measure a root's tree in the page and keep what holds on any platform, by each element's
@@ -22,6 +53,13 @@ import { coincidingAround } from "./coinciding-around.ts";
  * - `oneLine`: an element under a `max-width` whose own text sits on one line, or a wrapping flex
  *   row whose items do.
  * - `underMaxHeight`: an element more than half a pixel under its `max-height`.
+ * - `underMaxWidth`: an element as wide with its `max-width` 24px lower, in every mode of
+ *   {@link EVERY_MODE}, so the maximum sits at least 24px past its width, a margin no font moves, and
+ *   never narrows it. The page reads the lowered maximum back, so a maximum Chromium cannot lower,
+ *   such as `min-content`, which makes the `calc()` invalid, records nothing.
+ * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which with
+ *   those margins at zero leaves at least 24px between its last item and its content box's end, in
+ *   every mode of {@link EVERY_MODE}, so the margins take that room (CSS Flexbox 1 §8.1).
  * - `ellipsisFits`: an element that ends its one line of text in an ellipsis, `text-overflow:
  *   ellipsis` on a box that hides its overflow and keeps to one line, whose content box is at least
  *   a pixel wider than its first character and the ellipsis together. Chromium keeps the first
@@ -59,7 +97,8 @@ import { coincidingAround } from "./coinciding-around.ts";
  */
 export async function measuredFacts(
   cdp: CDPSession,
-  nodeId: number
+  nodeId: number,
+  modes: readonly PageMode[] = EVERY_MODE
 ): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const { object } = await cdp.send("DOM.resolveNode", { nodeId });
   if (object.objectId === undefined) {
@@ -69,6 +108,7 @@ export async function measuredFacts(
     objectId: object.objectId,
     returnByValue: true,
     functionDeclaration: MEASURE_IN_PAGE,
+    arguments: [{ value: modes }],
   });
   // SAFETY: the page function returns facts by path, as plain JSON.
   return new Map(Object.entries((result.value ?? {}) as Record<string, MeasuredFacts>));
@@ -87,7 +127,7 @@ export async function measuredFacts(
 const TRACK_CLEARANCE_PX = 1;
 
 /** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `function () {
+const MEASURE_IN_PAGE = `function (modes) {
   const root = this;
   const out = {};
   const put = (path, key, value) => { (out[path] ??= {})[key] = value; };
@@ -117,6 +157,14 @@ const MEASURE_IN_PAGE = `function () {
     const width = element.getBoundingClientRect().width;
     if (style === null) { element.removeAttribute("style"); } else { element.setAttribute("style", style); }
     return width;
+  };
+  const inFlow = (element) => !["absolute", "fixed"].includes(getComputedStyle(element).position) && getComputedStyle(element).display !== "none";
+  // The auto margins of a flex container's items along its direction, as their computed values keep
+  // \`auto\` (CSS Typed OM), where \`getComputedStyle\` gives their used lengths.
+  const autoMargins = (element) => {
+    const direction = getComputedStyle(element).flexDirection;
+    const sides = direction.startsWith("row") ? ["left", "right"] : ["top", "bottom"];
+    return [...element.children].filter(inFlow).flatMap((child) => sides.filter((side) => String(child.computedStyleMap().get("margin-" + side)) === "auto").map((side) => ({ child, side })));
   };
   const elements = [];
   const walk = (element, path) => {
@@ -212,6 +260,8 @@ const MEASURE_IN_PAGE = `function () {
       put(first.path, "widest", true);
     }
   }
+  const underMaxWidth = [];
+  const freeAlongMain = [];
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
     const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
@@ -257,6 +307,8 @@ const MEASURE_IN_PAGE = `function () {
     if (style.maxHeight !== "none" && element.getBoundingClientRect().height + 0.5 < Number.parseFloat(style.maxHeight)) {
       put(path, "underMaxHeight", true);
     }
+    if (style.maxWidth !== "none") { underMaxWidth.push({ element, path }); }
+    if (style.display.endsWith("flex") && !style.flexWrap.startsWith("wrap") && autoMargins(element).length > 0) { freeAlongMain.push({ element, path }); }
     const [child, ...others] = element.children;
     const line = Number.parseFloat(style.lineHeight);
     if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
@@ -284,5 +336,60 @@ const MEASURE_IN_PAGE = `function () {
       }
     }
   }
+  // The facts that must hold in every mode a designer can pick: each candidate is measured with the
+  // page stamped in each mode, and keeps the fact only where every mode keeps it.
+  const holdsInEveryMode = (candidates, holds) => {
+    const html = document.documentElement;
+    const body = document.body;
+    const saved = [html, body].map((element) => [element, [...element.attributes].filter((attribute) => attribute.name.startsWith("data-")).map((attribute) => [attribute.name, attribute.value])]);
+    let kept = candidates;
+    for (const mode of modes) {
+      for (const [name, value] of Object.entries(mode.root)) { html.setAttribute(name, value); }
+      for (const [name, value] of Object.entries(mode.body)) { body.setAttribute(name, value); }
+      kept = kept.filter((candidate) => holds(candidate.element));
+    }
+    for (const [element, attributes] of saved) {
+      for (const name of [...element.attributes].map((attribute) => attribute.name).filter((name) => name.startsWith("data-"))) { element.removeAttribute(name); }
+      for (const [name, value] of attributes) { element.setAttribute(name, value); }
+    }
+    return kept;
+  };
+  // A maximum no wider than the box it limits is lowered by 24px, which Chromium must apply: an
+  // intrinsic keyword such as \`min-content\` makes the \`calc()\` invalid, so it keeps its value.
+  const underMax = (element) => {
+    const maximum = getComputedStyle(element).maxWidth;
+    if (maximum === "none" || /content/.test(maximum)) { return false; }
+    const width = element.getBoundingClientRect().width;
+    const attribute = element.getAttribute("style");
+    element.style.setProperty("max-width", "calc(" + maximum + " - 24px)", "important");
+    const applied = getComputedStyle(element).maxWidth !== maximum;
+    const lowered = element.getBoundingClientRect().width;
+    if (attribute === null) { element.removeAttribute("style"); } else { element.setAttribute("style", attribute); }
+    return applied && Math.abs(lowered - width) <= 0.01;
+  };
+  for (const { path } of holdsInEveryMode(underMaxWidth, underMax)) { put(path, "underMaxWidth", true); }
+  // A flex line holds its items and the gaps between them with 24px to spare along its direction
+  // once the auto margins along it give their room back.
+  const freeAlong = (element) => {
+    const style = getComputedStyle(element);
+    const row = style.flexDirection === "row";
+    if (!row && style.flexDirection !== "column") { return false; }
+    const margins = autoMargins(element);
+    const saved = margins.map(({ child }) => [child, child.getAttribute("style")]);
+    for (const { child, side } of margins) { child.style.setProperty("margin-" + side, "0px", "important"); }
+    const box = element.getBoundingClientRect();
+    const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
+    const end = row ? box.right - px("border-right-width") - px("padding-right") : box.bottom - px("border-bottom-width") - px("padding-bottom");
+    const used = Math.max(...[...element.children].filter(inFlow).map((child) => {
+      const edges = child.getBoundingClientRect();
+      const after = Number.parseFloat(getComputedStyle(child).getPropertyValue(row ? "margin-right" : "margin-bottom")) || 0;
+      return (row ? edges.right : edges.bottom) + after;
+    }));
+    for (const [child, attribute] of saved) {
+      if (attribute === null) { child.removeAttribute("style"); } else { child.setAttribute("style", attribute); }
+    }
+    return end - used >= 24;
+  };
+  for (const { path } of holdsInEveryMode(freeAlongMain, freeAlong)) { put(path, "freeAlongMain", true); }
   return out;
 }`;

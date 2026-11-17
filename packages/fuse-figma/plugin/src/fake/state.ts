@@ -150,6 +150,8 @@ export type NodeState = {
   height: number;
   /** The layer's rotation in degrees, counterclockwise, from -180 to 180 (rule 26). */
   rotation: number;
+  /** Whether a write of `visible` hid the layer, which a mirror of it shows as its main does. */
+  hidden: boolean;
   opacity: number;
   constraints: Constraints;
   /**

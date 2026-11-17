@@ -21,6 +21,7 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import type { MeasuredFacts } from "./capture-format.ts";
 import { measuredFacts } from "./page-facts.ts";
 
 const BLUE_PNG =
@@ -229,5 +230,74 @@ describe("a one-column grid's column the capture measures as fitting", () => {
     [400, "400px", false],
   ])("with a %spx box in its item, a %s column holds it: %s", async (inner, column, fits) => {
     expect(await measure(inner)).toEqual({ column, fits });
+  });
+});
+
+/** Measure the root `#root` of the page's markup, and read back its `style` attribute. */
+async function factsOfRoot(): Promise<{
+  readonly facts: MeasuredFacts | undefined;
+  readonly style: string | null;
+}> {
+  const cdp = await page.context().newCDPSession(page);
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
+  const facts = await measuredFacts(cdp, nodeId);
+  await cdp.detach();
+  return { facts: facts.get(""), style: await page.locator("#root").getAttribute("style") };
+}
+
+/**
+ * Unit under test: the page function's `underMaxWidth`. Oracle: Chromium's own layout of a box
+ * beside its `max-width`, read through `getBoundingClientRect`. A 100px box under `max-width: 100%`
+ * of a 300px container keeps 200px of room in every mode, so a maximum 24px lower leaves it 100px
+ * wide; under a 110px maximum it keeps 10px, which 24px less takes away; a 400px box under a 300px
+ * maximum is narrowed by it already; and a 400px box under `min-content`, which Chromium narrows to
+ * its 100px content, takes no `calc()` of it, so nothing proves the maximum idle. A box 200px wide
+ * dense and 230px comfortable under a 240px maximum keeps 40px of room dense but 10px comfortable,
+ * so the fact fails in a mode the capture does not render. The page leaves the box's inline style and
+ * the document's mode as it found them.
+ */
+describe("a maximum the capture measures as never narrowing its box", () => {
+  async function measure(box: string, inner: string) {
+    await page.setContent(
+      `<style>:root[data-density="comfortable"] .wider { width: 230px !important }</style><main data-compare-cell><div style="width:300px"><div id="root" style="${box}"><div class="${inner}" style="width:${inner === "wider" ? "200px" : inner};height:10px;flex-shrink:0"></div></div></div></main>`
+    );
+    const { facts, style } = await factsOfRoot();
+    const density = await page.evaluate(() => document.documentElement.getAttribute("data-density"));
+    return { under: facts?.underMaxWidth === true, style, density };
+  }
+
+  it.each([
+    ["display:flex;width:fit-content;max-width:100%", "100px", true],
+    ["display:flex;width:fit-content;max-width:110px", "100px", false],
+    ["display:flex;width:fit-content;max-width:100%", "400px", false],
+    ["display:flex;width:400px;max-width:min-content", "100px", false],
+    ["display:flex;width:fit-content;max-width:240px", "wider", false],
+  ])("on %s around a %s child: %s", async (box, inner, under) => {
+    expect(await measure(box, inner)).toEqual({ under, style: box, density: null });
+  });
+});
+
+/**
+ * Unit under test: the page function's `freeAlongMain`. Oracle: Chromium's own layout of a flex
+ * column whose second item takes `margin-top: auto`. A 200px column holding two 40px items 30px apart
+ * leaves 90px for the margin. A 100px column leaves none: the items and the gap take 110px, so the
+ * margin is 0 and the second item overflows. A column 140px tall dense and 100px tall comfortable
+ * leaves 30px dense and none comfortable, so the fact fails in a mode the capture does not render.
+ */
+describe("a flex line the capture measures as leaving room for an auto margin", () => {
+  async function measure(height: string) {
+    await page.setContent(
+      `<style>:root[data-density="comfortable"] .shrinks { height: 100px !important }</style><main data-compare-cell><div id="root" class="${height === "shrinks" ? "shrinks" : ""}" style="display:flex;flex-direction:column;gap:30px;height:${height === "shrinks" ? "140px" : height}"><div style="height:40px;flex:none"></div><div style="height:40px;flex:none;margin-top:auto"></div></div></main>`
+    );
+    return (await factsOfRoot()).facts?.freeAlongMain === true;
+  }
+
+  it.each([
+    ["200px", true],
+    ["100px", false],
+    ["shrinks", false],
+  ])("in a column %s tall: %s", async (height, free) => {
+    expect(await measure(height)).toBe(free);
   });
 });

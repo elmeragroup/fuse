@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCaptured,
+  buildChip,
   chip,
   FILL,
   fixed,
@@ -30,16 +31,6 @@ import type { PartManifest } from "../capture/manifest";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BooleanPropertySpec, FrameLayerSpec } from "./kit-spec";
-
-/** Build a chip whose root wins the given classes and holds the given elements. */
-function buildChip(
-  classes: string,
-  children: readonly FixtureElement[] = [],
-  manifest: Parameters<typeof chip>[0] = {},
-  options: FixtureOptions = {}
-) {
-  return buildCaptured(chip(manifest), rest({ slot: "chip", classes, children }), options);
-}
 
 /** Build a chip whose root wins `classes` and holds one `chip-dot` part that wins `dot`. */
 function buildWithDot(classes: string, dot: string, options: FixtureOptions = {}) {

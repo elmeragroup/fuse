@@ -640,3 +640,35 @@ describe("a label that wraps at a max width", () => {
     expect((await labelOf(file)).maxWidth).toBeNull();
   });
 });
+
+// Unit under test: `reconcileKit` on a variant whose frame the spec draws hidden, as a part under
+// `visibility: hidden` draws. Oracle: the plugin typings, where any scene node's `visible` is
+// writable and reads back what was written, and an empty second Plan. Showing the frame again plans
+// the one `visible` write back.
+describe("a variant whose frame the spec hides", () => {
+  const hidden: FrameLayerSpec = { ...frame("button/hidden", "Hidden", []), hidden: true };
+
+  it("draws the frame hidden in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([hidden]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    expect(childNamed(await buttonVariant(file), "FRAME", "Hidden").visible).toBe(false);
+  });
+
+  it("plans the one visible write when the spec shows the frame again, and converges", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, nestedKit([hidden]), true);
+    file.reopen();
+    const { hidden: _hidden, ...shown } = hidden;
+    const kit = nestedKit([shown]);
+    expect((await reconcileKit(file.figma, kit, false)).changes).toEqual([
+      "Button / size=md / Hidden: visible → true",
+      ...RELAYOUT,
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+  });
+});

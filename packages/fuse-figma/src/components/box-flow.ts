@@ -126,8 +126,9 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * @param box - The box's sizing and limits, which say whether it hugs its layers along its
  *   direction with no minimum, so `justify-content` has no free space to distribute, and the sizing
  *   of the layers inside it, which a column's `align-items` decides as it stretches them or not, and
- *   how its cascade knows whether a list item draws a marker, and whether the capture measured a
- *   one-column grid's column as wide as its content box.
+ *   how its cascade knows whether a list item draws a marker, whether the capture measured a
+ *   one-column grid's column as wide as its content box, and whether it measured the box's flex line
+ *   leaving room for auto margins along it in every mode.
  * @returns The box's layout, and the alignment its parts set, which {@link settleFlow}
  *   settles once the parts map.
  */
@@ -141,6 +142,7 @@ export function readFlow(
     readonly markers: MarkerReading;
     readonly lineFits: boolean;
     readonly trackFits: boolean;
+    readonly freeAlongMain: boolean;
   }
 ): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
@@ -187,7 +189,7 @@ export function readFlow(
     flex &&
     (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
-  const autoStart = flex && !column ? readAutoStart(reader, flow) : undefined;
+  const autoStart = flex ? readAutoStart(reader, flow, { direction, free: box.freeAlongMain }) : undefined;
   const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
   // A box with free space spaces its layers out only where they map to leave it some, so the box
   // mapping reads its `space-between` once they map.
@@ -334,9 +336,13 @@ const ONE_COLUMN_GRID: Layout = {
   oneColumnGrid: true,
 };
 
-/** How the coverage table names an auto start margin {@link readAutoStart} reads on two layers. */
+/** How the coverage table names an auto margin {@link readAutoStart} reads between two layers. */
 const AUTO_START =
   "the auto margin takes the row's free space, which ends the row with the layer, as space-between places two layers";
+
+/** How the coverage table names an auto margin {@link readAutoStart} reads between a column's two layers. */
+const AUTO_START_DOWN =
+  "the auto margin takes the column's free space, which ends the column with the last layer, as space-between places two layers";
 
 /** How the coverage table names an auto start margin {@link readAutoStart} reads after the label. */
 const AUTO_START_AFTER_LABEL =
@@ -345,48 +351,90 @@ const AUTO_START_AFTER_LABEL =
 /** The `text-align` values that set a label's text from its left, where a filling label draws as one at its own width. */
 const FROM_LEFT: ReadonlySet<string> = new Set(["", "start", "left"]);
 
+/** The margins before and after a layer along a flex box's direction. */
+const MAIN_MARGINS = {
+  HORIZONTAL: { start: "margin-left", end: "margin-right" },
+  VERTICAL: { start: "margin-top", end: "margin-bottom" },
+} as const satisfies Record<DirectionSpec, { readonly start: string; readonly end: string }>;
+
 /**
- * Read an auto start margin on the last layer of a flex row, as a menu row's shortcut or caret ends
- * the row. Auto margins take the row's free space before `justify-content` distributes it (CSS
- * Flexbox 1 §8.1), so the margin ends the row with the layer and packs the others at the start. The
- * row must leave `justify-content` unset and the layer its end margin, so nothing else places them.
+ * Read an auto margin between the layers of a flex box along its direction, as a menu row's shortcut
+ * or caret ends the row and a Sheet's `mt-auto` footer ends its column. Auto margins take the box's
+ * free space before `justify-content` distributes it (CSS Flexbox 1 §8.1), so the margin ends the
+ * box with the layers after it and packs the others at the start. The box must leave
+ * `justify-content` unset, so nothing else places them.
  *
- * - On the last of two layers the row reads as spaced between its ends, as `space-between` places
- *   two layers: `spaced`.
- * - On the last of more layers, with the row's own label right before it and the row setting its
- *   text from the left, the label fills the free space in Figma and paints nothing past its text, so
- *   the row packs at its start with its gap and draws what CSS draws: `label-fills`. The layers
- *   before the label keep their widths.
+ * - Between two layers, an auto start margin on the last that sets no end margin reads as spaced
+ *   between the box's ends, as `space-between` places two layers: `spaced`. In a row this holds as
+ *   the menu rows have drawn it. In a column, and for an auto end margin on the first part that sets
+ *   no start margin, as `me-auto` writes it, the capture must have measured the box leaving the
+ *   margin room in every mode (`freeAlongMain`): where the layers and the gap overflow the box, the
+ *   margin takes none, and the box keeps them packed at its start where `space-between` would not.
+ * - In a row, an auto start margin on the last of more layers, with the row's own label right before
+ *   it and the row setting its text from the left, makes the label fill the free space in Figma,
+ *   where it paints nothing past its text, so the row packs at its start with its gap and draws what
+ *   CSS draws: `label-fills`. The layers before the label keep their widths.
  *
- * An auto margin anywhere else stays unread, so it lands unmapped.
+ * A row that leaves no free space, as one that hugs its layers along its direction or holds a layer
+ * that grows, gives the margin nothing to take, and draws the same packed at its start, which the
+ * mapping decides once its layers map, as `spacesNothingOut` in `box-mapping.ts` says. An auto margin
+ * anywhere else stays unread, so it lands unmapped.
  *
- * @param reader - The row's style.
- * @param flow - The row's layers in flow.
- * @returns How the margin places the row's layers, or undefined where it stays unread.
+ * @param reader - The box's style.
+ * @param flow - The box's layers in flow.
+ * @param line - The box's direction, and whether the capture measured its flex line leaving room for
+ *   the margin in every mode.
+ * @returns How the margin places the box's layers, or undefined where it stays unread.
  */
-function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-fills" | undefined {
-  const { last } = flow;
-  const auto = (property: string) => normalizeCss(last?.resolved(property) ?? "") === "auto";
+function readAutoStart(
+  reader: LayerStyle,
+  flow: FlowLayers,
+  line: { readonly direction: DirectionSpec; readonly free: boolean }
+): "spaced" | "label-fills" | undefined {
+  const { direction, free } = line;
+  const { start, end } = MAIN_MARGINS[direction];
+  const auto = (style: LayerStyle | undefined, property: string) =>
+    normalizeCss(style?.resolved(property) ?? "") === "auto";
   const count = flow.parts.length + flow.others.length;
+  const [first] = flow.parts;
+  // `me-auto` on the first of two parts places them as `ms-auto` on the second does.
+  // A row's start margin keeps the reading its menu rows were drawn by; the others need the room.
+  const proven = free || direction === "HORIZONTAL";
+  const between =
+    proven && auto(flow.last, start) && flow.last?.has(end) !== true
+      ? { style: flow.last, property: start }
+      : free &&
+          count === 2 &&
+          flow.others.length === 0 &&
+          auto(first?.style, end) &&
+          first?.style.has(start) !== true
+        ? { style: first?.style, property: end }
+        : undefined;
   const placing =
     count === 2
       ? "spaced"
-      : count > 2 && flow.labelBeforeLast && FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""))
+      : direction === "HORIZONTAL" &&
+          between?.property === start &&
+          count > 2 &&
+          flow.labelBeforeLast &&
+          FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""))
         ? "label-fills"
         : undefined;
-  if (
-    last === undefined ||
-    placing === undefined ||
-    reader.has("justify-content") ||
-    !auto("margin-left") ||
-    last.has("margin-right")
-  ) {
+  if (between?.style === undefined || placing === undefined || reader.has("justify-content")) {
     return undefined;
   }
-  last.read(
-    "margin-left",
+  between.style.read(
+    between.property,
     (value) => value,
-    () => ({ outcome: "literal", detail: placing === "spaced" ? AUTO_START : AUTO_START_AFTER_LABEL }),
+    () => ({
+      outcome: "literal",
+      detail:
+        placing === "label-fills"
+          ? AUTO_START_AFTER_LABEL
+          : direction === "VERTICAL"
+            ? AUTO_START_DOWN
+            : AUTO_START,
+    }),
     reader.feed("primaryAlign")
   );
   return placing;

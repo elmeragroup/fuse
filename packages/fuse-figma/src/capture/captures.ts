@@ -6,6 +6,7 @@
 import type { Result } from "effect";
 
 import accordionItem from "../../captures/accordion-item.json" with { type: "json" };
+import actionBar from "../../captures/action-bar.json" with { type: "json" };
 import alertDialogContent from "../../captures/alert-dialog-content.json" with { type: "json" };
 import alertDialogOpen from "../../captures/alert-dialog-open.json" with { type: "json" };
 import alert from "../../captures/alert.json" with { type: "json" };
@@ -81,6 +82,7 @@ import selectOpen from "../../captures/select-open.json" with { type: "json" };
 import selectPopup from "../../captures/select-popup.json" with { type: "json" };
 import selectTrigger from "../../captures/select-trigger.json" with { type: "json" };
 import separator from "../../captures/separator.json" with { type: "json" };
+import sheetContent from "../../captures/sheet-content.json" with { type: "json" };
 import sidebarFooter from "../../captures/sidebar-footer.json" with { type: "json" };
 import sidebarGroupLabel from "../../captures/sidebar-group-label.json" with { type: "json" };
 import sidebarGroup from "../../captures/sidebar-group.json" with { type: "json" };
@@ -158,6 +160,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["meter", meter],
   ["empty", empty],
   ["card", card],
+  ["action-bar", actionBar],
+  ["sheet-content", sheetContent],
   ["confirm-button", confirmButton],
   ["toggle", toggle],
   ["icon-toggle", iconToggle],

@@ -358,8 +358,23 @@ export function partShare(style: LayerStyle): RowShare {
     : { kind: "pixels", value: length + margins };
 }
 
-/** Whether a flex item neither shrinks nor grows from its `auto` basis, as `shrink-0` alone sets. */
+/** Why `flex: none` drops. */
+const NO_FLEX =
+  "`none` neither grows nor shrinks the item from its own size (CSS Flexbox 1 §7.1.1), as Figma's auto layout keeps a fixed or hugging layer";
+
+/**
+ * Whether a box's `flex` is `none`, `0 0 auto` (CSS Flexbox 1 §7.1.1): it neither grows nor shrinks
+ * from its own size, as `flex-none` sets.
+ */
+function keepsOwnSize(style: LayerStyle): boolean {
+  return normalizeCss(style.resolved("flex") ?? "") === "none";
+}
+
+/** Whether a flex item neither shrinks nor grows from its `auto` basis, as `shrink-0` alone or `flex-none` sets. */
 function keepsOwnWidth(style: LayerStyle): boolean {
+  if (keepsOwnSize(style)) {
+    return !style.has("flex-basis") && !style.has("flex-grow") && !style.has("flex-shrink");
+  }
   return (
     normalizeCss(style.resolved("flex-shrink") ?? "") === "0" &&
     !style.has("flex") &&
@@ -826,7 +841,15 @@ export function readGrowth(
   const horizontal = layout.direction === "HORIZONTAL";
   const along = horizontal ? sizing.horizontal : sizing.vertical;
   const axis = horizontal ? WIDTH : HEIGHT;
-  const growing = parts.filter((part) => part.has("flex"));
+  for (const part of parts.filter(keepsOwnSize)) {
+    part.read(
+      "flex",
+      (value) => value,
+      () => ({ outcome: "dropped", detail: NO_FLEX }),
+      []
+    );
+  }
+  const growing = parts.filter((part) => part.has("flex") && !keepsOwnSize(part));
   const [only] = growing;
   if (!layout.flex || growing.length !== 1 || only === undefined) {
     return undefined;
@@ -1100,6 +1123,8 @@ const CLIPPING: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll
  * @param fit - What a `fit-content` width draws as.
  * @param inside - The sizing of the layers inside the box, which its lengths and limits decide too:
  *   whether a layer fills or hugs, the length a share takes, and where a text wraps.
+ * @param underMaxWidth - Whether the capture measured the box as wide with its `max-width` 24px
+ *   lower, so a maximum the build cannot read as a length never narrows it and drops.
  * @returns The box's sizing, limits, clipping and extent.
  */
 export function readSizing(
@@ -1107,15 +1132,22 @@ export function readSizing(
   room: Room,
   variables: VariableIndex,
   fit: FitContent,
-  inside: Feed
+  inside: Feed,
+  underMaxWidth: boolean
 ): BoxSizing {
   // A parent that hugs its width with nothing bounding it is as wide as each layer it holds.
   const roomy = room.horizontal.percent.kind === "hugging" && room.unbounded;
-  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, { fit, inside, roomy });
+  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, {
+    fit,
+    inside,
+    roomy,
+    under: underMaxWidth,
+  });
   const vertical = readAxis(reader, HEIGHT, room.vertical, variables, {
     fit: "content",
     inside,
     roomy: false,
+    under: false,
   });
   reader.read(
     "field-sizing",
@@ -1256,6 +1288,10 @@ const WHOLE_PARENT_MAXIMUM =
  */
 const FILLING_MAXIMUM = "the box fills its parent, so it is never longer than 100% of the parent";
 
+/** Why a maximum the capture measured never narrowing the box drops. */
+const UNDER_MAXIMUM =
+  "the capture measured the box as wide with this maximum 24px lower, so it never narrows the box, at a margin no font moves";
+
 const CAPPED_LENGTH =
   "the 100% maximum lowers the height to the parent's content height, which a fill down draws";
 const CAPPING_MAXIMUM = "the box fills its parent's content height, which the height reaches";
@@ -1306,11 +1342,18 @@ function capsAtParent(
  * Read a `min-*` or `max-*` as a length: a synced variable or a literal, or, against a declared
  * viewport, a `calc()`, `min()` or `max()` that mixes percentages with lengths, its `dvh` and `dvw`
  * read against that viewport, as Dialog's `max-h-[calc(100%-2rem)]` resolves in
- * its viewport.
+ * its viewport. Beside a fixed length, a percentage, or such a `calc()`, resolves against a basis of
+ * literal pixels too, as an Attachment root's `max-w-full` is its preview's width: there the limit
+ * only folds into the length or drops (`resolveLimits`), so the basis never becomes a Figma limit.
  */
-function readLimit(value: string, variables: VariableIndex, percent: PercentBasis): NumberSpec | undefined {
+function readLimit(
+  value: string,
+  variables: VariableIndex,
+  percent: PercentBasis,
+  fixed: boolean
+): NumberSpec | undefined {
   const own = readNumber(value, variables);
-  if (own !== undefined || percent.kind !== "length" || percent.viewport === undefined) {
+  if (own !== undefined || percent.kind !== "length" || (percent.viewport === undefined && !fixed)) {
     return own;
   }
   const resolved = evaluateLengthOf(inViewport(value, percent.viewport), percent.value);
@@ -1329,7 +1372,18 @@ function readAxis(
   axis: AxisProperties,
   room: AxisRoom,
   variables: VariableIndex,
-  { fit, inside, roomy }: { readonly fit: FitContent; readonly inside: Feed; readonly roomy: boolean }
+  {
+    fit,
+    inside,
+    roomy,
+    under,
+  }: {
+    readonly fit: FitContent;
+    readonly inside: Feed;
+    readonly roomy: boolean;
+    /** Whether the capture measured the box as wide with its maximum 24px lower, on the width only. */
+    readonly under: boolean;
+  }
 ): AxisRead & { readonly known: boolean } {
   if (capsAtParent(reader, axis, room, variables)) {
     reader.read(
@@ -1361,6 +1415,20 @@ function readAxis(
       []
     );
   }
+  // A maximum the build cannot read as a length, which the capture measured never narrowing the box.
+  const measuredUnder =
+    !inertMaximum &&
+    under &&
+    maximum !== undefined &&
+    readLimit(maximum, variables, room.percent, size.kind === "fixed") === undefined;
+  if (measuredUnder) {
+    reader.read(
+      axis.max,
+      (value) => value,
+      () => ({ outcome: "dropped", detail: UNDER_MAXIMUM }),
+      []
+    );
+  }
   const popupMaximum = roomyMaximum(axis.max, reader.raw(axis.max) ?? "", variables);
   // Nothing sets the available room outside a positioner, so the value never resolves and the
   // maximum is marked rather than read.
@@ -1373,9 +1441,9 @@ function readAxis(
       return popupMaximum.kind === "length" ? [{ side, property, value: popupMaximum.value }] : [];
     }
     const value = reader.resolved(property);
-    return value === undefined || (side === "max" && inertMaximum)
+    return value === undefined || (side === "max" && (inertMaximum || measuredUnder))
       ? []
-      : [{ side, property, value: readLimit(value, variables, room.percent) }];
+      : [{ side, property, value: readLimit(value, variables, room.percent, size.kind === "fixed") }];
   });
   const limited = resolveLimits(size, bounds, axis);
   // Each note was decided from the value the read substitutes, so the read only records it.

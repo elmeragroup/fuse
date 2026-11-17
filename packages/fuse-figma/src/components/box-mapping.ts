@@ -37,6 +37,7 @@ import {
   viewportRoom,
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
+import { dropIdleOrigin, readRotation } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
 import type {
   BoxDefinition,
@@ -91,13 +92,11 @@ import type { Feed, LayerStyle, SpecField } from "./layer-style";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
 import {
-  dropIdleOrigin,
   endsBesideLabel,
   endsInFlow,
   huggedWidth,
   padToOffset,
   placeParts,
-  readRotation,
   slotAroundDot,
 } from "./placement";
 import type { Layout } from "./placement";
@@ -122,6 +121,12 @@ function literalLayout(expected: readonly string[], detail: string) {
     describe: () => ({ outcome: "literal" as const, detail }),
   };
 }
+
+/**
+ * Why a list item's `list-style-type` and `list-style-image` drop where both resolve to `none`: the
+ * item generates no marker (CSS Lists 3 §3), so it draws as the block box it is.
+ */
+const NO_MARKER = "both resolve to `none`, so the list item draws no marker";
 
 /** Why a grid in one column drops its `column-gap`. */
 const ONE_COLUMN_GAP = "the grid lays its items in one column, which has no column gap";
@@ -214,6 +219,19 @@ function readDisplay(
   const stacked = layout.blocks && (width.kind !== "hug" || layers.length === 1);
   // A list item with no marker lays out as the block box it is (CSS Display 3 §2.3).
   const plainBlock = isPlainBlock(reader, markers);
+  // A base layer's `list-style: none` drops as every base declaration no part reads does.
+  if (plainBlock && display === "list-item") {
+    for (const property of ["list-style-type", "list-style-image"].filter(
+      (each) => !reader.setByBase(each)
+    )) {
+      reader.read(
+        property,
+        (value) => value,
+        () => ({ outcome: "dropped", detail: NO_MARKER }),
+        []
+      );
+    }
+  }
   const marker =
     display === "list-item"
       ? ", a list item whose resolved `list-style-type` and `list-style-image` are `none`, so it draws no marker"
@@ -418,7 +436,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     label !== undefined && slots.length === 0 && !(box.parts ?? []).some((child) => child.shownIn(cell));
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
-  const { sizing, limits, clips, extent, known } = readSizing(reader, room, context.variables, fit, inside);
+  const { sizing, limits, clips, extent, known } = readSizing(
+    reader,
+    room,
+    context.variables,
+    fit,
+    inside,
+    cascade.measured?.underMaxWidth === true
+  );
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
@@ -502,6 +527,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       markers,
       lineFits: cascade.measured?.lineFits === true,
       trackFits: cascade.measured?.trackFits === true,
+      freeAlongMain: cascade.measured?.freeAlongMain === true,
     }
   );
   const { layout } = flow;
@@ -584,6 +610,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         ? absoluteRoom(holder)
         : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
+    // The one layer of a box fixed or filling on both axes leaves the box its size when it hides.
+    const keepsRoom =
+      index !== -1 &&
+      holder.layers.length === 1 &&
+      sizing.horizontal.kind !== "hug" &&
+      sizing.vertical.kind !== "hug";
     return mapPart(
       part,
       room,
@@ -592,7 +624,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       layout.blocks && adjoinsMargin(styles, index),
       reader,
       // A fixed part sits out of the flow, so it is first where no part shows before it.
-      shown.indexOf(part) === 0
+      shown.indexOf(part) === 0,
+      keepsRoom
     );
   });
   const parts = settledParts(reader, flow, mapped, scope);
@@ -987,6 +1020,7 @@ function elementOf(child: PartDefinition): PartElement {
  *   {@link adjoinsMargin} says.
  * @param parent - The box's style, which a fixed instance part's place reads.
  * @param first - Whether the part is the box's first part.
+ * @param keepsRoom - Whether the box keeps its size with the part hidden, as {@link readHidden} needs.
  * @returns The part as mapped.
  */
 function mapPart(
@@ -996,7 +1030,8 @@ function mapPart(
   scope: MapScope,
   collapses: boolean,
   parent: LayerStyle,
-  first: boolean
+  first: boolean,
+  keepsRoom: boolean
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = part.cascade.measured?.widest === true ? room.rowMinimum : undefined;
@@ -1045,7 +1080,13 @@ function mapPart(
     ...(scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : box),
   };
   const { optional } = part.child;
-  const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
+  const hidden = optional === undefined && readHidden(part.cascade.style, keepsRoom);
+  const linked =
+    optional === undefined
+      ? hidden
+        ? { ...drawn, hidden: true as const }
+        : drawn
+      : { ...drawn, visibleProperty: optional.name };
   const rotation = readRotation(part.cascade.style);
   const turned = rotation === undefined ? linked : { ...linked, rotation };
   const layer = wrapFrameMargins(
@@ -1057,6 +1098,35 @@ function mapPart(
     scope.clipsAround === true
   );
   return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined };
+}
+
+/** Why a hidden part draws as a hidden layer. */
+const HIDDEN =
+  "the layer is hidden, which paints nothing of it or of what it holds, and the box it fills keeps its size without it";
+
+/**
+ * Read a part's `visibility: hidden`, which `invisible` sets, as a hidden layer. CSS paints nothing
+ * of a hidden box, and nothing of its descendants that inherit the value, while the box keeps its room
+ * in the layout (CSS Display 3 §4.1). Figma paints nothing of a hidden layer or of what it holds, but
+ * its auto layout lays the layer out as if it were gone, so the two draw alike only where the room
+ * the part keeps changes nothing: the part is the one layer of a box whose width and height are fixed
+ * or fill, which keeps its size without it, as a calendar's day button in its cell. Anywhere else the
+ * value stays unread, so it lands unmapped, and so does a descendant's own `visibility: visible`,
+ * which CSS shows inside the hidden box and Figma hides with it.
+ *
+ * @param style - The part's style.
+ * @param keepsRoom - Whether the box that holds the part keeps its size with the part hidden.
+ * @returns Whether the part draws hidden.
+ */
+function readHidden(style: LayerStyle, keepsRoom: boolean): boolean {
+  return (
+    style.read(
+      "visibility",
+      (value) => (keepsRoom && normalizeCss(value) === "hidden" ? value : undefined),
+      () => ({ outcome: "literal", detail: HIDDEN }),
+      []
+    ) !== undefined
+  );
 }
 
 /**

@@ -31,13 +31,16 @@ export type VariableIndex = {
   readonly maximum: (ref: VariableRef) => number | undefined;
   /** Whether a custom property is a synced variable, which substitution must keep. */
   readonly owns: (customProperty: string) => boolean;
+  /** Whether a COLOR variable is fully opaque in every mode, false where any mode lets light through or it is unknown. */
+  readonly opaque: (ref: VariableRef) => boolean;
 };
 
 /**
  * Index synced variables by their web code syntax.
  *
- * @param variables - Each synced variable with the code syntax the sync writes for it, and the
- *   smallest and largest values it holds in any mode when it is a FLOAT variable.
+ * @param variables - Each synced variable with the code syntax the sync writes for it, the smallest
+ *   and largest values it holds in any mode when it is a FLOAT variable, and, for a COLOR variable,
+ *   whether it is fully opaque in every mode.
  * @returns The index.
  */
 export function makeVariableIndex(
@@ -46,6 +49,7 @@ export function makeVariableIndex(
     readonly webSyntax: string;
     readonly minimum?: number | undefined;
     readonly maximum?: number | undefined;
+    readonly opaque?: boolean;
   }[]
 ): VariableIndex {
   const owned = new Set<string>();
@@ -70,8 +74,12 @@ export function makeVariableIndex(
   const bySyntax = new Map<string, VariableRef>();
   const minimums = new Map<string, number>();
   const maximums = new Map<string, number>();
-  for (const { ref, webSyntax, minimum, maximum } of variables) {
+  const opaques = new Set<string>();
+  for (const { ref, webSyntax, minimum, maximum, opaque } of variables) {
     bySyntax.set(canonical(webSyntax), ref);
+    if (opaque === true) {
+      opaques.add(refKey(ref));
+    }
     if (minimum !== undefined) {
       minimums.set(refKey(ref), minimum);
     }
@@ -94,6 +102,7 @@ export function makeVariableIndex(
     minimum: (ref) => minimums.get(refKey(ref)),
     maximum: (ref) => maximums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
+    opaque: (ref) => opaques.has(refKey(ref)),
   };
 }
 
