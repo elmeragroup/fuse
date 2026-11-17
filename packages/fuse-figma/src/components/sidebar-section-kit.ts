@@ -70,8 +70,6 @@ export const SIDEBAR_SUB_ROWS = [
 /** The rich menu demo's row that holds the first badge. */
 export const SIDEBAR_BADGE_ROW = { label: "Orders", icon: "Package" } as const;
 
-const collapsed = (cell: Cell): boolean => cell.collapsed === "true";
-
 /** The axis a section's cells take: expanded and collapsed to the icon rail. */
 const COLLAPSED_AXES = [{ name: "collapsed", values: ["false", "true"] }];
 
@@ -123,19 +121,17 @@ function menuButtonManifest(
 }
 
 /**
- * The group label in an expanded or a collapsed group, each face its own instance. The collapsed
- * rail fades the label out and pulls the rows up over it, so the collapsed one draws in no layer.
+ * The group label, one part for an expanded and a collapsed group. The collapsed rail fades the
+ * label out and pulls the rows up over it, so the collapsed variant holds no label layer.
  */
-function groupLabelManifest(rail: boolean): InstanceManifest {
-  return {
-    kind: "instance",
-    key: rail ? "label-collapsed" : "label",
-    of: SIDEBAR_GROUP_LABEL_MANIFEST,
-    cell: () => ({ state: "rest" }),
-    shownIn: (cell) => collapsed(cell) === rail,
-    exposed: true,
-  };
-}
+const GROUP_LABEL: InstanceManifest = {
+  kind: "instance",
+  key: "label",
+  of: SIDEBAR_GROUP_LABEL_MANIFEST,
+  cell: () => ({ state: "rest" }),
+  shownIn: always,
+  exposed: true,
+};
 
 /** The group's manifest, which the capture-backed build reads with `captures/sidebar-group.json`. */
 export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
@@ -148,8 +144,7 @@ export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
   label: undefined,
   iconsFor: () => [],
   parts: [
-    groupLabelManifest(false),
-    groupLabelManifest(true),
+    GROUP_LABEL,
     frameManifest("content", "sidebar-group-content", [
       frameManifest(
         "menu",

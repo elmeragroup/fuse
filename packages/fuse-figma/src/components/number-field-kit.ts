@@ -18,7 +18,7 @@
  */
 import type { IconManifest, InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import { frameLabelRowManifest, frameMessagesManifest, isInvalid } from "./field-frame-kit";
+import { frameLabelRowManifest, frameMessagesManifest } from "./field-frame-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
@@ -72,21 +72,21 @@ export const NUMBER_FIELD_STEPPER_MANIFEST: SetManifest = {
 
 /**
  * A stepper instance as the manifest names it, by the `data-slot` Fuse stamps on its `<button>`: the
- * decrease stepper with Minus or the increase stepper with Plus. An invalid field stamps
- * `data-invalid` on its steppers, so the invalid cells hold their own instances. A disabled field
- * disables its steppers, and a read-only one marks them read-only.
+ * decrease stepper with Minus or the increase stepper with Plus. A disabled field disables its
+ * steppers, and a read-only one marks them read-only. An invalid field stamps `data-invalid` on
+ * them, which the build carries as the invalid cell's overrides on the one layer.
  */
-function stepperManifest(direction: "decrease" | "increase", invalid: boolean): InstanceManifest {
+function stepperManifest(direction: "decrease" | "increase"): InstanceManifest {
   return {
     kind: "instance",
-    key: invalid ? `${direction}-invalid` : direction,
+    key: direction,
     of: NUMBER_FIELD_STEPPER_MANIFEST,
     slot: `number-field-${direction === "decrease" ? "decrement" : "increment"}`,
     cell: (outer) => ({
       state: outer.state === "disabled" || outer.state === "readonly" ? outer.state : "rest",
     }),
     properties: () => ({ swap: { Icon: direction === "decrease" ? "Minus" : "Plus" } }),
-    shownIn: (cell) => isInvalid(cell) === invalid,
+    shownIn: always,
   };
 }
 
@@ -136,12 +136,7 @@ const GROUP_MANIFEST: PartManifest = {
       shownIn: always,
       label: undefined,
       iconsFor: () => [],
-      parts: [
-        stepperManifest("decrease", false),
-        stepperManifest("decrease", true),
-        stepperManifest("increase", false),
-        stepperManifest("increase", true),
-      ],
+      parts: [stepperManifest("decrease"), stepperManifest("increase")],
     },
   ],
 };

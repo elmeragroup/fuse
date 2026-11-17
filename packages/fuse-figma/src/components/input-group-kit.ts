@@ -60,26 +60,19 @@ function buttonCell(cell: Cell): Cell {
 
 /**
  * Combobox's caret trigger in the trailing addon: `InputGroup.Button` rendering `Combobox.Trigger`,
- * an `Icon button` instance with CaretDown. Inside an invalid Field, Base UI marks the trigger
- * `aria-invalid` and `data-invalid` too, so the invalid cells hold their own instance. The open
- * form's caret has its own instance too.
- *
- * @param invalid - Whether this is the invalid cells' instance.
- * @param open - Whether this is the open form's instance.
- * @returns The instance part.
+ * an `Icon button` instance with CaretDown, closed or open. One layer serves every cell: inside an
+ * invalid Field Base UI marks the trigger `aria-invalid` and `data-invalid`, and the open popup
+ * turns its caret, and the build carries what each cell draws differently as that cell's overrides.
  */
-function caretManifest(invalid: boolean, open: boolean): InstanceManifest {
-  return {
-    kind: "instance",
-    key: ["caret", ...(open ? ["open"] : []), ...(invalid ? ["invalid"] : [])].join("-"),
-    of: ICON_BUTTON_MANIFEST,
-    cell: buttonCell,
-    slot: "input-group-button",
-    properties: () => ({ swap: { Icon: "CaretDown" } }),
-    shownIn: (cell) =>
-      cell.form === (open ? "caret-open" : "caret") && (cell.state === "invalid") === invalid,
-  };
-}
+const CARET: InstanceManifest = {
+  kind: "instance",
+  key: "caret",
+  of: ICON_BUTTON_MANIFEST,
+  cell: buttonCell,
+  slot: "input-group-button",
+  properties: () => ({ swap: { Icon: "CaretDown" } }),
+  shownIn: showsCaret,
+};
 
 /**
  * The Input group's manifest, which the capture-backed build reads with `captures/input-group.json`,
@@ -129,10 +122,7 @@ export const INPUT_GROUP_MANIFEST: SetManifest = {
       label: undefined,
       iconsFor: () => [],
       parts: [
-        caretManifest(false, false),
-        caretManifest(true, false),
-        caretManifest(false, true),
-        caretManifest(true, true),
+        CARET,
         {
           // Combobox's clear button: `Combobox.Clear` rendering `InputGroup.Button`.
           kind: "instance",

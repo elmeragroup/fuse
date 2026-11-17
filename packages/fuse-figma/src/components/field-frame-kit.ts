@@ -7,8 +7,9 @@
  * - The label, the error and the description are instances of `Label`, `Field error` and `Field
  *   description`, each exposed so a designer sets its text from the composite.
  * - Base UI stamps the Field's state on the label and the description as data attributes: a
- *   disabled Field marks them `data-disabled`, an invalid one `data-invalid`. Each stamp is its own
- *   instance, which the cells of that state show.
+ *   disabled Field marks them `data-disabled`, an invalid one `data-invalid`. The label and the
+ *   description are one layer each, and the build carries what a stamp draws differently as that
+ *   cell's overrides.
  */
 import type { InstanceManifest, PartManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
@@ -26,17 +27,9 @@ export function isInvalid(cell: Cell): boolean {
   return cell.state === "invalid";
 }
 
-/** The Field state Base UI stamps on the description: none, `data-disabled` or `data-invalid`. */
-type DescriptionStamp = "none" | "disabled" | "invalid";
-
-/** The stamp a cell's Field puts on its description. */
-function stampOf(cell: Cell): DescriptionStamp {
-  return cell.state === "disabled" || cell.state === "invalid" ? cell.state : "none";
-}
-
 /**
  * A field frame's label row as a manifest names it, at its place below the Field root, holding the
- * label at rest or disabled and the label of an invalid Field, which Base UI stamps `data-invalid`.
+ * label, at rest or disabled as the Field is.
  *
  * @param label - The label's text.
  * @param place - The row's place, such as `field/0`.
@@ -48,15 +41,15 @@ export function frameLabelRowManifest(
   place: string,
   after: readonly PartManifest[] = []
 ): PartManifest {
-  const labelOf = (invalid: boolean): InstanceManifest => ({
+  const labelPart: InstanceManifest = {
     kind: "instance",
-    key: invalid ? "label-invalid" : "label",
+    key: "label",
     of: LABEL_MANIFEST,
     cell: (outer) => ({ state: outer.state === "disabled" ? "disabled" : "rest" }),
     properties: () => ({ text: { Label: label } }),
-    shownIn: (cell) => isInvalid(cell) === invalid,
+    shownIn: always,
     exposed: true,
-  });
+  };
   return {
     key: "label-row",
     slot: undefined,
@@ -64,7 +57,7 @@ export function frameLabelRowManifest(
     shownIn: always,
     label: undefined,
     iconsFor: () => [],
-    parts: [labelOf(false), labelOf(true), ...after],
+    parts: [labelPart, ...after],
   };
 }
 
@@ -87,31 +80,30 @@ export function frameErrorManifest(error: string): InstanceManifest {
 }
 
 /**
- * A field frame's descriptions as a manifest names them, one per state Base UI stamps on it.
+ * A field frame's description as a manifest names it, in every cell.
  *
  * @param description - The description's text.
- * @returns The descriptions, one of which each cell shows.
+ * @returns The description.
  */
-export function frameDescriptionsManifest(description: string): readonly InstanceManifest[] {
-  const descriptionOf = (stamp: DescriptionStamp): InstanceManifest => ({
+export function frameDescriptionManifest(description: string): InstanceManifest {
+  return {
     kind: "instance",
-    key: stamp === "none" ? "description" : `description-${stamp}`,
+    key: "description",
     of: FIELD_DESCRIPTION_MANIFEST,
     cell: () => ({ state: "rest" }),
     properties: () => ({ text: { Text: description } }),
-    shownIn: (cell) => stampOf(cell) === stamp,
+    shownIn: always,
     exposed: true,
-  });
-  return [descriptionOf("none"), descriptionOf("disabled"), descriptionOf("invalid")];
+  };
 }
 
 /**
- * A field frame's error and its descriptions as a manifest names them, after its control.
+ * A field frame's error and its description as a manifest names them, after its control.
  *
  * @param error - The error's text.
  * @param description - The description's text.
- * @returns The error, then the descriptions.
+ * @returns The error, then the description.
  */
 export function frameMessagesManifest(error: string, description: string): readonly InstanceManifest[] {
-  return [frameErrorManifest(error), ...frameDescriptionsManifest(description)];
+  return [frameErrorManifest(error), frameDescriptionManifest(description)];
 }
