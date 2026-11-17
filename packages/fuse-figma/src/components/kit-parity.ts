@@ -64,9 +64,8 @@ export const KIT_PARITY = {
   },
   "aspect-ratio": { kind: "issue", issue: MISSING_SETS },
   attachment: { kind: "issue", issue: MISSING_SETS },
-  // The Combobox sets do not draw it: its popup is as wide as the whole field box, not the input
-  // plus 28px, its rows keep no room for a check, and no Input group form holds an input with no
-  // addon.
+  // The Combobox sets do not draw it: its rows keep no room for a check, and no Input group form
+  // holds an input with no addon.
   autocomplete: { kind: "issue", issue: MISSING_SETS },
   "autocomplete-field": { kind: "issue", issue: MISSING_SETS },
   avatar: { kind: "sets", sets: ["avatar", "avatar-group"] },
@@ -100,15 +99,13 @@ export const KIT_PARITY = {
   combobox: {
     kind: "partial",
     sets: ["combobox-item", "combobox-empty", "combobox-popup", "combobox-open"],
-    missing:
-      "The popup search field, chips, the small input size, the read-only fill, and the popup as wide as the whole field box.",
+    missing: "The popup search field, chips, the small input size, and the read-only fill.",
     issue: MISSING_SETS,
   },
   "combobox-field": {
     kind: "partial",
     sets: ["label", "input-group", "combobox-popup", "combobox-item", "field-description", "field-error"],
-    missing:
-      "The read-only fill, the input with neither button, and the popup as wide as the whole field box.",
+    missing: "The read-only fill, and the input with neither button.",
     issue: MISSING_SETS,
   },
   command: {
