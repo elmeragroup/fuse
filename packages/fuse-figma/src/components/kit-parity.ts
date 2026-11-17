@@ -100,13 +100,15 @@ export const KIT_PARITY = {
   combobox: {
     kind: "partial",
     sets: ["combobox-item", "combobox-empty", "combobox-popup", "combobox-open"],
-    missing: "The popup search field, chips, the small input size, and the read-only fill.",
+    missing:
+      "The popup search field, chips, the small input size, the read-only fill, and the popup as wide as the whole field box.",
     issue: MISSING_SETS,
   },
   "combobox-field": {
     kind: "partial",
     sets: ["label", "input-group", "combobox-popup", "combobox-item", "field-description", "field-error"],
-    missing: "The read-only fill, the trigger and clear buttons together, and the input with neither button.",
+    missing:
+      "The read-only fill, the input with neither button, and the popup as wide as the whole field box.",
     issue: MISSING_SETS,
   },
   command: {
