@@ -270,6 +270,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
                   "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-highlighted:bg-accent","data-highlighted:text-accent-foreground","data-highlighted:**:text-accent-foreground"],
+                  "measured": {"widest":true},
                   "children": []
                 },
                 {
@@ -497,6 +498,7 @@
                       "pseudo": {},
                       "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
                       "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-highlighted:bg-accent","data-highlighted:text-accent-foreground","data-highlighted:**:text-accent-foreground"],
+                      "measured": {"widest":true},
                       "children": []
                     }
                   ]
@@ -562,6 +564,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--row-px":{"_tag":"element","up":6},"--row-py":{"_tag":"element","up":6},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
               "unmatched": [],
+              "measured": {"widest":true},
               "children": []
             },
             {

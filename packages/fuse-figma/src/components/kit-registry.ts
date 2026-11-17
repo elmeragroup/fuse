@@ -9,7 +9,7 @@
  * through `buildComponentSets()`.
  */
 import type { SetManifest } from "../capture/manifest";
-import { ACCORDION_ITEM } from "./accordion-kit";
+import { ACCORDION_ITEM, ACCORDION_ITEM_MANIFEST } from "./accordion-kit";
 import {
   ALERT_DIALOG_CONTENT,
   ALERT_DIALOG_CONTENT_MANIFEST,
@@ -21,10 +21,15 @@ import { AVATAR, AVATAR_GROUP, AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./
 import { BADGE, BADGE_MANIFEST } from "./badge-kit";
 import {
   BREADCRUMB_ELLIPSIS,
+  BREADCRUMB_ELLIPSIS_MANIFEST,
   BREADCRUMB_LINK,
+  BREADCRUMB_LINK_MANIFEST,
   BREADCRUMB_PAGE,
+  BREADCRUMB_PAGE_MANIFEST,
   BREADCRUMB_SEPARATOR,
+  BREADCRUMB_SEPARATOR_MANIFEST,
   BREADCRUMB_TRAIL,
+  BREADCRUMB_TRAIL_MANIFEST,
 } from "./breadcrumb-kit";
 import { BUTTON, BUTTON_MANIFEST, ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CHECKBOX, CHECKBOX_MANIFEST } from "./checkbox-kit";
@@ -44,7 +49,7 @@ import {
   COMMAND_PALETTE,
   COMMAND_PALETTE_MANIFEST,
 } from "./command-dialog-kit";
-import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST, COMMAND_LIST } from "./command-kit";
+import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST, COMMAND_LIST, COMMAND_LIST_MANIFEST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON, CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
@@ -65,6 +70,7 @@ import {
   DROPDOWN_MENU_POPUP,
   DROPDOWN_MENU_POPUP_MANIFEST,
   DROPDOWN_MENU_SUB_CONTENT,
+  DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
 } from "./dropdown-popup-kit";
 import { EMPTY, EMPTY_MANIFEST } from "./empty-kit";
 import {
@@ -80,7 +86,7 @@ import {
 import { FILE_UPLOAD_DROPZONE, FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
 import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
 import { INPUT, INPUT_MANIFEST } from "./input-kit";
-import { ITEM, ITEM_LINK } from "./item-kit";
+import { ITEM, ITEM_LINK, ITEM_LINK_MANIFEST, ITEM_MANIFEST } from "./item-kit";
 import { KBD, KBD_GROUP, KBD_GROUP_MANIFEST, KBD_MANIFEST } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { LABEL, LABEL_MANIFEST } from "./label-kit";
@@ -101,7 +107,16 @@ import {
 } from "./navigation-menu-kit";
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
 import { NUMBER_FIELD, NUMBER_FIELD_STEPPER } from "./number-field-kit";
-import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
+import {
+  PAGINATION_EDGE,
+  PAGINATION_EDGE_MANIFEST,
+  PAGINATION_ELLIPSIS,
+  PAGINATION_ELLIPSIS_MANIFEST,
+  PAGINATION_LINK,
+  PAGINATION_LINK_MANIFEST,
+  PAGINATION_ROW,
+  PAGINATION_ROW_MANIFEST,
+} from "./pagination-kit";
 import {
   POPOVER_CONTENT,
   POPOVER_CONTENT_MANIFEST,
@@ -144,7 +159,7 @@ import { TEXTAREA_FIELD, TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA, TEXTAREA_MANIFEST } from "./textarea-kit";
 import { TOGGLE_GROUP, TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE, ICON_TOGGLE_MANIFEST, TOGGLE, TOGGLE_MANIFEST } from "./toggle-kit";
-import { TOOLBAR } from "./toolbar-kit";
+import { TOOLBAR, TOOLBAR_MANIFEST } from "./toolbar-kit";
 import {
   TOOLTIP_CONTENT,
   TOOLTIP_CONTENT_MANIFEST,
@@ -519,38 +534,59 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(METER.axes),
     manifest: METER_MANIFEST,
   },
-  { definition: PAGINATION_LINK, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_LINK.axes) },
-  { definition: PAGINATION_EDGE, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_EDGE.axes) },
+  {
+    definition: PAGINATION_LINK,
+    page: PAGINATION_PAGE,
+    previewCells: matrixCells(PAGINATION_LINK.axes),
+    manifest: PAGINATION_LINK_MANIFEST,
+  },
+  {
+    definition: PAGINATION_EDGE,
+    page: PAGINATION_PAGE,
+    previewCells: matrixCells(PAGINATION_EDGE.axes),
+    manifest: PAGINATION_EDGE_MANIFEST,
+  },
   {
     definition: PAGINATION_ELLIPSIS,
     page: PAGINATION_PAGE,
     previewCells: matrixCells(PAGINATION_ELLIPSIS.axes),
+    manifest: PAGINATION_ELLIPSIS_MANIFEST,
   },
-  { definition: PAGINATION_ROW, page: PAGINATION_PAGE, previewCells: matrixCells(PAGINATION_ROW.axes) },
+  {
+    definition: PAGINATION_ROW,
+    page: PAGINATION_PAGE,
+    previewCells: matrixCells(PAGINATION_ROW.axes),
+    manifest: PAGINATION_ROW_MANIFEST,
+  },
   {
     definition: BREADCRUMB_LINK,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_LINK.axes),
+    manifest: BREADCRUMB_LINK_MANIFEST,
   },
   {
     definition: BREADCRUMB_PAGE,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_PAGE.axes),
+    manifest: BREADCRUMB_PAGE_MANIFEST,
   },
   {
     definition: BREADCRUMB_ELLIPSIS,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_ELLIPSIS.axes),
+    manifest: BREADCRUMB_ELLIPSIS_MANIFEST,
   },
   {
     definition: BREADCRUMB_SEPARATOR,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
+    manifest: BREADCRUMB_SEPARATOR_MANIFEST,
   },
   {
     definition: BREADCRUMB_TRAIL,
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
+    manifest: BREADCRUMB_TRAIL_MANIFEST,
   },
   {
     definition: SELECT_TRIGGER,
@@ -640,6 +676,7 @@ export const KIT: readonly KitEntry[] = [
     definition: DROPDOWN_MENU_SUB_CONTENT,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_SUB_CONTENT.axes),
+    manifest: DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_OPEN,
@@ -677,7 +714,12 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(COMMAND_ITEM.axes),
     manifest: COMMAND_ITEM_MANIFEST,
   },
-  { definition: COMMAND_LIST, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_LIST.axes) },
+  {
+    definition: COMMAND_LIST,
+    page: COMMAND_PAGE,
+    previewCells: matrixCells(COMMAND_LIST.axes),
+    manifest: COMMAND_LIST_MANIFEST,
+  },
   // The palette and its open example, drawn from the Input group, Kbd and Command item sets above.
   {
     definition: COMMAND_PALETTE,
@@ -703,10 +745,25 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(LINK.axes),
     manifest: LINK_MANIFEST,
   },
-  { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
-  { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
+  {
+    definition: ITEM,
+    page: ITEM_PAGE,
+    previewCells: matrixCells(ITEM.axes),
+    manifest: ITEM_MANIFEST,
+  },
+  {
+    definition: ITEM_LINK,
+    page: ITEM_PAGE,
+    previewCells: matrixCells(ITEM_LINK.axes),
+    manifest: ITEM_LINK_MANIFEST,
+  },
   { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes), manifest: ALERT_MANIFEST },
-  { definition: ACCORDION_ITEM, page: ACCORDION_PAGE, previewCells: matrixCells(ACCORDION_ITEM.axes) },
+  {
+    definition: ACCORDION_ITEM,
+    page: ACCORDION_PAGE,
+    previewCells: matrixCells(ACCORDION_ITEM.axes),
+    manifest: ACCORDION_ITEM_MANIFEST,
+  },
   {
     definition: SIDEBAR_MENU_BUTTON,
     page: SIDEBAR_PAGE,
@@ -770,7 +827,12 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
     manifest: FILE_UPLOAD_DROPZONE_MANIFEST,
   },
-  { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
+  {
+    definition: TOOLBAR,
+    page: TOOLBAR_PAGE,
+    previewCells: matrixCells(TOOLBAR.axes),
+    manifest: TOOLBAR_MANIFEST,
+  },
   {
     definition: TOOLTIP_CONTENT,
     page: TOOLTIP_PAGE,

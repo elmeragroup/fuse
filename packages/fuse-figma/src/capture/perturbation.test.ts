@@ -37,6 +37,11 @@ describe("inferKind", () => {
       "not-fill",
     ],
     [
+      "a box whose only text is visually hidden, as Breadcrumb's ellipsis, does not read as tracking its parent",
+      { ...KEPT, textReaches: false, parentWidened: false, tracksParent: true },
+      "unknown",
+    ],
+    [
       "a box without text that kept its width in a parent that widened does not fill",
       { ...KEPT, text: false },
       "not-fill",

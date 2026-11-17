@@ -24,6 +24,7 @@
  */
 import { accordionVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { IconManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import { DIV_BLOCK } from "./element-defaults";
 import { HOST_TYPE } from "./host-type";
@@ -87,18 +88,20 @@ function slotsFor(cell: Cell) {
 
 const showsOpen = (cell: Cell): boolean => accordionLook(cell).open;
 
-/** The caret `Accordion.Trigger` renders by default, CaretDown with the `icon` slot's classes. */
+/** The caret `Accordion.Trigger` renders by default, as a manifest names it. */
+const CARET: IconManifest = {
+  key: "caret",
+  name: "Caret",
+  side: "end",
+  direct: true,
+  dataIcon: undefined,
+  icon: "CaretDown",
+  swapProperty: undefined,
+};
+
+/** The caret with the `icon` slot's classes. */
 function caret(cell: Cell): IconSlot {
-  return {
-    key: "caret",
-    name: "Caret",
-    side: "end",
-    direct: true,
-    dataIcon: undefined,
-    icon: "CaretDown",
-    swapProperty: undefined,
-    classes: slotsFor(cell).icon(),
-  };
+  return { ...CARET, classes: slotsFor(cell).icon() };
 }
 
 /** The trigger, the native `<button>` that toggles the item, holding its label and the caret. */
@@ -201,5 +204,58 @@ export const ACCORDION_ITEM: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [HEADER, PANEL],
+  swapProperties: [],
+};
+
+/**
+ * The item's manifest, which the capture-backed build reads with `captures/accordion-item.json`: the
+ * header around the trigger, and the open panel around the `<div>` at its first place, which holds
+ * its text. The style Base UI writes on the panel comes from the capture.
+ */
+export const ACCORDION_ITEM_MANIFEST: SetManifest = {
+  key: "accordion-item",
+  name: "Accordion item",
+  slot: "accordion-item",
+  statePart: "accordion-trigger",
+  axes: ACCORDION_ITEM.axes,
+  columnAxis: "state",
+  previewWidth: ACCORDION_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "header",
+      slot: "accordion-header",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "trigger",
+          slot: "accordion-trigger",
+          shownIn: always,
+          label: TRIGGER.label,
+          iconsFor: () => [CARET],
+        },
+      ],
+    },
+    {
+      key: "content",
+      slot: "accordion-content",
+      shownIn: showsOpen,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "content-inner",
+          slot: undefined,
+          place: "accordion-content/0",
+          shownIn: always,
+          label: CONTENT_INNER.label,
+          iconsFor: () => [],
+        },
+      ],
+    },
+  ],
   swapProperties: [],
 };

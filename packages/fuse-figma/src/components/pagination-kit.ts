@@ -19,12 +19,14 @@
  */
 import { buttonVariants, cn, paginationVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { IconManifest, InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import { BUTTON_OMITTED_STATES, BUTTON_PENDING_ONLY_VARIANTS } from "./button-kit";
 import type {
   Cell,
   ComponentDefinition,
   IconSlot,
   InstanceDefinition,
+  LabelDefinition,
   PartDefinition,
 } from "./component-spec";
 import { HOST_TYPE } from "./host-type";
@@ -56,6 +58,15 @@ export const PAGINATION_LINK_LABEL = "1";
  * A page link, as `<Pagination.Link href isActive>1</Pagination.Link>`: ghost, or outline while
  * current.
  */
+/** The link's number, which the `Label` property sets. */
+const LINK_LABEL: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: PAGINATION_LINK_LABEL,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 export const PAGINATION_LINK: ComponentDefinition = {
   key: "pagination-link",
   name: "Pagination link",
@@ -68,13 +79,7 @@ export const PAGINATION_LINK: ComponentDefinition = {
   states: {},
   facts: new Map(),
   omittedStates: OMITTED_STATES,
-  label: {
-    key: "label",
-    name: "label",
-    characters: PAGINATION_LINK_LABEL,
-    textProperty: "Label",
-    shownIn: () => true,
-  },
+  label: LINK_LABEL,
   iconsFor: () => [],
   swapProperties: [],
 };
@@ -278,6 +283,124 @@ export const PAGINATION_ROW: ComponentDefinition = {
         itemAround(edgeOf("previous")),
         ...PAGINATION_ROW_PAGES.map((number, index) => itemAround(pageOf(number, index === 0))),
         itemAround(edgeOf("next")),
+      ],
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The link's manifest, which the capture-backed build reads with `captures/pagination-link.json`. */
+export const PAGINATION_LINK_MANIFEST: SetManifest = {
+  key: "pagination-link",
+  name: "Pagination link",
+  slot: "pagination-link",
+  axes: PAGINATION_LINK.axes,
+  columnAxis: "state",
+  label: LINK_LABEL,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** An edge's caret as a manifest names it, on the side of its copy. */
+function caretManifest(direction: Direction): IconManifest {
+  const { classes: _classes, ...caret } = EDGES[direction].caret;
+  return caret;
+}
+
+/**
+ * The edge's manifest, which the capture-backed build reads with `captures/pagination-edge.json`.
+ * Its label names no element: the `<span>` around the copy carries no class, so it takes the link's
+ * own type.
+ */
+export const PAGINATION_EDGE_MANIFEST: SetManifest = {
+  key: "pagination-edge",
+  name: "Pagination edge",
+  slot: "pagination-edge",
+  elementSlot: (cell) => `pagination-${directionOf(cell)}`,
+  axes: PAGINATION_EDGE.axes,
+  columnAxis: "state",
+  label: {
+    key: "label",
+    name: "label",
+    charactersFor: (cell) => EDGES[directionOf(cell)].copy,
+    shownIn: () => true,
+  },
+  iconsFor: (cell) => [caretManifest(directionOf(cell))],
+  swapProperties: [],
+};
+
+/** The ellipsis's manifest, which the capture-backed build reads with `captures/pagination-ellipsis.json`. */
+export const PAGINATION_ELLIPSIS_MANIFEST: SetManifest = {
+  key: "pagination-ellipsis",
+  name: "Pagination ellipsis",
+  slot: "pagination-ellipsis",
+  axes: PAGINATION_ELLIPSIS.axes,
+  columnAxis: "size",
+  label: undefined,
+  iconsFor: () => {
+    const { classes: _classes, ...dots } = DOTS;
+    return [dots];
+  },
+  swapProperties: [],
+};
+
+/** A `Pagination.Item` around an instance, as the row's manifest names it. */
+function itemManifest(inner: InstanceManifest): PartManifest {
+  return {
+    key: `${inner.key}-item`,
+    slot: "pagination-item",
+    shownIn: () => true,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [inner],
+  };
+}
+
+/** The previous or next edge as the row's manifest names it, as {@link edgeOf} draws it. */
+function edgeManifest(direction: Direction): InstanceManifest {
+  return {
+    kind: "instance",
+    key: direction,
+    of: PAGINATION_EDGE_MANIFEST,
+    slot: `pagination-${direction}`,
+    cell: () => ({ direction, state: "rest" }),
+    shownIn: () => true,
+  };
+}
+
+/** A page link as the row's manifest names it, as {@link pageOf} draws it. */
+function pageManifest(number: string, current: boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `page-${number}`,
+    of: PAGINATION_LINK_MANIFEST,
+    cell: () => ({ current: current ? "on" : "off", state: "rest" }),
+    properties: () => ({ text: { Label: number } }),
+    shownIn: () => true,
+    exposed: true,
+  };
+}
+
+/** The row's manifest, which the capture-backed build reads with `captures/pagination-row.json`. */
+export const PAGINATION_ROW_MANIFEST: SetManifest = {
+  key: "pagination-row",
+  name: "Pagination row",
+  slot: "pagination",
+  axes: PAGINATION_ROW.axes,
+  columnAxis: "pages",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "content",
+      slot: "pagination-content",
+      shownIn: () => true,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        itemManifest(edgeManifest("previous")),
+        ...PAGINATION_ROW_PAGES.map((number, index) => itemManifest(pageManifest(number, index === 0))),
+        itemManifest(edgeManifest("next")),
       ],
     },
   ],

@@ -409,3 +409,19 @@ export const DROPDOWN_MENU_OPEN_MANIFEST: SetManifest = {
   ],
   swapProperties: [],
 };
+
+/**
+ * The submenu's manifest, which the capture-backed build reads with
+ * `captures/dropdown-menu-sub-content.json`: the docs Submenu demo's rows.
+ */
+export const DROPDOWN_MENU_SUB_CONTENT_MANIFEST: SetManifest = {
+  key: "dropdown-menu-sub-content",
+  name: "Dropdown menu sub content",
+  slot: "dropdown-menu-sub-content",
+  axes: DROPDOWN_MENU_SUB_CONTENT.axes,
+  columnAxis: "content",
+  label: undefined,
+  iconsFor: () => [],
+  parts: partsManifest(DROPDOWN_SUBMENU, "submenu", always, undefined),
+  swapProperties: [],
+};

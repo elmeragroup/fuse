@@ -115,7 +115,8 @@ export function inferKind(box: ProbedBox): InferredKind {
   // widened tells a box that fills it from one that does not.
   const withoutText: InferredKind =
     box.widened && (box.parentWidened || !box.tracksParent) ? "not-fill" : "unknown";
-  if (!box.text) {
+  // Text that cannot widen the box, as a visually hidden label, tells nothing a text run would.
+  if (!box.text || !box.textReaches) {
     return withoutText;
   }
   if (box.tracksParent && !box.root) {
@@ -130,8 +131,7 @@ export function inferKind(box: ProbedBox): InferredKind {
   if (box.longer - box.base > CHANGED) {
     return "hug";
   }
-  // A box that kept its width is fixed only where its text could have widened it.
-  return box.textReaches ? "fixed" : withoutText;
+  return "fixed";
 }
 
 /**

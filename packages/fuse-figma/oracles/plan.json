@@ -122,36 +122,6 @@
       "reason": "The empty message draws at the width the capture measured around it, 384px, where the recipe definition computed 374px, as combobox-empty.json classifies."
     },
     {
-      "pattern": "Dropdown menu popup / content=radio / *: layoutSizingHorizontal → FILL",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
-      "pattern": "Dropdown menu popup / content=radio / *: minWidth → none",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
-      "pattern": "Dropdown menu popup / content=destructive / *: layoutSizingHorizontal → FILL",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
-      "pattern": "Dropdown menu popup / content=destructive / *: minWidth → none",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
-      "pattern": "Dropdown menu popup / content=submenu / *: layoutSizingHorizontal → FILL",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
-      "pattern": "Dropdown menu popup / content=submenu / *: minWidth → none",
-      "verdict": "fix-in-new",
-      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
-    },
-    {
       "pattern": "Select item / selected=on, state=* / indicator: itemSpacing → 8",
       "verdict": "old-was-wrong",
       "reason": "The row's `*:[span]:last:gap-2` reaches the indicator, as select-item.json classifies."
@@ -208,6 +178,96 @@
     },
     {
       "pattern": "File upload dropzone / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Accordion item / * / accordion-header / accordion-trigger / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as accordion-item.json classifies; Plan moves each trigger label to centre."
+    },
+    {
+      "pattern": "Item / variant=*, size=*, described=*, media=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Item / variant=*, size=*, described=*, media=image / item-media / image: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "Chromium's default style sheet clips an `<img>`'s content, as item.json classifies."
+    },
+    {
+      "pattern": "Pagination row / pages=* / pagination-content / pagination-item: layoutMode → VERTICAL",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Pagination row / pages=* / pagination-content / pagination-item: primaryAxisAlignItems → MIN",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Pagination row / pages=* / pagination-content / pagination-item: counterAxisAlignItems → MIN",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Pagination row / pages=* / pagination-content / pagination-item / pagination-link: layoutSizingHorizontal → FIXED, layoutSizingVertical → FIXED, width → control-h-md, height → control-h-md",
+      "verdict": "fix-in-new",
+      "reason": "Plan writes the link instance's own fixed size once its list item's layout mode changes, as the line above classifies; the instance keeps the size its set draws."
+    },
+    {
+      "pattern": "Pagination row / pages=* / pagination-content / pagination-item / pagination-edge: layoutSizingVertical → FIXED, height → control-h-md, layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "Plan writes the link instance's own fixed size once its list item's layout mode changes, as the line above classifies; the instance keeps the size its set draws."
+    },
+    {
+      "pattern": "Breadcrumb separator / size=*: layoutMode → VERTICAL",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Breadcrumb separator / size=*: primaryAxisAlignItems → MIN",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Breadcrumb separator / size=*: counterAxisAlignItems → MIN",
+      "verdict": "fix-in-new",
+      "reason": "The `<li>` is a list item with no marker, so it lays out as the block box it is around its one layer, a vertical auto layout from its start, as the set's oracle file classifies. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "pattern": "Dropdown menu sub content / *: shadows → #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, foreground/10 0 0 0 1 (holds #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Toolbar / orientation=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Pagination ellipsis / size=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Pagination row / pages=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Breadcrumb page / current=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Breadcrumb ellipsis / size=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Breadcrumb separator / size=*: clipsContent → false",
       "verdict": "fix-in-new",
       "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
     },

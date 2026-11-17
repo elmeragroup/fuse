@@ -34,6 +34,7 @@ import {
   itemVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { PartManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -308,4 +309,108 @@ export const ITEM_LINK: ComponentDefinition = {
   iconsFor: () => [],
   parts: [LINK_ROW.media, LINK_ROW.content],
   swapProperties: swapProperties([LIGHTNING]),
+};
+
+/** The BOOLEAN property that hides the media. */
+const MEDIA_PROPERTY = { name: "Media", defaultValue: true };
+
+/** The media and the content column of a row as its manifest names them, for a set's look and texts. */
+function rowManifest(
+  look: (cell: Cell) => ItemLook,
+  texts: readonly PartManifest[]
+): readonly PartManifest[] {
+  const holdsImage = (cell: Cell): boolean => look(cell).media === "image";
+  return [
+    {
+      key: "media",
+      slot: "item-media",
+      shownIn: always,
+      optional: MEDIA_PROPERTY,
+      label: undefined,
+      iconsFor: (cell) => (holdsImage(cell) ? [] : [LIGHTNING]),
+      parts: [
+        {
+          key: "image",
+          slot: undefined,
+          place: "item-media/0",
+          shownIn: holdsImage,
+          image: portraitPng,
+          label: undefined,
+          iconsFor: () => [],
+        },
+      ],
+    },
+    {
+      key: "content",
+      slot: "item-content",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: texts,
+    },
+  ];
+}
+
+/** The title as a manifest names it, in the text a set gives it. */
+function titleManifest(characters: string): PartManifest {
+  return {
+    key: "title",
+    slot: "item-title",
+    shownIn: always,
+    label: { key: "text", name: "text", characters, textProperty: "Title", shownIn: always },
+    iconsFor: () => [],
+  };
+}
+
+/** The Item row's manifest, which the capture-backed build reads with `captures/item.json`. */
+export const ITEM_MANIFEST: SetManifest = {
+  key: "item",
+  name: "Item",
+  slot: "item",
+  axes: ITEM.axes,
+  columnAxis: "size",
+  previewWidth: ITEM_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    ...rowManifest(itemLook, [
+      titleManifest(ITEM_TITLE_TEXT),
+      {
+        key: "description",
+        slot: "item-description",
+        shownIn: (cell) => itemLook(cell).described,
+        label: DESCRIPTION.label,
+        iconsFor: () => [],
+      },
+    ]),
+    {
+      key: "actions",
+      slot: "item-actions",
+      shownIn: always,
+      optional: { name: "Actions", defaultValue: true },
+      label: {
+        key: "text",
+        name: "text",
+        characters: ITEM_ACTIONS_TEXT,
+        textProperty: "Actions text",
+        shownIn: always,
+      },
+      iconsFor: () => [],
+    },
+  ],
+  swapProperties: ITEM.swapProperties,
+};
+
+/** The link row's manifest, which the capture-backed build reads with `captures/item-link.json`. */
+export const ITEM_LINK_MANIFEST: SetManifest = {
+  key: "item-link",
+  name: "Item link",
+  slot: "item",
+  axes: ITEM_LINK.axes,
+  columnAxis: "state",
+  previewWidth: ITEM_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: rowManifest(itemLinkLook, [titleManifest(ITEM_LINK_TITLE_TEXT)]),
+  swapProperties: ITEM_LINK.swapProperties,
 };

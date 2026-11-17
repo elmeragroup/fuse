@@ -23,10 +23,11 @@
  */
 import { separatorClass, toolbarVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { always } from "./popup-facts";
-import { SEPARATOR } from "./separator-kit";
+import { SEPARATOR, SEPARATOR_MANIFEST } from "./separator-kit";
 
 /** A toolbar button of the Basic demo: its label and the icon its `Start icon` swap property picks. */
 type ToolbarAction = { readonly key: string; readonly label: string; readonly icon: string };
@@ -133,5 +134,66 @@ export const TOOLBAR: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [GROUP, SEPARATOR_PART, ...toolbarButtons(TOOLBAR_DISABLED_ACTION, "disabled")],
+  swapProperties: [],
+};
+
+/** A toolbar button as the bar's manifest names it, as {@link toolbarButton} draws it. */
+function toolbarButtonManifest(
+  action: ToolbarAction,
+  state: "rest" | "disabled",
+  orientation: Orientation
+): InstanceManifest {
+  return {
+    kind: "instance",
+    key: orientation === "horizontal" ? action.key : `${action.key}-vertical`,
+    of: BUTTON_MANIFEST,
+    slot: "toolbar-button",
+    cell: () => ({ variant: "ghost", size: "sm", state, icon: "start" }),
+    properties: () => ({ text: { Label: action.label }, swap: { "Start icon": action.icon } }),
+    shownIn: (cell) => (cell.orientation ?? "horizontal") === orientation,
+    exposed: true,
+  };
+}
+
+/** The bar's buttons in both orientations as its manifest names them, each shown in its own. */
+function toolbarButtonManifests(
+  action: ToolbarAction,
+  state: "rest" | "disabled"
+): readonly InstanceManifest[] {
+  return [
+    toolbarButtonManifest(action, state, "horizontal"),
+    toolbarButtonManifest(action, state, "vertical"),
+  ];
+}
+
+/** The toolbar's manifest, which the capture-backed build reads with `captures/toolbar.json`. */
+export const TOOLBAR_MANIFEST: SetManifest = {
+  key: "toolbar",
+  name: "Toolbar",
+  slot: "toolbar",
+  axes: TOOLBAR.axes,
+  columnAxis: "orientation",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "group",
+      slot: "toolbar-group",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: TOOLBAR_GROUP_ACTIONS.flatMap((action) => toolbarButtonManifests(action, "rest")),
+    },
+    {
+      kind: "instance",
+      key: "separator",
+      of: SEPARATOR_MANIFEST,
+      slot: "toolbar-separator",
+      cell: (outer) => ({ orientation: outer.orientation === "vertical" ? "horizontal" : "vertical" }),
+      properties: () => ({}),
+      shownIn: always,
+    },
+    ...toolbarButtonManifests(TOOLBAR_DISABLED_ACTION, "disabled"),
+  ],
   swapProperties: [],
 };
