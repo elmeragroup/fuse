@@ -4,23 +4,15 @@
  * toggle` holds the same variants, sizes, states and pressed values around one icon with no
  * label, 64 cells.
  *
- * - Both variants rest with no fill. `outline` draws an `input` border and casts `shadow-xs`.
- * - A pressed Toggle fills with `toggle-pressed` and sets its label in
- *   `toggle-pressed-foreground` through `aria-pressed:` and `data-pressed:`, which Base UI's
- *   Toggle stamps while it is pressed. Neutral themes point the pair at `muted` and
- *   `foreground`, and branded themes at `primary` and `primary-foreground`. Hover paints `muted`
- *   on an unpressed Toggle only: the pressed face outranks it, so a pressed Toggle looks the same
- *   at rest and on hover.
- * - Each size is the control size's `min-square` fit. xs rounds with the compact corner, the
- *   synced `radius-compact`, and the other sizes with `radius-md`.
- * - `state-table.ts` gives hover, focus and disabled their variants and the icon edge its
- *   padding.
+ * - The `pressed` axis turns the Toggle off and on, as Base UI's Toggle stamps `aria-pressed` and
+ *   `data-pressed` while it is pressed.
+ * - Each icon is Star, as the Toggle docs place it, and a swap property picks it.
  */
 import { toggleVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { SetManifest } from "../capture/manifest";
+import type { IconManifest, LabelManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot, LabelDefinition } from "./component-spec";
+import type { Cell } from "./component-spec";
 import { ownKey } from "./own-key";
 
 type ToggleVariant = keyof typeof toggleVariants.variants.variant;
@@ -36,38 +28,12 @@ function isVariant(value: string | undefined): value is ToggleVariant {
   return ownKey(toggleVariants.variants.variant, value);
 }
 
-function isSize(value: string | undefined): value is ToggleSize {
-  return ownKey(toggleVariants.variants.size, value);
-}
-
-function classesFor(cell: Cell): string {
-  const { variant, size } = cell;
-  if (!isVariant(variant) || !isSize(size)) {
-    throw new Error(`Toggle has no variant ${variant ?? ""} or size ${size ?? ""}`);
-  }
-  return toggleVariants({ variant, size });
-}
-
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled"] };
 
 const PRESSED_AXIS = { name: "pressed", values: ["off", "on"] };
 
-const pressed = (cell: Cell): boolean => cell.pressed === "on";
-
-/** Base UI's Toggle renders `aria-pressed="true"` and `data-pressed` while it is pressed. */
-const FACTS = new Map([
-  ["aria-pressed", pressed],
-  ["data-pressed", pressed],
-]);
-
-/**
- * A disabled Toggle is a natively disabled `<button>`, which Base UI marks `data-disabled` and
- * never `aria-disabled`, so no cell shows the state face's `aria-disabled:` arm.
- */
-const OMITTED_STATES = new Set(["aria-disabled"]);
-
 /** Star, the icon the Toggle docs place on either side. */
-const START_ICON: IconSlot = {
+const START_ICON: IconManifest = {
   key: "icon-start",
   name: "Start icon",
   side: "start",
@@ -77,7 +43,7 @@ const START_ICON: IconSlot = {
   swapProperty: "Start icon",
 };
 
-const END_ICON: IconSlot = {
+const END_ICON: IconManifest = {
   key: "icon-end",
   name: "End icon",
   side: "end",
@@ -91,7 +57,7 @@ const END_ICON: IconSlot = {
  * The one icon of an icon toggle, as the docs place it: `<Star data-icon="inline-start" />`
  * alone inside the Toggle, so it takes the start icon's padding.
  */
-const ONLY_ICON: IconSlot = {
+const ONLY_ICON: IconManifest = {
   key: "icon-only",
   name: "Icon",
   side: "start",
@@ -101,7 +67,7 @@ const ONLY_ICON: IconSlot = {
   swapProperty: "Icon",
 };
 
-function toggleIcons(cell: Cell): readonly IconSlot[] {
+function toggleIcons(cell: Cell): readonly IconManifest[] {
   switch (cell.icon) {
     case "start":
       return [START_ICON];
@@ -119,7 +85,7 @@ function toggleIcons(cell: Cell): readonly IconSlot[] {
 export const TOGGLE_LABEL = "Toggle";
 
 /** The label, which the `Label` text property sets. */
-const LABEL: LabelDefinition = {
+const LABEL: LabelManifest = {
   key: "label",
   name: "label",
   characters: TOGGLE_LABEL,
@@ -127,12 +93,14 @@ const LABEL: LabelDefinition = {
   shownIn: () => true,
 };
 
-/** A Toggle with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side. */
-export const TOGGLE: ComponentDefinition = {
+/**
+ * The Toggle's manifest, which the capture-backed build reads with `captures/toggle.json`: a Toggle
+ * with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side.
+ */
+export const TOGGLE_MANIFEST: SetManifest = {
   key: "toggle",
   name: "Toggle",
   slot: "toggle",
-  rootKind: "native-control",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: SIZES },
@@ -141,52 +109,22 @@ export const TOGGLE: ComponentDefinition = {
     { name: "icon", values: ["none", "start", "end"] },
   ],
   columnAxis: "state",
-  classesFor,
-  states: {},
-  facts: FACTS,
-  omittedStates: OMITTED_STATES,
   label: LABEL,
   iconsFor: toggleIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
 
-/** A Toggle around one icon, as `<Toggle aria-label="…"><Star data-icon="inline-start" /></Toggle>`. */
-export const ICON_TOGGLE: ComponentDefinition = {
-  key: "icon-toggle",
-  name: "Icon toggle",
-  slot: "toggle",
-  rootKind: "native-control",
-  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: SIZES }, STATE_AXIS, PRESSED_AXIS],
-  columnAxis: "state",
-  classesFor,
-  states: {},
-  facts: FACTS,
-  omittedStates: OMITTED_STATES,
-  label: undefined,
-  iconsFor: () => [ONLY_ICON],
-  swapProperties: swapProperties([ONLY_ICON]),
-};
-
-/** The Toggle's manifest, which the capture-backed build reads with `captures/toggle.json`. */
-export const TOGGLE_MANIFEST: SetManifest = {
-  key: "toggle",
-  name: "Toggle",
-  slot: "toggle",
-  axes: TOGGLE.axes,
-  columnAxis: "state",
-  label: LABEL,
-  iconsFor: toggleIcons,
-  swapProperties: TOGGLE.swapProperties,
-};
-
-/** The Icon toggle's manifest, which the capture-backed build reads with `captures/icon-toggle.json`. */
+/**
+ * The Icon toggle's manifest, which the capture-backed build reads with `captures/icon-toggle.json`:
+ * a Toggle around one icon, as `<Toggle aria-label="…"><Star data-icon="inline-start" /></Toggle>`.
+ */
 export const ICON_TOGGLE_MANIFEST: SetManifest = {
   key: "icon-toggle",
   name: "Icon toggle",
   slot: "toggle",
-  axes: ICON_TOGGLE.axes,
+  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: SIZES }, STATE_AXIS, PRESSED_AXIS],
   columnAxis: "state",
   label: undefined,
   iconsFor: () => [ONLY_ICON],
-  swapProperties: ICON_TOGGLE.swapProperties,
+  swapProperties: swapProperties([ONLY_ICON]),
 };

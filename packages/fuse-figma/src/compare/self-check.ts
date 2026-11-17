@@ -26,7 +26,7 @@ import { buildComponentSets } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
-import { SELECT_ITEM } from "../components/select-kit.ts";
+import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
 import { loadRenderers } from "./cell-renderers.ts";
@@ -144,10 +144,10 @@ function fillMismatch(
  * @throws When no set has such a cell, which leaves the self-check nothing to change.
  */
 function firstInState(state: string): string {
-  for (const { definition, previewCells } of KIT) {
+  for (const { manifest, previewCells } of KIT) {
     const cell = previewCells.find((candidate) => candidate.state === state);
     if (cell !== undefined) {
-      return variantKey(definition, cell);
+      return variantKey(manifest, cell);
     }
   }
   throw new Error(`the kit's preview frames place no ${state} cell for the self-check to change`);
@@ -187,8 +187,8 @@ type Perturbed = { readonly preview: string; readonly variant: string };
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
   const build = yield* locateFuseBuild();
   const fillMismatches: string[] = [];
-  const variants = KIT.flatMap(({ definition, previewCells }) =>
-    previewCells.map((cell) => variantKey(definition, cell))
+  const variants = KIT.flatMap(({ manifest, previewCells }) =>
+    previewCells.map((cell) => variantKey(manifest, cell))
   );
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
@@ -226,7 +226,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
         );
         const colorOf = tokenColorsIn(theme.success);
         for (const { instance, cell, definition, request } of planned) {
-          const fill = definition.key === SELECT_ITEM.key ? selectItemFill(cell) : undefined;
+          const fill = definition.key === SELECT_ITEM_MANIFEST.key ? selectItemFill(cell) : undefined;
           const raster = rendered.cells.get(request.id)?.raster;
           const mismatch =
             fill === undefined || raster === undefined
@@ -341,12 +341,6 @@ function judgeSelfCheck(
   }
   for (const entry of report.skipped) {
     lines.push(`  skipped: ${entry.preview} ${entry.variant}: ${entry.reason}`);
-  }
-  // A markup difference flags its cell, which fails the check above, and the line says what differs.
-  for (const row of [...report.rows, ...report.skipped]) {
-    for (const { message } of row.markup) {
-      lines.push(`markup: ${row.preview} ${message}`);
-    }
   }
   const passed =
     topMatches && failing.length === 0 && report.skipped.length === 0 && fillMismatches.length === 0;

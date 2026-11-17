@@ -203,7 +203,6 @@ function boxDefinition(box: BoxManifest) {
     // A form control's label names no placement: the mapping takes it from the captured element.
     label: box.label,
     iconsFor: (cell: Cell): readonly IconSlot[] => box.iconsFor(cell),
-    classesFor: () => "",
   };
 }
 
@@ -233,16 +232,9 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     union: _union,
     sideOffset,
     alignItemWithTrigger: _alignItemWithTrigger,
-    statePlace: _statePlace,
     ...rest
   } = manifest;
-  const plain: ComponentDefinition = {
-    ...rest,
-    ...boxDefinition(manifest),
-    facts: new Map(),
-    states: {},
-    omittedStates: new Set(),
-  };
+  const plain: ComponentDefinition = { ...rest, ...boxDefinition(manifest) };
   const definition: ComponentDefinition =
     sideOffset === undefined ? plain : { ...plain, rootOverflow: "visible" };
   return parts === undefined ? definition : { ...definition, parts: parts.map(partDefinition) };

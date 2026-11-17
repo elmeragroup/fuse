@@ -9,10 +9,6 @@
 import { readAnchored } from "./anchored-part";
 import { listNames, marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
-import { splitClasses } from "./cascade";
-import type { CoverageNote, LayerStyle } from "./cascade";
-import { splitClassName } from "./class-name";
-import type { Cell, PartDefinition } from "./component-spec";
 import {
   affineLength,
   describeNumber,
@@ -42,9 +38,9 @@ import type {
   SizeSpec,
   StrokeSpec,
 } from "./kit-spec";
+import type { CoverageNote, LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
 import { readPivot } from "./pivot-part";
-import type { CompiledUtilities } from "./utility-css";
 
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
@@ -410,30 +406,6 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
         "the component's root sits alone in its component set, so its stacking level orders it among nothing the set draws",
     }),
     []
-  );
-}
-
-/**
- * The parts whose classes set `scale` in some cell of the matrix, under any variant. Each draws as
- * a slot around a dot in every cell, so every cell has the same layer tree. The build asks once per
- * set, before it maps a cell.
- *
- * @param parts - Every part of the component, at any depth.
- * @param cells - Every cell of its matrix.
- * @param compiled - The compiled utilities, which say what each class sets.
- * @returns Each such part.
- */
-export function partsThatScale(
-  parts: readonly PartDefinition[],
-  cells: readonly Cell[],
-  compiled: CompiledUtilities
-): ReadonlySet<PartDefinition> {
-  const setsScale = (className: string): boolean =>
-    compiled.rules
-      .get(splitClassName(className).utility)
-      ?.declarations.some((declaration) => declaration.property === "scale") === true;
-  return new Set(
-    parts.filter((part) => cells.some((cell) => splitClasses(part.classesFor(cell)).some(setsScale)))
   );
 }
 

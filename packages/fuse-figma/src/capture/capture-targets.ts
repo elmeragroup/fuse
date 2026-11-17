@@ -1,5 +1,5 @@
 /**
- * The sets the capture renders: each kit entry switched to the capture, as its manifest names it.
+ * The sets the capture renders: each kit entry, as its manifest names it.
  */
 
 import { matrixCells, previewWidthIn } from "../components/component-spec.ts";
@@ -32,14 +32,14 @@ function optionalProperties(
 import type { CaptureTarget } from "./run-capture.ts";
 
 /**
- * The capture targets of the kit's switched sets, in kit order.
+ * The capture targets of the kit's sets, in kit order.
  *
- * @param only - The keys of the sets to capture, or undefined for every switched set.
+ * @param only - The keys of the sets to capture, or undefined for every set.
  * @returns The targets.
  */
 export function captureTargets(only?: ReadonlySet<string>): readonly CaptureTarget[] {
   return KIT.flatMap(({ manifest }) => {
-    if (manifest === undefined || (only !== undefined && !only.has(manifest.key))) {
+    if (only !== undefined && !only.has(manifest.key)) {
       return [];
     }
     const definition = manifestDefinition(manifest);

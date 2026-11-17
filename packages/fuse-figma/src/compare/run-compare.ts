@@ -2,14 +2,13 @@
  * Compare a snapshot with the real Fuse components, cell by cell. For each preview the run
  * renders every instance's cell on one browser page in the preview's theme and density, lays the
  * Figma PNG and the browser crop over the theme's background on one canvas with their boxes
- * aligned, and diffs them. It checks each client cell's mounted markup against its definition, as
- * `client-markup.ts` says, and records the differences on the cell's row with the `markup` flag.
- * It writes three pictures per cell, `report.json` and `report.html`.
+ * aligned, and diffs them. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
 import { Effect, FileSystem, Result } from "effect";
 import { join } from "node:path";
 
+import { manifestDefinition } from "../capture/manifest.ts";
 import type { KitBuildError } from "../components/build-errors.ts";
 import { buildComponentSets } from "../components/build-kit.ts";
 import { previewWidthIn } from "../components/component-spec.ts";
@@ -28,14 +27,12 @@ import {
   restingTwin,
   writesHighlightAttribute,
 } from "./cells.ts";
-import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
 import type { FontNotLoaded } from "./font-check.ts";
-import type { MarkupDiagnostic } from "./markup-check.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
-import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
+import { forcedSelector, measuredSelectors, rootInCell, slotSpan } from "./preview-page.ts";
 import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -88,13 +85,6 @@ export type ReportRow = {
    * change either, such as a pressed Toggle on hover. Such a cell gets no `state-missing` flag.
    */
   readonly unchangedByDesign: boolean;
-  /**
-   * How the markup the page mounted for a client cell differs from its definition: its first
-   * difference, as `markup-check.ts` reports one, or empty where it matches. `kit-markup.test.ts`
-   * checks a static cell's markup instead, so its row holds none. A row that holds any carries the
-   * `markup` flag.
-   */
-  readonly markup: readonly MarkupDiagnostic[];
   readonly images: CellImages;
 };
 
@@ -103,11 +93,6 @@ export type SkippedInstance = {
   readonly preview: string;
   readonly variant: string;
   readonly reason: string;
-  /**
-   * How the client cell's mounted markup differs from its definition, as on a row, for a cell the
-   * page rendered and the run could not diff, such as one whose Figma PNG does not decode.
-   */
-  readonly markup: readonly MarkupDiagnostic[];
 };
 
 /** A preview as the run rendered it. */
@@ -163,9 +148,9 @@ export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRende
  * @returns Each definition with its renderer.
  */
 export function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
-  return KIT.flatMap(({ definition }) => {
-    const renderer = renderers.get(definition.key);
-    return renderer === undefined ? [] : [{ ...definition, renderer }];
+  return KIT.flatMap(({ manifest }) => {
+    const renderer = renderers.get(manifest.key);
+    return renderer === undefined ? [] : [{ ...manifestDefinition(manifest), renderer }];
   });
 }
 
@@ -225,6 +210,7 @@ export function planCells(
         : { _tag: "Static", html: renderCellHtml(renderer, shown) };
     const forced = forcedPseudoClasses(cell, renderer.highlight);
     const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);
+    const root = rootInCell(definition, cell);
     planned.push({
       instance,
       definition,
@@ -232,12 +218,12 @@ export function planCells(
       request: {
         id: `c${String(index)}`,
         content: content(cell),
-        measured: measuredSelectors(definition, isClientRenderer(renderer) ? renderer.union : undefined),
+        measured: measuredSelectors(root, isClientRenderer(renderer) ? renderer.union : undefined),
         // A fixed root in a declared viewport takes a host as wide as the viewport.
         span: slotSpan(layout, previewWidthIn(definition, cell) ?? definition.viewport?.width),
         // and a row as tall as the viewport where that is taller than a slot.
         height: definition.viewport?.height,
-        forcedOn: forcedSelector(definition, cell),
+        forcedOn: forcedSelector(root, cell),
         forced,
         writesHighlightAttribute: writesHighlight,
         resting: forcesState({ forced, writesHighlightAttribute: writesHighlight })
@@ -423,15 +409,10 @@ const comparePreview = Effect.fnUntraced(function* (
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ) {
-  const skip = (
-    variant: string,
-    reason: string,
-    markup: readonly MarkupDiagnostic[] = []
-  ): SkippedInstance => ({
+  const skip = (variant: string, reason: string): SkippedInstance => ({
     preview: preview.key,
     variant,
     reason,
-    markup,
   });
   const theme = parsePreviewTheme(preview.modes);
   if (Result.isFailure(theme)) {
@@ -451,19 +432,14 @@ const comparePreview = Effect.fnUntraced(function* (
   );
   const rows: ReportRow[] = [];
   const skipped = unsupported.map((entry) => skip(entry.variant, entry.reason));
-  for (const { instance, definition, cell: parsedCell, request } of planned) {
+  for (const { instance, cell: parsedCell, request } of planned) {
     const cell = cells.get(request.id);
     if (cell === undefined) {
       throw new Error(`the page returned no picture for ${request.id}`);
     }
-    const { renderer } = definition;
-    const markup =
-      cell.mounted !== undefined && isClientRenderer(renderer)
-        ? checkClientMarkup(definition, renderer.union, parsedCell, cell.mounted)
-        : [];
     const png = instance.image === null ? null : parsePng(Buffer.from(instance.image.png, "base64"));
     if (png !== null && Result.isFailure(png)) {
-      skipped.push(skip(instance.variant, png.failure.message, markup));
+      skipped.push(skip(instance.variant, png.failure.message));
       continue;
     }
     const figmaSide: FigmaSide = {
@@ -475,10 +451,7 @@ const comparePreview = Effect.fnUntraced(function* (
     };
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
     const restsByDesign = request.restsByDesign && cell.state === "missing";
-    const flags: CellFlag[] = [
-      ...(markup.length > 0 ? ["markup" as const] : []),
-      ...stateFlags(cell, restsByDesign),
-    ];
+    const flags: CellFlag[] = [...stateFlags(cell, restsByDesign)];
     const compared = compareCell(figmaSide, cell, flags, background, options);
     const write = Effect.fnUntraced(function* (suffix: string, raster: Raster) {
       const path = `cells/${stem}-${suffix}.png`;
@@ -508,7 +481,6 @@ const comparePreview = Effect.fnUntraced(function* (
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,
       verdict: compared.verdict,
       unchangedByDesign: restsByDesign,
-      markup,
       images: pictures,
     });
   }

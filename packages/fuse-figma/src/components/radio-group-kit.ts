@@ -3,42 +3,30 @@
  * and three rows, the docs Basic demo's `Contract` options with `Fixed` selected, vertical and
  * horizontal, at rest, disabled and invalid: 6 cells. The root is the `Field.Root`, Base UI's
  * `<div data-slot="field">`, around FieldFrame's legend mode: a `Field.Set`, the `<fieldset
- * data-slot="field-set">`, whose parts sit `surface-gap-md` apart, closer than its own gap, since it
- * holds a radio group.
+ * data-slot="field-set">`.
  *
  * - The heading row is FieldFrame's label row holding a `Field legend` instance at its `label`
- *   variant, `Contract`. A described legend gives up its bottom margin.
- * - The description, a `Field description` instance, sits under the legend, its negative top margin
- *   cancelling the fieldset's gap above it, in a gapless frame with the legend row (W5-P5).
- * - The group primitive, `<div data-slot="radio-group">`, stacks the rows `surface-gap-sm` apart when
- *   vertical and lays them in a row `surface-gap-lg` apart when horizontal. Each row is a `Radio row`
- *   instance in the cell's state, the first checked.
+ *   variant, `Contract`.
+ * - The description, a `Field description` instance, sits under the legend, in a gapless frame with
+ *   the legend row (W5-P5).
+ * - The group primitive, `<div data-slot="radio-group">`, stacks the rows when vertical and lays them
+ *   in a row when horizontal. Each row is a `Radio row` instance in the cell's state, the first
+ *   checked. Chromium measured the three rows of a horizontal group end at 201px dense and 217px
+ *   comfortable in its 384px on 2026-10-27, so they never wrap, and a real file drew them packed
+ *   left with no wrap (W5-P6).
  * - The invalid cells add a `Field error` instance after the group, with the docs Pending demo's
- *   message. An invalid Field passes its `data-invalid:text-error` to the legend.
+ *   message.
  * - The description and the error, and the states Base UI stamps on the description, come from
  *   `field-frame-kit.ts`.
  * - `RadioItemGroup`, the stacked-card variant, is left out.
  */
-import {
-  fieldFrameVariants,
-  fieldVariants,
-  selectionGroupOrientationVariants,
-} from "@elmeragroup/fuse/recipe-catalog";
-
 import type { InstanceManifest, SetManifest } from "../capture/manifest";
-import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
-import {
-  FIELD_FRAME_DISABLED,
-  FIELD_FRAME_SET,
-  frameDescriptions,
-  frameError,
-  frameDescriptionsManifest,
-  frameErrorManifest,
-} from "./field-frame-kit";
-import { FIELD_LEGEND, FIELD_LEGEND_MANIFEST } from "./field-text-kit";
+import type { Cell } from "./component-spec";
+import { frameDescriptionsManifest, frameErrorManifest } from "./field-frame-kit";
+import { FIELD_LEGEND_MANIFEST } from "./field-text-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
-import { always, never } from "./popup-facts";
-import { RADIO_FIELDSET_FACTS, RADIO_ROW, RADIO_ROW_MANIFEST } from "./radio-row-kit";
+import { always } from "./popup-facts";
+import { RADIO_ROW_MANIFEST } from "./radio-row-kit";
 
 /** The legend: the docs Basic demo's. */
 export const RADIO_GROUP_LEGEND = "Contract";
@@ -73,32 +61,6 @@ export function orientationFor(cell: Cell): Orientation {
   return orientation;
 }
 
-/** FieldFrame's slots for a described legend. */
-const legendFrame = fieldFrameVariants({ legendDescription: true });
-
-/** The legend row: FieldFrame's label row around a `Field legend` instance. */
-const LEGEND_ROW: PartDefinition = {
-  key: "legend-row",
-  slot: undefined,
-  element: { tag: "div", attributes: { class: fieldFrameVariants().labelRow() } },
-  shownIn: always,
-  classesFor: () => fieldFrameVariants().labelRow(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [
-    {
-      kind: "instance",
-      key: "legend",
-      of: FIELD_LEGEND,
-      cell: () => ({ variant: "label" }),
-      classesFor: () => legendFrame.label(),
-      properties: () => ({ text: { Text: RADIO_GROUP_LEGEND } }),
-      shownIn: always,
-      exposed: true,
-    },
-  ],
-};
-
 /**
  * A row's cell: a vertical group stretches its rows across its width and a horizontal one hugs
  * them, the first checked, in the group's state.
@@ -112,72 +74,6 @@ function rowCell(index: number, outer: Cell): Cell {
 }
 
 /** A row, a `Radio row` instance in the group's state, the first checked. */
-function row(label: string, index: number): InstanceDefinition {
-  return {
-    kind: "instance",
-    key: `row-${index + 1}`,
-    of: RADIO_ROW,
-    cell: (outer) => rowCell(index, outer),
-    properties: () => ({ text: { Label: label } }),
-    shownIn: always,
-    exposed: true,
-  };
-}
-
-/** The group primitive, which lays the rows out by the cell's orientation. */
-const GROUP: PartDefinition = {
-  key: "group",
-  slot: "radio-group",
-  shownIn: always,
-  classesFor: (cell) => selectionGroupOrientationVariants({ orientation: orientationFor(cell) }).group(),
-  fitsOneLine:
-    "Chromium measured the three rows of a horizontal group end at 201px dense and 217px comfortable in its 384px on 2026-10-27, so they never wrap, and a real file drew them packed left, surface-gap-lg apart, with no wrap (W5-P6)",
-  label: undefined,
-  iconsFor: () => [],
-  parts: RADIO_GROUP_OPTIONS.map(row),
-};
-
-/** The `Field.Set` that FieldFrame's legend mode wraps its parts in. */
-const FIELD_SET: PartDefinition = {
-  key: "field-set",
-  slot: "field-set",
-  shownIn: always,
-  classesFor: () => fieldVariants().set(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [
-    LEGEND_ROW,
-    ...frameDescriptions(RADIO_GROUP_DESCRIPTION, legendFrame.description()),
-    GROUP,
-    frameError(RADIO_GROUP_ERROR),
-  ],
-};
-
-/**
- * A radio group, as `<RadioGroup label description orientation defaultValue>` around three
- * `<Radio>` rows, disabled, or invalid with an error message.
- */
-export const RADIO_GROUP: ComponentDefinition = {
-  ...FIELD_FRAME_SET,
-  key: "radio-group",
-  name: "Radio group",
-  // The radios take the states, and Base UI mirrors them on the Field root as data attributes.
-  rootKind: "base-ui-field-part",
-  axes: [
-    { name: "orientation", values: ORIENTATIONS },
-    { name: "state", values: ["rest", "disabled", "invalid"] },
-  ],
-  states: { disabled: FIELD_FRAME_DISABLED },
-  facts: new Map([
-    // The Field root is vertical in every cell, whatever the group's own orientation.
-    ["data-vertical", always],
-    ["data-horizontal", never],
-    ...RADIO_FIELDSET_FACTS,
-  ]),
-  parts: [FIELD_SET],
-};
-
-/** A row as the group's manifest names it, as {@link row} draws it. */
 function rowManifest(label: string, index: number): InstanceManifest {
   return {
     kind: "instance",
@@ -191,15 +87,20 @@ function rowManifest(label: string, index: number): InstanceManifest {
 }
 
 /**
- * The radio group's manifest, which the capture-backed build reads with `captures/radio-group.json`:
- * the fieldset around the legend row, the descriptions, the group primitive and the error.
+ * The radio group's manifest, which the capture-backed build reads with `captures/radio-group.json`,
+ * as `<RadioGroup label description orientation defaultValue>` around three `<Radio>` rows renders
+ * it, disabled, or invalid with an error message: the fieldset around the legend row, the
+ * descriptions, the group primitive and the error.
  */
 export const RADIO_GROUP_MANIFEST: SetManifest = {
   key: "radio-group",
   name: "Radio group",
   slot: "field",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  axes: RADIO_GROUP.axes,
+  axes: [
+    { name: "orientation", values: ORIENTATIONS },
+    { name: "state", values: ["rest", "disabled", "invalid"] },
+  ],
   columnAxis: "state",
   label: undefined,
   iconsFor: () => [],

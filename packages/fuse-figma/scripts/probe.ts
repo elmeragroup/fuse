@@ -10,14 +10,11 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, FileSystem, Runtime } from "effect";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { Console, Data, Effect, Runtime } from "effect";
 import { parseArgs } from "node:util";
 
 import { captureTargets } from "../src/capture/capture-targets.ts";
 import type { InstanceManifest, PartManifest } from "../src/capture/manifest.ts";
-import { classifiesProbe, decodeOracle } from "../src/capture/oracle.ts";
 import { contradictions, probeCells } from "../src/capture/perturbation.ts";
 import type { ProbedCell } from "../src/capture/perturbation.ts";
 import { CAPTURE_THEME, requestOf } from "../src/capture/run-capture.ts";
@@ -27,8 +24,6 @@ import { locateFuseBuild, readPageAssets } from "../src/compare/page-assets.ts";
 import { PAGE_LAYOUT } from "../src/compare/preview-page.ts";
 import { buildComponentSets, densityLengths } from "../src/components/build-kit.ts";
 import { matrixCells, variantKey } from "../src/components/component-spec.ts";
-
-const ORACLES = fileURLToPath(new URL("../oracles/", import.meta.url));
 
 /** The run stopped, and what it printed says why. */
 class ProbeStopped extends Data.TaggedError("ProbeStopped") {
@@ -55,16 +50,6 @@ function keysBySlot(parts: readonly (PartManifest | InstanceManifest)[]): Readon
     )
   );
 }
-
-/** A set's oracle file, or no entry where it has none. */
-const oracleOf = Effect.fn("probe.oracleOf")(function* (key: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = join(ORACLES, `${key}.json`);
-  if (!(yield* fs.exists(path))) {
-    return { set: key, entries: [] };
-  }
-  return yield* Effect.fromResult(decodeOracle(JSON.parse(yield* fs.readFileString(path))));
-});
 
 /** How many cells share a page. */
 const CELLS_PER_PAGE = 60;
@@ -117,15 +102,13 @@ const main = Effect.fn("probe.main")(function* () {
       }
     }
     const {
-      found: all,
+      found,
       compared: here,
       inferred,
     } = contradictions(set, probed, keysBySlot(target.parts ?? []), lengthOf);
     for (const [kind, count] of inferred) {
       kinds.set(kind, (kinds.get(kind) ?? 0) + count);
     }
-    const oracle = yield* oracleOf(target.key);
-    const found = all.filter((each) => !classifiesProbe(oracle, each));
     compared += here;
     for (const each of found) {
       yield* Console.error(
@@ -144,7 +127,7 @@ const main = Effect.fn("probe.main")(function* () {
       }
     }
     yield* Console.log(
-      `${target.key}: ${String(here)} boxes compared, ${String(all.length - found.length)} classified and ${String(found.length)} unclassified contradictions`
+      `${target.key}: ${String(here)} boxes compared, ${String(found.length)} contradictions`
     );
   }
   yield* Console.log(

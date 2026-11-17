@@ -1,7 +1,7 @@
-import { Effect, Result } from "effect";
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { baseBorderColor, compileUtilities } from "./utility-css";
+import { compileUtilities } from "./utility-css";
 
 describe("compileUtilities", () => {
   it("reads each utility's declarations from Tailwind's build of fuse.css", async () => {
@@ -54,68 +54,5 @@ describe("compileUtilities", () => {
       initialValue: "0 0 #0000",
       inherits: false,
     });
-  });
-
-  // Oracle: fuse.css's `@custom-variant item-described` puts the class after a parent context,
-  // `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`.
-  // `:where()` weighs nothing (Selectors 4 §17), so the rule weighs (0,1,0), as the bare utility does,
-  // and Tailwind prints a variant's rule after every bare utility's.
-  it("places a class whose rule selects it as the child of a parent context", async () => {
-    const compiled = await Effect.runPromise(compileUtilities(["self-start", "item-described:self-start"]));
-    const bare = compiled.classes.get("self-start");
-    const described = compiled.classes.get("item-described:self-start");
-    expect(described?.specificity).toEqual([0, 1, 0]);
-    expect((described?.order ?? -1) > (bare?.order ?? Number.POSITIVE_INFINITY)).toBe(true);
-  });
-
-  // Oracle: Tailwind compiles `in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner` to
-  // `:where([data-slot="navigation-menu-popup"]) :where(.…)`, a weightless class below a parent
-  // context. Both `:where()`s weigh nothing (Selectors 4 §17), so the rule weighs (0,0,0).
-  it("places a weightless class whose rule selects it below a parent context", async () => {
-    const className = "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner";
-    const compiled = await Effect.runPromise(compileUtilities([className]));
-    expect(compiled.classes.get(className)?.specificity).toEqual([0, 0, 0]);
-  });
-});
-
-// Unit under test: `baseBorderColor`, which reads the base-layer border color every Fuse part gets
-// from a compile against `fuse.css`. Oracle: the base layer of `packages/fuse/src/styles/fuse.css`,
-// whose rule for every element but a native form widget without a `data-slot` sets
-// `border-color: var(--border, currentcolor)`.
-describe("baseBorderColor", () => {
-  const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
-
-  it("reads the border color fuse.css's base layer gives every part", async () => {
-    expect(Result.getOrThrow(baseBorderColor(await Effect.runPromise(compileUtilities([]))))).toEqual({
-      property: "border-color",
-      value: "var(--border, currentcolor)",
-    });
-  });
-
-  it("follows the rule's value, and fails when the rule or its border color is gone", async () => {
-    const compiled = await Effect.runPromise(compileUtilities([]));
-    const withBase = (baseRules: typeof compiled.baseRules) => ({ ...compiled, baseRules });
-    const failureOf = (read: ReturnType<typeof baseBorderColor>) =>
-      Result.isFailure(read) ? read.failure.message : undefined;
-    expect(
-      Result.getOrThrow(
-        baseBorderColor(
-          withBase([
-            {
-              selector: `${PART_ARM}, ::after`,
-              declarations: [{ property: "border-color", value: "var(--input)" }],
-            },
-          ])
-        )
-      )
-    ).toEqual({ property: "border-color", value: "var(--input)" });
-    expect(failureOf(baseBorderColor(withBase([])))).toMatch(/base layer/);
-    expect(
-      failureOf(
-        baseBorderColor(
-          withBase([{ selector: PART_ARM, declarations: [{ property: "outline-color", value: "red" }] }])
-        )
-      )
-    ).toMatch(/border-color/);
   });
 });

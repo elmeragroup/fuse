@@ -11,12 +11,11 @@ import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { isPlainBlock, readFlow } from "./box-flow.ts";
-import { CellLedger, LayerStyle, inheritance } from "./cascade.ts";
-import type { Layer } from "./cascade.ts";
 import type { BuildContext } from "./component-spec.ts";
-import { CascadeLogs } from "./coverage-log.ts";
 import { makeVariableIndex } from "./css-values.ts";
 import { NO_LIMITS } from "./kit-spec.ts";
+import { CellLedger, LayerStyle, inheritance } from "./layer-style.ts";
+import type { Layer } from "./layer-style.ts";
 import { compileUtilities } from "./utility-css.ts";
 
 let context: BuildContext;
@@ -25,8 +24,6 @@ beforeAll(async () => {
   context = {
     compiled: await Effect.runPromise(compileUtilities([])),
     variables: makeVariableIndex([]),
-    page: [],
-    base: [],
   };
 });
 
@@ -38,9 +35,7 @@ function ledger(): CellLedger {
     context,
     origin: ORIGIN,
     record: () => undefined,
-    meaningOf: () => ({ kind: "unmodelled" }),
     cell: {},
-    logs: new CascadeLogs(),
     inPlace: undefined,
   });
 }
@@ -55,7 +50,7 @@ function box(cell: CellLedger, declarations: Readonly<Record<string, string>>, p
         className: "sample",
         origin: ORIGIN,
         rank: 0,
-        specificity: [0, 0, 0],
+        at: undefined,
         order: 0,
         declarations: Object.entries(declarations).map(([property, value]) => ({ property, value })),
       },

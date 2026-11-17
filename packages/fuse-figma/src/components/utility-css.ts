@@ -1,15 +1,13 @@
 /**
- * Compile recipe classes against `fuse.css` and read back each bare utility's declarations, and
- * where each full class sits in the output and how specific its selector is. The spec builder
- * decides from a class's variants whether it holds in a cell, so it reads the declarations of
- * the bare utility. It orders the classes that hold as the browser does, by the full class's
- * selector specificity and then its place in the output. Tailwind's own compiler resolves the
- * classes, which keeps the spec on the exact CSS a consumer ships, and the reader walks the
- * compiler's own syntax tree. The same compile gives the comparison page the CSS of the classes a
- * host app compiles itself.
+ * Compile the classes the captures record against `fuse.css`, as a Tailwind-source consumer does,
+ * and read back what the capture cascade resolves values against: the theme values Tailwind emits,
+ * the custom properties it registers with `@property`, and the rules of the `base` layer. Tailwind
+ * emits a theme value and a registration only for a utility it compiles, so the compile covers
+ * every captured class. The same compile gives the comparison page the CSS of the classes a host
+ * app compiles itself.
  */
 
-import { Effect, Result } from "effect";
+import { Effect } from "effect";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
@@ -17,10 +15,7 @@ import { compileAst } from "tailwindcss";
 import { KitSourceInvalid, runTool } from "./build-errors";
 import type { KitToolFailed } from "./build-errors";
 import { splitClassName } from "./class-name";
-import { exceptLastChildClass, leadingClass, namedClasses, selectorAlternatives } from "./css-selector";
-import { splitTopLevel } from "./css-values";
-import { compareSpecificity, specificityOf } from "./specificity";
-import type { Specificity } from "./specificity";
+import { leadingClass } from "./css-selector";
 
 /**
  * A node of Tailwind's syntax tree. Tailwind exports `compileAst` but not its node types, so
@@ -41,41 +36,14 @@ export type UtilityRule = {
   readonly declarations: readonly UtilityDeclaration[];
 };
 
-/**
- * Where a full class, variants included, sits in Tailwind's output and how specific its selector
- * is. In one cascade layer the more specific rule wins a property, and a later one breaks a tie.
- */
-export type ClassPlacement = {
-  /** The position of the class's first rule in Tailwind's output. */
-  readonly order: number;
-  /** The specificity of its most specific selector. */
-  readonly specificity: Specificity;
-};
-
 /** What the compile produced for a set of classes. */
 export type CompiledUtilities = {
   /** Each bare utility Tailwind emitted a rule for. A utility it does not know is absent. */
   readonly rules: ReadonlyMap<string, UtilityRule>;
-  /**
-   * Each bare utility whose rule styles every child of the element that carries it but the last, as
-   * Tailwind compiles `space-y-4` to `:where(.space-y-4 > :not(:last-child))`. Such a utility has no
-   * entry in `rules`, since its rule selects no element by the class alone.
-   */
-  readonly exceptLastChildRules: ReadonlyMap<string, UtilityRule>;
-  /** Each full class Tailwind emitted a rule for, such as `data-checked:border-primary`. */
-  readonly classes: ReadonlyMap<string, ClassPlacement>;
-  /**
-   * The selector of every rule that names a class outside a pseudo-class's parentheses, by that
-   * class, whatever the selector starts with, so a part's presence check reads the `:has()` of an
-   * `item-described:` rule, `:where(:has(…)) > .class`, here.
-   */
-  readonly rulesByClass: ReadonlyMap<string, readonly string[]>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
   /** Each custom property Tailwind registered with `@property`, such as `--tw-ring-offset-width`. */
   readonly registeredProperties: ReadonlyMap<string, RegisteredProperty>;
-  /** The rules of the `base` layer, such as the one in `fuse.css` that colors every border. */
-  readonly baseRules: readonly BaseRule[];
 };
 
 /**
@@ -86,12 +54,6 @@ export type RegisteredProperty = {
   readonly initialValue: string | undefined;
   /** False only where the rule says `inherits: false`, as Tailwind says for every `--tw-*`. */
   readonly inherits: boolean;
-};
-
-/** A rule of the `base` layer: its whole selector list and its declarations. */
-export type BaseRule = {
-  readonly selector: string;
-  readonly declarations: readonly UtilityDeclaration[];
 };
 
 /**
@@ -109,9 +71,8 @@ function consumerEntry(): AstNode[] {
  * Compile the classes and their bare utilities with `fuse.css` the way a Tailwind-source
  * consumer does.
  *
- * @param classes - Recipe classes, with or without variants.
- * @returns Each bare utility's declarations, each full class's placement, and the variables
- *   they read. The Effect fails with `KitSourceInvalid` when `fuse.css` imports what the build
+ * @param classes - The classes, with or without variants.
+ * @returns The utility rules, theme values and registered properties. The Effect fails with `KitSourceInvalid` when `fuse.css` imports what the build
  *   cannot load, and with `KitToolFailed` when Tailwind fails otherwise.
  */
 export function compileUtilities(
@@ -218,102 +179,18 @@ function buildConsumerCss(
 }
 
 /**
- * The arm of `fuse.css`'s base-layer border rule that matches every element except a native form
- * widget without a `data-slot`. Every Fuse part carries a `data-slot`, so it matches each one.
- */
-const PART_ARM = ":where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot])))";
-
-/**
- * The border color `fuse.css`'s base layer gives every Fuse part, which makes every border the
- * `border` role where no utility colors it.
- *
- * @param compiled - A compile against `fuse.css`.
- * @returns The `border-color` declaration of the base rule whose selector list holds the arm
- *   every part matches, or `KitSourceInvalid` when the base layer has no rule with that arm, or the
- *   rule sets no border color.
- */
-export function baseBorderColor(
-  compiled: CompiledUtilities
-): Result.Result<UtilityDeclaration, KitSourceInvalid> {
-  const rule = compiled.baseRules.find((candidate) =>
-    splitTopLevel(candidate.selector, ",").includes(PART_ARM)
-  );
-  if (rule === undefined) {
-    return Result.fail(
-      new KitSourceInvalid({ message: `fuse.css's base layer has no rule for ${PART_ARM}` })
-    );
-  }
-  const borderColor = rule.declarations.findLast((declaration) => declaration.property === "border-color");
-  if (borderColor === undefined) {
-    return Result.fail(
-      new KitSourceInvalid({ message: `fuse.css's base-layer rule for ${PART_ARM} sets no border-color` })
-    );
-  }
-  return Result.succeed(borderColor);
-}
-
-/**
- * Read Tailwind's build output. A rule whose whole selector is one class is that utility's
- * rule, and so is one that styles every child but the last of the element that carries one class,
- * as `space-y-*` compiles, which the read keeps apart. A `@supports` block that tests
- * `color-mix()` overrides the declarations before it, because every browser Fuse supports passes
- * that test. Any other nested block, such as
- * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped. The
- * rules of the `base` layer are kept apart, since no class selects them.
- *
- * Every rule whose selector starts with a class places that class, at the top level or inside
- * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`, and so does a `*:` rule,
- * `:is(.class > *)…`, for the class whose children it styles, an `item-described:` rule,
- * `:where(…) > .class`, for the class it selects in a parent context, and a `[:where(&)]:` rule,
- * `:where(.class)`, for the class it selects at no specificity. Its first rule gives
- * its order, and its most specific selector its specificity. Every rule also lists its selector
- * under each class it names, wherever the class sits in the selector.
+ * Read Tailwind's build output: each rule whose whole selector is one class, that utility's rule,
+ * the theme variables it emits on `:root` and each `@property` registration, past the `base` layer,
+ * which no class selects. A `@supports` block that tests `color-mix()` overrides the
+ * declarations before it, because every browser Fuse supports passes that test.
  *
  * @param nodes - The syntax tree `build` returns.
- * @returns The utility rules, class placements, theme values and registered properties.
+ * @returns The utility rules, theme values and registered properties.
  */
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
-  const exceptLastChildRules = new Map<string, UtilityRule>();
-  const classes = new Map<string, ClassPlacement>();
-  const rulesByClass = new Map<string, string[]>();
   const themeValues = new Map<string, string>();
   const registeredProperties = new Map<string, RegisteredProperty>();
-  const baseRules: BaseRule[] = [];
-  let order = 0;
-  const place = (node: AstNode): void => {
-    if (node.kind === "at-rule" && node.name !== "@property" && node.name !== "@keyframes") {
-      if (!(node.name === "@layer" && node.params === "base")) {
-        node.nodes.forEach(place);
-      }
-      return;
-    }
-    if (node.kind === "rule") {
-      for (const name of new Set(namedClasses(node.selector))) {
-        rulesByClass.set(name, [...(rulesByClass.get(name) ?? []), node.selector]);
-      }
-    }
-    const leading =
-      node.kind === "rule"
-        ? (leadingClass(node.selector) ??
-          childrenClass(node.selector) ??
-          descendantsClass(node.selector) ??
-          contextClass(node.selector) ??
-          weightlessClass(node.selector))
-        : undefined;
-    if (node.kind !== "rule" || leading === undefined) {
-      return;
-    }
-    const specificity = specificityOf(node.selector);
-    const placed = classes.get(leading.name);
-    if (placed === undefined) {
-      classes.set(leading.name, { order, specificity });
-      order += 1;
-    } else if (compareSpecificity(specificity, placed.specificity) > 0) {
-      classes.set(leading.name, { ...placed, specificity });
-    }
-  };
-  nodes.forEach(place);
   const visit = (node: AstNode): void => {
     if (node.kind === "at-rule") {
       if (node.name === "@property") {
@@ -326,13 +203,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
         });
         return;
       }
-      if (node.name === "@layer" && node.params === "base") {
-        for (const child of node.nodes) {
-          if (child.kind === "rule") {
-            baseRules.push({ selector: child.selector, declarations: declarationsOf(child.nodes) });
-          }
-        }
-      } else if (node.name === "@layer") {
+      if (node.name === "@layer" && node.params !== "base") {
         node.nodes.forEach(visit);
       }
       return;
@@ -350,16 +221,9 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     if (leading?.rest === "") {
       rules.set(leading.name, { utility: leading.name, declarations: effectiveDeclarations(node.nodes) });
     }
-    const spacing = exceptLastChildClass(node.selector);
-    if (spacing !== undefined) {
-      exceptLastChildRules.set(spacing, {
-        utility: spacing,
-        declarations: effectiveDeclarations(node.nodes),
-      });
-    }
   };
   nodes.forEach(visit);
-  return { rules, exceptLastChildRules, classes, rulesByClass, themeValues, registeredProperties, baseRules };
+  return { rules, themeValues, registeredProperties };
 }
 
 /**
@@ -385,75 +249,4 @@ function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDecla
     }
     return declarationsOf([node]);
   });
-}
-
-/**
- * The class a `*:` rule styles the children of, as Tailwind compiles `*:data-[slot=x]:flex` to
- * `:is(.\*\:data-\[slot\=x\]\:flex > *)[data-slot="x"]`, which selects each child of the element
- * that carries the class.
- */
-function childrenClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
-  const opening = ":is(";
-  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
-  return inner?.rest.startsWith(" > *)") === true ? inner : undefined;
-}
-
-/**
- * The class a `**:` rule styles every element below, as Tailwind compiles
- * `data-popup-open:**:text-accent-foreground` to
- * `:is(.data-popup-open\:\*\*\:text-accent-foreground[data-popup-open] *)`: the class and its
- * conditions, then the descendant combinator and the universal selector, which select every element
- * below the element that carries the class.
- */
-function descendantsClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
-  const opening = ":is(";
-  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
-  return inner?.rest.endsWith(" *)") === true && !inner.rest.endsWith("> *)") ? inner : undefined;
-}
-
-/**
- * The class a rule selects as the child or a descendant of a context, as fuse.css's `item-described:`
- * compiles to `:where(:has( > [data-slot="item-content"] > [data-slot="item-description"])) > .item-described\:…`
- * and Tailwind's `in-data-popup-open:` to `:where([data-popup-open]) .in-data-popup-open\:…`: one
- * `:where()`, the child or descendant combinator, then the class, which is the rule's subject.
- */
-function contextClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
-  const [alternative, ...others] = selectorAlternatives(selector);
-  const [context] = alternative ?? [];
-  if (
-    others.length > 0 ||
-    context?.kind !== "pseudo" ||
-    context.name !== "where" ||
-    context.element ||
-    context.argument === undefined
-  ) {
-    return undefined;
-  }
-  const after = selector.slice(`:where(${context.argument})`.length);
-  const combinator = /^(?:\s*>\s*|\s+)/.exec(after);
-  return combinator === null ? undefined : leadingClass(after.slice(combinator[0].length));
-}
-
-/**
- * The class a rule wraps whole in one `:where()`, as Tailwind compiles `[:where(&)]:rounded-md` to
- * `:where(.\[\:where\(\&\)\]\:rounded-md)`, which selects the element that carries the class at a
- * specificity of (0,0,0) (Selectors 4 §17). The `:where()` may hold the class below a parent context,
- * as `in-data-[slot=…]:[:where(&)]:rounded-inner` compiles to `:where(:where([data-slot="…"]) .…)`,
- * or select its children, as `[:where(&>*)]:ring-2` compiles to `:where(.… > *)`.
- */
-function weightlessClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
-  const [alternative, ...others] = selectorAlternatives(selector);
-  const [wrapper, ...after] = alternative ?? [];
-  if (
-    others.length > 0 ||
-    after.length > 0 ||
-    wrapper?.kind !== "pseudo" ||
-    wrapper.name !== "where" ||
-    wrapper.element ||
-    wrapper.argument === undefined
-  ) {
-    return undefined;
-  }
-  const inner = leadingClass(wrapper.argument) ?? contextClass(wrapper.argument);
-  return inner?.rest === "" || inner?.rest === " > *" ? inner : undefined;
 }

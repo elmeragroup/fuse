@@ -1,11 +1,11 @@
 /**
- * The component definition: what a kit definition says about a recipe's component set, its axes,
- * parts, instances, labels, icons and facts, and what a build takes and returns. It also holds the
- * pure utilities over definitions, such as the variant matrix and the classes a definition uses.
- * `component-builder.ts` turns a definition into a Figma component set.
+ * The component definition the mapping walks, as `capture/manifest.ts` builds it from a set's
+ * manifest: its axes, parts, instances, labels and icons, and what a build takes and returns. It also
+ * holds the pure utilities over definitions, such as the variant matrix. `component-builder.ts` turns
+ * a definition and its capture into a Figma component set.
  */
 
-import { splitClasses } from "./cascade";
+import type { CellAccounting } from "../capture/capture-cascade.ts";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
 import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, SwapPropertySpec } from "./kit-spec";
@@ -20,18 +20,15 @@ export type PreviewLength = { readonly pixels: number; readonly css?: string | u
 /** One cell of a variant matrix: a value for each axis. */
 export type Cell = Readonly<Record<string, string>>;
 
-/**
- * An icon a part renders in a cell, described as the DOM holds it, so the recipe's child
- * selectors can find it the way the browser does.
- */
+/** An icon a part renders in a cell, described as the DOM holds it, so the capture finds it. */
 export type IconSlot = {
   readonly key: string;
   readonly name: string;
   /** The side of the label the icon sits on. */
   readonly side: "start" | "end";
   /**
-   * Whether the `<svg>` is a child of the part that lists it, which `[&>svg]` on that part
-   * selects. The spinner of a pending Button sits in a span, so it is not.
+   * Whether the `<svg>` is a child of the part that lists it. The spinner of a pending Button sits in
+   * a span, so it is not.
    */
   readonly direct: boolean;
   /** The `data-icon` the icon, or the span around it, carries. */
@@ -41,17 +38,10 @@ export type IconSlot = {
   /** The INSTANCE_SWAP property that picks the icon, or undefined for a fixed icon. */
   readonly swapProperty: string | undefined;
   /**
-   * The classes the `<svg>` carries itself, such as Loader's `animate-spin size-4`. They cascade
-   * with the child selectors that reach the icon, each by its specificity, over what the icon
-   * inherits. An icon without them takes its style from its boxes alone.
-   */
-  readonly classes?: string;
-  /**
    * The BOOLEAN property that shows or hides the icon, which links the icon layer's `visible` beside
    * its swap link (PI2), or undefined for an icon that shows wherever its cell lists it. A cell lists
    * an optional icon wherever the set can show it, and the markup renders it only while the property
-   * is on. A class that reads whether the icon is there, through an `svg` inside `:has()`, stops the
-   * build, as it does for an optional part.
+   * is on.
    */
   readonly optional?: BooleanPropertySpec;
 };
@@ -69,50 +59,6 @@ export function swapProperties(slots: readonly IconSlot[]): readonly SwapPropert
 }
 
 /**
- * The variants Base UI stamps on a checked control's root, for a definition's `facts`:
- * `data-checked` and `aria-checked="true"` while it is on, and `data-unchecked` while it is off.
- * A control with a third value adds its own, as Checkbox adds `data-indeterminate`.
- */
-export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
-  ["data-checked", (cell: Cell) => cell.checked === "on"],
-  ["data-unchecked", (cell: Cell) => cell.checked === "off"],
-  ["aria-checked", (cell: Cell) => cell.checked === "on"],
-]);
-
-/**
- * What the element that takes a set's states is, the root or the part its `statePart` names, which
- * decides the attributes its disabled state holds.
- *
- * - `native-control`: a native `<button>`, disabled through its `disabled` attribute.
- * - `base-ui-span`: a Base UI `<span>`, such as a radio, which Base UI disables with
- *   `aria-disabled` and keeps focusable.
- * - `base-ui-field-part`: Base UI's `Field.Label` `<label>`, `Field.Description` `<p>` or
- *   `Field.Error` `<div>`, which take their Field's state as data attributes, so a disabled Field
- *   marks them `data-disabled` alone and an invalid one `data-invalid` alone.
- * - `plain-element`: an element nothing stamps a state on, such as Field's title `<div>`, which
- *   shows a disabled Field only through the `group-data-disabled/field:` its definition names.
- */
-export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-part" | "plain-element";
-
-/**
- * Where a native control sets its text within the text's box, which no class says, as an `<input>`
- * centers its value down its box and a `<textarea>` starts its text at the top.
- */
-export type TextPlacement = {
-  readonly horizontal: "start" | "center" | "end";
-  readonly vertical: "top" | "center" | "bottom";
-  /**
-   * How the control sets its text in lines, which it does itself whatever the box's `display` says.
-   * `single` keeps the text on one line across the content box, as an `<input>` sets its value,
-   * whatever `white-space` says, so the label fills the box's width and ends in an ellipsis after one
-   * line. `wrap` wraps the text at the content box's width, as a `<textarea>` wraps its value, so the
-   * label fills the width with its height following its lines. Undefined leaves the lines to the
-   * box's CSS.
-   */
-  readonly lines?: "single" | "wrap";
-};
-
-/**
  * A text layer a part shows, and where its characters come from: one text in every cell, which a
  * TEXT property of the set can set, or a text per cell, which no property sets, since one property
  * holds one default.
@@ -122,24 +68,13 @@ export type LabelDefinition = {
   readonly name: string;
   /** Whether a cell shows the label. A Kbd shows it in its text cell and not its icon cell. */
   readonly shownIn: (cell: Cell) => boolean;
-  /** Where the text sits in its box, or undefined for the top left, where CSS sets a box's text. */
-  readonly placement?: TextPlacement;
   /**
    * The attribute in which the component's markup holds the characters in a cell, as an `<input>`
    * holds its placeholder in `placeholder` and its value in `value`. It returns undefined for a cell
    * whose box holds them as its own text, as a `<textarea>` holds its value, and a label without it
-   * holds them as its own text in every cell. `figma:compare`'s markup check reads the text there.
+   * holds them as its own text in every cell.
    */
   readonly textAttribute?: (cell: Cell) => string | undefined;
-  /**
-   * The child element in which the component's markup holds the characters as its own text, for a
-   * box that wraps them in an element with no `class` or `style`, as Pagination's edge link wraps
-   * its copy in a bare `<span>`. A flex row lays such an element out as it would the text alone, so
-   * the kit draws the characters as the box's own text layer, between the icons on either side.
-   * `figma:compare`'s markup check reads the text there, and fails an element that carries a `class`
-   * or `style`. Undefined for a label the box holds as its own text or in `textAttribute`.
-   */
-  readonly textElement?: ElementSelector;
   /**
    * Set where the markup holds a space before the characters, as Meter's value holds one after its
    * icon. A box that sets its text in lines draws it as one space advance after a start icon, and
@@ -163,13 +98,11 @@ export type LabelDefinition = {
 );
 
 /**
- * What the root, or a part below it, renders in a cell: its classes and its children. The
- * children sit in DOM order: the parts first, then the start icons, the label and the end icons, and
- * last the parts whose `after` names the label.
+ * What the root, or a part below it, renders in a cell: its children. The children sit in DOM order:
+ * the parts first, then the start icons, the label and the end icons, and last the parts whose
+ * `after` names the label.
  */
 export type BoxDefinition = {
-  /** The recipe's class string for one cell. */
-  readonly classesFor: (cell: Cell) => string;
   /** The text layer, or undefined for a part that shows no text of its own. */
   readonly label: LabelDefinition | undefined;
   /** The icons a cell renders in this part, in DOM order. A start icon sits before the label. */
@@ -177,114 +110,40 @@ export type BoxDefinition = {
   /** The parts directly below this one, in DOM order, each a frame or an instance of another set. */
   readonly parts?: readonly (PartDefinition | InstanceDefinition)[];
   /**
-   * How many element children the box's markup holds in a cell beside the parts, the icons and the
-   * element of its label the definition draws, such as the visually hidden `<span>` that holds an
-   * ellipsis's copy, so the build knows every element child the box holds. A class that styles every
-   * child but the last, as `space-y-4` does, reads that count, and stays unmapped on a box whose
-   * definition leaves this unset. `figma:compare`'s markup check holds the count to the markup.
-   */
-  readonly undrawnChildren?: (cell: Cell) => number;
-  /**
    * The picture the box shows, as an `<img>` shows its `src`: the bytes of a PNG file, the one
    * format the kit ships, which the build reads when it maps the box. Undefined for a box that shows
    * none.
    */
   readonly image?: () => Uint8Array;
   /**
-   * The declarations the browser's default style sheet gives the box's element, which no class
-   * sets, such as `display: block` on a `<p>` or a `<div>`. They apply on the box below the base
-   * layer and every class, as the user agent's origin does, so a class's own `display` beats them.
-   * Undefined for a box whose classes set what the kit reads, or whose element is inline, as a
-   * `<span>` or an `<a>` is.
-   */
-  readonly elementDefaults?: readonly OuterDeclaration[];
-  /**
    * The positioned element around the box that is the containing block of the box's absolute parts,
-   * where the box's own classes leave it static, and that has the box's border box, as Base UI's
+   * where the box's own `position` leaves it static, and that has the box's border box, as Base UI's
    * tooltip positioner holds its popup. The placement of an absolute part reads the box as its
    * containing block there. Undefined for a box whose own `position` decides.
    */
   readonly positionedBy?: string;
-  /**
-   * Why a wrapping row lays its layers out on one line in every cell, for a row whose `flex-wrap:
-   * wrap` no rule reads, since what fits depends on its text: a measurement, as Chromium measured
-   * Radio group's three horizontal rows end at 201px dense and 217px comfortable in its 384px.
-   * Figma's row never wraps, so the row draws as one line, and `figma:compare` shows a cell where
-   * the measurement no longer holds. It also says a hugging box's own wrapping label fits on one line
-   * under a `max-width` the build cannot read in pixels as the label's room, as Tooltip's popup holds
-   * its text far inside 320px less a density padding, so the label hugs on one line. Undefined for a
-   * box whose wrapping a rule reads or that leaves it unmapped.
-   */
-  readonly fitsOneLine?: string;
-  /**
-   * Why the box's content stays under its `max-height` in every cell, a measurement, as Chromium
-   * measured the Command palette's rows, input and footer 289px dense and 341px comfortable under its
-   * 380px cap. A box that hugs its height under a cap it never reaches is as tall as its layers, so a
-   * layer that grows, as the palette's `flex-1` list, has no room to grow into. Undefined for a box
-   * whose growth a rule reads or that leaves it unmapped.
-   */
-  readonly underMaxHeight?: string;
 };
 
 /**
- * An element named by its tag and the attributes it carries rather than by one fixed `data-slot`, as
- * Alert dialog's Cancel renders a `<button data-dialog-action-type="secondary">`. `figma:compare`
- * measures a root by its CSS form, such as `button[data-dialog-action-type="secondary"]`, and its
- * markup check places a root or a part by it.
- */
-export type ElementSelector = {
-  /**
-   * The element's tag name in lowercase, such as `div`.
-   */
-  readonly tag: string;
-  /**
-   * The attributes the element carries, each name in lowercase. A string matches that exact value,
-   * and `true` matches the attribute with any value, as `[data-focus-ring-control]` does.
-   */
-  readonly attributes: Readonly<Record<string, string | true>>;
-  /**
-   * The attributes whose values end with a suffix, each name in lowercase, as `[data-slot$="-label"]`
-   * matches the group label of Select and of Dropdown menu, which name their slots by family. An empty
-   * suffix matches nothing, as in CSS. Undefined for an element the other fields name.
-   */
-  readonly suffixes?: Readonly<Record<string, string>>;
-};
-
-/** One declaration of an element's `style` attribute, such as Base UI's `width: 85%` on a meter's fill. */
-export type InlineDeclaration = {
-  readonly property: string;
-  readonly value: string;
-  /**
-   * Why the markup's value is one the component computes from the layout at run time, which `value`
-   * stands for in the kit's cells, as Base UI writes a Tooltip arrow's `left` from the trigger's
-   * centre. The markup check then holds the property present with any value. Undefined for a value
-   * the markup writes as it is.
-   */
-  readonly measured?: string;
-};
-
-/**
- * A part below the root, such as a checkbox's indicator. It cascades its own classes, and
- * inherits its parent's text color, font and custom properties as the DOM does.
+ * A part below the root, such as a checkbox's indicator. It inherits its parent's text color, font
+ * and custom properties as the DOM does.
  */
 export type PartDefinition = BoxDefinition & {
   /** The key of the part's frame layer. */
   readonly key: string;
+  /**
+   * The part's `data-slot`, which names its layer, or undefined for a part without one, as Radio's
+   * dot, whose layer takes the part's key as its name.
+   */
+  readonly slot: string | undefined;
   /** Whether a cell renders the part. Base UI mounts a checkbox's indicator only while checked. */
   readonly shownIn: (cell: Cell) => boolean;
   /**
    * The BOOLEAN property of the set that shows or hides the part in the cells that render it, and
    * the value it starts with, for a part a docs demo leaves out, such as a description. Undefined for
-   * a part that shows wherever a cell renders it. A part whose presence a selector reads, as
-   * `item-described:` reads Item's description, cannot be optional, and the build stops on one.
+   * a part that shows wherever a cell renders it.
    */
   readonly optional?: BooleanPropertySpec;
-  /**
-   * The declarations of the part's `style` attribute in a cell, in the attribute's order, which
-   * cascade above every class, as a style attribute beats every rule of a style sheet. Undefined for
-   * a part whose markup carries no `style`.
-   */
-  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
   /**
    * `"label"` for a part the markup holds after its box's label and end icons, as a Dropdown menu
    * row's shortcut follows the row's own text, so its layer sits after theirs. Undefined for a part
@@ -292,48 +151,12 @@ export type PartDefinition = BoxDefinition & {
    */
   readonly after?: "label";
   /**
-   * Whether the part is the row that sets the width of a popup that hugs its rows, in a cell, as
-   * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
-   */
-  readonly setsWidth?: (cell: Cell) => boolean;
-  /**
-   * The variants only the part's own element carries, and whether each holds in a cell, as Base UI
-   * stamps `data-orientation` on `Sidebar.Separator` inside a panel whose root carries none. The part's
-   * classes cascade with them over the set's table. A part with facts holds no parts, since their
-   * elements carry none of them, and a fact cannot give a variant the set's table already gives a
-   * meaning; the build stops on either. Undefined for a part that carries only the set's facts.
-   */
-  readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
-  /**
-   * Where a capture-backed build finds a part without a `data-slot`: the element-ordinal path from
-   * the nearest element above it with a `data-slot`, such as `field/1/0` for the first child of the
-   * Field root's second child. Undefined for a part with a `data-slot`, or one the recipe cascade
-   * builds.
+   * Where the build finds a part without a `data-slot`: the element-ordinal path from the nearest
+   * element above it with a `data-slot`, such as `field/1/0` for the first child of the Field root's
+   * second child. Undefined for a part with a `data-slot`.
    */
   readonly place?: string;
-} & (
-    | {
-        /** The part's `data-slot`, which names its layer. */
-        readonly slot: string;
-        /** A part its `data-slot` names needs no selector. */
-        readonly element?: never;
-        /**
-         * The part's element's tag, such as `input`, which a direct-child selector such as
-         * `[&>input]:` reaches it by. Undefined where no class reaches the part by its tag.
-         */
-        readonly tag?: string;
-      }
-    | {
-        /** No `data-slot`, as on Radio's dot, so the layer takes the part's key as its name. */
-        readonly slot: undefined;
-        /**
-         * The part's element, which `figma:compare`'s markup check finds below its parent part by
-         * this selector. Undefined for a part the check finds by its place, as the one child element
-         * of its parent beside the parts with a `data-slot`.
-         */
-        readonly element?: ElementSelector;
-      }
-  );
+};
 
 /**
  * The values a composite gives the inner set's TEXT, BOOLEAN and INSTANCE_SWAP properties, each by
@@ -379,37 +202,10 @@ export type InstanceDefinition = {
    */
   readonly slot?: string;
   /**
-   * The element the outer component renders the inner root as, where it differs from the one the
-   * inner set's `element` names, as Number field's decrease stepper is the `<button
-   * data-slot="number-field-decrement">` where the stepper set names its increase stepper. `figma:compare`'s markup
-   * check places the instance there. Undefined where the inner set's own element names it.
-   */
-  readonly element?: ElementSelector;
-  /**
-   * The classes the outer component passes the inner one as its `className`, which the inner
-   * component merges after its own with `cn`, as Alert passes its tone's `button` slot. Undefined for
-   * none.
-   */
-  readonly classesFor?: (outer: Cell) => string;
-  /**
-   * The classes the inner root carries of its own in place of the inner set's, for an outer component
-   * that renders the inner markup without the consumer classes the inner set's cells pass, as
-   * Toolbar's separator draws Separator's hairline with none of the lengths the Separator set takes
-   * from its docs demos. The outer classes merge after them as after the set's. Undefined where the
-   * inner set's own classes hold.
-   */
-  readonly ownClassesFor?: (inner: Cell) => string;
-  /**
    * The values the outer cell gives the inner set's properties, undefined where every property keeps
    * its default.
    */
   readonly properties?: (outer: Cell) => InstanceProperties;
-  /**
-   * The classes the outer component gives the icon each INSTANCE_SWAP property places, by the
-   * property's name, as Combobox renders the CaretDown in its caret button with `caret()`. They
-   * cascade after the inner icon's own classes. Undefined for none.
-   */
-  readonly swapClasses?: (outer: Cell) => Readonly<Record<string, string>>;
   /** Whether a cell renders the part. */
   readonly shownIn: (cell: Cell) => boolean;
   /**
@@ -419,11 +215,6 @@ export type InstanceDefinition = {
    */
   readonly optional?: BooleanPropertySpec;
   /**
-   * Whether the part is the row that sets the width of a popup that hugs its rows, in a cell, as
-   * `hugging-rows.ts` says: it hugs across, and its siblings fill. Undefined for a part that never is.
-   */
-  readonly setsWidth?: (cell: Cell) => boolean;
-  /**
    * `"label"` for an instance the markup holds after its box's label and end icons, as a Command
    * row's Kbd group shortcut follows the row's own text, as {@link PartDefinition.after} says for a
    * frame.
@@ -431,73 +222,32 @@ export type InstanceDefinition = {
   readonly after?: "label";
   /** True where a designer sets the inner set's properties from the outer instance's panel. */
   readonly exposed?: true;
-  /**
-   * The variants that hold for the inner root where the outer component renders it, beyond the inner
-   * set's own facts, as Base UI stamps `aria-expanded` on the trigger of an open popup. Each may name
-   * a variant the inner set omits, through the omissions every set shares, such as `aria-expanded`,
-   * or its own `omittedStates` or `omittedCompositions`, as a row link drawn outside the popup omits
-   * `in-data-[slot=navigation-menu-popup]`, or one it leaves unmodelled. A variant the inner set gives
-   * a meaning stops the build, as Input's `invalid` state renders `aria-invalid`, and so does an
-   * omitted pseudo-element, media condition or transition frame. The in-place cascade reads them, and
-   * the diff carries what they paint as overrides. Undefined for none.
-   */
-  readonly facts?: ReadonlyMap<string, (cell: Cell) => boolean>;
-  /**
-   * The facts among `facts` that name a variant the inner set renders through one of its states,
-   * which the outer component stamps on the inner root outside that state, as Base UI marks a
-   * disabled toolbar button `aria-disabled`, which the Button set renders only in its pending cell.
-   * The in-place cascade reads them over that meaning, and the diff carries what they paint as
-   * overrides. Undefined for none.
-   */
-  readonly stamps?: ReadonlySet<string>;
 };
 
 /** A component the builder can turn into a component set. Its own box is the root. */
 export type ComponentDefinition = BoxDefinition & {
   readonly key: string;
   readonly name: string;
-  /**
-   * The declarations of the root's `style` attribute in a cell, in the attribute's order, which
-   * cascade above every class, as a part's {@link PartDefinition.styleFor} do, as ToggleGroup writes
-   * `--gap` from its `spacing`. Undefined for a root whose markup carries no `style`.
-   */
-  readonly styleFor?: (cell: Cell) => readonly InlineDeclaration[];
-  /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
+  /** The root layer's name, and the root element's `data-slot` unless `elementSlot` names another. */
   readonly slot: string;
   /**
-   * The root element, for a root whose markup carries no `data-slot`, or one whose `data-slot`
-   * changes with the cell, as Pagination's edge link carries `pagination-previous` or
-   * `pagination-next`. `figma:compare` measures the one element of a cell this selector matches,
-   * and its markup check places the root there. Undefined for a root its `data-slot` names.
-   */
-  readonly element?: ElementSelector;
-  /**
-   * The `data-slot` the element `element` names carries in a cell, as Pagination's edge link carries
-   * `pagination-previous` or `pagination-next` by its direction. Undefined for an element that carries
-   * none in any cell, and for a root its `data-slot` names. The
-   * presence check reads it for an instance part's root, and the markup check holds it to what each
-   * cell renders.
+   * The `data-slot` the root carries in a cell, as Pagination's edge link carries
+   * `pagination-previous` or `pagination-next` by its direction. Undefined for a root its `slot` names.
    */
   readonly elementSlot?: (cell: Cell) => string;
   /**
-   * What the element that takes the set's states is: the root, or the part `statePart` names. A set
-   * whose `state` axis has `disabled` names it, and `state-table.ts` refuses one that does not.
-   */
-  readonly rootKind?: RootKind;
-  /**
    * The `data-slot` of the part that takes the set's `state` axis, for a root that a pointer does not
    * hover, a keyboard does not focus and a native `disabled` does not disable, as an Accordion item
-   * holds the trigger that does. `figma:compare` forces hover and focus on that part, and its markup
-   * check reads the state's attributes there. Undefined for a root that takes its states itself.
+   * holds the trigger that does. `figma:compare` forces hover and focus on that part. Undefined for a
+   * root that takes its states itself.
    */
   readonly statePart?: string;
   /**
-   * The element of the part that takes the set's `state` axis, for such a part that carries no
-   * `data-slot`, as Number field's `<input>` does, named as {@link ComponentDefinition.element} names
-   * a root. `figma:compare` forces hover and focus on it, and its markup check reads the state's
-   * attributes there. A definition names it or `statePart`, not both.
+   * The place of the element that takes the set's `state` axis where it carries no `data-slot`, as
+   * Number field's `<input>` sits at `field/1/0/0`, by the element-ordinal path a part's `place`
+   * names. `figma:compare` and the capture force hover and focus on it.
    */
-  readonly statePartElement?: ElementSelector;
+  readonly statePlace?: string;
   /**
    * The `data-slot` of the sibling before the root whose state the set's `state` axis follows, for a
    * root that reads it through `peer-*` variants, as a Sidebar menu badge reads its menu button's
@@ -520,19 +270,16 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly previewWidth?: number;
   /**
-   * The width each cell's container gives the root, for a set whose cells differ, as a Radio row fills
-   * the width of a vertical group and hugs in a horizontal one, where its container gives it none:
-   * undefined for such a cell. A definition names it or {@link ComponentDefinition.previewWidth}, not
-   * both.
+   * The width each cell's container gives the root, for a set whose cells differ, as the capture
+   * measured it around the root. A definition names it or {@link ComponentDefinition.previewWidth},
+   * not both.
    */
   readonly previewWidthFor?: (cell: Cell) => number | undefined;
   /**
    * The height in pixels the root's containing block gives it, which a root's percentage height
-   * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, a
-   * root's percentage height stays unmapped. The compare renderer draws the same block around it. A
-   * height that changes by density names its CSS length beside its dense pixels, as a Number field
-   * stepper's field box content height, `calc(var(--control-h-md) - 2px)`, so the root's `100%` binds
-   * what that length binds.
+   * takes, as the Sidebar demo frame's `h-[28rem]` gives the container's `h-full`. Without it, the
+   * root's percentage height takes the content height the elements around it set, or stays unmapped.
+   * The compare renderer draws the same block around it.
    */
   readonly previewHeight?: PreviewLength;
   /**
@@ -545,30 +292,12 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly viewport?: Viewport;
   /**
-   * `visible` for a root whose layers reach past it, as the open Select's popup casts its shadow
-   * below and beside the column that holds it, and a Tooltip's arrow hangs below its popup, so the
-   * root leaves them unclipped. Undefined for every other root, which clips, as a spread ring on the
-   * root needs, since Figma draws a frame's own shadow spread only where the frame clips (PR2). The
-   * build stops on a root that is `visible` and casts a shadow; a fill or a stroke draws the same
-   * either way.
+   * `visible` for a root whose layers reach past it, as an anchored composite's popup casts its
+   * shadow beside the column that holds it, so the root leaves them unclipped. Undefined for every
+   * other root, whose clipping its capture decides. The build stops on a root that is `visible` and
+   * casts a shadow.
    */
   readonly rootOverflow?: "visible";
-  /**
-   * The declarations the host sets around the root in a cell with no class to name them, which the
-   * root inherits over the page's, such as the type a Pagination link takes from the browser's
-   * medium font size and preflight on `<html>`, since its classes set none. Undefined for a root
-   * that inherits nothing more from the host. An element a Fuse recipe styles is named in
-   * `ancestorsFor` instead.
-   */
-  readonly inheritedFor?: (cell: Cell) => readonly OuterDeclaration[];
-  /**
-   * The elements between the page and the root in a cell, outermost first, each named by the
-   * recipe classes it carries, as a Breadcrumb link sits in `Breadcrumb.List` and `Breadcrumb.Item`.
-   * Each cascades its classes with the cell's states and facts, and the root inherits their
-   * computed values, as an invalid Field root passes its `data-invalid:text-error` to its input.
-   * Undefined, or none in a cell, for a root with no such element around it.
-   */
-  readonly ancestorsFor?: (cell: Cell) => readonly AncestorDefinition[];
   readonly axes: readonly AxisSpec[];
   /**
    * The axes added to the set after a file first held it, as Select trigger gained `width`. Each
@@ -580,91 +309,14 @@ export type ComponentDefinition = BoxDefinition & {
    */
   readonly addedAxes?: ReadonlySet<string>;
   readonly columnAxis: string;
-  /**
-   * The variants each of the component's own states renders, beyond the ones `state-table.ts`
-   * gives every component, such as `{ pending: ["data-disabled", "aria-disabled"] }`.
-   */
-  readonly states: Readonly<Record<string, readonly string[]>>;
-  /** Each variant only this component uses, and whether it holds in a cell. */
-  readonly facts: ReadonlyMap<string, (cell: Cell) => boolean>;
-  /**
-   * The variants of states this component leaves out on top of the shared ones, such as a
-   * group's corners. A class with one of them lands in the coverage table as dropped. A class
-   * with a variant neither the table nor the definition knows is unmapped, so a new state in
-   * the recipe fails the gate.
-   */
-  readonly omittedStates: ReadonlySet<string>;
-  /**
-   * The pseudo-elements the kit draws no layer for, such as `after` for a hit area, each with the
-   * reason a designer reads in the coverage table. A class on one of them lands there as dropped.
-   */
-  readonly omittedPseudoElements?: ReadonlyMap<string, string>;
-  /**
-   * The variants that style the component inside a composition the kit does not draw, or style
-   * a child it holds there, such as a label's `has-[>[data-slot=checkbox]]:` around a checkbox,
-   * each with the reason a designer reads in the coverage table. A class with one of them lands
-   * there as dropped.
-   */
-  readonly omittedCompositions?: ReadonlyMap<string, string>;
-  /**
-   * The media variants that style the component under a condition of the user's device the kit does
-   * not draw, such as `forced-colors:`, each with the reason a designer reads in the coverage table.
-   * A class with one of them lands there as dropped.
-   */
-  readonly omittedMedia?: ReadonlyMap<string, string>;
   /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
   readonly swapProperties: readonly SwapPropertySpec[];
-};
-
-/**
- * An element between the page and the root, named by its recipe classes. The kit draws no layer
- * for it. Its classes cascade in each cell as the root's do, and the root inherits its computed
- * values, so it takes the element's type and text color. Its own declarations that do not inherit,
- * such as a list's flex row, reach no drawn layer.
- */
-export type AncestorDefinition = {
-  /** The element's `data-slot`, which names it in the coverage table, such as `breadcrumb-list`. */
-  readonly slot: string;
-  /** The classes the element carries, as its recipe gives them. */
-  readonly classes: string;
-  /**
-   * Why the kit draws none of the element's own declarations that do not inherit, which the
-   * coverage table gives for each of them, such as `the list lays out and wraps the trail, which the
-   * set does not draw`.
-   */
-  readonly undrawn: string;
-  /**
-   * True for the ancestor that paints behind the root and whose box holds the root's, as
-   * `Sidebar.Provider`'s wrapper paints the inset panel's band. A root that paints no background
-   * takes this ancestor's background as its fill, and the coverage table names the ancestor's class.
-   * Undefined for every other ancestor. A cell names at most one.
-   */
-  readonly backdrop?: true;
-};
-
-/**
- * A declaration a part gets from outside its recipe, where its recipe sets nothing: one the
- * host page sets on an ancestor and the part inherits, such as the text color of an outline
- * Button, or one a base-layer rule sets on the part itself.
- */
-export type OuterDeclaration = {
-  /** The host class or the stylesheet rule that sets it, for the coverage table. */
-  readonly className: string;
-  readonly property: string;
-  readonly value: string;
 };
 
 /** What the builder needs besides the component. */
 export type BuildContext = {
   readonly compiled: CompiledUtilities;
   readonly variables: VariableIndex;
-  /** The inherited declarations of the host page, applied before every other declaration. */
-  readonly page: readonly OuterDeclaration[];
-  /**
-   * The base-layer declarations every root gets, applied after the page's and before every
-   * recipe class, since any utility beats the base layer. A root that does not read one drops it.
-   */
-  readonly base: readonly OuterDeclaration[];
   /**
    * Each mode of the synced collections, with the variables as it resolves them, which the build
    * measures a layer's geometry in where the bounds across all modes cannot tell. Undefined for none.
@@ -672,12 +324,14 @@ export type BuildContext = {
   readonly modes?: readonly ModeView[];
 };
 
-/** A component set and the coverage of the recipe classes it read. */
+/** A component set and the coverage of the captured declarations it read. */
 export type BuiltComponent = {
   readonly componentSet: Omit<ComponentSetSpec, "page">;
   readonly coverage: readonly CoverageRow[];
   /** Each font style the text layers use. */
   readonly fontStyles: readonly string[];
+  /** What each cell's cascade put into its layers, by the cell's key, which the coverage oracle reads. */
+  readonly accounting: ReadonlyMap<string, CellAccounting>;
 };
 
 /**
@@ -713,41 +367,6 @@ export function variantKey(
     (axis) => definition.addedAxes?.has(axis.name) !== true || cell[axis.name] !== axis.values[0]
   );
   return `${definition.key}/${keyed.map((axis) => `${axis.name}=${cell[axis.name] ?? ""}`).join(",")}`;
-}
-
-/**
- * Every class the elements around the root, the root, its parts and their icons use in any cell of
- * the matrix, which the build compiles. An instance part adds the classes the outer component passes
- * it, and those it gives the icons its swap properties place, in each cell that renders it. Its inner component's classes are the inner definition's own,
- * which the build compiles for the inner set, built first.
- *
- * @param definition - The component.
- * @returns The classes, in the order the elements first use them, the ancestors' before the boxes',
- *   and each box's before its icons'.
- */
-export function definitionClasses(definition: ComponentDefinition): readonly string[] {
-  return matrixCells(definition.axes).flatMap((cell) => [
-    ...(definition.ancestorsFor?.(cell) ?? []).flatMap((ancestor) => splitClasses(ancestor.classes)),
-    ...boxClasses(definition, cell),
-  ]);
-}
-
-/** The classes a box, its icons and the parts below it use in a cell, depth first. */
-function boxClasses(box: BoxDefinition, cell: Cell): readonly string[] {
-  return [
-    ...splitClasses(box.classesFor(cell)),
-    ...box.iconsFor(cell).flatMap((slot) => splitClasses(slot.classes ?? "")),
-    ...(box.parts ?? []).flatMap((part) =>
-      "kind" in part
-        ? part.shownIn(cell)
-          ? [
-              ...splitClasses(part.classesFor?.(cell) ?? ""),
-              ...Object.values(part.swapClasses?.(cell) ?? {}).flatMap(splitClasses),
-            ]
-          : []
-        : boxClasses(part, cell)
-    ),
-  ];
 }
 
 /** Every cell of the matrix, the first axis varying slowest. */

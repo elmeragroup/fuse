@@ -3,40 +3,25 @@
  * `<div>`, 36 cells, and the row as a link, 8 cells.
  *
  * - `Item` crosses the recipe's three variants and three sizes with `described` and the media kind.
- *   `described=on` adds the description, which `item-described:` reads: the media and the content
- *   then top-align, and icon media is one title line tall, `text-sm` at `leading-snug`, a literal
- *   19.25px, since no theme sets either value. The media kind is `icon`, the docs Lightning at
- *   16px, or `image`, the docs portrait framed in a rounded square that `group-data-[size]/item`
- *   sizes with the row. The recipe's `default` media holds whatever a consumer puts in it, as
- *   Empty's default media holds an illustration, so the set leaves it out.
+ *   `described=on` adds the description. The media kind is `icon`, the docs Lightning, or `image`,
+ *   the docs portrait. The recipe's `default` media holds whatever a consumer puts in it, as Empty's
+ *   default media holds an illustration, so the set leaves it out.
  * - The media and the actions hide behind the `Media` and `Actions` BOOLEAN properties, since a
  *   docs demo leaves either out and no class reads whether they are there. The description's
  *   presence is the `described` axis instead.
- * - The title is the docs Basic demo's `Spot` at 14/19.25 Medium, and the description its
- *   `Hourly price with no lock-in.` at 14/21 in `muted-foreground`, two lines at most, or 12/18 in
- *   an `xs` row. The actions hold the demo's plain text `Active`. A text property sets each.
- * - Beside a description, `item-described:self-start` tops the media and the content, so the row
- *   aligns its layers at the start, and the actions, which paint nothing and center their text,
- *   fill the row's height there, so their text sits where CSS centers the actions on the row (PF).
- * - `Item link` is the row rendered as an `<a>`, as the docs As a link demo renders it, where the
- *   recipe's `[a]:` arms hold: the default and outline variants in four states at the default
- *   size, with icon media and a title. Hover fills it `muted`, focus draws the 2px ring, and an
- *   `aria-disabled="true"` link dims to 50%, as the docs mark an unavailable link row.
+ * - The title is the docs Basic demo's `Spot`, and the description its `Hourly price with no
+ *   lock-in.`. The actions hold the demo's plain text `Active`. A text property sets each.
+ * - `Item link` is the row rendered as an `<a>`, as the docs As a link demo renders it: the default
+ *   and outline variants in four states at the default size, with icon media and a title. A
+ *   disabled cell is an `aria-disabled="true"` link, as the docs mark an unavailable link row.
  * - The header and the footer wait for kit components that hold instances, since the docs fill
  *   them with other components. A row in a DropdownMenu or an `Item.Group` is not drawn either.
  */
-import {
-  ITEM_TITLE_CLASSES,
-  itemActionsClass,
-  itemContentClass,
-  itemDescriptionClass,
-  itemMediaVariants,
-  itemVariants,
-} from "@elmeragroup/fuse/recipe-catalog";
+import { itemMediaVariants, itemVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { PartManifest, SetManifest } from "../capture/manifest";
+import type { IconManifest, PartManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
+import type { Cell } from "./component-spec";
 import { ownKey } from "./own-key";
 import { always } from "./popup-facts";
 import { portraitPng } from "./portrait";
@@ -122,7 +107,7 @@ export function itemLinkLook(cell: Cell): ItemLook {
 }
 
 /** The docs demos' Lightning in icon media, which the `Icon` swap property picks. */
-const LIGHTNING: IconSlot = {
+const LIGHTNING: IconManifest = {
   key: "icon",
   name: "Icon",
   side: "start",
@@ -132,189 +117,13 @@ const LIGHTNING: IconSlot = {
   swapProperty: "Icon",
 };
 
-/** The title, in the text a set gives it, which its `Title` property sets. */
-function title(characters: string): PartDefinition {
-  return {
-    key: "title",
-    slot: "item-title",
-    shownIn: always,
-    classesFor: () => ITEM_TITLE_CLASSES,
-    label: { key: "text", name: "text", characters, textProperty: "Title", shownIn: always },
-    iconsFor: () => [],
-  };
-}
-
-/** The description, in the `item` cells that hold one. */
-const DESCRIPTION: PartDefinition = {
-  key: "description",
-  slot: "item-description",
-  shownIn: (cell) => itemLook(cell).described,
-  classesFor: () => itemDescriptionClass,
-  label: {
-    key: "text",
-    name: "text",
-    characters: ITEM_DESCRIPTION_TEXT,
-    textProperty: "Description",
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
-
-/**
- * The media and the content column of a row, the row's classes, and the variants that read the row
- * around a part, by how a set reads its cells.
- *
- * @param look - What a cell of the set renders.
- * @param texts - The parts the content column holds.
- */
-function row(look: (cell: Cell) => ItemLook, texts: readonly PartDefinition[]) {
-  const holdsImage = (cell: Cell): boolean => look(cell).media === "image";
-
-  /** The docs portrait in image media, an `<img>` with no class of its own, which the media sizes. */
-  const image: PartDefinition = {
-    key: "image",
-    slot: undefined,
-    element: { tag: "img", attributes: {} },
-    shownIn: holdsImage,
-    classesFor: () => "",
-    label: undefined,
-    iconsFor: () => [],
-    image: portraitPng,
-  };
-
-  /** The media, behind the `Media` BOOLEAN property. */
-  const media: PartDefinition = {
-    key: "media",
-    slot: "item-media",
-    shownIn: always,
-    optional: { name: "Media", defaultValue: true },
-    classesFor: (cell) => itemMediaVariants({ variant: look(cell).media }),
-    label: undefined,
-    iconsFor: (cell) => (holdsImage(cell) ? [] : [LIGHTNING]),
-    parts: [image],
-  };
-
-  const content: PartDefinition = {
-    key: "content",
-    slot: "item-content",
-    shownIn: always,
-    classesFor: () => itemContentClass,
-    label: undefined,
-    iconsFor: () => [],
-    parts: texts,
-  };
-
-  /** The variants that read the row around a part: its size and whether it holds a description. */
-  const facts = new Map<string, (cell: Cell) => boolean>([
-    ...SIZES.map(
-      (size) => [`group-data-[size=${size}]/item`, (cell: Cell) => look(cell).size === size] as const
-    ),
-    ["item-described", (cell: Cell) => look(cell).described],
-  ]);
-
-  return {
-    classesFor: (cell: Cell) => itemVariants({ variant: look(cell).variant, size: look(cell).size }),
-    facts,
-    media,
-    content,
-  };
-}
-
-/** The actions, the demo's plain text in a `<span>`, behind the `Actions` BOOLEAN property. */
-const ACTIONS: PartDefinition = {
-  key: "actions",
-  slot: "item-actions",
-  shownIn: always,
-  optional: { name: "Actions", defaultValue: true },
-  classesFor: () => itemActionsClass,
-  label: {
-    key: "text",
-    name: "text",
-    characters: ITEM_ACTIONS_TEXT,
-    textProperty: "Actions text",
-    textElement: { tag: "span", attributes: {} },
-    shownIn: always,
-  },
-  iconsFor: () => [],
-};
-
-/** The compositions neither set draws, each with the reason a designer reads. */
-const OMITTED_COMPOSITIONS: ReadonlyMap<string, string> = new Map([
-  [
-    "in-data-[slot=dropdown-menu-content]",
-    "an extra-small row inside a DropdownMenu, which the set does not draw",
-  ],
-  ["[&+[data-slot=item-content]]", "a second Item.Content after this one, which the set does not draw"],
-]);
-
-const ITEM_ROW = row(itemLook, [title(ITEM_TITLE_TEXT), DESCRIPTION]);
-
-/**
- * An Item row as a `<div>`, as `<Item.Root variant size>` around its media, content and actions in
- * a 384px container.
- */
-export const ITEM: ComponentDefinition = {
-  key: "item",
-  name: "Item",
-  slot: "item",
-  axes: [
-    { name: "variant", values: VARIANTS },
-    { name: "size", values: SIZES },
-    { name: "described", values: ["off", "on"] },
-    { name: "media", values: MEDIA_KINDS },
-  ],
-  columnAxis: "size",
-  previewWidth: ITEM_PREVIEW_WIDTH,
-  classesFor: ITEM_ROW.classesFor,
-  states: {},
-  facts: ITEM_ROW.facts,
-  // A `<div>` row takes no focus, hover or disabled state; the link set draws them.
-  omittedStates: new Set(["focus-visible", "disabled", "aria-disabled"]),
-  omittedCompositions: new Map([
-    ...OMITTED_COMPOSITIONS,
-    ["[a]", "the row as a link, which the Item link set draws"],
-  ]),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [ITEM_ROW.media, ITEM_ROW.content, ACTIONS],
-  swapProperties: swapProperties([LIGHTNING]),
-};
-
-const LINK_ROW = row(itemLinkLook, [title(ITEM_LINK_TITLE_TEXT)]);
-
-/**
- * An Item row as a link, as `<Item.Root variant render={<a href="#order" />}>` around icon media and
- * a title in a 384px container, `aria-disabled="true"` where the cell is disabled.
- */
-export const ITEM_LINK: ComponentDefinition = {
-  key: "item-link",
-  name: "Item link",
-  slot: "item",
-  // An `<a>` takes no `disabled`, so the docs mark an unavailable link row `aria-disabled="true"`,
-  // which only its author stamps.
-  rootKind: "plain-element",
-  axes: [
-    { name: "variant", values: ["default", "outline"] },
-    { name: "state", values: ["rest", "hover", "focus", "disabled"] },
-  ],
-  columnAxis: "state",
-  previewWidth: ITEM_PREVIEW_WIDTH,
-  classesFor: LINK_ROW.classesFor,
-  states: { disabled: ["aria-disabled"] },
-  facts: new Map([...LINK_ROW.facts, ["[a]", always]]),
-  // An `<a>` never matches `:disabled`, which a `render={<button disabled />}` row reads.
-  omittedStates: new Set(["disabled"]),
-  omittedCompositions: OMITTED_COMPOSITIONS,
-  label: undefined,
-  iconsFor: () => [],
-  parts: [LINK_ROW.media, LINK_ROW.content],
-  swapProperties: swapProperties([LIGHTNING]),
-};
-
 /** The BOOLEAN property that hides the media. */
 const MEDIA_PROPERTY = { name: "Media", defaultValue: true };
 
-/** The media and the content column of a row as its manifest names them, for a set's look and texts. */
+/**
+ * The media and the content column of a row, for a set's look and texts. The media sits behind the
+ * `Media` BOOLEAN property, and image media holds the docs portrait, an `<img>` at its first place.
+ */
 function rowManifest(
   look: (cell: Cell) => ItemLook,
   texts: readonly PartManifest[]
@@ -351,7 +160,7 @@ function rowManifest(
   ];
 }
 
-/** The title as a manifest names it, in the text a set gives it. */
+/** The title, in the text a set gives it, which its `Title` property sets. */
 function titleManifest(characters: string): PartManifest {
   return {
     key: "title",
@@ -362,12 +171,21 @@ function titleManifest(characters: string): PartManifest {
   };
 }
 
-/** The Item row's manifest, which the capture-backed build reads with `captures/item.json`. */
+/**
+ * The Item row's manifest, which the capture-backed build reads with `captures/item.json`: an Item
+ * row as a `<div>`, as `<Item.Root variant size>` around its media, content and actions in a 384px
+ * container. The actions hold the demo's plain text in a `<span>`.
+ */
 export const ITEM_MANIFEST: SetManifest = {
   key: "item",
   name: "Item",
   slot: "item",
-  axes: ITEM.axes,
+  axes: [
+    { name: "variant", values: VARIANTS },
+    { name: "size", values: SIZES },
+    { name: "described", values: ["off", "on"] },
+    { name: "media", values: MEDIA_KINDS },
+  ],
   columnAxis: "size",
   previewWidth: ITEM_PREVIEW_WIDTH,
   label: undefined,
@@ -379,7 +197,13 @@ export const ITEM_MANIFEST: SetManifest = {
         key: "description",
         slot: "item-description",
         shownIn: (cell) => itemLook(cell).described,
-        label: DESCRIPTION.label,
+        label: {
+          key: "text",
+          name: "text",
+          characters: ITEM_DESCRIPTION_TEXT,
+          textProperty: "Description",
+          shownIn: always,
+        },
         iconsFor: () => [],
       },
     ]),
@@ -398,19 +222,26 @@ export const ITEM_MANIFEST: SetManifest = {
       iconsFor: () => [],
     },
   ],
-  swapProperties: ITEM.swapProperties,
+  swapProperties: swapProperties([LIGHTNING]),
 };
 
-/** The link row's manifest, which the capture-backed build reads with `captures/item-link.json`. */
+/**
+ * The link row's manifest, which the capture-backed build reads with `captures/item-link.json`: an
+ * Item row as a link, as `<Item.Root variant render={<a href="#order" />}>` around icon media and a
+ * title in a 384px container, `aria-disabled="true"` where the cell is disabled.
+ */
 export const ITEM_LINK_MANIFEST: SetManifest = {
   key: "item-link",
   name: "Item link",
   slot: "item",
-  axes: ITEM_LINK.axes,
+  axes: [
+    { name: "variant", values: ["default", "outline"] },
+    { name: "state", values: ["rest", "hover", "focus", "disabled"] },
+  ],
   columnAxis: "state",
   previewWidth: ITEM_PREVIEW_WIDTH,
   label: undefined,
   iconsFor: () => [],
   parts: rowManifest(itemLinkLook, [titleManifest(ITEM_LINK_TITLE_TEXT)]),
-  swapProperties: ITEM_LINK.swapProperties,
+  swapProperties: swapProperties([LIGHTNING]),
 };

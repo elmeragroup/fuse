@@ -4,24 +4,17 @@
  * holds every variant at the four square sizes in five states, 140 cells, each an icon with no
  * label.
  *
- * - `default` and `secondary` fill with a bound color. `outline` draws a border whose width is
- *   a variable and casts a shadow whose blur and spread are formulas over it. `destructive` and
- *   `success` fill and stroke with role tints such as `error/10`. `ghost` fills only on hover,
- *   and `link` draws no box and underlines on hover.
- * - Each size reads its own row of the `Fuse density` control metrics.
- * - The states map Fuse's state variants onto one `state` axis. Hover comes from
- *   `enabled-hover:`, focus from `focus-visible:` and disabled from the three disabled faces.
- *   Pending is the disabled face plus a spinner in the leading slot, as `isPending` renders it.
- * - An icon moves the padding on its side through `has-data-[icon=inline-*]:`. Each icon is an
- *   instance of the kit's icon components, which a swap property picks.
- * - `icon-inline` stays out. It takes its size from the surrounding text line, which a
- *   standalone component does not have.
+ * - The `state` axis holds rest, hover, focus, disabled and pending. A pending cell shows a spinner
+ *   in the leading slot, as `isPending` renders it.
+ * - Each icon is an instance of the kit's icon components, which a swap property picks.
+ * - `icon-inline` stays out. It takes its size from the surrounding text line, which a standalone
+ *   component does not have.
  */
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { SetManifest } from "../capture/manifest";
+import type { IconManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import type { Cell } from "./component-spec";
 import { ownKey } from "./own-key";
 
 type ButtonVariant = keyof typeof buttonVariants.variants.variant;
@@ -41,41 +34,13 @@ function isVariant(value: string | undefined): value is ButtonVariant {
   return ownKey(buttonVariants.variants.variant, value);
 }
 
-function isSize(value: string | undefined): value is ButtonSize {
-  return ownKey(buttonVariants.variants.size, value);
-}
-
-function classesFor(cell: Cell): string {
-  const { variant, size } = cell;
-  if (!isVariant(variant) || !isSize(size)) {
-    throw new Error(`Button has no variant ${variant ?? ""} or size ${size ?? ""}`);
-  }
-  return buttonVariants({ variant, size });
-}
-
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled", "pending"] };
-
-/**
- * The variants a pending Button renders beyond the disabled face's `data-disabled`. It stays
- * focusable, so Base UI marks it `aria-disabled` instead of `disabled`, and Button stamps
- * `data-pending-indicator` while the spinner shows.
- */
-export const BUTTON_PENDING_ONLY_VARIANTS = ["aria-disabled", "data-[pending-indicator]"] as const;
-
-/**
- * A pending Button draws the disabled look of the state face. `state-table.ts` gives hover, focus
- * and disabled their variants.
- */
-const STATES = { pending: ["data-disabled", ...BUTTON_PENDING_ONLY_VARIANTS] };
-
-/** The group corners belong to a Button group, which a standalone component does not show. */
-export const BUTTON_OMITTED_STATES: ReadonlySet<string> = new Set(["in-data-[slot=button-group]"]);
 
 /**
  * The spinner `isPending` renders in a span that carries `data-icon="inline-start"`, so a
  * pending cell takes the start icon's padding even with no icon of its own.
  */
-const SPINNER: IconSlot = {
+const SPINNER: IconManifest = {
   key: "spinner",
   name: "Spinner",
   side: "start",
@@ -85,7 +50,7 @@ const SPINNER: IconSlot = {
   swapProperty: undefined,
 };
 
-const START_ICON: IconSlot = {
+const START_ICON: IconManifest = {
   key: "icon-start",
   name: "Start icon",
   side: "start",
@@ -95,7 +60,7 @@ const START_ICON: IconSlot = {
   swapProperty: "Start icon",
 };
 
-const END_ICON: IconSlot = {
+const END_ICON: IconManifest = {
   key: "icon-end",
   name: "End icon",
   side: "end",
@@ -106,7 +71,7 @@ const END_ICON: IconSlot = {
 };
 
 /** The one icon of an icon button, a bare `<svg>` child, as `<Button size="icon"><Plus /></Button>`. */
-const ONLY_ICON: IconSlot = {
+const ONLY_ICON: IconManifest = {
   key: "icon-only",
   name: "Icon",
   side: "start",
@@ -120,7 +85,7 @@ const ONLY_ICON: IconSlot = {
  * The icons the cell's `icon` value places, then the spinner when the cell is pending, in DOM
  * order. Button renders the spinner after its children and `order-first` draws it first.
  */
-function buttonIcons(cell: Cell): readonly IconSlot[] {
+function buttonIcons(cell: Cell): readonly IconManifest[] {
   const pending = cell.state === "pending" ? [SPINNER] : [];
   switch (cell.icon) {
     case "start":
@@ -138,11 +103,11 @@ function buttonIcons(cell: Cell): readonly IconSlot[] {
  */
 export const BUTTON_LABEL = "Button";
 
-export const BUTTON: ComponentDefinition = {
+/** The Button's manifest, which the capture-backed build reads with `captures/button.json`. */
+export const BUTTON_MANIFEST: SetManifest = {
   key: "button",
   name: "Button",
   slot: "button",
-  rootKind: "native-control",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: BUTTON_LABEL_SIZES },
@@ -150,10 +115,6 @@ export const BUTTON: ComponentDefinition = {
     { name: "icon", values: ["none", "start", "end"] },
   ],
   columnAxis: "state",
-  classesFor,
-  states: STATES,
-  facts: new Map(),
-  omittedStates: BUTTON_OMITTED_STATES,
   label: {
     key: "label",
     name: "label",
@@ -165,45 +126,19 @@ export const BUTTON: ComponentDefinition = {
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
 
-/** The Button's manifest, which the capture-backed build reads with `captures/button.json`. */
-export const BUTTON_MANIFEST: SetManifest = {
-  key: "button",
-  name: "Button",
-  slot: "button",
-  axes: BUTTON.axes,
-  columnAxis: "state",
-  label: BUTTON.label,
-  iconsFor: buttonIcons,
-  swapProperties: BUTTON.swapProperties,
-};
-
-/** The square sizes, as `<Button size="icon">` renders them around a lone icon. */
-export const ICON_BUTTON: ComponentDefinition = {
+/**
+ * The Icon button's manifest, which the capture-backed build reads with `captures/icon-button.json`.
+ * Its square sizes are the ones `<Button size="icon">` renders around a lone icon.
+ */
+export const ICON_BUTTON_MANIFEST: SetManifest = {
   key: "icon-button",
   name: "Icon button",
   slot: "button",
-  rootKind: "native-control",
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",
-  classesFor,
-  states: STATES,
-  facts: new Map(),
-  omittedStates: BUTTON_OMITTED_STATES,
   label: undefined,
   // The icons sit in DOM order. Button renders the spinner after its children, and the recipe
   // hides the icon while the spinner shows, so the kit draws the spinner alone.
   iconsFor: (cell) => (cell.state === "pending" ? [ONLY_ICON, SPINNER] : [ONLY_ICON]),
   swapProperties: swapProperties([ONLY_ICON]),
-};
-
-/** The Icon button's manifest, which the capture-backed build reads with `captures/icon-button.json`. */
-export const ICON_BUTTON_MANIFEST: SetManifest = {
-  key: "icon-button",
-  name: "Icon button",
-  slot: "button",
-  axes: ICON_BUTTON.axes,
-  columnAxis: "state",
-  label: undefined,
-  iconsFor: ICON_BUTTON.iconsFor,
-  swapProperties: ICON_BUTTON.swapProperties,
 };

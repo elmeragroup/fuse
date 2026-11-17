@@ -1,3 +1,6 @@
+import { affineLength, constantOf, normalizeCss, scaleAffine, sumAffine } from "./css-values";
+import type { AffineLength } from "./css-values";
+import type { AnchoredSpec } from "./kit-spec";
 /**
  * An instance part placed absolutely at its parent's end, and down either centred, as a Sidebar menu
  * badge's `absolute right-1 top-[calc(var(--row-h)/2-0.625rem)]` sits over the end of its row, or a
@@ -19,10 +22,7 @@
  * frame whose size changes by mode keeps its x instead (W5-P14b). Every box the kit builds is auto
  * layout, as `DirectionSpec` holds and `anchored-instances.test.ts` pins.
  */
-import type { LayerStyle } from "./cascade";
-import { affineLength, constantOf, normalizeCss, scaleAffine, sumAffine } from "./css-values";
-import type { AffineLength } from "./css-values";
-import type { AnchoredSpec } from "./kit-spec";
+import type { LayerStyle } from "./layer-style";
 
 /** Why an absolute instance part stays unmapped, or its placement. */
 type Anchoring =

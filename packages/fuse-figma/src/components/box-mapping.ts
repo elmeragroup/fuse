@@ -6,6 +6,7 @@
  * assembles a set from the root of each cell.
  */
 
+import type { BoxCascade, PartElement } from "./box-cascade";
 import type { MarkerReading } from "./box-flow";
 import {
   isPlainBlock,
@@ -36,7 +37,6 @@ import {
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import type { BoxCascade, Feed, LayerStyle, PartElement, SpecField } from "./cascade";
 import type {
   BoxDefinition,
   BuildContext,
@@ -45,7 +45,6 @@ import type {
   InstanceDefinition,
   LabelDefinition,
   PartDefinition,
-  TextPlacement,
 } from "./component-spec";
 import {
   describeNumber,
@@ -61,7 +60,7 @@ import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
-import { holdsWidthRow, namedMinimum, rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
+import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, ZERO } from "./kit-spec";
 import type {
@@ -86,7 +85,8 @@ import {
   readWithoutLabel,
   spaceBeforeLabel,
 } from "./label-layout";
-import type { LabelScope } from "./label-layout";
+import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
+import type { Feed, LayerStyle, SpecField } from "./layer-style";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
 import {
@@ -208,17 +208,14 @@ function readDisplay(
   // Blocks fill a box only across a width it has before they lay out, but one block fills a box
   // that hugs its width exactly, since the box shrinks to fit that block.
   const stacked = layout.blocks && (width.kind !== "hug" || layers.length === 1);
-  // A list item with no marker lays out as the block box it is (CSS Display 3 §2.3). The recipe
-  // cascade, which assumes no marker, maps one only where it stacks its blocks.
-  const assumed = display === "list-item" && markers === "assumed-none";
-  const plainBlock = isPlainBlock(reader, markers) && (!assumed || stacked);
+  // A list item with no marker lays out as the block box it is (CSS Display 3 §2.3).
+  const plainBlock = isPlainBlock(reader, markers);
   const marker =
-    display === "list-item" && !assumed
+    display === "list-item"
       ? ", a list item whose resolved `list-style-type` and `list-style-image` are `none`, so it draws no marker"
       : "";
-  const stackDetail = assumed
-    ? "a vertical auto layout, its block-level parts stacked down it as in a block box, since Tailwind preflight's `list-style: none` on the list leaves the item no marker"
-    : "a vertical auto layout, its block-level parts stacked down it, each as wide as the box";
+  const stackDetail =
+    "a vertical auto layout, its block-level parts stacked down it, each as wide as the box";
   const flow =
     display === "inline-block" && ownText
       ? literalLayout(
@@ -319,12 +316,10 @@ const SIDE_PADDINGS = ["padding-left", "padding-right"] as const;
 export type PropertyValues = {
   readonly text: Readonly<Record<string, string>>;
   readonly swap: Readonly<Record<string, string>>;
-  /** The classes the outer component gives the icon each INSTANCE_SWAP property places. */
-  readonly swapClasses: Readonly<Record<string, string>>;
 };
 
 /** No property values, as a set's own cells take their labels and icons from the definition. */
-export const NO_VALUES: PropertyValues = { text: {}, swap: {}, swapClasses: {} };
+export const NO_VALUES: PropertyValues = { text: {}, swap: {} };
 
 /** A label showing the characters a TEXT value gives its property, where one does. */
 function labelWith(label: LabelDefinition, text: PropertyValues["text"]): LabelDefinition {
@@ -342,10 +337,9 @@ const CONTROL_PLACEMENTS: ReadonlyMap<string, TextPlacement> = new Map([
   ["textarea", { horizontal: "start", vertical: "top", lines: "wrap" }],
 ]);
 
-/** A label with the placement its box's element gives it, where the label names none and the box is a form control. */
-function withControlPlacement(label: LabelDefinition, tag: string | undefined): LabelDefinition {
-  const placement =
-    label.placement === undefined && tag !== undefined ? CONTROL_PLACEMENTS.get(tag) : undefined;
+/** A label with the placement its box's element gives it, where the box is a form control. */
+function withControlPlacement(label: LabelDefinition, tag: string | undefined): PlacedLabel {
+  const placement = tag === undefined ? undefined : CONTROL_PLACEMENTS.get(tag);
   return placement === undefined ? label : { ...label, placement };
 }
 
@@ -353,11 +347,6 @@ function withControlPlacement(label: LabelDefinition, tag: string | undefined): 
 function slotWith(slot: IconSlot, swap: PropertyValues["swap"]): IconSlot {
   const icon = slot.swapProperty === undefined ? undefined : swap[slot.swapProperty];
   return icon === undefined ? slot : { ...slot, icon };
-}
-
-/** The classes the outer component gives the icon a slot's swap property places, if any. */
-function givenClasses(slot: IconSlot, values: PropertyValues): string | undefined {
-  return slot.swapProperty === undefined ? undefined : values.swapClasses[slot.swapProperty];
 }
 
 /** A part a cell shows in a box, cascaded: a frame, or an instance of another set. */
@@ -432,7 +421,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // The style of the last icon on each side, where a row's last layer can set an auto margin.
   const lastIcon = new Map<IconSlot["side"], LayerStyle>();
   for (const slot of slots) {
-    const style = cascade.icon(slot, givenClasses(slot, scope.values));
+    const style = cascade.icon(slot);
     const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
       (slot.side === "start" ? start : end).push(icon);
@@ -468,14 +457,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const before = inDom.filter((part) => !afterLabel(part));
   const trailing = inDom.filter((part) => afterLabel(part));
   const shown = [...before, ...trailing];
-  // Every part and icon is an element child, absolute or hidden ones too, and so is the element a
-  // label's characters sit in, beside the ones the definition draws no layer for.
-  const undrawn = box.undrawnChildren?.(cell);
-  const elementChildren =
-    cascade.elementChildren ??
-    (undrawn === undefined
-      ? undefined
-      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn);
+  const { elementChildren } = cascade;
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));
   const flowingAfter = trailing.filter((part) => !outOfFlow(part.cascade.style));
@@ -488,13 +470,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...others.map(({ name }) => name),
     ...flowingAfter.map(({ name }) => name),
   ];
-  // A cascade that read the element resolves a list item's marker; the recipe cascade assumes none.
-  const markers: MarkerReading =
-    cascade.elementTag === undefined
-      ? "assumed-none"
-      : cascade.markerContent === true
-        ? "content"
-        : "resolved";
+  // The capture resolves a list item's marker, and records a `::marker` only where it sets `content`.
+  const markers: MarkerReading = cascade.markerContent === true ? "content" : "resolved";
   // A part's own `align-self` can decide the box's alignment, so the layout reads once they cascade.
   const flow = readFlow(
     reader,
@@ -552,7 +529,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const growing = readGrowth(
     holder,
     flowing.map((part) => part.cascade.style),
-    box.underMaxHeight ?? cascade.measured?.underMaxHeight
+    cascade.measured?.underMaxHeight
   );
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
@@ -570,7 +547,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     )
       ? last.cascade.style
       : undefined;
-  const fitsOneLine = box.fitsOneLine ?? cascade.measured?.fitsOneLine;
+  const fitsOneLine = cascade.measured?.fitsOneLine;
   readWraps(holder, growing, fitsOneLine);
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
@@ -580,11 +557,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // A popup that hugs its rows hugs the one that sets its width and fills the others.
   const across = rowsAcross(
     { layout, width: sizing.horizontal, limits },
-    flowing.map(
-      (part) =>
-        holdsWidthRow(part.kind === "instance" ? part.visit.part : part.child, cell) ||
-        part.cascade.measured?.holdsWidest === true
-    )
+    flowing.map((part) => part.cascade.measured?.holdsWidest === true)
   );
   const minimum =
     across === undefined ? undefined : rowMinimum(limits.minWidth, room, reader, context.variables);
@@ -958,9 +931,8 @@ function leadingAbsolute(parts: readonly ShownPart[]): ShownPart | undefined {
 }
 
 /**
- * Cascade the parts a box shows in the cell, each below the box: a frame part's own classes, style
- * attribute and element defaults, and an instance part's inner root, as {@link InstanceParts.cascade}
- * builds it in place.
+ * Cascade the parts a box shows in the cell, each below the box: a frame part, and an instance part's
+ * inner root, as {@link InstanceParts.cascade} builds it in place.
  *
  * @param box - The box's definition.
  * @param cascade - The box's cascade.
@@ -976,38 +948,13 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         return scope.instances.cascade(child, cascade, cell);
       }
       const name = partName(child);
-      if (child.facts !== undefined && (child.parts?.length ?? 0) > 0) {
-        throw new KitUnmappable({ message: `the part ${name} holds parts, which carry none of its facts` });
-      }
-      return {
-        kind: "frame",
-        child,
-        key: child.key,
-        name,
-        cascade: cascade.part(
-          child.classesFor(cell),
-          name,
-          elementOf(child),
-          {
-            inline: child.styleFor?.(cell) ?? [],
-            defaults: child.elementDefaults ?? [],
-          },
-          child.facts
-        ),
-      };
+      return { kind: "frame", child, key: child.key, name, cascade: cascade.part(name, elementOf(child)) };
     });
 }
 
-/**
- * What finds a frame part's element: its key, its `data-slot` or the tag a direct-child selector
- * reaches it by, and its place, where a capture-backed build finds a part without a `data-slot`.
- */
+/** What finds a frame part's element: its key, its `data-slot`, or its place for a part without one. */
 function elementOf(child: PartDefinition): PartElement {
-  const element: PartElement = {
-    key: child.key,
-    slot: child.slot,
-    tag: child.slot === undefined ? child.element?.tag : child.tag,
-  };
+  const element: PartElement = { key: child.key, slot: child.slot };
   const placed = child.place === undefined ? element : { ...element, place: child.place };
   const optional = child.optional === undefined ? placed : { ...placed, optional: true as const };
   return child.after === undefined ? optional : { ...optional, after: child.after };
@@ -1039,12 +986,7 @@ function mapPart(
   first: boolean
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
-  const minimum = namedMinimum(
-    part.kind === "instance" ? part.visit.part : part.child,
-    scope.cell,
-    room,
-    part.cascade.measured?.widest === true
-  );
+  const minimum = part.cascade.measured?.widest === true ? room.rowMinimum : undefined;
   if (part.kind === "instance") {
     const fixed = fixedPlace(
       { own: part.visit.part.of.viewport, composite: scope.viewport, style: part.cascade.style },
@@ -1212,11 +1154,7 @@ function labelBox(
   label: LabelDefinition,
   growing: number | undefined
 ): Holder {
-  const element = cascade.labelElement({
-    tag: label.textElement?.tag,
-    last: holder.layers.at(-1) === label.name,
-    key: label.key,
-  });
+  const element = cascade.labelElement({ last: holder.layers.at(-1) === label.name, key: label.key });
   return element === undefined ? holder : (labelElementHolder(holder, element, label, growing) ?? holder);
 }
 

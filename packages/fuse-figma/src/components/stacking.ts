@@ -1,3 +1,6 @@
+import { normalizeCss } from "./css-values";
+import { coveredShadow, walkLayers } from "./kit-spec";
+import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, InstanceLayerSpec } from "./kit-spec";
 /**
  * The paint order of a box that stacks blocks, as `box-mapping.ts` maps it: whether the box puts its
  * first layer on top, where CSS paints a ring an earlier block's layer casts over a later block's
@@ -5,10 +8,7 @@
  * inside it, at any depth, drawn as its inner root built in place, as {@link PaintedInstances} keeps
  * them.
  */
-import type { LayerStyle } from "./cascade";
-import { normalizeCss } from "./css-values";
-import { coveredShadow, walkLayers } from "./kit-spec";
-import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, InstanceLayerSpec } from "./kit-spec";
+import type { LayerStyle } from "./layer-style";
 
 /**
  * What each instance layer of a mapping paints: the inner root it draws as built in place, with the

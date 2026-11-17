@@ -85,15 +85,6 @@ const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, o
     );
   }
   yield* Console.log(`Report: ${resolve(options.outDir, "report.html")}`);
-  const differences = [...report.rows, ...report.skipped].flatMap((entry) =>
-    entry.markup.map(({ message }) => `  ${message}  (${entry.preview})`)
-  );
-  if (differences.length > 0) {
-    yield* Console.error(
-      `The mounted markup of ${String(differences.length)} client cells differs from their definitions:\n${differences.join("\n")}`
-    );
-    return yield* new CompareStopped();
-  }
 });
 
 const program = Effect.gen(function* () {

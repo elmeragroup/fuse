@@ -1,3 +1,6 @@
+import { describeNumber, evaluateLength, normalizeCss, readNumber, splitTopLevel } from "./css-values";
+import type { VariableIndex } from "./css-values";
+import type { NumberSpec } from "./kit-spec";
 /**
  * A translate across that every row of a column shares, as each Sidebar sub row's `-translate-x-px`
  * moves it 1px left over its sub menu's padding. A translate moves a box's painting and leaves the
@@ -10,10 +13,7 @@
  * holds shares a translate, the box carries it to its own column, as a sub row's `<li>` carries its
  * link's. Any other translate stays unread, so it lands in the coverage table as unmapped.
  */
-import type { LayerStyle } from "./cascade";
-import { describeNumber, evaluateLength, normalizeCss, readNumber, splitTopLevel } from "./css-values";
-import type { VariableIndex } from "./css-values";
-import type { NumberSpec } from "./kit-spec";
+import type { LayerStyle } from "./layer-style";
 
 /** A box whose `translate` moves it: its style, and whether it is an instance's root built in place. */
 type Carrier = { readonly style: LayerStyle; readonly instance: boolean };

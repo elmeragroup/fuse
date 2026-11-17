@@ -9,181 +9,108 @@
  * through `buildComponentSets()`.
  */
 import type { SetManifest } from "../capture/manifest";
-import { ACCORDION_ITEM, ACCORDION_ITEM_MANIFEST } from "./accordion-kit";
+import { ACCORDION_ITEM_MANIFEST } from "./accordion-kit";
+import { ALERT_DIALOG_CONTENT_MANIFEST, ALERT_DIALOG_OPEN_MANIFEST } from "./alert-dialog-kit";
+import { ALERT_MANIFEST } from "./alert-kit";
+import { AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
+import { BADGE_MANIFEST } from "./badge-kit";
 import {
-  ALERT_DIALOG_CONTENT,
-  ALERT_DIALOG_CONTENT_MANIFEST,
-  ALERT_DIALOG_OPEN,
-  ALERT_DIALOG_OPEN_MANIFEST,
-} from "./alert-dialog-kit";
-import { ALERT, ALERT_MANIFEST } from "./alert-kit";
-import { AVATAR, AVATAR_GROUP, AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
-import { BADGE, BADGE_MANIFEST } from "./badge-kit";
-import {
-  BREADCRUMB_ELLIPSIS,
   BREADCRUMB_ELLIPSIS_MANIFEST,
-  BREADCRUMB_LINK,
   BREADCRUMB_LINK_MANIFEST,
-  BREADCRUMB_PAGE,
   BREADCRUMB_PAGE_MANIFEST,
-  BREADCRUMB_SEPARATOR,
   BREADCRUMB_SEPARATOR_MANIFEST,
-  BREADCRUMB_TRAIL,
   BREADCRUMB_TRAIL_MANIFEST,
 } from "./breadcrumb-kit";
-import { BUTTON, BUTTON_MANIFEST, ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
-import { CHECKBOX, CHECKBOX_MANIFEST } from "./checkbox-kit";
+import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
+import { CHECKBOX_MANIFEST } from "./checkbox-kit";
 import {
-  COMBOBOX_EMPTY,
   COMBOBOX_EMPTY_MANIFEST,
-  COMBOBOX_ITEM,
   COMBOBOX_ITEM_MANIFEST,
-  COMBOBOX_OPEN,
   COMBOBOX_OPEN_MANIFEST,
-  COMBOBOX_POPUP,
   COMBOBOX_POPUP_MANIFEST,
 } from "./combobox-kit";
-import {
-  COMMAND_DIALOG_OPEN,
-  COMMAND_DIALOG_OPEN_MANIFEST,
-  COMMAND_PALETTE,
-  COMMAND_PALETTE_MANIFEST,
-} from "./command-dialog-kit";
-import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST, COMMAND_LIST, COMMAND_LIST_MANIFEST } from "./command-kit";
+import { COMMAND_DIALOG_OPEN_MANIFEST, COMMAND_PALETTE_MANIFEST } from "./command-dialog-kit";
+import { COMMAND_ITEM_MANIFEST, COMMAND_LIST_MANIFEST } from "./command-kit";
 import { matrixCells } from "./component-spec";
-import type { Cell, ComponentDefinition } from "./component-spec";
-import { CONFIRM_BUTTON, CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
-import { DIALOG_CONTENT, DIALOG_CONTENT_MANIFEST, DIALOG_OPEN, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
+import type { Cell } from "./component-spec";
+import { CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
+import { DIALOG_CONTENT_MANIFEST, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
-  DROPDOWN_MENU_CHECKBOX_ITEM,
   DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
-  DROPDOWN_MENU_ITEM,
   DROPDOWN_MENU_ITEM_MANIFEST,
-  DROPDOWN_MENU_RADIO_ITEM,
   DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
-  DROPDOWN_MENU_SUB_TRIGGER,
   DROPDOWN_MENU_SUB_TRIGGER_MANIFEST,
 } from "./dropdown-menu-kit";
 import {
-  DROPDOWN_MENU_OPEN,
   DROPDOWN_MENU_OPEN_MANIFEST,
-  DROPDOWN_MENU_POPUP,
   DROPDOWN_MENU_POPUP_MANIFEST,
-  DROPDOWN_MENU_SUB_CONTENT,
   DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
 } from "./dropdown-popup-kit";
-import { EMPTY, EMPTY_MANIFEST } from "./empty-kit";
+import { EMPTY_MANIFEST } from "./empty-kit";
 import {
-  FIELD_DESCRIPTION,
   FIELD_DESCRIPTION_MANIFEST,
-  FIELD_ERROR,
   FIELD_ERROR_MANIFEST,
-  FIELD_LEGEND,
   FIELD_LEGEND_MANIFEST,
-  FIELD_TITLE,
   FIELD_TITLE_MANIFEST,
 } from "./field-text-kit";
-import { FILE_UPLOAD_DROPZONE, FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
-import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
-import { INPUT, INPUT_MANIFEST } from "./input-kit";
-import { ITEM, ITEM_LINK, ITEM_LINK_MANIFEST, ITEM_MANIFEST } from "./item-kit";
-import { KBD, KBD_GROUP, KBD_GROUP_MANIFEST, KBD_MANIFEST } from "./kbd-kit";
+import { FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
+import { INPUT_GROUP_MANIFEST } from "./input-group-kit";
+import { INPUT_MANIFEST } from "./input-kit";
+import { ITEM_LINK_MANIFEST, ITEM_MANIFEST } from "./item-kit";
+import { KBD_GROUP_MANIFEST, KBD_MANIFEST } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
-import { LABEL, LABEL_MANIFEST } from "./label-kit";
-import { LINK, LINK_MANIFEST } from "./link-kit";
-import { LOADER, LOADER_MANIFEST } from "./loader-kit";
+import type { AxisSpec } from "./kit-spec";
+import { LABEL_MANIFEST } from "./label-kit";
+import { LINK_MANIFEST } from "./link-kit";
+import { LOADER_MANIFEST } from "./loader-kit";
+import { MENU_GROUP_LABEL_MANIFEST, MENU_SEPARATOR_MANIFEST } from "./menu-kit";
+import { METER_MANIFEST } from "./meter-kit";
 import {
-  MENU_GROUP_LABEL,
-  MENU_GROUP_LABEL_MANIFEST,
-  MENU_SEPARATOR,
-  MENU_SEPARATOR_MANIFEST,
-} from "./menu-kit";
-import { METER, METER_MANIFEST } from "./meter-kit";
-import {
-  NAVIGATION_MENU_BAR_LINK,
   NAVIGATION_MENU_BAR_LINK_MANIFEST,
-  NAVIGATION_MENU_BAR_TRIGGER,
   NAVIGATION_MENU_BAR_TRIGGER_MANIFEST,
-  NAVIGATION_MENU_ROW_LINK,
   NAVIGATION_MENU_ROW_LINK_MANIFEST,
-  NAVIGATION_MENU_VERTICAL_TRIGGER,
   NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST,
 } from "./navigation-menu-kit";
-import { NAVIGATION_MENU_POPUP, NAVIGATION_MENU_POPUP_MANIFEST } from "./navigation-menu-popup-kit";
+import { NAVIGATION_MENU_POPUP_MANIFEST } from "./navigation-menu-popup-kit";
+import { NUMBER_FIELD_MANIFEST, NUMBER_FIELD_STEPPER_MANIFEST } from "./number-field-kit";
 import {
-  NUMBER_FIELD,
-  NUMBER_FIELD_MANIFEST,
-  NUMBER_FIELD_STEPPER,
-  NUMBER_FIELD_STEPPER_MANIFEST,
-} from "./number-field-kit";
-import {
-  PAGINATION_EDGE,
   PAGINATION_EDGE_MANIFEST,
-  PAGINATION_ELLIPSIS,
   PAGINATION_ELLIPSIS_MANIFEST,
-  PAGINATION_LINK,
   PAGINATION_LINK_MANIFEST,
-  PAGINATION_ROW,
   PAGINATION_ROW_MANIFEST,
 } from "./pagination-kit";
+import { POPOVER_CONTENT_MANIFEST, POPOVER_OPEN_MANIFEST } from "./popover-kit";
+import { RADIO_GROUP_MANIFEST } from "./radio-group-kit";
+import { RADIO_ICON_BUTTON_MANIFEST } from "./radio-icon-button-kit";
+import { RADIO_MANIFEST } from "./radio-kit";
+import { RADIO_ROW_MANIFEST } from "./radio-row-kit";
+import { SELECT_FIELD_MANIFEST } from "./select-field-kit";
+import { SELECT_ITEM_MANIFEST, SELECT_OPEN_MANIFEST, SELECT_POPUP_MANIFEST } from "./select-kit";
+import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
+import { SEPARATOR_MANIFEST } from "./separator-kit";
 import {
-  POPOVER_CONTENT,
-  POPOVER_CONTENT_MANIFEST,
-  POPOVER_OPEN,
-  POPOVER_OPEN_MANIFEST,
-} from "./popover-kit";
-import { RADIO_GROUP, RADIO_GROUP_MANIFEST } from "./radio-group-kit";
-import { RADIO_ICON_BUTTON, RADIO_ICON_BUTTON_MANIFEST } from "./radio-icon-button-kit";
-import { RADIO, RADIO_MANIFEST } from "./radio-kit";
-import { RADIO_ROW, RADIO_ROW_MANIFEST } from "./radio-row-kit";
-import { SELECT_FIELD, SELECT_FIELD_MANIFEST } from "./select-field-kit";
-import {
-  SELECT_ITEM,
-  SELECT_ITEM_MANIFEST,
-  SELECT_OPEN,
-  SELECT_OPEN_MANIFEST,
-  SELECT_POPUP,
-  SELECT_POPUP_MANIFEST,
-} from "./select-kit";
-import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
-import { SEPARATOR, SEPARATOR_MANIFEST } from "./separator-kit";
-import {
-  SIDEBAR_GROUP_LABEL,
   SIDEBAR_GROUP_LABEL_MANIFEST,
-  SIDEBAR_MENU_BADGE,
   SIDEBAR_MENU_BADGE_MANIFEST,
-  SIDEBAR_MENU_BUTTON,
   SIDEBAR_MENU_BUTTON_MANIFEST,
-  SIDEBAR_MENU_SUB_BUTTON,
   SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
 } from "./sidebar-kit";
-import { SIDEBAR, SIDEBAR_MANIFEST } from "./sidebar-panel-kit";
+import { SIDEBAR_MANIFEST } from "./sidebar-panel-kit";
 import {
-  SIDEBAR_FOOTER,
   SIDEBAR_FOOTER_MANIFEST,
-  SIDEBAR_GROUP,
   SIDEBAR_GROUP_MANIFEST,
-  SIDEBAR_HEADER,
   SIDEBAR_HEADER_MANIFEST,
-  SIDEBAR_MENU_ITEM_WITH_BADGE,
   SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST,
-  SIDEBAR_MENU_SUB,
   SIDEBAR_MENU_SUB_MANIFEST,
 } from "./sidebar-section-kit";
-import { SKELETON, SKELETON_MANIFEST } from "./skeleton-kit";
-import { SWITCH, SWITCH_MANIFEST } from "./switch-kit";
-import { TEXT_FIELD, TEXT_FIELD_MANIFEST } from "./text-field-kit";
-import { TEXTAREA_FIELD, TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
-import { TEXTAREA, TEXTAREA_MANIFEST } from "./textarea-kit";
-import { TOGGLE_GROUP, TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
-import { ICON_TOGGLE, ICON_TOGGLE_MANIFEST, TOGGLE, TOGGLE_MANIFEST } from "./toggle-kit";
-import { TOOLBAR, TOOLBAR_MANIFEST } from "./toolbar-kit";
-import {
-  TOOLTIP_CONTENT,
-  TOOLTIP_CONTENT_MANIFEST,
-  TOOLTIP_OPEN,
-  TOOLTIP_OPEN_MANIFEST,
-} from "./tooltip-kit";
+import { SKELETON_MANIFEST } from "./skeleton-kit";
+import { SWITCH_MANIFEST } from "./switch-kit";
+import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
+import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
+import { TEXTAREA_MANIFEST } from "./textarea-kit";
+import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
+import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
+import { TOOLBAR_MANIFEST } from "./toolbar-kit";
+import { TOOLTIP_CONTENT_MANIFEST, TOOLTIP_OPEN_MANIFEST } from "./tooltip-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -265,7 +192,7 @@ const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
 
 /**
  * The page of Breadcrumb's parts, the link, the current page, the ellipsis and the separator, and the
- * trail of them. Its name keeps it apart from `BREADCRUMB_PAGE`, the current page's set.
+ * trail of them. Its name keeps it apart from `BREADCRUMB_PAGE_MANIFEST`, the current page's set.
  */
 const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
 
@@ -313,14 +240,10 @@ const NAVIGATION_MENU_PAGE: KitPage = { slug: "navigation-menu", name: "Navigati
  * frame order.
  */
 export type KitEntry = {
-  readonly definition: ComponentDefinition;
   readonly page: KitPage;
   readonly previewCells: readonly Cell[];
-  /**
-   * The set's manifest where the build reads the set from its capture in `captures/`, which switches
-   * the set from the recipe cascade to the capture. Undefined for a set the recipe cascade builds.
-   */
-  readonly manifest?: SetManifest;
+  /** The set's manifest, which the build reads with the set's capture in `captures/`. */
+  readonly manifest: SetManifest;
 };
 
 /**
@@ -329,7 +252,7 @@ export type KitEntry = {
  * first value. `fixed` sets the cell's other axes.
  */
 function previewCells(
-  definition: ComponentDefinition,
+  definition: { readonly axes: readonly AxisSpec[] },
   baseSize: string,
   fixed: Cell,
   crossed: readonly string[] = []
@@ -356,7 +279,11 @@ function previewCells(
 }
 
 /** Each variant at rest at the base size with a start icon, then with an end icon. */
-function iconCells(definition: ComponentDefinition, baseSize: string, fixed: Cell): Cell[] {
+function iconCells(
+  definition: { readonly axes: readonly AxisSpec[] },
+  baseSize: string,
+  fixed: Cell
+): Cell[] {
   return ["start", "end"].flatMap((icon) =>
     axisValues(definition, "variant").map((variant) => ({
       ...fixed,
@@ -371,565 +298,476 @@ function iconCells(definition: ComponentDefinition, baseSize: string, fixed: Cel
 /** The kit's component sets, in the order the plugin places them. */
 export const KIT: readonly KitEntry[] = [
   {
-    definition: BUTTON,
     page: BUTTON_PAGE,
-    previewCells: [...previewCells(BUTTON, "default", { icon: "none" }), ...iconCells(BUTTON, "default", {})],
+    previewCells: [
+      ...previewCells(BUTTON_MANIFEST, "default", { icon: "none" }),
+      ...iconCells(BUTTON_MANIFEST, "default", {}),
+    ],
     manifest: BUTTON_MANIFEST,
   },
   {
-    definition: ICON_BUTTON,
     page: BUTTON_PAGE,
-    previewCells: previewCells(ICON_BUTTON, "icon", {}),
+    previewCells: previewCells(ICON_BUTTON_MANIFEST, "icon", {}),
     manifest: ICON_BUTTON_MANIFEST,
   },
   {
-    definition: CONFIRM_BUTTON,
     page: BUTTON_PAGE,
-    previewCells: previewCells(CONFIRM_BUTTON, "default", {}, ["armed"]),
+    previewCells: previewCells(CONFIRM_BUTTON_MANIFEST, "default", {}, ["armed"]),
     manifest: CONFIRM_BUTTON_MANIFEST,
   },
   {
-    definition: TOGGLE,
     page: TOGGLE_PAGE,
     previewCells: [
-      ...previewCells(TOGGLE, "default", { icon: "none" }, ["pressed"]),
-      ...iconCells(TOGGLE, "default", { pressed: "off" }),
+      ...previewCells(TOGGLE_MANIFEST, "default", { icon: "none" }, ["pressed"]),
+      ...iconCells(TOGGLE_MANIFEST, "default", { pressed: "off" }),
     ],
     manifest: TOGGLE_MANIFEST,
   },
   {
-    definition: ICON_TOGGLE,
     page: TOGGLE_PAGE,
-    previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
+    previewCells: previewCells(ICON_TOGGLE_MANIFEST, "default", {}, ["pressed"]),
     manifest: ICON_TOGGLE_MANIFEST,
   },
   // A spaced Toggle group has no state, so its previews place every cell of its matrix.
   {
-    definition: TOGGLE_GROUP,
     page: TOGGLE_PAGE,
-    previewCells: matrixCells(TOGGLE_GROUP.axes),
+    previewCells: matrixCells(TOGGLE_GROUP_MANIFEST.axes),
     manifest: TOGGLE_GROUP_MANIFEST,
   },
   // A Badge has no state, so its previews place every cell of its matrix.
   {
-    definition: BADGE,
     page: BADGE_PAGE,
-    previewCells: matrixCells(BADGE.axes),
+    previewCells: matrixCells(BADGE_MANIFEST.axes),
     manifest: BADGE_MANIFEST,
   },
   {
-    definition: KBD,
     page: KBD_PAGE,
-    previewCells: matrixCells(KBD.axes),
+    previewCells: matrixCells(KBD_MANIFEST.axes),
     manifest: KBD_MANIFEST,
   },
   {
-    definition: KBD_GROUP,
     page: KBD_PAGE,
-    previewCells: matrixCells(KBD_GROUP.axes),
+    previewCells: matrixCells(KBD_GROUP_MANIFEST.axes),
     manifest: KBD_GROUP_MANIFEST,
   },
   {
-    definition: RADIO_ICON_BUTTON,
     page: RADIO_PAGE,
-    previewCells: matrixCells(RADIO_ICON_BUTTON.axes),
+    previewCells: matrixCells(RADIO_ICON_BUTTON_MANIFEST.axes),
     manifest: RADIO_ICON_BUTTON_MANIFEST,
   },
   {
-    definition: RADIO,
     page: RADIO_PAGE,
-    previewCells: matrixCells(RADIO.axes),
+    previewCells: matrixCells(RADIO_MANIFEST.axes),
     manifest: RADIO_MANIFEST,
   },
   {
-    definition: CHECKBOX,
     page: CHECKBOX_PAGE,
-    previewCells: matrixCells(CHECKBOX.axes),
+    previewCells: matrixCells(CHECKBOX_MANIFEST.axes),
     manifest: CHECKBOX_MANIFEST,
   },
   {
-    definition: SWITCH,
     page: SWITCH_PAGE,
-    previewCells: matrixCells(SWITCH.axes),
+    previewCells: matrixCells(SWITCH_MANIFEST.axes),
     manifest: SWITCH_MANIFEST,
   },
   {
-    definition: SEPARATOR,
     page: SEPARATOR_PAGE,
-    previewCells: matrixCells(SEPARATOR.axes),
+    previewCells: matrixCells(SEPARATOR_MANIFEST.axes),
     manifest: SEPARATOR_MANIFEST,
   },
   {
-    definition: SKELETON,
     page: SKELETON_PAGE,
-    previewCells: matrixCells(SKELETON.axes),
+    previewCells: matrixCells(SKELETON_MANIFEST.axes),
     manifest: SKELETON_MANIFEST,
   },
   {
-    definition: LOADER,
     page: LOADER_PAGE,
-    previewCells: matrixCells(LOADER.axes),
+    previewCells: matrixCells(LOADER_MANIFEST.axes),
     manifest: LOADER_MANIFEST,
   },
-  { definition: LABEL, page: FIELD_PAGE, previewCells: matrixCells(LABEL.axes), manifest: LABEL_MANIFEST },
+  { page: FIELD_PAGE, previewCells: matrixCells(LABEL_MANIFEST.axes), manifest: LABEL_MANIFEST },
   {
-    definition: FIELD_DESCRIPTION,
     page: FIELD_PAGE,
-    previewCells: matrixCells(FIELD_DESCRIPTION.axes),
+    previewCells: matrixCells(FIELD_DESCRIPTION_MANIFEST.axes),
     manifest: FIELD_DESCRIPTION_MANIFEST,
   },
   {
-    definition: FIELD_ERROR,
     page: FIELD_PAGE,
-    previewCells: matrixCells(FIELD_ERROR.axes),
+    previewCells: matrixCells(FIELD_ERROR_MANIFEST.axes),
     manifest: FIELD_ERROR_MANIFEST,
   },
   {
-    definition: FIELD_LEGEND,
     page: FIELD_PAGE,
-    previewCells: matrixCells(FIELD_LEGEND.axes),
+    previewCells: matrixCells(FIELD_LEGEND_MANIFEST.axes),
     manifest: FIELD_LEGEND_MANIFEST,
   },
   {
-    definition: FIELD_TITLE,
     page: FIELD_PAGE,
-    previewCells: matrixCells(FIELD_TITLE.axes),
+    previewCells: matrixCells(FIELD_TITLE_MANIFEST.axes),
     manifest: FIELD_TITLE_MANIFEST,
   },
   // The labelled radio rows and the group, which show Field's legend, description and error.
   {
-    definition: RADIO_ROW,
     page: RADIO_PAGE,
-    previewCells: matrixCells(RADIO_ROW.axes),
+    previewCells: matrixCells(RADIO_ROW_MANIFEST.axes),
     manifest: RADIO_ROW_MANIFEST,
   },
   {
-    definition: RADIO_GROUP,
     page: RADIO_PAGE,
-    previewCells: matrixCells(RADIO_GROUP.axes),
+    previewCells: matrixCells(RADIO_GROUP_MANIFEST.axes),
     manifest: RADIO_GROUP_MANIFEST,
   },
-  { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes), manifest: INPUT_MANIFEST },
+  { page: INPUT_PAGE, previewCells: matrixCells(INPUT_MANIFEST.axes), manifest: INPUT_MANIFEST },
   {
-    definition: INPUT_GROUP,
     page: INPUT_PAGE,
-    previewCells: matrixCells(INPUT_GROUP.axes),
+    previewCells: matrixCells(INPUT_GROUP_MANIFEST.axes),
     manifest: INPUT_GROUP_MANIFEST,
   },
   {
-    definition: TEXT_FIELD,
     page: INPUT_PAGE,
-    previewCells: matrixCells(TEXT_FIELD.axes),
+    previewCells: matrixCells(TEXT_FIELD_MANIFEST.axes),
     manifest: TEXT_FIELD_MANIFEST,
   },
   {
-    definition: TEXTAREA,
     page: TEXTAREA_PAGE,
-    previewCells: matrixCells(TEXTAREA.axes),
+    previewCells: matrixCells(TEXTAREA_MANIFEST.axes),
     manifest: TEXTAREA_MANIFEST,
   },
   {
-    definition: TEXTAREA_FIELD,
     page: TEXTAREA_PAGE,
-    previewCells: matrixCells(TEXTAREA_FIELD.axes),
+    previewCells: matrixCells(TEXTAREA_FIELD_MANIFEST.axes),
     manifest: TEXTAREA_FIELD_MANIFEST,
   },
   {
-    definition: AVATAR,
     page: AVATAR_PAGE,
-    previewCells: matrixCells(AVATAR.axes),
+    previewCells: matrixCells(AVATAR_MANIFEST.axes),
     manifest: AVATAR_MANIFEST,
   },
   {
-    definition: AVATAR_GROUP,
     page: AVATAR_PAGE,
-    previewCells: matrixCells(AVATAR_GROUP.axes),
+    previewCells: matrixCells(AVATAR_GROUP_MANIFEST.axes),
     manifest: AVATAR_GROUP_MANIFEST,
   },
   {
-    definition: METER,
     page: METER_PAGE,
-    previewCells: matrixCells(METER.axes),
+    previewCells: matrixCells(METER_MANIFEST.axes),
     manifest: METER_MANIFEST,
   },
   {
-    definition: PAGINATION_LINK,
     page: PAGINATION_PAGE,
-    previewCells: matrixCells(PAGINATION_LINK.axes),
+    previewCells: matrixCells(PAGINATION_LINK_MANIFEST.axes),
     manifest: PAGINATION_LINK_MANIFEST,
   },
   {
-    definition: PAGINATION_EDGE,
     page: PAGINATION_PAGE,
-    previewCells: matrixCells(PAGINATION_EDGE.axes),
+    previewCells: matrixCells(PAGINATION_EDGE_MANIFEST.axes),
     manifest: PAGINATION_EDGE_MANIFEST,
   },
   {
-    definition: PAGINATION_ELLIPSIS,
     page: PAGINATION_PAGE,
-    previewCells: matrixCells(PAGINATION_ELLIPSIS.axes),
+    previewCells: matrixCells(PAGINATION_ELLIPSIS_MANIFEST.axes),
     manifest: PAGINATION_ELLIPSIS_MANIFEST,
   },
   {
-    definition: PAGINATION_ROW,
     page: PAGINATION_PAGE,
-    previewCells: matrixCells(PAGINATION_ROW.axes),
+    previewCells: matrixCells(PAGINATION_ROW_MANIFEST.axes),
     manifest: PAGINATION_ROW_MANIFEST,
   },
   {
-    definition: BREADCRUMB_LINK,
     page: BREADCRUMB_PARTS_PAGE,
-    previewCells: matrixCells(BREADCRUMB_LINK.axes),
+    previewCells: matrixCells(BREADCRUMB_LINK_MANIFEST.axes),
     manifest: BREADCRUMB_LINK_MANIFEST,
   },
   {
-    definition: BREADCRUMB_PAGE,
     page: BREADCRUMB_PARTS_PAGE,
-    previewCells: matrixCells(BREADCRUMB_PAGE.axes),
+    previewCells: matrixCells(BREADCRUMB_PAGE_MANIFEST.axes),
     manifest: BREADCRUMB_PAGE_MANIFEST,
   },
   {
-    definition: BREADCRUMB_ELLIPSIS,
     page: BREADCRUMB_PARTS_PAGE,
-    previewCells: matrixCells(BREADCRUMB_ELLIPSIS.axes),
+    previewCells: matrixCells(BREADCRUMB_ELLIPSIS_MANIFEST.axes),
     manifest: BREADCRUMB_ELLIPSIS_MANIFEST,
   },
   {
-    definition: BREADCRUMB_SEPARATOR,
     page: BREADCRUMB_PARTS_PAGE,
-    previewCells: matrixCells(BREADCRUMB_SEPARATOR.axes),
+    previewCells: matrixCells(BREADCRUMB_SEPARATOR_MANIFEST.axes),
     manifest: BREADCRUMB_SEPARATOR_MANIFEST,
   },
   {
-    definition: BREADCRUMB_TRAIL,
     page: BREADCRUMB_PARTS_PAGE,
-    previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
+    previewCells: matrixCells(BREADCRUMB_TRAIL_MANIFEST.axes),
     manifest: BREADCRUMB_TRAIL_MANIFEST,
   },
   {
-    definition: SELECT_TRIGGER,
     page: SELECT_PAGE,
-    previewCells: matrixCells(SELECT_TRIGGER.axes),
+    previewCells: matrixCells(SELECT_TRIGGER_MANIFEST.axes),
     manifest: SELECT_TRIGGER_MANIFEST,
   },
   {
-    definition: SELECT_FIELD,
     page: SELECT_PAGE,
-    previewCells: matrixCells(SELECT_FIELD.axes),
+    previewCells: matrixCells(SELECT_FIELD_MANIFEST.axes),
     manifest: SELECT_FIELD_MANIFEST,
   },
   {
-    definition: MENU_GROUP_LABEL,
     page: SELECT_PAGE,
-    previewCells: matrixCells(MENU_GROUP_LABEL.axes),
+    previewCells: matrixCells(MENU_GROUP_LABEL_MANIFEST.axes),
     manifest: MENU_GROUP_LABEL_MANIFEST,
   },
   {
-    definition: MENU_SEPARATOR,
     page: SELECT_PAGE,
-    previewCells: matrixCells(MENU_SEPARATOR.axes),
+    previewCells: matrixCells(MENU_SEPARATOR_MANIFEST.axes),
     manifest: MENU_SEPARATOR_MANIFEST,
   },
   {
-    definition: SELECT_ITEM,
     page: SELECT_PAGE,
-    previewCells: matrixCells(SELECT_ITEM.axes),
+    previewCells: matrixCells(SELECT_ITEM_MANIFEST.axes),
     manifest: SELECT_ITEM_MANIFEST,
   },
   {
-    definition: SELECT_POPUP,
     page: SELECT_PAGE,
-    previewCells: matrixCells(SELECT_POPUP.axes),
+    previewCells: matrixCells(SELECT_POPUP_MANIFEST.axes),
     manifest: SELECT_POPUP_MANIFEST,
   },
   {
-    definition: SELECT_OPEN,
     page: SELECT_PAGE,
-    previewCells: matrixCells(SELECT_OPEN.axes),
+    previewCells: matrixCells(SELECT_OPEN_MANIFEST.axes),
     manifest: SELECT_OPEN_MANIFEST,
   },
   {
-    definition: POPOVER_CONTENT,
     page: POPOVER_PAGE,
-    previewCells: matrixCells(POPOVER_CONTENT.axes),
+    previewCells: matrixCells(POPOVER_CONTENT_MANIFEST.axes),
     manifest: POPOVER_CONTENT_MANIFEST,
   },
   {
-    definition: POPOVER_OPEN,
     page: POPOVER_PAGE,
-    previewCells: matrixCells(POPOVER_OPEN.axes),
+    previewCells: matrixCells(POPOVER_OPEN_MANIFEST.axes),
     manifest: POPOVER_OPEN_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_ITEM,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_ITEM.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_ITEM_MANIFEST.axes),
     manifest: DROPDOWN_MENU_ITEM_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_CHECKBOX_ITEM,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_CHECKBOX_ITEM.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST.axes),
     manifest: DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_RADIO_ITEM,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_RADIO_ITEM.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_RADIO_ITEM_MANIFEST.axes),
     manifest: DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_SUB_TRIGGER,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_SUB_TRIGGER.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_SUB_TRIGGER_MANIFEST.axes),
     manifest: DROPDOWN_MENU_SUB_TRIGGER_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_POPUP,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_POPUP.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_POPUP_MANIFEST.axes),
     manifest: DROPDOWN_MENU_POPUP_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_SUB_CONTENT,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_SUB_CONTENT.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_SUB_CONTENT_MANIFEST.axes),
     manifest: DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
   },
   {
-    definition: DROPDOWN_MENU_OPEN,
     page: DROPDOWN_MENU_PAGE,
-    previewCells: matrixCells(DROPDOWN_MENU_OPEN.axes),
+    previewCells: matrixCells(DROPDOWN_MENU_OPEN_MANIFEST.axes),
     manifest: DROPDOWN_MENU_OPEN_MANIFEST,
   },
   {
-    definition: COMBOBOX_ITEM,
     page: COMBOBOX_PAGE,
-    previewCells: matrixCells(COMBOBOX_ITEM.axes),
+    previewCells: matrixCells(COMBOBOX_ITEM_MANIFEST.axes),
     manifest: COMBOBOX_ITEM_MANIFEST,
   },
   {
-    definition: COMBOBOX_EMPTY,
     page: COMBOBOX_PAGE,
-    previewCells: matrixCells(COMBOBOX_EMPTY.axes),
+    previewCells: matrixCells(COMBOBOX_EMPTY_MANIFEST.axes),
     manifest: COMBOBOX_EMPTY_MANIFEST,
   },
   {
-    definition: COMBOBOX_POPUP,
     page: COMBOBOX_PAGE,
-    previewCells: matrixCells(COMBOBOX_POPUP.axes),
+    previewCells: matrixCells(COMBOBOX_POPUP_MANIFEST.axes),
     manifest: COMBOBOX_POPUP_MANIFEST,
   },
   {
-    definition: COMBOBOX_OPEN,
     page: COMBOBOX_PAGE,
-    previewCells: matrixCells(COMBOBOX_OPEN.axes),
+    previewCells: matrixCells(COMBOBOX_OPEN_MANIFEST.axes),
     manifest: COMBOBOX_OPEN_MANIFEST,
   },
   {
-    definition: COMMAND_ITEM,
     page: COMMAND_PAGE,
-    previewCells: matrixCells(COMMAND_ITEM.axes),
+    previewCells: matrixCells(COMMAND_ITEM_MANIFEST.axes),
     manifest: COMMAND_ITEM_MANIFEST,
   },
   {
-    definition: COMMAND_LIST,
     page: COMMAND_PAGE,
-    previewCells: matrixCells(COMMAND_LIST.axes),
+    previewCells: matrixCells(COMMAND_LIST_MANIFEST.axes),
     manifest: COMMAND_LIST_MANIFEST,
   },
   // The palette and its open example, drawn from the Input group, Kbd and Command item sets above.
   {
-    definition: COMMAND_PALETTE,
     page: COMMAND_PAGE,
-    previewCells: matrixCells(COMMAND_PALETTE.axes),
+    previewCells: matrixCells(COMMAND_PALETTE_MANIFEST.axes),
     manifest: COMMAND_PALETTE_MANIFEST,
   },
   {
-    definition: COMMAND_DIALOG_OPEN,
     page: COMMAND_PAGE,
-    previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
+    previewCells: matrixCells(COMMAND_DIALOG_OPEN_MANIFEST.axes),
     manifest: COMMAND_DIALOG_OPEN_MANIFEST,
   },
   {
-    definition: EMPTY,
     page: EMPTY_PAGE,
-    previewCells: matrixCells(EMPTY.axes),
+    previewCells: matrixCells(EMPTY_MANIFEST.axes),
     manifest: EMPTY_MANIFEST,
   },
   {
-    definition: LINK,
     page: LINK_PAGE,
-    previewCells: matrixCells(LINK.axes),
+    previewCells: matrixCells(LINK_MANIFEST.axes),
     manifest: LINK_MANIFEST,
   },
   {
-    definition: ITEM,
     page: ITEM_PAGE,
-    previewCells: matrixCells(ITEM.axes),
+    previewCells: matrixCells(ITEM_MANIFEST.axes),
     manifest: ITEM_MANIFEST,
   },
   {
-    definition: ITEM_LINK,
     page: ITEM_PAGE,
-    previewCells: matrixCells(ITEM_LINK.axes),
+    previewCells: matrixCells(ITEM_LINK_MANIFEST.axes),
     manifest: ITEM_LINK_MANIFEST,
   },
-  { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes), manifest: ALERT_MANIFEST },
+  { page: ALERT_PAGE, previewCells: matrixCells(ALERT_MANIFEST.axes), manifest: ALERT_MANIFEST },
   {
-    definition: ACCORDION_ITEM,
     page: ACCORDION_PAGE,
-    previewCells: matrixCells(ACCORDION_ITEM.axes),
+    previewCells: matrixCells(ACCORDION_ITEM_MANIFEST.axes),
     manifest: ACCORDION_ITEM_MANIFEST,
   },
   {
-    definition: SIDEBAR_MENU_BUTTON,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_MENU_BUTTON.axes),
+    previewCells: matrixCells(SIDEBAR_MENU_BUTTON_MANIFEST.axes),
     manifest: SIDEBAR_MENU_BUTTON_MANIFEST,
   },
   {
-    definition: SIDEBAR_MENU_SUB_BUTTON,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_MENU_SUB_BUTTON.axes),
+    previewCells: matrixCells(SIDEBAR_MENU_SUB_BUTTON_MANIFEST.axes),
     manifest: SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
   },
   {
-    definition: SIDEBAR_GROUP_LABEL,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_GROUP_LABEL.axes),
+    previewCells: matrixCells(SIDEBAR_GROUP_LABEL_MANIFEST.axes),
     manifest: SIDEBAR_GROUP_LABEL_MANIFEST,
   },
   {
-    definition: SIDEBAR_MENU_BADGE,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes),
+    previewCells: matrixCells(SIDEBAR_MENU_BADGE_MANIFEST.axes),
     manifest: SIDEBAR_MENU_BADGE_MANIFEST,
   },
   {
-    definition: SIDEBAR_GROUP,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_GROUP.axes),
+    previewCells: matrixCells(SIDEBAR_GROUP_MANIFEST.axes),
     manifest: SIDEBAR_GROUP_MANIFEST,
   },
   {
-    definition: SIDEBAR_HEADER,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_HEADER.axes),
+    previewCells: matrixCells(SIDEBAR_HEADER_MANIFEST.axes),
     manifest: SIDEBAR_HEADER_MANIFEST,
   },
   {
-    definition: SIDEBAR_FOOTER,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_FOOTER.axes),
+    previewCells: matrixCells(SIDEBAR_FOOTER_MANIFEST.axes),
     manifest: SIDEBAR_FOOTER_MANIFEST,
   },
   {
-    definition: SIDEBAR_MENU_SUB,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_MENU_SUB.axes),
+    previewCells: matrixCells(SIDEBAR_MENU_SUB_MANIFEST.axes),
     manifest: SIDEBAR_MENU_SUB_MANIFEST,
   },
   {
-    definition: SIDEBAR_MENU_ITEM_WITH_BADGE,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR_MENU_ITEM_WITH_BADGE.axes),
+    previewCells: matrixCells(SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST.axes),
     manifest: SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST,
   },
   {
-    definition: SIDEBAR,
     page: SIDEBAR_PAGE,
-    previewCells: matrixCells(SIDEBAR.axes),
+    previewCells: matrixCells(SIDEBAR_MANIFEST.axes),
     manifest: SIDEBAR_MANIFEST,
   },
   {
-    definition: NAVIGATION_MENU_BAR_TRIGGER,
     page: NAVIGATION_MENU_PAGE,
-    previewCells: matrixCells(NAVIGATION_MENU_BAR_TRIGGER.axes),
+    previewCells: matrixCells(NAVIGATION_MENU_BAR_TRIGGER_MANIFEST.axes),
     manifest: NAVIGATION_MENU_BAR_TRIGGER_MANIFEST,
   },
   {
-    definition: NAVIGATION_MENU_VERTICAL_TRIGGER,
     page: NAVIGATION_MENU_PAGE,
-    previewCells: matrixCells(NAVIGATION_MENU_VERTICAL_TRIGGER.axes),
+    previewCells: matrixCells(NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST.axes),
     manifest: NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST,
   },
   {
-    definition: NAVIGATION_MENU_BAR_LINK,
     page: NAVIGATION_MENU_PAGE,
-    previewCells: matrixCells(NAVIGATION_MENU_BAR_LINK.axes),
+    previewCells: matrixCells(NAVIGATION_MENU_BAR_LINK_MANIFEST.axes),
     manifest: NAVIGATION_MENU_BAR_LINK_MANIFEST,
   },
   {
-    definition: NAVIGATION_MENU_ROW_LINK,
     page: NAVIGATION_MENU_PAGE,
-    previewCells: matrixCells(NAVIGATION_MENU_ROW_LINK.axes),
+    previewCells: matrixCells(NAVIGATION_MENU_ROW_LINK_MANIFEST.axes),
     manifest: NAVIGATION_MENU_ROW_LINK_MANIFEST,
   },
   {
-    definition: NAVIGATION_MENU_POPUP,
     page: NAVIGATION_MENU_PAGE,
-    previewCells: matrixCells(NAVIGATION_MENU_POPUP.axes),
+    previewCells: matrixCells(NAVIGATION_MENU_POPUP_MANIFEST.axes),
     manifest: NAVIGATION_MENU_POPUP_MANIFEST,
   },
   {
-    definition: NUMBER_FIELD_STEPPER,
     page: NUMBER_FIELD_PAGE,
-    previewCells: matrixCells(NUMBER_FIELD_STEPPER.axes),
+    previewCells: matrixCells(NUMBER_FIELD_STEPPER_MANIFEST.axes),
     manifest: NUMBER_FIELD_STEPPER_MANIFEST,
   },
   {
-    definition: NUMBER_FIELD,
     page: NUMBER_FIELD_PAGE,
-    previewCells: matrixCells(NUMBER_FIELD.axes),
+    previewCells: matrixCells(NUMBER_FIELD_MANIFEST.axes),
     manifest: NUMBER_FIELD_MANIFEST,
   },
   {
-    definition: FILE_UPLOAD_DROPZONE,
     page: FILE_UPLOAD_PAGE,
-    previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
+    previewCells: matrixCells(FILE_UPLOAD_DROPZONE_MANIFEST.axes),
     manifest: FILE_UPLOAD_DROPZONE_MANIFEST,
   },
   {
-    definition: TOOLBAR,
     page: TOOLBAR_PAGE,
-    previewCells: matrixCells(TOOLBAR.axes),
+    previewCells: matrixCells(TOOLBAR_MANIFEST.axes),
     manifest: TOOLBAR_MANIFEST,
   },
   {
-    definition: TOOLTIP_CONTENT,
     page: TOOLTIP_PAGE,
-    previewCells: matrixCells(TOOLTIP_CONTENT.axes),
+    previewCells: matrixCells(TOOLTIP_CONTENT_MANIFEST.axes),
     manifest: TOOLTIP_CONTENT_MANIFEST,
   },
   {
-    definition: TOOLTIP_OPEN,
     page: TOOLTIP_PAGE,
-    previewCells: matrixCells(TOOLTIP_OPEN.axes),
+    previewCells: matrixCells(TOOLTIP_OPEN_MANIFEST.axes),
     manifest: TOOLTIP_OPEN_MANIFEST,
   },
   {
-    definition: ALERT_DIALOG_CONTENT,
     page: ALERT_DIALOG_PAGE,
-    previewCells: matrixCells(ALERT_DIALOG_CONTENT.axes),
+    previewCells: matrixCells(ALERT_DIALOG_CONTENT_MANIFEST.axes),
     manifest: ALERT_DIALOG_CONTENT_MANIFEST,
   },
   {
-    definition: ALERT_DIALOG_OPEN,
     page: ALERT_DIALOG_PAGE,
-    previewCells: matrixCells(ALERT_DIALOG_OPEN.axes),
+    previewCells: matrixCells(ALERT_DIALOG_OPEN_MANIFEST.axes),
     manifest: ALERT_DIALOG_OPEN_MANIFEST,
   },
   {
-    definition: DIALOG_CONTENT,
     page: DIALOG_PAGE,
-    previewCells: matrixCells(DIALOG_CONTENT.axes),
+    previewCells: matrixCells(DIALOG_CONTENT_MANIFEST.axes),
     manifest: DIALOG_CONTENT_MANIFEST,
   },
   {
-    definition: DIALOG_OPEN,
     page: DIALOG_PAGE,
-    previewCells: matrixCells(DIALOG_OPEN.axes),
+    previewCells: matrixCells(DIALOG_OPEN_MANIFEST.axes),
     manifest: DIALOG_OPEN_MANIFEST,
   },
 ];
