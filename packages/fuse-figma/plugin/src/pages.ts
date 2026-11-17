@@ -12,6 +12,7 @@ import { Effect } from "effect";
 
 import { topLevelSpecs } from "../../src/components/kit-spec.ts";
 import type { KitSpec, PageSpec } from "../../src/components/kit-spec.ts";
+import { ProbeOverKit } from "./errors.ts";
 import type { LayerConflict } from "./errors.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, indexSiblings, keyOf, setKey, staleOwned } from "./identity.ts";
@@ -62,7 +63,8 @@ const isLayer = (node: BaseNode): node is SceneNode => node.type !== "PAGE" && n
  * @param kit - The kit.
  * @returns The pages, for the planners of their nodes and for {@link planRetiredPages}. The Effect
  *   fails with `LayerConflict` when two pages carry the key of one the spec lists, or two top-level
- *   nodes on the kit pages carry one key.
+ *   nodes on the kit pages carry one key, and with `ProbeOverKit` when the kit is a probe and the
+ *   kit pages hold a set it lacks.
  */
 export const planPages = Effect.fnUntraced(function* (kit: KitSpec) {
   const run = yield* currentRun;
@@ -102,6 +104,19 @@ export const planPages = Effect.fnUntraced(function* (kit: KitSpec) {
 
   const topLevel = topLevelSpecs(kit);
   const keep = new Set(topLevel.map((spec) => spec.key));
+  if (kit.probe === true) {
+    const sets = kitPages
+      .flatMap((page) => staleOwned(page.children, keep))
+      .filter((node) => node.type === "COMPONENT_SET")
+      .map((node) => node.name)
+      .sort();
+    if (sets.length > 0) {
+      return yield* new ProbeOverKit({
+        message: `This file holds ${String(sets.length)} Fuse component sets the UX probe lacks, such as ${sets[0] ?? ""}, so the probe would delete them. Apply the probe to a new file.`,
+        sets,
+      });
+    }
+  }
   for (const page of kitPages) {
     for (const stale of staleOwned(page.children, keep)) {
       change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
