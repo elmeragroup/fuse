@@ -36,6 +36,7 @@ const SPINNER: IconManifest = {
 export const LOADER_MANIFEST: SetManifest = {
   key: "loader",
   name: "Loader",
+  api: { page: "loader", parts: ["Loader"] },
   slot: "loader",
   axes: [{ name: "size", values: SIZES }],
   columnAxis: "size",

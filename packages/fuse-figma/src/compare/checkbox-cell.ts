@@ -1,7 +1,7 @@
 /**
  * The renderer of the `checkbox` set: each cell as the real Fuse `<Checkbox aria-label="Accept">`.
  *
- * - `checked=on` sets `defaultChecked` and `checked=mixed` sets `indeterminate`. The page renders
+ * - `checked=true` sets `defaultChecked` and `indeterminate=true` sets `indeterminate`. The page renders
  *   static HTML, so the state the markup draws is the one the props start with.
  * - `disabled` sets `disabled`.
  * - `invalid` wraps the checkbox in an invalid `Field.Root`, the only source Base UI reads a
@@ -24,13 +24,13 @@ import type { CellRendering } from "./cell-renderers.ts";
 /** The checkbox's accessible name. The kit draws no label. */
 const CELL_LABEL = "Accept";
 
-/** A `checkbox` cell: a checkbox off, checked or mixed, inside an invalid field when invalid. */
+/** A `checkbox` cell: a checkbox unchecked, checked or indeterminate, inside an invalid field when invalid. */
 export const checkbox: CellRendering = {
   element: (cell: Cell) => {
     const props: ComponentProps<typeof Checkbox> = {
       "aria-label": CELL_LABEL,
-      defaultChecked: cell.checked === "on",
-      indeterminate: cell.checked === "mixed",
+      defaultChecked: cell.checked === "true",
+      indeterminate: cell.indeterminate === "true",
       disabled: cell.state === "disabled",
     };
     const box = createElement(Checkbox, props);

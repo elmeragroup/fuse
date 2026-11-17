@@ -37,8 +37,9 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "button", name: "Button", variants: 420, previewed: 70 },
       // 7 variants in 5 states, and 7 at each of 3 other sizes.
       { key: "icon-button", name: "Icon button", variants: 140, previewed: 56 },
-      // 2 variants in 4 states, armed off and on, and 2 at each of 3 other sizes.
-      { key: "confirm-button", name: "Confirm button", variants: 64, previewed: 22 },
+      // 2 variants in 4 states, armed off and on but never armed while disabled, and 2 at each of 3
+      // other sizes.
+      { key: "confirm-button", name: "Confirm button", variants: 56, previewed: 20 },
     ],
   },
   {
@@ -79,7 +80,7 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "radio-group", name: "Radio group", variants: 6, previewed: 6 },
     ],
   },
-  // Off, on and mixed, in 4 states.
+  // Unchecked, checked and indeterminate, in 4 states.
   {
     slug: "checkbox",
     name: "Checkbox",
@@ -373,8 +374,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "alert-dialog",
     name: "Alert dialog",
     sets: [
-      // The popup: destructive, neutral and pending.
-      { key: "alert-dialog-content", name: "Alert dialog content", variants: 3, previewed: 3 },
+      // The popup: destructive and neutral, at rest and performing the action.
+      { key: "alert-dialog-content", name: "Alert dialog content", variants: 4, previewed: 4 },
       // The destructive popup over the scrim.
       { key: "alert-dialog-open", name: "Alert dialog (open)", variants: 1, previewed: 1 },
     ],

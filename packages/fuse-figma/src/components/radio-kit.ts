@@ -13,7 +13,7 @@
 import type { SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
 
-const checked = (cell: Cell): boolean => cell.checked === "on";
+const checked = (cell: Cell): boolean => cell.checked === "true";
 
 /**
  * The radio's manifest, which the capture-backed build reads with `captures/radio.json`, as
@@ -23,9 +23,10 @@ const checked = (cell: Cell): boolean => cell.checked === "on";
 export const RADIO_MANIFEST: SetManifest = {
   key: "radio",
   name: "Radio",
+  api: { page: "radio-group", parts: ["RadioGroupItem"] },
   slot: "radio-group-item",
   axes: [
-    { name: "checked", values: ["off", "on"] },
+    { name: "checked", values: ["false", "true"] },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",

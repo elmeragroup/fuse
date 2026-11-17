@@ -1,7 +1,7 @@
 /**
  * The renderer of the `switch` set: each cell as the real Fuse `<Switch aria-label="Notifications">`.
  *
- * - `size` sets `size`, and `checked=on` sets `defaultChecked`. The page renders static HTML, so
+ * - `size` sets `size`, and `checked=true` sets `defaultChecked`. The page renders static HTML, so
  *   the state the markup draws is the one the props start with.
  * - `disabled` sets `disabled`.
  * - `invalid` wraps the switch in an invalid `Field.Root`, the only source Base UI reads a
@@ -43,7 +43,7 @@ export const switchCell: CellRendering = {
     const props: ComponentProps<typeof Switch> = {
       "aria-label": CELL_LABEL,
       size,
-      defaultChecked: cell.checked === "on",
+      defaultChecked: cell.checked === "true",
       disabled: cell.state === "disabled",
     };
     const track = createElement(Switch, props);

@@ -13,8 +13,9 @@
  *   TEXT property, `Value`, that starts as the docs Basic demo's placeholder in every cell.
  * - `content=placeholder` renders the trigger with nothing selected, and `content=value` with a
  *   selection.
- * - The caret is a fixed CaretDown at the trigger's end. `open=on` renders the trigger with its popup
- *   open, where the caret turns half a turn.
+ * - The caret is a fixed CaretDown at the trigger's end. `open=true` renders the trigger with its popup
+ *   open, where the caret turns half a turn. A Select opened through `open` or `defaultOpen` stays
+ *   open when it is disabled, so the set draws the open trigger disabled too.
  * - Only an invalid cell renders the trigger in a Field, the one source Base UI reads its validity
  *   from.
  */
@@ -52,10 +53,10 @@ export function sizeFor(cell: Cell): SelectTriggerSize {
  * Whether a cell shows the trigger with its popup open.
  *
  * @param cell - A `select-trigger` cell.
- * @returns True at `open=on`.
+ * @returns True at `open=true`.
  */
 export function showsOpen(cell: Cell): boolean {
-  return cell.open === "on";
+  return cell.open === "true";
 }
 
 /** The caret `Select.Icon` renders at the trigger's end, CaretDown, fixed, so no swap property picks it. */
@@ -78,6 +79,7 @@ const CARET: IconManifest = {
 export const SELECT_TRIGGER_MANIFEST: SetManifest = {
   key: "select-trigger",
   name: "Select trigger",
+  api: { page: "select", parts: ["Select.Root", "Select.Trigger"] },
   slot: "select-trigger",
   // The width a filling trigger takes. A hugging trigger reads none of it.
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
@@ -89,7 +91,7 @@ export const SELECT_TRIGGER_MANIFEST: SetManifest = {
     { name: "size", values: SIZES },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
     { name: "content", values: ["placeholder", "value"] },
-    { name: "open", values: ["off", "on"] },
+    { name: "open", values: ["false", "true"] },
   ],
   columnAxis: "state",
   label: undefined,

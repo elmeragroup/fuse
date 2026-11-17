@@ -61,6 +61,7 @@ function text(characters: string): LabelManifest {
  *
  * @param key - The set's key and its root's `data-slot`.
  * @param name - The set's name.
+ * @param part - The Field part the set draws, as the Field page's API reference names it.
  * @param axis - The set's one axis, which is also its column axis.
  * @param characters - The text every cell shows.
  * @param previewWidth - The width of the host the sample renders in, or undefined for a part that
@@ -70,6 +71,7 @@ function text(characters: string): LabelManifest {
 function textManifest(
   key: string,
   name: string,
+  part: string,
   axis: AxisSpec,
   characters: string,
   previewWidth: number | undefined
@@ -77,6 +79,7 @@ function textManifest(
   const manifest: SetManifest = {
     key,
     name,
+    api: { page: "field", parts: [part] },
     slot: key,
     axes: [axis],
     columnAxis: axis.name,
@@ -95,6 +98,7 @@ function textManifest(
 export const FIELD_DESCRIPTION_MANIFEST: SetManifest = textManifest(
   "field-description",
   "Field description",
+  "Field.Description",
   { name: "state", values: ["rest"] },
   FIELD_DESCRIPTION_TEXT,
   FIELD_BOX_PREVIEW_WIDTH
@@ -107,6 +111,7 @@ export const FIELD_DESCRIPTION_MANIFEST: SetManifest = textManifest(
 export const FIELD_ERROR_MANIFEST: SetManifest = textManifest(
   "field-error",
   "Field error",
+  "Field.Error",
   { name: "state", values: ["invalid"] },
   FIELD_ERROR_TEXT,
   FIELD_BOX_PREVIEW_WIDTH
@@ -119,6 +124,7 @@ export const FIELD_ERROR_MANIFEST: SetManifest = textManifest(
 export const FIELD_LEGEND_MANIFEST: SetManifest = textManifest(
   "field-legend",
   "Field legend",
+  "Field.Legend",
   { name: "variant", values: LEGEND_VARIANTS },
   FIELD_LEGEND_TEXT,
   FIELD_BOX_PREVIEW_WIDTH
@@ -131,6 +137,7 @@ export const FIELD_LEGEND_MANIFEST: SetManifest = textManifest(
 export const FIELD_TITLE_MANIFEST: SetManifest = textManifest(
   "field-title",
   "Field title",
+  "Field.Title",
   { name: "state", values: ["rest", "disabled"] },
   FIELD_TITLE_TEXT,
   undefined

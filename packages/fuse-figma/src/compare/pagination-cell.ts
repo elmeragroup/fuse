@@ -3,7 +3,7 @@
  * docs Basic demo gives it.
  *
  * - A `pagination-link` cell renders `<Pagination.Link>` around the number `pagination-kit.ts`
- *   draws, with `isActive` at `current=on`.
+ *   draws, with `isActive` set at `isActive=true`.
  * - A `pagination-edge` cell renders `<Pagination.Previous>` or `<Pagination.Next>`, which write
  *   their own caret and copy.
  * - A `pagination-ellipsis` cell renders `<Pagination.Ellipsis>`.
@@ -36,7 +36,7 @@ export const paginationLink: CellRendering = {
     inEnglish(
       createElement(
         Pagination.Link,
-        { href: `#${PAGINATION_LINK_LABEL}`, isActive: cell.current === "on" },
+        { href: `#${PAGINATION_LINK_LABEL}`, isActive: cell.isActive === "true" },
         PAGINATION_LINK_LABEL
       )
     ),

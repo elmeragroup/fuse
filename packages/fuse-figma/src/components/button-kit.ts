@@ -107,6 +107,7 @@ export const BUTTON_LABEL = "Button";
 export const BUTTON_MANIFEST: SetManifest = {
   key: "button",
   name: "Button",
+  api: { page: "button", parts: ["Button"] },
   slot: "button",
   axes: [
     { name: "variant", values: VARIANTS },
@@ -133,6 +134,7 @@ export const BUTTON_MANIFEST: SetManifest = {
 export const ICON_BUTTON_MANIFEST: SetManifest = {
   key: "icon-button",
   name: "Icon button",
+  api: { page: "button", parts: ["Button"] },
   slot: "button",
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",

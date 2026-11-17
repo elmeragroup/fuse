@@ -241,17 +241,19 @@ function footerSection(): ReactElement {
 
 /** A `sidebar-group` cell: the icon collapse demo's group, expanded or collapsed. */
 export const sidebarGroup: CellRendering = {
-  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, groupSection(), rootAround(cell.collapsed === "on")),
+  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, groupSection(), rootAround(cell.collapsed === "true")),
 };
 
 /** A `sidebar-header` cell: the app frame demo's header, expanded or collapsed. */
 export const sidebarHeader: CellRendering = {
-  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, headerSection(), rootAround(cell.collapsed === "on")),
+  element: (cell: Cell) =>
+    host(SIDEBAR_SECTION_WIDTH, headerSection(), rootAround(cell.collapsed === "true")),
 };
 
 /** A `sidebar-footer` cell: the landing dashboard's footer row, expanded or collapsed. */
 export const sidebarFooter: CellRendering = {
-  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, footerSection(), rootAround(cell.collapsed === "on")),
+  element: (cell: Cell) =>
+    host(SIDEBAR_SECTION_WIDTH, footerSection(), rootAround(cell.collapsed === "true")),
 };
 
 /** The `sidebar-menu-sub` cell: the rich menu demo's sub menu in an expanded Sidebar. */
@@ -291,7 +293,7 @@ export const sidebarMenuItemWithBadge: CellRendering = {
           null,
           createElement(
             Sidebar.MenuButton,
-            { isActive: cell.active === "on" },
+            { isActive: cell.isActive === "true" },
             rowIcon(SIDEBAR_BADGE_ROW.icon),
             createElement("span", null, SIDEBAR_BADGE_ROW.label)
           ),
@@ -319,7 +321,7 @@ export const sidebarPanel: CellRendering = {
         locale: "en-US",
         children: createElement(
           Sidebar.Provider,
-          { defaultOpen: cell.collapsed !== "on", className: SIDEBAR_PROVIDER_CLASS },
+          { defaultOpen: cell.collapsed !== "true", className: SIDEBAR_PROVIDER_CLASS },
           createElement(
             Sidebar.Root,
             { variant: panelVariant(cell), collapsible: "icon", className: SIDEBAR_ROOT_CLASS },

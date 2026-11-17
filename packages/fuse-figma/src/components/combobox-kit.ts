@@ -15,7 +15,7 @@
  *   list holds the rows.
  * - `Combobox (open)` is the Input group of `Combobox.Input` while its popup is open, and the popup
  *   below it holding the Basic demo's rows, 1 cell. The input is the Input group set's
- *   `form=caret open`. Base UI places the popup 6px below the Input group, aligned to its start.
+ *   `form=caret-open`. Base UI places the popup 6px below the Input group, aligned to its start.
  *
  * The popup and the open Combobox sample an Input group `COMBOBOX_INPUT_GROUP_WIDTH` wide, 384px.
  */
@@ -42,7 +42,7 @@ function rowManifest(label: string, shownIn: (cell: Cell) => boolean): InstanceM
     kind: "instance",
     key: `item-${label.toLowerCase()}`,
     of: COMBOBOX_ITEM_MANIFEST,
-    cell: () => ({ selected: "off", state: "rest" }),
+    cell: () => ({ selected: "false", state: "rest" }),
     properties: () => ({ text: { Label: label } }),
     shownIn,
     exposed: true,
@@ -58,9 +58,10 @@ function rowManifest(label: string, shownIn: (cell: Cell) => boolean): InstanceM
 export const COMBOBOX_ITEM_MANIFEST: SetManifest = {
   key: "combobox-item",
   name: "Combobox item",
+  api: { page: "combobox", parts: ["Combobox.Item"] },
   slot: "combobox-item",
   axes: [
-    { name: "selected", values: ["off", "on"] },
+    { name: "selected", values: ["false", "true"] },
     { name: "state", values: ["rest", "highlighted", "disabled"] },
   ],
   columnAxis: "state",
@@ -78,7 +79,7 @@ export const COMBOBOX_ITEM_MANIFEST: SetManifest = {
       slot: undefined,
       place: "combobox-item/0",
       after: "label",
-      shownIn: (cell) => cell.selected === "on",
+      shownIn: (cell) => cell.selected === "true",
       label: undefined,
       iconsFor: () => [MENU_CHECK],
     },
@@ -93,6 +94,7 @@ export const COMBOBOX_ITEM_MANIFEST: SetManifest = {
 export const COMBOBOX_EMPTY_MANIFEST: SetManifest = {
   key: "combobox-empty",
   name: "Combobox empty",
+  api: { page: "combobox", parts: ["Combobox.Empty"] },
   slot: "combobox-empty",
   axes: [{ name: "content", values: ["empty"] }],
   columnAxis: "content",
@@ -138,6 +140,7 @@ function groupManifest({ value: label, items: rows }: (typeof COMBOBOX_GROUPS)[n
 export const COMBOBOX_POPUP_MANIFEST: SetManifest = {
   key: "combobox-popup",
   name: "Combobox popup",
+  api: { page: "combobox", parts: ["Combobox.Content"] },
   slot: "combobox-content",
   axes: [{ name: "content", values: ["flat", "grouped", "empty"] }],
   columnAxis: "content",
@@ -166,7 +169,7 @@ export const COMBOBOX_POPUP_MANIFEST: SetManifest = {
           key: "separator",
           of: MENU_SEPARATOR_MANIFEST,
           slot: "combobox-separator",
-          cell: () => ({ size: "default" }),
+          cell: () => ({ orientation: "horizontal" }),
           shownIn: isGrouped,
         };
         return [
@@ -187,9 +190,10 @@ export const COMBOBOX_POPUP_MANIFEST: SetManifest = {
 export const COMBOBOX_OPEN_MANIFEST: SetManifest = {
   key: "combobox-open",
   name: "Combobox (open)",
+  api: { page: "combobox", parts: ["Combobox.Content"] },
   slot: "combobox-open",
-  axes: [{ name: "placement", values: ["below"] }],
-  columnAxis: "placement",
+  axes: [{ name: "side", values: ["bottom"] }],
+  columnAxis: "side",
   previewWidth: COMBOBOX_INPUT_GROUP_WIDTH,
   union: ["input-group", "combobox-content"],
   sideOffset: 6,
@@ -200,7 +204,7 @@ export const COMBOBOX_OPEN_MANIFEST: SetManifest = {
       kind: "instance",
       key: "input",
       of: INPUT_GROUP_MANIFEST,
-      cell: () => ({ form: "caret open", state: "rest" }),
+      cell: () => ({ form: "caret-open", state: "rest" }),
       shownIn: always,
     },
     {

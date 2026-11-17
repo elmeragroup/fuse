@@ -190,8 +190,8 @@
   ],
   "cells": [
     {
-    "key": "sidebar-menu-item-with-badge/active=off",
-    "cell": {"active":"off"},
+    "key": "sidebar-menu-item-with-badge/isActive=false",
+    "cell": {"isActive":"false"},
     "roots": [
       {
         "around": [
@@ -290,8 +290,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-item-with-badge/active=on",
-    "cell": {"active":"on"},
+    "key": "sidebar-menu-item-with-badge/isActive=true",
+    "cell": {"isActive":"true"},
     "roots": [
       {
         "around": [

@@ -3,7 +3,7 @@
  * `<div>`, 36 cells, and the row as a link, 8 cells.
  *
  * - `Item` crosses the recipe's three variants and three sizes with `described` and the media kind.
- *   `described=on` adds the description. The media kind is `icon`, the docs Lightning, or `image`,
+ *   `described=true` adds the description. The media kind is `icon`, the docs Lightning, or `image`,
  *   the docs portrait. The recipe's `default` media holds whatever a consumer puts in it, as Empty's
  *   default media holds an illustration, so the set leaves it out.
  * - The media and the actions hide behind the `Media` and `Actions` BOOLEAN properties, since a
@@ -87,7 +87,7 @@ export function itemLook(cell: Cell): ItemLook {
   if (!isVariant(variant) || !isSize(size) || !isMediaKind(media)) {
     throw new Error(`Item has no variant ${variant ?? ""}, size ${size ?? ""} or media ${media ?? ""}`);
   }
-  return { variant, size, described: cell.described === "on", media };
+  return { variant, size, described: cell.described === "true", media };
 }
 
 /**
@@ -179,11 +179,12 @@ function titleManifest(characters: string): PartManifest {
 export const ITEM_MANIFEST: SetManifest = {
   key: "item",
   name: "Item",
+  api: { page: "item", parts: ["Item.Root"] },
   slot: "item",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: SIZES },
-    { name: "described", values: ["off", "on"] },
+    { name: "described", values: ["false", "true"] },
     { name: "media", values: MEDIA_KINDS },
   ],
   columnAxis: "size",
@@ -233,6 +234,7 @@ export const ITEM_MANIFEST: SetManifest = {
 export const ITEM_LINK_MANIFEST: SetManifest = {
   key: "item-link",
   name: "Item link",
+  api: { page: "item", parts: ["Item.Root"] },
   slot: "item",
   axes: [
     { name: "variant", values: ["default", "outline"] },

@@ -162,8 +162,8 @@
   ],
   "cells": [
     {
-    "key": "breadcrumb-trail/ellipsis=off",
-    "cell": {"ellipsis":"off"},
+    "key": "breadcrumb-trail/ellipsis=false",
+    "cell": {"ellipsis":"false"},
     "roots": [
       {
         "around": [
@@ -327,8 +327,8 @@
     ]
   },
     {
-    "key": "breadcrumb-trail/ellipsis=on",
-    "cell": {"ellipsis":"on"},
+    "key": "breadcrumb-trail/ellipsis=true",
+    "cell": {"ellipsis":"true"},
     "roots": [
       {
         "around": [

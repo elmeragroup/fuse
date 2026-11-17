@@ -46,6 +46,7 @@ export const TEXT_FIELD_ERROR = "Enter a work email.";
 export const TEXT_FIELD_MANIFEST: SetManifest = {
   key: "text-field",
   name: "Text field",
+  api: { page: "text-field", parts: ["TextField"] },
   slot: "field",
   statePart: "input",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,

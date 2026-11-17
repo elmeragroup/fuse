@@ -173,8 +173,8 @@
   ],
   "cells": [
     {
-    "key": "sidebar-footer/collapsed=off",
-    "cell": {"collapsed":"off"},
+    "key": "sidebar-footer/collapsed=false",
+    "cell": {"collapsed":"false"},
     "roots": [
       {
         "around": [
@@ -274,8 +274,8 @@
     ]
   },
     {
-    "key": "sidebar-footer/collapsed=on",
-    "cell": {"collapsed":"on"},
+    "key": "sidebar-footer/collapsed=true",
+    "cell": {"collapsed":"true"},
     "roots": [
       {
         "around": [

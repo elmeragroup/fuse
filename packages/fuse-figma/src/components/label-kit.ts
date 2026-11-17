@@ -28,6 +28,7 @@ const LABEL_LAYER: LabelManifest = {
 export const LABEL_MANIFEST: SetManifest = {
   key: "label",
   name: "Label",
+  api: { page: "field", parts: ["Field.Label"] },
   slot: "field-label",
   axes: [{ name: "state", values: ["rest", "disabled"] }],
   columnAxis: "state",

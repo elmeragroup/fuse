@@ -42,6 +42,7 @@ export function demoClassesFor(cell: Cell): string {
 export const SKELETON_MANIFEST: SetManifest = {
   key: "skeleton",
   name: "Skeleton",
+  api: { page: "skeleton", parts: ["Skeleton"] },
   slot: "skeleton",
   axes: [{ name: "shape", values: [...DEMO_CLASSES.keys()] }],
   columnAxis: "shape",

@@ -328,8 +328,8 @@
     ]
   },
     {
-    "key": "menu-group-label/kind=menu inset",
-    "cell": {"kind":"menu inset"},
+    "key": "menu-group-label/kind=menu-inset",
+    "cell": {"kind":"menu-inset"},
     "roots": [
       {
         "around": [

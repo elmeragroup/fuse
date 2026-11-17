@@ -5,8 +5,8 @@
  * - `menuGroupLabel`, a client rendering of each family's caption, measured as the label. At
  *   `kind=plain`, an open Select whose popup holds one group, the docs Groups demo's Citrus caption and
  *   its first row. The popup is 144px wide, its minimum, wider than the trigger, so the group gives the
- *   label 136px. At `kind=menu` and `kind=menu inset`, an open Dropdown menu whose popup holds one
- *   group, the caption, `inset` at `menu inset`, and one row. The caption sits in a `<div>` 136px wide,
+ *   label 136px. At `kind=menu` and `kind=menu-inset`, an open Dropdown menu whose popup holds one
+ *   group, the caption, `inset` at `menu-inset`, and one row. The caption sits in a `<div>` 136px wide,
  *   which carries no `data-slot`, so the popup hugs it at the same 144px and the markup check reads
  *   the popup and the group around the caption as Fuse renders them.
  * - `menuSeparator`, a static rendering: `<Select.Separator />` in a host 144px wide that pads
@@ -87,7 +87,7 @@ function dropdownLabel(container: HTMLElement, inset: boolean) {
 export const menuGroupLabel: ClientCellRendering = {
   hostClasses: [CAPTION_WIDTH],
   element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
-    cell.kind === "plain" ? selectLabel(container) : dropdownLabel(container, cell.kind === "menu inset"),
+    cell.kind === "plain" ? selectLabel(container) : dropdownLabel(container, cell.kind === "menu-inset"),
 };
 
 /** A popup's width and padding, which the host's own build compiles. */

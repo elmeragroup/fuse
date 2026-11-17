@@ -35,6 +35,7 @@ export const BADGE_LABEL = "Badge";
 export const BADGE_MANIFEST: SetManifest = {
   key: "badge",
   name: "Badge",
+  api: { page: "badge", parts: ["Badge"] },
   slot: "badge",
   axes: [
     { name: "variant", values: VARIANTS },

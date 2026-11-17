@@ -289,8 +289,8 @@
   ],
   "cells": [
     {
-    "key": "combobox-open/placement=below",
-    "cell": {"placement":"below"},
+    "key": "combobox-open/side=bottom",
+    "cell": {"side":"bottom"},
     "roots": [
       {
         "around": [

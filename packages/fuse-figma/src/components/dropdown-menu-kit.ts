@@ -1,6 +1,6 @@
 /**
  * Dropdown menu's rows, as component sets on a page of their own. The shared `Menu group label` on
- * the Select page draws Dropdown menu's caption as its `menu` and `menu inset` kinds.
+ * the Select page draws Dropdown menu's caption as its `menu` and `menu-inset` kinds.
  *
  * - `Dropdown menu sub trigger` is the row that opens a submenu, in 5 states: 5 cells.
  *   `DropdownMenu.SubTrigger` renders Base UI's `<div role="menuitem"
@@ -24,7 +24,7 @@
  * Each row cell except the sub trigger's is `DROPDOWN_ROW_CELL_WIDTH` wide, a popup width the kit
  * picks. The popups, the sub content and the open menu sit in `dropdown-popup-kit.ts`.
  */
-import type { IconManifest, LabelManifest, SetManifest } from "../capture/manifest";
+import type { FuseParts, IconManifest, LabelManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
 import {
   DROPDOWN_MENU_CHECKBOX_TEXT,
@@ -64,6 +64,7 @@ const CARET: IconManifest = {
 export const DROPDOWN_MENU_SUB_TRIGGER_MANIFEST: SetManifest = {
   key: "dropdown-menu-sub-trigger",
   name: "Dropdown menu sub trigger",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.SubTrigger"] },
   slot: "dropdown-menu-sub-trigger",
   axes: [{ name: "state", values: ["rest", "highlighted", "focus", "open", "disabled"] }],
   columnAxis: "state",
@@ -93,10 +94,11 @@ const USER: IconManifest = {
 export const DROPDOWN_MENU_ITEM_MANIFEST: SetManifest = {
   key: "dropdown-menu-item",
   name: "Dropdown menu item",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.Item"] },
   slot: "dropdown-menu-item",
   axes: [
     { name: "variant", values: ["default", "destructive"] },
-    { name: "inset", values: ["off", "on"] },
+    { name: "inset", values: ["false", "true"] },
     { name: "state", values: ["rest", "highlighted", "focus", "disabled"] },
   ],
   columnAxis: "state",
@@ -123,7 +125,7 @@ export const DROPDOWN_MENU_ITEM_MANIFEST: SetManifest = {
   swapProperties: [{ name: "Icon glyph", defaultIcon: "User" }],
 };
 
-const isChecked = (cell: Cell): boolean => cell.checked === "on";
+const isChecked = (cell: Cell): boolean => cell.checked === "true";
 
 /** The Check Base UI's indicator `<span>` holds inside the row's indicator `<span>`, fixed. */
 const CHECK: IconManifest = {
@@ -143,6 +145,7 @@ const CHECK: IconManifest = {
 function checkableRowManifest(row: {
   readonly key: string;
   readonly name: string;
+  readonly api: FuseParts;
   readonly slot: string;
   readonly indicator: string;
   readonly characters: string;
@@ -150,9 +153,10 @@ function checkableRowManifest(row: {
   return {
     key: row.key,
     name: row.name,
+    api: row.api,
     slot: row.slot,
     axes: [
-      { name: "checked", values: ["off", "on"] },
+      { name: "checked", values: ["false", "true"] },
       { name: "state", values: ["rest", "highlighted", "focus", "disabled"] },
     ],
     columnAxis: "state",
@@ -180,6 +184,7 @@ function checkableRowManifest(row: {
 export const DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST: SetManifest = checkableRowManifest({
   key: "dropdown-menu-checkbox-item",
   name: "Dropdown menu checkbox item",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.CheckboxItem"] },
   slot: "dropdown-menu-checkbox-item",
   indicator: "dropdown-menu-checkbox-item-indicator",
   characters: DROPDOWN_MENU_CHECKBOX_TEXT,
@@ -193,6 +198,7 @@ export const DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST: SetManifest = checkableRowMan
 export const DROPDOWN_MENU_RADIO_ITEM_MANIFEST: SetManifest = checkableRowManifest({
   key: "dropdown-menu-radio-item",
   name: "Dropdown menu radio item",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.RadioItem"] },
   slot: "dropdown-menu-radio-item",
   indicator: "dropdown-menu-radio-item-indicator",
   characters: DROPDOWN_MENU_RADIO_TEXT,

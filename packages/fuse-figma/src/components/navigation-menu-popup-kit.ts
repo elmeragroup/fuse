@@ -48,7 +48,7 @@ function itemManifest(
         kind: "instance",
         key: "link",
         of: NAVIGATION_MENU_ROW_LINK_MANIFEST,
-        cell: () => ({ state: "rest", active: "off" }),
+        cell: () => ({ state: "rest", active: "false" }),
         properties: () => ({ text: { Label: text } }),
         shownIn,
         exposed: true,
@@ -65,6 +65,7 @@ function itemManifest(
 export const NAVIGATION_MENU_POPUP_MANIFEST: SetManifest = {
   key: "navigation-menu-popup",
   name: "Navigation menu popup",
+  api: { page: "navigation-menu", parts: ["NavigationMenu.Content"] },
   slot: "navigation-menu-popup",
   axes: [{ name: "content", values: NAVIGATION_MENU_POPUP_CONTENTS }],
   columnAxis: "content",

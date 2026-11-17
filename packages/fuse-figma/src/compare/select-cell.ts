@@ -71,7 +71,7 @@ export const selectItem: ClientCellRendering = {
       container,
       {
         labels: [SELECT_ITEM_TEXT],
-        value: cell.selected === "on" ? valueOf(SELECT_ITEM_TEXT) : null,
+        value: cell.selected === "true" ? valueOf(SELECT_ITEM_TEXT) : null,
         size: "default",
         align: "start",
       },

@@ -23,7 +23,7 @@ import { loadRenderers } from "../src/compare/cell-renderers.ts";
 import { locateFuseBuild, readPageAssets } from "../src/compare/page-assets.ts";
 import { PAGE_LAYOUT } from "../src/compare/preview-page.ts";
 import { buildComponentSets, densityLengths } from "../src/components/build-kit.ts";
-import { matrixCells, variantKey } from "../src/components/component-spec.ts";
+import { possibleCells, variantKey } from "../src/components/component-spec.ts";
 
 /** The run stopped, and what it printed says why. */
 class ProbeStopped extends Data.TaggedError("ProbeStopped") {
@@ -77,7 +77,7 @@ const main = Effect.fn("probe.main")(function* () {
       failed = true;
       continue;
     }
-    const cells = matrixCells(target.axes).map((cell, index) => ({
+    const cells = possibleCells(target).map((cell, index) => ({
       key: variantKey(target, cell),
       request: requestOf(target, renderer, cell, index),
     }));

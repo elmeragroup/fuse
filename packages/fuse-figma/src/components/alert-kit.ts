@@ -9,7 +9,7 @@
  *   in `alert.tsx` picks them. The tone decides the icon, so no property swaps it.
  * - The title and the description are the docs Variants demo's first row, `Scheduled maintenance`
  *   and `Read-only access tonight from 22:00 to 23:00.`. A text property sets each.
- * - `described=on` adds the description. The description's presence is the `described` axis, not
+ * - `described=true` adds the description. The description's presence is the `described` axis, not
  *   a BOOLEAN property, since a selector reads it.
  * - The action is `alert.tsx`'s `<Button size="sm">` in Item.Actions: an instance of Button's
  *   `default` variant at `sm`, at rest and with no icon, whose label is the docs Action demo's
@@ -69,7 +69,7 @@ export function alertLook(cell: Cell): AlertLook {
   if (!isVariant(variant)) {
     throw new Error(`Alert has no variant ${variant ?? ""}`);
   }
-  return { variant, described: cell.described === "on" };
+  return { variant, described: cell.described === "true" };
 }
 
 /** The tone's icon, `Alert.Icon`'s `<svg>`. */
@@ -99,10 +99,11 @@ export const ALERT_ACTION_PROPERTY = "Action";
 export const ALERT_MANIFEST: SetManifest = {
   key: "alert",
   name: "Alert",
+  api: { page: "alert", parts: ["Alert.Root"] },
   slot: "item",
   axes: [
     { name: "variant", values: VARIANTS },
-    { name: "described", values: ["off", "on"] },
+    { name: "described", values: ["false", "true"] },
   ],
   columnAxis: "described",
   previewWidth: ALERT_PREVIEW_WIDTH,

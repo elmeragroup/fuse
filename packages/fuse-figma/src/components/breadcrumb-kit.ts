@@ -16,6 +16,7 @@
  * `Breadcrumb.Item` inside it. The list sets the type and the text color each part inherits.
  */
 import type {
+  FuseParts,
   IconManifest,
   InstanceManifest,
   LabelManifest,
@@ -61,6 +62,7 @@ const CARET: IconManifest = {
 function partManifest(part: {
   readonly key: string;
   readonly name: string;
+  readonly api: FuseParts;
   readonly slot: string;
   readonly axes: readonly AxisSpec[];
   readonly columnAxis: string;
@@ -70,6 +72,7 @@ function partManifest(part: {
   return {
     key: part.key,
     name: part.name,
+    api: part.api,
     slot: part.slot,
     axes: part.axes,
     columnAxis: part.columnAxis,
@@ -86,6 +89,7 @@ function partManifest(part: {
 export const BREADCRUMB_LINK_MANIFEST: SetManifest = partManifest({
   key: "breadcrumb-link",
   name: "Breadcrumb link",
+  api: { page: "breadcrumb", parts: ["Breadcrumb.Link"] },
   slot: "breadcrumb-link",
   axes: [{ name: "state", values: ["rest", "hover", "focus"] }],
   columnAxis: "state",
@@ -101,15 +105,16 @@ export const BREADCRUMB_LINK_MANIFEST: SetManifest = partManifest({
 
 /**
  * The page's manifest, which the capture-backed build reads with `captures/breadcrumb-page.json`:
- * `<Breadcrumb.Page>Breadcrumb</Breadcrumb.Page>`. It has no states, so the set's one property,
- * `current`, names the `aria-current="page"` that makes it the current page.
+ * `<Breadcrumb.Page>Breadcrumb</Breadcrumb.Page>`, which `aria-current="page"` marks. It has no
+ * states, so the set's one property is `state=rest`.
  */
 export const BREADCRUMB_PAGE_MANIFEST: SetManifest = partManifest({
   key: "breadcrumb-page",
   name: "Breadcrumb page",
+  api: { page: "breadcrumb", parts: ["Breadcrumb.Page"] },
   slot: "breadcrumb-page",
-  axes: [{ name: "current", values: ["page"] }],
-  columnAxis: "current",
+  axes: [{ name: "state", values: ["rest"] }],
+  columnAxis: "state",
   label: {
     key: "label",
     name: "label",
@@ -123,15 +128,16 @@ export const BREADCRUMB_PAGE_MANIFEST: SetManifest = partManifest({
 /**
  * The ellipsis's manifest, which the capture-backed build reads with
  * `captures/breadcrumb-ellipsis.json`: the marker for omitted links, `<Breadcrumb.Ellipsis />` in its
- * list and item. The component takes no variant props, so the set's one property, `size`, names its
- * 20px box.
+ * list and item, a 20px box. The component takes no variant props, so the set's one property is
+ * `state=rest`.
  */
 export const BREADCRUMB_ELLIPSIS_MANIFEST: SetManifest = partManifest({
   key: "breadcrumb-ellipsis",
   name: "Breadcrumb ellipsis",
+  api: { page: "breadcrumb", parts: ["Breadcrumb.Ellipsis"] },
   slot: "breadcrumb-ellipsis",
-  axes: [{ name: "size", values: ["20"] }],
-  columnAxis: "size",
+  axes: [{ name: "state", values: ["rest"] }],
+  columnAxis: "state",
   label: undefined,
   iconsFor: () => [DOTS],
 });
@@ -139,14 +145,15 @@ export const BREADCRUMB_ELLIPSIS_MANIFEST: SetManifest = partManifest({
 /**
  * The separator's manifest, which the capture-backed build reads with
  * `captures/breadcrumb-separator.json`: `<Breadcrumb.Separator />` in its list. The component takes
- * no variant props, so the set's one property, `size`, names the 14px its chevron takes.
+ * no variant props, so the set's one property is `state=rest`. Its chevron takes 14px.
  */
 export const BREADCRUMB_SEPARATOR_MANIFEST: SetManifest = partManifest({
   key: "breadcrumb-separator",
   name: "Breadcrumb separator",
+  api: { page: "breadcrumb", parts: ["Breadcrumb.Separator"] },
   slot: "breadcrumb-separator",
-  axes: [{ name: "size", values: ["14"] }],
-  columnAxis: "size",
+  axes: [{ name: "state", values: ["rest"] }],
+  columnAxis: "state",
   label: undefined,
   iconsFor: () => [CARET],
 });
@@ -155,7 +162,7 @@ export const BREADCRUMB_SEPARATOR_MANIFEST: SetManifest = partManifest({
 export const BREADCRUMB_TRAIL_LINK_LABEL = "Quick start";
 
 /** Whether a trail cell shows the ellipsis, as the docs Ellipsis demo does. */
-const collapsed = (cell: Cell): boolean => cell.ellipsis === "on";
+const collapsed = (cell: Cell): boolean => cell.ellipsis === "true";
 
 /**
  * An entry of the trail: a `Breadcrumb.Item` around an instance of a part's set, in the cells the
@@ -178,22 +185,23 @@ function separatorManifest(key: string, shownIn: (cell: Cell) => boolean = () =>
     kind: "instance",
     key: `${key}-separator`,
     of: BREADCRUMB_SEPARATOR_MANIFEST,
-    cell: () => ({ size: "14" }),
+    cell: () => ({ state: "rest" }),
     shownIn,
   };
 }
 
 /**
  * The trail's manifest, which the capture-backed build reads with `captures/breadcrumb-trail.json`:
- * the docs Basic demo's trail, and the Ellipsis demo's at `ellipsis=on`. `Breadcrumb.List` holds
+ * the docs Basic demo's trail, and the Ellipsis demo's at `ellipsis=true`. `Breadcrumb.List` holds
  * `Home`, `Quick start` and the current page, each in its item, with a separator between them. The
  * links and the page are exposed, so a designer retypes them from the trail's panel.
  */
 export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
   key: "breadcrumb-trail",
   name: "Breadcrumb trail",
+  api: { page: "breadcrumb", parts: ["Breadcrumb.List"] },
   slot: "breadcrumb-list",
-  axes: [{ name: "ellipsis", values: ["off", "on"] }],
+  axes: [{ name: "ellipsis", values: ["false", "true"] }],
   columnAxis: "ellipsis",
   label: undefined,
   iconsFor: () => [],
@@ -211,7 +219,7 @@ export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
       kind: "instance",
       key: "ellipsis",
       of: BREADCRUMB_ELLIPSIS_MANIFEST,
-      cell: () => ({ size: "20" }),
+      cell: () => ({ state: "rest" }),
       shownIn: collapsed,
     }),
     separatorManifest("ellipsis", collapsed),
@@ -229,7 +237,7 @@ export const BREADCRUMB_TRAIL_MANIFEST: SetManifest = {
       kind: "instance",
       key: "page",
       of: BREADCRUMB_PAGE_MANIFEST,
-      cell: () => ({ current: "page" }),
+      cell: () => ({ state: "rest" }),
       shownIn: () => true,
       exposed: true,
     }),

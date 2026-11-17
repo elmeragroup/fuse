@@ -154,8 +154,8 @@
   ],
   "cells": [
     {
-    "key": "sidebar-menu-sub-button/size=md,active=off,state=rest",
-    "cell": {"size":"md","active":"off","state":"rest"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=false,state=rest",
+    "cell": {"size":"md","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -204,8 +204,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=off,state=hover",
-    "cell": {"size":"md","active":"off","state":"hover"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=false,state=hover",
+    "cell": {"size":"md","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -254,8 +254,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=off,state=focus",
-    "cell": {"size":"md","active":"off","state":"focus"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=false,state=focus",
+    "cell": {"size":"md","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -304,8 +304,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=off,state=disabled",
-    "cell": {"size":"md","active":"off","state":"disabled"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=false,state=disabled",
+    "cell": {"size":"md","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -354,8 +354,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=on,state=rest",
-    "cell": {"size":"md","active":"on","state":"rest"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=true,state=rest",
+    "cell": {"size":"md","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -404,8 +404,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=on,state=hover",
-    "cell": {"size":"md","active":"on","state":"hover"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=true,state=hover",
+    "cell": {"size":"md","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -454,8 +454,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=on,state=focus",
-    "cell": {"size":"md","active":"on","state":"focus"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=true,state=focus",
+    "cell": {"size":"md","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -504,8 +504,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=md,active=on,state=disabled",
-    "cell": {"size":"md","active":"on","state":"disabled"},
+    "key": "sidebar-menu-sub-button/size=md,isActive=true,state=disabled",
+    "cell": {"size":"md","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -554,8 +554,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=off,state=rest",
-    "cell": {"size":"sm","active":"off","state":"rest"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=false,state=rest",
+    "cell": {"size":"sm","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -604,8 +604,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=off,state=hover",
-    "cell": {"size":"sm","active":"off","state":"hover"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=false,state=hover",
+    "cell": {"size":"sm","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -654,8 +654,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=off,state=focus",
-    "cell": {"size":"sm","active":"off","state":"focus"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=false,state=focus",
+    "cell": {"size":"sm","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -704,8 +704,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=off,state=disabled",
-    "cell": {"size":"sm","active":"off","state":"disabled"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=false,state=disabled",
+    "cell": {"size":"sm","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -754,8 +754,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=on,state=rest",
-    "cell": {"size":"sm","active":"on","state":"rest"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=true,state=rest",
+    "cell": {"size":"sm","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -804,8 +804,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=on,state=hover",
-    "cell": {"size":"sm","active":"on","state":"hover"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=true,state=hover",
+    "cell": {"size":"sm","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -854,8 +854,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=on,state=focus",
-    "cell": {"size":"sm","active":"on","state":"focus"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=true,state=focus",
+    "cell": {"size":"sm","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -904,8 +904,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-sub-button/size=sm,active=on,state=disabled",
-    "cell": {"size":"sm","active":"on","state":"disabled"},
+    "key": "sidebar-menu-sub-button/size=sm,isActive=true,state=disabled",
+    "cell": {"size":"sm","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [

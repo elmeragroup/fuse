@@ -3,7 +3,7 @@
  * aria-label="Option">`, alone in a `<RadioGroup>`, since a radio renders checked only inside a
  * group.
  *
- * - `checked=on` sets the group's `defaultValue` to the item's value. The page renders static
+ * - `checked=true` sets the group's `defaultValue` to the item's value. The page renders static
  *   HTML, so the state the markup draws is the one the props start with.
  * - `disabled` sets the item's `disabled`.
  * - `invalid` sets the group's `isInvalid`. `RadioGroup` renders its own `Field.Root` and passes
@@ -27,11 +27,11 @@ const VALUE = "a";
 const CELL_LABEL = "Option";
 
 /**
- * One radio item alone in a `<RadioGroup>`, which checks it at `checked=on` and marks it invalid
+ * One radio item alone in a `<RadioGroup>`, which checks it at `checked=true` and marks it invalid
  * at `invalid`, as the module docblock describes.
  *
  * @param cell - The cell.
- * @param value - The item's value, which the group starts with at `checked=on`.
+ * @param value - The item's value, which the group starts with at `checked=true`.
  * @param item - The item, a `RadioGroupItem`, a `RadioIconButton` or a `Radio` row.
  * @param props - More of the group's props, such as its orientation.
  * @returns The group around the item.
@@ -43,7 +43,7 @@ export function inRadioGroup(
   props: Partial<RadioGroupProps> = {}
 ): ReactElement {
   const group: RadioGroupProps = { ...props, isInvalid: cell.state === "invalid" };
-  if (cell.checked === "on") {
+  if (cell.checked === "true") {
     group.defaultValue = value;
   }
   return createElement(RadioGroup, group, item);

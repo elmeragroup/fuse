@@ -69,7 +69,7 @@ function sectionManifest(key: string, of: SetManifest): InstanceManifest {
     kind: "instance",
     key,
     of,
-    cell: (outer) => ({ collapsed: outer.collapsed ?? "off" }),
+    cell: (outer) => ({ collapsed: outer.collapsed ?? "false" }),
     shownIn: always,
     exposed: true,
   };
@@ -82,11 +82,12 @@ function sectionManifest(key: string, of: SetManifest): InstanceManifest {
 export const SIDEBAR_MANIFEST: SetManifest = {
   key: "sidebar",
   name: "Sidebar",
+  api: { page: "sidebar", parts: ["Sidebar.Root"] },
   slot: "sidebar-container",
   previewHeight: { pixels: SIDEBAR_PANEL_HEIGHT },
   axes: [
     { name: "variant", values: PANEL_VARIANTS },
-    { name: "collapsed", values: ["off", "on"] },
+    { name: "collapsed", values: ["false", "true"] },
   ],
   columnAxis: "collapsed",
   label: undefined,

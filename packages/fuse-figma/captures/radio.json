@@ -178,8 +178,8 @@
   ],
   "cells": [
     {
-    "key": "radio/checked=off,state=rest",
-    "cell": {"checked":"off","state":"rest"},
+    "key": "radio/checked=false,state=rest",
+    "cell": {"checked":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -237,8 +237,8 @@
     ]
   },
     {
-    "key": "radio/checked=off,state=focus",
-    "cell": {"checked":"off","state":"focus"},
+    "key": "radio/checked=false,state=focus",
+    "cell": {"checked":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -296,8 +296,8 @@
     ]
   },
     {
-    "key": "radio/checked=off,state=disabled",
-    "cell": {"checked":"off","state":"disabled"},
+    "key": "radio/checked=false,state=disabled",
+    "cell": {"checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -355,8 +355,8 @@
     ]
   },
     {
-    "key": "radio/checked=off,state=invalid",
-    "cell": {"checked":"off","state":"invalid"},
+    "key": "radio/checked=false,state=invalid",
+    "cell": {"checked":"false","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -414,8 +414,8 @@
     ]
   },
     {
-    "key": "radio/checked=on,state=rest",
-    "cell": {"checked":"on","state":"rest"},
+    "key": "radio/checked=true,state=rest",
+    "cell": {"checked":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -499,8 +499,8 @@
     ]
   },
     {
-    "key": "radio/checked=on,state=focus",
-    "cell": {"checked":"on","state":"focus"},
+    "key": "radio/checked=true,state=focus",
+    "cell": {"checked":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -584,8 +584,8 @@
     ]
   },
     {
-    "key": "radio/checked=on,state=disabled",
-    "cell": {"checked":"on","state":"disabled"},
+    "key": "radio/checked=true,state=disabled",
+    "cell": {"checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -669,8 +669,8 @@
     ]
   },
     {
-    "key": "radio/checked=on,state=invalid",
-    "cell": {"checked":"on","state":"invalid"},
+    "key": "radio/checked=true,state=invalid",
+    "cell": {"checked":"true","state":"invalid"},
     "roots": [
       {
         "around": [

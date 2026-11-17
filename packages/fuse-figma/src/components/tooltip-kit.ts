@@ -22,6 +22,7 @@ import { TOOLTIP_TEXT } from "./tooltip-text";
 export const TOOLTIP_CONTENT_MANIFEST: SetManifest = {
   key: "tooltip-content",
   name: "Tooltip content",
+  api: { page: "tooltip", parts: ["Tooltip.Content"] },
   slot: "tooltip-content",
   axes: [{ name: "content", values: ["basic"] }],
   columnAxis: "content",
@@ -48,9 +49,10 @@ export const TOOLTIP_CONTENT_MANIFEST: SetManifest = {
 export const TOOLTIP_OPEN_MANIFEST: SetManifest = {
   key: "tooltip-open",
   name: "Tooltip (open)",
+  api: { page: "tooltip", parts: ["Tooltip.Content"] },
   slot: "tooltip-open",
-  axes: [{ name: "placement", values: ["above"] }],
-  columnAxis: "placement",
+  axes: [{ name: "side", values: ["top"] }],
+  columnAxis: "side",
   union: ["tooltip-content", "tooltip-trigger"],
   sideOffset: 4,
   label: undefined,

@@ -56,6 +56,7 @@ function hintManifest(entry: (typeof COMMAND_DIALOG_HINTS)[number]): PartManifes
 export const COMMAND_PALETTE_MANIFEST: SetManifest = {
   key: "command-palette",
   name: "Command palette",
+  api: { page: "command", parts: ["Command.Root"] },
   slot: "command-content",
   axes: [{ name: "content", values: ["commands"] }],
   columnAxis: "content",
@@ -121,6 +122,7 @@ export const COMMAND_PALETTE_MANIFEST: SetManifest = {
 export const COMMAND_DIALOG_OPEN_MANIFEST: SetManifest = {
   key: "command-dialog-open",
   name: "Command dialog (open)",
+  api: { page: "command", parts: ["Command.Root", "Command.Content"] },
   slot: "command-dialog-open",
   axes: [{ name: "placement", values: ["top"] }],
   columnAxis: "placement",

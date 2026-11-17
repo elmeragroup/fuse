@@ -26,7 +26,7 @@ import { readFileSync } from "node:fs";
 
 import { buildComponentSets } from "../components/build-kit.ts";
 import type { KitComponentSet } from "../components/build-kit.ts";
-import { matrixCells, variantKey } from "../components/component-spec.ts";
+import { possibleCells, variantKey } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { fuseVariableSet } from "../fuse-variable-set.ts";
 import type { InstancePlace } from "./capture-cascade.ts";
@@ -185,7 +185,7 @@ function fieldsOutsideAllowlist(manifest: SetManifest): readonly string[] {
       return;
     }
     seen.add(each);
-    const cells = matrixCells(each.axes);
+    const cells = possibleCells(each);
     check("set", each, each.key);
     box(each, each.key, cells);
     for (const below of each.parts ?? []) {

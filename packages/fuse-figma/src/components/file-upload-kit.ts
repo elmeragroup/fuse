@@ -53,6 +53,7 @@ const DESCRIPTION_TEXT: LabelManifest = {
 export const FILE_UPLOAD_DROPZONE_MANIFEST: SetManifest = {
   key: "file-upload-dropzone",
   name: "File upload dropzone",
+  api: { page: "file-upload", parts: ["FileUpload.Dropzone"] },
   slot: "file-upload-dropzone",
   focusPart: "file-upload-trigger",
   previewWidth: FILE_UPLOAD_PREVIEW_WIDTH,

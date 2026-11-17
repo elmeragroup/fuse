@@ -232,6 +232,7 @@ function captureOf(
 const MANIFEST: SetManifest = {
   key: "sample",
   name: "Sample",
+  api: { page: "sample", parts: ["Sample"] },
   slot: "root",
   axes: [{ name: "state", values: ["rest"] }],
   columnAxis: "state",

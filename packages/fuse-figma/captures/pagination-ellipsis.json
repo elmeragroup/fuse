@@ -137,8 +137,8 @@
   ],
   "cells": [
     {
-    "key": "pagination-ellipsis/size=md",
-    "cell": {"size":"md"},
+    "key": "pagination-ellipsis/state=rest",
+    "cell": {"state":"rest"},
     "roots": [
       {
         "around": [],

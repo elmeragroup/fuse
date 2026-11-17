@@ -87,7 +87,7 @@ export function menuButtonLook(cell: Cell): MenuButtonLook {
   if (!isMenuButtonVariant(variant) || !isMenuButtonSize(size)) {
     throw new Error(`Sidebar menu button has no variant ${variant ?? ""} or size ${size ?? ""}`);
   }
-  return { variant, size, active: cell.active === "on", collapsed: cell.collapsed === "on" };
+  return { variant, size, active: cell.isActive === "true", collapsed: cell.collapsed === "true" };
 }
 
 /** What a `sidebar-menu-sub-button` cell renders. */
@@ -108,7 +108,7 @@ export function subButtonLook(cell: Cell): SubButtonLook {
   if (!isSubButtonSize(size)) {
     throw new Error(`Sidebar menu sub button has no size ${size ?? ""}`);
   }
-  return { size, active: cell.active === "on" };
+  return { size, active: cell.isActive === "true" };
 }
 
 /** The menu button's variants and sizes in the recipe's order, its defaults first. */
@@ -144,12 +144,13 @@ function textManifest(characters: string, textProperty: string): LabelManifest {
 export const SIDEBAR_MENU_BUTTON_MANIFEST: SetManifest = {
   key: "sidebar-menu-button",
   name: "Sidebar menu button",
+  api: { page: "sidebar", parts: ["Sidebar.MenuButton"] },
   slot: "sidebar-menu-button",
   axes: [
     { name: "variant", values: MENU_BUTTON_VARIANTS },
     { name: "size", values: MENU_BUTTON_SIZES },
-    { name: "collapsed", values: ["off", "on"] },
-    { name: "active", values: ["off", "on"] },
+    { name: "collapsed", values: ["false", "true"] },
+    { name: "isActive", values: ["false", "true"] },
     { name: "state", values: ["rest", "hover", "focus", "disabled"] },
   ],
   columnAxis: "state",
@@ -162,10 +163,11 @@ export const SIDEBAR_MENU_BUTTON_MANIFEST: SetManifest = {
 export const SIDEBAR_MENU_SUB_BUTTON_MANIFEST: SetManifest = {
   key: "sidebar-menu-sub-button",
   name: "Sidebar menu sub button",
+  api: { page: "sidebar", parts: ["Sidebar.MenuSubButton"] },
   slot: "sidebar-menu-sub-button",
   axes: [
     { name: "size", values: SUB_BUTTON_SIZES },
-    { name: "active", values: ["off", "on"] },
+    { name: "isActive", values: ["false", "true"] },
     { name: "state", values: ["rest", "hover", "focus", "disabled"] },
   ],
   columnAxis: "state",
@@ -178,6 +180,7 @@ export const SIDEBAR_MENU_SUB_BUTTON_MANIFEST: SetManifest = {
 export const SIDEBAR_GROUP_LABEL_MANIFEST: SetManifest = {
   key: "sidebar-group-label",
   name: "Sidebar group label",
+  api: { page: "sidebar", parts: ["Sidebar.GroupLabel"] },
   slot: "sidebar-group-label",
   axes: [{ name: "state", values: ["rest"] }],
   columnAxis: "state",
@@ -193,6 +196,7 @@ export const SIDEBAR_GROUP_LABEL_MANIFEST: SetManifest = {
 export const SIDEBAR_MENU_BADGE_MANIFEST: SetManifest = {
   key: "sidebar-menu-badge",
   name: "Sidebar menu badge",
+  api: { page: "sidebar", parts: ["Sidebar.MenuBadge"] },
   slot: "sidebar-menu-badge",
   statePeer: "sidebar-menu-button",
   axes: [{ name: "state", values: ["rest", "hover", "active"] }],

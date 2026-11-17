@@ -60,6 +60,7 @@ const GLYPH_MANIFEST: IconManifest = {
 export const NUMBER_FIELD_STEPPER_MANIFEST: SetManifest = {
   key: "number-field-stepper",
   name: "Number field stepper",
+  api: { page: "number-field", parts: ["NumberField"] },
   slot: "number-field-stepper",
   elementSlot: () => "number-field-increment",
   axes: [{ name: "state", values: ["rest", "hover", "disabled", "readonly"] }],
@@ -153,6 +154,7 @@ const GROUP_MANIFEST: PartManifest = {
 export const NUMBER_FIELD_MANIFEST: SetManifest = {
   key: "number-field",
   name: "Number field",
+  api: { page: "number-field", parts: ["NumberField"] },
   slot: "field",
   statePlace: "field/1/0/0",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,

@@ -63,6 +63,7 @@ const COUNTER_TEXT: LabelManifest = {
 export const TEXTAREA_FIELD_MANIFEST: SetManifest = {
   key: "textarea-field",
   name: "Textarea field",
+  api: { page: "textarea-field", parts: ["TextareaField"] },
   slot: "field",
   statePart: "field-control",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,

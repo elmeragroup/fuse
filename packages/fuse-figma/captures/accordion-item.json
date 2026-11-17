@@ -198,8 +198,8 @@
   ],
   "cells": [
     {
-    "key": "accordion-item/variant=default,radius=none,open=off,state=rest",
-    "cell": {"variant":"default","radius":"none","open":"off","state":"rest"},
+    "key": "accordion-item/variant=default,radius=none,open=false,state=rest",
+    "cell": {"variant":"default","radius":"none","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -285,8 +285,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=off,state=hover",
-    "cell": {"variant":"default","radius":"none","open":"off","state":"hover"},
+    "key": "accordion-item/variant=default,radius=none,open=false,state=hover",
+    "cell": {"variant":"default","radius":"none","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -372,8 +372,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=off,state=focus",
-    "cell": {"variant":"default","radius":"none","open":"off","state":"focus"},
+    "key": "accordion-item/variant=default,radius=none,open=false,state=focus",
+    "cell": {"variant":"default","radius":"none","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -459,8 +459,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=off,state=disabled",
-    "cell": {"variant":"default","radius":"none","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=none,open=false,state=disabled",
+    "cell": {"variant":"default","radius":"none","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -546,8 +546,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=on,state=rest",
-    "cell": {"variant":"default","radius":"none","open":"on","state":"rest"},
+    "key": "accordion-item/variant=default,radius=none,open=true,state=rest",
+    "cell": {"variant":"default","radius":"none","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -659,8 +659,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=on,state=hover",
-    "cell": {"variant":"default","radius":"none","open":"on","state":"hover"},
+    "key": "accordion-item/variant=default,radius=none,open=true,state=hover",
+    "cell": {"variant":"default","radius":"none","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -772,8 +772,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=on,state=focus",
-    "cell": {"variant":"default","radius":"none","open":"on","state":"focus"},
+    "key": "accordion-item/variant=default,radius=none,open=true,state=focus",
+    "cell": {"variant":"default","radius":"none","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -885,8 +885,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=none,open=on,state=disabled",
-    "cell": {"variant":"default","radius":"none","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=none,open=true,state=disabled",
+    "cell": {"variant":"default","radius":"none","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -998,8 +998,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=off,state=rest",
-    "cell": {"variant":"default","radius":"lg","open":"off","state":"rest"},
+    "key": "accordion-item/variant=default,radius=lg,open=false,state=rest",
+    "cell": {"variant":"default","radius":"lg","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1085,8 +1085,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=off,state=hover",
-    "cell": {"variant":"default","radius":"lg","open":"off","state":"hover"},
+    "key": "accordion-item/variant=default,radius=lg,open=false,state=hover",
+    "cell": {"variant":"default","radius":"lg","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1172,8 +1172,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=off,state=focus",
-    "cell": {"variant":"default","radius":"lg","open":"off","state":"focus"},
+    "key": "accordion-item/variant=default,radius=lg,open=false,state=focus",
+    "cell": {"variant":"default","radius":"lg","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1259,8 +1259,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=off,state=disabled",
-    "cell": {"variant":"default","radius":"lg","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=lg,open=false,state=disabled",
+    "cell": {"variant":"default","radius":"lg","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1346,8 +1346,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=on,state=rest",
-    "cell": {"variant":"default","radius":"lg","open":"on","state":"rest"},
+    "key": "accordion-item/variant=default,radius=lg,open=true,state=rest",
+    "cell": {"variant":"default","radius":"lg","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1459,8 +1459,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=on,state=hover",
-    "cell": {"variant":"default","radius":"lg","open":"on","state":"hover"},
+    "key": "accordion-item/variant=default,radius=lg,open=true,state=hover",
+    "cell": {"variant":"default","radius":"lg","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1572,8 +1572,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=on,state=focus",
-    "cell": {"variant":"default","radius":"lg","open":"on","state":"focus"},
+    "key": "accordion-item/variant=default,radius=lg,open=true,state=focus",
+    "cell": {"variant":"default","radius":"lg","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1685,8 +1685,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=lg,open=on,state=disabled",
-    "cell": {"variant":"default","radius":"lg","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=lg,open=true,state=disabled",
+    "cell": {"variant":"default","radius":"lg","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1798,8 +1798,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=off,state=rest",
-    "cell": {"variant":"default","radius":"xl","open":"off","state":"rest"},
+    "key": "accordion-item/variant=default,radius=xl,open=false,state=rest",
+    "cell": {"variant":"default","radius":"xl","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1885,8 +1885,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=off,state=hover",
-    "cell": {"variant":"default","radius":"xl","open":"off","state":"hover"},
+    "key": "accordion-item/variant=default,radius=xl,open=false,state=hover",
+    "cell": {"variant":"default","radius":"xl","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1972,8 +1972,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=off,state=focus",
-    "cell": {"variant":"default","radius":"xl","open":"off","state":"focus"},
+    "key": "accordion-item/variant=default,radius=xl,open=false,state=focus",
+    "cell": {"variant":"default","radius":"xl","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2059,8 +2059,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=off,state=disabled",
-    "cell": {"variant":"default","radius":"xl","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=xl,open=false,state=disabled",
+    "cell": {"variant":"default","radius":"xl","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2146,8 +2146,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=on,state=rest",
-    "cell": {"variant":"default","radius":"xl","open":"on","state":"rest"},
+    "key": "accordion-item/variant=default,radius=xl,open=true,state=rest",
+    "cell": {"variant":"default","radius":"xl","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -2259,8 +2259,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=on,state=hover",
-    "cell": {"variant":"default","radius":"xl","open":"on","state":"hover"},
+    "key": "accordion-item/variant=default,radius=xl,open=true,state=hover",
+    "cell": {"variant":"default","radius":"xl","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -2372,8 +2372,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=on,state=focus",
-    "cell": {"variant":"default","radius":"xl","open":"on","state":"focus"},
+    "key": "accordion-item/variant=default,radius=xl,open=true,state=focus",
+    "cell": {"variant":"default","radius":"xl","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2485,8 +2485,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=default,radius=xl,open=on,state=disabled",
-    "cell": {"variant":"default","radius":"xl","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=default,radius=xl,open=true,state=disabled",
+    "cell": {"variant":"default","radius":"xl","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2598,8 +2598,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=off,state=rest",
-    "cell": {"variant":"card","radius":"none","open":"off","state":"rest"},
+    "key": "accordion-item/variant=card,radius=none,open=false,state=rest",
+    "cell": {"variant":"card","radius":"none","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -2685,8 +2685,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=off,state=hover",
-    "cell": {"variant":"card","radius":"none","open":"off","state":"hover"},
+    "key": "accordion-item/variant=card,radius=none,open=false,state=hover",
+    "cell": {"variant":"card","radius":"none","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -2772,8 +2772,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=off,state=focus",
-    "cell": {"variant":"card","radius":"none","open":"off","state":"focus"},
+    "key": "accordion-item/variant=card,radius=none,open=false,state=focus",
+    "cell": {"variant":"card","radius":"none","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2859,8 +2859,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=off,state=disabled",
-    "cell": {"variant":"card","radius":"none","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=none,open=false,state=disabled",
+    "cell": {"variant":"card","radius":"none","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2946,8 +2946,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=on,state=rest",
-    "cell": {"variant":"card","radius":"none","open":"on","state":"rest"},
+    "key": "accordion-item/variant=card,radius=none,open=true,state=rest",
+    "cell": {"variant":"card","radius":"none","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3059,8 +3059,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=on,state=hover",
-    "cell": {"variant":"card","radius":"none","open":"on","state":"hover"},
+    "key": "accordion-item/variant=card,radius=none,open=true,state=hover",
+    "cell": {"variant":"card","radius":"none","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3172,8 +3172,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=on,state=focus",
-    "cell": {"variant":"card","radius":"none","open":"on","state":"focus"},
+    "key": "accordion-item/variant=card,radius=none,open=true,state=focus",
+    "cell": {"variant":"card","radius":"none","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -3285,8 +3285,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=none,open=on,state=disabled",
-    "cell": {"variant":"card","radius":"none","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=none,open=true,state=disabled",
+    "cell": {"variant":"card","radius":"none","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -3398,8 +3398,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=off,state=rest",
-    "cell": {"variant":"card","radius":"lg","open":"off","state":"rest"},
+    "key": "accordion-item/variant=card,radius=lg,open=false,state=rest",
+    "cell": {"variant":"card","radius":"lg","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3485,8 +3485,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=off,state=hover",
-    "cell": {"variant":"card","radius":"lg","open":"off","state":"hover"},
+    "key": "accordion-item/variant=card,radius=lg,open=false,state=hover",
+    "cell": {"variant":"card","radius":"lg","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3572,8 +3572,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=off,state=focus",
-    "cell": {"variant":"card","radius":"lg","open":"off","state":"focus"},
+    "key": "accordion-item/variant=card,radius=lg,open=false,state=focus",
+    "cell": {"variant":"card","radius":"lg","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -3659,8 +3659,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=off,state=disabled",
-    "cell": {"variant":"card","radius":"lg","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=lg,open=false,state=disabled",
+    "cell": {"variant":"card","radius":"lg","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -3746,8 +3746,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=on,state=rest",
-    "cell": {"variant":"card","radius":"lg","open":"on","state":"rest"},
+    "key": "accordion-item/variant=card,radius=lg,open=true,state=rest",
+    "cell": {"variant":"card","radius":"lg","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3859,8 +3859,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=on,state=hover",
-    "cell": {"variant":"card","radius":"lg","open":"on","state":"hover"},
+    "key": "accordion-item/variant=card,radius=lg,open=true,state=hover",
+    "cell": {"variant":"card","radius":"lg","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3972,8 +3972,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=on,state=focus",
-    "cell": {"variant":"card","radius":"lg","open":"on","state":"focus"},
+    "key": "accordion-item/variant=card,radius=lg,open=true,state=focus",
+    "cell": {"variant":"card","radius":"lg","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4085,8 +4085,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=lg,open=on,state=disabled",
-    "cell": {"variant":"card","radius":"lg","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=lg,open=true,state=disabled",
+    "cell": {"variant":"card","radius":"lg","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -4198,8 +4198,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=off,state=rest",
-    "cell": {"variant":"card","radius":"xl","open":"off","state":"rest"},
+    "key": "accordion-item/variant=card,radius=xl,open=false,state=rest",
+    "cell": {"variant":"card","radius":"xl","open":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -4285,8 +4285,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=off,state=hover",
-    "cell": {"variant":"card","radius":"xl","open":"off","state":"hover"},
+    "key": "accordion-item/variant=card,radius=xl,open=false,state=hover",
+    "cell": {"variant":"card","radius":"xl","open":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -4372,8 +4372,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=off,state=focus",
-    "cell": {"variant":"card","radius":"xl","open":"off","state":"focus"},
+    "key": "accordion-item/variant=card,radius=xl,open=false,state=focus",
+    "cell": {"variant":"card","radius":"xl","open":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4459,8 +4459,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=off,state=disabled",
-    "cell": {"variant":"card","radius":"xl","open":"off","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=xl,open=false,state=disabled",
+    "cell": {"variant":"card","radius":"xl","open":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -4546,8 +4546,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=on,state=rest",
-    "cell": {"variant":"card","radius":"xl","open":"on","state":"rest"},
+    "key": "accordion-item/variant=card,radius=xl,open=true,state=rest",
+    "cell": {"variant":"card","radius":"xl","open":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -4659,8 +4659,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=on,state=hover",
-    "cell": {"variant":"card","radius":"xl","open":"on","state":"hover"},
+    "key": "accordion-item/variant=card,radius=xl,open=true,state=hover",
+    "cell": {"variant":"card","radius":"xl","open":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -4772,8 +4772,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=on,state=focus",
-    "cell": {"variant":"card","radius":"xl","open":"on","state":"focus"},
+    "key": "accordion-item/variant=card,radius=xl,open=true,state=focus",
+    "cell": {"variant":"card","radius":"xl","open":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4885,8 +4885,8 @@
     ]
   },
     {
-    "key": "accordion-item/variant=card,radius=xl,open=on,state=disabled",
-    "cell": {"variant":"card","radius":"xl","open":"on","state":"disabled"},
+    "key": "accordion-item/variant=card,radius=xl,open=true,state=disabled",
+    "cell": {"variant":"card","radius":"xl","open":"true","state":"disabled"},
     "roots": [
       {
         "around": [

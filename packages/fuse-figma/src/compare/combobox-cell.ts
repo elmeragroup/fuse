@@ -109,7 +109,7 @@ export const comboboxItem: ClientCellRendering = {
   element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
     openCombobox(container, {
       items: [COMBOBOX_ITEM_TEXT],
-      value: cell.selected === "on" ? COMBOBOX_ITEM_TEXT : null,
+      value: cell.selected === "true" ? COMBOBOX_ITEM_TEXT : null,
       children: popupChildren(flatList(cell.state === "disabled")),
     }),
   highlight: "data-highlighted",

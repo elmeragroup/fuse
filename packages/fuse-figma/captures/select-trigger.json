@@ -207,8 +207,8 @@
   ],
   "cells": [
     {
-    "key": "select-trigger/size=default,state=rest,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"default","state":"rest","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=default,state=rest,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"default","state":"rest","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -255,8 +255,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=rest,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"default","state":"rest","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=default,state=rest,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"default","state":"rest","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -303,8 +303,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=rest,content=value,open=off",
-    "cell": {"width":"hug","size":"default","state":"rest","content":"value","open":"off"},
+    "key": "select-trigger/size=default,state=rest,content=value,open=false",
+    "cell": {"width":"hug","size":"default","state":"rest","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -351,8 +351,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=rest,content=value,open=on",
-    "cell": {"width":"hug","size":"default","state":"rest","content":"value","open":"on"},
+    "key": "select-trigger/size=default,state=rest,content=value,open=true",
+    "cell": {"width":"hug","size":"default","state":"rest","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -399,8 +399,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=focus,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"default","state":"focus","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=default,state=focus,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"default","state":"focus","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -447,8 +447,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=focus,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"default","state":"focus","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=default,state=focus,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"default","state":"focus","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -495,8 +495,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=focus,content=value,open=off",
-    "cell": {"width":"hug","size":"default","state":"focus","content":"value","open":"off"},
+    "key": "select-trigger/size=default,state=focus,content=value,open=false",
+    "cell": {"width":"hug","size":"default","state":"focus","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -543,8 +543,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=focus,content=value,open=on",
-    "cell": {"width":"hug","size":"default","state":"focus","content":"value","open":"on"},
+    "key": "select-trigger/size=default,state=focus,content=value,open=true",
+    "cell": {"width":"hug","size":"default","state":"focus","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -591,8 +591,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=disabled,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"default","state":"disabled","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=default,state=disabled,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"default","state":"disabled","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -639,8 +639,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=disabled,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"default","state":"disabled","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=default,state=disabled,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"default","state":"disabled","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -687,8 +687,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=disabled,content=value,open=off",
-    "cell": {"width":"hug","size":"default","state":"disabled","content":"value","open":"off"},
+    "key": "select-trigger/size=default,state=disabled,content=value,open=false",
+    "cell": {"width":"hug","size":"default","state":"disabled","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -735,8 +735,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=disabled,content=value,open=on",
-    "cell": {"width":"hug","size":"default","state":"disabled","content":"value","open":"on"},
+    "key": "select-trigger/size=default,state=disabled,content=value,open=true",
+    "cell": {"width":"hug","size":"default","state":"disabled","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -783,8 +783,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=invalid,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"default","state":"invalid","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=default,state=invalid,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"default","state":"invalid","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -857,8 +857,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=invalid,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"default","state":"invalid","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=default,state=invalid,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"default","state":"invalid","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -931,8 +931,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=invalid,content=value,open=off",
-    "cell": {"width":"hug","size":"default","state":"invalid","content":"value","open":"off"},
+    "key": "select-trigger/size=default,state=invalid,content=value,open=false",
+    "cell": {"width":"hug","size":"default","state":"invalid","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -1005,8 +1005,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=default,state=invalid,content=value,open=on",
-    "cell": {"width":"hug","size":"default","state":"invalid","content":"value","open":"on"},
+    "key": "select-trigger/size=default,state=invalid,content=value,open=true",
+    "cell": {"width":"hug","size":"default","state":"invalid","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -1079,8 +1079,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=rest,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"sm","state":"rest","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=sm,state=rest,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"sm","state":"rest","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1127,8 +1127,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=rest,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"sm","state":"rest","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=sm,state=rest,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"sm","state":"rest","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1175,8 +1175,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=rest,content=value,open=off",
-    "cell": {"width":"hug","size":"sm","state":"rest","content":"value","open":"off"},
+    "key": "select-trigger/size=sm,state=rest,content=value,open=false",
+    "cell": {"width":"hug","size":"sm","state":"rest","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1223,8 +1223,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=rest,content=value,open=on",
-    "cell": {"width":"hug","size":"sm","state":"rest","content":"value","open":"on"},
+    "key": "select-trigger/size=sm,state=rest,content=value,open=true",
+    "cell": {"width":"hug","size":"sm","state":"rest","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1271,8 +1271,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=focus,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"sm","state":"focus","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=sm,state=focus,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"sm","state":"focus","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1319,8 +1319,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=focus,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"sm","state":"focus","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=sm,state=focus,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"sm","state":"focus","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1367,8 +1367,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=focus,content=value,open=off",
-    "cell": {"width":"hug","size":"sm","state":"focus","content":"value","open":"off"},
+    "key": "select-trigger/size=sm,state=focus,content=value,open=false",
+    "cell": {"width":"hug","size":"sm","state":"focus","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1415,8 +1415,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=focus,content=value,open=on",
-    "cell": {"width":"hug","size":"sm","state":"focus","content":"value","open":"on"},
+    "key": "select-trigger/size=sm,state=focus,content=value,open=true",
+    "cell": {"width":"hug","size":"sm","state":"focus","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1463,8 +1463,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=disabled,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"sm","state":"disabled","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=sm,state=disabled,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"sm","state":"disabled","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1511,8 +1511,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=disabled,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"sm","state":"disabled","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=sm,state=disabled,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"sm","state":"disabled","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1559,8 +1559,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=disabled,content=value,open=off",
-    "cell": {"width":"hug","size":"sm","state":"disabled","content":"value","open":"off"},
+    "key": "select-trigger/size=sm,state=disabled,content=value,open=false",
+    "cell": {"width":"hug","size":"sm","state":"disabled","content":"value","open":"false"},
     "roots": [
       {
         "around": [],
@@ -1607,8 +1607,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=disabled,content=value,open=on",
-    "cell": {"width":"hug","size":"sm","state":"disabled","content":"value","open":"on"},
+    "key": "select-trigger/size=sm,state=disabled,content=value,open=true",
+    "cell": {"width":"hug","size":"sm","state":"disabled","content":"value","open":"true"},
     "roots": [
       {
         "around": [],
@@ -1655,8 +1655,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=invalid,content=placeholder,open=off",
-    "cell": {"width":"hug","size":"sm","state":"invalid","content":"placeholder","open":"off"},
+    "key": "select-trigger/size=sm,state=invalid,content=placeholder,open=false",
+    "cell": {"width":"hug","size":"sm","state":"invalid","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -1729,8 +1729,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=invalid,content=placeholder,open=on",
-    "cell": {"width":"hug","size":"sm","state":"invalid","content":"placeholder","open":"on"},
+    "key": "select-trigger/size=sm,state=invalid,content=placeholder,open=true",
+    "cell": {"width":"hug","size":"sm","state":"invalid","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -1803,8 +1803,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=invalid,content=value,open=off",
-    "cell": {"width":"hug","size":"sm","state":"invalid","content":"value","open":"off"},
+    "key": "select-trigger/size=sm,state=invalid,content=value,open=false",
+    "cell": {"width":"hug","size":"sm","state":"invalid","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -1877,8 +1877,8 @@
     ]
   },
     {
-    "key": "select-trigger/size=sm,state=invalid,content=value,open=on",
-    "cell": {"width":"hug","size":"sm","state":"invalid","content":"value","open":"on"},
+    "key": "select-trigger/size=sm,state=invalid,content=value,open=true",
+    "cell": {"width":"hug","size":"sm","state":"invalid","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -1951,8 +1951,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=rest,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"default","state":"rest","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=rest,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"default","state":"rest","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -2013,8 +2013,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=rest,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"default","state":"rest","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=rest,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"default","state":"rest","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -2075,8 +2075,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=rest,content=value,open=off",
-    "cell": {"width":"fill","size":"default","state":"rest","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=rest,content=value,open=false",
+    "cell": {"width":"fill","size":"default","state":"rest","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -2137,8 +2137,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=rest,content=value,open=on",
-    "cell": {"width":"fill","size":"default","state":"rest","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=rest,content=value,open=true",
+    "cell": {"width":"fill","size":"default","state":"rest","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -2199,8 +2199,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=focus,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"default","state":"focus","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=focus,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"default","state":"focus","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -2261,8 +2261,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=focus,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"default","state":"focus","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=focus,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"default","state":"focus","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -2323,8 +2323,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=focus,content=value,open=off",
-    "cell": {"width":"fill","size":"default","state":"focus","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=focus,content=value,open=false",
+    "cell": {"width":"fill","size":"default","state":"focus","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -2385,8 +2385,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=focus,content=value,open=on",
-    "cell": {"width":"fill","size":"default","state":"focus","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=focus,content=value,open=true",
+    "cell": {"width":"fill","size":"default","state":"focus","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -2447,8 +2447,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=disabled,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"default","state":"disabled","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=disabled,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"default","state":"disabled","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -2509,8 +2509,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=disabled,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"default","state":"disabled","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=disabled,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"default","state":"disabled","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -2571,8 +2571,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=disabled,content=value,open=off",
-    "cell": {"width":"fill","size":"default","state":"disabled","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=disabled,content=value,open=false",
+    "cell": {"width":"fill","size":"default","state":"disabled","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -2633,8 +2633,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=disabled,content=value,open=on",
-    "cell": {"width":"fill","size":"default","state":"disabled","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=disabled,content=value,open=true",
+    "cell": {"width":"fill","size":"default","state":"disabled","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -2695,8 +2695,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=invalid,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"default","state":"invalid","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=invalid,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"default","state":"invalid","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -2769,8 +2769,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=invalid,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"default","state":"invalid","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=invalid,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"default","state":"invalid","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -2843,8 +2843,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=invalid,content=value,open=off",
-    "cell": {"width":"fill","size":"default","state":"invalid","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=default,state=invalid,content=value,open=false",
+    "cell": {"width":"fill","size":"default","state":"invalid","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -2917,8 +2917,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=default,state=invalid,content=value,open=on",
-    "cell": {"width":"fill","size":"default","state":"invalid","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=default,state=invalid,content=value,open=true",
+    "cell": {"width":"fill","size":"default","state":"invalid","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -2991,8 +2991,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=rest,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"sm","state":"rest","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=rest,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"sm","state":"rest","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -3053,8 +3053,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=rest,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"sm","state":"rest","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=rest,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"sm","state":"rest","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -3115,8 +3115,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=rest,content=value,open=off",
-    "cell": {"width":"fill","size":"sm","state":"rest","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=rest,content=value,open=false",
+    "cell": {"width":"fill","size":"sm","state":"rest","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -3177,8 +3177,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=rest,content=value,open=on",
-    "cell": {"width":"fill","size":"sm","state":"rest","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=rest,content=value,open=true",
+    "cell": {"width":"fill","size":"sm","state":"rest","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -3239,8 +3239,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=focus,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"sm","state":"focus","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=focus,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"sm","state":"focus","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -3301,8 +3301,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=focus,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"sm","state":"focus","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=focus,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"sm","state":"focus","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -3363,8 +3363,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=focus,content=value,open=off",
-    "cell": {"width":"fill","size":"sm","state":"focus","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=focus,content=value,open=false",
+    "cell": {"width":"fill","size":"sm","state":"focus","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -3425,8 +3425,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=focus,content=value,open=on",
-    "cell": {"width":"fill","size":"sm","state":"focus","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=focus,content=value,open=true",
+    "cell": {"width":"fill","size":"sm","state":"focus","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -3487,8 +3487,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=disabled,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"sm","state":"disabled","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=disabled,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"sm","state":"disabled","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -3549,8 +3549,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=disabled,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"sm","state":"disabled","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=disabled,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"sm","state":"disabled","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -3611,8 +3611,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=disabled,content=value,open=off",
-    "cell": {"width":"fill","size":"sm","state":"disabled","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=disabled,content=value,open=false",
+    "cell": {"width":"fill","size":"sm","state":"disabled","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -3673,8 +3673,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=disabled,content=value,open=on",
-    "cell": {"width":"fill","size":"sm","state":"disabled","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=disabled,content=value,open=true",
+    "cell": {"width":"fill","size":"sm","state":"disabled","content":"value","open":"true"},
     "roots": [
       {
         "around": [
@@ -3735,8 +3735,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=invalid,content=placeholder,open=off",
-    "cell": {"width":"fill","size":"sm","state":"invalid","content":"placeholder","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=invalid,content=placeholder,open=false",
+    "cell": {"width":"fill","size":"sm","state":"invalid","content":"placeholder","open":"false"},
     "roots": [
       {
         "around": [
@@ -3809,8 +3809,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=invalid,content=placeholder,open=on",
-    "cell": {"width":"fill","size":"sm","state":"invalid","content":"placeholder","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=invalid,content=placeholder,open=true",
+    "cell": {"width":"fill","size":"sm","state":"invalid","content":"placeholder","open":"true"},
     "roots": [
       {
         "around": [
@@ -3883,8 +3883,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=invalid,content=value,open=off",
-    "cell": {"width":"fill","size":"sm","state":"invalid","content":"value","open":"off"},
+    "key": "select-trigger/width=fill,size=sm,state=invalid,content=value,open=false",
+    "cell": {"width":"fill","size":"sm","state":"invalid","content":"value","open":"false"},
     "roots": [
       {
         "around": [
@@ -3957,8 +3957,8 @@
     ]
   },
     {
-    "key": "select-trigger/width=fill,size=sm,state=invalid,content=value,open=on",
-    "cell": {"width":"fill","size":"sm","state":"invalid","content":"value","open":"on"},
+    "key": "select-trigger/width=fill,size=sm,state=invalid,content=value,open=true",
+    "cell": {"width":"fill","size":"sm","state":"invalid","content":"value","open":"true"},
     "roots": [
       {
         "around": [

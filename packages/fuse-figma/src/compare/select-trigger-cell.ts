@@ -9,7 +9,7 @@
  * - The value shows the `placeholder` `select-trigger-kit.ts` draws while nothing is selected. A
  *   `content=value` cell selects the root's one item, whose label is the same text, so Base UI
  *   shows the label and drops `data-placeholder`.
- * - `open=on` sets the root's `defaultOpen`. Base UI then stamps on the trigger what it stamps while
+ * - `open=true` sets the root's `defaultOpen`. Base UI then stamps on the trigger what it stamps while
  *   the popup is open, `data-popup-open`, `data-pressed` and `aria-expanded="true"`, and
  *   `data-popup-open` on the caret. The root holds no `Select.Content`, so no popup renders.
  * - `invalid` puts the root in an invalid `Field.Root`, the one source Base UI reads the trigger's

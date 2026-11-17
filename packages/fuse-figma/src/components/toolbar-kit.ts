@@ -74,6 +74,7 @@ function toolbarButtonManifests(
 export const TOOLBAR_MANIFEST: SetManifest = {
   key: "toolbar",
   name: "Toolbar",
+  api: { page: "toolbar", parts: ["Toolbar.Root"] },
   slot: "toolbar",
   axes: [{ name: "orientation", values: ["horizontal", "vertical"] }],
   columnAxis: "orientation",

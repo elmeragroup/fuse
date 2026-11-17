@@ -174,6 +174,7 @@ const BAR_MANIFEST: PartManifest = {
 export const METER_MANIFEST: SetManifest = {
   key: "meter",
   name: "Meter",
+  api: { page: "meter", parts: ["Meter"] },
   slot: "meter",
   axes: [
     { name: "mode", values: Object.values(MODES) },

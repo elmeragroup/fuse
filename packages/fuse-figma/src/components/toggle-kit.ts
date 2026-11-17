@@ -30,7 +30,7 @@ function isVariant(value: string | undefined): value is ToggleVariant {
 
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled"] };
 
-const PRESSED_AXIS = { name: "pressed", values: ["off", "on"] };
+const PRESSED_AXIS = { name: "pressed", values: ["false", "true"] };
 
 /** Star, the icon the Toggle docs place on either side. */
 const START_ICON: IconManifest = {
@@ -100,6 +100,7 @@ const LABEL: LabelManifest = {
 export const TOGGLE_MANIFEST: SetManifest = {
   key: "toggle",
   name: "Toggle",
+  api: { page: "toggle", parts: ["Toggle"] },
   slot: "toggle",
   axes: [
     { name: "variant", values: VARIANTS },
@@ -121,6 +122,7 @@ export const TOGGLE_MANIFEST: SetManifest = {
 export const ICON_TOGGLE_MANIFEST: SetManifest = {
   key: "icon-toggle",
   name: "Icon toggle",
+  api: { page: "toggle", parts: ["Toggle"] },
   slot: "toggle",
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: SIZES }, STATE_AXIS, PRESSED_AXIS],
   columnAxis: "state",

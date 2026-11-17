@@ -2,10 +2,10 @@
  * Confirm button, a set of its own on the Button page. ConfirmButton renders a Button that arms on
  * the first press and confirms on the second. Only its destructive and success variants style the
  * armed state, so the set holds those two at Button's four label sizes, in four states, armed off
- * and on: 64 cells.
+ * and on, less the armed disabled cells: 56 cells.
  *
- * - Disabling a ConfirmButton disarms it, so a disabled cell draws disarmed at `armed=on` too.
- *   Pending disarms it as well, and Button's set draws pending, so this set leaves it out.
+ * - Disabling a ConfirmButton disarms it, so the set holds no armed disabled cell. Pending disarms
+ *   it as well, and Button's set draws pending, so this set leaves it out.
  * - The label is the docs' Destructive demo's resting `Delete`. The demos swap in a label while
  *   armed, such as `Confirm delete`, and a designer types it on the instance, since one text
  *   property holds one default.
@@ -34,12 +34,19 @@ export const CONFIRM_BUTTON_LABEL = "Delete";
 export const CONFIRM_BUTTON_MANIFEST: SetManifest = {
   key: "confirm-button",
   name: "Confirm button",
+  api: { page: "confirm-button", parts: ["ConfirmButton"] },
   slot: "button",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: BUTTON_LABEL_SIZES },
     { name: "state", values: ["rest", "hover", "focus", "disabled"] },
-    { name: "armed", values: ["off", "on"] },
+    { name: "armed", values: ["false", "true"] },
+  ],
+  impossible: [
+    {
+      where: { state: "disabled", armed: "true" },
+      fact: "ConfirmButton disarms while `disabled`, `isPending` or `isVisuallyDisabled` is on, resetting its armed state during render (`confirm-button.tsx`).",
+    },
   ],
   columnAxis: "state",
   label: {

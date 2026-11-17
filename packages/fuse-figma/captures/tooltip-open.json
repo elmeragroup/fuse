@@ -193,8 +193,8 @@
   ],
   "cells": [
     {
-    "key": "tooltip-open/placement=above",
-    "cell": {"placement":"above"},
+    "key": "tooltip-open/side=top",
+    "cell": {"side":"top"},
     "roots": [
       {
         "around": [

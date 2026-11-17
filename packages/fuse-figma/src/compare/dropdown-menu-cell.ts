@@ -118,7 +118,7 @@ export const dropdownMenuItem: ClientCellRendering = {
         DropdownMenu.Item,
         {
           variant: cell.variant === "destructive" ? "destructive" : "default",
-          inset: cell.inset === "on",
+          inset: cell.inset === "true",
           disabled: cell.state === "disabled",
         },
         turnedOn.has("Icon") ? createElement(User) : null,
@@ -137,7 +137,7 @@ export const dropdownMenuCheckboxItem: ClientCellRendering = {
       container,
       createElement(
         DropdownMenu.CheckboxItem,
-        { checked: cell.checked === "on", disabled: cell.state === "disabled" },
+        { checked: cell.checked === "true", disabled: cell.state === "disabled" },
         DROPDOWN_MENU_CHECKBOX_TEXT
       )
     ),
@@ -152,7 +152,7 @@ export const dropdownMenuRadioItem: ClientCellRendering = {
       container,
       createElement(
         DropdownMenu.RadioGroup,
-        { value: cell.checked === "on" ? "status" : "activity" },
+        { value: cell.checked === "true" ? "status" : "activity" },
         createElement(
           DropdownMenu.RadioItem,
           { value: "status", disabled: cell.state === "disabled" },

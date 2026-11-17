@@ -197,8 +197,8 @@
   ],
   "cells": [
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -283,8 +283,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -369,8 +369,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -455,8 +455,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -541,8 +541,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -627,8 +627,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -713,8 +713,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -799,8 +799,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"default","size":"default","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"default","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -885,8 +885,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -969,8 +969,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1053,8 +1053,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1137,8 +1137,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1221,8 +1221,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1305,8 +1305,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1389,8 +1389,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1473,8 +1473,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=default,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"default","size":"default","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=default,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"default","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1557,8 +1557,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1643,8 +1643,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -1729,8 +1729,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1815,8 +1815,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1901,8 +1901,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1987,8 +1987,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -2073,8 +2073,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2159,8 +2159,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"default","size":"sm","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"sm","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2245,8 +2245,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -2329,8 +2329,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -2413,8 +2413,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2497,8 +2497,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2581,8 +2581,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -2665,8 +2665,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -2749,8 +2749,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -2833,8 +2833,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"default","size":"sm","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=sm,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"sm","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2917,8 +2917,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3003,8 +3003,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3089,8 +3089,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -3175,8 +3175,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -3261,8 +3261,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3347,8 +3347,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3433,8 +3433,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -3519,8 +3519,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"default","size":"lg","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"lg","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -3605,8 +3605,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -3689,8 +3689,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -3773,8 +3773,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -3857,8 +3857,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -3941,8 +3941,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -4025,8 +4025,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -4109,8 +4109,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4193,8 +4193,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"default","size":"lg","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=default,size=lg,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"default","size":"lg","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -4277,8 +4277,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -4363,8 +4363,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -4449,8 +4449,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4535,8 +4535,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -4621,8 +4621,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -4707,8 +4707,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -4793,8 +4793,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -4879,8 +4879,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"default","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"default","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -4965,8 +4965,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -5049,8 +5049,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -5133,8 +5133,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -5217,8 +5217,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -5301,8 +5301,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -5385,8 +5385,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -5469,8 +5469,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -5553,8 +5553,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"default","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=default,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"default","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -5637,8 +5637,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -5723,8 +5723,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -5809,8 +5809,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -5895,8 +5895,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -5981,8 +5981,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -6067,8 +6067,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -6153,8 +6153,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -6239,8 +6239,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"sm","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"sm","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -6325,8 +6325,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -6409,8 +6409,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -6493,8 +6493,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -6577,8 +6577,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -6661,8 +6661,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -6745,8 +6745,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -6829,8 +6829,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -6913,8 +6913,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"sm","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=sm,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"sm","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -6997,8 +6997,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=off,state=rest",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -7083,8 +7083,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=off,state=hover",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -7169,8 +7169,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=off,state=focus",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -7255,8 +7255,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -7341,8 +7341,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=on,state=rest",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -7427,8 +7427,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=on,state=hover",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -7513,8 +7513,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=on,state=focus",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -7599,8 +7599,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=off,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"lg","collapsed":"off","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=false,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"lg","collapsed":"false","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -7685,8 +7685,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=off,state=rest",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"off","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=false,state=rest",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -7769,8 +7769,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=off,state=hover",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"off","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=false,state=hover",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [
@@ -7853,8 +7853,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=off,state=focus",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"off","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=false,state=focus",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -7937,8 +7937,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=off,state=disabled",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"off","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=false,state=disabled",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -8021,8 +8021,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=on,state=rest",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"on","state":"rest"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=true,state=rest",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -8105,8 +8105,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=on,state=hover",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"on","state":"hover"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=true,state=hover",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [
@@ -8189,8 +8189,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=on,state=focus",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"on","state":"focus"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=true,state=focus",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -8273,8 +8273,8 @@
     ]
   },
     {
-    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=on,active=on,state=disabled",
-    "cell": {"variant":"outline","size":"lg","collapsed":"on","active":"on","state":"disabled"},
+    "key": "sidebar-menu-button/variant=outline,size=lg,collapsed=true,isActive=true,state=disabled",
+    "cell": {"variant":"outline","size":"lg","collapsed":"true","isActive":"true","state":"disabled"},
     "roots": [
       {
         "around": [

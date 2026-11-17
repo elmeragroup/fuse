@@ -187,8 +187,8 @@
   ],
   "cells": [
     {
-    "key": "dropdown-menu-checkbox-item/checked=off,state=rest",
-    "cell": {"checked":"off","state":"rest"},
+    "key": "dropdown-menu-checkbox-item/checked=false,state=rest",
+    "cell": {"checked":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -272,8 +272,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=off,state=highlighted",
-    "cell": {"checked":"off","state":"highlighted"},
+    "key": "dropdown-menu-checkbox-item/checked=false,state=highlighted",
+    "cell": {"checked":"false","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -357,8 +357,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=off,state=focus",
-    "cell": {"checked":"off","state":"focus"},
+    "key": "dropdown-menu-checkbox-item/checked=false,state=focus",
+    "cell": {"checked":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -442,8 +442,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=off,state=disabled",
-    "cell": {"checked":"off","state":"disabled"},
+    "key": "dropdown-menu-checkbox-item/checked=false,state=disabled",
+    "cell": {"checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -527,8 +527,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=on,state=rest",
-    "cell": {"checked":"on","state":"rest"},
+    "key": "dropdown-menu-checkbox-item/checked=true,state=rest",
+    "cell": {"checked":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -638,8 +638,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=on,state=highlighted",
-    "cell": {"checked":"on","state":"highlighted"},
+    "key": "dropdown-menu-checkbox-item/checked=true,state=highlighted",
+    "cell": {"checked":"true","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -749,8 +749,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=on,state=focus",
-    "cell": {"checked":"on","state":"focus"},
+    "key": "dropdown-menu-checkbox-item/checked=true,state=focus",
+    "cell": {"checked":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -860,8 +860,8 @@
     ]
   },
     {
-    "key": "dropdown-menu-checkbox-item/checked=on,state=disabled",
-    "cell": {"checked":"on","state":"disabled"},
+    "key": "dropdown-menu-checkbox-item/checked=true,state=disabled",
+    "cell": {"checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [

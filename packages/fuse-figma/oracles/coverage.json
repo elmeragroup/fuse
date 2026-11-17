@@ -3942,70 +3942,62 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=on 0/root/0"
+        "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=true 0/root/0"
       ]
     },
     {
@@ -4015,70 +4007,62 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=on 0/root/0"
+        "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=true 0/root/0"
       ]
     },
     {
@@ -4088,70 +4072,62 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=on 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=off 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=on 0/root/0"
+        "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=destructive,size=xs,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=default,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=lg,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=sm,state=rest,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=disabled,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=focus,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=hover,armed=true 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=false 0/root/0",
+        "confirm-button/variant=success,size=xs,state=rest,armed=true 0/root/0"
       ]
     },
     {
@@ -4161,14 +4137,14 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "radio/checked=off,state=disabled 0/root::after",
-        "radio/checked=off,state=focus 0/root::after",
-        "radio/checked=off,state=invalid 0/root::after",
-        "radio/checked=off,state=rest 0/root::after",
-        "radio/checked=on,state=disabled 0/root::after",
-        "radio/checked=on,state=focus 0/root::after",
-        "radio/checked=on,state=invalid 0/root::after",
-        "radio/checked=on,state=rest 0/root::after"
+        "radio/checked=false,state=disabled 0/root::after",
+        "radio/checked=false,state=focus 0/root::after",
+        "radio/checked=false,state=invalid 0/root::after",
+        "radio/checked=false,state=rest 0/root::after",
+        "radio/checked=true,state=disabled 0/root::after",
+        "radio/checked=true,state=focus 0/root::after",
+        "radio/checked=true,state=invalid 0/root::after",
+        "radio/checked=true,state=rest 0/root::after"
       ]
     },
     {
@@ -4178,18 +4154,18 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "checkbox/checked=mixed,state=disabled 0/root::after",
-        "checkbox/checked=mixed,state=focus 0/root::after",
-        "checkbox/checked=mixed,state=invalid 0/root::after",
-        "checkbox/checked=mixed,state=rest 0/root::after",
-        "checkbox/checked=off,state=disabled 0/root::after",
-        "checkbox/checked=off,state=focus 0/root::after",
-        "checkbox/checked=off,state=invalid 0/root::after",
-        "checkbox/checked=off,state=rest 0/root::after",
-        "checkbox/checked=on,state=disabled 0/root::after",
-        "checkbox/checked=on,state=focus 0/root::after",
-        "checkbox/checked=on,state=invalid 0/root::after",
-        "checkbox/checked=on,state=rest 0/root::after"
+        "checkbox/checked=false,indeterminate=false,state=disabled 0/root::after",
+        "checkbox/checked=false,indeterminate=false,state=focus 0/root::after",
+        "checkbox/checked=false,indeterminate=false,state=invalid 0/root::after",
+        "checkbox/checked=false,indeterminate=false,state=rest 0/root::after",
+        "checkbox/checked=false,indeterminate=true,state=disabled 0/root::after",
+        "checkbox/checked=false,indeterminate=true,state=focus 0/root::after",
+        "checkbox/checked=false,indeterminate=true,state=invalid 0/root::after",
+        "checkbox/checked=false,indeterminate=true,state=rest 0/root::after",
+        "checkbox/checked=true,indeterminate=false,state=disabled 0/root::after",
+        "checkbox/checked=true,indeterminate=false,state=focus 0/root::after",
+        "checkbox/checked=true,indeterminate=false,state=invalid 0/root::after",
+        "checkbox/checked=true,indeterminate=false,state=rest 0/root::after"
       ]
     },
     {
@@ -4199,22 +4175,22 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "switch/size=default,checked=off,state=disabled 0/root::after",
-        "switch/size=default,checked=off,state=focus 0/root::after",
-        "switch/size=default,checked=off,state=invalid 0/root::after",
-        "switch/size=default,checked=off,state=rest 0/root::after",
-        "switch/size=default,checked=on,state=disabled 0/root::after",
-        "switch/size=default,checked=on,state=focus 0/root::after",
-        "switch/size=default,checked=on,state=invalid 0/root::after",
-        "switch/size=default,checked=on,state=rest 0/root::after",
-        "switch/size=sm,checked=off,state=disabled 0/root::after",
-        "switch/size=sm,checked=off,state=focus 0/root::after",
-        "switch/size=sm,checked=off,state=invalid 0/root::after",
-        "switch/size=sm,checked=off,state=rest 0/root::after",
-        "switch/size=sm,checked=on,state=disabled 0/root::after",
-        "switch/size=sm,checked=on,state=focus 0/root::after",
-        "switch/size=sm,checked=on,state=invalid 0/root::after",
-        "switch/size=sm,checked=on,state=rest 0/root::after"
+        "switch/size=default,checked=false,state=disabled 0/root::after",
+        "switch/size=default,checked=false,state=focus 0/root::after",
+        "switch/size=default,checked=false,state=invalid 0/root::after",
+        "switch/size=default,checked=false,state=rest 0/root::after",
+        "switch/size=default,checked=true,state=disabled 0/root::after",
+        "switch/size=default,checked=true,state=focus 0/root::after",
+        "switch/size=default,checked=true,state=invalid 0/root::after",
+        "switch/size=default,checked=true,state=rest 0/root::after",
+        "switch/size=sm,checked=false,state=disabled 0/root::after",
+        "switch/size=sm,checked=false,state=focus 0/root::after",
+        "switch/size=sm,checked=false,state=invalid 0/root::after",
+        "switch/size=sm,checked=false,state=rest 0/root::after",
+        "switch/size=sm,checked=true,state=disabled 0/root::after",
+        "switch/size=sm,checked=true,state=focus 0/root::after",
+        "switch/size=sm,checked=true,state=invalid 0/root::after",
+        "switch/size=sm,checked=true,state=rest 0/root::after"
       ]
     },
     {
@@ -4252,14 +4228,14 @@
       "property": "color",
       "reason": "The kit draws the placeholder as the control's own text, so in a placeholder cell the `::placeholder` color replaces the control's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
       "at": [
-        "input-group/form=caret open,state=disabled 0/root/1",
-        "input-group/form=caret open,state=focus 0/root/1",
-        "input-group/form=caret open,state=invalid 0/root/1",
-        "input-group/form=caret open,state=rest 0/root/1",
         "input-group/form=caret,state=disabled 0/root/0",
         "input-group/form=caret,state=focus 0/root/0",
         "input-group/form=caret,state=invalid 0/root/0",
         "input-group/form=caret,state=rest 0/root/0",
+        "input-group/form=caret-open,state=disabled 0/root/1",
+        "input-group/form=caret-open,state=focus 0/root/1",
+        "input-group/form=caret-open,state=invalid 0/root/1",
+        "input-group/form=caret-open,state=rest 0/root/1",
         "input-group/form=clear,state=disabled 0/root/0",
         "input-group/form=clear,state=focus 0/root/0",
         "input-group/form=clear,state=invalid 0/root/0",
@@ -4277,14 +4253,14 @@
       "property": "opacity",
       "reason": "The kit draws the placeholder as the control's own text, so in a placeholder cell the `::placeholder` color replaces the control's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
       "at": [
-        "input-group/form=caret open,state=disabled 0/root/1::placeholder",
-        "input-group/form=caret open,state=focus 0/root/1::placeholder",
-        "input-group/form=caret open,state=invalid 0/root/1::placeholder",
-        "input-group/form=caret open,state=rest 0/root/1::placeholder",
         "input-group/form=caret,state=disabled 0/root/0::placeholder",
         "input-group/form=caret,state=focus 0/root/0::placeholder",
         "input-group/form=caret,state=invalid 0/root/0::placeholder",
         "input-group/form=caret,state=rest 0/root/0::placeholder",
+        "input-group/form=caret-open,state=disabled 0/root/1::placeholder",
+        "input-group/form=caret-open,state=focus 0/root/1::placeholder",
+        "input-group/form=caret-open,state=invalid 0/root/1::placeholder",
+        "input-group/form=caret-open,state=rest 0/root/1::placeholder",
         "input-group/form=clear,state=disabled 0/root/0::placeholder",
         "input-group/form=clear,state=focus 0/root/0::placeholder",
         "input-group/form=clear,state=invalid 0/root/0::placeholder",
@@ -4302,8 +4278,8 @@
       "property": "border-color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "input-group/form=caret open,state=invalid 0/root/2/0",
-        "input-group/form=caret,state=invalid 0/root/1/0"
+        "input-group/form=caret,state=invalid 0/root/1/0",
+        "input-group/form=caret-open,state=invalid 0/root/2/0"
       ]
     },
     {
@@ -4313,8 +4289,8 @@
       "property": "--tw-ring-shadow",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "input-group/form=caret open,state=invalid 0/root/2/0",
-        "input-group/form=caret,state=invalid 0/root/1/0"
+        "input-group/form=caret,state=invalid 0/root/1/0",
+        "input-group/form=caret-open,state=invalid 0/root/2/0"
       ]
     },
     {
@@ -4324,8 +4300,8 @@
       "property": "box-shadow",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "input-group/form=caret open,state=invalid 0/root/2/0",
-        "input-group/form=caret,state=invalid 0/root/1/0"
+        "input-group/form=caret,state=invalid 0/root/1/0",
+        "input-group/form=caret-open,state=invalid 0/root/2/0"
       ]
     },
     {
@@ -4335,8 +4311,8 @@
       "property": "--tw-ring-color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "input-group/form=caret open,state=invalid 0/root/2/0",
-        "input-group/form=caret,state=invalid 0/root/1/0"
+        "input-group/form=caret,state=invalid 0/root/1/0",
+        "input-group/form=caret-open,state=invalid 0/root/2/0"
       ]
     },
     {
@@ -4346,10 +4322,10 @@
       "property": "color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "input-group/form=caret open,state=disabled 0/root/2/0",
-        "input-group/form=caret open,state=focus 0/root/2/0",
-        "input-group/form=caret open,state=invalid 0/root/2/0",
-        "input-group/form=caret open,state=rest 0/root/2/0"
+        "input-group/form=caret-open,state=disabled 0/root/2/0",
+        "input-group/form=caret-open,state=focus 0/root/2/0",
+        "input-group/form=caret-open,state=invalid 0/root/2/0",
+        "input-group/form=caret-open,state=rest 0/root/2/0"
       ]
     },
     {
@@ -4493,14 +4469,14 @@
       "property": "box-sizing",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "select-open/placement=below,size=default 0/around/0",
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=default 1/around/0",
-        "select-open/placement=below,size=default 1/around/1",
-        "select-open/placement=below,size=sm 0/around/0",
-        "select-open/placement=below,size=sm 0/around/1",
-        "select-open/placement=below,size=sm 1/around/0",
-        "select-open/placement=below,size=sm 1/around/1"
+        "select-open/side=bottom,size=default 0/around/0",
+        "select-open/side=bottom,size=default 0/around/1",
+        "select-open/side=bottom,size=default 1/around/0",
+        "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=sm 0/around/0",
+        "select-open/side=bottom,size=sm 0/around/1",
+        "select-open/side=bottom,size=sm 1/around/0",
+        "select-open/side=bottom,size=sm 1/around/1"
       ]
     },
     {
@@ -4510,14 +4486,14 @@
       "property": "border",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "select-open/placement=below,size=default 0/around/0",
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=default 1/around/0",
-        "select-open/placement=below,size=default 1/around/1",
-        "select-open/placement=below,size=sm 0/around/0",
-        "select-open/placement=below,size=sm 0/around/1",
-        "select-open/placement=below,size=sm 1/around/0",
-        "select-open/placement=below,size=sm 1/around/1"
+        "select-open/side=bottom,size=default 0/around/0",
+        "select-open/side=bottom,size=default 0/around/1",
+        "select-open/side=bottom,size=default 1/around/0",
+        "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=sm 0/around/0",
+        "select-open/side=bottom,size=sm 0/around/1",
+        "select-open/side=bottom,size=sm 1/around/0",
+        "select-open/side=bottom,size=sm 1/around/1"
       ]
     },
     {
@@ -4527,14 +4503,14 @@
       "property": "border-color",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "select-open/placement=below,size=default 0/around/0",
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=default 1/around/0",
-        "select-open/placement=below,size=default 1/around/1",
-        "select-open/placement=below,size=sm 0/around/0",
-        "select-open/placement=below,size=sm 0/around/1",
-        "select-open/placement=below,size=sm 1/around/0",
-        "select-open/placement=below,size=sm 1/around/1"
+        "select-open/side=bottom,size=default 0/around/0",
+        "select-open/side=bottom,size=default 0/around/1",
+        "select-open/side=bottom,size=default 1/around/0",
+        "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=sm 0/around/0",
+        "select-open/side=bottom,size=sm 0/around/1",
+        "select-open/side=bottom,size=sm 1/around/0",
+        "select-open/side=bottom,size=sm 1/around/1"
       ]
     },
     {
@@ -4543,10 +4519,7 @@
       "className": "w-36",
       "property": "width",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=sm 0/around/1"
-      ]
+      "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
     },
     {
       "set": "select-open",
@@ -4554,10 +4527,7 @@
       "className": "flex",
       "property": "display",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=sm 0/around/1"
-      ]
+      "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
     },
     {
       "set": "select-open",
@@ -4565,10 +4535,7 @@
       "className": "justify-center",
       "property": "justify-content",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/placement=below,size=default 0/around/1",
-        "select-open/placement=below,size=sm 0/around/1"
-      ]
+      "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
     },
     {
       "set": "select-open",
@@ -4576,10 +4543,7 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/placement=below,size=default 1/around/1",
-        "select-open/placement=below,size=sm 1/around/1"
-      ]
+      "at": ["select-open/side=bottom,size=default 1/around/1", "select-open/side=bottom,size=sm 1/around/1"]
     },
     {
       "set": "select-open",
@@ -4587,10 +4551,7 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/placement=below,size=default 1/around/1",
-        "select-open/placement=below,size=sm 1/around/1"
-      ]
+      "at": ["select-open/side=bottom,size=default 1/around/1", "select-open/side=bottom,size=sm 1/around/1"]
     },
     {
       "set": "popover-open",
@@ -4599,10 +4560,10 @@
       "property": "box-sizing",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "popover-open/placement=below 0/around/0",
-        "popover-open/placement=below 0/around/1",
-        "popover-open/placement=below 1/around/0",
-        "popover-open/placement=below 1/around/1"
+        "popover-open/side=bottom 0/around/0",
+        "popover-open/side=bottom 0/around/1",
+        "popover-open/side=bottom 1/around/0",
+        "popover-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -4612,10 +4573,10 @@
       "property": "border",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "popover-open/placement=below 0/around/0",
-        "popover-open/placement=below 0/around/1",
-        "popover-open/placement=below 1/around/0",
-        "popover-open/placement=below 1/around/1"
+        "popover-open/side=bottom 0/around/0",
+        "popover-open/side=bottom 0/around/1",
+        "popover-open/side=bottom 1/around/0",
+        "popover-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -4625,10 +4586,10 @@
       "property": "border-color",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "popover-open/placement=below 0/around/0",
-        "popover-open/placement=below 0/around/1",
-        "popover-open/placement=below 1/around/0",
-        "popover-open/placement=below 1/around/1"
+        "popover-open/side=bottom 0/around/0",
+        "popover-open/side=bottom 0/around/1",
+        "popover-open/side=bottom 1/around/0",
+        "popover-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -4637,7 +4598,7 @@
       "className": "flex",
       "property": "display",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/placement=below 0/around/1"]
+      "at": ["popover-open/side=bottom 0/around/1"]
     },
     {
       "set": "popover-open",
@@ -4645,7 +4606,7 @@
       "className": "w-72",
       "property": "width",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/placement=below 0/around/1"]
+      "at": ["popover-open/side=bottom 0/around/1"]
     },
     {
       "set": "popover-open",
@@ -4653,7 +4614,7 @@
       "className": "justify-center",
       "property": "justify-content",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/placement=below 0/around/1"]
+      "at": ["popover-open/side=bottom 0/around/1"]
     },
     {
       "set": "popover-open",
@@ -4661,7 +4622,7 @@
       "className": "aria-expanded:bg-muted",
       "property": "background-color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["popover-open/placement=below 0/root"]
+      "at": ["popover-open/side=bottom 0/root"]
     },
     {
       "set": "popover-open",
@@ -4669,7 +4630,7 @@
       "className": "aria-expanded:text-foreground",
       "property": "color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["popover-open/placement=below 0/root"]
+      "at": ["popover-open/side=bottom 0/root"]
     },
     {
       "set": "popover-open",
@@ -4677,7 +4638,7 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/placement=below 1/around/1"]
+      "at": ["popover-open/side=bottom 1/around/1"]
     },
     {
       "set": "popover-open",
@@ -4685,7 +4646,7 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/placement=below 1/around/1"]
+      "at": ["popover-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-checkbox-item",
@@ -4694,10 +4655,10 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4707,10 +4668,10 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4720,10 +4681,10 @@
       "property": "border-style",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4733,10 +4694,10 @@
       "property": "pointer-events",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4746,10 +4707,10 @@
       "property": "position",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4759,10 +4720,10 @@
       "property": "right",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4772,10 +4733,10 @@
       "property": "display",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4785,10 +4746,10 @@
       "property": "align-items",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4798,10 +4759,10 @@
       "property": "justify-content",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4811,8 +4772,8 @@
       "property": "color",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=off,state=highlighted 0/root/0"
+        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0"
       ]
     },
     {
@@ -4822,10 +4783,10 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -4835,10 +4796,10 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -4848,10 +4809,10 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-checkbox-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-checkbox-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -4861,10 +4822,10 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4874,10 +4835,10 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4887,10 +4848,10 @@
       "property": "border-style",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4900,10 +4861,10 @@
       "property": "pointer-events",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4913,10 +4874,10 @@
       "property": "position",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4926,10 +4887,10 @@
       "property": "right",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4939,10 +4900,10 @@
       "property": "display",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4952,10 +4913,10 @@
       "property": "align-items",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4965,10 +4926,10 @@
       "property": "justify-content",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=rest 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
       ]
     },
     {
@@ -4978,8 +4939,8 @@
       "property": "color",
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
-        "dropdown-menu-radio-item/checked=off,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=off,state=highlighted 0/root/0"
+        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
+        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0"
       ]
     },
     {
@@ -4989,10 +4950,10 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-radio-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -5002,10 +4963,10 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "dropdown-menu-radio-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -5015,10 +4976,10 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "dropdown-menu-radio-item/checked=on,state=disabled 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=focus 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=highlighted 0/root/0/0",
-        "dropdown-menu-radio-item/checked=on,state=rest 0/root/0/0"
+        "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=focus 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=highlighted 0/root/0/0",
+        "dropdown-menu-radio-item/checked=true,state=rest 0/root/0/0"
       ]
     },
     {
@@ -5027,7 +4988,7 @@
       "className": "tailwind preflight",
       "property": "box-sizing",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 0/around/0", "dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5035,7 +4996,7 @@
       "className": "tailwind preflight",
       "property": "border",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 0/around/0", "dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5043,7 +5004,7 @@
       "className": "fuse.css base layer",
       "property": "border-color",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 0/around/0", "dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5051,7 +5012,7 @@
       "className": "aria-expanded:bg-muted",
       "property": "background-color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["dropdown-menu-open/placement=below 0/root"]
+      "at": ["dropdown-menu-open/side=bottom 0/root"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5059,7 +5020,7 @@
       "className": "aria-expanded:text-foreground",
       "property": "color",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["dropdown-menu-open/placement=below 0/root"]
+      "at": ["dropdown-menu-open/side=bottom 0/root"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5067,7 +5028,7 @@
       "className": "fuse.css base layer",
       "property": "border-color",
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dropdown-menu-open/placement=below 1/around/0"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/0"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5075,7 +5036,7 @@
       "className": "fuse.css base layer",
       "property": "box-sizing",
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dropdown-menu-open/placement=below 1/around/0"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/0"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5083,7 +5044,7 @@
       "className": "fuse.css base layer",
       "property": "border-style",
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dropdown-menu-open/placement=below 1/around/0"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/0"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5091,7 +5052,7 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5099,7 +5060,7 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5107,7 +5068,7 @@
       "className": "outline-none",
       "property": "--tw-outline-style",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
@@ -5115,7 +5076,7 @@
       "className": "outline-none",
       "property": "outline-style",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/placement=below 1/around/1"]
+      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "combobox-open",
@@ -5124,10 +5085,10 @@
       "property": "box-sizing",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "combobox-open/placement=below 0/around/0",
-        "combobox-open/placement=below 0/around/1",
-        "combobox-open/placement=below 1/around/0",
-        "combobox-open/placement=below 1/around/1"
+        "combobox-open/side=bottom 0/around/0",
+        "combobox-open/side=bottom 0/around/1",
+        "combobox-open/side=bottom 1/around/0",
+        "combobox-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -5137,10 +5098,10 @@
       "property": "border",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "combobox-open/placement=below 0/around/0",
-        "combobox-open/placement=below 0/around/1",
-        "combobox-open/placement=below 1/around/0",
-        "combobox-open/placement=below 1/around/1"
+        "combobox-open/side=bottom 0/around/0",
+        "combobox-open/side=bottom 0/around/1",
+        "combobox-open/side=bottom 1/around/0",
+        "combobox-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -5150,10 +5111,10 @@
       "property": "border-color",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "combobox-open/placement=below 0/around/0",
-        "combobox-open/placement=below 0/around/1",
-        "combobox-open/placement=below 1/around/0",
-        "combobox-open/placement=below 1/around/1"
+        "combobox-open/side=bottom 0/around/0",
+        "combobox-open/side=bottom 0/around/1",
+        "combobox-open/side=bottom 1/around/0",
+        "combobox-open/side=bottom 1/around/1"
       ]
     },
     {
@@ -5162,7 +5123,7 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["combobox-open/placement=below 1/around/1"]
+      "at": ["combobox-open/side=bottom 1/around/1"]
     },
     {
       "set": "combobox-open",
@@ -5170,7 +5131,7 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["combobox-open/placement=below 1/around/1"]
+      "at": ["combobox-open/side=bottom 1/around/1"]
     },
     {
       "set": "command-item",
@@ -5275,42 +5236,42 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "item/variant=default,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=image 0/root/2/0"
+        "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=image 0/root/2/0"
       ]
     },
     {
@@ -5320,42 +5281,42 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
-        "item/variant=default,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=image 0/root/2/0"
+        "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=image 0/root/2/0"
       ]
     },
     {
@@ -5365,42 +5326,42 @@
       "property": "border-color",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
-        "item/variant=default,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=on,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=off,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=on,media=image 0/root/2/0"
+        "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=default,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=muted,size=xs,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=default,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=sm,described=true,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=false,media=image 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=icon 0/root/2/0",
+        "item/variant=outline,size=xs,described=true,media=image 0/root/2/0"
       ]
     },
     {
@@ -5409,7 +5370,7 @@
       "className": "group-data-[collapsible=icon]:-mt-8",
       "property": "margin-top",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["sidebar-group/collapsed=on 0/root/0"]
+      "at": ["sidebar-group/collapsed=true 0/root/0"]
     },
     {
       "set": "sidebar-group",
@@ -5417,7 +5378,7 @@
       "className": "group-data-[collapsible=icon]:opacity-0",
       "property": "opacity",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["sidebar-group/collapsed=on 0/root/0"]
+      "at": ["sidebar-group/collapsed=true 0/root/0"]
     },
     {
       "set": "sidebar-menu-item-with-badge",
@@ -5426,8 +5387,8 @@
       "property": "right",
       "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
       "at": [
-        "sidebar-menu-item-with-badge/active=off 0/root/1",
-        "sidebar-menu-item-with-badge/active=on 0/root/1"
+        "sidebar-menu-item-with-badge/isActive=false 0/root/1",
+        "sidebar-menu-item-with-badge/isActive=true 0/root/1"
       ]
     },
     {
@@ -5481,10 +5442,10 @@
       "property": "box-sizing",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "tooltip-open/placement=above 0/around/0",
-        "tooltip-open/placement=above 0/around/1",
-        "tooltip-open/placement=above 1/around/0",
-        "tooltip-open/placement=above 1/around/1"
+        "tooltip-open/side=top 0/around/0",
+        "tooltip-open/side=top 0/around/1",
+        "tooltip-open/side=top 1/around/0",
+        "tooltip-open/side=top 1/around/1"
       ]
     },
     {
@@ -5494,10 +5455,10 @@
       "property": "border",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "tooltip-open/placement=above 0/around/0",
-        "tooltip-open/placement=above 0/around/1",
-        "tooltip-open/placement=above 1/around/0",
-        "tooltip-open/placement=above 1/around/1"
+        "tooltip-open/side=top 0/around/0",
+        "tooltip-open/side=top 0/around/1",
+        "tooltip-open/side=top 1/around/0",
+        "tooltip-open/side=top 1/around/1"
       ]
     },
     {
@@ -5507,10 +5468,10 @@
       "property": "border-color",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
-        "tooltip-open/placement=above 0/around/0",
-        "tooltip-open/placement=above 0/around/1",
-        "tooltip-open/placement=above 1/around/0",
-        "tooltip-open/placement=above 1/around/1"
+        "tooltip-open/side=top 0/around/0",
+        "tooltip-open/side=top 0/around/1",
+        "tooltip-open/side=top 1/around/0",
+        "tooltip-open/side=top 1/around/1"
       ]
     },
     {
@@ -5519,7 +5480,7 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/placement=above 0/around/1"]
+      "at": ["tooltip-open/side=top 0/around/1"]
     },
     {
       "set": "tooltip-open",
@@ -5527,7 +5488,7 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/placement=above 0/around/1"]
+      "at": ["tooltip-open/side=top 0/around/1"]
     },
     {
       "set": "tooltip-open",
@@ -5535,7 +5496,7 @@
       "className": "pt-12",
       "property": "padding-top",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/placement=above 1/around/1"]
+      "at": ["tooltip-open/side=top 1/around/1"]
     },
     {
       "set": "tooltip-open",
@@ -5543,7 +5504,7 @@
       "className": "flex",
       "property": "display",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/placement=above 1/around/1"]
+      "at": ["tooltip-open/side=top 1/around/1"]
     },
     {
       "set": "tooltip-open",
@@ -5551,7 +5512,7 @@
       "className": "justify-center",
       "property": "justify-content",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/placement=above 1/around/1"]
+      "at": ["tooltip-open/side=top 1/around/1"]
     },
     {
       "set": "alert-dialog-open",

@@ -3,13 +3,14 @@
  * popup open over the scrim.
  *
  * - `Alert dialog content` is the popup, `AlertDialog.Content`'s Dialog popup, `<div role="alertdialog"
- *   data-slot="dialog-content">`, destructive, neutral and pending: 3 cells. It is fixed in the
+ *   data-slot="dialog-content">`, destructive and neutral, each at rest and performing its action:
+ *   4 cells. It is fixed in the
  *   viewport (`ALERT_DIALOG_VIEWPORT`). It holds:
  *   - the header row: the title, and the title line, a box one title line tall holding the icon:
  *     WarningOctagon for a destructive dialog, Info for a neutral one;
  *   - the description, muted copy;
  *   - the footer row, holding the ghost small Cancel and the small action Button, destructive or
- *     default, pending in the pending cell.
+ *     default, pending while the dialog performs its action.
  *   The copy is the docs demos', which differs by cell, so no TEXT property sets it (one property
  *   holds one default); the action's label is the Button instance's own. The icon differs by cell too,
  *   so no swap property picks it.
@@ -47,7 +48,7 @@ const CANCEL_MANIFEST: InstanceManifest = {
   exposed: true,
 };
 
-/** The small action Button: destructive or default, pending in the pending cell. */
+/** The small action Button: destructive or default, pending while the dialog performs its action. */
 const ACTION_MANIFEST: InstanceManifest = {
   kind: "instance",
   key: "action",
@@ -55,7 +56,7 @@ const ACTION_MANIFEST: InstanceManifest = {
   cell: (outer) => ({
     variant: outer.variant === "neutral" ? "default" : "destructive",
     size: "sm",
-    state: outer.variant === "pending" ? "pending" : "rest",
+    state: outer.isPerformingAction === "true" ? "pending" : "rest",
     icon: "none",
   }),
   properties: (outer) => ({ text: { Label: alertDialogCopy(outer.variant).action } }),
@@ -67,8 +68,12 @@ const ACTION_MANIFEST: InstanceManifest = {
 export const ALERT_DIALOG_CONTENT_MANIFEST: SetManifest = {
   key: "alert-dialog-content",
   name: "Alert dialog content",
+  api: { page: "alert-dialog", parts: ["AlertDialog.Content"] },
   slot: "dialog-content",
-  axes: [{ name: "variant", values: ["destructive", "neutral", "pending"] }],
+  axes: [
+    { name: "variant", values: ["destructive", "neutral"] },
+    { name: "isPerformingAction", values: ["false", "true"] },
+  ],
   columnAxis: "variant",
   viewport: ALERT_DIALOG_VIEWPORT,
   label: undefined,
@@ -106,6 +111,7 @@ export const ALERT_DIALOG_CONTENT_MANIFEST: SetManifest = {
 export const ALERT_DIALOG_OPEN_MANIFEST: SetManifest = {
   key: "alert-dialog-open",
   name: "Alert dialog (open)",
+  api: { page: "alert-dialog", parts: ["AlertDialog.Content"] },
   slot: "alert-dialog-open",
   axes: [{ name: "placement", values: ["centered"] }],
   columnAxis: "placement",
@@ -118,7 +124,7 @@ export const ALERT_DIALOG_OPEN_MANIFEST: SetManifest = {
       kind: "instance",
       key: "content",
       of: ALERT_DIALOG_CONTENT_MANIFEST,
-      cell: () => ({ variant: "destructive" }),
+      cell: () => ({ variant: "destructive", isPerformingAction: "false" }),
       shownIn: always,
     },
   ],

@@ -197,8 +197,8 @@
   ],
   "cells": [
     {
-    "key": "icon-toggle/variant=default,size=default,state=rest,pressed=off",
-    "cell": {"variant":"default","size":"default","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=default,state=rest,pressed=false",
+    "cell": {"variant":"default","size":"default","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -231,8 +231,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=rest,pressed=on",
-    "cell": {"variant":"default","size":"default","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=default,state=rest,pressed=true",
+    "cell": {"variant":"default","size":"default","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -265,8 +265,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=hover,pressed=off",
-    "cell": {"variant":"default","size":"default","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=default,state=hover,pressed=false",
+    "cell": {"variant":"default","size":"default","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -299,8 +299,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=hover,pressed=on",
-    "cell": {"variant":"default","size":"default","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=default,state=hover,pressed=true",
+    "cell": {"variant":"default","size":"default","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -333,8 +333,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=focus,pressed=off",
-    "cell": {"variant":"default","size":"default","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=default,state=focus,pressed=false",
+    "cell": {"variant":"default","size":"default","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -367,8 +367,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=focus,pressed=on",
-    "cell": {"variant":"default","size":"default","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=default,state=focus,pressed=true",
+    "cell": {"variant":"default","size":"default","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -401,8 +401,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=disabled,pressed=off",
-    "cell": {"variant":"default","size":"default","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=default,state=disabled,pressed=false",
+    "cell": {"variant":"default","size":"default","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -435,8 +435,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=default,state=disabled,pressed=on",
-    "cell": {"variant":"default","size":"default","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=default,state=disabled,pressed=true",
+    "cell": {"variant":"default","size":"default","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -469,8 +469,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=rest,pressed=off",
-    "cell": {"variant":"default","size":"xs","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=xs,state=rest,pressed=false",
+    "cell": {"variant":"default","size":"xs","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -503,8 +503,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=rest,pressed=on",
-    "cell": {"variant":"default","size":"xs","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=xs,state=rest,pressed=true",
+    "cell": {"variant":"default","size":"xs","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -537,8 +537,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=hover,pressed=off",
-    "cell": {"variant":"default","size":"xs","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=xs,state=hover,pressed=false",
+    "cell": {"variant":"default","size":"xs","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -571,8 +571,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=hover,pressed=on",
-    "cell": {"variant":"default","size":"xs","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=xs,state=hover,pressed=true",
+    "cell": {"variant":"default","size":"xs","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -605,8 +605,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=focus,pressed=off",
-    "cell": {"variant":"default","size":"xs","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=xs,state=focus,pressed=false",
+    "cell": {"variant":"default","size":"xs","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -639,8 +639,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=focus,pressed=on",
-    "cell": {"variant":"default","size":"xs","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=xs,state=focus,pressed=true",
+    "cell": {"variant":"default","size":"xs","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -673,8 +673,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=disabled,pressed=off",
-    "cell": {"variant":"default","size":"xs","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=xs,state=disabled,pressed=false",
+    "cell": {"variant":"default","size":"xs","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -707,8 +707,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=xs,state=disabled,pressed=on",
-    "cell": {"variant":"default","size":"xs","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=xs,state=disabled,pressed=true",
+    "cell": {"variant":"default","size":"xs","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -741,8 +741,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=rest,pressed=off",
-    "cell": {"variant":"default","size":"sm","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=sm,state=rest,pressed=false",
+    "cell": {"variant":"default","size":"sm","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -775,8 +775,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=rest,pressed=on",
-    "cell": {"variant":"default","size":"sm","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=sm,state=rest,pressed=true",
+    "cell": {"variant":"default","size":"sm","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -809,8 +809,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=hover,pressed=off",
-    "cell": {"variant":"default","size":"sm","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=sm,state=hover,pressed=false",
+    "cell": {"variant":"default","size":"sm","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -843,8 +843,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=hover,pressed=on",
-    "cell": {"variant":"default","size":"sm","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=sm,state=hover,pressed=true",
+    "cell": {"variant":"default","size":"sm","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -877,8 +877,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=focus,pressed=off",
-    "cell": {"variant":"default","size":"sm","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=sm,state=focus,pressed=false",
+    "cell": {"variant":"default","size":"sm","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -911,8 +911,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=focus,pressed=on",
-    "cell": {"variant":"default","size":"sm","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=sm,state=focus,pressed=true",
+    "cell": {"variant":"default","size":"sm","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -945,8 +945,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=disabled,pressed=off",
-    "cell": {"variant":"default","size":"sm","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=sm,state=disabled,pressed=false",
+    "cell": {"variant":"default","size":"sm","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -979,8 +979,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=sm,state=disabled,pressed=on",
-    "cell": {"variant":"default","size":"sm","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=sm,state=disabled,pressed=true",
+    "cell": {"variant":"default","size":"sm","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1013,8 +1013,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=rest,pressed=off",
-    "cell": {"variant":"default","size":"lg","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=lg,state=rest,pressed=false",
+    "cell": {"variant":"default","size":"lg","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1047,8 +1047,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=rest,pressed=on",
-    "cell": {"variant":"default","size":"lg","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=lg,state=rest,pressed=true",
+    "cell": {"variant":"default","size":"lg","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1081,8 +1081,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=hover,pressed=off",
-    "cell": {"variant":"default","size":"lg","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=lg,state=hover,pressed=false",
+    "cell": {"variant":"default","size":"lg","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1115,8 +1115,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=hover,pressed=on",
-    "cell": {"variant":"default","size":"lg","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=lg,state=hover,pressed=true",
+    "cell": {"variant":"default","size":"lg","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1149,8 +1149,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=focus,pressed=off",
-    "cell": {"variant":"default","size":"lg","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=lg,state=focus,pressed=false",
+    "cell": {"variant":"default","size":"lg","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1183,8 +1183,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=focus,pressed=on",
-    "cell": {"variant":"default","size":"lg","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=lg,state=focus,pressed=true",
+    "cell": {"variant":"default","size":"lg","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1217,8 +1217,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=disabled,pressed=off",
-    "cell": {"variant":"default","size":"lg","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=default,size=lg,state=disabled,pressed=false",
+    "cell": {"variant":"default","size":"lg","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1251,8 +1251,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=default,size=lg,state=disabled,pressed=on",
-    "cell": {"variant":"default","size":"lg","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=default,size=lg,state=disabled,pressed=true",
+    "cell": {"variant":"default","size":"lg","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1285,8 +1285,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=rest,pressed=off",
-    "cell": {"variant":"outline","size":"default","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=default,state=rest,pressed=false",
+    "cell": {"variant":"outline","size":"default","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1319,8 +1319,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=rest,pressed=on",
-    "cell": {"variant":"outline","size":"default","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=default,state=rest,pressed=true",
+    "cell": {"variant":"outline","size":"default","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1353,8 +1353,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=hover,pressed=off",
-    "cell": {"variant":"outline","size":"default","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=default,state=hover,pressed=false",
+    "cell": {"variant":"outline","size":"default","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1387,8 +1387,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=hover,pressed=on",
-    "cell": {"variant":"outline","size":"default","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=default,state=hover,pressed=true",
+    "cell": {"variant":"outline","size":"default","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1421,8 +1421,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=focus,pressed=off",
-    "cell": {"variant":"outline","size":"default","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=default,state=focus,pressed=false",
+    "cell": {"variant":"outline","size":"default","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1455,8 +1455,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=focus,pressed=on",
-    "cell": {"variant":"outline","size":"default","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=default,state=focus,pressed=true",
+    "cell": {"variant":"outline","size":"default","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1489,8 +1489,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=disabled,pressed=off",
-    "cell": {"variant":"outline","size":"default","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=default,state=disabled,pressed=false",
+    "cell": {"variant":"outline","size":"default","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1523,8 +1523,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=default,state=disabled,pressed=on",
-    "cell": {"variant":"outline","size":"default","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=default,state=disabled,pressed=true",
+    "cell": {"variant":"outline","size":"default","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1557,8 +1557,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=rest,pressed=off",
-    "cell": {"variant":"outline","size":"xs","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=xs,state=rest,pressed=false",
+    "cell": {"variant":"outline","size":"xs","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1591,8 +1591,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=rest,pressed=on",
-    "cell": {"variant":"outline","size":"xs","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=xs,state=rest,pressed=true",
+    "cell": {"variant":"outline","size":"xs","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1625,8 +1625,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=hover,pressed=off",
-    "cell": {"variant":"outline","size":"xs","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=xs,state=hover,pressed=false",
+    "cell": {"variant":"outline","size":"xs","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1659,8 +1659,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=hover,pressed=on",
-    "cell": {"variant":"outline","size":"xs","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=xs,state=hover,pressed=true",
+    "cell": {"variant":"outline","size":"xs","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1693,8 +1693,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=focus,pressed=off",
-    "cell": {"variant":"outline","size":"xs","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=xs,state=focus,pressed=false",
+    "cell": {"variant":"outline","size":"xs","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1727,8 +1727,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=focus,pressed=on",
-    "cell": {"variant":"outline","size":"xs","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=xs,state=focus,pressed=true",
+    "cell": {"variant":"outline","size":"xs","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1761,8 +1761,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=disabled,pressed=off",
-    "cell": {"variant":"outline","size":"xs","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=xs,state=disabled,pressed=false",
+    "cell": {"variant":"outline","size":"xs","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1795,8 +1795,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=xs,state=disabled,pressed=on",
-    "cell": {"variant":"outline","size":"xs","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=xs,state=disabled,pressed=true",
+    "cell": {"variant":"outline","size":"xs","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1829,8 +1829,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=rest,pressed=off",
-    "cell": {"variant":"outline","size":"sm","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=sm,state=rest,pressed=false",
+    "cell": {"variant":"outline","size":"sm","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1863,8 +1863,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=rest,pressed=on",
-    "cell": {"variant":"outline","size":"sm","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=sm,state=rest,pressed=true",
+    "cell": {"variant":"outline","size":"sm","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1897,8 +1897,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=hover,pressed=off",
-    "cell": {"variant":"outline","size":"sm","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=sm,state=hover,pressed=false",
+    "cell": {"variant":"outline","size":"sm","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1931,8 +1931,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=hover,pressed=on",
-    "cell": {"variant":"outline","size":"sm","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=sm,state=hover,pressed=true",
+    "cell": {"variant":"outline","size":"sm","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -1965,8 +1965,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=focus,pressed=off",
-    "cell": {"variant":"outline","size":"sm","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=sm,state=focus,pressed=false",
+    "cell": {"variant":"outline","size":"sm","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -1999,8 +1999,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=focus,pressed=on",
-    "cell": {"variant":"outline","size":"sm","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=sm,state=focus,pressed=true",
+    "cell": {"variant":"outline","size":"sm","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -2033,8 +2033,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=disabled,pressed=off",
-    "cell": {"variant":"outline","size":"sm","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=sm,state=disabled,pressed=false",
+    "cell": {"variant":"outline","size":"sm","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -2067,8 +2067,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=sm,state=disabled,pressed=on",
-    "cell": {"variant":"outline","size":"sm","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=sm,state=disabled,pressed=true",
+    "cell": {"variant":"outline","size":"sm","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -2101,8 +2101,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=rest,pressed=off",
-    "cell": {"variant":"outline","size":"lg","state":"rest","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=lg,state=rest,pressed=false",
+    "cell": {"variant":"outline","size":"lg","state":"rest","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -2135,8 +2135,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=rest,pressed=on",
-    "cell": {"variant":"outline","size":"lg","state":"rest","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=lg,state=rest,pressed=true",
+    "cell": {"variant":"outline","size":"lg","state":"rest","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -2169,8 +2169,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=hover,pressed=off",
-    "cell": {"variant":"outline","size":"lg","state":"hover","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=lg,state=hover,pressed=false",
+    "cell": {"variant":"outline","size":"lg","state":"hover","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -2203,8 +2203,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=hover,pressed=on",
-    "cell": {"variant":"outline","size":"lg","state":"hover","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=lg,state=hover,pressed=true",
+    "cell": {"variant":"outline","size":"lg","state":"hover","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -2237,8 +2237,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=focus,pressed=off",
-    "cell": {"variant":"outline","size":"lg","state":"focus","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=lg,state=focus,pressed=false",
+    "cell": {"variant":"outline","size":"lg","state":"focus","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -2271,8 +2271,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=focus,pressed=on",
-    "cell": {"variant":"outline","size":"lg","state":"focus","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=lg,state=focus,pressed=true",
+    "cell": {"variant":"outline","size":"lg","state":"focus","pressed":"true"},
     "roots": [
       {
         "around": [],
@@ -2305,8 +2305,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=disabled,pressed=off",
-    "cell": {"variant":"outline","size":"lg","state":"disabled","pressed":"off"},
+    "key": "icon-toggle/variant=outline,size=lg,state=disabled,pressed=false",
+    "cell": {"variant":"outline","size":"lg","state":"disabled","pressed":"false"},
     "roots": [
       {
         "around": [],
@@ -2339,8 +2339,8 @@
     ]
   },
     {
-    "key": "icon-toggle/variant=outline,size=lg,state=disabled,pressed=on",
-    "cell": {"variant":"outline","size":"lg","state":"disabled","pressed":"on"},
+    "key": "icon-toggle/variant=outline,size=lg,state=disabled,pressed=true",
+    "cell": {"variant":"outline","size":"lg","state":"disabled","pressed":"true"},
     "roots": [
       {
         "around": [],

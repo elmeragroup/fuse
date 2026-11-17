@@ -276,8 +276,8 @@
   ],
   "cells": [
     {
-    "key": "sidebar/variant=sidebar,collapsed=off",
-    "cell": {"variant":"sidebar","collapsed":"off"},
+    "key": "sidebar/variant=sidebar,collapsed=false",
+    "cell": {"variant":"sidebar","collapsed":"false"},
     "roots": [
       {
         "around": [
@@ -789,8 +789,8 @@
     ]
   },
     {
-    "key": "sidebar/variant=sidebar,collapsed=on",
-    "cell": {"variant":"sidebar","collapsed":"on"},
+    "key": "sidebar/variant=sidebar,collapsed=true",
+    "cell": {"variant":"sidebar","collapsed":"true"},
     "roots": [
       {
         "around": [
@@ -1296,8 +1296,8 @@
     ]
   },
     {
-    "key": "sidebar/variant=inset,collapsed=off",
-    "cell": {"variant":"inset","collapsed":"off"},
+    "key": "sidebar/variant=inset,collapsed=false",
+    "cell": {"variant":"inset","collapsed":"false"},
     "roots": [
       {
         "around": [
@@ -1809,8 +1809,8 @@
     ]
   },
     {
-    "key": "sidebar/variant=inset,collapsed=on",
-    "cell": {"variant":"inset","collapsed":"on"},
+    "key": "sidebar/variant=inset,collapsed=true",
+    "cell": {"variant":"inset","collapsed":"true"},
     "roots": [
       {
         "around": [

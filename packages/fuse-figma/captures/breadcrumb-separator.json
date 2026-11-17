@@ -136,8 +136,8 @@
   ],
   "cells": [
     {
-    "key": "breadcrumb-separator/size=14",
-    "cell": {"size":"14"},
+    "key": "breadcrumb-separator/state=rest",
+    "cell": {"state":"rest"},
     "roots": [
       {
         "around": [

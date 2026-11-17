@@ -4,8 +4,8 @@
  * compare page in a host as large as the viewport the definitions declare, its popup and scrim
  * portalled into that host, which is their containing block, as `viewport-host.ts` says.
  *
- * - `alertDialogContent`: the popup, measured alone, destructive, neutral or pending; the page hides
- *   the scrim.
+ * - `alertDialogContent`: the popup, measured alone, destructive or neutral, at rest or performing
+ *   its action; the page hides the scrim.
  * - `alertDialogOpen`: the destructive popup over the scrim, measured together, the scrim as large as
  *   the viewport.
  *
@@ -22,7 +22,7 @@ import type { Cell } from "../components/component-spec.ts";
 import type { ClientCellRendering } from "./cell-renderers.ts";
 import { viewportHost } from "./viewport-host.ts";
 
-/** The docs demo's AlertDialog, open, in a cell's variant: destructive, neutral, or destructive and pending. */
+/** The docs demo's AlertDialog, open, in a cell's variant, performing its action where the cell is. */
 function openAlertDialog(cell: Cell) {
   const copy = alertDialogCopy(cell.variant);
   return viewportHost(ALERT_DIALOG_VIEWPORT, (host) =>
@@ -35,7 +35,7 @@ function openAlertDialog(cell: Cell) {
           variant: cell.variant === "neutral" ? "neutral" : "destructive",
           title: copy.title,
           actionLabel: copy.action,
-          isPerformingAction: cell.variant === "pending",
+          isPerformingAction: cell.isPerformingAction === "true",
           children: copy.description,
         }),
       }),
@@ -50,6 +50,6 @@ export const alertDialogContent: ClientCellRendering = {
 
 /** The open Alert dialog, its scrim and its popup. */
 export const alertDialogOpen: ClientCellRendering = {
-  element: () => openAlertDialog({ variant: "destructive" }),
+  element: () => openAlertDialog({ variant: "destructive", isPerformingAction: "false" }),
   union: ["dialog-overlay", "dialog-content"],
 };

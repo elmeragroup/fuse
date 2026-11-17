@@ -4,7 +4,7 @@
  *
  * - `Menu group label` is a group's caption, 3 cells. Its `kind` axis picks the family per cell.
  *   `plain` is the label every family but Dropdown menu renders, drawn as Select's, `Select.Label` in
- *   a `Select.Group`. `menu` is Dropdown menu's `DropdownMenu.Label`, and `menu inset` is that label
+ *   a `Select.Group`. `menu` is Dropdown menu's `DropdownMenu.Label`, and `menu-inset` is that label
  *   with `inset`, which pads its start by the room a row's indicator takes.
  * - `Menu separator` is the hairline between groups, 1 cell. A popup draws it across its whole
  *   width, whatever it pads.
@@ -16,21 +16,22 @@ import { always } from "./popup-facts";
 /** The group label every cell shows, the default of its `Label` property: the docs Groups demo's first. */
 export const MENU_GROUP_LABEL_TEXT = "Citrus";
 
-/** Whether a group label cell is Dropdown menu's, `menu` or `menu inset`, rather than the plain one. */
+/** Whether a group label cell is Dropdown menu's, `menu` or `menu-inset`, rather than the plain one. */
 const isDropdownLabel = (cell: Cell): boolean => cell.kind !== "plain";
 
 /**
  * The label's manifest, which the capture-backed build reads with `captures/menu-group-label.json`:
  * `<Select.Label>Citrus</Select.Label>` in a `Select.Group` at `kind=plain`, and
  * `<DropdownMenu.Label>Citrus</DropdownMenu.Label>` in a `DropdownMenu.Group`, `inset` at
- * `kind=menu inset`. Each family names the element's slot.
+ * `kind=menu-inset`. Each family names the element's slot.
  */
 export const MENU_GROUP_LABEL_MANIFEST: SetManifest = {
   key: "menu-group-label",
   name: "Menu group label",
+  api: { page: "select", parts: ["Select.Label"] },
   slot: "menu-group-label",
   elementSlot: (cell) => (isDropdownLabel(cell) ? "dropdown-menu-label" : "select-label"),
-  axes: [{ name: "kind", values: ["plain", "menu", "menu inset"] }],
+  axes: [{ name: "kind", values: ["plain", "menu", "menu-inset"] }],
   columnAxis: "kind",
   label: {
     key: "label",
@@ -45,15 +46,17 @@ export const MENU_GROUP_LABEL_MANIFEST: SetManifest = {
 
 /**
  * The separator's manifest, which the capture-backed build reads with `captures/menu-separator.json`:
- * the hairline between a menu's groups, as `<Select.Separator />`.
+ * the hairline between a menu's groups, as `<Select.Separator />`. Its one property is
+ * `Select.Separator`'s `orientation`, at its one value the kit draws, `horizontal`.
  */
 export const MENU_SEPARATOR_MANIFEST: SetManifest = {
   key: "menu-separator",
   name: "Menu separator",
+  api: { page: "select", parts: ["Select.Separator"] },
   slot: "menu-separator",
   elementSlot: () => "select-separator",
-  axes: [{ name: "size", values: ["default"] }],
-  columnAxis: "size",
+  axes: [{ name: "orientation", values: ["horizontal"] }],
+  columnAxis: "orientation",
   label: undefined,
   iconsFor: () => [],
   swapProperties: [],

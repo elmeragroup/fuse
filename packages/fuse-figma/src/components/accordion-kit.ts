@@ -6,7 +6,7 @@
  * - The root is Base UI's `<div data-slot="accordion-item">`. Its sample renders in a 384px host.
  * - The header, an `<h3>`, holds the trigger, a native `<button>`. It shows the docs Basic demo's
  *   `Shipping`, which the `Label` property sets, and the CaretDown at its end.
- * - `open=on` shows the panel, which Base UI mounts only while the item is open. The panel's text is
+ * - `open=true` shows the panel, which Base UI mounts only while the item is open. The panel's text is
  *   the demo's `Delivered within 3–5 business days.`, which the `Content` property sets.
  * - The trigger takes the states.
  * - `hasIndicator` stays at its default, the trailing caret. The docs Leading indicator demo drops
@@ -66,7 +66,7 @@ export function accordionLook(cell: Cell): AccordionLook {
   if (!isVariant(variant) || !isRadius(radius)) {
     throw new Error(`Accordion item has no variant ${variant ?? ""} or radius ${radius ?? ""}`);
   }
-  return { variant, radius, open: cell.open === "on" };
+  return { variant, radius, open: cell.open === "true" };
 }
 
 const showsOpen = (cell: Cell): boolean => accordionLook(cell).open;
@@ -93,12 +93,13 @@ const CARET: IconManifest = {
 export const ACCORDION_ITEM_MANIFEST: SetManifest = {
   key: "accordion-item",
   name: "Accordion item",
+  api: { page: "accordion", parts: ["Accordion.Root", "Accordion.Item"] },
   slot: "accordion-item",
   statePart: "accordion-trigger",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "radius", values: RADII },
-    { name: "open", values: ["off", "on"] },
+    { name: "open", values: ["false", "true"] },
     { name: "state", values: ["rest", "hover", "focus", "disabled"] },
   ],
   columnAxis: "state",

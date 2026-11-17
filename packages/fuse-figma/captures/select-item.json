@@ -185,8 +185,8 @@
   ],
   "cells": [
     {
-    "key": "select-item/selected=off,state=rest",
-    "cell": {"selected":"off","state":"rest"},
+    "key": "select-item/selected=false,state=rest",
+    "cell": {"selected":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -270,8 +270,8 @@
     ]
   },
     {
-    "key": "select-item/selected=off,state=highlighted",
-    "cell": {"selected":"off","state":"highlighted"},
+    "key": "select-item/selected=false,state=highlighted",
+    "cell": {"selected":"false","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -355,8 +355,8 @@
     ]
   },
     {
-    "key": "select-item/selected=off,state=disabled",
-    "cell": {"selected":"off","state":"disabled"},
+    "key": "select-item/selected=false,state=disabled",
+    "cell": {"selected":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -440,8 +440,8 @@
     ]
   },
     {
-    "key": "select-item/selected=on,state=rest",
-    "cell": {"selected":"on","state":"rest"},
+    "key": "select-item/selected=true,state=rest",
+    "cell": {"selected":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -550,8 +550,8 @@
     ]
   },
     {
-    "key": "select-item/selected=on,state=highlighted",
-    "cell": {"selected":"on","state":"highlighted"},
+    "key": "select-item/selected=true,state=highlighted",
+    "cell": {"selected":"true","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -660,8 +660,8 @@
     ]
   },
     {
-    "key": "select-item/selected=on,state=disabled",
-    "cell": {"selected":"on","state":"disabled"},
+    "key": "select-item/selected=true,state=disabled",
+    "cell": {"selected":"true","state":"disabled"},
     "roots": [
       {
         "around": [

@@ -208,8 +208,8 @@
   ],
   "cells": [
     {
-    "key": "item/variant=default,size=default,described=off,media=icon",
-    "cell": {"variant":"default","size":"default","described":"off","media":"icon"},
+    "key": "item/variant=default,size=default,described=false,media=icon",
+    "cell": {"variant":"default","size":"default","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -321,8 +321,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=default,described=off,media=image",
-    "cell": {"variant":"default","size":"default","described":"off","media":"image"},
+    "key": "item/variant=default,size=default,described=false,media=image",
+    "cell": {"variant":"default","size":"default","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -434,8 +434,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=default,described=on,media=icon",
-    "cell": {"variant":"default","size":"default","described":"on","media":"icon"},
+    "key": "item/variant=default,size=default,described=true,media=icon",
+    "cell": {"variant":"default","size":"default","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -560,8 +560,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=default,described=on,media=image",
-    "cell": {"variant":"default","size":"default","described":"on","media":"image"},
+    "key": "item/variant=default,size=default,described=true,media=image",
+    "cell": {"variant":"default","size":"default","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -686,8 +686,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=sm,described=off,media=icon",
-    "cell": {"variant":"default","size":"sm","described":"off","media":"icon"},
+    "key": "item/variant=default,size=sm,described=false,media=icon",
+    "cell": {"variant":"default","size":"sm","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -799,8 +799,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=sm,described=off,media=image",
-    "cell": {"variant":"default","size":"sm","described":"off","media":"image"},
+    "key": "item/variant=default,size=sm,described=false,media=image",
+    "cell": {"variant":"default","size":"sm","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -912,8 +912,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=sm,described=on,media=icon",
-    "cell": {"variant":"default","size":"sm","described":"on","media":"icon"},
+    "key": "item/variant=default,size=sm,described=true,media=icon",
+    "cell": {"variant":"default","size":"sm","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -1038,8 +1038,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=sm,described=on,media=image",
-    "cell": {"variant":"default","size":"sm","described":"on","media":"image"},
+    "key": "item/variant=default,size=sm,described=true,media=image",
+    "cell": {"variant":"default","size":"sm","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -1164,8 +1164,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=xs,described=off,media=icon",
-    "cell": {"variant":"default","size":"xs","described":"off","media":"icon"},
+    "key": "item/variant=default,size=xs,described=false,media=icon",
+    "cell": {"variant":"default","size":"xs","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -1277,8 +1277,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=xs,described=off,media=image",
-    "cell": {"variant":"default","size":"xs","described":"off","media":"image"},
+    "key": "item/variant=default,size=xs,described=false,media=image",
+    "cell": {"variant":"default","size":"xs","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -1390,8 +1390,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=xs,described=on,media=icon",
-    "cell": {"variant":"default","size":"xs","described":"on","media":"icon"},
+    "key": "item/variant=default,size=xs,described=true,media=icon",
+    "cell": {"variant":"default","size":"xs","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -1516,8 +1516,8 @@
     ]
   },
     {
-    "key": "item/variant=default,size=xs,described=on,media=image",
-    "cell": {"variant":"default","size":"xs","described":"on","media":"image"},
+    "key": "item/variant=default,size=xs,described=true,media=image",
+    "cell": {"variant":"default","size":"xs","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -1642,8 +1642,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=default,described=off,media=icon",
-    "cell": {"variant":"outline","size":"default","described":"off","media":"icon"},
+    "key": "item/variant=outline,size=default,described=false,media=icon",
+    "cell": {"variant":"outline","size":"default","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -1755,8 +1755,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=default,described=off,media=image",
-    "cell": {"variant":"outline","size":"default","described":"off","media":"image"},
+    "key": "item/variant=outline,size=default,described=false,media=image",
+    "cell": {"variant":"outline","size":"default","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -1868,8 +1868,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=default,described=on,media=icon",
-    "cell": {"variant":"outline","size":"default","described":"on","media":"icon"},
+    "key": "item/variant=outline,size=default,described=true,media=icon",
+    "cell": {"variant":"outline","size":"default","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -1994,8 +1994,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=default,described=on,media=image",
-    "cell": {"variant":"outline","size":"default","described":"on","media":"image"},
+    "key": "item/variant=outline,size=default,described=true,media=image",
+    "cell": {"variant":"outline","size":"default","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -2120,8 +2120,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=sm,described=off,media=icon",
-    "cell": {"variant":"outline","size":"sm","described":"off","media":"icon"},
+    "key": "item/variant=outline,size=sm,described=false,media=icon",
+    "cell": {"variant":"outline","size":"sm","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -2233,8 +2233,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=sm,described=off,media=image",
-    "cell": {"variant":"outline","size":"sm","described":"off","media":"image"},
+    "key": "item/variant=outline,size=sm,described=false,media=image",
+    "cell": {"variant":"outline","size":"sm","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -2346,8 +2346,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=sm,described=on,media=icon",
-    "cell": {"variant":"outline","size":"sm","described":"on","media":"icon"},
+    "key": "item/variant=outline,size=sm,described=true,media=icon",
+    "cell": {"variant":"outline","size":"sm","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -2472,8 +2472,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=sm,described=on,media=image",
-    "cell": {"variant":"outline","size":"sm","described":"on","media":"image"},
+    "key": "item/variant=outline,size=sm,described=true,media=image",
+    "cell": {"variant":"outline","size":"sm","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -2598,8 +2598,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=xs,described=off,media=icon",
-    "cell": {"variant":"outline","size":"xs","described":"off","media":"icon"},
+    "key": "item/variant=outline,size=xs,described=false,media=icon",
+    "cell": {"variant":"outline","size":"xs","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -2711,8 +2711,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=xs,described=off,media=image",
-    "cell": {"variant":"outline","size":"xs","described":"off","media":"image"},
+    "key": "item/variant=outline,size=xs,described=false,media=image",
+    "cell": {"variant":"outline","size":"xs","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -2824,8 +2824,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=xs,described=on,media=icon",
-    "cell": {"variant":"outline","size":"xs","described":"on","media":"icon"},
+    "key": "item/variant=outline,size=xs,described=true,media=icon",
+    "cell": {"variant":"outline","size":"xs","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -2950,8 +2950,8 @@
     ]
   },
     {
-    "key": "item/variant=outline,size=xs,described=on,media=image",
-    "cell": {"variant":"outline","size":"xs","described":"on","media":"image"},
+    "key": "item/variant=outline,size=xs,described=true,media=image",
+    "cell": {"variant":"outline","size":"xs","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -3076,8 +3076,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=default,described=off,media=icon",
-    "cell": {"variant":"muted","size":"default","described":"off","media":"icon"},
+    "key": "item/variant=muted,size=default,described=false,media=icon",
+    "cell": {"variant":"muted","size":"default","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -3189,8 +3189,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=default,described=off,media=image",
-    "cell": {"variant":"muted","size":"default","described":"off","media":"image"},
+    "key": "item/variant=muted,size=default,described=false,media=image",
+    "cell": {"variant":"muted","size":"default","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -3302,8 +3302,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=default,described=on,media=icon",
-    "cell": {"variant":"muted","size":"default","described":"on","media":"icon"},
+    "key": "item/variant=muted,size=default,described=true,media=icon",
+    "cell": {"variant":"muted","size":"default","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -3428,8 +3428,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=default,described=on,media=image",
-    "cell": {"variant":"muted","size":"default","described":"on","media":"image"},
+    "key": "item/variant=muted,size=default,described=true,media=image",
+    "cell": {"variant":"muted","size":"default","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -3554,8 +3554,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=sm,described=off,media=icon",
-    "cell": {"variant":"muted","size":"sm","described":"off","media":"icon"},
+    "key": "item/variant=muted,size=sm,described=false,media=icon",
+    "cell": {"variant":"muted","size":"sm","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -3667,8 +3667,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=sm,described=off,media=image",
-    "cell": {"variant":"muted","size":"sm","described":"off","media":"image"},
+    "key": "item/variant=muted,size=sm,described=false,media=image",
+    "cell": {"variant":"muted","size":"sm","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -3780,8 +3780,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=sm,described=on,media=icon",
-    "cell": {"variant":"muted","size":"sm","described":"on","media":"icon"},
+    "key": "item/variant=muted,size=sm,described=true,media=icon",
+    "cell": {"variant":"muted","size":"sm","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -3906,8 +3906,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=sm,described=on,media=image",
-    "cell": {"variant":"muted","size":"sm","described":"on","media":"image"},
+    "key": "item/variant=muted,size=sm,described=true,media=image",
+    "cell": {"variant":"muted","size":"sm","described":"true","media":"image"},
     "roots": [
       {
         "around": [
@@ -4032,8 +4032,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=xs,described=off,media=icon",
-    "cell": {"variant":"muted","size":"xs","described":"off","media":"icon"},
+    "key": "item/variant=muted,size=xs,described=false,media=icon",
+    "cell": {"variant":"muted","size":"xs","described":"false","media":"icon"},
     "roots": [
       {
         "around": [
@@ -4145,8 +4145,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=xs,described=off,media=image",
-    "cell": {"variant":"muted","size":"xs","described":"off","media":"image"},
+    "key": "item/variant=muted,size=xs,described=false,media=image",
+    "cell": {"variant":"muted","size":"xs","described":"false","media":"image"},
     "roots": [
       {
         "around": [
@@ -4258,8 +4258,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=xs,described=on,media=icon",
-    "cell": {"variant":"muted","size":"xs","described":"on","media":"icon"},
+    "key": "item/variant=muted,size=xs,described=true,media=icon",
+    "cell": {"variant":"muted","size":"xs","described":"true","media":"icon"},
     "roots": [
       {
         "around": [
@@ -4384,8 +4384,8 @@
     ]
   },
     {
-    "key": "item/variant=muted,size=xs,described=on,media=image",
-    "cell": {"variant":"muted","size":"xs","described":"on","media":"image"},
+    "key": "item/variant=muted,size=xs,described=true,media=image",
+    "cell": {"variant":"muted","size":"xs","described":"true","media":"image"},
     "roots": [
       {
         "around": [
