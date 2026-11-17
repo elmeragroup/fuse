@@ -29,8 +29,8 @@ import type { FontNotLoaded } from "../compare/font-check.ts";
 import {
   cellSelector,
   forcedSelector,
-  measuredSelector,
   measuredSelectors,
+  rootInCell,
   PAGE_LAYOUT,
   slotSpan,
 } from "../compare/preview-page.ts";
@@ -148,8 +148,7 @@ export function requestOf(
     const client: CellContent = { _tag: "Client", set: target.key, cell: shown };
     return turnedOn.length === 0 ? client : { ...client, turnedOn };
   };
-  // The root carries the slot its family stamps where the set names one.
-  const root = { ...target, slot: target.elementSlot?.(cell) ?? target.slot };
+  const root = rootInCell(target, cell);
   const forced = forcedPseudoClasses(cell, renderer.highlight);
   const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);
   return {
@@ -158,8 +157,7 @@ export function requestOf(
     measured: measuredSelectors(root, target.union),
     span: slotSpan(PAGE_LAYOUT, target.previewWidthFor?.(cell)),
     height: undefined,
-    forcedOn:
-      target.statePlace === undefined ? forcedSelector(root, cell) : placeSelector(root, target.statePlace),
+    forcedOn: forcedSelector(root, cell),
     forced,
     writesHighlightAttribute: writesHighlight,
     resting: forcesState({ forced, writesHighlightAttribute: writesHighlight })
@@ -168,18 +166,6 @@ export function requestOf(
     fallback: fallbackInteraction(cell),
     restsByDesign: false,
   };
-}
-
-/**
- * The selector of the element at a place: from the measured root where the place starts at the
- * root's own `data-slot`, else from the element inside it that carries that slot, each step down a
- * child by its element ordinal, as `:nth-child()` counts elements.
- */
-function placeSelector(root: Pick<CaptureTarget, "slot">, place: string): string {
-  const [slot = "", ...steps] = place.split("/");
-  const from =
-    slot === root.slot ? measuredSelector(root) : `${measuredSelector(root)} [data-slot="${slot}"]`;
-  return [from, ...steps.map((step) => `:nth-child(${String(Number(step) + 1)})`)].join(" > ");
 }
 
 /** An element on the path from `<html>` to an element, with its winners. */

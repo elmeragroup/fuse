@@ -1,29 +1,19 @@
-import { kbdVariants } from "@elmeragroup/fuse/recipe-catalog";
-
 /**
  * Kbd, as two component sets on one page.
  *
  * - `Kbd` is a key cap that holds a label or one icon: 2 cells. The recipe declares no axes, so the
  *   set's one property is what the cap holds, `content`, which is also its column axis. The cap is
- *   the recipe's `cap` slot, a 20px `<kbd data-slot="kbd">` with a muted fill and a border hairline.
- *   It reads no density metric. The text cap holds the `Label` text, `K` by default, as the docs
- *   demos place `Ctrl`, `K` or `Enter`. The icon cap holds one icon at the cap's 12px icon size,
- *   picked by `Icon`. `tabular-nums` has no Figma form, so the label keeps the font's default
- *   numerals.
- * - `Kbd group` is the docs Combination demo's first combination, `Ctrl` and `K`: 1 cell. The
- *   group's `group` slot lays the caps out in a row 4px apart, each an instance of the text cap.
- *   Its `*:data-[slot=kbd]:rounded-[inherit]` gives each cap the group's `rounded-sm`, the cap's own
- *   corner, so each instance draws its variant as it is.
+ *   a `<kbd data-slot="kbd">`. The text cap holds the `Label` text, `K` by default, as the docs
+ *   demos place `Ctrl`, `K` or `Enter`. The icon cap holds one icon, picked by `Icon`.
+ * - `Kbd group` is the docs Combination demo's first combination, `Ctrl` and `K`: 1 cell. Each cap
+ *   in the group is an instance of the text cap.
  */
-import type { InstanceManifest, SetManifest } from "../capture/manifest";
+import type { IconManifest, InstanceManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot, InstanceDefinition } from "./component-spec";
-
-const { cap, group } = kbdVariants();
-const CAP = cap();
+import type { Cell } from "./component-spec";
 
 /** Backspace, a roster icon that reads as a key. The roster has no Command icon. */
-const ICON: IconSlot = {
+const ICON: IconManifest = {
   key: "icon",
   name: "Icon",
   side: "start",
@@ -41,17 +31,16 @@ const holdsIcon = (cell: Cell): boolean => cell.content === "icon";
  */
 export const KBD_LABEL = "K";
 
-/** A key cap, as `<Kbd>K</Kbd>`, or around one icon, as `<Kbd><Backspace /></Kbd>`. */
-export const KBD: ComponentDefinition = {
+/**
+ * The cap's manifest, which the capture-backed build reads with `captures/kbd.json`: a key cap, as
+ * `<Kbd>K</Kbd>`, or around one icon, as `<Kbd><Backspace /></Kbd>`.
+ */
+export const KBD_MANIFEST: SetManifest = {
   key: "kbd",
   name: "Kbd",
   slot: "kbd",
   axes: [{ name: "content", values: ["text", "icon"] }],
   columnAxis: "content",
-  classesFor: () => CAP,
-  states: {},
-  facts: new Map(),
-  omittedStates: new Set(),
   label: {
     key: "label",
     name: "label",
@@ -75,57 +64,6 @@ export const KBD_GROUP_MODIFIER = "Ctrl";
  * @param key - The instance's key.
  * @param label - The cap's label, which the `Label` property sets where it is not the text cap's own.
  */
-function capOf(key: string, label: string): InstanceDefinition {
-  return {
-    kind: "instance",
-    key,
-    of: KBD,
-    cell: () => ({ content: "text" }),
-    properties: () => ({ text: { Label: label } }),
-    shownIn: () => true,
-    exposed: true,
-  };
-}
-
-/**
- * A key combination, as `<KbdGroup><Kbd>Ctrl</Kbd><Kbd>K</Kbd></KbdGroup>`. The recipe declares no
- * axes, so the set's one property, `keys`, names the two caps the combination holds.
- */
-export const KBD_GROUP: ComponentDefinition = {
-  key: "kbd-group",
-  name: "Kbd group",
-  slot: "kbd-group",
-  axes: [{ name: "keys", values: ["2"] }],
-  columnAxis: "keys",
-  classesFor: () => group(),
-  states: {},
-  facts: new Map(),
-  omittedStates: new Set(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [capOf("modifier", KBD_GROUP_MODIFIER), capOf("key", KBD_LABEL)],
-  swapProperties: [],
-};
-
-/** The cap's manifest, which the capture-backed build reads with `captures/kbd.json`. */
-export const KBD_MANIFEST: SetManifest = {
-  key: "kbd",
-  name: "Kbd",
-  slot: "kbd",
-  axes: KBD.axes,
-  columnAxis: "content",
-  label: {
-    key: "label",
-    name: "label",
-    characters: KBD_LABEL,
-    textProperty: "Label",
-    shownIn: (cell) => !holdsIcon(cell),
-  },
-  iconsFor: KBD.iconsFor,
-  swapProperties: KBD.swapProperties,
-};
-
-/** A text cap in the group as a manifest names it, as {@link capOf} draws it. */
 function capManifest(key: string, label: string): InstanceManifest {
   return {
     kind: "instance",
@@ -138,12 +76,16 @@ function capManifest(key: string, label: string): InstanceManifest {
   };
 }
 
-/** The group's manifest, which the capture-backed build reads with `captures/kbd-group.json`. */
+/**
+ * The group's manifest, which the capture-backed build reads with `captures/kbd-group.json`: a key
+ * combination, as `<KbdGroup><Kbd>Ctrl</Kbd><Kbd>K</Kbd></KbdGroup>`. The recipe declares no axes,
+ * so the set's one property, `keys`, names the two caps the combination holds.
+ */
 export const KBD_GROUP_MANIFEST: SetManifest = {
   key: "kbd-group",
   name: "Kbd group",
   slot: "kbd-group",
-  axes: KBD_GROUP.axes,
+  axes: [{ name: "keys", values: ["2"] }],
   columnAxis: "keys",
   label: undefined,
   iconsFor: () => [],

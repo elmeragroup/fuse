@@ -1,13 +1,3 @@
-/**
- * How a box sizes each axis, read from its CSS and from the room its parent gives it: the length
- * a `width` or `height` sets, a `100%` that fills its parent, a share of a length in pixels, the
- * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether the box's
- * `overflow` clips it. `box-mapping.ts` reads a box's sizing before it maps the
- * box's parts, then asks this module for the room each part gets, in the box's flow or, for an
- * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
- * the same holder.
- */
-import type { CoverageNote, Feed, LayerStyle } from "./cascade";
 import type { PreviewLength } from "./component-spec";
 import {
   affineLength,
@@ -31,6 +21,16 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
+/**
+ * How a box sizes each axis, read from its CSS and from the room its parent gives it: the length
+ * a `width` or `height` sets, a `100%` that fills its parent, a share of a length in pixels, the
+ * stretch a column gives an unset width, the `min-*` and `max-*` limits, and whether the box's
+ * `overflow` clips it. `box-mapping.ts` reads a box's sizing before it maps the
+ * box's parts, then asks this module for the room each part gets, in the box's flow or, for an
+ * absolute part, against its containing block. `label-layout.ts` reads the box's own text against
+ * the same holder.
+ */
+import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import { AUTO_HEIGHT, autoHeightBasis } from "./percent-height";
 import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";

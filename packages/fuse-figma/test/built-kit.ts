@@ -9,6 +9,8 @@ import type { CoverageRow } from "../src/components/coverage.ts";
 import type { ChildLayerSpec, ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
 import { deepFrozen } from "./frozen.ts";
 
+export { FILL, fixed, HUG, literal } from "./capture-fixtures.ts";
+
 /** The parts of the built kit a per-set suite reads. */
 export type BuiltSets = {
   readonly spec: Pick<KitSpec, "componentSets">;
@@ -82,55 +84,6 @@ export function instancesIn(
   );
 }
 
-/** A field bound to a `Fuse tokens` variable. */
-export const token = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
-
-/** A color bound to a `Fuse tokens` variable, the name the expectations give a paint. */
-export const paint = token;
-
 /** A field bound to a `Fuse density` variable. */
 export const density = (name: string) =>
   ({ kind: "variable", variable: { collection: "Fuse density", name } }) as const;
-
-/** A literal number field. */
-export const literal = (value: number) => ({ kind: "literal", value }) as const;
-
-/** An axis fixed at a length. */
-export const fixed = <Length>(length: Length) => ({ kind: "fixed", length }) as const;
-
-/** An axis that hugs the box's content. */
-export const HUG = { kind: "hug" } as const;
-
-/** An axis that fills the room its parent's auto layout gives the box. */
-export const FILL = { kind: "fill" } as const;
-
-/** A box fixed at a width and a height. */
-export const fixedSize = <Width, Height>(width: Width, height: Height) =>
-  ({ horizontal: fixed(width), vertical: fixed(height) }) as const;
-
-/** No limit on either axis. */
-export const UNLIMITED = {
-  minWidth: undefined,
-  maxWidth: undefined,
-  minHeight: undefined,
-  maxHeight: undefined,
-} as const;
-
-/**
- * A horizontal box with no limits, padding or gap that centers its layers, with no shadow and
- * full opacity.
- */
-export const CENTERED_BOX = {
-  direction: "HORIZONTAL",
-  limits: UNLIMITED,
-  paddingTop: literal(0),
-  paddingRight: literal(0),
-  paddingBottom: literal(0),
-  paddingLeft: literal(0),
-  itemSpacing: literal(0),
-  primaryAlign: "CENTER",
-  counterAlign: "CENTER",
-  shadows: [],
-  opacity: 1,
-} as const;

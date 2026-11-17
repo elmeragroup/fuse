@@ -1,11 +1,12 @@
+import { Result } from "effect";
 /**
  * Instance parts: a part that renders another kit component, as Alert renders a Button for its
  * action, drawn as an instance of the inner set's variant. The build proves the instance draws what
  * Fuse draws there, so a composite cannot drift from its parts:
  *
- * - It builds the inner definition's root in place, below the outer parts, with the classes the outer
- *   component passes merged in as the inner component merges its `className`, and with the property
- *   values the outer cell gives.
+ * - It builds the inner definition's root in place, below the outer parts, from the composite's
+ *   capture, which holds the classes the outer component passes, and with the property values the
+ *   outer cell gives.
  * - `instance-diff.ts` diffs that root against the inner set's variant, and the instance layer carries
  *   the property values, overrides and sizing the diff finds. A difference no instance field carries
  *   lands in the coverage table as unmapped.
@@ -18,14 +19,13 @@
  */
 import { isDeepStrictEqual } from "node:util";
 
-import { cn } from "@elmeragroup/fuse/recipe-catalog";
-
+import { partsThatScaleIn } from "../capture/capture-cascade";
+import { keptCapture } from "../capture/captures";
+import type { BoxCascade } from "./box-cascade";
 import { mapBox } from "./box-mapping";
 import type { MapScope, PropertyValues } from "./box-mapping";
 import type { Room } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import { splitClasses } from "./cascade";
-import type { BoxCascade, Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./cascade";
 import type {
   BuildContext,
   Cell,
@@ -35,10 +35,9 @@ import type {
   NestedProperties,
   PartDefinition,
 } from "./component-spec";
-import type { CoverageRow } from "./coverage";
-import { CascadeLogs } from "./coverage-log";
+import type { RecordedRow } from "./coverage";
 import type { Origin } from "./coverage-log";
-import { instancePartsOf, instanceRootSlotOf, partsOf } from "./definition-parts";
+import { instancePartsOf, instanceRootSlotOf } from "./definition-parts";
 import { diffInstance } from "./instance-diff";
 import type { InstanceDiff, InstanceDifference } from "./instance-diff";
 import type {
@@ -50,31 +49,22 @@ import type {
   InstancePropertiesSpec,
   VariantSpec,
 } from "./kit-spec";
-import { partsThatScale } from "./placement";
+import type { Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./layer-style";
 import { PaintedInstances } from "./stacking";
-import { makeStateTable, withInPlaceFacts } from "./state-table";
-import type { StateTable } from "./state-table";
 
 /** A component set the build made before the set that holds an instance of it. */
 export type InnerSet = Omit<ComponentSetSpec, "page">;
 
 /** A coverage row before it names its component. */
-type Row = Omit<CoverageRow, "component">;
+type Row = RecordedRow;
 
 /** What the build keeps for one instance part across the outer set's cells. */
 type PartRecord = {
-  /** The inner definition's state table, which the inner classes read in place. */
-  readonly meaningOf: StateTable;
-  /**
-   * The logs the inner component's own classes keep in place across the outer cells. Their rows are
-   * the inner set's, whose own build finishes its logs, so these never finish.
-   */
-  readonly logs: CascadeLogs;
   /**
    * The owner of the classes the outer component passes, which records into the coverage of the set
-   * or inner component that holds the part, and the logs those classes keep across the outer cells.
+   * or inner component that holds the part.
    */
-  readonly passed: { readonly origin: Origin; readonly logs: CascadeLogs };
+  readonly passed: { readonly origin: Origin };
   /** The inner definition's parts that draw as a slot around a dot, as its own set draws them. */
   readonly scaling: ReadonlySet<PartDefinition>;
 };
@@ -110,10 +100,7 @@ type Visit = {
   readonly sink: FeedSink;
   /** The diff of the root built in place, once it maps. */
   readonly diffs: InstanceDiff[];
-  /**
-   * The instance parts the inner component holds, built in place too. The classes the inner component
-   * passes them are its own, which the inner set's coverage holds, so their logs never finish here.
-   */
+  /** The instance parts the inner component holds, built in place too. */
   readonly nested: InstanceParts;
 };
 
@@ -178,10 +165,9 @@ export class InstanceParts {
   }
 
   /**
-   * Cascade an instance part's inner root directly below its parent box in an outer cell: the inner
-   * definition's classes for the inner cell, with the classes the outer component passes merged after
-   * them by `cn`, as the inner component merges its `className`. The inner component owns its own
-   * classes, and the composite the passed ones.
+   * Cascade an instance part's inner root directly below its parent box in an outer cell. The inner
+   * component owns its own classes, and the composite the ones it passes, as the composite's capture
+   * tells them apart.
    *
    * @param part - The instance part.
    * @param parent - The cascade of the box that holds the part.
@@ -207,9 +193,7 @@ export class InstanceParts {
         message: `${part.key} shows ${of.name} at ${JSON.stringify(cell)}, a cell its set lacks`,
       });
     }
-    const record = this.#recordOf(part, set);
-    const given = new Set(splitClasses(part.classesFor?.(outer) ?? ""));
-    const merged = splitClasses(cn(part.ownClassesFor?.(cell) ?? of.classesFor(cell), [...given].join(" ")));
+    const record = this.#recordOf(part);
     const values = withGiven(part.properties?.(outer) ?? {}, this.#given, part.key);
     checkNested(values.nested ?? [], part.of, part.key);
     const innerRows: Row[] = [];
@@ -227,7 +211,7 @@ export class InstanceParts {
       part,
       variant,
       cell,
-      values: valuesOf(values, part.swapClasses?.(outer) ?? {}, set, part.key),
+      values: valuesOf(values, set, part.key),
       scaling: record.scaling,
       booleans: booleansOf(values, set, part.key),
       innerRows,
@@ -250,16 +234,11 @@ export class InstanceParts {
     };
     this.#visits.push(visit);
     const cascade = parent.instance(
-      {
-        own: merged.filter((className) => !given.has(className)).join(" "),
-        passed: merged.filter((className) => given.has(className)).join(" "),
-      },
       of.slot,
       part.after === undefined
-        ? { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag, set: of.key }
-        : { slot: instanceRootSlotOf(part, cell), tag: of.element?.tag, set: of.key, after: part.after },
-      of.elementDefaults ?? [],
-      { meaningOf: record.meaningOf, cell, logs: record.logs, inPlace, passed: record.passed }
+        ? { slot: instanceRootSlotOf(part, cell), set: of.key }
+        : { slot: instanceRootSlotOf(part, cell), set: of.key, after: part.after },
+      { cell, inPlace, passed: record.passed }
     );
     return { kind: "instance", key: part.key, name: of.slot, cascade, visit };
   }
@@ -346,41 +325,19 @@ export class InstanceParts {
     }
   }
 
-  /**
-   * Give the rows the logs of the classes the outer component passes leave, as
-   * {@link CascadeLogs.finish} says, to the coverage of the set or inner component that holds the
-   * part: a passed class whose variants never hold in an inner cell lands there. The inner
-   * component's own classes leave theirs to the inner set. Call it after every cell.
-   */
-  finish(): void {
-    for (const { passed } of this.#parts.values()) {
-      passed.logs.finish(passed.origin.record);
-    }
-  }
-
-  #recordOf(part: InstanceDefinition, set: InnerSet): PartRecord {
+  #recordOf(part: InstanceDefinition): PartRecord {
     const known = this.#parts.get(part);
     if (known !== undefined) {
       return known;
     }
-    // Made on its first read: a capture-backed inner root reads no variant, and its manifest names
-    // none of what a state table needs.
-    let table: StateTable | undefined;
+    // The inner set's own capture says which of its parts win a `scale`, as its own build reads it.
+    const inner = keptCapture(part.of.key);
     const made: PartRecord = {
-      meaningOf: (variant) => {
-        table ??=
-          part.facts === undefined
-            ? makeStateTable(part.of)
-            : withInPlaceFacts(part.of, part.facts, part.stamps);
-        return table(variant);
-      },
-      logs: new CascadeLogs(),
-      passed: { origin: { record: this.#emit }, logs: new CascadeLogs() },
-      scaling: partsThatScale(
-        partsOf(part.of),
-        set.variants.map((variant) => variant.properties),
-        this.#context.compiled
-      ),
+      passed: { origin: { record: this.#emit } },
+      scaling:
+        inner === undefined || Result.isFailure(inner)
+          ? new Set()
+          : partsThatScaleIn(inner.success, part.of.parts ?? []),
     };
     this.#parts.set(part, made);
     return made;
@@ -535,19 +492,13 @@ function booleansOf(
 }
 
 /**
- * The TEXT and INSTANCE_SWAP values an outer cell gives the inner set, and the classes it gives the
- * icon each INSTANCE_SWAP property places, which the mapping applies to the inner root's labels and
- * icons in place, leaving the inner definition as it is. The diff then finds them as property values
+ * The TEXT and INSTANCE_SWAP values an outer cell gives the inner set, which the mapping applies to
+ * the inner root's labels and icons in place, leaving the inner definition as it is. The diff then finds them as property values
  * and overrides, or leaves unmapped what they change beside the characters, the icon and its paint.
  *
  * @throws When a value names a property the inner set does not define as that type.
  */
-function valuesOf(
-  values: InstanceProperties,
-  swapClasses: Readonly<Record<string, string>>,
-  set: InnerSet,
-  where: string
-): PropertyValues {
+function valuesOf(values: InstanceProperties, set: InnerSet, where: string): PropertyValues {
   const text = values.text ?? {};
   const swap = values.swap ?? {};
   refuseUndefined(
@@ -557,16 +508,14 @@ function valuesOf(
     Object.keys(text),
     set.textProperties.map(({ name }) => name)
   );
-  for (const given of [swap, swapClasses]) {
-    refuseUndefined(
-      where,
-      set,
-      "INSTANCE_SWAP",
-      Object.keys(given),
-      set.swapProperties.map(({ name }) => name)
-    );
-  }
-  return { text, swap, swapClasses };
+  refuseUndefined(
+    where,
+    set,
+    "INSTANCE_SWAP",
+    Object.keys(swap),
+    set.swapProperties.map(({ name }) => name)
+  );
+  return { text, swap };
 }
 
 /**

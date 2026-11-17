@@ -3,32 +3,19 @@
  * cells, with columns by level. A cell's tone and icon come from `meterToneCell`, the table Meter
  * reads, so a designer picks what the meter means and how full it is, and the color and icon follow.
  *
- * - The root is Base UI's `<div data-slot="meter">`, a `flex flex-col gap-1` column. No docs demo
- *   gives it a width, so the kit draws it 256px wide, `w-64`, the width a container gives it, which
- *   the block-level root fills.
- * - The header is a `<div>` with no `data-slot`. It fills the column's width and puts the label at
- *   its start and the value at its end, at least 8px apart.
- * - The label `Storage used` is 14/20 Medium, and the `Label` text property sets it.
- * - The value is the level's share as Base UI shows it, `50%`, `85%`, `100%` and `100%`, at 14/20
- *   Regular in the tone's color. Each cell shows its own text, which no property sets, since a text
- *   property holds one default. The tone's Warning or CheckCircle icon sits before it, with the
- *   space the markup holds between them.
- * - The bar fills the column's width, a 6px `muted` pill.
- * - Base UI's `MeterIndicator` gives the fill `inset-inline-start: 0; height: inherit; width: <share>%`
- *   in a style attribute over its classes, so the fill is an absolute layer at the bar's top left
- *   that keeps its share of the bar's width as the bar stretches, in the tone's color.
+ * - The root is Base UI's `<div data-slot="meter">`. No docs demo gives it a width, so its sample
+ *   renders in a 256px host, `w-64`, the width a container gives it.
+ * - The header is a `<div>` with no `data-slot` that holds the label and the value.
+ * - The label is `Storage used`, and the `Label` text property sets it.
+ * - The value is the level's share as Base UI shows it, `50%`, `85%`, `100%` and `100%`. Each cell
+ *   shows its own text, which no property sets, since a text property holds one default. The tone's
+ *   Warning or CheckCircle icon sits before it, with the space the markup holds between them.
+ * - The bar, Base UI's `Meter.Track`, holds the fill, Base UI's `Meter.Indicator`.
  */
-import { cn, METER_CONSTANTS, meterToneCell, meterVariants } from "@elmeragroup/fuse/recipe-catalog";
+import { METER_CONSTANTS, meterToneCell } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { IconManifest, PartManifest, SetManifest } from "../capture/manifest";
-import type {
-  Cell,
-  ComponentDefinition,
-  IconSlot,
-  InlineDeclaration,
-  LabelDefinition,
-  PartDefinition,
-} from "./component-spec";
+import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
+import type { Cell } from "./component-spec";
 import { always } from "./popup-facts";
 
 /** The width a container gives a meter in the kit's previews and the compare host, `w-64`. */
@@ -117,11 +104,6 @@ function toneOf(cell: Cell) {
   return meterToneCell(modeFor(cell), sampleFor(cell).level);
 }
 
-/** The recipe's slots in a cell's tone. */
-function slotsFor(cell: Cell) {
-  return meterVariants({ tone: toneOf(cell).tone });
-}
-
 /** The status icon before the value, which the tone table names, or none, as a manifest names it. */
 function statusIconManifests(cell: Cell): readonly IconManifest[] {
   const { icon } = toneOf(cell);
@@ -140,27 +122,8 @@ function statusIconManifests(cell: Cell): readonly IconManifest[] {
       ];
 }
 
-/** The status icon before the value with the recipe's classes. */
-function statusIcons(cell: Cell): readonly IconSlot[] {
-  return statusIconManifests(cell).map((icon) => ({ ...icon, classes: slotsFor(cell).icon() }));
-}
-
-/**
- * The style attribute Base UI's `MeterIndicator` writes on the fill, in its order.
- *
- * @param cell - A `meter` cell.
- * @returns The declarations.
- */
-export function fillStyleFor(cell: Cell): readonly InlineDeclaration[] {
-  return [
-    { property: "inset-inline-start", value: "0" },
-    { property: "height", value: "inherit" },
-    { property: "width", value: `${shareOf(cell)}%` },
-  ];
-}
-
 /** The label's text, which the `Label` property sets. */
-const LABEL_TEXT: LabelDefinition = {
+const LABEL_TEXT: LabelManifest = {
   key: "label",
   name: "label",
   characters: METER_LABEL,
@@ -169,7 +132,7 @@ const LABEL_TEXT: LabelDefinition = {
 };
 
 /** The value's text, the share after a space, which no property sets. */
-const VALUE_TEXT: LabelDefinition = {
+const VALUE_TEXT: LabelManifest = {
   key: "value",
   name: "value",
   charactersFor: valueTextFor,
@@ -177,87 +140,10 @@ const VALUE_TEXT: LabelDefinition = {
   leadingSpace: true,
 };
 
-/** The label, Base UI's `Meter.Label`. */
-const LABEL: PartDefinition = {
-  key: "label",
-  slot: "meter-label",
-  shownIn: always,
-  classesFor: (cell) => slotsFor(cell).label(),
-  label: LABEL_TEXT,
-  iconsFor: () => [],
-};
-
-/** The value: the status icon, a space, and the share. */
-const VALUE: PartDefinition = {
-  key: "value",
-  slot: "meter-value",
-  shownIn: always,
-  classesFor: (cell) => {
-    const slots = slotsFor(cell);
-    return cn(slots.labelValue(), slots.value());
-  },
-  label: VALUE_TEXT,
-  iconsFor: statusIcons,
-};
-
-/** The row that holds the label and the value, which carries no `data-slot`. */
-const HEADER: PartDefinition = {
-  key: "header",
-  slot: undefined,
-  shownIn: always,
-  classesFor: (cell) => slotsFor(cell).labelContainer(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [LABEL, VALUE],
-};
-
-/** The fill, Base UI's `Meter.Indicator`, with the style it writes. */
-const FILL: PartDefinition = {
-  key: "fill",
-  slot: "meter-bar-fill",
-  shownIn: always,
-  classesFor: (cell) => slotsFor(cell).barFill(),
-  styleFor: fillStyleFor,
-  label: undefined,
-  iconsFor: () => [],
-};
-
-/** The bar, Base UI's `Meter.Track`, which holds the fill. */
-const BAR: PartDefinition = {
-  key: "bar",
-  slot: "meter-bar",
-  shownIn: always,
-  classesFor: (cell) => slotsFor(cell).bar(),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [FILL],
-};
-
-/** A meter, as `<Meter label="Storage used" mode value maxValue />` in a 256px container. */
-export const METER: ComponentDefinition = {
-  key: "meter",
-  name: "Meter",
-  slot: "meter",
-  axes: [
-    { name: "mode", values: Object.values(MODES) },
-    { name: "level", values: [...SAMPLES.keys()] },
-  ],
-  columnAxis: "level",
-  previewWidth: METER_PREVIEW_WIDTH,
-  classesFor: (cell) => slotsFor(cell).root(),
-  states: {},
-  facts: new Map(),
-  omittedStates: new Set(),
-  omittedMedia: new Map([
-    ["forced-colors", "the kit draws the normal colors, not the system colors a forced-colors mode paints"],
-  ]),
-  label: undefined,
-  iconsFor: () => [],
-  parts: [HEADER, BAR],
-  swapProperties: [],
-};
-
-/** The header's manifest: the row at the root's first place, which carries no `data-slot`. */
+/**
+ * The header's manifest: the row at the root's first place, which carries no `data-slot`. It holds
+ * Base UI's `Meter.Label` and `Meter.Value`, the status icon, a space and the share.
+ */
 const HEADER_MANIFEST: PartManifest = {
   key: "header",
   slot: undefined,
@@ -271,7 +157,7 @@ const HEADER_MANIFEST: PartManifest = {
   ],
 };
 
-/** The bar's manifest, which holds the fill. */
+/** The bar's manifest, Base UI's `Meter.Track`, which holds the fill, Base UI's `Meter.Indicator`. */
 const BAR_MANIFEST: PartManifest = {
   key: "bar",
   slot: "meter-bar",
@@ -281,12 +167,18 @@ const BAR_MANIFEST: PartManifest = {
   parts: [{ key: "fill", slot: "meter-bar-fill", shownIn: always, label: undefined, iconsFor: () => [] }],
 };
 
-/** The meter's manifest, which the capture-backed build reads with `captures/meter.json`. */
+/**
+ * The meter's manifest, which the capture-backed build reads with `captures/meter.json`: a meter,
+ * as `<Meter label="Storage used" mode value maxValue />` in a 256px container.
+ */
 export const METER_MANIFEST: SetManifest = {
   key: "meter",
   name: "Meter",
   slot: "meter",
-  axes: METER.axes,
+  axes: [
+    { name: "mode", values: Object.values(MODES) },
+    { name: "level", values: [...SAMPLES.keys()] },
+  ],
   columnAxis: "level",
   previewWidth: METER_PREVIEW_WIDTH,
   label: undefined,

@@ -6,11 +6,11 @@
  * which the stacking of the boxes above reads. `placement.ts` reads the margins of a root.
  */
 import { outOfFlow } from "./box-sizing";
-import type { LayerStyle, SpecField } from "./cascade";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
 import type { FrameLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
+import type { LayerStyle, SpecField } from "./layer-style";
 import type { Layout } from "./placement";
 
 /**

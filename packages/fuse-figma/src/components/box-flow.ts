@@ -1,10 +1,10 @@
+import type { ChildSpacing } from "./box-cascade";
 /**
  * How a box lays out the layers in its flow, as `box-mapping.ts` maps it: the direction and the
  * alignments its flex, grid or block layout gives them, a column's stretch, and the alignment a row's
  * parts set through `align-self`, which settles once the parts map.
  */
 import { BLOCK_LEVEL, heightBounds, listNames } from "./box-sizing";
-import type { ChildSpacing, CoverageNote, Feed, LayerStyle } from "./cascade";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import type {
@@ -18,6 +18,7 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
+import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 
 /** Where `align-items` places a box's children across its direction, by the value Tailwind compiles. */
@@ -364,11 +365,9 @@ function readAutoStart(reader: LayerStyle, flow: FlowLayers): "spaced" | "label-
  * How a box's cascade knows whether a list item draws a marker: `resolved` where it read the element
  * and the page's style sheets, as a capture does, and its `::marker` sets no `content` beyond
  * `normal` or `none`, so the item's own `list-style-type` and `list-style-image` say; `content`
- * where its `::marker` sets other `content`, which draws whatever they say (CSS Lists 3 §3.2); and
- * `assumed-none` for the recipe cascade, which models no list style and takes Tailwind preflight's
- * `list-style: none`, which every list the kit draws carries.
+ * where its `::marker` sets other `content`, which draws whatever they say (CSS Lists 3 §3.2).
  */
-export type MarkerReading = "resolved" | "content" | "assumed-none";
+export type MarkerReading = "resolved" | "content";
 
 /**
  * Whether a box lays out as a block container that draws no more than a block box does: a `block`,
@@ -391,10 +390,9 @@ export function isPlainBlock(reader: LayerStyle, markers: MarkerReading): boolea
     return false;
   }
   return (
-    markers === "assumed-none" ||
-    (markers === "resolved" &&
-      normalizeCss(reader.resolved("list-style-type") ?? "disc").toLowerCase() === "none" &&
-      normalizeCss(reader.resolved("list-style-image") ?? "none").toLowerCase() === "none")
+    markers === "resolved" &&
+    normalizeCss(reader.resolved("list-style-type") ?? "disc").toLowerCase() === "none" &&
+    normalizeCss(reader.resolved("list-style-image") ?? "none").toLowerCase() === "none"
   );
 }
 

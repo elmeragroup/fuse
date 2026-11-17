@@ -51,8 +51,6 @@ beforeAll(async () => {
   context = {
     compiled: await Effect.runPromise(compileUtilities([])),
     variables: makeVariableIndex([]),
-    page: [],
-    base: [],
   };
 });
 

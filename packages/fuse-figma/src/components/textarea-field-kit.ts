@@ -1,42 +1,25 @@
 /**
  * Textarea field, as one component set on the Textarea page: the docs Basic demo's labelled
  * textarea in five states, 5 cells. The root is `TextareaField`'s `Field.Root`, Base UI's `<div
- * data-slot="field">` with the `root` slot of `fieldVariants`, a column 4px apart.
+ * data-slot="field">`.
  *
- * - The heading row is FieldFrame's label row with TextareaField's 8px gap: a `Label` instance and,
- *   behind the `Counter` BOOLEAN property, the character counter at the row's end in 12px
- *   `muted-foreground`. The docs Basic demo shows no counter, so the property starts off; the
- *   Counter demo's `maxLength={120}` shows `0/120` over an empty textarea. The row packs its children
- *   with `SPACE_BETWEEN`, and with the counter hidden Figma packs the lone label at the start, as
- *   CSS's `justify-between` does (W5-P1).
+ * - The heading row is FieldFrame's label row: a `Label` instance and, behind the `Counter` BOOLEAN
+ *   property, the character counter, a bare `<span>`, at the row's end. The docs Basic demo shows no
+ *   counter, so the property starts off; the Counter demo's `maxLength={120}` shows `0/120` over an
+ *   empty textarea. With the counter hidden, Figma packs the lone label at the start, as CSS's
+ *   `justify-between` does (W5-P1).
  * - The control is a `Textarea` instance in the cell's state, holding the Basic demo's placeholder.
- *   `Field.Control` renders it, so it carries `data-slot="field-control"`, which takes the states.
+ *   `Field.Control` renders it, so it carries `data-slot="field-control"`, and it takes the states.
  * - A `Field error` instance follows the control in the invalid cell, where Base UI renders the
  *   error, and a `Field description` instance closes the column.
  * - The label, the error and the description, and the states Base UI stamps on them, come from
  *   `field-frame-kit.ts`.
  */
-import { cn, fieldFrameVariants, textareaFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
-
-import type { SetManifest } from "../capture/manifest";
-import type {
-  ComponentDefinition,
-  InstanceDefinition,
-  LabelDefinition,
-  PartDefinition,
-} from "./component-spec";
-import {
-  FIELD_FRAME_DISABLED,
-  FIELD_FRAME_SET,
-  frameDescriptions,
-  frameError,
-  frameLabelRow,
-  frameLabelRowManifest,
-  frameMessagesManifest,
-} from "./field-frame-kit";
+import type { LabelManifest, SetManifest } from "../capture/manifest";
+import { frameLabelRowManifest, frameMessagesManifest } from "./field-frame-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
-import { TEXTAREA, TEXTAREA_MANIFEST } from "./textarea-kit";
+import { TEXTAREA_MANIFEST } from "./textarea-kit";
 
 /** The label, the default of the Label instance's `Label` property: the docs Basic demo's label. */
 export const TEXTAREA_FIELD_LABEL = "Bio";
@@ -59,14 +42,11 @@ const TEXTAREA_FIELD_COUNTER = `0/${TEXTAREA_FIELD_MAX_LENGTH}`;
 /** The BOOLEAN property that shows the counter. */
 export const TEXTAREA_FIELD_COUNTER_PROPERTY = "Counter";
 
-const frame = fieldFrameVariants();
-const parts = textareaFieldVariants();
-
 /** The BOOLEAN property that shows the counter, which starts false. */
 const COUNTER_OPTIONAL = { name: TEXTAREA_FIELD_COUNTER_PROPERTY, defaultValue: false };
 
 /** The counter's text, which the `Count` property sets. */
-const COUNTER_TEXT: LabelDefinition = {
+const COUNTER_TEXT: LabelManifest = {
   key: "text",
   name: "text",
   characters: TEXTAREA_FIELD_COUNTER,
@@ -74,65 +54,11 @@ const COUNTER_TEXT: LabelDefinition = {
   shownIn: always,
 };
 
-/** The `current/max` character counter at the end of the heading row, a bare `<span>`. */
-const COUNTER: PartDefinition = {
-  key: "counter",
-  slot: undefined,
-  shownIn: always,
-  optional: COUNTER_OPTIONAL,
-  classesFor: () => parts.counter(),
-  label: COUNTER_TEXT,
-  iconsFor: () => [],
-};
-
-/** FieldFrame's heading row, with TextareaField's gap between the label and the counter. */
-const LABEL_ROW = frameLabelRow(TEXTAREA_FIELD_LABEL, cn(frame.labelRow(), parts.labelRow()), [COUNTER]);
-
-/** The control, a `Textarea` instance in the cell's state, holding the placeholder. */
-const CONTROL: InstanceDefinition = {
-  kind: "instance",
-  key: "textarea",
-  of: TEXTAREA,
-  // `Field.Control` renders the Textarea and stamps its own slot over the textarea's.
-  slot: "field-control",
-  cell: (outer) => ({ content: "placeholder", state: outer.state ?? "rest" }),
-  properties: () => ({ text: { Text: TEXTAREA_FIELD_PLACEHOLDER } }),
-  shownIn: always,
-  exposed: true,
-};
-
-/**
- * A textarea field, as `<TextareaField label description placeholder maxLength?>`, read-only,
- * disabled or invalid with an error message.
- */
-export const TEXTAREA_FIELD: ComponentDefinition = {
-  ...FIELD_FRAME_SET,
-  key: "textarea-field",
-  name: "Textarea field",
-  // The textarea takes the states, and Base UI mirrors them on the Field root as data attributes.
-  rootKind: "native-control",
-  statePart: "field-control",
-  axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] }],
-  // The root is the `group/field` a disabled Field marks `data-disabled`, which the label reads.
-  states: {
-    disabled: FIELD_FRAME_DISABLED,
-    // The read-only textarea, as Textarea's own state renders it.
-    readonly: ["[&[readonly]:not(:disabled)]"],
-  },
-  // The textarea holds no value, so it shows its placeholder.
-  facts: new Map([["placeholder", always]]),
-  parts: [
-    LABEL_ROW,
-    CONTROL,
-    frameError(TEXTAREA_FIELD_ERROR),
-    ...frameDescriptions(TEXTAREA_FIELD_DESCRIPTION),
-  ],
-};
-
 /**
  * The textarea field's manifest, which the capture-backed build reads with
- * `captures/textarea-field.json`: the label row with the counter beside the label, the textarea,
- * then the messages.
+ * `captures/textarea-field.json`, as `<TextareaField label description placeholder maxLength?>`
+ * renders it, read-only, disabled or invalid with an error message: the label row with the counter
+ * beside the label, the textarea, then the messages.
  */
 export const TEXTAREA_FIELD_MANIFEST: SetManifest = {
   key: "textarea-field",
@@ -140,7 +66,7 @@ export const TEXTAREA_FIELD_MANIFEST: SetManifest = {
   slot: "field",
   statePart: "field-control",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  axes: TEXTAREA_FIELD.axes,
+  axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] }],
   columnAxis: "state",
   label: undefined,
   iconsFor: () => [],
@@ -160,6 +86,7 @@ export const TEXTAREA_FIELD_MANIFEST: SetManifest = {
       kind: "instance",
       key: "textarea",
       of: TEXTAREA_MANIFEST,
+      // `Field.Control` renders the Textarea and stamps its own slot over the textarea's.
       slot: "field-control",
       cell: (outer) => ({ content: "placeholder", state: outer.state ?? "rest" }),
       properties: () => ({ text: { Text: TEXTAREA_FIELD_PLACEHOLDER } }),

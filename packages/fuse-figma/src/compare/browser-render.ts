@@ -16,8 +16,7 @@
  *
  * A client cell mounts on the page from the client bundle, open, with its popup in its slot. The
  * page awaits the mount before it reads any font or style, checks that no client slot holds focus
- * or a `data-highlighted` Base UI set on open, reads each client cell's mounted HTML for the markup
- * check before it forces any state, and measures the union of the elements a cell names, so an open
+ * or a `data-highlighted` Base UI set on open, and measures the union of the elements a cell names, so an open
  * composite's box spans its trigger and its popup. A highlighted row takes
  * `:focus`, or the `data-highlighted` its renderer names with no pseudo class, through the same
  * forcing.
@@ -116,12 +115,7 @@ export type RenderedCell = {
   /** The measured element's border box in CSS pixels. */
   readonly box: BoxSize;
   readonly state: StateOutcome;
-  /** A client cell's markup as the page mounted it, before any forced state; undefined for a static cell. */
-  readonly mounted: MountedHtml | undefined;
 };
-
-/** A client cell's mounted markup: its slot's inner HTML, and each measured element's outer HTML in order. */
-export type MountedHtml = { readonly slot: string; readonly measured: readonly string[] };
 
 /** One rendered preview. */
 export type RenderedPreview = {
@@ -355,7 +349,6 @@ export class CompareBrowser {
         await awaitMount(page);
         await checkSettled(page);
       }
-      const mounted = await readMounted(page, requests);
       const font = await checkFont(page, fontSweepSelector(requests));
       if (Result.isFailure(font)) {
         return Result.fail(font.failure);
@@ -375,7 +368,7 @@ export class CompareBrowser {
           layout,
           rects[index] ?? slotRect(layout, index)
         );
-        cells.set(request.id, { ...rendered, mounted: mounted.get(request.id) });
+        cells.set(request.id, rendered);
       }
       return Result.succeed({ background: await probeBackground(page), font: font.success, cells });
     } finally {
@@ -495,28 +488,6 @@ async function checkSettled(page: Page): Promise<void> {
   if (unsettled.length > 0) {
     throw new Error(`a client cell holds a state its cell does not name: ${unsettled.join("; ")}`);
   }
-}
-
-/** Each client cell's mounted markup, by cell id, read before the page forces any state. */
-async function readMounted(
-  page: Page,
-  requests: readonly CellRequest[]
-): Promise<ReadonlyMap<string, MountedHtml>> {
-  const mounted = new Map<string, MountedHtml>();
-  for (const request of requests) {
-    if (request.content._tag !== "Client") {
-      continue;
-    }
-    mounted.set(request.id, {
-      slot: await page.locator(`[data-compare-cell="${request.id}"]`).innerHTML(),
-      measured: await Promise.all(
-        request.measured.map((element) =>
-          page.locator(cellSelector(request.id, element)).evaluate((node) => node.outerHTML)
-        )
-      ),
-    });
-  }
-  return mounted;
 }
 
 /**
@@ -648,7 +619,7 @@ async function renderCell(
   forcedState: StateOutcome,
   layout: PageLayout,
   slot: PageRect
-): Promise<Omit<RenderedCell, "mounted">> {
+): Promise<RenderedCell> {
   const box = measuredBox(await measuredBoxes(page, request));
   const clip = cellClip(request.id, slot, box, layout.padding);
   if (request.content._tag === "Client") {

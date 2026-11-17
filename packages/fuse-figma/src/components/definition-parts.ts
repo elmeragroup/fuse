@@ -45,15 +45,14 @@ export function allPartsOf(box: BoxDefinition): readonly (PartDefinition | Insta
 
 /**
  * The `data-slot` a definition's root element carries in a cell: the slot `elementSlot` gives the
- * cell, as a family stamps its own on a shared Menu separator, else its `slot`, unless `element`
- * names the element, which then carries none.
+ * cell, as a family stamps its own on a shared Menu separator, else its `slot`.
  *
  * @param definition - A component.
  * @param cell - One of its cells.
- * @returns The slot, or undefined for a root element that carries none.
+ * @returns The slot.
  */
-export function rootSlotOf(definition: ComponentDefinition, cell: Cell): string | undefined {
-  return definition.elementSlot?.(cell) ?? (definition.element === undefined ? definition.slot : undefined);
+export function rootSlotOf(definition: ComponentDefinition, cell: Cell): string {
+  return definition.elementSlot?.(cell) ?? definition.slot;
 }
 
 /**
@@ -66,48 +65,6 @@ export function rootSlotOf(definition: ComponentDefinition, cell: Cell): string 
  */
 export function instanceRootSlotOf(part: InstanceDefinition, inner: Cell): string | undefined {
   return part.slot ?? rootSlotOf(part.of, inner);
-}
-
-/**
- * Every `data-slot` the markup renders for a part and the elements inside it, in the cells given, as
- * the DOM holds them: a frame's own and those below it, and an instance's inner root's in each inner
- * cell the part shows and those its inner component renders, through its own instance parts in turn.
- * A definition the walk is already inside adds nothing again, so a cycle of instance parts ends.
- *
- * @param part - A frame or an instance part.
- * @param cells - The cells of the definition that holds the part.
- * @returns The slots, depth first.
- */
-export function renderedSlots(
-  part: PartDefinition | InstanceDefinition,
-  cells: readonly Cell[]
-): readonly string[] {
-  return slotsBelow(part, cells, new Set());
-}
-
-function slotsBelow(
-  part: PartDefinition | InstanceDefinition,
-  cells: readonly Cell[],
-  inside: ReadonlySet<BoxDefinition>
-): readonly string[] {
-  if (!("kind" in part)) {
-    return [...(part.slot === undefined ? [] : [part.slot]), ...partSlots(part, cells, inside)];
-  }
-  const { of } = part;
-  if (inside.has(of)) {
-    return [];
-  }
-  const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
-  const roots = shown.flatMap((cell) => instanceRootSlotOf(part, cell) ?? []);
-  return [...new Set(roots), ...partSlots(of, shown, new Set([...inside, of]))];
-}
-
-function partSlots(
-  box: BoxDefinition,
-  cells: readonly Cell[],
-  inside: ReadonlySet<BoxDefinition>
-): readonly string[] {
-  return (box.parts ?? []).flatMap((part) => slotsBelow(part, cells, inside));
 }
 
 /**
@@ -133,7 +90,7 @@ function renderedRootSlots(
   definition: ComponentDefinition,
   definitions: readonly ComponentDefinition[]
 ): ReadonlySet<string> {
-  const own = matrixCells(definition.axes).flatMap((cell) => rootSlotOf(definition, cell) ?? []);
+  const own = matrixCells(definition.axes).map((cell) => rootSlotOf(definition, cell));
   const stamped = definitions.flatMap((outer) =>
     instancePartsOf(outer)
       .filter((part) => part.of.key === definition.key)

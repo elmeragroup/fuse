@@ -16,7 +16,7 @@
  * every animation and transition, so a pending spinner stays at 0°.
  */
 
-import type { Cell, ComponentDefinition, ElementSelector } from "../components/component-spec.ts";
+import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { kitFontCss } from "../kit-fonts.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
@@ -271,20 +271,16 @@ export function fontSweepSelector(
 /**
  * The selector of the element a definition's cell forces hover or focus on: for a focus cell, the
  * part its `focusPart` names inside the measured element, as File upload's trigger; otherwise the part
- * its `statePart` names inside the measured element, as an Accordion item's trigger, the sibling
- * before the measured element its `statePeer` names, as a Sidebar menu badge's menu button, or the
- * measured element itself.
+ * its `statePart` names inside the measured element, as an Accordion item's trigger, the element at
+ * its `statePlace`, as Number field's `<input>`, the sibling before the measured element its
+ * `statePeer` names, as a Sidebar menu badge's menu button, or the measured element itself.
  *
- * @param definition - The root's slot and element, and the parts or sibling that take the set's
- *   states.
+ * @param definition - The root's slot, and the parts or sibling that take the set's states.
  * @param cell - The cell, whose `state` picks the focus part for a focus cell.
  * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
  */
 export function forcedSelector(
-  definition: Pick<
-    ComponentDefinition,
-    "slot" | "element" | "statePart" | "statePartElement" | "statePeer" | "focusPart"
-  >,
+  definition: Pick<ComponentDefinition, "slot" | "statePart" | "statePlace" | "statePeer" | "focusPart">,
   cell: Cell
 ): string {
   const measured = measuredSelector(definition);
@@ -294,35 +290,48 @@ export function forcedSelector(
   if (definition.statePeer !== undefined) {
     return `[data-slot="${definition.statePeer}"]:has(~ ${measured})`;
   }
-  if (definition.statePartElement !== undefined) {
-    return `${measured} ${elementSelector(definition.statePartElement)}`;
+  if (definition.statePlace !== undefined) {
+    return placeSelector(definition, definition.statePlace);
   }
   return definition.statePart === undefined ? measured : `${measured} [data-slot="${definition.statePart}"]`;
 }
 
 /**
- * The selector of the element a definition's cells measure: the one whose `data-slot` is the
- * definition's `slot`, or, for a root whose markup carries no `data-slot`, the one its `element`
- * names by tag and attributes, such as `div[role="option"]`, each attribute by its presence or its
- * value and each of its `suffixes` by the end of its value.
- *
- * @param definition - The root's slot and, for a root without a `data-slot`, its element.
- * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
+ * The selector of the element at a place: from the measured element where the place starts at the
+ * root's own `data-slot`, else from the element inside it that carries that slot, each step down a
+ * child by its element ordinal, as `:nth-child()` counts elements.
  */
-export function measuredSelector(definition: Pick<ComponentDefinition, "slot" | "element">): string {
-  const { element } = definition;
-  return element === undefined ? `[data-slot="${definition.slot}"]` : elementSelector(element);
+function placeSelector(definition: Pick<ComponentDefinition, "slot">, place: string): string {
+  const [slot = "", ...steps] = place.split("/");
+  const measured = measuredSelector(definition);
+  const from = slot === definition.slot ? measured : `${measured} [data-slot=${cssString(slot)}]`;
+  return [from, ...steps.map((step) => `:nth-child(${String(Number(step) + 1)})`)].join(" > ");
 }
 
-/** The CSS form of an element selector: its tag, then each attribute and suffix it names. */
-function elementSelector(element: ElementSelector): string {
-  const attributes = Object.entries(element.attributes).map(([name, value]) =>
-    value === true ? `[${name}]` : `[${name}=${cssString(value)}]`
-  );
-  const suffixes = Object.entries(element.suffixes ?? {}).map(
-    ([name, suffix]) => `[${name}$=${cssString(suffix)}]`
-  );
-  return `${element.tag}${[...attributes, ...suffixes].join("")}`;
+/**
+ * A definition with the `data-slot` its root carries in a cell: the one its family stamps where the
+ * set names one in `elementSlot`, as Pagination's edge carries `pagination-previous`, else its `slot`.
+ *
+ * @param definition - The definition.
+ * @param cell - The cell.
+ * @returns The definition with that slot in `slot`.
+ */
+export function rootInCell<Definition extends Pick<ComponentDefinition, "slot" | "elementSlot">>(
+  definition: Definition,
+  cell: Cell
+): Definition {
+  return { ...definition, slot: definition.elementSlot?.(cell) ?? definition.slot };
+}
+
+/**
+ * The selector of the element a definition's cells measure: the one whose `data-slot` is the
+ * definition's `slot`.
+ *
+ * @param definition - The root's slot.
+ * @returns A selector for an element anywhere inside a cell's slot, as {@link cellSelector} takes it.
+ */
+export function measuredSelector(definition: Pick<ComponentDefinition, "slot">): string {
+  return `[data-slot="${definition.slot}"]`;
 }
 
 /**
@@ -330,13 +339,13 @@ function elementSelector(element: ElementSelector): string {
  * or, for an open composite, the trigger and popup its renderer names by `data-slot`, whose union
  * the page measures.
  *
- * @param definition - The root's slot and, for a root without a `data-slot`, its element.
+ * @param definition - The root's slot.
  * @param union - The `data-slot` of each element an open composite's box spans, undefined for a cell
  *   that measures its root.
  * @returns One selector per measured element, as {@link cellSelector} takes it.
  */
 export function measuredSelectors(
-  definition: Pick<ComponentDefinition, "slot" | "element">,
+  definition: Pick<ComponentDefinition, "slot">,
   union: readonly string[] | undefined
 ): readonly string[] {
   return union === undefined

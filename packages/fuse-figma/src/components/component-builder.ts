@@ -1,6 +1,6 @@
 /**
- * Turn a recipe into a Figma component set. For every cell of the variant matrix the builder
- * asks `cascade.ts` for the computed style of the root, each part and each icon, and
+ * Turn a set's capture into a Figma component set. For every cell of the variant matrix the builder
+ * asks `capture/capture-cascade.ts` for the computed style of the root, each part and each icon, and
  * `box-mapping.ts` maps it onto Figma fields. Every declaration it reads lands in the coverage
  * table with what became of it. `component-spec.ts` holds the definition types this module reads.
  */
@@ -21,11 +21,9 @@ import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
 import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import { SetCascade } from "./cascade";
-import type { BoxCascade, LayerStyle } from "./cascade";
 import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
-import { definitionClasses, matrixCells, previewWidthIn, variantKey } from "./component-spec";
+import { matrixCells, previewWidthIn, variantKey } from "./component-spec";
 import type {
   BuildContext,
   BuiltComponent,
@@ -34,17 +32,9 @@ import type {
   ComponentDefinition,
   LabelDefinition,
 } from "./component-spec";
-import type { CoverageRow } from "./coverage";
+import type { CoverageRow, RecordedRow } from "./coverage";
 import { normalizeCss } from "./css-values";
-import {
-  allPartsOf,
-  framePartsOf,
-  instancePartsOf,
-  instanceRootSlotOf,
-  instancingSlots,
-  partsOf,
-  renderedSlots,
-} from "./definition-parts";
+import { allPartsOf, framePartsOf, instanceRootSlotOf, instancingSlots, partsOf } from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
@@ -55,55 +45,42 @@ import type {
   TextPropertySpec,
   VariantSpec,
 } from "./kit-spec";
-import { booleanPropertiesOf, refusePresenceReads } from "./optional-parts";
+import type { LayerStyle } from "./layer-style";
+import { booleanPropertiesOf } from "./optional-parts";
 import type { OptionalPart } from "./optional-parts";
-import { partsThatScale, placeRoot } from "./placement";
+import { placeRoot } from "./placement";
 import { PaintedInstances } from "./stacking";
-import { makeStateTable } from "./state-table";
 
-/**
- * What a set builds from: the definition the mapping walks, and the capture its cascade reads, or
- * undefined for the recipe cascade.
- */
+/** What a set builds from: the definition the mapping walks, and the capture its cascade reads. */
 export type SetSource = {
   readonly definition: ComponentDefinition;
-  readonly capture: SetCapture | undefined;
+  readonly capture: SetCapture;
   /** How an open composite places its cells' roots, as its manifest names it; undefined otherwise. */
   readonly open?: OpenPlacement;
 };
 
 /**
- * Build the component sets of a list of definitions in its order, each with the sets before it at
+ * Build the component sets of a list of sources in its order, each with the sets before it at
  * hand, so a set builds after the sets its instance parts show.
  *
- * @template Entry - What the list holds for each set, its definition among it.
- * @param entries - The definitions, each set after the sets it holds instances of.
+ * @param sources - Each set's definition and capture, each set after the sets it holds instances of.
  * @param context - The compiled utilities and the synced variables.
- * @param source - What builds an entry's set: its definition and the recipe cascade, or the
- *   definition its manifest gives and its capture. The recipe by default.
- * @returns Each entry with its built set, in the list's order.
+ * @returns Each built set, in the list's order.
  * @throws When an instance part shows a set the list puts later or lacks, or the instance parts form
  *   a cycle, as {@link checkInstanceOrder} says, or a set does not build.
  */
-export function buildSetsInOrder<Entry extends { readonly definition: ComponentDefinition }>(
-  entries: readonly Entry[],
-  context: BuildContext,
-  source: (entry: Entry) => SetSource = (entry) => ({ definition: entry.definition, capture: undefined })
-): readonly (readonly [Entry, BuiltComponent])[] {
-  checkInstanceOrder(entries.map(({ definition }) => definition));
-  const sourced = entries.map((entry) => [entry, source(entry)] as const);
-  const holders = instancingSlots(sourced.map(([, { definition }]) => definition));
+export function buildSetsInOrder(
+  sources: readonly SetSource[],
+  context: BuildContext
+): readonly BuiltComponent[] {
+  checkInstanceOrder(sources.map(({ definition }) => definition));
+  const holders = instancingSlots(sources.map(({ definition }) => definition));
   const built = new Map<string, InnerSet>();
-  return sourced.map(([entry, { definition, capture, open }]) => {
+  return sources.map(({ definition, capture, open }) => {
     const instancedIn = holders.get(definition.key) ?? new Set<string>();
-    const set = buildComponentSet(
-      definition,
-      context,
-      built,
-      capture === undefined ? undefined : { capture, open, instancedIn }
-    );
-    built.set(entry.definition.key, set.componentSet);
-    return [entry, set] as const;
+    const set = buildComponentSet(definition, context, built, { capture, open, instancedIn });
+    built.set(definition.key, set.componentSet);
+    return set;
   });
 }
 
@@ -113,20 +90,25 @@ export function buildSetsInOrder<Entry extends { readonly definition: ComponentD
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
  * @param inner - The sets built before this one, by key, which its instance parts show.
- * @param capture - The set's capture, which the set's cascade reads in place of the definition's
- *   classes, or undefined for the recipe cascade.
+ * @param captured - The set's capture, which its cascade reads, how an open composite places its
+ *   cells' roots, and the root slots of the sets that hold it as an instance.
  * @returns The component set, its coverage and the font styles its text uses.
  * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
 export function buildComponentSet(
   definition: ComponentDefinition,
   context: BuildContext,
-  inner: ReadonlyMap<string, InnerSet> = new Map(),
-  captured?: CapturedSource
+  inner: ReadonlyMap<string, InnerSet>,
+  captured: CapturedSource
 ): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
-  const record = (row: Omit<CoverageRow, "component">): void => {
+  // Each captured declaration a recorded row accounts for, by cell; the table keeps none of them.
+  const accounted = new Map<string, Set<string>>();
+  const record = ({ at = [], ...row }: RecordedRow): void => {
+    for (const { cell, declaration } of at) {
+      accounted.set(cell, (accounted.get(cell) ?? new Set()).add(declaration));
+    }
     const full = { component: definition.name, ...row };
     coverage.set(
       JSON.stringify([full.part, full.className, full.property, full.value, full.outcome, full.detail]),
@@ -134,29 +116,15 @@ export function buildComponentSet(
     );
   };
   const cells = matrixCells(definition.axes);
-  const optional = optionalParts(definition, cells, undefined);
+  const optional = optionalParts(definition, cells);
   const booleans = booleanPropertiesOf(definition.name, optional);
-  // The inner sets list their own optional parts' properties, but a class of this set can read them.
-  const presence = [...optional, ...innerOptionalParts(definition, cells, [], new Set([definition]))];
-  if (presence.length > 0) {
-    refusePresenceReads(
-      definition.name,
-      presence,
-      new Set(definitionClasses(definition)),
-      context.compiled.rulesByClass
-    );
-  }
   const cascade = setCascade(definition, context, record, captured, inner);
-  // A capture-backed root clips only where some cell's root casts a shadow, whose spread Figma draws
-  // only from a clipping frame, or CSS clips it; else its layers' rings show past its edge, as in the
-  // browser.
-  const unclippedRoot = captured !== undefined && !castsShadowOrClips(captured.capture);
+  // A root clips only where some cell's root casts a shadow, whose spread Figma draws only from a
+  // clipping frame, or CSS clips it; else its layers' rings show past its edge, as in the browser.
+  const unclippedRoot = !castsShadowOrClips(captured.capture);
   const instances = new InstanceParts(context, inner, record);
-  // A capture-backed set names no classes, so its capture says which parts win a `scale`.
-  const scaling =
-    captured === undefined
-      ? partsThatScale(partsOf(definition), cells, context.compiled)
-      : partsThatScaleIn(captured.capture, definition.parts ?? []);
+  // The capture says which parts win a `scale`.
+  const scaling = partsThatScaleIn(captured.capture, definition.parts ?? []);
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
     const plain: MapScope = {
@@ -171,7 +139,7 @@ export function buildComponentSet(
     };
     const scope: MapScope =
       definition.viewport === undefined ? plain : { ...plain, viewport: definition.viewport };
-    const rootCascade = cellCascade.root(definition, cell);
+    const rootCascade = cellCascade.root(definition.slot);
     // A root clips its content, because Figma draws a drop shadow's spread only from a frame
     // that clips, and a focus ring is a spread shadow. The first run on a real file stored the
     // ring's 2px spread as 0 on a root that did not clip. Clipping costs a root nothing, since
@@ -229,7 +197,6 @@ export function buildComponentSet(
     return { key: variantKey(definition, cell), properties: cell, root };
   });
   cascade.finish();
-  instances.finish();
   const componentSet: BuiltComponent["componentSet"] = {
     key: definition.key,
     name: definition.name,
@@ -247,15 +214,14 @@ export function buildComponentSet(
     componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
     fontStyles: [...fontStyles],
+    accounting: new Map(
+      [...cascade.instancePlaces()].map(([cell, instances]) => [
+        cell,
+        { accounted: accounted.get(cell) ?? new Set<string>(), instances },
+      ])
+    ),
   };
 }
-
-/** The cascade of one cell, as the builder drives it, from the recipe or from the capture. */
-type CellEngine = {
-  readonly root: (definition: ComponentDefinition, cell: Cell) => BoxCascade;
-  readonly backdrop: () => LayerStyle | undefined;
-  readonly settle: () => void;
-};
 
 /**
  * A set's capture, which its cascade reads, how an open composite places its cells' roots, and the
@@ -267,74 +233,32 @@ type CapturedSource = {
   readonly instancedIn: ReadonlySet<string>;
 };
 
-/** The cascade of a set's cells, as the builder drives it, and what records its logs once they cascaded. */
-type SetEngine = { readonly cell: (cell: Cell) => CellEngine; readonly finish: () => void };
-
-/** The cascade of a set's cells, from the definition's classes or from the set's capture. */
+/** The cascade of a set's cells from the set's capture. */
 function setCascade(
   definition: ComponentDefinition,
   context: BuildContext,
-  record: (row: Omit<CoverageRow, "component">) => void,
-  source: CapturedSource | undefined,
+  record: (row: RecordedRow) => void,
+  source: CapturedSource,
   inner: ReadonlyMap<string, InnerSet>
-): SetEngine {
-  if (source !== undefined) {
-    const { capture, open, instancedIn } = source;
-    const captured = new CaptureSetCascade({
-      capture,
-      definition,
-      context,
-      record,
-      captureOf: (key) => {
-        const kept = keptCapture(key);
-        return kept === undefined || Result.isFailure(kept) ? undefined : kept.success;
-      },
-      open,
-      anchorWidth: (cell) =>
-        open?._tag === "anchored"
-          ? anchorWidth(definition, capture, cell, inner)
-          : // A popup set alone has no anchor of its own: its sample's anchor fills the host it renders in.
-            sampleAnchorWidth(definition, cell),
-      instancedIn,
-    });
-    return {
-      cell: (cell) => {
-        const cascade = captured.cell(cell);
-        return {
-          root: (root) => cascade.root(root.slot),
-          backdrop: () => cascade.backdrop(),
-          settle: () => {
-            cascade.settle();
-          },
-        };
-      },
-      finish: () => {
-        captured.finish();
-      },
-    };
-  }
-  const recipe = new SetCascade(makeStateTable(definition), context, record);
-  return {
-    cell: (cell) => {
-      const cascade = recipe.cell(cell);
-      return {
-        root: (root, shown) =>
-          cascade.root(root.classesFor(shown), root.slot, {
-            declarations: root.inheritedFor?.(shown) ?? [],
-            ancestors: root.ancestorsFor?.(shown) ?? [],
-            defaults: root.elementDefaults ?? [],
-            inline: root.styleFor?.(shown) ?? [],
-          }),
-        backdrop: () => cascade.backdrop(),
-        settle: () => {
-          cascade.settle();
-        },
-      };
+): CaptureSetCascade {
+  const { capture, open, instancedIn } = source;
+  return new CaptureSetCascade({
+    capture,
+    definition,
+    context,
+    record,
+    captureOf: (key) => {
+      const kept = keptCapture(key);
+      return kept === undefined || Result.isFailure(kept) ? undefined : kept.success;
     },
-    finish: () => {
-      recipe.finish();
-    },
-  };
+    open,
+    anchorWidth: (cell) =>
+      open?._tag === "anchored"
+        ? anchorWidth(definition, capture, cell, inner)
+        : // A popup set alone has no anchor of its own: its sample's anchor fills the host it renders in.
+          sampleAnchorWidth(definition, cell),
+    instancedIn,
+  });
 }
 
 /** The shadows an instance overrides on its root, or undefined where it draws its variant's own. */
@@ -395,32 +319,17 @@ function textProperties(definition: ComponentDefinition): readonly TextPropertyS
 }
 
 /**
- * A definition's optional parts, depth first, each with every `data-slot` that hiding it hides, as the
- * markup renders them in the cells given: its own and those of the elements inside it, through the
- * instances it holds, whose inner roots and parts the DOM holds too.
+ * A definition's optional parts and icons, depth first, each with the property it hides behind.
  *
  * @param definition - The definition.
- * @param cells - Its cells, or the inner cells an instance of it shows.
- * @param inside - The instance that holds the definition's root, for an inner set's parts.
+ * @param cells - Its cells, whose icons the icon slots list.
  * @returns The parts.
  */
-function optionalParts(
-  definition: ComponentDefinition,
-  cells: readonly Cell[],
-  inside: OptionalPart["inside"]
-): readonly OptionalPart[] {
+function optionalParts(definition: ComponentDefinition, cells: readonly Cell[]): readonly OptionalPart[] {
   const parts = allPartsOf(definition).flatMap((part): OptionalPart[] =>
     part.optional === undefined
       ? []
-      : [
-          {
-            name: "kind" in part ? part.of.slot : partName(part),
-            property: part.optional,
-            slots: renderedSlots(part, cells),
-            elements: [],
-            inside,
-          },
-        ]
+      : [{ name: "kind" in part ? part.of.slot : partName(part), property: part.optional }]
   );
   // An icon is an `<svg>` with no slot, listed once by its key however many cells show it.
   const icons = new Map(
@@ -431,42 +340,9 @@ function optionalParts(
   return [
     ...parts,
     ...[...icons.values()].flatMap((slot): OptionalPart[] =>
-      slot.optional === undefined
-        ? []
-        : [{ name: slot.name, property: slot.optional, slots: [], elements: ["svg"], inside }]
+      slot.optional === undefined ? [] : [{ name: slot.name, property: slot.optional }]
     ),
   ];
-}
-
-/**
- * The optional parts of the inner sets a box's instance parts show, in the inner cells each instance
- * shows, through the instances those sets hold in turn. A definition the walk is already inside adds
- * nothing again.
- *
- * @param box - The definition whose instance parts the walk starts at.
- * @param cells - The cells of the definition, or the inner cells an instance of it shows.
- * @param path - The keys of the instance parts from the set down to the box.
- * @param inside - The definitions the walk is inside.
- * @returns The parts, each with the instance that holds it and its set.
- */
-function innerOptionalParts(
-  box: ComponentDefinition,
-  cells: readonly Cell[],
-  path: readonly string[],
-  inside: ReadonlySet<ComponentDefinition>
-): readonly OptionalPart[] {
-  return instancePartsOf(box).flatMap((part) => {
-    const { of } = part;
-    if (inside.has(of)) {
-      return [];
-    }
-    const shown = cells.filter((cell) => part.shownIn(cell)).map((cell) => part.cell(cell));
-    const keys = [...path, part.key];
-    return [
-      ...optionalParts(of, shown, { instance: keys.join(" / "), set: of.name }),
-      ...innerOptionalParts(of, shown, keys, new Set([...inside, of])),
-    ];
-  });
 }
 
 /**

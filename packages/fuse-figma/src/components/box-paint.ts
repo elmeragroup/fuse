@@ -7,7 +7,6 @@
 import { createHash } from "node:crypto";
 
 import { KitUnmappable } from "./build-errors";
-import type { CoverageNote, LayerStyle } from "./cascade";
 import {
   describeNumber,
   evaluateLength,
@@ -26,6 +25,7 @@ import type {
   ShadowSpec,
   SideStroke,
 } from "./kit-spec";
+import type { CoverageNote, LayerStyle } from "./layer-style";
 
 /**
  * What a color read from CSS became, for the coverage table.

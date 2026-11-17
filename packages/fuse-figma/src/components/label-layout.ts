@@ -10,8 +10,7 @@ import { describeColor } from "./box-paint";
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import type { CoverageNote, LayerStyle } from "./cascade";
-import type { Cell, LabelDefinition, TextPlacement } from "./component-spec";
+import type { Cell, LabelDefinition } from "./component-spec";
 import {
   describeNumber,
   evaluateLength,
@@ -35,7 +34,28 @@ import type {
   TextLayerSpec,
   TextSizingSpec,
 } from "./kit-spec";
+import type { CoverageNote, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+
+/**
+ * Where a native control sets its text within the text's box, which no class says, as an `<input>`
+ * centers its value down its box and a `<textarea>` starts its text at the top.
+ */
+export type TextPlacement = {
+  readonly horizontal: "start" | "center" | "end";
+  readonly vertical: "top" | "center" | "bottom";
+  /**
+   * How the control sets its text in lines, which it does itself whatever the box's `display` says.
+   * `single` keeps the text on one line across the content box, as an `<input>` sets its value,
+   * whatever `white-space` says, so the label fills the box's width and ends in an ellipsis after one
+   * line. `wrap` wraps the text at the content box's width, as a `<textarea>` wraps its value, so the
+   * label fills the width with its height following its lines.
+   */
+  readonly lines: "single" | "wrap";
+};
+
+/** A label, with the placement a form control gives its text where its box is one. */
+export type PlacedLabel = LabelDefinition & { readonly placement?: TextPlacement };
 
 /** A box's label, and the alignments a native control's placement gives the box, where it sets them. */
 export type MappedLabel = {
@@ -328,7 +348,7 @@ export function inertClamp(style: LayerStyle): string | undefined {
  * @returns The text layer, and the alignments a native control's placement gives the box.
  * @throws When the box's style gives the label no font family, size, line height or color.
  */
-export function mapLabel(holder: Holder, label: LabelDefinition, scope: LabelScope): MappedLabel {
+export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope): MappedLabel {
   const { style } = holder;
   const { color, variables, path } = scope;
   const fontSize = style.read(
@@ -926,7 +946,7 @@ function refuseItem(
  */
 function readLabelLayout(
   holder: Holder,
-  label: LabelDefinition,
+  label: PlacedLabel,
   characters: { readonly shown: string; readonly built: string | undefined },
   lines: number | undefined,
   variant: string,

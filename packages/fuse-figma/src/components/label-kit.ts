@@ -1,42 +1,19 @@
 /**
  * Label, as one component set: the label a form shows above its control, at rest and disabled, 2
  * cells. Fuse has no standalone Label. This is `Field.Label`, Base UI's `<label
- * data-slot="field-label">` inside a `Field.Root`, with the `label` slot of `fieldVariants`.
+ * data-slot="field-label">` inside a `Field.Root`.
  *
- * - The label is the root's own text, `Email`, as the docs' field label. It hugs its text, set in
- *   the label type pair at Medium.
- * - Disabled draws at 50% opacity, through `group-data-disabled/field:`, which holds while the
- *   Field root around the label carries `data-disabled`. Base UI stamps the same `data-disabled`
- *   on the label itself.
- * - The recipe's `has-[>[data-slot=field]]:`, `*:data-[slot=field]:`, `has-[>[data-slot=checkbox]]:`
- *   and `has-data-checked:` arms style a label that wraps a Field card or a Checkbox. That is
- *   Field composition, which waits for wave 3, so they drop.
+ * - The label is the root's own text, `Email`, as the docs' field label, which the `Label` property
+ *   sets.
+ * - The disabled cell renders the label in a disabled Field.
  */
-import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
-
-import type { SetManifest } from "../capture/manifest";
-import type { ComponentDefinition, LabelDefinition } from "./component-spec";
+import type { LabelManifest, SetManifest } from "../capture/manifest";
 
 /** The label's text, the default of its `Label` property: the docs' field label. */
 export const LABEL_TEXT = "Email";
 
-/** Why the kit drops the arms that style a label wrapping a control or a Field card. */
-const COMPOSITION =
-  "a label that wraps a control or a Field card is Field composition, which waits for wave 3";
-
-/**
- * The label's arms that style a label wrapping a control or a Field card, which a definition that
- * draws a Field label omits, each with its reason.
- */
-export const LABEL_OMITTED_COMPOSITIONS: ReadonlyMap<string, string> = new Map(
-  ["has-[>[data-slot=field]]", "*", "has-[>[data-slot=checkbox]]", "has-data-checked"].map((variant) => [
-    variant,
-    COMPOSITION,
-  ])
-);
-
 /** The label's text layer, which sets the `Label` property. */
-const LABEL_LAYER: LabelDefinition = {
+const LABEL_LAYER: LabelManifest = {
   key: "label",
   name: "label",
   characters: LABEL_TEXT,
@@ -44,31 +21,15 @@ const LABEL_LAYER: LabelDefinition = {
   shownIn: () => true,
 };
 
-/** A label, as `<Field.Root disabled={…}><Field.Label>Email</Field.Label></Field.Root>`. */
-export const LABEL: ComponentDefinition = {
-  key: "label",
-  name: "Label",
-  slot: "field-label",
-  rootKind: "base-ui-field-part",
-  axes: [{ name: "state", values: ["rest", "disabled"] }],
-  columnAxis: "state",
-  classesFor: () => fieldVariants().label(),
-  // The Field root carries `data-disabled` and the `group/field` marker that this variant reads.
-  states: { disabled: ["group-data-disabled/field"] },
-  facts: new Map(),
-  omittedStates: new Set(),
-  omittedCompositions: LABEL_OMITTED_COMPOSITIONS,
-  label: LABEL_LAYER,
-  iconsFor: () => [],
-  swapProperties: [],
-};
-
-/** The label's manifest, which the capture-backed build reads with `captures/label.json`. */
+/**
+ * The label's manifest, which the capture-backed build reads with `captures/label.json`, as
+ * `<Field.Root disabled={…}><Field.Label>Email</Field.Label></Field.Root>` renders it.
+ */
 export const LABEL_MANIFEST: SetManifest = {
   key: "label",
   name: "Label",
   slot: "field-label",
-  axes: LABEL.axes,
+  axes: [{ name: "state", values: ["rest", "disabled"] }],
   columnAxis: "state",
   label: LABEL_LAYER,
   iconsFor: () => [],

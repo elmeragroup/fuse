@@ -1,3 +1,6 @@
+import { affineLength, constantOf, sumAffine } from "./css-values";
+import { NO_LIMITS, ZERO } from "./kit-spec";
+import type { ChildLayerSpec, CounterAlignSpec, FrameLayerSpec } from "./kit-spec";
 /**
  * Layers a flex column draws flush against the layer before them: a part whose negative top margin
  * is exactly the column's gap, which cancels the gap above it (CSS Box Alignment 3 §8, CSS Flexbox 1
@@ -7,10 +10,7 @@
  * real file drew the description flush under the legend and the next layer one `surface-gap-md`
  * below the frame, 12px at Dense and 16px at Comfortable (W5-P5).
  */
-import type { LayerStyle } from "./cascade";
-import { affineLength, constantOf, sumAffine } from "./css-values";
-import { NO_LIMITS, ZERO } from "./kit-spec";
-import type { ChildLayerSpec, CounterAlignSpec, FrameLayerSpec } from "./kit-spec";
+import type { LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 
 /** What became of the margin that cancels the gap. */

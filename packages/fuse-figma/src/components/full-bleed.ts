@@ -1,12 +1,3 @@
-/**
- * Separators that span their popup. A menu popup pads its rows, and a separator between them cancels
- * the padding with negative margins, as `-mx-(--surface-pad-sm)` does, so it runs from edge to edge.
- * Figma has no negative margin, so the popup draws with no padding across, and each run of layers
- * between separators sits in a section frame that pads it. A popup that pads nothing across and
- * clips what overflows it draws the separator at its own width, so the margins drop there.
- * `box-mapping.ts` asks once a box's parts map, before it reads the box's padding.
- */
-import type { LayerStyle } from "./cascade";
 import type { CoverageOutcome } from "./coverage";
 import {
   affineLength,
@@ -21,6 +12,15 @@ import {
 import type { AffineLength, VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
 import type { CounterAlignSpec, FrameLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
+/**
+ * Separators that span their popup. A menu popup pads its rows, and a separator between them cancels
+ * the padding with negative margins, as `-mx-(--surface-pad-sm)` does, so it runs from edge to edge.
+ * Figma has no negative margin, so the popup draws with no padding across, and each run of layers
+ * between separators sits in a section frame that pads it. A popup that pads nothing across and
+ * clips what overflows it draws the separator at its own width, so the margins drop there.
+ * `box-mapping.ts` asks once a box's parts map, before it reads the box's padding.
+ */
+import type { LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 
 /** A part of the box, its style and the layer the mapping drew for it. */

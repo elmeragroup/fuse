@@ -35,9 +35,6 @@ export const FOOTER_CLOSE_COPY: DialogCopy = {
   ],
 };
 
-/** The corner close's accessible name, the en-US dictionary's `overlay.close`. */
-export const CORNER_CLOSE_LABEL = "Close";
-
 /**
  * The viewport the Dialog popup and its open example sit in: Alert dialog's, since Dialog reads the
  * same `w-full max-w-(--overlay-width) max-h-[calc(100%-2rem)]` at the md size and the same `sm:` footer.

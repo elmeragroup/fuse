@@ -1,7 +1,7 @@
 /**
  * Build the component kit the Fuse plugin applies: a page for each component, holding the
  * component sets of `kit-registry.ts` and four preview frames, and an `Icons` page holding an
- * icon component for every Fuse icon. It also builds the coverage table of every recipe class.
+ * icon component for every Fuse icon. It also builds the coverage table of every captured declaration.
  */
 import { Effect, Result } from "effect";
 
@@ -16,12 +16,11 @@ import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder, inPlacementOrder } from "./component-builder";
 import type { SetSource } from "./component-builder";
-import { definitionClasses, variantKey } from "./component-spec";
+import { variantKey } from "./component-spec";
 import type {
   BuiltComponent,
   ComponentDefinition,
   InstanceDefinition,
-  OuterDeclaration,
   PartDefinition,
 } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
@@ -42,7 +41,7 @@ import type {
   PageSpec,
   PreviewSpec,
 } from "./kit-spec";
-import { baseBorderColor, compileUtilities } from "./utility-css";
+import { compileUtilities } from "./utility-css";
 
 /** A theme the previews pin: Fjordkraft private in one identity, color scheme and density. */
 function previewTheme(
@@ -81,16 +80,6 @@ const ICONS_PAGE: PageSpec = { key: "page/icons", name: "Icons" };
 function pageSpec(page: KitPage): PageSpec {
   return { key: `page/${page.slug}`, name: page.name };
 }
-
-/**
- * The page a Fuse host renders into. The docs layout sets `font-sans text-foreground` on
- * `<body>` (`apps/docs/src/app/(docs)/layout.tsx`), so a part whose recipe sets no text color
- * or family inherits these.
- */
-const PAGE: readonly OuterDeclaration[] = [
-  { className: "body text-foreground", property: "color", value: "var(--foreground)" },
-  { className: "body font-sans", property: "font-family", value: "var(--font-sans)" },
-];
 
 /**
  * The variable set the kit binds, the index its CSS values resolve through, and each mode of a
@@ -215,12 +204,11 @@ function modeViews(
  * @throws Any other error, a defect of the mapping.
  */
 function mapSets(
-  registry: readonly KitEntry[],
-  context: Parameters<typeof buildSetsInOrder>[1],
-  source: (entry: KitEntry) => SetSource
-): Result.Result<ReturnType<typeof buildSetsInOrder<KitEntry>>, KitUnmappable> {
+  sources: readonly SetSource[],
+  context: Parameters<typeof buildSetsInOrder>[1]
+): Result.Result<ReturnType<typeof buildSetsInOrder>, KitUnmappable> {
   try {
-    return Result.succeed(buildSetsInOrder(registry, context, source));
+    return Result.succeed(buildSetsInOrder(sources, context));
   } catch (thrown) {
     if (thrown instanceof KitUnmappable) {
       return Result.fail(thrown);
@@ -229,22 +217,8 @@ function mapSets(
   }
 }
 
-/**
- * Which cascade builds the kit's sets: `switched` reads each set its kit entry switches to the
- * capture from its capture and every other set from its recipe, and `recipe` reads every set from
- * its recipe, as the differential oracle compares.
- */
-export type KitEngine = "switched" | "recipe";
-
-/** What builds an entry's set under an engine, or `CaptureUnreadable` for a kept capture the schema rejects. */
-function setSource(
-  entry: KitEntry,
-  engine: KitEngine
-): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
-  const { manifest } = entry;
-  if (engine === "recipe" || manifest === undefined) {
-    return Result.succeed({ definition: entry.definition, capture: undefined });
-  }
+/** What builds an entry's set, or `CaptureUnreadable` for a kept capture the schema rejects. */
+function setSource({ manifest }: KitEntry): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
   const capture = keptCapture(manifest.key);
   if (capture === undefined) {
     return Result.fail(
@@ -340,33 +314,48 @@ function openPlacement(manifest: SetManifest): Result.Result<OpenPlacement | und
     : Result.succeed({ _tag: "modal", viewport: manifest.viewport });
 }
 
+/** Every class an element of the captures carries, around a root or below it. */
+function capturedClasses(captures: readonly SetCapture[]): ReadonlySet<string> {
+  const classes = new Set<string>();
+  const visit = (element: SetCapture["page"][number]): void => {
+    for (const className of element.classes) {
+      classes.add(className);
+    }
+    for (const child of element.children) {
+      visit(child);
+    }
+  };
+  for (const capture of captures) {
+    for (const { roots } of capture.cells) {
+      for (const { around, root } of roots) {
+        for (const element of [...around, root]) {
+          visit(element);
+        }
+      }
+    }
+  }
+  return classes;
+}
+
 const buildSets = Effect.fnUntraced(function* (
   { variables, modes }: KitVariables,
-  registry: readonly KitEntry[],
-  engine: KitEngine = "switched"
+  registry: readonly KitEntry[]
 ) {
-  const sources = new Map<KitEntry, SetSource>();
+  const sources: SetSource[] = [];
   for (const entry of registry) {
-    sources.set(entry, yield* Effect.fromResult(setSource(entry, engine)));
+    sources.push(yield* Effect.fromResult(setSource(entry)));
   }
-  const classes = new Set(registry.flatMap(({ definition }) => definitionClasses(definition)));
-  const compiled = yield* compileUtilities([...classes]);
-  // The base layer's border color sets the color on each element, so a part does not inherit it
-  // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
-  // Badge sets no border color, so its stroke binds `border`.
-  const borderColor = yield* Effect.fromResult(baseBorderColor(compiled));
-  const base: readonly OuterDeclaration[] = [{ className: "fuse.css base layer", ...borderColor }];
-  const mapped = yield* Effect.fromResult(
-    mapSets(
-      registry,
-      { compiled, variables, page: PAGE, base, modes },
-      (entry) => sources.get(entry) ?? { definition: entry.definition, capture: undefined }
-    )
-  );
-  const sets: readonly KitComponentSet[] = mapped.map(([{ page }, set]) => ({
-    ...set,
-    componentSet: { ...set.componentSet, page: pageSpec(page).key },
-  }));
+  // Tailwind emits a theme value and an `@property` registration only for a utility it compiles, so
+  // the build compiles every class a capture records, which says which custom properties inherit.
+  const compiled = yield* compileUtilities([...capturedClasses(sources.map(({ capture }) => capture))]);
+  const mapped = yield* Effect.fromResult(mapSets(sources, { compiled, variables, modes }));
+  // The builder returns one set per source, in the registry's order.
+  const sets: readonly KitComponentSet[] = registry.flatMap(({ page }, index) => {
+    const set = mapped[index];
+    return set === undefined
+      ? []
+      : [{ ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } }];
+  });
   return sets;
 });
 
@@ -377,8 +366,8 @@ const buildSets = Effect.fnUntraced(function* (
  *   classes it read and the font styles its text uses. The Effect fails with `KitUnmappable`,
  *   `KitSourceInvalid` or `KitToolFailed`, as {@link buildKit} does.
  */
-export const buildComponentSets = Effect.fn("buildComponentSets")(function* (engine: KitEngine = "switched") {
-  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT, engine);
+export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
+  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
 });
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
@@ -399,13 +388,10 @@ export type BuiltKit = {
  *   `KitSourceInvalid` where a Fuse source lacks what the kit needs, such as a mode a preview pins,
  *   and with `KitToolFailed` where Tailwind, rolldown or the temporary directory fails.
  */
-export const buildKit = Effect.fn("buildKit")(function* (
-  registry: readonly KitEntry[] = KIT,
-  engine: KitEngine = "switched"
-) {
+export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
   const kitVariableSet = yield* Effect.fromResult(kitVariables());
   const { collections, variables } = kitVariableSet;
-  const built = yield* buildSets(kitVariableSet, registry, engine);
+  const built = yield* buildSets(kitVariableSet, registry);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     return yield* new KitSourceInvalid({ message: "the variable set has no foreground for the icon glyphs" });
@@ -446,11 +432,11 @@ export const buildKit = Effect.fn("buildKit")(function* (
         modes: theme.modes,
         groups: registry
           .filter((entry) => entry.page.slug === page.slug)
-          .map(({ definition, previewCells }) => ({
-            key: `${key}/${definition.key}`,
-            name: definition.name,
-            componentSet: definition.key,
-            variants: previewCells.map((cell) => variantKey(definition, cell)),
+          .map(({ manifest, previewCells }) => ({
+            key: `${key}/${manifest.key}`,
+            name: manifest.name,
+            componentSet: manifest.key,
+            variants: previewCells.map((cell) => variantKey(manifest, cell)),
           })),
       };
     })

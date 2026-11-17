@@ -3,22 +3,15 @@
  * `<div data-slot="skeleton" aria-hidden="true">`, so the set has no state axis, and its columns
  * are the shapes.
  *
- * - The recipe fills the block with the `muted` role and gives it the `radius-md` corner. Its
- *   `animate-pulse` drops, as Figma components do not animate.
- * - The recipe gives no size, so each cell passes the shape a docs demo gives as consumer
- *   classes: a 192 × 16 line (`h-4 w-48`) and a 40px circle (`size-10 rounded-full`). The kit
- *   merges them as Skeleton merges its `className`, so the circle's `rounded-full` replaces the
- *   recipe's `rounded-md`.
+ * The recipe gives no size, so each cell passes the shape a docs demo gives as consumer classes:
+ * a 192 × 16 line (`h-4 w-48`) and a 40px circle (`size-10 rounded-full`).
  */
-import { cn, skeletonClass } from "@elmeragroup/fuse/recipe-catalog";
-
 import type { SetManifest } from "../capture/manifest";
-import type { Cell, ComponentDefinition } from "./component-spec";
+import type { Cell } from "./component-spec";
 
 /**
- * The docs demos' shapes, as consumer classes, by the `shape` axis value. The kit merges them
- * over the recipe as Skeleton merges a consumer's `className`, and the compare renderer passes
- * them as that `className`.
+ * The docs demos' shapes, as consumer classes, by the `shape` axis value. The compare renderer
+ * passes them as Skeleton's `className`.
  */
 export const DEMO_CLASSES: ReadonlyMap<string, string> = new Map([
   ["line", "h-4 w-48"],
@@ -42,28 +35,15 @@ export function demoClassesFor(cell: Cell): string {
   return classes;
 }
 
-/** A skeleton, as `<Skeleton className={demoClassesFor(cell)} />`. */
-export const SKELETON: ComponentDefinition = {
-  key: "skeleton",
-  name: "Skeleton",
-  slot: "skeleton",
-  axes: [{ name: "shape", values: [...DEMO_CLASSES.keys()] }],
-  columnAxis: "shape",
-  classesFor: (cell) => cn(skeletonClass, demoClassesFor(cell)),
-  states: {},
-  facts: new Map(),
-  omittedStates: new Set(),
-  label: undefined,
-  iconsFor: () => [],
-  swapProperties: [],
-};
-
-/** The skeleton's manifest, which the capture-backed build reads with `captures/skeleton.json`. */
+/**
+ * The skeleton's manifest, which the capture-backed build reads with `captures/skeleton.json`: a
+ * skeleton, as `<Skeleton className={demoClassesFor(cell)} />`.
+ */
 export const SKELETON_MANIFEST: SetManifest = {
   key: "skeleton",
   name: "Skeleton",
   slot: "skeleton",
-  axes: SKELETON.axes,
+  axes: [{ name: "shape", values: [...DEMO_CLASSES.keys()] }],
   columnAxis: "shape",
   label: undefined,
   iconsFor: () => [],

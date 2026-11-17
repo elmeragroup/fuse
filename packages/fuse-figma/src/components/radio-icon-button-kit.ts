@@ -3,22 +3,14 @@
  * states, around one icon with no label: 50 cells.
  *
  * - The root is Base UI's radio `<span data-slot="radio-icon-button">`, which renders checked only
- *   inside a `RadioGroup`. A checked button draws a `primary` border and fills with `muted`
- *   through `data-checked:`, which Base UI stamps while the radio is checked. Hover paints the
- *   same `muted`, so a checked button looks the same at rest and on hover.
- * - A span never matches `:disabled`, so `state-table.ts` holds `aria-disabled:` and
- *   `data-disabled:` at disabled, as Base UI stamps them, and gives hover, focus and invalid their
- *   variants. Invalid draws the `error` border and ring of a radio inside an invalid Field.
- * - The recipe's invalid focus ring needs invalid and focus at once, which no cell draws.
- * - Each size is the control size's `square` fit and reads its own row of the `Fuse density`
- *   control metrics. `icon-xxs` and `icon-xs` share the xs square and differ by icon size.
+ *   inside a `RadioGroup`.
+ * - Invalid renders the button in an invalid Field.
+ * - The icon is List, the first icon the docs demo places, which the `Icon` swap property picks.
  */
-import { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
+import type { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { SetManifest } from "../capture/manifest";
-import { BASE_UI_CHECKED_FACTS, swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
-import { ownKey } from "./own-key";
+import type { IconManifest, SetManifest } from "../capture/manifest";
+import { swapProperties } from "./component-spec";
 
 type RadioIconButtonSize = keyof typeof radioIconButtonVariants.variants.size;
 
@@ -31,20 +23,8 @@ const SIZES = [
   "icon-lg",
 ] as const satisfies readonly RadioIconButtonSize[];
 
-function isSize(value: string | undefined): value is RadioIconButtonSize {
-  return ownKey(radioIconButtonVariants.variants.size, value);
-}
-
-function classesFor(cell: Cell): string {
-  const { size } = cell;
-  if (!isSize(size)) {
-    throw new Error(`Radio icon button has no size ${size ?? ""}`);
-  }
-  return radioIconButtonVariants({ size });
-}
-
 /** List, the first icon the docs demo places. */
-const ICON: IconSlot = {
+const ICON: IconManifest = {
   key: "icon",
   name: "Icon",
   side: "start",
@@ -55,37 +35,22 @@ const ICON: IconSlot = {
 };
 
 /**
- * A radio icon button in a group, as
- * `<RadioGroup><RadioIconButton value="list" aria-label="List"><List /></RadioIconButton></RadioGroup>`.
+ * The radio icon button's manifest, which the capture-backed build reads with
+ * `captures/radio-icon-button.json`, as
+ * `<RadioGroup><RadioIconButton value="list" aria-label="List"><List /></RadioIconButton></RadioGroup>`
+ * renders it.
  */
-export const RADIO_ICON_BUTTON: ComponentDefinition = {
+export const RADIO_ICON_BUTTON_MANIFEST: SetManifest = {
   key: "radio-icon-button",
   name: "Radio icon button",
   slot: "radio-icon-button",
-  rootKind: "base-ui-span",
   axes: [
     { name: "size", values: SIZES },
     { name: "checked", values: ["off", "on"] },
     { name: "state", values: ["rest", "hover", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",
-  classesFor,
-  states: {},
-  facts: BASE_UI_CHECKED_FACTS,
-  omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [ICON],
   swapProperties: swapProperties([ICON]),
-};
-
-/** The radio icon button's manifest, which the capture-backed build reads with `captures/radio-icon-button.json`. */
-export const RADIO_ICON_BUTTON_MANIFEST: SetManifest = {
-  key: "radio-icon-button",
-  name: "Radio icon button",
-  slot: "radio-icon-button",
-  axes: RADIO_ICON_BUTTON.axes,
-  columnAxis: "state",
-  label: undefined,
-  iconsFor: () => [ICON],
-  swapProperties: RADIO_ICON_BUTTON.swapProperties,
 };

@@ -1,4 +1,3 @@
-import type { LayerStyle } from "./cascade";
 /**
  * The parts the kit draws in no layer because CSS gives them no room and nothing to paint.
  *
@@ -17,6 +16,7 @@ import type { LayerStyle } from "./cascade";
  */
 import type { Cell, PartDefinition } from "./component-spec";
 import { evaluateLength, evaluateNumber } from "./css-values";
+import type { LayerStyle } from "./layer-style";
 
 /** Why an empty part draws in no layer. */
 export const EMPTY_PART =

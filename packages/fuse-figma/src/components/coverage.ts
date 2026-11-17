@@ -17,6 +17,15 @@
 export type CoverageOutcome = "bound" | "literal" | "dropped" | "unmapped" | "unshown";
 
 /** One declaration of one recipe class, with what the builder did with it. */
+/**
+ * A captured declaration a row accounts for: the cell's key, and the declaration's place and index
+ * in the cell, as `0/root/1#42`. The set's recorder collects these and keeps them out of the table.
+ */
+export type CapturedAt = { readonly cell: string; readonly declaration: string };
+
+/** A row as a recorder takes it: a coverage row with no component, and the declarations it accounts for. */
+export type RecordedRow = Omit<CoverageRow, "component"> & { readonly at?: readonly CapturedAt[] };
+
 export type CoverageRow = {
   readonly component: string;
   /**

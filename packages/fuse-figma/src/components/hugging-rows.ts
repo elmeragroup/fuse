@@ -8,10 +8,9 @@ import { isDeepStrictEqual } from "node:util";
 
 import { pixelsAcross } from "./box-sizing";
 import type { Room } from "./box-sizing";
-import type { LayerStyle } from "./cascade";
-import type { Cell, InstanceDefinition, PartDefinition } from "./component-spec";
 import type { VariableIndex } from "./css-values";
 import type { LimitsSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
+import type { LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 
 /**
@@ -38,22 +37,6 @@ export function drawsAtOwnWidth(
     inPlace.horizontal.kind === "hug" &&
     variant.horizontal.kind === "fill" &&
     isDeepStrictEqual(inPlace.vertical, variant.vertical)
-  );
-}
-
-/**
- * Whether a part is the row that sets its popup's width in a cell, or holds it in a frame part at any
- * depth, as a Dropdown menu group holds its widest row.
- *
- * @param part - A frame or an instance part.
- * @param cell - The cell of the set the part belongs to.
- * @returns True for the row and every frame around it.
- */
-export function holdsWidthRow(part: PartDefinition | InstanceDefinition, cell: Cell): boolean {
-  return (
-    part.setsWidth?.(cell) === true ||
-    (!("kind" in part) &&
-      (part.parts ?? []).some((child) => child.shownIn(cell) && holdsWidthRow(child, cell)))
   );
 }
 
@@ -123,23 +106,4 @@ export function rowRoom(inside: Room, across: SizeSpec | undefined, minimum: Num
   const sized =
     across === undefined ? inside : { ...inside, horizontal: { ...inside.horizontal, auto: across } };
   return across?.kind === "hug" && minimum !== undefined ? { ...sized, rowMinimum: minimum } : sized;
-}
-
-/**
- * The minimum width a part draws with: the popup's row minimum for the named row, as its own room
- * carries it, and none for any other part.
- *
- * @param part - A frame or an instance part.
- * @param cell - The cell of the set the part belongs to.
- * @param room - The room the part's box gives it.
- * @param measured - Whether a capture measured the part's element as the widest row.
- * @returns The minimum, or undefined.
- */
-export function namedMinimum(
-  part: PartDefinition | InstanceDefinition,
-  cell: Cell,
-  room: Room,
-  measured: boolean
-): NumberSpec | undefined {
-  return part.setsWidth?.(cell) === true || measured ? room.rowMinimum : undefined;
 }

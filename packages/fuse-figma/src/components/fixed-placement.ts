@@ -1,3 +1,5 @@
+import { evaluateLength, evaluateLengthOf, evaluatePercentage, inViewport, normalizeCss } from "./css-values";
+import type { Viewport } from "./css-values";
 /**
  * An instance part whose inner root is `position: fixed` in a declared viewport, inside a composite
  * that draws the same viewport, as an overlay's popup sits over its scrim. `fixedPlace` recognises
@@ -5,9 +7,7 @@
  * into the coverage table there, so both halves of the policy live here. `box-mapping.ts` calls
  * the first while it maps the part and the second once the part's room is known.
  */
-import type { LayerStyle } from "./cascade";
-import { evaluateLength, evaluateLengthOf, evaluatePercentage, inViewport, normalizeCss } from "./css-values";
-import type { Viewport } from "./css-values";
+import type { LayerStyle } from "./layer-style";
 import { translateShares } from "./placement";
 import type { Layout } from "./placement";
 

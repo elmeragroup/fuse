@@ -1,12 +1,12 @@
+import { evaluateLength, evaluateLengthOf, normalizeCss, splitTopLevel } from "./css-values";
+import { fixedLength } from "./kit-spec";
+import type { FrameLayerSpec, PivotSpec } from "./kit-spec";
 /**
  * An absolute part placed by its centre, as a Tooltip's arrow hangs from its popup's bottom edge, which
  * `placeParts` in `placement.ts` asks for before its other readers. The recognition and the coverage
  * rows it writes live together in `readPivot`.
  */
-import type { CoverageNote, LayerStyle } from "./cascade";
-import { evaluateLength, evaluateLengthOf, normalizeCss, splitTopLevel } from "./css-values";
-import { fixedLength } from "./kit-spec";
-import type { FrameLayerSpec, PivotSpec } from "./kit-spec";
+import type { CoverageNote, LayerStyle } from "./layer-style";
 import { MARGINS } from "./margin-box";
 import type { ParentBox } from "./placement";
 
