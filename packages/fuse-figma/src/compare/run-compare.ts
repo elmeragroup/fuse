@@ -90,8 +90,8 @@ export type ReportRow = {
   readonly unchangedByDesign: boolean;
   /**
    * How the markup the page mounted for a client cell differs from its definition: its first
-   * difference, as `markup-check.ts` reports one, or empty where it matches. A static cell's markup
-   * is checked by the kit's tests instead, so its row holds none. A row that holds any carries the
+   * difference, as `markup-check.ts` reports one, or empty where it matches. `kit-markup.test.ts`
+   * checks a static cell's markup instead, so its row holds none. A row that holds any carries the
    * `markup` flag.
    */
   readonly markup: readonly MarkupDiagnostic[];

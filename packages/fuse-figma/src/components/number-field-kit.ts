@@ -196,11 +196,15 @@ const STEPPERS: PartDefinition = {
   ],
 };
 
-/** The group, the field box around the input, the denomination and the steppers. */
+/**
+ * The group, the field box around the input, the denomination and the steppers. NumberField takes
+ * Base UI's `role="group"` off it and gives it no `data-slot`, so the part finds it by its
+ * `data-size`, which nothing else in the field carries.
+ */
 const GROUP: PartDefinition = {
   key: "group",
   slot: undefined,
-  element: { tag: "div", attributes: { role: "group" } },
+  element: { tag: "div", attributes: { "data-size": true } },
   shownIn: always,
   classesFor: (cell) => slots(cell).group(),
   label: undefined,

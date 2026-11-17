@@ -47,9 +47,9 @@ function inLocale(field: ReactElement): ReactElement {
  */
 const STEPPER_ALONE = [
   "[&_[data-slot=number-field-decrement]]:invisible",
-  "[&_[role=group]]:border-transparent!",
-  "[&_[role=group]]:bg-transparent!",
-  "[&_[role=group]]:shadow-none!",
+  "[&_[data-size]]:border-transparent!",
+  "[&_[data-size]]:bg-transparent!",
+  "[&_[data-size]]:shadow-none!",
 ] as const;
 
 /** A `number-field-stepper` cell: the field's increase stepper at rest, hovered, disabled at its bound or read-only. */

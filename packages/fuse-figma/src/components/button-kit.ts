@@ -115,14 +115,17 @@ const ONLY_ICON: IconSlot = {
   swapProperty: "Icon",
 };
 
-/** The spinner when the cell is pending, then the icons the cell's `icon` value places. */
+/**
+ * The icons the cell's `icon` value places, then the spinner when the cell is pending, in DOM
+ * order. Button renders the spinner after its children and `order-first` draws it first.
+ */
 function buttonIcons(cell: Cell): readonly IconSlot[] {
   const pending = cell.state === "pending" ? [SPINNER] : [];
   switch (cell.icon) {
     case "start":
-      return [...pending, START_ICON];
+      return [START_ICON, ...pending];
     case "end":
-      return [...pending, END_ICON];
+      return [END_ICON, ...pending];
     default:
       return pending;
   }
@@ -174,6 +177,8 @@ export const ICON_BUTTON: ComponentDefinition = {
   facts: new Map(),
   omittedStates: BUTTON_OMITTED_STATES,
   label: undefined,
-  iconsFor: (cell) => (cell.state === "pending" ? [SPINNER, ONLY_ICON] : [ONLY_ICON]),
+  // The icons sit in DOM order. Button renders the spinner after its children, and the recipe
+  // hides the icon while the spinner shows, so the kit draws the spinner alone.
+  iconsFor: (cell) => (cell.state === "pending" ? [ONLY_ICON, SPINNER] : [ONLY_ICON]),
   swapProperties: swapProperties([ONLY_ICON]),
 };
