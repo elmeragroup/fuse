@@ -447,6 +447,16 @@
         "className": "aria-expanded:text-secondary-foreground"
       }
     ],
+    "card": [
+      {
+        "part": "card-content",
+        "className": "[:where([data-slot=card-section])>&]:p-0"
+      },
+      {
+        "part": "card-header",
+        "className": "has-data-[slot=card-action]:grid-cols-[1fr_auto]"
+      }
+    ],
     "checkbox": [
       {
         "part": "checkbox",

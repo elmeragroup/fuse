@@ -18,6 +18,7 @@ import breadcrumbPage from "../../captures/breadcrumb-page.json" with { type: "j
 import breadcrumbSeparator from "../../captures/breadcrumb-separator.json" with { type: "json" };
 import breadcrumbTrail from "../../captures/breadcrumb-trail.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
+import card from "../../captures/card.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
 import comboboxItem from "../../captures/combobox-item.json" with { type: "json" };
@@ -156,6 +157,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["avatar-group", avatarGroup],
   ["meter", meter],
   ["empty", empty],
+  ["card", card],
   ["confirm-button", confirmButton],
   ["toggle", toggle],
   ["icon-toggle", iconToggle],

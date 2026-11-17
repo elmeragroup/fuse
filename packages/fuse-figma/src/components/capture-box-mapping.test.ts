@@ -301,6 +301,58 @@ describe("a grid that centers its content", () => {
   });
 });
 
+// Oracle: CSS Grid 1 §11.8 and CSS Sizing 3 §5.1. In a grid of indefinite height an `auto` row has
+// no free space to stretch into, and a block's min-content and max-content heights are both its
+// height at the column's width, so `min-content` rows are the items' heights. `align-items` places
+// an item down its row (CSS Box Alignment 3 §6.1), which a row as tall as its item leaves no room
+// for, and the unset `justify-items` still stretches each item across. A grid of fixed height has
+// free space that `auto` rows take, so the rule does not apply there.
+describe("a grid in one column whose rows hug", () => {
+  async function build(height: string) {
+    const { variant, coverage } = await buildChip(
+      `grid auto-rows-min items-start ${height}`,
+      [{ slot: "chip-dot", classes: "h-[4px]" }],
+      { parts: [part()], previewWidth: 256 }
+    );
+    const rows = coverage
+      .filter((row) => ["grid", "auto-rows-min", "items-start"].includes(row.className))
+      .map((row) => `${row.className}: ${row.outcome}`)
+      .toSorted();
+    return { root: variant?.root, rows };
+  }
+
+  it("draws a column whose items fill across, and drops the row size and alignment", async () => {
+    const { root, rows } = await build("");
+    expect(root?.direction).toEqual("VERTICAL");
+    expect(
+      root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
+    ).toEqual([FILL]);
+    expect(rows).toEqual(["auto-rows-min: dropped", "grid: literal", "items-start: dropped"]);
+  });
+
+  it("stays unmapped at a fixed height, where rows take the free space", async () => {
+    const { rows } = await build("h-[40px]");
+    expect(rows).toEqual(["auto-rows-min: unmapped", "grid: unmapped", "items-start: unmapped"]);
+  });
+});
+
+// Oracle: CSS Containment 2 §3.2. Inline-size containment sizes a box's width as if it held nothing,
+// which a width the parent stretches across never reads, and which shrinks a box that hugs its
+// content to nothing, which a Figma hug does not draw.
+describe("an inline-size container", () => {
+  it("drops the containment on a root that fills its preview", async () => {
+    const { coverage } = await buildChip("@container flex flex-col", [], { previewWidth: 256 });
+    expect(notesOf(coverage, "@container")).toEqual([
+      ["container-type", "dropped", "the width is fixed or stretched, so no content sizes it"],
+    ]);
+  });
+
+  it("leaves the containment unmapped on a root that hugs its width", async () => {
+    const { coverage } = await buildChip("@container inline-flex");
+    expect(notesOf(coverage, "@container").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
 // Oracle: CSS. A `relative` box stays where the flow puts it and only anchors positioned descendants,
 // which an auto layout has none of. `align-self` places a flex item across its parent's line, and a
 // component's root sits in no line: `auto` asks for nothing, while `stretch` asks for a length the

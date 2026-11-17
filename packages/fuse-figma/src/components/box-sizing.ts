@@ -533,10 +533,14 @@ export function absoluteRoom(holder: Holder): Room {
 
 /**
  * Whether a box is a column whose unset `align-items` stretches its layers across it, as CSS's
- * `normal` does for flex items.
+ * `normal` does for flex items, or a grid in one column, whose items its unset `justify-items`
+ * stretches across (CSS Box Alignment 3 §6.1), since a grid's `align-items` places them down.
  */
 function stretches({ style, layout }: Holder): boolean {
-  return layout.flex && layout.direction === "VERTICAL" && !style.has("align-items");
+  return (
+    layout.oneColumnGrid === true ||
+    (layout.flex && layout.direction === "VERTICAL" && !style.has("align-items"))
+  );
 }
 
 /**

@@ -393,6 +393,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "dialog-open", name: "Dialog (open)", variants: 1, previewed: 1 },
     ],
   },
+  // The default demo's vertical card at the default and the lg size.
+  { slug: "card", name: "Card", sets: [{ key: "card", name: "Card", variants: 2, previewed: 2 }] },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */
