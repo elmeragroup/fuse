@@ -1,0 +1,156 @@
+{
+  "set": "link",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows, under the definition's hand-written facts. The capture lists the class once: unmapped where no rule written for it matched any cell, or dropped where a transition explains it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "link",
+        "className": "html, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe definition modelled the host page's type on `<html>` by hand. The capture reads preflight's `line-height: 1.5` on `<html>`, and the build adds the browser's initial `medium` font size, 16px, which no rule declares. The link inherits both, as the `html` rows show."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "enabled-hover:decoration-current",
+        "property": "text-decoration-color",
+        "value": "currentcolor"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe source writes `currentcolor`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "enabled-hover:decoration-current",
+        "property": "text-decoration-color",
+        "value": "currentColor"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The shipped CSS writes `currentColor`. CSS keywords match ASCII case-insensitively, so both read as an underline in the text's own color."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "has-[>[data-icon]]:whitespace-nowrap",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "[&_svg]:inline",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "[&_svg]:align-[-0.125em]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "[&_svg:not([class\\*='size-'])]:size-[1em]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "[&>[data-icon=inline-end]]:ms-[0.25em]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "link",
+        "className": "[&>[data-icon=inline-start]]:me-[0.25em]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    }
+  ]
+}

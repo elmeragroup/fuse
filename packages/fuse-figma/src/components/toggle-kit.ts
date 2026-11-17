@@ -18,8 +18,9 @@
  */
 import { toggleVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
-import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import type { Cell, ComponentDefinition, IconSlot, LabelDefinition } from "./component-spec";
 import { ownKey } from "./own-key";
 
 type ToggleVariant = keyof typeof toggleVariants.variants.variant;
@@ -117,6 +118,15 @@ function toggleIcons(cell: Cell): readonly IconSlot[] {
  */
 export const TOGGLE_LABEL = "Toggle";
 
+/** The label, which the `Label` text property sets. */
+const LABEL: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: TOGGLE_LABEL,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 /** A Toggle with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side. */
 export const TOGGLE: ComponentDefinition = {
   key: "toggle",
@@ -135,13 +145,7 @@ export const TOGGLE: ComponentDefinition = {
   states: {},
   facts: FACTS,
   omittedStates: OMITTED_STATES,
-  label: {
-    key: "label",
-    name: "label",
-    characters: TOGGLE_LABEL,
-    textProperty: "Label",
-    shownIn: () => true,
-  },
+  label: LABEL,
   iconsFor: toggleIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };
@@ -161,4 +165,28 @@ export const ICON_TOGGLE: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [ONLY_ICON],
   swapProperties: swapProperties([ONLY_ICON]),
+};
+
+/** The Toggle's manifest, which the capture-backed build reads with `captures/toggle.json`. */
+export const TOGGLE_MANIFEST: SetManifest = {
+  key: "toggle",
+  name: "Toggle",
+  slot: "toggle",
+  axes: TOGGLE.axes,
+  columnAxis: "state",
+  label: LABEL,
+  iconsFor: toggleIcons,
+  swapProperties: TOGGLE.swapProperties,
+};
+
+/** The Icon toggle's manifest, which the capture-backed build reads with `captures/icon-toggle.json`. */
+export const ICON_TOGGLE_MANIFEST: SetManifest = {
+  key: "icon-toggle",
+  name: "Icon toggle",
+  slot: "toggle",
+  axes: ICON_TOGGLE.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [ONLY_ICON],
+  swapProperties: ICON_TOGGLE.swapProperties,
 };

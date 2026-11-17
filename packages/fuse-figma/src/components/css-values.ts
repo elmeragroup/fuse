@@ -353,14 +353,26 @@ export function evaluateLengthOf(value: string, basis: number): number | undefin
 }
 
 /**
+ * The largest single-precision float in pixels, to the six digits a minifier keeps. Fuse's built
+ * CSS writes `calc(infinity * 1px)` as this length, the largest one Chromium holds, so a capture
+ * reads `rounded-full` as `3.40282e38px`.
+ */
+const FLOAT_MAX_PX = /^3\.40282e\+?38px$/i;
+
+/**
  * Whether a value is an infinite length, such as the `calc(infinity * 1px)` that `rounded-full`
- * compiles to. CSS clamps it to the largest length the property allows.
+ * compiles to, or the largest float length a minifier writes for it. CSS clamps it to the largest
+ * length the property allows.
  *
  * @param value - A CSS value with no `var()` left in it.
  * @returns True for a length of positive infinity.
  */
 export function isInfiniteLength(value: string): boolean {
-  const evaluated = evaluate(normalizeCss(value));
+  const normalized = normalizeCss(value);
+  if (FLOAT_MAX_PX.test(normalized)) {
+    return true;
+  }
+  const evaluated = evaluate(normalized);
   return evaluated?.value === Number.POSITIVE_INFINITY && evaluated.unit === "px";
 }
 

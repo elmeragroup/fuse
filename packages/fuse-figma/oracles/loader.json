@@ -1,0 +1,59 @@
+{
+  "set": "loader",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.clips",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing here (`overflow` is `visible` initially, CSS Overflow 3 §3) and the set's root casts no shadow in any cell, so the capture-backed root leaves its layers unclipped, and a ring at its edge shows as in the browser. A root that casts a shadow still clips, since Figma draws a spread only from a clipping frame (PR2)."
+    }
+  ]
+}

@@ -38,6 +38,15 @@ export type ProbedBox = {
   readonly root: boolean;
   /** Whether a text node sits at or below the box. */
   readonly text: boolean;
+  /**
+   * Whether lengthening the box's text could widen it: some text node is the box's own, or every
+   * element between it and the box widened with it or is as wide as its parent's content box, which
+   * leaves its width to the elements above it, as a popup's rows do. Text in a box of a set width, as
+   * an avatar's initials, or in a visually hidden label, never widens a box above it, hugging or fixed.
+   */
+  readonly textReaches: boolean;
+  /** Whether the box's parent widened when the probe widened the element around the root. */
+  readonly parentWidened: boolean;
   readonly base: number;
   readonly wider: number;
   readonly longer: number;
@@ -102,8 +111,12 @@ export function inferKind(box: ProbedBox): InferredKind {
   if (box.wider - box.base > CHANGED) {
     return box.fixedInViewport ? "fill-viewport" : "fill";
   }
+  // Without text, a box narrower than its parent does not fill it, and otherwise only a parent that
+  // widened tells a box that fills it from one that does not.
+  const withoutText: InferredKind =
+    box.widened && (box.parentWidened || !box.tracksParent) ? "not-fill" : "unknown";
   if (!box.text) {
-    return box.widened ? "not-fill" : "unknown";
+    return withoutText;
   }
   if (box.tracksParent && !box.root) {
     return "tracks";
@@ -114,28 +127,46 @@ export function inferKind(box: ProbedBox): InferredKind {
   if (box.longer - box.base > CHANGED && box.capsAtParent && !box.root) {
     return "fits";
   }
-  return box.longer - box.base > CHANGED ? "hug" : "fixed";
+  if (box.longer - box.base > CHANGED) {
+    return "hug";
+  }
+  // A box that kept its width is fixed only where its text could have widened it.
+  return box.textReaches ? "fixed" : withoutText;
 }
 
 /**
+ * What else decides how a mapped layer's width behaves: whether it is an absolute layer whose
+ * horizontal constraint resizes it with its parent (`SCALE` or `STRETCH`), as Meter's fill keeps its
+ * share of the bar, and whether a literal maximum width holds it at the width the probe measured, as
+ * Empty's content sits at its `max-w-sm`.
+ */
+export type MappedWidth = {
+  readonly resizesWithParent: boolean;
+  readonly heldAtMaximum: boolean;
+};
+
+/**
  * Whether a mapped horizontal sizing agrees with what the probe inferred. A root that fills its host
- * draws fixed at the host's width, since a component's root has no parent in Figma.
+ * draws fixed at the host's width, since a component's root has no parent in Figma. A fixed layer
+ * that resizes with its parent agrees with a box that fills, and a filling layer held at its maximum
+ * agrees with a box that kept its width.
  *
  * @param inferred - The inferred kind.
  * @param mapped - The layer's horizontal sizing.
  * @param root - Whether the box is a set's root.
+ * @param width - What else decides the layer's width.
  * @returns True where they agree.
  */
-export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean): boolean {
+export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, width: MappedWidth): boolean {
   switch (inferred) {
     case "fill":
-      return mapped.kind === "fill" || (root && mapped.kind === "fixed");
+      return mapped.kind === "fill" || (mapped.kind === "fixed" && (root || width.resizesWithParent));
     case "fill-viewport":
       return mapped.kind === "fixed" || mapped.kind === "fill";
     case "hug":
       return mapped.kind === "hug";
     case "fixed":
-      return mapped.kind === "fixed";
+      return mapped.kind === "fixed" || (mapped.kind === "fill" && width.heldAtMaximum);
     case "not-fill":
       return mapped.kind !== "fill";
     case "tracks":
@@ -297,18 +328,33 @@ export async function probeCells(
             return [];
           }
           return [root, ...root.querySelectorAll("[data-slot]")].map((element) => {
-            const lengthened: { node: Node; text: string }[] = [];
+            const lengthened: { node: Node; text: string; between: { element: Element; width: number }[] }[] =
+              [];
             const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
             for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
               const text = node.textContent ?? "";
               if (text.trim() !== "") {
-                lengthened.push({ node, text });
-                node.textContent = text + longerBy;
+                // The elements from the text's own up to the box, which a longer text widens on its way.
+                const between: { element: Element; width: number }[] = [];
+                for (let up = node.parentElement; up !== null && up !== element; up = up.parentElement) {
+                  between.push({ element: up, width: up.getBoundingClientRect().width });
+                }
+                lengthened.push({ node, text, between });
               }
+            }
+            for (const { node, text } of lengthened) {
+              node.textContent = text + longerBy;
             }
             const measured = {
               width: element.getBoundingClientRect().width,
               parent: contentWidth(element.parentElement),
+              reaches: lengthened.some(({ between }) =>
+                between.every(
+                  ({ element: up, width }) =>
+                    up.getBoundingClientRect().width - width > 1 ||
+                    Math.abs(up.getBoundingClientRect().width - contentWidth(up.parentElement)) <= 1
+                )
+              ),
             };
             // Far longer, so a box that fits its text, as `w-fit` does, reaches its parent and wraps.
             for (const { node, text } of lengthened) {
@@ -332,6 +378,8 @@ export async function probeCells(
           slot: box.slot,
           root: box.root,
           text: box.text,
+          textReaches: longer[at]?.[index]?.reaches === true,
+          parentWidened: (wider[at]?.[index]?.parent ?? box.parent) - box.parent > 1,
           base: box.width,
           wider: wider[at]?.[index]?.width ?? box.width,
           longer: longer[at]?.[index]?.width ?? box.width,
@@ -422,7 +470,14 @@ export function contradictions(
       const inferred = inferKind(box);
       counts.set(inferred, (counts.get(inferred) ?? 0) + 1);
       const isRoot = layer === variant.root;
-      if (!agrees(inferred, layer.sizing.horizontal, isRoot)) {
+      const maximum = "limits" in layer ? layer.limits.maxWidth : undefined;
+      const constraint: string | undefined =
+        "absolute" in layer ? layer.absolute.constraints.horizontal : undefined;
+      const width: MappedWidth = {
+        resizesWithParent: constraint === "SCALE" || constraint === "STRETCH",
+        heldAtMaximum: maximum?.kind === "literal" && Math.abs(maximum.value - box.base) <= CHANGED,
+      };
+      if (!agrees(inferred, layer.sizing.horizontal, isRoot, width)) {
         found.push({ cell: variant.key, slot: box.slot, inferred, mapped: layer.sizing.horizontal.kind });
       }
     }

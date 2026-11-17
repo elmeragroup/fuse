@@ -157,6 +157,56 @@
       "reason": "The row's `*:[span]:last:gap-2` reaches the indicator, as select-item.json classifies."
     },
     {
+      "pattern": "Toggle / * / label: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as toggle.json classifies; Plan moves each Toggle label to centre."
+    },
+    {
+      "pattern": "Confirm button / * / label: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as confirm-button.json classifies; Plan moves each Confirm button label to centre."
+    },
+    {
+      "pattern": "Separator / orientation=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Skeleton / shape=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Loader / size=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Field legend / variant=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Field title / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Meter / mode=*, level=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Empty / variant=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Avatar / content=image, size=* / avatar-image: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "Chromium's default style sheet clips an `<img>`'s content, as avatar.json classifies."
+    },
+    {
       "pattern": "*: lay out * variants in * columns and * rows",
       "verdict": "fix-in-new",
       "reason": "Plan lays a set's variants out again once one of the changes above resizes a variant."

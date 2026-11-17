@@ -37,7 +37,14 @@ import {
   cn,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
+import type {
+  Cell,
+  ComponentDefinition,
+  InstanceDefinition,
+  LabelDefinition,
+  PartDefinition,
+} from "./component-spec";
 import { portraitPng } from "./portrait";
 
 /**
@@ -75,19 +82,22 @@ export const AVATAR_INITIALS = "AL";
 
 const holdsImage = (cell: Cell): boolean => cell.content === "image";
 
+/** The initials, which the `Label` text property sets. */
+const INITIALS: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: AVATAR_INITIALS,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 /** The initials Base UI renders while no image has loaded. */
 const FALLBACK: PartDefinition = {
   key: "fallback",
   slot: "avatar-fallback",
   shownIn: (cell) => !holdsImage(cell),
   classesFor: () => avatarFallbackClass,
-  label: {
-    key: "label",
-    name: "label",
-    characters: AVATAR_INITIALS,
-    textProperty: "Label",
-    shownIn: () => true,
-  },
+  label: INITIALS,
   iconsFor: () => [],
 };
 
@@ -169,5 +179,63 @@ export const AVATAR_GROUP: ComponentDefinition = {
   iconsFor: () => [],
   parts: AVATAR_GROUP_INITIALS.map(memberOf),
   undrawnChildren: () => 0,
+  swapProperties: [],
+};
+
+/** The avatar's parts as its manifest names them: the fallback's initials, or the portrait. */
+const AVATAR_PARTS: readonly PartManifest[] = [
+  {
+    key: "fallback",
+    slot: "avatar-fallback",
+    shownIn: (cell) => !holdsImage(cell),
+    label: INITIALS,
+    iconsFor: () => [],
+  },
+  {
+    key: "image",
+    slot: "avatar-image",
+    shownIn: holdsImage,
+    image: portraitPng,
+    label: undefined,
+    iconsFor: () => [],
+  },
+];
+
+/** The avatar's manifest, which the capture-backed build reads with `captures/avatar.json`. */
+export const AVATAR_MANIFEST: SetManifest = {
+  key: "avatar",
+  name: "Avatar",
+  slot: "avatar",
+  axes: AVATAR.axes,
+  columnAxis: "size",
+  label: undefined,
+  iconsFor: () => [],
+  parts: AVATAR_PARTS,
+  swapProperties: [],
+};
+
+/** An avatar of the group as a manifest names it, as {@link memberOf} draws it. */
+function memberManifest(initials: string): InstanceManifest {
+  return {
+    kind: "instance",
+    key: initials.toLowerCase(),
+    of: AVATAR_MANIFEST,
+    cell: () => ({ content: "fallback", size: "32" }),
+    properties: () => ({ text: { Label: initials } }),
+    shownIn: () => true,
+    exposed: true,
+  };
+}
+
+/** The group's manifest, which the capture-backed build reads with `captures/avatar-group.json`. */
+export const AVATAR_GROUP_MANIFEST: SetManifest = {
+  key: "avatar-group",
+  name: "Avatar group",
+  slot: "avatar-group",
+  axes: AVATAR_GROUP.axes,
+  columnAxis: "avatars",
+  label: undefined,
+  iconsFor: () => [],
+  parts: AVATAR_GROUP_INITIALS.map(memberManifest),
   swapProperties: [],
 };

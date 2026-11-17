@@ -17,6 +17,7 @@
  */
 import { buttonVariants, cn, confirmButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BUTTON_LABEL_SIZES, BUTTON_OMITTED_STATES, BUTTON_PENDING_ONLY_VARIANTS } from "./button-kit";
 import type { Cell, ComponentDefinition } from "./component-spec";
 
@@ -90,6 +91,28 @@ export const CONFIRM_BUTTON: ComponentDefinition = {
     textProperty: "Label",
     shownIn: () => true,
     textElement: { tag: "span", attributes: {} },
+  },
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/**
+ * The Confirm button's manifest, which the capture-backed build reads with
+ * `captures/confirm-button.json`. Its label names no element. ConfirmButton wraps the text in a
+ * `<span>` with no class, so the label takes the button's own type.
+ */
+export const CONFIRM_BUTTON_MANIFEST: SetManifest = {
+  key: "confirm-button",
+  name: "Confirm button",
+  slot: "button",
+  axes: CONFIRM_BUTTON.axes,
+  columnAxis: "state",
+  label: {
+    key: "label",
+    name: "label",
+    characters: CONFIRM_BUTTON_LABEL,
+    textProperty: "Label",
+    shownIn: () => true,
   },
   iconsFor: () => [],
   swapProperties: [],

@@ -20,11 +20,13 @@
  */
 import { cn, METER_CONSTANTS, meterToneCell, meterVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { IconManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type {
   Cell,
   ComponentDefinition,
   IconSlot,
   InlineDeclaration,
+  LabelDefinition,
   PartDefinition,
 } from "./component-spec";
 import { always } from "./popup-facts";
@@ -120,8 +122,8 @@ function slotsFor(cell: Cell) {
   return meterVariants({ tone: toneOf(cell).tone });
 }
 
-/** The status icon before the value, which the tone table names, or none. */
-function statusIcons(cell: Cell): readonly IconSlot[] {
+/** The status icon before the value, which the tone table names, or none, as a manifest names it. */
+function statusIconManifests(cell: Cell): readonly IconManifest[] {
   const { icon } = toneOf(cell);
   return icon === "none"
     ? []
@@ -134,9 +136,13 @@ function statusIcons(cell: Cell): readonly IconSlot[] {
           dataIcon: undefined,
           icon: STATUS_ICONS[icon],
           swapProperty: undefined,
-          classes: slotsFor(cell).icon(),
         },
       ];
+}
+
+/** The status icon before the value with the recipe's classes. */
+function statusIcons(cell: Cell): readonly IconSlot[] {
+  return statusIconManifests(cell).map((icon) => ({ ...icon, classes: slotsFor(cell).icon() }));
 }
 
 /**
@@ -153,13 +159,31 @@ export function fillStyleFor(cell: Cell): readonly InlineDeclaration[] {
   ];
 }
 
+/** The label's text, which the `Label` property sets. */
+const LABEL_TEXT: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: METER_LABEL,
+  textProperty: "Label",
+  shownIn: always,
+};
+
+/** The value's text, the share after a space, which no property sets. */
+const VALUE_TEXT: LabelDefinition = {
+  key: "value",
+  name: "value",
+  charactersFor: valueTextFor,
+  shownIn: always,
+  leadingSpace: true,
+};
+
 /** The label, Base UI's `Meter.Label`. */
 const LABEL: PartDefinition = {
   key: "label",
   slot: "meter-label",
   shownIn: always,
   classesFor: (cell) => slotsFor(cell).label(),
-  label: { key: "label", name: "label", characters: METER_LABEL, textProperty: "Label", shownIn: always },
+  label: LABEL_TEXT,
   iconsFor: () => [],
 };
 
@@ -172,7 +196,7 @@ const VALUE: PartDefinition = {
     const slots = slotsFor(cell);
     return cn(slots.labelValue(), slots.value());
   },
-  label: { key: "value", name: "value", charactersFor: valueTextFor, shownIn: always, leadingSpace: true },
+  label: VALUE_TEXT,
   iconsFor: statusIcons,
 };
 
@@ -230,5 +254,43 @@ export const METER: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [HEADER, BAR],
+  swapProperties: [],
+};
+
+/** The header's manifest: the row at the root's first place, which carries no `data-slot`. */
+const HEADER_MANIFEST: PartManifest = {
+  key: "header",
+  slot: undefined,
+  place: "meter/0",
+  shownIn: always,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    { key: "label", slot: "meter-label", shownIn: always, label: LABEL_TEXT, iconsFor: () => [] },
+    { key: "value", slot: "meter-value", shownIn: always, label: VALUE_TEXT, iconsFor: statusIconManifests },
+  ],
+};
+
+/** The bar's manifest, which holds the fill. */
+const BAR_MANIFEST: PartManifest = {
+  key: "bar",
+  slot: "meter-bar",
+  shownIn: always,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [{ key: "fill", slot: "meter-bar-fill", shownIn: always, label: undefined, iconsFor: () => [] }],
+};
+
+/** The meter's manifest, which the capture-backed build reads with `captures/meter.json`. */
+export const METER_MANIFEST: SetManifest = {
+  key: "meter",
+  name: "Meter",
+  slot: "meter",
+  axes: METER.axes,
+  columnAxis: "level",
+  previewWidth: METER_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [HEADER_MANIFEST, BAR_MANIFEST],
   swapProperties: [],
 };
