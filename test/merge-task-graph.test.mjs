@@ -1,16 +1,27 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, it } from "vitest";
 
 import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { asRecord, asString } from "./json-object.mjs";
+import { repoRoot } from "./repo-tree.mjs";
 import { readWorkflow, requiredJobSteps, requiredRunStep, turboTasks } from "./workflow.mjs";
 
 /** Gates that run only in the merge workflow's browser job. */
 const BROWSER_JOB_GATE = /#test:(browser|e2e|packed-consumer)$/;
 
+/**
+ * The one condition a gate may carry: the figma-compare job renders only when the self-check's
+ * inputs changed (.github/scripts/figma-compare-affected.sh).
+ * @type {Record<string, string>}
+ */
+const GATE_CONDITIONS = { "figma-compare": "steps.affected.outputs.run == 'true'" };
+
 /** @param {string} job */
 function turboRunStep(job) {
   const step = requiredRunStep(requiredJobSteps(readWorkflow("merge"), job), "pnpm exec turbo run ");
-  expect(step.if, `${job} gate must not be conditional`).toBeUndefined();
+  expect(step.if, `${job} gate must not be conditional`).toBe(GATE_CONDITIONS[job]);
   return step;
 }
 
@@ -90,13 +101,17 @@ it("the merge checks schedule all required gates without browser work", () => {
   expect(ids.filter((id) => BROWSER_JOB_GATE.test(id))).toEqual([]);
 }, 30_000);
 
-it("splits the ci:checks aggregate exactly between the checks and browser jobs", () => {
+it("splits the ci:checks aggregate exactly between the checks, browser and figma-compare jobs", () => {
   // Unit under test: merge's resolved job graphs. Oracle: turbo.json's ci:checks aggregate.
   // Shared builds count once; Fuse's no-op `ci:checks` and `check` anchors are not gates.
   const aggregate = executableTaskIds(resolvedTasks(["run", "ci:checks"])).filter(
     (id) => !AGGREGATE_ANCHORS.has(id)
   );
-  const scheduled = executableTaskIds([...scheduledTasks("checks"), ...scheduledTasks("browser")]);
+  const scheduled = executableTaskIds([
+    ...scheduledTasks("checks"),
+    ...scheduledTasks("browser"),
+    ...scheduledTasks("figma-compare"),
+  ]);
   expect([...new Set(scheduled)].sort()).toEqual([...new Set(aggregate)].sort());
 }, 30_000);
 
@@ -114,10 +129,11 @@ it("schedules every publish gate through the ci:checks aggregate", () => {
 
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
-  // the tasks this list names, which CI alone runs. Fuse's no-op aggregate anchors are not gates.
+  // the tasks this list names, which CI alone runs. `test:compare` is fuse-figma's self-check in
+  // Chromium, which takes minutes. Fuse's no-op aggregate anchors are not gates.
   // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json), and `pack` the
   // tarball only the packed-artifact tier reads.
-  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check", "pack"];
+  const ciOnly = ["test:e2e", "build:e2e", "test:compare", "test:packed-consumer", "package:check", "pack"];
   const gates = (/** @type {string} */ aggregate) =>
     new Set(executableTaskIds(resolvedTasks(["run", aggregate])).filter((id) => !AGGREGATE_ANCHORS.has(id)));
   const full = gates("ci:checks");
@@ -131,6 +147,47 @@ it("the local check gate is ci:checks without the e2e and packed-artifact tier",
   const expected = [...full].filter((id) => !ciOnly.some((task) => id.endsWith(`#${task}`)));
   expect([...local].sort()).toEqual(expected.sort());
 }, 60_000);
+
+it("the figma-compare job schedules fuse-figma's self-check and no other gate", () => {
+  // Its own runner keeps the minutes-long Chromium render out of the browser job.
+  const ids = executableTaskIds(scheduledTasks("figma-compare")).filter((id) => !id.endsWith("#build"));
+  expect(ids).toEqual(["@elmeragroup/fuse-figma#test:compare"]);
+  const others = executableTaskIds([...scheduledTasks("checks"), ...scheduledTasks("browser")]);
+  expect(others).not.toContain("@elmeragroup/fuse-figma#test:compare");
+}, 30_000);
+
+it("the figma-compare job's change gate covers every package and file its render needs", () => {
+  // Unit under test: .github/figma-compare-inputs.txt, the pathspecs the job's gate diffs. Oracles:
+  // the packages Turbo builds for the task, and the local action and scripts the job runs. Git
+  // matches the pathspecs, so a path the list leaves out or excludes fails here.
+  const pathspecs = readFileSync(join(repoRoot, ".github/figma-compare-inputs.txt"), "utf8")
+    .split("\n")
+    .filter((line) => line !== "" && !line.startsWith("#"));
+  const covered = new Set(
+    execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", ...pathspecs], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    })
+      .split("\n")
+      .filter((line) => line !== "")
+  );
+  const graph = turboTasks(["run", "test:compare", "--filter=@elmeragroup/fuse-figma"]);
+  const manifests = graph.map((task) => `${asString(task.directory, "task directory")}/package.json`);
+  expect(manifests).toContain("packages/fuse/package.json");
+  const steps = requiredJobSteps(readWorkflow("merge"), "figma-compare");
+  const localFiles = steps.flatMap((step) => {
+    const uses = step.uses === undefined ? "" : asString(step.uses, "step uses");
+    const run = step.run === undefined ? "" : asString(step.run, "step run");
+    return [
+      ...(uses.startsWith("./") ? [`${uses.slice(2)}/action.yml`] : []),
+      ...[...run.matchAll(/\.github\/scripts\/[\w.-]+/g)].map(([path]) => path),
+    ];
+  });
+  expect(localFiles).toContain(".github/actions/setup-playwright/action.yml");
+  for (const path of [...manifests, ...localFiles, ".github/workflows/merge.yml", "pnpm-lock.yaml"]) {
+    expect(covered, `.github/figma-compare-inputs.txt must cover ${path}`).toContain(path);
+  }
+}, 30_000);
 
 /** @type {Map<string, string[]> | undefined} */
 let testGraph;

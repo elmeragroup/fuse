@@ -1,0 +1,43 @@
+# What fuse-figma's `test:compare` self-check reads, as git pathspecs, one per line. The merge
+# workflow's figma-compare job renders only when one of these changed since its base
+# (.github/scripts/figma-compare-affected.sh). test/merge-task-graph.test.mjs checks that every
+# package the task's turbo graph builds is listed. A path listed too broadly costs a render; one
+# left out lets a change skip the check.
+
+# fuse-figma's sources and scripts
+packages/fuse-figma
+:(exclude)packages/fuse-figma/README.md
+:(exclude)packages/fuse-figma/test
+:(exclude)packages/fuse-figma/plugin
+:(exclude,glob)packages/fuse-figma/**/*.test.ts
+
+# The Fuse build the cells render, its build scripts, and the sources the kit reads directly
+packages/fuse/src
+:(exclude,glob)packages/fuse/src/**/*.test.*
+:(exclude,glob)packages/fuse/src/**/__snapshots__/**
+packages/fuse/scripts
+packages/fuse/package.json
+packages/fuse/tsconfig.json
+packages/fuse/tsdown.config.ts
+
+# The color package, which Fuse's theme and the kit import from source
+packages/color/src
+:(exclude,glob)packages/color/src/**/*.test.*
+packages/color/package.json
+
+# The TypeScript config the builds extend
+tooling/typescript
+
+# Dependencies and the task graph
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+patches
+turbo.json
+
+# The job and its setup
+.github/workflows/merge.yml
+.github/actions/setup-playwright
+.github/scripts/install-playwright-deps.sh
+.github/scripts/figma-compare-affected.sh
+.github/figma-compare-inputs.txt

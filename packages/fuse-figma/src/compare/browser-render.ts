@@ -1,7 +1,8 @@
 /// <reference lib="dom" />
 /**
- * The browser side of the comparison: Playwright's Chromium renders a preview's cells on one page
- * at device scale 2 and crops each cell with a transparent background.
+ * The browser side of the comparison: Playwright's Chromium renders a preview's cells at device
+ * scale 2, on pages no taller than `MAX_PAGE_HEIGHT` so Chromium paints every tile before a
+ * screenshot, and crops each cell with a transparent background.
  *
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
  * page shows its state at once and no pointer or focus moves between screenshots. The page forces
@@ -40,9 +41,11 @@ import {
   cellSelector,
   CLIENT_HIDDEN,
   fontSweepSelector,
+  MAX_PAGE_HEIGHT,
   MOUNTED,
   MOUNTED_DONE,
   PAGE_ORIGIN,
+  pageBatches,
   pageViewport,
   previewDocument,
   slotRect,
@@ -228,7 +231,9 @@ export class CompareBrowser {
   }
 
   /**
-   * Render one preview's cells.
+   * Render one preview's cells, on as many pages as keep each viewport within
+   * {@link MAX_PAGE_HEIGHT}, {@link PAGE_CONCURRENCY} at a time. Each page mounts, checks its fonts
+   * and forces its states on its own cells, as one page for the whole preview did.
    *
    * @param theme - The preview's theme.
    * @param requests - The cells.
@@ -240,26 +245,25 @@ export class CompareBrowser {
     requests: readonly CellRequest[],
     layout: PageLayout
   ): Effect.Effect<RenderedPreview, FontNotLoaded> {
-    return Effect.flatMap(
-      Effect.promise(() => this.#renderPreview(theme, requests, layout)),
-      Effect.fromResult
-    );
+    const batches = pageBatches(layout, requests, (request) => pageCellsOf([request]), MAX_PAGE_HEIGHT);
+    return Effect.forEach(
+      batches.length === 0 ? [[]] : batches,
+      (batch) =>
+        Effect.flatMap(
+          Effect.promise(() => this.#renderPage(theme, batch, layout)),
+          Effect.fromResult
+        ),
+      { concurrency: PAGE_CONCURRENCY }
+    ).pipe(Effect.map(mergePages));
   }
 
-  /** Playwright's side of {@link renderPreview}, which awaits the page. */
-  async #renderPreview(
+  /** Playwright's side of {@link renderPreview} for one page of cells, which awaits the page. */
+  async #renderPage(
     theme: PreviewTheme,
     requests: readonly CellRequest[],
     layout: PageLayout
   ): Promise<Result.Result<RenderedPreview, FontNotLoaded>> {
-    const pageCells: PageCell[] = [
-      ...requests.map(({ id, content, measured, span, height }) => ({ id, content, measured, span, height })),
-      ...requests.flatMap(({ id, resting, measured, span, height }) =>
-        resting === undefined
-          ? []
-          : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span, height }]
-      ),
-    ];
+    const pageCells = pageCellsOf(requests);
     const rects = slotRects(layout, pageCells);
     const stamps: ThemeStamps = themeStamps(theme);
     const html = previewDocument(stamps, pageCells, layout, this.#assets.hostCss);
@@ -303,6 +307,52 @@ export class CompareBrowser {
       await context.close();
     }
   }
+}
+
+/**
+ * How many pages of one preview render at once. Rendering is Chromium-bound, and a CI runner has 4
+ * vCPUs, so a few pages at a time keep them busy without starving the screenshots.
+ */
+const PAGE_CONCURRENCY = 3;
+
+/** The cells a page holds for its requests: each request's cell, then each resting twin. */
+function pageCellsOf(requests: readonly CellRequest[]): PageCell[] {
+  return [
+    ...requests.map(({ id, content, measured, span, height }) => ({ id, content, measured, span, height })),
+    ...requests.flatMap(({ id, resting, measured, span, height }) =>
+      resting === undefined
+        ? []
+        : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span, height }]
+    ),
+  ];
+}
+
+/**
+ * One preview from its pages: every page's cells, the fonts any page used, and the theme's
+ * background, which every page paints alike.
+ *
+ * @throws When two pages read different backgrounds, since the pages share one theme.
+ */
+function mergePages(pages: readonly RenderedPreview[]): RenderedPreview {
+  const [first] = pages;
+  if (first === undefined) {
+    throw new Error("a preview renders at least one page");
+  }
+  for (const { background } of pages) {
+    if (
+      background.r !== first.background.r ||
+      background.g !== first.background.g ||
+      background.b !== first.background.b
+    ) {
+      throw new Error("the pages of one preview read different theme backgrounds");
+    }
+  }
+  const fonts = [...new Set(pages.flatMap(({ font }) => (font === "" ? [] : font.split(", "))))];
+  return {
+    background: first.background,
+    font: fonts.join(", "),
+    cells: new Map(pages.flatMap(({ cells }) => [...cells])),
+  };
 }
 
 /** Wait for the client bundle to mount the client cells and their popups to settle. */

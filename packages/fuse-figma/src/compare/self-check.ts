@@ -1,5 +1,6 @@
 /**
- * An end-to-end check of the comparison itself, run by hand with `figma:compare --self-check`.
+ * An end-to-end check of the comparison itself, `figma:compare --self-check`, which CI runs as the
+ * package's `test:compare` task.
  * It renders every cell the kit's preview frames place in the browser, turns the crops into a
  * fake snapshot shaped like a Figma export, changes two cells, and compares the snapshot with a
  * second render.
@@ -317,15 +318,29 @@ function judgeSelfCheck(
       `#${String(index + 1)} ${row.preview} ${row.variant}: tolerant ${row.verdict.tolerantPercent.toFixed(3)}%, raw ${row.verdict.rawPercent.toFixed(3)}%, Δ ${String(row.verdict.widthDelta)}×${String(row.verdict.heightDelta)}, flags [${row.verdict.flags.join(", ")}]`
     );
   }
+  if (!topMatches) {
+    lines.push(
+      `expected at the top: ${expectedTop.map((expected) => `${expected.preview} ${expected.variant}`).join(", ")}`
+    );
+  }
   const rest = report.rows.slice(expectedTop.length);
   const worstTolerant = Math.max(0, ...rest.map((row) => row.verdict.tolerantPercent));
   const worstRaw = Math.max(0, ...rest.map((row) => row.verdict.rawPercent));
-  const flagged = rest.filter((row) => row.verdict.flags.length > 0);
-  lines.push(
-    `${String(rest.length)} other cells: worst tolerant ${worstTolerant.toFixed(3)}%, worst raw ${worstRaw.toFixed(3)}%, ${String(flagged.length)} flagged, ${String(report.skipped.length)} skipped`
+  // Every cell past the changed two must match exactly, so the console names each one that does
+  // not, with its flags and mismatch, and a CI log says which cells to open in the report.
+  const failing = rest.filter(
+    (row) => row.verdict.flags.length > 0 || row.verdict.tolerantPercent > 0 || row.verdict.rawPercent > 0
   );
-  for (const row of flagged.slice(0, 10)) {
-    lines.push(`  flagged: ${row.preview} ${row.variant} [${row.verdict.flags.join(", ")}]`);
+  lines.push(
+    `${String(rest.length)} other cells: worst tolerant ${worstTolerant.toFixed(3)}%, worst raw ${worstRaw.toFixed(3)}%, ${String(failing.length)} differ, ${String(report.skipped.length)} skipped`
+  );
+  for (const row of failing) {
+    lines.push(
+      `  differs: ${row.preview} ${row.variant}: tolerant ${row.verdict.tolerantPercent.toFixed(3)}%, raw ${row.verdict.rawPercent.toFixed(3)}%, Δ ${String(row.verdict.widthDelta)}×${String(row.verdict.heightDelta)}, flags [${row.verdict.flags.join(", ")}]`
+    );
+  }
+  for (const entry of report.skipped) {
+    lines.push(`  skipped: ${entry.preview} ${entry.variant}: ${entry.reason}`);
   }
   // A markup difference flags its cell, which fails the check above, and the line says what differs.
   for (const row of [...report.rows, ...report.skipped]) {
@@ -334,12 +349,7 @@ function judgeSelfCheck(
     }
   }
   const passed =
-    topMatches &&
-    worstTolerant === 0 &&
-    worstRaw === 0 &&
-    flagged.length === 0 &&
-    report.skipped.length === 0 &&
-    fillMismatches.length === 0;
+    topMatches && failing.length === 0 && report.skipped.length === 0 && fillMismatches.length === 0;
   lines.push(
     passed
       ? "Self-check passed: the two changed cells lead the report and every other cell matches exactly."

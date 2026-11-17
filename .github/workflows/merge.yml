@@ -11,9 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Jobs without their own grant (checks, browser) run dependency code on every PR and push,
-# so their token is read-only. The release and version jobs declare their own permissions,
-# which replace this default for those jobs.
+# Jobs without their own grant (checks, browser, figma-compare) run dependency code on every PR
+# and push, so their token is read-only. The release and version jobs declare their own
+# permissions, which replace this default for those jobs.
 permissions:
   contents: read
 
@@ -72,7 +72,8 @@ jobs:
             turbo-checks-
 
       # turbo.json ci:checks minus the browser, e2e and packed-consumer checks, which the browser
-      # job runs, so a unit or type failure does not wait on the browser suites.
+      # job runs, and fuse-figma's self-check, which the figma-compare job runs, so a unit or type
+      # failure does not wait on the browser suites.
       - name: turbo ci:checks (no browser)
         id: turbo-gate
         run: pnpm exec turbo run '//#lint:oxlint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check api:report
@@ -135,67 +136,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile --no-runtime
 
-      # The browser download is keyed on the Playwright version pnpm resolved, so a catalog bump
-      # misses once and every other run restores it. An unparsable version fails here rather than
-      # becoming a constant key that restores stale browsers after every bump.
-      - name: Resolve Playwright version
-        id: playwright
-        run: |
-          version="$(pnpm --filter @elmeragroup/fuse exec playwright --version | awk '{print $2}')"
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected playwright --version output: $version"; exit 1; }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-
       # The `browser-engines` project and the docs time-zone hydration suite run in WebKit as well
-      # as Chromium. Their system packages install in their own step, so either browser cache
-      # result shares the package cache.
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install chromium webkit
-
-      # The system packages' .debs are cached too: fetching them from the Ubuntu mirror has
-      # stalled runs for 40 minutes. A set only installs onto the dpkg state it was resolved
-      # against, so the key names the runner image as well as the Playwright version that lists
-      # the packages. The image variables come from the runner's environment, which the `env`
-      # context does not include.
-      - name: Resolve runner image
-        id: runner-image
-        run: |
-          if [ -z "${ImageOS:-}" ] || [ -z "${ImageVersion:-}" ]; then echo "::error::ImageOS or ImageVersion is unset"; exit 1; fi
-          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
-
-      - name: Restore Playwright system packages
-        id: deps-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # as Chromium.
+      - name: Set up Playwright
+        uses: ./.github/actions/setup-playwright
         with:
-          path: ${{ runner.temp }}/playwright-debs
-          key: playwright-debs-${{ steps.runner-image.outputs.image }}-${{ steps.playwright.outputs.version }}
-
-      # One bounded download on a miss; the script explains the limit. The step's limit is a
-      # backstop over that attempt and the offline install.
-      - name: Install Playwright system dependencies
-        id: playwright-deps
-        timeout-minutes: 6
-        env:
-          CACHE_HIT: ${{ steps.deps-cache.outputs.cache-hit }}
-          DEBS: ${{ runner.temp }}/playwright-debs
-        run: bash .github/scripts/install-playwright-deps.sh
-
-      # The script offers a set only after downloading it on a miss. Any ref saves, so a branch
-      # run restores its own entry. A PR falls back to main's, so it misses only while main has
-      # none for its image.
-      - name: Save Playwright system packages
-        if: steps.playwright-deps.outputs.save == 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/playwright-debs
-          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+          browsers: chromium webkit
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
       # results. A PR restores from its own branch first and falls back to main's. Every run on
@@ -236,6 +182,99 @@ jobs:
       # Turbo never evicts, so keep only the entries this run used before the cache saves. A
       # red gate still saves, so its successful tasks replay on the next attempt; a run whose
       # gate never started has nothing to prune or save.
+      - name: Prune turbo cache
+        id: prune-turbo-cache
+        if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+
+  # fuse-figma's `figma:compare --self-check` (packages/fuse-figma/README.md, "Comparing with the
+  # browser"). It renders every kit cell twice in Chromium, about 2 minutes on 4 vCPUs, in a job of
+  # its own so it can pass in seconds when what it reads did not change
+  # (.github/figma-compare-inputs.txt). On a pull request turbo also replays it until its task
+  # inputs change (packages/fuse-figma/turbo.json). It guards the Figma kit's tooling, not the
+  # published package, so publishing and deploys do not wait on it.
+  figma-compare:
+    runs-on: ubuntu-latest
+    # A hang guard: setup and a cold render take minutes.
+    timeout-minutes: 20
+    env:
+      # Per-attempt keys, restored by prefix, as in the browser job.
+      TURBO_CACHE_KEY: turbo-figma-compare-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A pull request compares with its base commit and a push to main with the commit it started
+      # from, so a docs-only change passes here in seconds. A manual run always renders. The
+      # script and its pathspecs say what counts.
+      - name: Decide whether the self-check's inputs changed
+        id: affected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash .github/scripts/figma-compare-affected.sh
+
+      - name: Setup pnpm
+        if: steps.affected.outputs.run == 'true'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node
+        if: steps.affected.outputs.run == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install
+        if: steps.affected.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile --no-runtime
+
+      - name: Set up Playwright
+        if: steps.affected.outputs.run == 'true'
+        uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+
+      - name: Restore turbo cache
+        if: ${{ steps.affected.outputs.run == 'true' && github.ref != 'refs/heads/main' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+          restore-keys: |
+            turbo-figma-compare-${{ github.sha }}-
+            turbo-figma-compare-
+
+      - name: turbo figma:compare self-check
+        id: turbo-gate
+        if: steps.affected.outputs.run == 'true'
+        run: pnpm exec turbo run test:compare
+        env:
+          TURBO_RUN_SUMMARY: "true"
+
+      # The log names each cell that differs; the report shows their pictures. The self-check's
+      # fake snapshot holds every cell's PNG again, so it stays behind.
+      - name: Upload the self-check report
+        if: ${{ failure() && steps.turbo-gate.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: figma-compare-self-check
+          path: |
+            packages/fuse-figma/.cache/figma-compare/self-check/report.html
+            packages/fuse-figma/.cache/figma-compare/self-check/report.json
+            packages/fuse-figma/.cache/figma-compare/self-check/cells/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Prune turbo cache
         id: prune-turbo-cache
         if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}

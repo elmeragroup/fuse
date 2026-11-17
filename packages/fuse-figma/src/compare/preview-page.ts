@@ -166,7 +166,7 @@ export function slotRects(
 }
 
 /**
- * The viewport that shows every slot, so no crop needs scrolling.
+ * The viewport that shows every slot of a page, so no crop needs scrolling.
  *
  * @param layout - The page layout.
  * @param cells - The cells, in page order.
@@ -181,6 +181,52 @@ export function pageViewport(
     width: Math.max(layout.columns * layout.slotWidth, ...rects.map((rect) => rect.x + rect.width)),
     height: Math.max(layout.top + layout.slotHeight, ...rects.map((rect) => rect.y + rect.height)),
   };
+}
+
+/**
+ * The tallest viewport a preview page takes, in CSS pixels: eight rows of slots and the top margin.
+ * Chromium rasterizes a page's compositor tiles under a memory budget, and a viewport that holds a
+ * whole preview, about 100,000px tall, outgrows it: on a 4-vCPU Linux runner a sixth of the crops
+ * came back with tiles not yet painted, blank or cut along a tile edge. Pages this tall paint every
+ * tile before each screenshot, and each screenshot costs a fifth as much.
+ */
+export const MAX_PAGE_HEIGHT = 3728;
+
+/**
+ * Split a preview's items into pages whose viewport stays within a height, in order. An item goes
+ * on the current page while the page's viewport, with the item's cells added, stays within the
+ * height; otherwise it starts the next page. An item taller than the height gets a page of its own.
+ *
+ * @param layout - The page layout.
+ * @param items - The items, in page order.
+ * @param cellsOf - The cells an item puts on its page, such as a cell and its resting twin.
+ * @param maxHeight - The tallest viewport a page may take.
+ * @returns The pages, each a run of items in order, together holding every item once.
+ */
+export function pageBatches<T>(
+  layout: PageLayout,
+  items: readonly T[],
+  cellsOf: (item: T) => readonly Pick<PageCell, "span" | "height">[],
+  maxHeight: number
+): readonly (readonly T[])[] {
+  const batches: T[][] = [];
+  let current: T[] = [];
+  let cells: Pick<PageCell, "span" | "height">[] = [];
+  for (const item of items) {
+    const next = [...cells, ...cellsOf(item)];
+    if (current.length > 0 && pageViewport(layout, next).height > maxHeight) {
+      batches.push(current);
+      current = [item];
+      cells = [...cellsOf(item)];
+    } else {
+      current.push(item);
+      cells = next;
+    }
+  }
+  if (current.length > 0) {
+    batches.push(current);
+  }
+  return batches;
 }
 
 /**

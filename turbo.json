@@ -62,6 +62,9 @@
     "test:e2e": {
       "dependsOn": ["build"]
     },
+    // CI-only, like `test:e2e`: fuse-figma's `figma:compare --self-check`, which renders every kit
+    // cell twice in Chromium. packages/fuse-figma/turbo.json declares its build and inputs.
+    "test:compare": {},
     "test:packed-consumer": {
       "dependsOn": ["pack"]
     },
@@ -91,10 +94,10 @@
     // `check` script has nothing left to run: `@elmeragroup/fuse` defines both as self-describing
     // no-ops that exist only so `turbo run <aggregate>` fans out to the dependency list.
     // `check` is the local gate; `ci:checks` is `check` plus the CI-only e2e and packed-artifact
-    // tier (`test:e2e`, `test:packed-consumer`, `package:check`), so it mirrors every gate the
-    // merge workflow runs.
+    // tier (`test:e2e`, `test:compare`, `test:packed-consumer`, `package:check`), so it mirrors every
+    // gate the merge workflow runs.
     "ci:checks": {
-      "dependsOn": ["check", "test:e2e", "test:packed-consumer", "package:check"]
+      "dependsOn": ["check", "test:e2e", "test:compare", "test:packed-consumer", "package:check"]
     },
     "check": {
       "dependsOn": [

@@ -91,7 +91,8 @@ Write a mechanical source contract, a test shape included, as a rule in
 `vitest related <files> --run --project unit` in the owning package. Lint through
 `pnpm lint`, which first builds what the type-aware rules read; a direct `oxlint` needs those
 outputs and `OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
-Before review, run `pnpm check`; CI adds the docs e2e and packed tier. For docs-app
+Before review, run `pnpm check`; CI adds the docs e2e, the packed tier and fuse-figma's
+`test:compare` self-check. For docs-app
 behavior, run `pnpm exec turbo run build:e2e --filter=docs`, then
 `pnpm --filter docs test:e2e test/<file>`.
 For exports, packaging or dependencies, run `package:check` and `test:packed-consumer`,

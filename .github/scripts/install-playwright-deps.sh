@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Installs the system packages Playwright's browsers need, from the restored .deb cache on a
-# hit and from the Ubuntu mirror otherwise. After a download on a miss it copies the .debs into
-# the cache directory and writes `save=true` to GITHUB_OUTPUT, so the workflow saves them; a
-# hit's key already holds a set, so it never offers one.
+# Installs the system packages that the Playwright browsers in BROWSERS need, such as
+# `chromium webkit`, from the restored .deb cache on a hit and from the Ubuntu mirror otherwise.
+# After a download on a miss it copies the .debs into the cache directory and writes `save=true`
+# to GITHUB_OUTPUT, so the workflow saves them; a hit's key already holds a set, so it never
+# offers one.
+: "${BROWSERS:?Set BROWSERS to the space-separated Playwright browsers}"
 : "${DEBS:?Set DEBS to the .deb cache directory}"
 : "${GITHUB_OUTPUT:?Set GITHUB_OUTPUT}"
 cache_hit="${CACHE_HIT:-false}"
+read -ra browsers <<<"$BROWSERS"
 playwright="$PWD/packages/fuse/node_modules/.bin/playwright"
 # apt's archive directory, where it keeps the .debs it downloads (/var/cache/apt/archives/).
 archive=""
@@ -41,7 +44,7 @@ download() {
   config="$(mktemp)"
   echo 'APT::Get::Download-Only "true";' >"$config"
   if sudo env "PATH=$PATH" "APT_CONFIG=$config" timeout --kill-after=30s 3m \
-    "$playwright" install-deps chromium webkit; then
+    "$playwright" install-deps "${browsers[@]}"; then
     return 0
   fi
   echo "::warning::Downloading Playwright system packages failed or took over 3 minutes"
