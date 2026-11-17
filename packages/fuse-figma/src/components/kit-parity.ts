@@ -100,12 +100,14 @@ export const KIT_PARITY = {
   combobox: {
     kind: "partial",
     sets: ["combobox-item", "combobox-empty", "combobox-popup", "combobox-open"],
-    missing: "The popup search field, chips, and the small input size.",
+    missing: "The popup search field, chips, the small input size, and the read-only fill.",
     issue: MISSING_SETS,
   },
   "combobox-field": {
-    kind: "composed",
-    from: ["label", "input-group", "combobox-popup", "combobox-item", "field-description", "field-error"],
+    kind: "partial",
+    sets: ["label", "input-group", "combobox-popup", "combobox-item", "field-description", "field-error"],
+    missing: "The read-only fill, the trigger and clear buttons together, and the input with neither button.",
+    issue: MISSING_SETS,
   },
   command: {
     kind: "partial",
@@ -174,7 +176,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["input-group"],
     missing:
-      "The `sm` size axis, block addons, a textarea, a kbd, and the trigger and clear buttons together.",
+      "The `sm` size axis, the read-only fill, block addons, a textarea, a kbd, and the trigger and clear buttons together.",
     issue: MISSING_SETS,
   },
   item: {
@@ -203,7 +205,7 @@ export const KIT_PARITY = {
   "number-field": {
     kind: "partial",
     sets: ["number-field-stepper", "number-field"],
-    missing: "The invalid focus ring.",
+    missing: "The `sm` size axis, and the invalid focus ring.",
     issue: MISSING_SETS,
   },
   pagination: {
@@ -243,10 +245,15 @@ export const KIT_PARITY = {
       "select-popup",
       "select-open",
     ],
-    missing: "A popup width other than 144px.",
+    missing: "A popup width other than 144px, and the read-only fill.",
     issue: MISSING_SETS,
   },
-  "select-field": { kind: "partial", sets: ["select-field"], missing: '`size="sm"`.', issue: MISSING_SETS },
+  "select-field": {
+    kind: "partial",
+    sets: ["select-field"],
+    missing: '`size="sm"`, and the read-only fill.',
+    issue: MISSING_SETS,
+  },
   "selection-item": { kind: "issue", issue: MISSING_SETS },
   separator: { kind: "sets", sets: ["separator"] },
   sheet: { kind: "issue", issue: MISSING_SETS },
@@ -283,7 +290,7 @@ export const KIT_PARITY = {
   "text-field": {
     kind: "partial",
     sets: ["text-field"],
-    missing: "The inline and card variants.",
+    missing: "The `sm` size axis, and the inline and card variants.",
     issue: MISSING_SETS,
   },
   textarea: {
