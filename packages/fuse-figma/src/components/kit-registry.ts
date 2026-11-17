@@ -23,6 +23,7 @@ import {
   BREADCRUMB_TRAIL_MANIFEST,
 } from "./breadcrumb-kit";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
+import { CALENDAR_DAY_MANIFEST } from "./calendar-day-kit";
 import { CARD_MANIFEST } from "./card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
 import {
@@ -240,6 +241,9 @@ const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
 
 /** The page Action bar sits on alone. */
 const ACTION_BAR_PAGE: KitPage = { slug: "action-bar", name: "Action bar", example: "action-bar" };
+
+/** The page the calendar sets sit on. */
+const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar", example: "calendar-day" };
 
 /** The page Sheet content sits on alone. */
 const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
@@ -824,5 +828,10 @@ export const KIT: readonly KitEntry[] = [
     page: SHEET_PAGE,
     previewCells: possibleCells(SHEET_CONTENT_MANIFEST),
     manifest: SHEET_CONTENT_MANIFEST,
+  },
+  {
+    page: CALENDAR_PAGE,
+    previewCells: possibleCells(CALENDAR_DAY_MANIFEST),
+    manifest: CALENDAR_DAY_MANIFEST,
   },
 ];

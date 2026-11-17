@@ -71,6 +71,11 @@ export type Layout = {
    */
   readonly oneColumnGrid?: true;
   /**
+   * True for a table, a row group, a row or a cell whose parts the capture measured tiling it, as
+   * `readTableFlow` in `table-layout.ts` reads it. Absent elsewhere.
+   */
+  readonly table?: true;
+  /**
    * True for a flex box of fixed or filling length whose `justify-content: space-between` the flow
    * leaves unread, since whether it spaces anything out depends on the layers it maps. The box mapping
    * reads it once they map, through `readSpaceBetween` in `box-flow.ts`. Absent elsewhere.
@@ -432,7 +437,16 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
       vertical: scaledSize(sizing.vertical, share),
     },
     limits: NO_LIMITS,
-    cornerRadius: scaled(cornerRadius, share),
+    cornerRadius:
+      cornerRadius.kind === "corners"
+        ? {
+            kind: "corners",
+            topLeft: scaled(cornerRadius.topLeft, share),
+            topRight: scaled(cornerRadius.topRight, share),
+            bottomRight: scaled(cornerRadius.bottomRight, share),
+            bottomLeft: scaled(cornerRadius.bottomLeft, share),
+          }
+        : scaled(cornerRadius, share),
     stroke: stroke === undefined ? undefined : scaledStroke(stroke, share),
   };
   return {
@@ -847,7 +861,14 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
         const scalable =
           literal(fixedLength(box.sizing.horizontal)) &&
           literal(fixedLength(box.sizing.vertical)) &&
-          literal(box.cornerRadius) &&
+          (box.cornerRadius.kind === "corners"
+            ? [
+                box.cornerRadius.topLeft,
+                box.cornerRadius.topRight,
+                box.cornerRadius.bottomRight,
+                box.cornerRadius.bottomLeft,
+              ].every(literal)
+            : literal(box.cornerRadius)) &&
           (box.stroke === undefined || "sides" in box.stroke || literal(box.stroke.weight)) &&
           box.shadows.length === 0 &&
           box.children.length === 0;

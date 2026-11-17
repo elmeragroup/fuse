@@ -27,6 +27,7 @@ const KEPT: ProbedBox = {
   base: 100,
   wider: 100,
   longer: 100,
+  longest: 100,
   tracksParent: false,
   overflows: false,
   fixedInViewport: false,
@@ -75,7 +76,12 @@ describe("inferKind", () => {
 });
 
 /** A layer's width as a plain frame in the flow decides it. */
-const PLAIN: MappedWidth = { resizesWithParent: false, heldAtMaximum: false, hugsMeasuredWidth: false };
+const PLAIN: MappedWidth = {
+  resizesWithParent: false,
+  heldAtMaximum: false,
+  hugsMeasuredWidth: false,
+  fixedAtMeasuredWidth: false,
+};
 
 describe("agrees", () => {
   it.each<readonly [string, InferredKind, "fixed" | "fill" | "hug", MappedWidth, boolean]>([
@@ -103,6 +109,20 @@ describe("agrees", () => {
       "hug",
       { ...PLAIN, hugsMeasuredWidth: true },
       true,
+    ],
+    [
+      "a layer fixed at the width the probe measured, which its text never widened, as a calendar day's button in the cell that hugs it, agrees with a box as wide as its parent",
+      "tracks",
+      "fixed",
+      { ...PLAIN, fixedAtMeasuredWidth: true },
+      true,
+    ],
+    [
+      "a fixed layer at another width contradicts a box as wide as its parent",
+      "tracks",
+      "fixed",
+      PLAIN,
+      false,
     ],
   ])("%s", (_rule, inferred, mapped, width, agreed) => {
     const sizing =
@@ -153,5 +173,48 @@ describe("a hug the probe measured at a kept width", () => {
 
   it("contradicts a Badge, which hugs its text, where the probe measured its width kept", () => {
     expect(foundAt("badge", 40)).toEqual(["fixed → hug"]);
+  });
+});
+
+// Oracle: the probe's own runs. A calendar day's `size-9` button sits as wide as the cell that hugs
+// it in every run; the fixed 36px the kit draws agrees only where the far longer text kept it at
+// 36px too, since a box that grows with far longer text, as an auto width under a `min-width` does
+// once its text passes the minimum, is no fixed layer.
+describe("a fixed layer as wide as the parent that hugs it", () => {
+  let built: BuiltSets;
+
+  beforeAll(async () => {
+    built = await builtKit();
+  }, 120_000);
+
+  const found = (longest: number) => {
+    const set = built.spec.componentSets.find((each) => each.key === "calendar-day");
+    const variant = set?.variants[0];
+    if (set === undefined || variant === undefined) {
+      throw new Error("the kit builds no calendar-day set");
+    }
+    const button: ProbedBox = {
+      ...KEPT,
+      slot: "calendar-day-button",
+      base: 36,
+      wider: 36,
+      longer: 36,
+      longest,
+      tracksParent: true,
+    };
+    return contradictions(
+      set,
+      new Map([[variant.key, { id: "cell", boxes: [button], gap: undefined }]]),
+      new Map([["calendar-day-button", "button"]]),
+      Result.getOrThrow(densityLengths("dense"))
+    ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
+  };
+
+  it("agrees where the far longer text kept the button at its 36px", () => {
+    expect(found(36)).toEqual([]);
+  });
+
+  it("contradicts the fixed width where the far longer text widened the box", () => {
+    expect(found(1264)).toEqual(["tracks → fixed"]);
   });
 });

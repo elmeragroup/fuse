@@ -552,6 +552,100 @@
         "className": "data-[side=top]:top-0"
       }
     ],
+    "calendar-day": [
+      {
+        "part": "calendar-day-button",
+        "className": "data-current:font-semibold"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selected:data-invalid:not-data-in-range:bg-error"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selected:data-invalid:not-data-in-range:text-error-foreground"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selection-end:data-invalid:bg-error"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selection-end:data-invalid:text-error-foreground"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selection-start:data-invalid:bg-error"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-selection-start:data-invalid:text-error-foreground"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-unavailable:line-through"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "data-unavailable:text-muted-foreground"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:not-data-in-range:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:not-data-in-range:text-[HighlightText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:text-[HighlightText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-end:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-end:text-[HighlightText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-start:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-start:text-[HighlightText]"
+      },
+      {
+        "part": "calendar-day-grid-cell",
+        "className": "data-in-range:data-invalid:bg-error/10"
+      },
+      {
+        "part": "calendar-day-grid-cell",
+        "className": "data-in-range:first:rounded-s-full"
+      },
+      {
+        "part": "calendar-day-grid-cell",
+        "className": "data-in-range:last:rounded-e-full"
+      },
+      {
+        "part": "calendar-day-grid-cell",
+        "className": "forced-colors:data-in-range:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-grid-cell",
+        "className": "forced-colors:data-in-range:data-invalid:bg-[Mark]"
+      }
+    ],
     "checkbox": [
       {
         "part": "checkbox",

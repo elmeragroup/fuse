@@ -57,6 +57,14 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   in every mode of {@link EVERY_MODE} once the faces its text needs there have loaded, so the
  *   maximum never narrows it. The page reads the lowered maximum back, so a maximum Chromium cannot
  *   lower, such as `min-content`, which makes the `calc()` invalid, records nothing.
+ * - `tableTiles`: a table, a row group, a row or a cell whose parts tile its content box with no
+ *   space between, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}: a table's or
+ *   a group's rows down it, each as wide as it; a row's cells across it, each as tall as it; a cell's
+ *   one child filling it and keeping its size where the cell shrinks to fit it as a block, so the
+ *   child sizes itself, or its own text at the width and height the cell sets itself; and a table,
+ *   a group or a row tiles only where each part it holds tiles in turn. Neither the
+ *   columns nor the rows (CSS 2.1 §17.5) stretch a cell past what it holds, and no border spacing
+ *   lies between them, so each box draws as an auto layout that hugs its parts.
  * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which with
  *   those margins at zero leaves at least {@link FREE_SPACE_CLEARANCE_PX} between its last item and
  *   its content box's end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the
@@ -189,10 +197,12 @@ const MEASURE_IN_PAGE = `async function () {
   };
   const maxContent = (element) => {
     const style = element.getAttribute("style");
-    element.style.width = "max-content";
-    const width = element.getBoundingClientRect().width;
-    if (style === null) { element.removeAttribute("style"); } else { element.setAttribute("style", style); }
-    return width;
+    try {
+      element.style.width = "max-content";
+      return element.getBoundingClientRect().width;
+    } finally {
+      if (style === null) { element.removeAttribute("style"); } else { element.setAttribute("style", style); }
+    }
   };
   const inFlow = (element) => !["absolute", "fixed"].includes(getComputedStyle(element).position) && getComputedStyle(element).display !== "none";
   // The auto margins of a flex container's items along its direction, as their computed values keep
@@ -298,6 +308,8 @@ const MEASURE_IN_PAGE = `async function () {
   }
   const underMaxWidth = [];
   const freeAlongMain = [];
+  const tableTiles = [];
+  const TABLE_BOXES = new Set(["table", "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-cell"]);
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
     const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
@@ -345,6 +357,7 @@ const MEASURE_IN_PAGE = `async function () {
     }
     if (style.maxWidth !== "none") { underMaxWidth.push({ element, path }); }
     if (style.display.endsWith("flex") && !style.flexWrap.startsWith("wrap") && autoMargins(element).length > 0) { freeAlongMain.push({ element, path }); }
+    if (TABLE_BOXES.has(style.display)) { tableTiles.push({ element, path }); }
     const [child, ...others] = element.children;
     const line = Number.parseFloat(style.lineHeight);
     if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
@@ -451,5 +464,77 @@ const MEASURE_IN_PAGE = `async function () {
     });
   };
   for (const { path } of await holdsInEveryMode(freeAlongMain, freeAlong)) { put(path, "freeAlongMain", true); }
+  // A table box whose parts tile its content box with no space between, each part as the box lays
+  // it out: a table or a row group its rows down it, each as wide as it, a row its cells across it,
+  // each as tall as it, and a cell its one child, or its own text at the cell's own length, so no
+  // column or row stretches a cell past what it holds.
+  const near = (left, right) => Math.abs(left - right) < ${String(LAYOUT_UNIT_PX)};
+  const contentBox = (element) => {
+    const box = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
+    return {
+      left: box.left + px("border-left-width") + px("padding-left"),
+      right: box.right - px("border-right-width") - px("padding-right"),
+      top: box.top + px("border-top-width") + px("padding-top"),
+      bottom: box.bottom - px("border-bottom-width") - px("padding-bottom"),
+    };
+  };
+  const marginBox = (element) => {
+    const box = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
+    return { left: box.left - px("margin-left"), right: box.right + px("margin-right"), top: box.top - px("margin-top"), bottom: box.bottom + px("margin-bottom") };
+  };
+  // A cell's own length on an axis where it sets one, as CSS Typed OM computes it: a length in px.
+  const ownLength = (element, property) => {
+    const value = element.computedStyleMap().get(property);
+    return value !== null && value !== undefined && "unit" in value && value.unit === "px" ? value.value : undefined;
+  };
+  const tiles = (element) => {
+    const display = getComputedStyle(element).display;
+    const inner = contentBox(element);
+    const parts = [...element.children].filter(inFlow);
+    if (display === "table-cell") {
+      const [only, ...rest] = parts;
+      if (only !== undefined) {
+        const outer = marginBox(only);
+        const fills = rest.length === 0 && ownText(element).length === 0 && near(outer.left, inner.left) && near(outer.right, inner.right) && near(outer.top, inner.top) && near(outer.bottom, inner.bottom);
+        if (!fills) { return false; }
+        // The child must keep its size where the cell shrinks to fit it as a block outside the table,
+        // so its own size, not the column's or the row's, is what the cell wraps.
+        const own = only.getBoundingClientRect();
+        return withStyles([
+          [element, "display", "block"],
+          [element, "width", "max-content"],
+          [element, "height", "auto"],
+        ], () => {
+          const alone = only.getBoundingClientRect();
+          return near(alone.width, own.width) && near(alone.height, own.height);
+        });
+      }
+      const box = element.getBoundingClientRect();
+      const width = ownLength(element, "width");
+      const height = ownLength(element, "height");
+      return width !== undefined && height !== undefined && near(box.width, width) && near(box.height, height);
+    }
+    const across = display === "table-row";
+    const wanted = across ? ["table-cell"] : ["table-row", "table-row-group", "table-header-group", "table-footer-group"];
+    if (parts.length === 0 || ownText(element).length > 0 || !parts.every((part) => wanted.includes(getComputedStyle(part).display))) {
+      return false;
+    }
+    let edge = across ? inner.left : inner.top;
+    for (const part of parts) {
+      const box = part.getBoundingClientRect();
+      const fits = across
+        ? near(box.left, edge) && near(box.top, inner.top) && near(box.bottom, inner.bottom)
+        : near(box.top, edge) && near(box.left, inner.left) && near(box.right, inner.right);
+      if (!fits) { return false; }
+      edge = across ? box.right : box.bottom;
+    }
+    // A row or a group hugs its parts only where each of them hugs what it holds in turn.
+    return near(edge, across ? inner.right : inner.bottom) && parts.every((part) => tiles(part));
+  };
+  for (const { path } of await holdsInEveryMode(tableTiles, tiles)) { put(path, "tableTiles", true); }
   return out;
 }`;

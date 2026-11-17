@@ -8,6 +8,7 @@
 
 import { Result } from "effect";
 
+import { cornerLengths } from "../../src/components/corner-spec.ts";
 import { checkKitSpec } from "../../src/components/kit-check.ts";
 import type { KitContradiction } from "../../src/components/kit-check.ts";
 import { fixedLength, walkLayers } from "../../src/components/kit-spec.ts";
@@ -61,7 +62,7 @@ function boxRefs(box: BoxSpec): BoundRef[] {
       box.paddingBottom,
       box.paddingLeft,
       box.itemSpacing,
-      box.cornerRadius,
+      ...cornerLengths(box.cornerRadius),
       box.stroke !== undefined && "weight" in box.stroke ? box.stroke.weight : undefined,
       ...box.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
       box.backgroundBlur,
@@ -74,7 +75,7 @@ function boxRefs(box: BoxSpec): BoundRef[] {
 function overrideRefs(override: InstanceOverride): BoundRef[] {
   switch (override.field) {
     case "cornerRadius":
-      return boundNumber(override.value);
+      return cornerLengths(override.value).flatMap(boundNumber);
     case "effects":
       return override.shadows.flatMap((shadow) => [
         ...boundNumber(shadow.radius),

@@ -162,3 +162,37 @@ describe("an auto margin between two layers", () => {
     expect(notesOf(coverage, margin).map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
+
+// Oracle: CSS Flexbox 1 §9.7. A row's item that grows from a zero basis takes the free space less
+// its own margins, so a frame that fills the row, padded by the margins, around the item that fills
+// it, draws the same widths. An item at `w-full` is the whole row's width and its margins reach past
+// the row (in a 200px row, `mx-[8px]` puts its right edge at 208px), which no filling frame draws.
+describe("margins on a row's growing item", () => {
+  it("draw as a filling frame padded by the margins, around the item that fills it", async () => {
+    const { variant, coverage } = await buildChip(
+      "flex w-[200px]",
+      [
+        { slot: "a", classes: "flex-1 h-[8px] mx-[8px]" },
+        { slot: "b", classes: "size-[20px]" },
+      ],
+      { parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" })] }
+    );
+    const frame = frameOf(variant?.root);
+    expect([frame?.sizing.horizontal, frame?.paddingLeft, frame?.paddingRight]).toEqual([
+      { kind: "fill" },
+      literal(8),
+      literal(8),
+    ]);
+    expect(frameOf(frame)?.sizing.horizontal).toEqual({ kind: "fill" });
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("stay unmapped on an item 100% as wide as the row", async () => {
+    const { coverage } = await buildChip(
+      "flex w-[200px]",
+      [{ slot: "chip-dot", classes: "w-full shrink-0 h-[8px] mx-[8px]" }],
+      { parts: [part()] }
+    );
+    expect(notesOf(coverage, "mx-[8px]").map(([, outcome]) => outcome)).toEqual(["unmapped", "unmapped"]);
+  });
+});

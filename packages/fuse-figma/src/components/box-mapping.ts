@@ -7,6 +7,7 @@
  */
 
 import type { BoxCascade, PartElement } from "./box-cascade";
+import { readCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
 import {
   HUGGING_ROWS_DETAIL,
@@ -52,7 +53,6 @@ import {
   describeNumber,
   evaluateLength,
   evaluateNumber,
-  isInfiniteLength,
   normalizeCss,
   readColor,
   readNumber,
@@ -62,6 +62,7 @@ import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
+import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, ZERO } from "./kit-spec";
@@ -102,6 +103,7 @@ import {
 import type { Layout } from "./placement";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
+import { tableDisplayDetail } from "./table-layout";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
 import type { CarriedTranslates } from "./translate-fold";
 
@@ -209,6 +211,16 @@ function readDisplay(
       "display",
       (value) => (centered ? value : undefined),
       () => ({ outcome: "literal", detail: "an auto layout around its one layer" }),
+      lays
+    );
+    return false;
+  }
+  const table = tableDisplayDetail(display, layout);
+  if (table !== undefined) {
+    reader.read(
+      "display",
+      (value) => value,
+      () => ({ outcome: "literal", detail: table }),
       lays
     );
     return false;
@@ -528,6 +540,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       lineFits: cascade.measured?.lineFits === true,
       trackFits: cascade.measured?.trackFits === true,
       freeAlongMain: cascade.measured?.freeAlongMain === true,
+      tableTiles: cascade.measured?.tableTiles === true,
     }
   );
   const { layout } = flow;
@@ -610,12 +623,21 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         ? absoluteRoom(holder)
         : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
-    // The one layer of a box fixed or filling on both axes leaves the box its size when it hides.
-    const keepsRoom =
-      index !== -1 &&
-      holder.layers.length === 1 &&
-      sizing.horizontal.kind !== "hug" &&
-      sizing.vertical.kind !== "hug";
+    // The one layer of a box leaves the box its size when it hides: a box fixed or filling on both
+    // axes keeps it, and one that hugs is drawn at the layer's literal size with its literal insets.
+    const hugs = (axis: "horizontal" | "vertical") => sizing[axis].kind === "hug";
+    const keepsRoom: KeptRoom =
+      index === -1 ||
+      holder.layers.length !== 1 ||
+      (["horizontal", "vertical"] as const).some((axis) => hugs(axis) && !literalInsets(reader, axis))
+        ? { kind: "none" }
+        : {
+            kind: "kept",
+            hugs: {
+              horizontal: hugs("horizontal"),
+              vertical: hugs("vertical"),
+            },
+          };
     return mapPart(
       part,
       room,
@@ -808,7 +830,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   }
   const mappedBox: BoxSpec = {
     direction: layout.direction,
-    sizing,
+    // A box whose one layer hides keeps the length that layer holds, which Figma's auto layout would
+    // give back where the box hugs it.
+    sizing: children.some((child) => child.kind === "frame" && child.hidden === true)
+      ? heldSizing(reader, { sizing, limits }, children)
+      : sizing,
     limits,
     clips,
     paddingTop: number("padding-top", "paddingTop") ?? ZERO,
@@ -825,7 +851,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         ? "MIN"
         : placement.primaryAlign),
     counterAlign,
-    cornerRadius: readCorner(reader, sizing, context) ?? ZERO,
+    cornerRadius:
+      readCorner(
+        reader,
+        { sizing, held: heldSizing(reader, { sizing, limits }, children) },
+        context.variables
+      ) ?? ZERO,
     ...paint,
     opacity: opacity ?? 1,
     children,
@@ -1031,7 +1062,7 @@ function mapPart(
   collapses: boolean,
   parent: LayerStyle,
   first: boolean,
-  keepsRoom: boolean
+  keepsRoom: KeptRoom
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
   const minimum = part.cascade.measured?.widest === true ? room.rowMinimum : undefined;
@@ -1080,16 +1111,10 @@ function mapPart(
     ...(scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : box),
   };
   const { optional } = part.child;
-  const hidden = optional === undefined && readHidden(part.cascade.style, keepsRoom);
-  const linked =
-    optional === undefined
-      ? hidden
-        ? { ...drawn, hidden: true as const }
-        : drawn
-      : { ...drawn, visibleProperty: optional.name };
+  const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
   const rotation = readRotation(part.cascade.style);
   const turned = rotation === undefined ? linked : { ...linked, rotation };
-  const layer = wrapFrameMargins(
+  const wrapped = wrapFrameMargins(
     part.cascade.style,
     turned,
     layout,
@@ -1097,8 +1122,22 @@ function mapPart(
     collapses,
     scope.clipsAround === true
   );
+  // The layer its box holds hides, the frame that draws the part's margins where it has one, once
+  // its size is known, since that is the size the box keeps.
+  const layer =
+    optional === undefined && readHidden(part.cascade.style, keepsRoom, wrapped)
+      ? { ...wrapped, hidden: true as const }
+      : wrapped;
   return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined };
 }
+
+/**
+ * Whether a box keeps its size with its part hidden: `none` where the part is not its one layer in
+ * flow, and `kept` with the axes the box hugs, which the box holds at the part's literal length.
+ */
+type KeptRoom =
+  | { readonly kind: "none" }
+  | { readonly kind: "kept"; readonly hugs: { readonly horizontal: boolean; readonly vertical: boolean } };
 
 /** Why a hidden part draws as a hidden layer. */
 const HIDDEN =
@@ -1110,19 +1149,31 @@ const HIDDEN =
  * in the layout (CSS Display 3 §4.1). Figma paints nothing of a hidden layer or of what it holds, but
  * its auto layout lays the layer out as if it were gone, so the two draw alike only where the room
  * the part keeps changes nothing: the part is the one layer of a box whose width and height are fixed
- * or fill, which keeps its size without it, as a calendar's day button in its cell. Anywhere else the
+ * or fill, which keeps its size without it, or that hugs it on an axis where the part has a literal
+ * length, as a calendar's outside day button holds its cell, so the box is drawn at that length and
+ * its insets, as `held-size.ts` reads it. Anywhere else the
  * value stays unread, so it lands unmapped, and so does a descendant's own `visibility: visible`,
  * which CSS shows inside the hidden box and Figma hides with it.
  *
  * @param style - The part's style.
  * @param keepsRoom - Whether the box that holds the part keeps its size with the part hidden.
+ * @param drawn - The layer the box holds for the part, its margin frame where it has one, whose literal
+ *   lengths a box that hugs it keeps.
  * @returns Whether the part draws hidden.
  */
-function readHidden(style: LayerStyle, keepsRoom: boolean): boolean {
+function readHidden(style: LayerStyle, keepsRoom: KeptRoom, drawn: FrameLayerSpec): boolean {
+  const literal = (axis: "horizontal" | "vertical"): boolean => {
+    const size = drawn.sizing[axis];
+    return size.kind === "fixed" && size.length.kind === "literal";
+  };
+  const kept =
+    keepsRoom.kind === "kept" &&
+    (!keepsRoom.hugs.horizontal || literal("horizontal")) &&
+    (!keepsRoom.hugs.vertical || literal("vertical"));
   return (
     style.read(
       "visibility",
-      (value) => (keepsRoom && normalizeCss(value) === "hidden" ? value : undefined),
+      (value) => (kept && normalizeCss(value) === "hidden" ? value : undefined),
       () => ({ outcome: "literal", detail: HIDDEN }),
       []
     ) !== undefined
@@ -1252,59 +1303,6 @@ function labelBox(
   const { ellipsisFits } = element.measured;
   const own = labelElementHolder(holder, element.style, label, growing, { ellipsisFits, rowClips: clips });
   return own === undefined ? box : { holder: own, ellipsisFits };
-}
-
-/**
- * Read `border-radius` as the corner. An infinite radius, which `rounded-full` compiles to, reads
- * as half a side. CSS scales down radii whose sum exceeds a side, so it draws any radius above half
- * the shorter side as that half. With both sides fixed, the build writes that half. With one side
- * fixed, it writes half that side: on 2026-10-22 a real file drew a radius above half the shorter
- * side as that half and kept the written value (probe P10), so Figma draws it as CSS does whichever
- * side ends up shorter. A box with no fixed side has no length to halve, so its pill corner stays
- * unmapped.
- *
- * @param sizing - The box's sizing.
- * @returns The corner, or undefined when the box sets none or it does not map.
- */
-function readCorner(reader: LayerStyle, sizing: SizingSpec, context: BuildContext): NumberSpec | undefined {
-  const width = fixedLength(sizing.horizontal);
-  const height = fixedLength(sizing.vertical);
-  const corner = reader.read(
-    "border-radius",
-    (value): { readonly radius: NumberSpec; readonly detail: string | undefined } | undefined => {
-      const radius = readNumber(value, context.variables);
-      if (radius !== undefined) {
-        return { radius, detail: undefined };
-      }
-      if (!isInfiniteLength(value)) {
-        return undefined;
-      }
-      if (width?.kind === "literal" && height?.kind === "literal") {
-        const half = Math.min(width.value, height.value) / 2;
-        return {
-          radius: { kind: "literal", value: half },
-          detail: `${half}px, half the shorter side, which CSS draws for any larger radius`,
-        };
-      }
-      const fixedSide =
-        width === undefined
-          ? { side: "height", length: height }
-          : height === undefined
-            ? { side: "width", length: width }
-            : undefined;
-      if (fixedSide?.length?.kind !== "literal") {
-        return undefined;
-      }
-      const half = fixedSide.length.value / 2;
-      return {
-        radius: { kind: "literal", value: half },
-        detail: `${half}px, half the fixed ${fixedSide.side}, which Figma and CSS cap at half the shorter side`,
-      };
-    },
-    ({ radius, detail }) => (detail === undefined ? describeNumber(radius) : { outcome: "literal", detail }),
-    reader.feed("cornerRadius")
-  );
-  return corner?.radius;
 }
 
 /** The share of a row an icon takes: its literal size, or `unread` for a bound one. */

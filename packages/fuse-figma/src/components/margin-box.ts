@@ -151,6 +151,11 @@ export function wrapInstanceMargins(
  * it there (CSS Overflow 3 §3), so it shows from the start margin to the column's end, as
  * `Sidebar.Separator`'s `data-horizontal:w-full mx-2` does in `Sidebar.Content`. There the frame also
  * pads a positive literal start margin, and the end margin drops, since it shows nothing.
+ *
+ * A flex item that fills its row and hugs across takes the row's free space with its margins (CSS
+ * Flexbox 1 §9.7), so a frame that fills the row and hugs across, padded by the margins, holds the
+ * item, which fills it along the row, as a calendar's `flex-1 mx-2` month heading sits between its
+ * buttons.
  */
 function drawMargins(
   style: LayerStyle,
@@ -190,13 +195,29 @@ function drawMargins(
       (!across || VERTICAL_MARGINS.has(property) || insetAcross || (overshoots && property === "margin-left"))
   );
   const fixedOrHugs = horizontal.kind !== "fill" && vertical.kind !== "fill";
+  // A flex item that fills its row along it and hugs across, as a heading's `flex-1` beside its
+  // buttons, takes the free space with its margins (CSS Flexbox 1 §9.7), which a frame that fills
+  // along the row and pads the margins draws around the item that fills it.
+  const grows =
+    !stretched &&
+    parent.flex &&
+    parent.direction === "HORIZONTAL" &&
+    growsFromZero(style) &&
+    horizontal.kind === "fill" &&
+    vertical.kind !== "fill";
   const length = (value: string): NumberSpec | undefined => {
     const spec = readNumber(value, variables);
     return spec?.kind === "literal" && spec.value < 0 ? undefined : spec;
   };
   const maps = set.every((property) => length(style.resolved(property) ?? "") !== undefined);
   const flows = parent.flex || (parent.blocks && !collapses);
-  if (set.length === 0 || !flows || outOfFlow(style) || !(fixedOrHugs || across || stretched) || !maps) {
+  if (
+    set.length === 0 ||
+    !flows ||
+    outOfFlow(style) ||
+    !(fixedOrHugs || across || stretched || grows) ||
+    !maps
+  ) {
     return undefined;
   }
   if (overshoots && style.has("margin-right") && !zero("margin-right")) {
@@ -234,9 +255,11 @@ function drawMargins(
     direction: across ? "VERTICAL" : stretched ? parent.direction : "HORIZONTAL",
     sizing: stretched
       ? stretchedFrame(parent.direction)
-      : across
+      : grows
         ? { horizontal: { kind: "fill" }, vertical: { kind: "hug" } }
-        : { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+        : across
+          ? { horizontal: { kind: "fill" }, vertical: { kind: "hug" } }
+          : { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
     limits: NO_LIMITS,
     clips: false,
     paddingTop: margin("margin-top"),
@@ -244,8 +267,8 @@ function drawMargins(
     paddingBottom: margin("margin-bottom"),
     paddingLeft: margin("margin-left"),
     itemSpacing: ZERO,
-    primaryAlign: across || stretched ? "MIN" : "CENTER",
-    counterAlign: across || stretched ? "MIN" : "CENTER",
+    primaryAlign: across || stretched || grows ? "MIN" : "CENTER",
+    counterAlign: across || stretched || grows ? "MIN" : "CENTER",
     cornerRadius: ZERO,
     fill: undefined,
     stroke: undefined,
@@ -264,6 +287,15 @@ function stretchedFrame(direction: Layout["direction"]): FrameLayerSpec["sizing"
   return direction === "HORIZONTAL"
     ? { horizontal: { kind: "hug" }, vertical: { kind: "fill" } }
     : { horizontal: { kind: "fill" }, vertical: { kind: "hug" } };
+}
+
+/**
+ * Whether a flex item grows from a zero basis with no width of its own, as `flex-1` sets it (CSS
+ * Flexbox 1 §7.1.1), so the row's free space less its margins is its width. A `100%` width fills
+ * the same row from the whole row's width and pushes its margins past it, so it is no such item.
+ */
+function growsFromZero(style: LayerStyle): boolean {
+  return normalizeCss(style.resolved("flex") ?? "") === "1" && !style.has("width");
 }
 
 /** Why the end margin of a part that overshoots its clipping column drops. */

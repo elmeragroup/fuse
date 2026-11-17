@@ -258,7 +258,9 @@ describe("fuseVariableSet", () => {
   });
 
   it("syncs the tints a Frame and a RangeCalendar paint with, as their roles at the tint's alpha", async () => {
-    const compiled = await Effect.runPromise(compileUtilities(["bg-muted/72", "bg-primary/20"]));
+    const compiled = await Effect.runPromise(
+      compileUtilities(["bg-muted/72", "bg-primary/20", "bg-primary/30"])
+    );
     const mixOf = (utility: string) =>
       compiled.rules
         .get(utility)
@@ -269,11 +271,13 @@ describe("fuseVariableSet", () => {
       scopes: ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       webSyntax: mixOf("bg-muted/72"),
     });
-    expect(spec("Fuse tokens", "primary/20")).toMatchObject({
-      type: "COLOR",
-      scopes: ["ALL_FILLS", "STROKE_COLOR"],
-      webSyntax: mixOf("bg-primary/20"),
-    });
+    for (const share of [20, 30]) {
+      expect(spec("Fuse tokens", `primary/${String(share)}`)).toMatchObject({
+        type: "COLOR",
+        scopes: ["ALL_FILLS", "STROKE_COLOR"],
+        webSyntax: mixOf(`bg-primary/${String(share)}`),
+      });
+    }
     // Fjordkraft's neutral light theme takes `:root`'s `--muted: oklch(0.97 0.0013 106.42)` and
     // `--primary: oklch(0.16 0 0)` in themes.css, which are sRGB 0.9609 0.9609 0.9571 and 0.0518 on
     // every channel through the OKLab reference matrices, worked by hand.
@@ -284,9 +288,11 @@ describe("fuseVariableSet", () => {
     };
     const muted = channels("muted/72");
     const primary = channels("primary/20");
+    const hovered = channels("primary/30");
     for (const [color, [r, g, b], a] of [
       [muted, [0.9609, 0.9609, 0.9571], 0.72],
       [primary, [0.0518, 0.0518, 0.0518], 0.2],
+      [hovered, [0.0518, 0.0518, 0.0518], 0.3],
     ] as const) {
       expect(color.r).toBeCloseTo(r, 3);
       expect(color.g).toBeCloseTo(g, 3);

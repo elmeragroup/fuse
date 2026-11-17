@@ -8,6 +8,8 @@
  * designer renames it.
  */
 
+import type { CornerRadiusSpec } from "./corner-spec";
+
 /** The shared plugin data namespace for every key the plugin writes. */
 export const PLUGIN_DATA_NAMESPACE = "fuse";
 
@@ -473,7 +475,7 @@ export type InstanceOverride =
       readonly field: "textAlign";
       readonly horizontal: TextAlignSpec["horizontal"];
     }
-  | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: NumberSpec }
+  | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly path: readonly string[]; readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
 
 /**
@@ -619,7 +621,7 @@ export type BoxSpec = {
   readonly primaryAlign: PrimaryAlignSpec;
   /** Where the children sit across the direction, as `align-items` places them. */
   readonly counterAlign: CounterAlignSpec;
-  readonly cornerRadius: NumberSpec;
+  readonly cornerRadius: CornerRadiusSpec;
   readonly fill: FillSpec | undefined;
   readonly stroke: StrokeSpec | undefined;
   /**

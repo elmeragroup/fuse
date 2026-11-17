@@ -407,6 +407,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Sheet",
     sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 1 }],
   },
+  // One day of the month grid, by where it sits in the selection, its state and whether it is outside.
+  {
+    slug: "calendar",
+    name: "Calendar",
+    sets: [{ key: "calendar-day", name: "Calendar day", variants: 17, previewed: 17 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

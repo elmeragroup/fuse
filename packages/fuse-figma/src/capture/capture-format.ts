@@ -115,6 +115,11 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   freeAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * A table box whose rows, cells or one child tile its content box with no space between, in every
+   * density and theme, so no column or row stretches a cell past what it holds.
+   */
+  tableTiles: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * The element's line box holds its one inline-level child with no height or baseline offset of
    * its own, by a margin of 1px above and below: its content box's top and bottom edges are the
    * child's margin box's at its line height and at 2px more.
@@ -208,6 +213,12 @@ const CapturedCellSchema = Schema.Struct({
    * open composite's anchor and popup, or its backdrop and popup.
    */
   roots: Schema.NonEmptyArray(CapturedRootSchema),
+  /**
+   * Set on a state the page forced where no rule written for it matched this cell, while another
+   * cell of the set reaches the same state: the component leaves the state unstyled here, so the
+   * cell draws as its resting twin, as a selected calendar day's hover does.
+   */
+  drawsAsRest: Schema.optionalKey(Schema.Literal(true)),
 });
 
 /** One cell of a capture. */
@@ -332,6 +343,7 @@ export function formatCapture(capture: SetCapture): string {
       [
         ["key", JSON.stringify(cell.key)],
         ["cell", JSON.stringify(cell.cell)],
+        ...(cell.drawsAsRest === true ? ([["drawsAsRest", "true"]] as const) : []),
         [
           "roots",
           list(

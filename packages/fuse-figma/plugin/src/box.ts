@@ -7,7 +7,7 @@
 import { ringFill } from "../../src/components/kit-spec.ts";
 import type { BoxSpec, LimitsSpec, SideStroke } from "../../src/components/kit-spec.ts";
 import {
-  cornerField,
+  planCorners,
   LAYOUT_SIZING,
   near,
   planLayoutSizing,
@@ -193,7 +193,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
       spec.itemSpacing
     );
   });
-  planNumber(run, node, label, cornerField(node), spec.cornerRadius);
+  planCorners(run, node, label, spec.cornerRadius);
 
   // Figma paints a later layer above an earlier one, and the first on top with the field true (PZ2).
   const firstOnTop = spec.firstOnTop === true;

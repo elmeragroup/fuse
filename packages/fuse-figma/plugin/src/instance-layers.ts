@@ -24,6 +24,7 @@
 
 import { Effect } from "effect";
 
+import type { CornerRadiusSpec } from "../../src/components/corner-spec.ts";
 import { layerAt, ringFill, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
@@ -31,7 +32,6 @@ import type {
   InstanceLayerSpec,
   InstanceOverride,
   NestedPropertiesSpec,
-  NumberSpec,
   ShadowSpec,
   TextLayerSpec,
   VariantSpec,
@@ -40,15 +40,7 @@ import { planAnchoring } from "./anchoring.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
-import {
-  cornerField,
-  planLimit,
-  planNumber,
-  planPaints,
-  planScalar,
-  planEffects,
-  planVisibleLink,
-} from "./fields.ts";
+import { planCorners, planLimit, planPaints, planScalar, planEffects, planVisibleLink } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
 import type { InnerSpecs } from "./fonts.ts";
@@ -400,7 +392,7 @@ const planNested = Effect.fnUntraced(function* (
 /** An override the plan writes: the spec's, or the inner variant's own value for one it dropped. */
 type OverrideWrite =
   | { readonly field: "fill" | "strokeColor" | "textColor" | "glyph"; readonly paint: FillSpec | undefined }
-  | { readonly field: "cornerRadius"; readonly value: NumberSpec }
+  | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] }
   | { readonly field: "textAlign"; readonly horizontal: TextLayerSpec["align"]["horizontal"] };
 
@@ -475,7 +467,7 @@ function planOverride(run: Run, layer: HeldLayer, write: OverrideWrite): void {
     }
     case "cornerRadius": {
       const box = boxOf(layer, write.field);
-      planNumber(run, box, label, cornerField(box), write.value);
+      planCorners(run, box, label, write.value);
       return;
     }
     case "effects":

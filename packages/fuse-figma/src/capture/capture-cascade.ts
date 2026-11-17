@@ -2002,6 +2002,7 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
         : undefined,
     underMaxWidth: facts?.underMaxWidth === true,
     freeAlongMain: facts?.freeAlongMain === true,
+    tableTiles: facts?.tableTiles === true,
     widest: facts?.widest === true,
     holdsWidest: holds(element),
     lineFits: facts?.lineFits === true,

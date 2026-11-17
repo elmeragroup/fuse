@@ -161,12 +161,27 @@ describe("a part capped at its parent's height", () => {
 // Oracle: CSS Flexbox 1 §9.4 step 11, where an unset `align-items` stretches an auto-width item across
 // a column. A column that hugs its width is as wide as its widest layer, and Figma shrinks a layer
 // that fills a hugging frame, so the stretch has no Figma form and the missing alignment fails the gate.
+// A column that holds one layer is that layer's width (§9.2), so its stretch moves nothing.
 describe("a flex column", () => {
-  it("records the alignment a column that hugs its width is missing", async () => {
-    const { variant, coverage } = await buildWithDot("flex flex-col", "h-[4px]");
+  it("draws a column that hugs its one layer as it is, with no align-items missing", async () => {
+    const { coverage } = await buildWithDot("flex flex-col", "h-[4px]");
+    expect(coverage.filter((row) => row.property === "align-items" && row.outcome === "unmapped")).toEqual(
+      []
+    );
+  });
+
+  it("records the alignment a column that hugs its width is missing around two layers", async () => {
+    const { variant, coverage } = await buildChip(
+      "flex flex-col",
+      [
+        { slot: "chip-dot", classes: "h-[4px]" },
+        { slot: "chip-end", classes: "h-[4px]" },
+      ],
+      { parts: [part(), part({ key: "end", slot: "chip-end" })] }
+    );
     expect(
       variant?.root.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
-    ).toEqual([HUG]);
+    ).toEqual([HUG, HUG]);
     expect(coverage).toContainEqual(
       expect.objectContaining({ className: "flex-col", property: "align-items", outcome: "unmapped" })
     );
@@ -490,7 +505,13 @@ describe("a box's margin", () => {
   it.each([
     ["a negative margin", "flex", "size-[8px] -mt-1", "-mt-1", "margin-top"],
     ["a margin in a parent that is no flex box", "block", "size-[8px] mt-1", "mt-1", "margin-top"],
-    ["a margin beside a fill", "flex w-[100px]", "flex-1 h-[8px] ml-1", "ml-1", "margin-left"],
+    [
+      "a margin beside a fill down a column",
+      "flex flex-col h-[100px]",
+      "flex-1 w-[8px] mt-1",
+      "mt-1",
+      "margin-top",
+    ],
   ])("leaves %s on a part unmapped", async (_, parent, part, className, property) => {
     const { coverage } = await buildWithDot(parent, part);
     expect(notesOf(coverage, className)).toEqual([[property, "unmapped", expect.any(String)]]);
