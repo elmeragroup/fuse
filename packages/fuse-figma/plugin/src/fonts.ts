@@ -92,8 +92,13 @@ function isAlias(value: VariableValue): value is VariableAlias {
  * mode, and so does every alias the variable follows. It fails with `FileNotSynced` where the
  * file's variables do not resolve: a variable outside any collection, one without a value in the
  * mode, an alias to a variable the file lacks, or an alias cycle.
+ *
+ * @param figma - The plugin API.
+ * @param variable - The variable.
+ * @param pageModes - The modes the page pins, or none for each collection's default mode.
+ * @returns The value the variable resolves to.
  */
-const resolveOnPage = Effect.fnUntraced(function* (
+export const resolveOnPage = Effect.fnUntraced(function* (
   figma: PluginAPI,
   variable: Variable,
   pageModes: PageNode["explicitVariableModes"]

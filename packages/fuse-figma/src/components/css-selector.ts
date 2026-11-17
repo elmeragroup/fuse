@@ -1,6 +1,7 @@
 /**
- * Reading the selectors Tailwind prints: the class a rule leads with, with its escapes read, and the
- * class a spacing rule styles every child but the last of.
+ * Reading the selectors Tailwind prints: the class a rule leads with, with its escapes read, the
+ * class a spacing rule styles every child but the last of, and the class a `*:` or `**:` rule styles
+ * the children or descendants of.
  */
 
 /**
@@ -47,4 +48,26 @@ export function exceptLastChildClass(selector: string): string | undefined {
   const opening = ":where(";
   const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
   return inner?.rest === " > :not(:last-child))" ? inner.name : undefined;
+}
+
+/** The elements below its own that a class's rule styles: its children, or all its descendants. */
+export type BelowReach = "children" | "descendants";
+
+/**
+ * The class whose rule styles only the elements below it, as Tailwind compiles `*:text-sm` to
+ * `:is(.\*\:text-sm > *)` for the children and `**:text-sm` to `:is(.\*\*\:text-sm *)` for every
+ * descendant: one `:is()` around the class, then the child or the descendant combinator and `*`.
+ *
+ * @param selector - The rule's selector.
+ * @returns The class and what it reaches, or undefined for a rule of any other shape.
+ */
+export function belowClass(
+  selector: string
+): { readonly name: string; readonly reach: BelowReach } | undefined {
+  const opening = ":is(";
+  const inner = selector.startsWith(opening) ? leadingClass(selector.slice(opening.length)) : undefined;
+  if (inner?.rest === " > *)") {
+    return { name: inner.name, reach: "children" };
+  }
+  return inner?.rest === " *)" ? { name: inner.name, reach: "descendants" } : undefined;
 }

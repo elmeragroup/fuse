@@ -326,6 +326,12 @@ export function forkFile(source: FileState): FileState {
     collections: [...collections.values()],
     variables,
     images: new Set(source.images),
+    textStyles: source.textStyles.map((style) => ({
+      ...style,
+      font: { ...style.font },
+      bindings: new Map(style.bindings),
+      sharedData: new Map(style.sharedData),
+    })),
   };
   // A removed layer an instance replaced can still be the parent, main or main layer a record
   // names, so the copy takes every record the file's records reach, and the node table only the

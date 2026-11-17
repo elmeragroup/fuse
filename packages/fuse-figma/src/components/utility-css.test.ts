@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { compileUtilities } from "./utility-css";
+import { compileUtilities, elementReach } from "./utility-css";
 
 describe("compileUtilities", () => {
   it("reads each utility's declarations from Tailwind's build of fuse.css", async () => {
@@ -54,5 +54,34 @@ describe("compileUtilities", () => {
       initialValue: "0 0 #0000",
       inherits: false,
     });
+  });
+});
+
+// Oracle: Tailwind compiles `uppercase` to `.uppercase`, `[&]:uppercase` to the plain rule
+// `.\[\&\]\:uppercase` although the class carries a variant, `sm:uppercase` inside `@media (width >= 40rem)`,
+// `*:text-sm` to `:is(.\*\:text-sm > *)` and `**:text-sm` to `:is(.\*\*\:text-sm *)`, and an
+// unknown utility to nothing.
+describe("elementReach", () => {
+  const reachOf = async (className: string) =>
+    elementReach(await Effect.runPromise(compileUtilities([className])), className);
+
+  it("applies a plain rule of a class with no variant", async () => {
+    const reach = await reachOf("uppercase");
+    expect(reach.kind === "own" ? reach.rule.declarations : reach).toEqual([
+      { property: "text-transform", value: "uppercase" },
+    ]);
+  });
+
+  it.each([
+    ["*:text-sm", { kind: "below", reach: "children" }],
+    ["**:text-sm", { kind: "below", reach: "descendants" }],
+    ["[&]:uppercase", { kind: "unread", reason: "it carries the variant `[&]:`" }],
+    ["sm:uppercase", { kind: "unread", reason: "it carries the variant `sm:`" }],
+    [
+      "no-such-utility",
+      { kind: "unread", reason: "Tailwind compiles no rule that selects it alone, outside any condition" },
+    ],
+  ])("reads %s as the compile places it", async (className, expected) => {
+    expect(await reachOf(className)).toEqual(expected);
   });
 });
