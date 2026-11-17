@@ -266,6 +266,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"ellipsisFits":true},
                   "children": []
                 }
               ]
@@ -365,6 +366,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"ellipsisFits":true},
                   "children": []
                 }
               ]

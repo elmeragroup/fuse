@@ -98,10 +98,13 @@ export type BoxCascade = {
    * the text layer's.
    *
    * @param element - Whether the label is the box's last layer, and the label's key.
-   * @returns The element's style, or undefined where no rule of a class above it reaches it, so the
-   *   label reads this box's style.
+   * @returns The element's style and what the capture measured of it, or undefined where no rule of a
+   *   class above it reaches it, so the label reads this box's style.
    */
-  labelElement(element: { readonly last: boolean; readonly key: string }): LayerStyle | undefined;
+  labelElement(element: {
+    readonly last: boolean;
+    readonly key: string;
+  }): { readonly style: LayerStyle; readonly measured: MeasuredBox } | undefined;
   /**
    * Cascade an icon this box shows, over what this box passes down.
    *
@@ -137,6 +140,8 @@ export type MeasuredBox = {
   readonly holdsWidest: boolean;
   /** The box's line box adds no height or baseline offset to its one inline-level child. */
   readonly lineFits: boolean;
+  /** The box ends its one line in an ellipsis with room for its first character and the ellipsis. */
+  readonly ellipsisFits: boolean;
 };
 
 /**

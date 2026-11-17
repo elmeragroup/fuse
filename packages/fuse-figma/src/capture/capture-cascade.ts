@@ -1708,7 +1708,10 @@ class CaptureBoxCascade implements BoxCascade {
    * @returns The element's style, or undefined where no rule of a class above it reaches it, so the
    *   label reads this box's style.
    */
-  labelElement(element: { readonly last: boolean; readonly key: string }): LayerStyle | undefined {
+  labelElement(element: {
+    readonly last: boolean;
+    readonly key: string;
+  }): { readonly style: LayerStyle; readonly measured: MeasuredBox } | undefined {
     const box = this.#placed.at(-1);
     if (box === undefined || !element.last) {
       return undefined;
@@ -1734,7 +1737,10 @@ class CaptureBoxCascade implements BoxCascade {
       appliedOf(this.#read, held.declarations, placed, () => true),
       this.#layer
     );
-    return new LayerStyle(this.#ledger, layer, [...this.path, element.key]);
+    return {
+      style: new LayerStyle(this.#ledger, layer, [...this.path, element.key]),
+      measured: measuredBox(held, this.#read.declarations),
+    };
   }
 
   icon(slot: IconSlot): LayerStyle {
@@ -1997,5 +2003,6 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     widest: facts?.widest === true,
     holdsWidest: holds(element),
     lineFits: facts?.lineFits === true,
+    ellipsisFits: facts?.ellipsisFits === true,
   };
 }

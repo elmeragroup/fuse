@@ -593,7 +593,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     reader.missing(missing.property, missing.neededBy, missing.detail);
   }
   const clamp = readLineClamp(holder, label);
-  const labelHolder = label === undefined ? holder : labelBox(holder, cascade, label, growing);
+  const labelSource = labelBox(holder, cascade, label, growing, clips);
+  const labelHolder = labelSource.holder;
   const labelScope = (shown: LabelDefinition): LabelScope => {
     const own: LabelScope = {
       cell,
@@ -603,6 +604,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       variant,
       path: [...cascade.path, shown.key],
       fitsOneLine,
+      ellipsisFits: labelSource.ellipsisFits,
     };
     // A TEXT value gave the label other characters in place, so its layout follows its variant's.
     return shown === box.label || box.label === undefined
@@ -1144,18 +1146,31 @@ function sizingInside(
  *
  * @param holder - The box.
  * @param cascade - The box's cascade, which cascades the label's element.
- * @param label - The label the box shows in the cell.
+ * @param label - The label the box shows in the cell, or undefined for none.
  * @param growing - The index of the box's layer that grows, or undefined for none.
- * @returns The holder whose style and layout the label maps from.
+ * @param clips - Whether the box clips what overflows it.
+ * @returns The holder whose style and layout the label maps from, and whether the capture measured
+ *   room there for the label's first character and an ellipsis.
  */
 function labelBox(
   holder: Holder,
   cascade: BoxCascade,
-  label: LabelDefinition,
-  growing: number | undefined
-): Holder {
+  label: LabelDefinition | undefined,
+  growing: number | undefined,
+  clips: boolean
+) {
+  const box = { holder, ellipsisFits: cascade.measured?.ellipsisFits === true };
+  if (label === undefined) {
+    return box;
+  }
   const element = cascade.labelElement({ last: holder.layers.at(-1) === label.name, key: label.key });
-  return element === undefined ? holder : (labelElementHolder(holder, element, label, growing) ?? holder);
+  if (element === undefined) {
+    return box;
+  }
+  // The measurement is the element's whose style the label maps from.
+  const { ellipsisFits } = element.measured;
+  const own = labelElementHolder(holder, element.style, label, growing, { ellipsisFits, rowClips: clips });
+  return own === undefined ? box : { holder: own, ellipsisFits };
 }
 
 /**

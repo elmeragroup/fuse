@@ -169,3 +169,32 @@ describe("the elements the capture finds lying exactly behind a root", () => {
     });
   });
 });
+
+/**
+ * Unit under test: `measuredFacts`'s `ellipsisFits`, for a `truncate` span holding `Dashboard` in 14px
+ * Arial. Oracle: Chromium's rendering of the same span, read on 2026-11-17 for U3.5: in an 8px box it
+ * draws part of the `D`, in 16px `D` and part of the ellipsis, and in 40px `Dash…`, so only the
+ * widest box draws a whole ellipsis after its first character, where a Figma text's ellipsis sits.
+ */
+describe("a one-line ellipsis the capture measures with room", () => {
+  /** Whether the page function records `ellipsisFits` on the span in a box of the width given. */
+  async function fits(width: number) {
+    await page.setContent(
+      `<main data-compare-cell><div id="root" style="font:14px/20px Arial"><span style="display:block;width:${String(width)}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Dashboard</span></div></main>`
+    );
+    const cdp = await page.context().newCDPSession(page);
+    const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+    const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
+    const facts = await measuredFacts(cdp, nodeId);
+    await cdp.detach();
+    return facts.get("0")?.ellipsisFits === true;
+  }
+
+  it.each([
+    [8, false],
+    [16, false],
+    [40, true],
+  ])("holds in a %ipx box: %s", async (width, held) => {
+    expect(await fits(width)).toBe(held);
+  });
+});

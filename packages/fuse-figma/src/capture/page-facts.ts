@@ -22,6 +22,11 @@ import { coincidingAround } from "./coinciding-around.ts";
  * - `oneLine`: an element under a `max-width` whose own text sits on one line, or a wrapping flex
  *   row whose items do.
  * - `underMaxHeight`: an element more than half a pixel under its `max-height`.
+ * - `ellipsisFits`: an element that ends its one line of text in an ellipsis, `text-overflow:
+ *   ellipsis` on a box that hides its overflow and keeps to one line, whose content box is at least
+ *   a pixel wider than its first character and the ellipsis together. Chromium keeps the first
+ *   character of a line however narrow the box and sets the ellipsis after it, both clipped at the
+ *   box, so only a box that holds both draws what a Figma text that ends in an ellipsis draws.
  * - `coincidingAround`, on the root: how many of the elements around it, innermost first, lie
  *   exactly behind it, as {@link coincidingAround} decides from their boxes and the paint the page
  *   counts. An element's other child counts as reaching the root where its box or a box below it
@@ -209,6 +214,17 @@ const MEASURE_IN_PAGE = `function () {
         for (const rect of range.getClientRects()) { tops.add(Math.round(rect.top)); }
       }
       if (tops.size === 1) { put(path, "oneLine", true); }
+    }
+    const text = style.textOverflow === "ellipsis" && style.overflowX !== "visible" && (style.textWrapMode === "nowrap" || style.whiteSpace === "nowrap") ? (element.textContent ?? "").trim() : "";
+    if (text !== "") {
+      const [first] = new Intl.Segmenter().segment(text);
+      const probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre";
+      probe.textContent = (first?.segment ?? "") + "\u2026";
+      element.append(probe);
+      const need = probe.getBoundingClientRect().width;
+      probe.remove();
+      if (contentWidth(element) >= need + 1) { put(path, "ellipsisFits", true); }
     }
     if (style.maxHeight !== "none" && element.getBoundingClientRect().height + 0.5 < Number.parseFloat(style.maxHeight)) {
       put(path, "underMaxHeight", true);

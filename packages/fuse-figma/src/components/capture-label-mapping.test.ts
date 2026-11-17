@@ -59,6 +59,10 @@ function labelled(fields: PartFields = {}): PartManifest {
   return part({ label: LABEL, ...fields });
 }
 
+/** Why a narrow label span's clip stays unmapped in a row that does not clip. */
+const NARROW_SPAN =
+  "the label's element clips its text at its own edge, where a label with no room for its ellipsis hugs its text, and the row does not clip it at that edge";
+
 /** Build a chip whose root wins the text style and `classes` and holds the label itself. */
 function buildLabelled(classes: string, root: Partial<FixtureElement> = {}, label: LabelManifest = LABEL) {
   return buildCaptured(
@@ -274,17 +278,64 @@ describe("a label that ends in an ellipsis", () => {
   // Oracle: CSS Overflow 3 §3.2 and CSS Overflow 4 §4.2. In a block of a fixed width, `truncate`
   // keeps the text on one line and ends it in an ellipsis, and `line-clamp-2` ends it in one after its
   // second line. Figma's `textTruncation: "ENDING"` with `maxLines` cuts a text that fills its frame
-  // the same way, and the kit writes both from the label's `truncation`.
+  // the same way, and the kit writes both from the label's `truncation`. A one-line ellipsis needs the
+  // capture's measurement that the box holds its first character and the ellipsis, as a 120px box
+  // holds `B…`.
   it.each([
     ["truncate", 1],
     ["line-clamp-2", 2],
   ])(
     "ends a label that fills a 120px block in an ellipsis after its lines under %s",
     async (classes, maxLines) => {
-      const { variant } = await buildLabelled(`block w-[120px] ${classes}`);
+      const { variant } = await buildLabelled(`block w-[120px] ${classes}`, {
+        measured: { ellipsisFits: true },
+      });
       expect(textOf(variant?.root)?.truncation).toEqual({ maxLines });
     }
   );
+
+  // Oracle: Chromium's rendering of `Dashboard` in 14px type under `truncate`, read on 2026-11-17 for
+  // U3.5: in an 8px box it draws part of the `D`, in a 16px box `D` and part of the ellipsis, and in
+  // 24px `D…`. It keeps the first character however narrow the box, where a Figma text that ends in
+  // an ellipsis draws the ellipsis alone, as the collapsed Sidebar row drew `…` for a browser's `D`.
+  // A box the capture did not measure with room for the first character and the ellipsis takes none.
+  it("draws no ellipsis in a box the capture did not measure with room for its first character and the ellipsis", async () => {
+    const { variant, coverage } = await buildLabelled("block w-[8px] truncate");
+    expect(textOf(variant?.root)?.truncation).toBeUndefined();
+    expect(notesOf(coverage, "truncate")).toContainEqual([
+      "text-overflow",
+      "unmapped",
+      "the box has no room for its first character and the ellipsis, where Chromium draws both clipped at the box and a Figma text draws the ellipsis alone",
+    ]);
+  });
+
+  // Oracle: CSS Overflow 3 §3. A label's `<span>` that hides its overflow clips its text at its own
+  // edge, so in an 8px row Chromium draws part of the first character and nothing past the span. A
+  // hugging Figma text keeps its whole width, and only a frame around it that clips cuts it off. With
+  // no ellipsis to draw, the label hugs, so the span's clip draws only where the row's frame clips at
+  // the span's end: a row that clips with no end padding, as the large collapsed Sidebar row. A row
+  // that does not clip, or clips at a padding edge past the span, shows text Chromium hides.
+  it.each([
+    ["unmapped in a row that does not clip", "flex w-[8px]", ["overflow", "unmapped", NARROW_SPAN]],
+    [
+      "unmapped in a row that clips past its end padding",
+      "flex w-[8px] overflow-hidden pr-[4px]",
+      ["overflow", "unmapped", NARROW_SPAN],
+    ],
+    [
+      "drawn by a row that clips",
+      "flex w-[8px] overflow-hidden",
+      ["overflow", "literal", "the label's element clips its text at the room the row leaves it"],
+    ],
+  ])("leaves the clip of a narrow label span %s", async (_, classes, note) => {
+    const truncate = "[&>span:last-child]:truncate";
+    const { coverage } = await buildLabelled(classes, {
+      text: "",
+      carried: truncate,
+      children: [{ tag: "span", text: "Label", textIndex: 0, fromParent: truncate }],
+    });
+    expect(notesOf(coverage, truncate)).toContainEqual(note);
+  });
 
   it("leaves a clamp in a box that hugs up to a max-width unmapped", async () => {
     const detail =

@@ -97,6 +97,11 @@ const MeasuredFactsSchema = Schema.Struct({
    * whose background the root then shows.
    */
   coincidingAround: Schema.optionalKey(Schema.Finite),
+  /**
+   * The element ends its one line in an ellipsis, and its content box holds its first character and
+   * the ellipsis by a pixel, so the browser draws the ellipsis where a Figma text's would sit.
+   */
+  ellipsisFits: Schema.optionalKey(Schema.Literal(true)),
   /** The element stays more than half a pixel under its `max-height`. */
   underMaxHeight: Schema.optionalKey(Schema.Literal(true)),
   /**

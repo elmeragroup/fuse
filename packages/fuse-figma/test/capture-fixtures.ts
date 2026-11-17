@@ -12,6 +12,7 @@ import { Effect } from "effect";
 
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "../src/capture/capture-format.ts";
 import type {
+  MeasuredFacts,
   CapturedDeclaration,
   CapturedElement,
   DeclarationSource,
@@ -60,6 +61,8 @@ export type FixtureElement = {
   readonly carried?: string;
   /** Declarations written out, which win after the classes' own. */
   readonly written?: readonly Written[];
+  /** What the capture measured of the element in the browser, as `ellipsisFits`. */
+  readonly measured?: MeasuredFacts;
   readonly children?: readonly FixtureElement[];
 };
 
@@ -175,7 +178,9 @@ export async function buildCaptured(
       unmatched: [],
       children: (fixture.children ?? []).map(element),
     };
-    return fixture.textIndex === undefined ? captured : { ...captured, textIndex: fixture.textIndex };
+    const indexed =
+      fixture.textIndex === undefined ? captured : { ...captured, textIndex: fixture.textIndex };
+    return fixture.measured === undefined ? indexed : { ...indexed, measured: fixture.measured };
   };
   const capture: SetCapture = {
     format: CAPTURE_FORMAT,

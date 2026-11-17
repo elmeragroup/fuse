@@ -1,5 +1,55 @@
 {
-  "unmapped": [],
+  "unmapped": [
+    {
+      "set": "sidebar-menu-button",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "text-overflow",
+      "reason": "Collapsed to the icon rail, the row leaves its label span less room than its first character and the ellipsis need, 8px at the large size and none at the others: Chromium draws the first character and the ellipsis clipped at the span, while a Figma text that ends in an ellipsis draws the ellipsis alone. The label hugs its one line instead, and the row clips it at its own edge, where the span ends too, so Figma shows what Chromium draws."
+    },
+    {
+      "set": "sidebar-menu-button",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "overflow",
+      "reason": "Collapsed to the icon rail at the default and sm sizes, the row's 8px end padding lies between where the label span ends and where the row clips, and the label hugs its one line past the span, so the build cannot show that the row's clip cuts the text off at the span's edge. The span starts at the row's clip edge there, with no room left after the icon and the gap, so neither Chromium nor Figma shows any of the text. At the large size the row has no end padding and clips where the span ends."
+    },
+    {
+      "set": "sidebar-group",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "text-overflow",
+      "reason": "Collapsed to the icon rail, the row leaves its label span less room than its first character and the ellipsis need, 8px at the large size and none at the others: Chromium draws the first character and the ellipsis clipped at the span, while a Figma text that ends in an ellipsis draws the ellipsis alone. The label hugs its one line instead, and the row clips it at its own edge, where the span ends too, so Figma shows what Chromium draws."
+    },
+    {
+      "set": "sidebar-group",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "overflow",
+      "reason": "Collapsed to the icon rail at the default and sm sizes, the row's 8px end padding lies between where the label span ends and where the row clips, and the label hugs its one line past the span, so the build cannot show that the row's clip cuts the text off at the span's edge. The span starts at the row's clip edge there, with no room left after the icon and the gap, so neither Chromium nor Figma shows any of the text. At the large size the row has no end padding and clips where the span ends."
+    },
+    {
+      "set": "sidebar-footer",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "text-overflow",
+      "reason": "Collapsed to the icon rail, the row leaves its label span less room than its first character and the ellipsis need, 8px at the large size and none at the others: Chromium draws the first character and the ellipsis clipped at the span, while a Figma text that ends in an ellipsis draws the ellipsis alone. The label hugs its one line instead, and the row clips it at its own edge, where the span ends too, so Figma shows what Chromium draws."
+    },
+    {
+      "set": "sidebar",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "text-overflow",
+      "reason": "Collapsed to the icon rail, the row leaves its label span less room than its first character and the ellipsis need, 8px at the large size and none at the others: Chromium draws the first character and the ellipsis clipped at the span, while a Figma text that ends in an ellipsis draws the ellipsis alone. The label hugs its one line instead, and the row clips it at its own edge, where the span ends too, so Figma shows what Chromium draws."
+    },
+    {
+      "set": "sidebar",
+      "part": "sidebar-menu-button",
+      "className": "[&>span:last-child]:truncate",
+      "property": "overflow",
+      "reason": "Collapsed to the icon rail at the default and sm sizes, the row's 8px end padding lies between where the label span ends and where the row clips, and the label hugs its one line past the span, so the build cannot show that the row's clip cuts the text off at the span's edge. The span starts at the row's clip edge there, with no room left after the icon and the gap, so neither Chromium nor Figma shows any of the text. At the large size the row has no end padding and clips where the span ends."
+    }
+  ],
   "unbound": [
     {
       "set": "button",
