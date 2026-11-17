@@ -331,9 +331,13 @@ function MenuSearch({
         </InputGroupAddon>
         <SearchableMenu.Input
           ref={inputRef}
+          // Safari offers saved logins on a text input it takes for a username, and ignores
+          // `autocomplete="off"` there. It leaves search inputs alone.
+          type="search"
           aria-label={label}
           placeholder={placeholder}
-          render={<InputGroupPlainInput />}
+          // The native cancel button would sit beside the group's own controls.
+          render={<InputGroupPlainInput className="[&::-webkit-search-cancel-button]:hidden" />}
           {...definedProps({ onKeyDown })}
         />
       </InputGroupRoot>
