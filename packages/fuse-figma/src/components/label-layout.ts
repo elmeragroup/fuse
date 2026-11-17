@@ -90,6 +90,11 @@ export type LabelScope = {
    * line, which the measurement says CSS draws.
    */
   readonly fitsOneLine: string | undefined;
+  /**
+   * Whether the capture measured that the box ends its one line in an ellipsis with room for its
+   * first character and the ellipsis, where the browser and a Figma text both draw it.
+   */
+  readonly ellipsisFits: boolean;
 };
 
 /** The Figma style of each Roboto weight a recipe reaches. */
@@ -233,6 +238,33 @@ const UNENDED =
 const CAPPED_ELEMENT =
   "the row hugs its width up to a cap, where CSS cuts the label's element off, and a text in a hugging frame keeps its own width";
 
+/** Why a label's element that clips its text stays unmapped where the row does not clip at its end. */
+const UNCLIPPED_ELEMENT =
+  "the label's element clips its text at its own edge, where a label with no room for its ellipsis hugs its text, and the row does not clip it at that edge";
+
+/**
+ * Whether a row clips at the end of its last element where that element fills the room left: the
+ * row clips, and no padding or border lies between its content edge and its clip edge, so a Figma
+ * frame that clips cuts the text off where the element's own clip does.
+ */
+function clipsAtEnd(row: LayerStyle, clips: boolean): boolean {
+  const zero = (property: string): boolean => evaluateLength(row.resolved(property) ?? "0") === 0;
+  return clips && ["padding-right", "border-right-width"].every(zero);
+}
+
+/**
+ * Whether a box ends its one line in an ellipsis, as `truncate` makes it: it hides its overflow,
+ * keeps its text on one line and sets `text-overflow: ellipsis` (CSS Overflow 3 §4.2).
+ */
+function endsInEllipsis(style: LayerStyle): boolean {
+  const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
+  return (
+    value("overflow") === "hidden" &&
+    value("text-wrap-mode") === "nowrap" &&
+    value("text-overflow") === "ellipsis"
+  );
+}
+
 /** The `text-align` values that set a line from its start in a left-to-right page, unset included. */
 const FROM_START = new Set(["", "left", "start"]);
 
@@ -248,17 +280,24 @@ const FROM_START = new Set(["", "left", "start"]);
  * it, the element hugs its text. Anywhere else, a centred or end-aligned text and a row that hugs up
  * to a cap among them, the element's layout stays unmapped, and the label maps from the row.
  *
+ * An element that ends in an ellipsis with no room for its first character and the ellipsis leaves
+ * its label hugging its text, which runs past the element's edge, so the element's clip draws only
+ * where the row clips at that edge, as {@link clipsAtEnd} says, and stays unmapped elsewhere.
+ *
  * @param row - The box that holds the element, whose last layer the label is.
  * @param element - The element's style.
  * @param label - The label.
  * @param growing - The index of the row's layer that grows, or undefined for none.
+ * @param edge - Whether the capture measured room in the element for its first character and an
+ *   ellipsis, and whether the row clips what overflows it.
  * @returns The element as the box its label sits in, or undefined where its layout stays unmapped.
  */
 export function labelElementHolder(
   row: Holder,
   element: LayerStyle,
   label: LabelDefinition,
-  growing: number | undefined
+  growing: number | undefined,
+  edge: { readonly ellipsisFits: boolean; readonly rowClips: boolean }
 ): Holder | undefined {
   const { layout } = row;
   const ends =
@@ -275,14 +314,20 @@ export function labelElementHolder(
     }
     return undefined;
   }
+  const unclipped =
+    fills && endsInEllipsis(element) && !edge.ellipsisFits && !clipsAtEnd(row.style, edge.rowClips);
   element.read(
     "overflow",
     (value) => value,
-    (): CoverageNote =>
-      fills
+    (): CoverageNote => {
+      if (unclipped) {
+        return { outcome: "unmapped", detail: UNCLIPPED_ELEMENT };
+      }
+      return fills
         ? { outcome: "literal", detail: "the label's element clips its text at the room the row leaves it" }
-        : { outcome: "dropped", detail: NEVER_OVERFLOWS },
-    element.feed("sizing")
+        : { outcome: "dropped", detail: NEVER_OVERFLOWS };
+    },
+    unclipped ? [] : element.feed("sizing")
   );
   return {
     style: element,
@@ -420,7 +465,8 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
           scope.clamp,
           scope.variant,
           path,
-          scope.fitsOneLine
+          scope.fitsOneLine,
+          scope.ellipsisFits
         )
       : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
@@ -919,6 +965,14 @@ function refuseItem(
 }
 
 /**
+ * Why an ellipsis stays unmapped where the box has no room for its first character and the ellipsis:
+ * Chromium draws the first character and the ellipsis clipped at the box, and a Figma text that
+ * ends in an ellipsis draws the ellipsis alone.
+ */
+const NARROW_ELLIPSIS =
+  "the box has no room for its first character and the ellipsis, where Chromium draws both clipped at the box and a Figma text draws the ellipsis alone";
+
+/**
  * Read how a box's label sizes and truncates. The label is the box's own text. A block box sets it
  * in lines across its content width (CSS Text 3), so where that width is definite, fixed or
  * filling, text that wraps breaks its lines there, and the label fills the width with its height
@@ -951,18 +1005,22 @@ function readLabelLayout(
   lines: number | undefined,
   variant: string,
   path: readonly string[],
-  fitsOneLine: string | undefined
+  fitsOneLine: string | undefined,
+  ellipsisFits: boolean
 ): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
-  const mode = value("text-wrap-mode");
-  const wrapping = wraps(mode);
-  const truncates =
-    value("overflow") === "hidden" && mode === "nowrap" && value("text-overflow") === "ellipsis";
+  const wrapping = wraps(value("text-wrap-mode"));
+  const truncates = endsInEllipsis(style);
   // `text-overflow` applies to block containers (CSS Overflow 3 §4.2). A flex or grid box sets its
   // own text as an anonymous item, which it clips with no ellipsis.
   const item = textItem(holder);
-  const ellipsis = truncates && item === undefined;
+  // Chromium keeps a line's first character however narrow the box and sets the ellipsis after it,
+  // both clipped at the box, where a Figma text that ends in an ellipsis drops every character that
+  // does not fit beside it. Only a box the capture measured with room for both draws the same.
+  const blockTruncates = truncates && item === undefined;
+  const narrow = blockTruncates && !ellipsisFits;
+  const ellipsis = blockTruncates && ellipsisFits;
   const maxLines = ellipsis ? 1 : lines;
   const definite = sizing.horizontal.kind !== "hug";
   const cap: WidthCap =
@@ -1028,6 +1086,9 @@ function readLabelLayout(
     );
   }
   const cut = (detail: string): CoverageNote => {
+    if (narrow) {
+      return { outcome: "unmapped", detail: NARROW_ELLIPSIS };
+    }
     if (truncates && item !== undefined) {
       return {
         outcome: "dropped",
