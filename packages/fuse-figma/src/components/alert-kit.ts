@@ -36,7 +36,8 @@ import {
   itemVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
+import type { SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import type {
   Cell,
   ComponentDefinition,
@@ -107,19 +108,20 @@ function slotsFor(cell: Cell) {
 }
 
 /** The tone's icon, `Alert.Icon`'s `<svg>`, with the classes it carries. */
+function toneIcon(cell: Cell): IconSlot {
+  return {
+    key: "icon",
+    name: "Icon",
+    side: "start",
+    direct: true,
+    dataIcon: undefined,
+    icon: TONE_ICONS[alertLook(cell).variant],
+    swapProperty: undefined,
+  };
+}
+
 function toneIcons(cell: Cell): readonly IconSlot[] {
-  return [
-    {
-      key: "icon",
-      name: "Icon",
-      side: "start",
-      direct: true,
-      dataIcon: undefined,
-      icon: TONE_ICONS[alertLook(cell).variant],
-      swapProperty: undefined,
-      classes: slotsFor(cell).icon(),
-    },
-  ];
+  return [{ ...toneIcon(cell), classes: slotsFor(cell).icon() }];
 }
 
 /** Item's icon media with the alert's media line, holding the tone's icon. */
@@ -202,6 +204,67 @@ const ACTIONS: PartDefinition = {
  * An Alert, as `<Alert.Root variant>` around its title and, where the cell is described, its
  * description, in a 512px container, with the action behind the `Action` property.
  */
+/** The alert's manifest, which the capture-backed build reads with `captures/alert.json`. */
+export const ALERT_MANIFEST: SetManifest = {
+  key: "alert",
+  name: "Alert",
+  slot: "item",
+  axes: [
+    { name: "variant", values: VARIANTS },
+    { name: "described", values: ["off", "on"] },
+  ],
+  columnAxis: "described",
+  previewWidth: ALERT_PREVIEW_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+  parts: [
+    {
+      key: "media",
+      slot: "item-media",
+      shownIn: always,
+      label: undefined,
+      iconsFor: (cell) => [toneIcon(cell)],
+    },
+    {
+      key: "content",
+      slot: "item-content",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        { key: "title", slot: "item-title", shownIn: always, label: TITLE.label, iconsFor: () => [] },
+        {
+          key: "description",
+          slot: "item-description",
+          shownIn: (cell) => alertLook(cell).described,
+          label: DESCRIPTION.label,
+          iconsFor: () => [],
+        },
+      ],
+    },
+    {
+      key: "actions",
+      slot: "item-actions",
+      shownIn: always,
+      optional: { name: ALERT_ACTION_PROPERTY, defaultValue: false },
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          kind: "instance",
+          key: "action",
+          of: BUTTON_MANIFEST,
+          cell: () => ({ variant: "default", size: "sm", state: "rest", icon: "none" }),
+          properties: () => ({ text: { Label: ALERT_ACTION_LABEL } }),
+          shownIn: always,
+          exposed: true,
+        },
+      ],
+    },
+  ],
+};
+
 export const ALERT: ComponentDefinition = {
   key: "alert",
   name: "Alert",

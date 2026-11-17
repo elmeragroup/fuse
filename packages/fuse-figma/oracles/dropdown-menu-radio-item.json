@@ -1,0 +1,230 @@
+{
+  "set": "dropdown-menu-radio-item",
+  "entries": [
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-inset:pl-[calc(var(--row-px)+1.5rem)]",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-[variant=destructive]:text-error",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-[variant=destructive]:focus:bg-error/10",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-[variant=destructive]:focus:text-error",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-[variant=destructive]:\\*:[svg]:text-error",
+        "property": "",
+        "outcome": "unshown"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A class whose state no cell of the matrix shows, which the recipe build dropped under the definition's hand-written facts or omissions. A manifest holds neither, so the capture lists it as unshown, named here, until the matrix shows its state or the kit decides it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "`\\*:[svg]:text-error` paints a destructive row's icons `error`, which they already take from the row's own `text-error`, in every state"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "a static frame has no selection"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the root sets its own, so it does not inherit this"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A row the recipe definition's hand-written omission explained, which a manifest may not hold. The capture reads what each element does in the browser: a class that won nothing drops once, and a class whose state no cell shows stays unmapped."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell of the matrix shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The recipe build lists each declaration of a class whose variant no cell shows, under the definition's hand-written facts. The capture lists the class once: unmapped where no rule written for it matched any cell, or dropped where a transition explains it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "no cell that gives the box this class shows*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "As above, for a class whose variant no cell of the box shows."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "detail": "a marker class with no CSS"
+      },
+      "verdict": "accepted-loss",
+      "reason": "A marker class wins no declaration, so the capture lists it with the classes that won nothing."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "*, which * draw*"
+      },
+      "verdict": "accepted-loss",
+      "reason": "The definition modelled the popup or list around the row by its classes, and the recipe build listed each of their declarations. The capture reads the real elements around the root and passes down only what they inherit; the popup's own set lists its classes."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the * around the root sets its own, so the root does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build named the element around the root by the classes it modelled; the capture names it by its `data-slot` or tag, and lists the same inherited declaration there."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "inline style"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What Base UI writes on an element's `style`: the positioner's anchor width as the anchor's, and a popup's arrow placed on the anchor's centre."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, or whose rules matched and lost, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "* around the root sets its own, so the root does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "What an element of the markup around the root sets that the root sets itself, listed as the recipe build listed the page's."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "the root sets its own, so it does not inherit this"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As above, for a declaration the root sets itself."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-*-style` on a transition's * frame, and the kit draws the component at rest"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build's rows for the same enter and exit styles, one per declaration; the capture lists each class once."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "unmapped",
+        "detail": "*the definition neither models nor omits `motion-safe`"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The recipe build reads no `motion-safe:` variant, so it leaves #707's motion classes unmapped; the capture reads the winners of the media query and drops them as motion."
+    }
+  ]
+}

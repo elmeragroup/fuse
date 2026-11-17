@@ -10,8 +10,11 @@
  * - `dropped`: Figma has no form for it, such as a cursor or a transition, or no variant of
  *   the matrix represents its state.
  * - `unmapped`: the builder has no mapping for it yet.
+ * - `unshown`: a capture-backed set's class written for a state no captured cell shows: no rule
+ *   written for it matched an element of any cell, so neither the kit nor the browser drew it. The
+ *   row names the class once, and the set's matrix decides whether it ever shows.
  */
-export type CoverageOutcome = "bound" | "literal" | "dropped" | "unmapped";
+export type CoverageOutcome = "bound" | "literal" | "dropped" | "unmapped" | "unshown";
 
 /** One declaration of one recipe class, with what the builder did with it. */
 export type CoverageRow = {

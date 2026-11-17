@@ -18,12 +18,15 @@
  *
  * A popup hugs its rows, so the row that sets its width hugs across, with the group and section
  * around it, and every other row, section and separator fills (PM, PH2), as `hugging-rows.ts` says.
- * Each popup names its widest row, as the browser draws it, and that row keeps the popup's content
- * minimum as its own `minWidth`, so it fills to the minimum where its text fits and hugs past it (PH3).
+ * The recipe definitions name each popup's widest row in {@link POPUP_WIDEST_ROWS} and {@link SUB_CONTENT_WIDEST_ROWS}, as the browser
+ * draws it, and that row keeps the popup's content minimum as its own `minWidth`, so it fills to the
+ * minimum where its text fits and hugs past it (PH3). The capture-backed build measures the widest
+ * row instead, so the manifest names none.
  */
 import { dropdownMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
 import type {
   Cell,
   ComponentDefinition,
@@ -33,9 +36,13 @@ import type {
 } from "./component-spec";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM,
+  DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
   DROPDOWN_MENU_ITEM,
+  DROPDOWN_MENU_ITEM_MANIFEST,
   DROPDOWN_MENU_RADIO_ITEM,
+  DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
   DROPDOWN_MENU_SUB_TRIGGER,
+  DROPDOWN_MENU_SUB_TRIGGER_MANIFEST,
 } from "./dropdown-menu-kit";
 import {
   DROPDOWN_POPUP_CONTENTS,
@@ -45,12 +52,34 @@ import {
 } from "./dropdown-menu-text";
 import type { DropdownDemoNode } from "./dropdown-menu-text";
 import { DIV_BLOCK } from "./element-defaults";
-import { DROPDOWN_POPUP_FACTS, MENU_GROUP_LABEL, menuSeparatorPart } from "./menu-kit";
+import {
+  DROPDOWN_POPUP_FACTS,
+  MENU_GROUP_LABEL,
+  MENU_GROUP_LABEL_MANIFEST,
+  MENU_SEPARATOR_MANIFEST,
+  menuSeparatorPart,
+} from "./menu-kit";
 import { always, openPopupFacts } from "./popup-facts";
 
 const { content, subContent } = dropdownMenuVariants();
 
 /** A key part made of a node's place, unique within the popup's parts. */
+/**
+ * The keys of the rows the popup's recipe definition draws as each content's widest, a measurement
+ * Chromium made at both densities. Only the recipe build reads it, as the oracle of the capture build, which
+ * measures the widest row itself; it goes when the recipe definition does.
+ */
+const POPUP_WIDEST_ROWS: ReadonlySet<string> = new Set([
+  "basic-0-group-3-item",
+  "checkboxes-0-group-2-checkbox",
+  "radio-0-radio-group-2-radio",
+  "destructive-0-group-1-item",
+  "submenu-1-item",
+]);
+
+/** The key of the submenu's widest row, which the `Dropdown menu sub content` set's recipe draws. */
+const SUB_CONTENT_WIDEST_ROWS: ReadonlySet<string> = new Set(["submenu-2-item"]);
+
 const keyOf = (prefix: string, index: number, node: DropdownDemoNode): string =>
   `${prefix}-${String(index)}-${node.kind}`;
 
@@ -70,9 +99,10 @@ function partsOf(
   nodes: readonly DropdownDemoNode[],
   prefix: string,
   shownIn: (cell: Cell) => boolean,
-  group: { readonly value: string } | undefined
+  group: { readonly value: string } | undefined,
+  widest: ReadonlySet<string>
 ): readonly (PartDefinition | InstanceDefinition)[] {
-  return nodes.map((node, index) => partOf(node, keyOf(prefix, index, node), shownIn, group));
+  return nodes.map((node, index) => partOf(node, keyOf(prefix, index, node), shownIn, group, widest));
 }
 
 /** The part that draws one child: a frame for a group, an instance of a kit set for the rest. */
@@ -80,10 +110,10 @@ function partOf(
   node: DropdownDemoNode,
   key: string,
   shownIn: (cell: Cell) => boolean,
-  group: { readonly value: string } | undefined
+  group: { readonly value: string } | undefined,
+  widestRows: ReadonlySet<string>
 ): PartDefinition | InstanceDefinition {
-  const widest =
-    (node.kind === "item" || node.kind === "checkbox" || node.kind === "radio") && node.widest === true;
+  const widest = widestRows.has(key);
   const instance = (
     of: ComponentDefinition,
     cell: Cell,
@@ -111,7 +141,7 @@ function partOf(
         elementDefaults: DIV_BLOCK,
         label: undefined,
         iconsFor: () => [],
-        parts: partsOf(node.children, key, shownIn, node.kind === "radio-group" ? node : group),
+        parts: partsOf(node.children, key, shownIn, node.kind === "radio-group" ? node : group, widestRows),
       };
     case "label":
       return instance(MENU_GROUP_LABEL, { kind: node.inset === true ? "menu inset" : "menu" }, () => ({
@@ -162,7 +192,7 @@ export const DROPDOWN_MENU_POPUP: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: DROPDOWN_POPUP_CONTENTS.flatMap((value) =>
-    partsOf(DROPDOWN_POPUPS[value], value, (cell) => cell.content === value, undefined)
+    partsOf(DROPDOWN_POPUPS[value], value, (cell) => cell.content === value, undefined, POPUP_WIDEST_ROWS)
   ),
   swapProperties: [],
 };
@@ -184,7 +214,7 @@ export const DROPDOWN_MENU_SUB_CONTENT: ComponentDefinition = {
   omittedStates: new Set(),
   label: undefined,
   iconsFor: () => [],
-  parts: partsOf(DROPDOWN_SUBMENU, "submenu", always, undefined),
+  parts: partsOf(DROPDOWN_SUBMENU, "submenu", always, undefined, SUB_CONTENT_WIDEST_ROWS),
   swapProperties: [],
 };
 
@@ -229,6 +259,150 @@ export const DROPDOWN_MENU_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "popup",
       of: DROPDOWN_MENU_POPUP,
+      cell: () => ({ content: "basic" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The parts of a list of demo nodes as a manifest names them, as {@link partsOf} draws them. */
+function partsManifest(
+  nodes: readonly DropdownDemoNode[],
+  prefix: string,
+  shownIn: (cell: Cell) => boolean,
+  group: { readonly value: string } | undefined
+): readonly (PartManifest | InstanceManifest)[] {
+  return nodes.map((node, index) => partManifest(node, keyOf(prefix, index, node), shownIn, group));
+}
+
+/** One demo node's part as a manifest names it, as {@link partOf} draws it. */
+function partManifest(
+  node: DropdownDemoNode,
+  key: string,
+  shownIn: (cell: Cell) => boolean,
+  group: { readonly value: string } | undefined
+): PartManifest | InstanceManifest {
+  const instance = (
+    of: SetManifest,
+    cell: Cell,
+    properties: NonNullable<InstanceManifest["properties"]>,
+    slot?: string
+  ): InstanceManifest => {
+    const part: InstanceManifest = {
+      kind: "instance",
+      key,
+      of,
+      cell: () => cell,
+      properties,
+      shownIn,
+      exposed: true,
+    };
+    return slot === undefined ? part : { ...part, slot };
+  };
+  switch (node.kind) {
+    case "group":
+    case "radio-group":
+      return {
+        key,
+        slot: node.kind === "group" ? "dropdown-menu-group" : "dropdown-menu-radio-group",
+        shownIn,
+        label: undefined,
+        iconsFor: () => [],
+        parts: partsManifest(node.children, key, shownIn, node.kind === "radio-group" ? node : group),
+      };
+    case "label":
+      return instance(
+        MENU_GROUP_LABEL_MANIFEST,
+        { kind: node.inset === true ? "menu inset" : "menu" },
+        () => ({
+          text: { Label: node.label },
+        })
+      );
+    case "separator":
+      return {
+        kind: "instance",
+        key,
+        of: MENU_SEPARATOR_MANIFEST,
+        slot: "dropdown-menu-separator",
+        cell: () => ({ size: "default" }),
+        shownIn,
+      };
+    case "item":
+      return instance(
+        DROPDOWN_MENU_ITEM_MANIFEST,
+        {
+          variant: node.destructive === true ? "destructive" : "default",
+          inset: node.inset === true ? "on" : "off",
+          state: node.disabled === true ? "disabled" : "rest",
+        },
+        () => itemProperties(node)
+      );
+    case "checkbox":
+      return instance(
+        DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
+        { checked: node.checked ? "on" : "off", state: "rest" },
+        () => ({ text: { Label: node.label } })
+      );
+    case "radio":
+      return instance(
+        DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
+        { checked: node.value === group?.value ? "on" : "off", state: "rest" },
+        () => ({ text: { Label: node.label } })
+      );
+    case "sub-trigger":
+      return instance(DROPDOWN_MENU_SUB_TRIGGER_MANIFEST, { state: "rest" }, () => ({
+        text: { Label: node.label },
+      }));
+  }
+}
+
+/** The popup's manifest, which the capture-backed build reads with `captures/dropdown-menu-popup.json`. */
+export const DROPDOWN_MENU_POPUP_MANIFEST: SetManifest = {
+  key: "dropdown-menu-popup",
+  name: "Dropdown menu popup",
+  slot: "dropdown-menu-content",
+  axes: DROPDOWN_MENU_POPUP.axes,
+  columnAxis: "content",
+  label: undefined,
+  iconsFor: () => [],
+  parts: DROPDOWN_POPUP_CONTENTS.flatMap((value) =>
+    partsManifest(DROPDOWN_POPUPS[value], value, (cell) => cell.content === value, undefined)
+  ),
+  swapProperties: [],
+};
+
+/**
+ * The open Dropdown menu's manifest, which the capture-backed build reads with
+ * `captures/dropdown-menu-open.json`: the trigger Button, which `DropdownMenu.Trigger` stamps with its
+ * own slot, and the popup, and `DropdownMenu.Content`'s `sideOffset` as the docs' API reference gives
+ * it.
+ */
+export const DROPDOWN_MENU_OPEN_MANIFEST: SetManifest = {
+  key: "dropdown-menu-open",
+  name: "Dropdown menu (open)",
+  slot: "dropdown-menu-open",
+  axes: DROPDOWN_MENU_OPEN.axes,
+  columnAxis: "placement",
+  union: ["dropdown-menu-trigger", "dropdown-menu-content"],
+  sideOffset: 4,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "trigger",
+      of: BUTTON_MANIFEST,
+      cell: () => ({ variant: "outline", size: "default", state: "rest", icon: "none" }),
+      properties: () => ({ text: { Label: DROPDOWN_TRIGGER_TEXT } }),
+      slot: "dropdown-menu-trigger",
+      shownIn: always,
+      exposed: true,
+    },
+    {
+      kind: "instance",
+      key: "popup",
+      of: DROPDOWN_MENU_POPUP_MANIFEST,
       cell: () => ({ content: "basic" }),
       shownIn: always,
     },

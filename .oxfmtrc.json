@@ -48,6 +48,7 @@
     "packages/fuse/src/components/chart/format/fixtures/**/*.json",
     "packages/fuse/src/components/chart/layout/fixtures/**/*.json",
     "packages/fuse/etc/*.api.md",
+    "packages/fuse-figma/captures/*.json",
     "plop-templates/**",
     "**/next-env.d.ts",
     ".artifacts",

@@ -1,6 +1,20 @@
 {
   "extends": ["//"],
   "tasks": {
+    // The capture check in Chromium: each capture-backed set captured again and compared with its
+    // kept file, the perturbation probe, the differential oracle and the fake-file Plan differential.
+    // It runs in CI's `figma-capture` job and stays out of the local `check` gate. Like
+    // `test:compare`, it renders Fuse's build; the Plan differential reads the plugin's sources.
+    "test:capture": {
+      "dependsOn": ["@elmeragroup/fuse#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!test/**",
+        "$TURBO_ROOT$/packages/color/src/**",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/api.json"
+      ]
+    },
     // `figma:compare --self-check` in Chromium: every kit cell rendered twice and compared, and each
     // client cell's mounted markup checked against its definition. It takes minutes, so it runs in
     // CI's `figma-compare` job and stays out of the local `check` gate. The cells import Fuse's

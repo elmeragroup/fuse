@@ -191,7 +191,7 @@ export type InPlace = {
  * Where a declaration comes from: the layer it applies to, the part and class that set it, and the
  * origin that owns its rows.
  */
-type Provenance = Declaration & {
+export type Provenance = Declaration & {
   /** The id of the layer whose own cascade holds the declaration. */
   readonly layer: number;
   readonly origin: Origin;
@@ -206,7 +206,7 @@ type Provenance = Declaration & {
  * guaranteed-invalid (§3), which a read leaves unmapped. A declaration of the layer's own is
  * resolved where the layer reads it.
  */
-type StyleEntry = {
+export type StyleEntry = {
   readonly source: Provenance;
   /**
    * The custom property declarations an inherited value read where its ancestor computed it,
@@ -226,7 +226,8 @@ type StyleEntry = {
     }
 );
 
-type ComputedStyle = ReadonlyMap<string, StyleEntry>;
+/** A layer's computed style, by property. */
+export type ComputedStyle = ReadonlyMap<string, StyleEntry>;
 
 /** How the coverage table names a declaration of an element's `style` attribute, in place of a class. */
 const INLINE_STYLE = "inline style";
@@ -384,7 +385,7 @@ export type CellScope = {
 };
 
 /** A layer of the cell: its computed style, what read it, and the layers below it. */
-type Layer = {
+export type Layer = {
   readonly id: number;
   /**
    * The instance part built in place whose layers hold this one, which takes the rows of the
@@ -410,13 +411,13 @@ type Layer = {
 };
 
 /** What a layer around the root stands for: the page, or an ancestor and its reason. */
-type AroundLayer = { readonly undrawn: string | undefined };
+export type AroundLayer = { readonly undrawn: string | undefined };
 
 /**
  * The layers of one cell and what read their declarations. Ledgers of one cell share its layers, each
  * with the scope it cascades its boxes in.
  */
-class CellLedger {
+export class CellLedger {
   readonly scope: CellScope;
   readonly #layers: Layer[];
 
@@ -823,7 +824,7 @@ function cascadeBox(
     [...box.outer, ...base, ...box.selected, ...own.applied],
     at.parent
   );
-  return new BoxCascade(ledger, layer, at.path, {
+  return new RecipeBoxCascade(ledger, layer, at.path, {
     ancestorRules: box.ancestorRules,
     ownRules: own.childRules,
     partRules: own.partRules,
@@ -835,10 +836,104 @@ function cascadeBox(
 }
 
 /**
- * The cascade of one box, the root or a part: its own style, and the cascades of the parts and
- * icons below it.
+ * What finds a frame part's element below its box: the part's key, its `data-slot`, the tag a
+ * direct-child selector reaches it by, and, for a part without a `data-slot`, its place, as a part
+ * definition's `place` says, which the capture-backed cascade finds it by.
  */
-export class BoxCascade {
+export type PartElement = {
+  readonly key: string;
+  readonly slot: string | undefined;
+  readonly tag: string | undefined;
+  readonly place?: string;
+  /** Whether a BOOLEAN property shows the part, so a composite that turns it off leaves it out. */
+  readonly optional?: true;
+  /** Whether the part's element follows its box's text in the markup, as the definition's `after` says. */
+  readonly after?: "label";
+};
+
+/**
+ * The cascade of one box, the root or a part, as the mapping reads it: its own style, and the
+ * cascades of the parts and icons below it. The recipe cascade ({@link RecipeBoxCascade}) runs it
+ * from the definition's classes, and `capture-cascade.ts` from a set's capture.
+ */
+export type BoxCascade = {
+  /** The box's computed style. */
+  readonly style: LayerStyle;
+  /**
+   * The keys of the layers from the root down to the box's, the root of an instance part built in
+   * place counting as a root, which the fields its reads fill name.
+   */
+  readonly path: readonly string[];
+  /** As {@link RecipeBoxCascade.spaceChildren} says. */
+  spaceChildren(children: number | undefined, spacing?: ChildSpacing): NumberSpec | undefined;
+  /** As {@link RecipeBoxCascade.inPlace} says. */
+  inPlace(): InPlace | undefined;
+  /**
+   * As {@link RecipeBoxCascade.part} says. `element.place` names a part without a `data-slot` by its
+   * place, as a part definition's `place` says, which the capture-backed cascade finds it by.
+   */
+  part(
+    classes: string,
+    part: string,
+    element: PartElement,
+    outer?: {
+      readonly inline: readonly InlineDeclaration[];
+      readonly defaults: readonly OuterDeclaration[];
+    },
+    facts?: ReadonlyMap<string, (cell: Cell) => boolean>
+  ): BoxCascade;
+  /**
+   * As {@link RecipeBoxCascade.instance} says. `element.set` is the inner set's key, whose kept
+   * capture names the classes the composite passes.
+   */
+  instance(
+    classes: { readonly own: string; readonly passed: string },
+    part: string,
+    element: {
+      readonly slot: string | undefined;
+      readonly tag: string | undefined;
+      readonly set?: string;
+      readonly after?: "label";
+    },
+    defaults: readonly OuterDeclaration[],
+    scope: InstanceScope
+  ): BoxCascade;
+  /** As {@link RecipeBoxCascade.labelElement} says. */
+  labelElement(element: {
+    readonly tag: string;
+    readonly last: boolean;
+    readonly key: string;
+  }): LayerStyle | undefined;
+  /** As {@link RecipeBoxCascade.icon} says. */
+  icon(slot: IconSlot, given?: string): LayerStyle;
+  /**
+   * How many element children the box's element holds, where the cascade read the element itself,
+   * as a capture does. Undefined for the recipe cascade, whose definitions count the children they
+   * draw no layer for in `undrawnChildren`.
+   */
+  readonly elementChildren?: number | undefined;
+  /**
+   * What a capture measured of the box's element, as reasons the mapping reads in place of a
+   * definition's measurements: its text, or its wrapping row's items, on one line under its
+   * `max-width`; its content under its `max-height`; and whether it is, or holds, the widest row of
+   * a popup that hugs its rows. Undefined for the recipe cascade.
+   */
+  readonly measured?: MeasuredBox | undefined;
+};
+
+/** What a capture measured of a box's element, as {@link BoxCascade.measured} says. */
+export type MeasuredBox = {
+  readonly fitsOneLine: string | undefined;
+  readonly underMaxHeight: string | undefined;
+  readonly widest: boolean;
+  readonly holdsWidest: boolean;
+};
+
+/**
+ * The cascade of one box, the root or a part, from the definition's classes: its own style, and the
+ * cascades of the parts and icons below it.
+ */
+export class RecipeBoxCascade implements BoxCascade {
   /** The box's computed style. */
   readonly style: LayerStyle;
   /**
@@ -1401,7 +1496,7 @@ export class LayerStyle {
  * Whether a child inherits a property: one of the inherited properties the build reads, or a custom
  * property whose `@property` does not say `inherits: false`.
  */
-function inheritsProperty(property: string, context: BuildContext): boolean {
+export function inheritsProperty(property: string, context: BuildContext): boolean {
   return property.startsWith("--")
     ? context.compiled.registeredProperties.get(property)?.inherits !== false
     : INHERITED_PROPERTIES.has(property);
@@ -1412,7 +1507,7 @@ function inheritsProperty(property: string, context: BuildContext): boolean {
  * each inherited property, with the layer's custom properties substituted, so a child that sets
  * one of them anew does not change what it inherited.
  */
-function inheritance(layer: Layer, context: BuildContext): ComputedStyle {
+export function inheritance(layer: Layer, context: BuildContext): ComputedStyle {
   const passed = new Map<string, StyleEntry>();
   for (const [property, entry] of layer.style) {
     if (!inheritsProperty(property, context)) {
@@ -1801,9 +1896,14 @@ function inheritedKeyword(
 /**
  * The value an inherited property starts with on the document's root, which an `inherit` takes where
  * nothing outside the element sets the property: `font-weight` is `normal`, 400 (CSS Fonts 4 §2.2),
- * since neither the docs page nor Tailwind's preflight sets a weight on `<html>` or `<body>`.
+ * since neither the docs page nor Tailwind's preflight sets a weight on `<html>` or `<body>`, and
+ * `letter-spacing` is `normal` (CSS Text 3 §8.2), which preflight's `letter-spacing: inherit` on an
+ * `<input>` takes.
  */
-const INITIAL_VALUES = new Map([["font-weight", "400"]]);
+const INITIAL_VALUES = new Map([
+  ["font-weight", "400"],
+  ["letter-spacing", "normal"],
+]);
 
 /** The longhands `white-space`'s keywords set (CSS Text 4 §3): `white-space-collapse`, then `text-wrap-mode`. */
 const WHITE_SPACE = new Map([

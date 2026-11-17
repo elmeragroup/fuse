@@ -483,6 +483,16 @@ const SPACED_ELSEWHERE =
  * @returns The spacing, or undefined where none maps.
  */
 function readLetterSpacing(style: LayerStyle, path: readonly string[]): LetterSpacingSpec | undefined {
+  // `normal` is the font's own spacing (CSS Text 3 §8.2), which a Figma text layer draws unset.
+  if (normalizeCss(style.resolved("letter-spacing") ?? "") === "normal") {
+    style.mark(
+      "letter-spacing",
+      "dropped",
+      "normal spacing is the font's own, which Figma draws by default",
+      style.feed("letterSpacing", path)
+    );
+    return undefined;
+  }
   const declared = style.resolvedWhereDeclared("letter-spacing", "font-size");
   const own = style.resolved("font-size");
   const sameSize = declared !== undefined && own !== undefined && sameLength(declared, own);

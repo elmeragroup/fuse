@@ -1,0 +1,175 @@
+{
+  "set": "plan",
+  "entries": [
+    {
+      "pattern": "Button / *: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as button.json classifies; Plan moves each Button label to centre."
+    },
+    {
+      "pattern": "Kbd / content=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Kbd group / keys=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Label / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Field description / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Field error / state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Menu group label / kind=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Menu separator / size=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Select item / selected=*, state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Combobox item / selected=*, state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Combobox empty / content=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Command item / trailing=*, state=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Alert / variant=*, described=*: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "The set's root casts no shadow in any cell and CSS clips nothing, so the root leaves its layers unclipped, as each set's `root.clips` entry classifies. The pattern names the set's root in each variant, by its axes."
+    },
+    {
+      "pattern": "Input group / form=*, state=* / input-group-control: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as input-group.json classifies."
+    },
+    {
+      "pattern": "Select popup / *: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Popover content / *: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Dropdown menu popup / *: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Combobox popup / *: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Command palette / *: shadows → #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, foreground/10 0 0 0 1 (holds #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Alert dialog content / *: shadows → #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, foreground/10 0 0 0 1 (holds #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Dialog content / *: shadows → #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, foreground/10 0 0 0 1 (holds #000000 at 10% 0 4 6 -4, #000000 at 10% 0 10 15 -3, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "*Combobox popup*: width → 384",
+      "verdict": "old-was-wrong",
+      "reason": "The Combobox popup is as wide as its 384px Input group anchor, as combobox-popup.json classifies."
+    },
+    {
+      "pattern": "*Combobox item*: width → 376",
+      "verdict": "old-was-wrong",
+      "reason": "A Combobox row draws at the width the capture measured around it, 376px, where the recipe definition computed 366px, as combobox-item.json classifies."
+    },
+    {
+      "pattern": "*Combobox empty*: width → 384",
+      "verdict": "old-was-wrong",
+      "reason": "The empty message draws at the width the capture measured around it, 384px, where the recipe definition computed 374px, as combobox-empty.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=radio / *: layoutSizingHorizontal → FILL",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=radio / *: minWidth → none",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=destructive / *: layoutSizingHorizontal → FILL",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=destructive / *: minWidth → none",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=submenu / *: layoutSizingHorizontal → FILL",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Dropdown menu popup / content=submenu / *: minWidth → none",
+      "verdict": "fix-in-new",
+      "reason": "In this cell the Dropdown menu popup sits at its `min-w-32` floor, so the capture names no widest row and every row fills, as dropdown-menu-popup.json classifies."
+    },
+    {
+      "pattern": "Select item / selected=on, state=* / indicator: itemSpacing → 8",
+      "verdict": "old-was-wrong",
+      "reason": "The row's `*:[span]:last:gap-2` reaches the indicator, as select-item.json classifies."
+    },
+    {
+      "pattern": "*: lay out * variants in * columns and * rows",
+      "verdict": "fix-in-new",
+      "reason": "Plan lays a set's variants out again once one of the changes above resizes a variant."
+    },
+    {
+      "pattern": "*: place * in a row and stack * previews below them",
+      "verdict": "fix-in-new",
+      "reason": "Plan places a page's sets again once one of the changes above resizes a set."
+    },
+    {
+      "pattern": "*: plan again once *'s changes land",
+      "verdict": "fix-in-new",
+      "reason": "An instance of a set the lines above change, which Plan settles once that set's changes land."
+    }
+  ]
+}

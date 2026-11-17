@@ -27,7 +27,7 @@ import { Effect, Result } from "effect";
 import type { Scope } from "effect";
 import { join } from "node:path";
 import { chromium } from "playwright";
-import type { Browser, Page, Route } from "playwright";
+import type { Browser, CDPSession, Page, Route } from "playwright";
 
 import { cellClip, clipInsideSlot, measuredBox } from "./cell-measure.ts";
 import type { FallbackInteraction, ForcedPseudoClass } from "./cells.ts";
@@ -206,6 +206,15 @@ export class CompareBrowser {
     );
   }
 
+  /**
+   * The version of the Chromium build that renders the pages.
+   *
+   * @returns The version, such as `140.0.7339.16`.
+   */
+  version(): string {
+    return this.#browser.version();
+  }
+
   async #serve(route: Route, html: string): Promise<void> {
     const { pathname } = new URL(route.request().url());
     const css = new Map<string, string>([
@@ -255,6 +264,72 @@ export class CompareBrowser {
         ),
       { concurrency: PAGE_CONCURRENCY }
     ).pipe(Effect.map(mergePages));
+  }
+
+  /**
+   * Open one preview's page, as {@link renderPreview} does, and hand it to `read` before the page
+   * closes. The cells' resting twins sit beside them.
+   *
+   * @param theme - The preview's theme.
+   * @param requests - The cells.
+   * @param layout - The page layout.
+   * @param read - Reads the opened page.
+   * @returns What `read` returned. The Effect fails with `FontNotLoaded`.
+   */
+  openPreview<A>(
+    theme: PreviewTheme,
+    requests: readonly CellRequest[],
+    layout: PageLayout,
+    read: (opened: OpenedPreview) => Promise<A>
+  ): Effect.Effect<A, FontNotLoaded> {
+    return Effect.flatMap(
+      Effect.promise(() => this.#openPreview(theme, requests, layout, read)),
+      Effect.fromResult
+    );
+  }
+
+  /** Playwright's side of {@link openPreview}, which awaits the page. */
+  async #openPreview<A>(
+    theme: PreviewTheme,
+    requests: readonly CellRequest[],
+    layout: PageLayout,
+    read: (opened: OpenedPreview) => Promise<A>
+  ): Promise<Result.Result<A, FontNotLoaded>> {
+    const pageCells = pageCellsOf(requests);
+    const html = previewDocument(themeStamps(theme), pageCells, layout, this.#assets.hostCss);
+    const context = await this.#browser.newContext({
+      viewport: pageViewport(layout, pageCells),
+      colorScheme: theme.scheme,
+      locale: "en-US",
+      reducedMotion: "no-preference",
+    });
+    try {
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      const sheets = new Map<string, string>();
+      cdp.on("CSS.styleSheetAdded", ({ header }) => {
+        sheets.set(header.styleSheetId, header.sourceURL);
+      });
+      // Enabled before the page loads, the CSS agent keeps each stylesheet's source text, which
+      // gives each declaration as written, its importance and its longhands.
+      await cdp.send("DOM.enable");
+      await cdp.send("CSS.enable");
+      await page.route(`${PAGE_ORIGIN}/**`, (route) => this.#serve(route, html));
+      await page.goto(`${PAGE_ORIGIN}/preview.html`);
+      if (pageCells.some((cell) => cell.content._tag === "Client")) {
+        await awaitMount(page);
+        await checkSettled(page);
+      }
+      const font = await checkFont(page, fontSweepSelector(requests));
+      if (Result.isFailure(font)) {
+        return Result.fail(font.failure);
+      }
+      const { root } = await cdp.send("DOM.getDocument", { depth: -1, pierce: true });
+      const forced = await forceStates(page, requests, { cdp, root: root.nodeId });
+      return Result.succeed(await read({ page, cdp, forced, sheets, document: root }));
+    } finally {
+      await context.close();
+    }
   }
 
   /** Playwright's side of {@link renderPreview} for one page of cells, which awaits the page. */
@@ -354,6 +429,37 @@ function mergePages(pages: readonly RenderedPreview[]): RenderedPreview {
     cells: new Map(pages.flatMap(({ cells }) => [...cells])),
   };
 }
+
+/**
+ * A page {@link CompareBrowser.openPreview} opened: its cells mounted, their fonts loaded and their
+ * states forced through `cdp`, the session that enabled the CSS agent before the page loaded, so the
+ * agent holds each stylesheet's source text.
+ */
+export type OpenedPreview = {
+  readonly page: Page;
+  readonly cdp: CDPSession;
+  /** The ids of the cells whose forced state changed their styles against their resting twins. */
+  readonly forced: ReadonlySet<string>;
+  /** The URL of each stylesheet the page loaded, by its DevTools id; the page's own for a `<style>`. */
+  readonly sheets: ReadonlyMap<string, string>;
+  /**
+   * The whole document, read once before the page forced any state. Reading it again numbers the
+   * nodes anew and loses the forced states, which the CSS agent keeps by node id.
+   */
+  readonly document: DocumentNode;
+};
+
+/** A node of the document as DevTools reads it, with every node below it. */
+export type DocumentNode = {
+  readonly nodeId: number;
+  readonly nodeType: number;
+  readonly localName: string;
+  readonly nodeValue: string;
+  readonly attributes?: readonly string[];
+  readonly children?: readonly DocumentNode[];
+  /** The node's shadow roots, the browser's own among them, as an `<input>`'s placeholder. */
+  readonly shadowRoots?: readonly DocumentNode[];
+};
 
 /** Wait for the client bundle to mount the client cells and their popups to settle. */
 async function awaitMount(page: Page): Promise<void> {
@@ -460,32 +566,36 @@ async function checkFont(page: Page, selector: string): Promise<Result.Result<st
  * Force each cell's pseudo classes and write its forced attributes on its forced element, and
  * return the ids whose styles that changed.
  */
-async function forceStates(page: Page, requests: readonly CellRequest[]): Promise<ReadonlySet<string>> {
+async function forceStates(
+  page: Page,
+  requests: readonly CellRequest[],
+  session?: { readonly cdp: CDPSession; readonly root: number }
+): Promise<ReadonlySet<string>> {
   const forcing = requests.filter(forcesState);
   if (forcing.length === 0) {
     return new Set();
   }
-  const cdp = await page.context().newCDPSession(page);
+  const cdp = session?.cdp ?? (await page.context().newCDPSession(page));
   await cdp.send("DOM.enable");
   await cdp.send("CSS.enable");
-  const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
-  for (const request of forcing) {
-    const { nodeId } = await cdp.send("DOM.querySelector", {
-      nodeId: root.nodeId,
-      selector: cellSelector(request.id, request.forcedOn),
-    });
-    await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
-    if (request.writesHighlightAttribute) {
-      await cdp.send("DOM.setAttributeValue", { nodeId, name: "data-highlighted", value: "" });
-    }
-  }
-  const changed = new Set<string>();
-  for (const request of forcing) {
-    if (await stateChanged(page, request)) {
-      changed.add(request.id);
-    }
-  }
-  return changed;
+  // `DOM.getDocument` numbers the nodes anew, and the CSS agent keeps a forced state by node id, so a
+  // session that read the document keeps those ids.
+  const root = { nodeId: session?.root ?? (await cdp.send("DOM.getDocument", { depth: 0 })).root.nodeId };
+  // Each cell's state is its own node's, so the cells force side by side, and then compare.
+  await Promise.all(
+    forcing.map(async (request) => {
+      const { nodeId } = await cdp.send("DOM.querySelector", {
+        nodeId: root.nodeId,
+        selector: cellSelector(request.id, request.forcedOn),
+      });
+      await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
+      if (request.writesHighlightAttribute) {
+        await cdp.send("DOM.setAttributeValue", { nodeId, name: "data-highlighted", value: "" });
+      }
+    })
+  );
+  const reached = await Promise.all(forcing.map((request) => stateChanged(page, request)));
+  return new Set(forcing.flatMap((request, at) => (reached[at] === true ? [request.id] : [])));
 }
 
 /** Whether a cell's measured elements, or any element inside them, differ from its resting twin's. */

@@ -31,6 +31,9 @@ import { CLIENT_HIDDEN, MOUNTED, MOUNTED_DONE } from "./preview-page.ts";
 /** No BOOLEAN property turned on, as a preview shows every property at its default. */
 const AT_DEFAULTS: ReadonlySet<string> = new Set();
 
+/** A slot's `data-compare-on`, the BOOLEAN properties the cell turns on, as JSON. */
+const parseTurnedOn = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Array(Schema.String)));
+
 /** A slot's `data-compare-props`, which `previewDocument` writes as the cell's JSON. */
 const parseCell = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.Record(Schema.String, Schema.String))
@@ -63,7 +66,9 @@ async function mount(renderings: ReadonlyMap<string, ClientCellRendering>): Prom
     const root = document.createElement("div");
     root.style.display = "contents";
     slot.append(root);
-    const element = rendering.element(parseCell(slot.dataset.compareProps ?? ""), AT_DEFAULTS, slot);
+    const turnedOn =
+      slot.dataset.compareOn === undefined ? AT_DEFAULTS : new Set(parseTurnedOn(slot.dataset.compareOn));
+    const element = rendering.element(parseCell(slot.dataset.compareProps ?? ""), turnedOn, slot);
     flushSync(() => {
       createRoot(root, {
         onUncaughtError: (error) => {

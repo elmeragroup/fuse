@@ -14,7 +14,8 @@
  */
 import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { ComponentDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type { ComponentDefinition, LabelDefinition } from "./component-spec";
 
 /** The label's text, the default of its `Label` property: the docs' field label. */
 export const LABEL_TEXT = "Email";
@@ -34,6 +35,15 @@ export const LABEL_OMITTED_COMPOSITIONS: ReadonlyMap<string, string> = new Map(
   ])
 );
 
+/** The label's text layer, which sets the `Label` property. */
+const LABEL_LAYER: LabelDefinition = {
+  key: "label",
+  name: "label",
+  characters: LABEL_TEXT,
+  textProperty: "Label",
+  shownIn: () => true,
+};
+
 /** A label, as `<Field.Root disabled={…}><Field.Label>Email</Field.Label></Field.Root>`. */
 export const LABEL: ComponentDefinition = {
   key: "label",
@@ -48,7 +58,19 @@ export const LABEL: ComponentDefinition = {
   facts: new Map(),
   omittedStates: new Set(),
   omittedCompositions: LABEL_OMITTED_COMPOSITIONS,
-  label: { key: "label", name: "label", characters: LABEL_TEXT, textProperty: "Label", shownIn: () => true },
+  label: LABEL_LAYER,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The label's manifest, which the capture-backed build reads with `captures/label.json`. */
+export const LABEL_MANIFEST: SetManifest = {
+  key: "label",
+  name: "Label",
+  slot: "field-label",
+  axes: LABEL.axes,
+  columnAxis: "state",
+  label: LABEL_LAYER,
   iconsFor: () => [],
   swapProperties: [],
 };

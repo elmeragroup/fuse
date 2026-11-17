@@ -29,6 +29,7 @@
  */
 import { selectContentVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type {
   Cell,
   ComponentDefinition,
@@ -39,6 +40,8 @@ import type {
 import { DIV_BLOCK } from "./element-defaults";
 import {
   MENU_CHECK,
+  MENU_GROUP_LABEL_MANIFEST,
+  MENU_SEPARATOR_MANIFEST,
   menuGroupPart,
   menuRowPart,
   menuSeparatorPart,
@@ -47,7 +50,7 @@ import {
   SELECT_POPUP_WIDTH,
 } from "./menu-kit";
 import { always } from "./popup-facts";
-import { SELECT_TRIGGER } from "./select-trigger-kit";
+import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 
 const { content, item, itemText, itemIndicator, group } = selectContentVariants();
 
@@ -141,6 +144,42 @@ export const SELECT_ITEM: ComponentDefinition = {
 };
 
 /** A row of the popup, an instance of the row's set at rest and not selected, its label exposed. */
+/** The check a selected row shows, as the markup draws it. */
+const { classes: _checkClasses, ...CHECK } = MENU_CHECK;
+
+/** The row's text and its indicator, as a manifest names them by their places in the row. */
+const ITEM_PARTS: readonly PartManifest[] = [
+  {
+    key: "text",
+    slot: undefined,
+    place: "select-item/0",
+    shownIn: always,
+    label: ITEM_TEXT.label,
+    iconsFor: () => [],
+  },
+  {
+    key: "indicator",
+    slot: undefined,
+    place: "select-item/1",
+    shownIn: isSelected,
+    label: undefined,
+    iconsFor: () => [CHECK],
+  },
+];
+
+/** The row's manifest, which the capture-backed build reads with `captures/select-item.json`. */
+export const SELECT_ITEM_MANIFEST: SetManifest = {
+  key: "select-item",
+  name: "Select item",
+  slot: "select-item",
+  axes: SELECT_ITEM.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: ITEM_PARTS,
+  swapProperties: [],
+};
+
 const rowOf = (label: string, shownIn: (cell: Cell) => boolean): InstanceDefinition =>
   menuRowPart(SELECT_ITEM, { selected: "off", state: "rest" }, label, shownIn);
 
@@ -246,6 +285,121 @@ export const SELECT_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "popup",
       of: SELECT_POPUP,
+      cell: () => ({ content: "flat" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A row of the popup's list as a manifest names it, at rest, showing its label. */
+function rowManifest(label: string, shownIn: (cell: Cell) => boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `item-${label.toLowerCase()}`,
+    of: SELECT_ITEM_MANIFEST,
+    cell: () => ({ selected: "off", state: "rest" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn,
+    exposed: true,
+  };
+}
+
+/** A group of the popup's list as a manifest names it: its caption, then its rows. */
+function groupManifest({ label, rows }: (typeof SELECT_GROUPS)[number]): PartManifest {
+  return {
+    key: `group-${label.toLowerCase()}`,
+    slot: "select-group",
+    shownIn: isGrouped,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [
+      {
+        kind: "instance",
+        key: `label-${label.toLowerCase()}`,
+        of: MENU_GROUP_LABEL_MANIFEST,
+        cell: () => ({ kind: "plain" }),
+        properties: () => ({ text: { Label: label } }),
+        shownIn: isGrouped,
+        exposed: true,
+      },
+      ...rows.map((row) => rowManifest(row, isGrouped)),
+    ],
+  };
+}
+
+/** The popup's list, as a manifest names it at its place: the flat rows, or the groups and their separator. */
+const LIST_MANIFEST: PartManifest = {
+  key: "list",
+  slot: undefined,
+  place: "select-content/0",
+  shownIn: always,
+  label: undefined,
+  iconsFor: () => [],
+  parts: (() => {
+    const [first, second] = SELECT_GROUPS.map(groupManifest);
+    const separator: InstanceManifest = {
+      kind: "instance",
+      key: "separator",
+      of: MENU_SEPARATOR_MANIFEST,
+      cell: () => ({ size: "default" }),
+      shownIn: isGrouped,
+    };
+    return [
+      ...SELECT_BASIC_ROWS.map((row) => rowManifest(row, isFlat)),
+      ...(first === undefined || second === undefined ? [] : [first, separator, second]),
+    ];
+  })(),
+};
+
+/** The popup's manifest, which the capture-backed build reads with `captures/select-popup.json`. */
+export const SELECT_POPUP_MANIFEST: SetManifest = {
+  key: "select-popup",
+  name: "Select popup",
+  slot: "select-content",
+  axes: SELECT_POPUP.axes,
+  columnAxis: "content",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [LIST_MANIFEST],
+  swapProperties: [],
+};
+
+/**
+ * The open Select's manifest, which the capture-backed build reads with `captures/select-open.json`:
+ * the trigger and the popup it measures, the popup's `sideOffset` as the docs' API reference gives
+ * `Select.Content`'s default, and `alignItemWithTrigger` as the renderer passes it, `false`, not the
+ * default `true`: the kit draws the popup beside the trigger only.
+ */
+export const SELECT_OPEN_MANIFEST: SetManifest = {
+  key: "select-open",
+  name: "Select (open)",
+  slot: "select-open",
+  axes: SELECT_OPEN.axes,
+  columnAxis: "size",
+  union: ["select-trigger", "select-content"],
+  sideOffset: 4,
+  alignItemWithTrigger: false,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "trigger",
+      of: SELECT_TRIGGER_MANIFEST,
+      cell: (outer) => ({
+        width: "hug",
+        size: outer.size ?? "",
+        state: "rest",
+        content: "placeholder",
+        open: "on",
+      }),
+      shownIn: always,
+    },
+    {
+      kind: "instance",
+      key: "popup",
+      of: SELECT_POPUP_MANIFEST,
       cell: () => ({ content: "flat" }),
       shownIn: always,
     },

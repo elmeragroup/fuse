@@ -32,6 +32,7 @@ import {
   overlayModalPopupClass,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import {
   COMMAND_DIALOG_COMMANDS,
   COMMAND_DIALOG_EMPTY_TEXT,
@@ -39,11 +40,11 @@ import {
   COMMAND_DIALOG_TOP,
   COMMAND_DIALOG_VIEWPORT,
 } from "./command-dialog-text";
-import { COMMAND_ITEM } from "./command-kit";
+import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST } from "./command-kit";
 import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { DIV_BLOCK } from "./element-defaults";
-import { INPUT_GROUP } from "./input-group-kit";
-import { KBD } from "./kbd-kit";
+import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
+import { KBD, KBD_MANIFEST } from "./kbd-kit";
 import { OPEN_FACTS, always, never } from "./popup-facts";
 
 const { content, input, empty, list, footer, hint } = commandVariants();
@@ -205,6 +206,114 @@ export const COMMAND_DIALOG_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "palette",
       of: COMMAND_PALETTE,
+      cell: () => ({ content: "commands" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A footer hint as a manifest names it: its words, then its keys. */
+function hintManifest(entry: (typeof COMMAND_DIALOG_HINTS)[number]): PartManifest {
+  return {
+    key: `hint-${entry.key}`,
+    slot: "command-hint",
+    shownIn: always,
+    label: { key: "label", name: "label", characters: entry.label, textProperty: undefined, shownIn: always },
+    iconsFor: () => [],
+    parts: entry.keys.map((key, index): InstanceManifest => ({
+      kind: "instance",
+      key: `key-${String(index + 1)}`,
+      of: KBD_MANIFEST,
+      cell: () => ({ content: "text" }),
+      properties: () => ({ text: { Label: key } }),
+      shownIn: always,
+      exposed: true,
+    })),
+  };
+}
+
+/** The palette's manifest, which the capture-backed build reads with `captures/command-palette.json`. */
+export const COMMAND_PALETTE_MANIFEST: SetManifest = {
+  key: "command-palette",
+  name: "Command palette",
+  slot: "command-content",
+  axes: COMMAND_PALETTE.axes,
+  columnAxis: "content",
+  viewport: COMMAND_DIALOG_VIEWPORT,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "input",
+      of: INPUT_GROUP_MANIFEST,
+      slot: "command-input",
+      cell: () => ({ form: "search", state: "rest" }),
+      shownIn: always,
+      exposed: true,
+    },
+    {
+      key: "empty",
+      slot: "command-empty",
+      shownIn: always,
+      label: {
+        key: "text",
+        name: "text",
+        characters: COMMAND_DIALOG_EMPTY_TEXT,
+        textProperty: undefined,
+        shownIn: never,
+      },
+      iconsFor: () => [],
+    },
+    {
+      key: "list",
+      slot: "command-list",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: COMMAND_DIALOG_COMMANDS.map((label, index): InstanceManifest => ({
+        kind: "instance",
+        key: `item-${String(index + 1)}`,
+        of: COMMAND_ITEM_MANIFEST,
+        cell: () => ({ trailing: "none", state: "rest" }),
+        properties: () => ({ text: { Label: label } }),
+        shownIn: always,
+        exposed: true,
+      })),
+    },
+    {
+      key: "footer",
+      slot: "command-footer",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: COMMAND_DIALOG_HINTS.map(hintManifest),
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Command dialog's manifest, which the capture-backed build reads with
+ * `captures/command-dialog-open.json`: the Backdrop and the palette over it, in the viewport the
+ * palette is fixed in.
+ */
+export const COMMAND_DIALOG_OPEN_MANIFEST: SetManifest = {
+  key: "command-dialog-open",
+  name: "Command dialog (open)",
+  slot: "command-dialog-open",
+  axes: COMMAND_DIALOG_OPEN.axes,
+  columnAxis: "placement",
+  viewport: COMMAND_DIALOG_VIEWPORT,
+  union: ["dialog-overlay", "command-content"],
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "palette",
+      of: COMMAND_PALETTE_MANIFEST,
       cell: () => ({ content: "commands" }),
       shownIn: always,
     },

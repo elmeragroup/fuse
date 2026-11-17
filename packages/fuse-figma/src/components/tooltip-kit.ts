@@ -24,7 +24,8 @@
  */
 import { focusRing, tooltipVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { ICON_BUTTON } from "./button-kit";
+import type { SetManifest } from "../capture/manifest";
+import { ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
 import type { ComponentDefinition, PartDefinition } from "./component-spec";
 import { always, openPopupFacts } from "./popup-facts";
 import { TOOLTIP_TEXT } from "./tooltip-text";
@@ -121,6 +122,65 @@ export const TOOLTIP_OPEN: ComponentDefinition = {
       slot: "tooltip-trigger",
       classesFor: () => focusRing({ target: "self" }).root(),
       facts: new Map([["data-popup-open", always]]),
+      shownIn: always,
+      exposed: true,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The popup's manifest, which the capture-backed build reads with `captures/tooltip-content.json`. */
+export const TOOLTIP_CONTENT_MANIFEST: SetManifest = {
+  key: "tooltip-content",
+  name: "Tooltip content",
+  slot: "tooltip-content",
+  axes: TOOLTIP_CONTENT.axes,
+  columnAxis: "content",
+  label: { key: "text", name: "text", characters: TOOLTIP_TEXT, textProperty: "Text", shownIn: always },
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "arrow",
+      slot: undefined,
+      place: "tooltip-content/0",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Tooltip's manifest, which the capture-backed build reads with `captures/tooltip-open.json`:
+ * the popup and the trigger, which `Tooltip.Trigger` stamps with its own slot, and
+ * `Tooltip.Content`'s `sideOffset` as the docs' API reference gives it.
+ */
+export const TOOLTIP_OPEN_MANIFEST: SetManifest = {
+  key: "tooltip-open",
+  name: "Tooltip (open)",
+  slot: "tooltip-open",
+  axes: TOOLTIP_OPEN.axes,
+  columnAxis: "placement",
+  union: ["tooltip-content", "tooltip-trigger"],
+  sideOffset: 4,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "content",
+      of: TOOLTIP_CONTENT_MANIFEST,
+      cell: () => ({ content: "basic" }),
+      shownIn: always,
+    },
+    {
+      kind: "instance",
+      key: "trigger",
+      of: ICON_BUTTON_MANIFEST,
+      cell: () => ({ variant: "ghost", size: "icon", state: "rest" }),
+      properties: () => ({ swap: { Icon: "Info" } }),
+      slot: "tooltip-trigger",
       shownIn: always,
       exposed: true,
     },

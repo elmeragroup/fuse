@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canonicalCss,
+  sameCssValue,
   evaluateLength,
   evaluateNumber,
   evaluatePercentage,
@@ -251,5 +253,40 @@ describe("readShadows", () => {
 
   it("refuses inset shadows", () => {
     expect(readShadows("inset 0 0 0 1px var(--ring)", index)).toBeUndefined();
+  });
+});
+
+describe("canonicalCss", () => {
+  it("spells notation-only differences alike, as a minifier rewrites them", () => {
+    expect(canonicalCss("0.25rem")).toBe("0.25rem");
+    expect(canonicalCss(".25rem")).toBe("0.25rem");
+    expect(canonicalCss("200ms")).toBe("0.2s");
+    expect(canonicalCss(".2s")).toBe("0.2s");
+    expect(canonicalCss("0px")).toBe("0");
+    expect(canonicalCss("calc( 0.5 * 100% )")).toBe("calc(0.5 * 100%)");
+    expect(canonicalCss("translate(-.5rem,0px)")).toBe("translate(-0.5rem,0)");
+  });
+
+  it("keeps values apart that differ in meaning", () => {
+    expect(canonicalCss("1rem")).toBe("1rem");
+    expect(canonicalCss("0%")).toBe("0%");
+    expect(canonicalCss("#0000000d")).toBe("#0000000d");
+    expect(canonicalCss("var(--spacing-04)")).toBe("var(--spacing-04)");
+    expect(canonicalCss("2ms")).toBe("0.002s");
+  });
+});
+
+describe("sameCssValue", () => {
+  it("reads values that evaluate alike as the same", () => {
+    expect(sameCssValue("width", "calc(0.25rem * 4)", "1rem")).toBe(true);
+    expect(sameCssValue("border-color", "transparent", "#0000")).toBe(true);
+    expect(sameCssValue("opacity", "50%", ".5")).toBe(true);
+    expect(sameCssValue("top", "calc(1 / 2 * 100%)", "50%")).toBe(true);
+  });
+
+  it("keeps values apart that differ in meaning", () => {
+    expect(sameCssValue("width", "calc(0.25rem * 4)", "15px")).toBe(false);
+    expect(sameCssValue("color", "rgb(0 0 0 / 0.05)", "#0000000d")).toBe(false);
+    expect(sameCssValue("width", "50%", ".5")).toBe(false);
   });
 });

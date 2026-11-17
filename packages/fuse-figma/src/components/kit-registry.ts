@@ -8,9 +8,15 @@
  * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
+import type { SetManifest } from "../capture/manifest";
 import { ACCORDION_ITEM } from "./accordion-kit";
-import { ALERT_DIALOG_CONTENT, ALERT_DIALOG_OPEN } from "./alert-dialog-kit";
-import { ALERT } from "./alert-kit";
+import {
+  ALERT_DIALOG_CONTENT,
+  ALERT_DIALOG_CONTENT_MANIFEST,
+  ALERT_DIALOG_OPEN,
+  ALERT_DIALOG_OPEN_MANIFEST,
+} from "./alert-dialog-kit";
+import { ALERT, ALERT_MANIFEST } from "./alert-kit";
 import { AVATAR, AVATAR_GROUP } from "./avatar-kit";
 import { BADGE } from "./badge-kit";
 import {
@@ -20,34 +26,70 @@ import {
   BREADCRUMB_SEPARATOR,
   BREADCRUMB_TRAIL,
 } from "./breadcrumb-kit";
-import { BUTTON, ICON_BUTTON } from "./button-kit";
+import { BUTTON, BUTTON_MANIFEST, ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CHECKBOX } from "./checkbox-kit";
-import { COMBOBOX_EMPTY, COMBOBOX_ITEM, COMBOBOX_OPEN, COMBOBOX_POPUP } from "./combobox-kit";
-import { COMMAND_DIALOG_OPEN, COMMAND_PALETTE } from "./command-dialog-kit";
-import { COMMAND_ITEM, COMMAND_LIST } from "./command-kit";
+import {
+  COMBOBOX_EMPTY,
+  COMBOBOX_EMPTY_MANIFEST,
+  COMBOBOX_ITEM,
+  COMBOBOX_ITEM_MANIFEST,
+  COMBOBOX_OPEN,
+  COMBOBOX_OPEN_MANIFEST,
+  COMBOBOX_POPUP,
+  COMBOBOX_POPUP_MANIFEST,
+} from "./combobox-kit";
+import {
+  COMMAND_DIALOG_OPEN,
+  COMMAND_DIALOG_OPEN_MANIFEST,
+  COMMAND_PALETTE,
+  COMMAND_PALETTE_MANIFEST,
+} from "./command-dialog-kit";
+import { COMMAND_ITEM, COMMAND_ITEM_MANIFEST, COMMAND_LIST } from "./command-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { CONFIRM_BUTTON } from "./confirm-button-kit";
-import { DIALOG_CONTENT, DIALOG_OPEN } from "./dialog-kit";
+import { DIALOG_CONTENT, DIALOG_CONTENT_MANIFEST, DIALOG_OPEN, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM,
+  DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
   DROPDOWN_MENU_ITEM,
+  DROPDOWN_MENU_ITEM_MANIFEST,
   DROPDOWN_MENU_RADIO_ITEM,
+  DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
   DROPDOWN_MENU_SUB_TRIGGER,
+  DROPDOWN_MENU_SUB_TRIGGER_MANIFEST,
 } from "./dropdown-menu-kit";
-import { DROPDOWN_MENU_OPEN, DROPDOWN_MENU_POPUP, DROPDOWN_MENU_SUB_CONTENT } from "./dropdown-popup-kit";
+import {
+  DROPDOWN_MENU_OPEN,
+  DROPDOWN_MENU_OPEN_MANIFEST,
+  DROPDOWN_MENU_POPUP,
+  DROPDOWN_MENU_POPUP_MANIFEST,
+  DROPDOWN_MENU_SUB_CONTENT,
+} from "./dropdown-popup-kit";
 import { EMPTY } from "./empty-kit";
-import { FIELD_DESCRIPTION, FIELD_ERROR, FIELD_LEGEND, FIELD_TITLE } from "./field-text-kit";
+import {
+  FIELD_DESCRIPTION,
+  FIELD_DESCRIPTION_MANIFEST,
+  FIELD_ERROR,
+  FIELD_ERROR_MANIFEST,
+  FIELD_LEGEND,
+  FIELD_TITLE,
+} from "./field-text-kit";
 import { FILE_UPLOAD_DROPZONE } from "./file-upload-kit";
-import { INPUT_GROUP } from "./input-group-kit";
-import { INPUT } from "./input-kit";
+import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
+import { INPUT, INPUT_MANIFEST } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
-import { KBD, KBD_GROUP } from "./kbd-kit";
+import { KBD, KBD_GROUP, KBD_GROUP_MANIFEST, KBD_MANIFEST } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
-import { LABEL } from "./label-kit";
+import { LABEL, LABEL_MANIFEST } from "./label-kit";
 import { LINK } from "./link-kit";
 import { LOADER } from "./loader-kit";
-import { MENU_GROUP_LABEL, MENU_SEPARATOR } from "./menu-kit";
+import {
+  MENU_GROUP_LABEL,
+  MENU_GROUP_LABEL_MANIFEST,
+  MENU_SEPARATOR,
+  MENU_SEPARATOR_MANIFEST,
+} from "./menu-kit";
 import { METER } from "./meter-kit";
 import {
   NAVIGATION_MENU_BAR_LINK,
@@ -58,14 +100,26 @@ import {
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
 import { NUMBER_FIELD, NUMBER_FIELD_STEPPER } from "./number-field-kit";
 import { PAGINATION_EDGE, PAGINATION_ELLIPSIS, PAGINATION_LINK, PAGINATION_ROW } from "./pagination-kit";
-import { POPOVER_CONTENT, POPOVER_OPEN } from "./popover-kit";
+import {
+  POPOVER_CONTENT,
+  POPOVER_CONTENT_MANIFEST,
+  POPOVER_OPEN,
+  POPOVER_OPEN_MANIFEST,
+} from "./popover-kit";
 import { RADIO_GROUP } from "./radio-group-kit";
 import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
 import { RADIO } from "./radio-kit";
 import { RADIO_ROW } from "./radio-row-kit";
 import { SELECT_FIELD } from "./select-field-kit";
-import { SELECT_ITEM, SELECT_OPEN, SELECT_POPUP } from "./select-kit";
-import { SELECT_TRIGGER } from "./select-trigger-kit";
+import {
+  SELECT_ITEM,
+  SELECT_ITEM_MANIFEST,
+  SELECT_OPEN,
+  SELECT_OPEN_MANIFEST,
+  SELECT_POPUP,
+  SELECT_POPUP_MANIFEST,
+} from "./select-kit";
+import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 import { SEPARATOR } from "./separator-kit";
 import {
   SIDEBAR_GROUP_LABEL,
@@ -83,13 +137,18 @@ import {
 } from "./sidebar-section-kit";
 import { SKELETON } from "./skeleton-kit";
 import { SWITCH } from "./switch-kit";
-import { TEXT_FIELD } from "./text-field-kit";
+import { TEXT_FIELD, TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD } from "./textarea-field-kit";
 import { TEXTAREA } from "./textarea-kit";
 import { TOGGLE_GROUP } from "./toggle-group-kit";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 import { TOOLBAR } from "./toolbar-kit";
-import { TOOLTIP_CONTENT, TOOLTIP_OPEN } from "./tooltip-kit";
+import {
+  TOOLTIP_CONTENT,
+  TOOLTIP_CONTENT_MANIFEST,
+  TOOLTIP_OPEN,
+  TOOLTIP_OPEN_MANIFEST,
+} from "./tooltip-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -222,6 +281,11 @@ export type KitEntry = {
   readonly definition: ComponentDefinition;
   readonly page: KitPage;
   readonly previewCells: readonly Cell[];
+  /**
+   * The set's manifest where the build reads the set from its capture in `captures/`, which switches
+   * the set from the recipe cascade to the capture. Undefined for a set the recipe cascade builds.
+   */
+  readonly manifest?: SetManifest;
 };
 
 /**
@@ -275,8 +339,14 @@ export const KIT: readonly KitEntry[] = [
     definition: BUTTON,
     page: BUTTON_PAGE,
     previewCells: [...previewCells(BUTTON, "default", { icon: "none" }), ...iconCells(BUTTON, "default", {})],
+    manifest: BUTTON_MANIFEST,
   },
-  { definition: ICON_BUTTON, page: BUTTON_PAGE, previewCells: previewCells(ICON_BUTTON, "icon", {}) },
+  {
+    definition: ICON_BUTTON,
+    page: BUTTON_PAGE,
+    previewCells: previewCells(ICON_BUTTON, "icon", {}),
+    manifest: ICON_BUTTON_MANIFEST,
+  },
   {
     definition: CONFIRM_BUTTON,
     page: BUTTON_PAGE,
@@ -299,8 +369,18 @@ export const KIT: readonly KitEntry[] = [
   { definition: TOGGLE_GROUP, page: TOGGLE_PAGE, previewCells: matrixCells(TOGGLE_GROUP.axes) },
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
-  { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
-  { definition: KBD_GROUP, page: KBD_PAGE, previewCells: matrixCells(KBD_GROUP.axes) },
+  {
+    definition: KBD,
+    page: KBD_PAGE,
+    previewCells: matrixCells(KBD.axes),
+    manifest: KBD_MANIFEST,
+  },
+  {
+    definition: KBD_GROUP,
+    page: KBD_PAGE,
+    previewCells: matrixCells(KBD_GROUP.axes),
+    manifest: KBD_GROUP_MANIFEST,
+  },
   { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
   { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
   { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
@@ -308,17 +388,37 @@ export const KIT: readonly KitEntry[] = [
   { definition: SEPARATOR, page: SEPARATOR_PAGE, previewCells: matrixCells(SEPARATOR.axes) },
   { definition: SKELETON, page: SKELETON_PAGE, previewCells: matrixCells(SKELETON.axes) },
   { definition: LOADER, page: LOADER_PAGE, previewCells: matrixCells(LOADER.axes) },
-  { definition: LABEL, page: FIELD_PAGE, previewCells: matrixCells(LABEL.axes) },
-  { definition: FIELD_DESCRIPTION, page: FIELD_PAGE, previewCells: matrixCells(FIELD_DESCRIPTION.axes) },
-  { definition: FIELD_ERROR, page: FIELD_PAGE, previewCells: matrixCells(FIELD_ERROR.axes) },
+  { definition: LABEL, page: FIELD_PAGE, previewCells: matrixCells(LABEL.axes), manifest: LABEL_MANIFEST },
+  {
+    definition: FIELD_DESCRIPTION,
+    page: FIELD_PAGE,
+    previewCells: matrixCells(FIELD_DESCRIPTION.axes),
+    manifest: FIELD_DESCRIPTION_MANIFEST,
+  },
+  {
+    definition: FIELD_ERROR,
+    page: FIELD_PAGE,
+    previewCells: matrixCells(FIELD_ERROR.axes),
+    manifest: FIELD_ERROR_MANIFEST,
+  },
   { definition: FIELD_LEGEND, page: FIELD_PAGE, previewCells: matrixCells(FIELD_LEGEND.axes) },
   { definition: FIELD_TITLE, page: FIELD_PAGE, previewCells: matrixCells(FIELD_TITLE.axes) },
   // The labelled radio rows and the group, which show Field's legend, description and error.
   { definition: RADIO_ROW, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ROW.axes) },
   { definition: RADIO_GROUP, page: RADIO_PAGE, previewCells: matrixCells(RADIO_GROUP.axes) },
-  { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes) },
-  { definition: INPUT_GROUP, page: INPUT_PAGE, previewCells: matrixCells(INPUT_GROUP.axes) },
-  { definition: TEXT_FIELD, page: INPUT_PAGE, previewCells: matrixCells(TEXT_FIELD.axes) },
+  { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes), manifest: INPUT_MANIFEST },
+  {
+    definition: INPUT_GROUP,
+    page: INPUT_PAGE,
+    previewCells: matrixCells(INPUT_GROUP.axes),
+    manifest: INPUT_GROUP_MANIFEST,
+  },
+  {
+    definition: TEXT_FIELD,
+    page: INPUT_PAGE,
+    previewCells: matrixCells(TEXT_FIELD.axes),
+    manifest: TEXT_FIELD_MANIFEST,
+  },
   { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
   { definition: TEXTAREA_FIELD, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA_FIELD.axes) },
   { definition: AVATAR, page: AVATAR_PAGE, previewCells: matrixCells(AVATAR.axes) },
@@ -357,39 +457,84 @@ export const KIT: readonly KitEntry[] = [
     page: BREADCRUMB_PARTS_PAGE,
     previewCells: matrixCells(BREADCRUMB_TRAIL.axes),
   },
-  { definition: SELECT_TRIGGER, page: SELECT_PAGE, previewCells: matrixCells(SELECT_TRIGGER.axes) },
+  {
+    definition: SELECT_TRIGGER,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(SELECT_TRIGGER.axes),
+    manifest: SELECT_TRIGGER_MANIFEST,
+  },
   { definition: SELECT_FIELD, page: SELECT_PAGE, previewCells: matrixCells(SELECT_FIELD.axes) },
-  { definition: MENU_GROUP_LABEL, page: SELECT_PAGE, previewCells: matrixCells(MENU_GROUP_LABEL.axes) },
-  { definition: MENU_SEPARATOR, page: SELECT_PAGE, previewCells: matrixCells(MENU_SEPARATOR.axes) },
-  { definition: SELECT_ITEM, page: SELECT_PAGE, previewCells: matrixCells(SELECT_ITEM.axes) },
-  { definition: SELECT_POPUP, page: SELECT_PAGE, previewCells: matrixCells(SELECT_POPUP.axes) },
-  { definition: SELECT_OPEN, page: SELECT_PAGE, previewCells: matrixCells(SELECT_OPEN.axes) },
-  { definition: POPOVER_CONTENT, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_CONTENT.axes) },
-  { definition: POPOVER_OPEN, page: POPOVER_PAGE, previewCells: matrixCells(POPOVER_OPEN.axes) },
+  {
+    definition: MENU_GROUP_LABEL,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(MENU_GROUP_LABEL.axes),
+    manifest: MENU_GROUP_LABEL_MANIFEST,
+  },
+  {
+    definition: MENU_SEPARATOR,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(MENU_SEPARATOR.axes),
+    manifest: MENU_SEPARATOR_MANIFEST,
+  },
+  {
+    definition: SELECT_ITEM,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(SELECT_ITEM.axes),
+    manifest: SELECT_ITEM_MANIFEST,
+  },
+  {
+    definition: SELECT_POPUP,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(SELECT_POPUP.axes),
+    manifest: SELECT_POPUP_MANIFEST,
+  },
+  {
+    definition: SELECT_OPEN,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(SELECT_OPEN.axes),
+    manifest: SELECT_OPEN_MANIFEST,
+  },
+  {
+    definition: POPOVER_CONTENT,
+    page: POPOVER_PAGE,
+    previewCells: matrixCells(POPOVER_CONTENT.axes),
+    manifest: POPOVER_CONTENT_MANIFEST,
+  },
+  {
+    definition: POPOVER_OPEN,
+    page: POPOVER_PAGE,
+    previewCells: matrixCells(POPOVER_OPEN.axes),
+    manifest: POPOVER_OPEN_MANIFEST,
+  },
   {
     definition: DROPDOWN_MENU_ITEM,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_ITEM.axes),
+    manifest: DROPDOWN_MENU_ITEM_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_CHECKBOX_ITEM,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_CHECKBOX_ITEM.axes),
+    manifest: DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_RADIO_ITEM,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_RADIO_ITEM.axes),
+    manifest: DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_SUB_TRIGGER,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_SUB_TRIGGER.axes),
+    manifest: DROPDOWN_MENU_SUB_TRIGGER_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_POPUP,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_POPUP.axes),
+    manifest: DROPDOWN_MENU_POPUP_MANIFEST,
   },
   {
     definition: DROPDOWN_MENU_SUB_CONTENT,
@@ -400,25 +545,57 @@ export const KIT: readonly KitEntry[] = [
     definition: DROPDOWN_MENU_OPEN,
     page: DROPDOWN_MENU_PAGE,
     previewCells: matrixCells(DROPDOWN_MENU_OPEN.axes),
+    manifest: DROPDOWN_MENU_OPEN_MANIFEST,
   },
-  { definition: COMBOBOX_ITEM, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_ITEM.axes) },
-  { definition: COMBOBOX_EMPTY, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_EMPTY.axes) },
-  { definition: COMBOBOX_POPUP, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_POPUP.axes) },
-  { definition: COMBOBOX_OPEN, page: COMBOBOX_PAGE, previewCells: matrixCells(COMBOBOX_OPEN.axes) },
-  { definition: COMMAND_ITEM, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_ITEM.axes) },
+  {
+    definition: COMBOBOX_ITEM,
+    page: COMBOBOX_PAGE,
+    previewCells: matrixCells(COMBOBOX_ITEM.axes),
+    manifest: COMBOBOX_ITEM_MANIFEST,
+  },
+  {
+    definition: COMBOBOX_EMPTY,
+    page: COMBOBOX_PAGE,
+    previewCells: matrixCells(COMBOBOX_EMPTY.axes),
+    manifest: COMBOBOX_EMPTY_MANIFEST,
+  },
+  {
+    definition: COMBOBOX_POPUP,
+    page: COMBOBOX_PAGE,
+    previewCells: matrixCells(COMBOBOX_POPUP.axes),
+    manifest: COMBOBOX_POPUP_MANIFEST,
+  },
+  {
+    definition: COMBOBOX_OPEN,
+    page: COMBOBOX_PAGE,
+    previewCells: matrixCells(COMBOBOX_OPEN.axes),
+    manifest: COMBOBOX_OPEN_MANIFEST,
+  },
+  {
+    definition: COMMAND_ITEM,
+    page: COMMAND_PAGE,
+    previewCells: matrixCells(COMMAND_ITEM.axes),
+    manifest: COMMAND_ITEM_MANIFEST,
+  },
   { definition: COMMAND_LIST, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_LIST.axes) },
   // The palette and its open example, drawn from the Input group, Kbd and Command item sets above.
-  { definition: COMMAND_PALETTE, page: COMMAND_PAGE, previewCells: matrixCells(COMMAND_PALETTE.axes) },
+  {
+    definition: COMMAND_PALETTE,
+    page: COMMAND_PAGE,
+    previewCells: matrixCells(COMMAND_PALETTE.axes),
+    manifest: COMMAND_PALETTE_MANIFEST,
+  },
   {
     definition: COMMAND_DIALOG_OPEN,
     page: COMMAND_PAGE,
     previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
+    manifest: COMMAND_DIALOG_OPEN_MANIFEST,
   },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
   { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },
-  { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes) },
+  { definition: ALERT, page: ALERT_PAGE, previewCells: matrixCells(ALERT.axes), manifest: ALERT_MANIFEST },
   { definition: ACCORDION_ITEM, page: ACCORDION_PAGE, previewCells: matrixCells(ACCORDION_ITEM.axes) },
   {
     definition: SIDEBAR_MENU_BUTTON,
@@ -483,18 +660,40 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
   },
   { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
-  { definition: TOOLTIP_CONTENT, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_CONTENT.axes) },
-  { definition: TOOLTIP_OPEN, page: TOOLTIP_PAGE, previewCells: matrixCells(TOOLTIP_OPEN.axes) },
+  {
+    definition: TOOLTIP_CONTENT,
+    page: TOOLTIP_PAGE,
+    previewCells: matrixCells(TOOLTIP_CONTENT.axes),
+    manifest: TOOLTIP_CONTENT_MANIFEST,
+  },
+  {
+    definition: TOOLTIP_OPEN,
+    page: TOOLTIP_PAGE,
+    previewCells: matrixCells(TOOLTIP_OPEN.axes),
+    manifest: TOOLTIP_OPEN_MANIFEST,
+  },
   {
     definition: ALERT_DIALOG_CONTENT,
     page: ALERT_DIALOG_PAGE,
     previewCells: matrixCells(ALERT_DIALOG_CONTENT.axes),
+    manifest: ALERT_DIALOG_CONTENT_MANIFEST,
   },
   {
     definition: ALERT_DIALOG_OPEN,
     page: ALERT_DIALOG_PAGE,
     previewCells: matrixCells(ALERT_DIALOG_OPEN.axes),
+    manifest: ALERT_DIALOG_OPEN_MANIFEST,
   },
-  { definition: DIALOG_CONTENT, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_CONTENT.axes) },
-  { definition: DIALOG_OPEN, page: DIALOG_PAGE, previewCells: matrixCells(DIALOG_OPEN.axes) },
+  {
+    definition: DIALOG_CONTENT,
+    page: DIALOG_PAGE,
+    previewCells: matrixCells(DIALOG_CONTENT.axes),
+    manifest: DIALOG_CONTENT_MANIFEST,
+  },
+  {
+    definition: DIALOG_OPEN,
+    page: DIALOG_PAGE,
+    previewCells: matrixCells(DIALOG_OPEN.axes),
+    manifest: DIALOG_OPEN_MANIFEST,
+  },
 ];

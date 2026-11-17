@@ -40,6 +40,7 @@ import { comboboxVariants } from "@elmeragroup/fuse/recipe-catalog";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import {
   COMBOBOX_INPUT_GROUP_WIDTH,
   COMBOBOX_BASIC_ROWS,
@@ -56,9 +57,16 @@ import type {
   PartDefinition,
 } from "./component-spec";
 import { DIV_BLOCK } from "./element-defaults";
-import { INPUT_GROUP } from "./input-group-kit";
+import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
 import { SURFACE_PAD_SM } from "./kit-lengths";
-import { MENU_CHECK, menuGroupPart, menuRowPart, menuSeparatorPart } from "./menu-kit";
+import {
+  MENU_CHECK,
+  MENU_GROUP_LABEL_MANIFEST,
+  MENU_SEPARATOR_MANIFEST,
+  menuGroupPart,
+  menuRowPart,
+  menuSeparatorPart,
+} from "./menu-kit";
 import { always, never, openPopupFacts } from "./popup-facts";
 
 const { content, list, item, itemIndicator, empty } = comboboxVariants();
@@ -325,6 +333,176 @@ export const COMBOBOX_OPEN: ComponentDefinition = {
       kind: "instance",
       key: "popup",
       of: COMBOBOX_POPUP,
+      cell: () => ({ content: "flat" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A row of the popup's list as a manifest names it, at rest, showing its label. */
+function rowManifest(label: string, shownIn: (cell: Cell) => boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: `item-${label.toLowerCase()}`,
+    of: COMBOBOX_ITEM_MANIFEST,
+    cell: () => ({ selected: "off", state: "rest" }),
+    properties: () => ({ text: { Label: label } }),
+    shownIn,
+    exposed: true,
+  };
+}
+
+/** The row's manifest, which the capture-backed build reads with `captures/combobox-item.json`. */
+export const COMBOBOX_ITEM_MANIFEST: SetManifest = {
+  key: "combobox-item",
+  name: "Combobox item",
+  slot: "combobox-item",
+  axes: COMBOBOX_ITEM.axes,
+  columnAxis: "state",
+  label: {
+    key: "label",
+    name: "label",
+    characters: COMBOBOX_ITEM_TEXT,
+    textProperty: "Label",
+    shownIn: always,
+  },
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "indicator",
+      slot: undefined,
+      place: "combobox-item/0",
+      after: "label",
+      shownIn: (cell) => cell.selected === "on",
+      label: undefined,
+      iconsFor: () => {
+        const { classes: _classes, ...check } = MENU_CHECK;
+        return [check];
+      },
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The empty message's manifest, which the capture-backed build reads with `captures/combobox-empty.json`. */
+export const COMBOBOX_EMPTY_MANIFEST: SetManifest = {
+  key: "combobox-empty",
+  name: "Combobox empty",
+  slot: "combobox-empty",
+  axes: COMBOBOX_EMPTY.axes,
+  columnAxis: "content",
+  label: {
+    key: "text",
+    name: "text",
+    characters: COMBOBOX_EMPTY_TEXT,
+    textProperty: "Text",
+    shownIn: always,
+  },
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** A group of the popup's list as a manifest names it: its caption, then its rows. */
+function groupManifest({ value: label, items: rows }: (typeof COMBOBOX_GROUPS)[number]): PartManifest {
+  return {
+    key: `group-${label.toLowerCase()}`,
+    slot: "combobox-group",
+    shownIn: isGrouped,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [
+      {
+        kind: "instance",
+        key: `label-${label.toLowerCase()}`,
+        of: MENU_GROUP_LABEL_MANIFEST,
+        slot: "combobox-label",
+        cell: () => ({ kind: "plain" }),
+        properties: () => ({ text: { Label: label } }),
+        shownIn: isGrouped,
+        exposed: true,
+      },
+      ...rows.map((row) => rowManifest(row, isGrouped)),
+    ],
+  };
+}
+
+/**
+ * The popup's manifest, which the capture-backed build reads with `captures/combobox-popup.json`. Its
+ * sample's anchor, the Input group, fills the 384px host the sample renders in.
+ */
+export const COMBOBOX_POPUP_MANIFEST: SetManifest = {
+  key: "combobox-popup",
+  name: "Combobox popup",
+  slot: "combobox-content",
+  axes: COMBOBOX_POPUP.axes,
+  columnAxis: "content",
+  previewWidth: COMBOBOX_INPUT_GROUP_WIDTH,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "empty",
+      of: COMBOBOX_EMPTY_MANIFEST,
+      cell: () => ({ content: "empty" }),
+      shownIn: isEmpty,
+      exposed: true,
+    },
+    {
+      key: "list",
+      slot: "combobox-list",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: (() => {
+        const [first, second] = COMBOBOX_GROUPS.map(groupManifest);
+        const separator: InstanceManifest = {
+          kind: "instance",
+          key: "separator",
+          of: MENU_SEPARATOR_MANIFEST,
+          slot: "combobox-separator",
+          cell: () => ({ size: "default" }),
+          shownIn: isGrouped,
+        };
+        return [
+          ...COMBOBOX_BASIC_ROWS.map((row) => rowManifest(row, isFlat)),
+          ...(first === undefined || second === undefined ? [] : [first, separator, second]),
+        ];
+      })(),
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Combobox's manifest, which the capture-backed build reads with
+ * `captures/combobox-open.json`: the Input group and the popup it measures, and `Combobox.Content`'s
+ * `sideOffset` as the docs' API reference gives it.
+ */
+export const COMBOBOX_OPEN_MANIFEST: SetManifest = {
+  key: "combobox-open",
+  name: "Combobox (open)",
+  slot: "combobox-open",
+  axes: COMBOBOX_OPEN.axes,
+  columnAxis: "placement",
+  previewWidth: COMBOBOX_INPUT_GROUP_WIDTH,
+  union: ["input-group", "combobox-content"],
+  sideOffset: 6,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "input",
+      of: INPUT_GROUP_MANIFEST,
+      cell: () => ({ form: "caret open", state: "rest" }),
+      shownIn: always,
+    },
+    {
+      kind: "instance",
+      key: "popup",
+      of: COMBOBOX_POPUP_MANIFEST,
       cell: () => ({ content: "flat" }),
       shownIn: always,
     },

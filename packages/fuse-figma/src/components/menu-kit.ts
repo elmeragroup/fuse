@@ -24,6 +24,7 @@ import {
   selectContentVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type {
   AncestorDefinition,
   Cell,
@@ -142,6 +143,19 @@ export const MENU_GROUP_LABEL: ComponentDefinition = {
 };
 
 /** The hairline between a menu's groups, as `<Select.Separator />` in a popup that pads 4px across. */
+/** The label's manifest, which the capture-backed build reads with `captures/menu-group-label.json`. */
+export const MENU_GROUP_LABEL_MANIFEST: SetManifest = {
+  key: "menu-group-label",
+  name: "Menu group label",
+  slot: "menu-group-label",
+  elementSlot: (cell) => (isDropdownLabel(cell) ? "dropdown-menu-label" : "select-label"),
+  axes: MENU_GROUP_LABEL.axes,
+  columnAxis: "kind",
+  label: MENU_GROUP_LABEL.label,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
 export const MENU_SEPARATOR: ComponentDefinition = {
   key: "menu-separator",
   name: "Menu separator",
@@ -166,6 +180,19 @@ export const MENU_SEPARATOR: ComponentDefinition = {
 };
 
 /** The key part a menu row or group takes from its label: lowercase, a hyphen for each space. */
+/** The separator's manifest, which the capture-backed build reads with `captures/menu-separator.json`. */
+export const MENU_SEPARATOR_MANIFEST: SetManifest = {
+  key: "menu-separator",
+  name: "Menu separator",
+  slot: "menu-separator",
+  elementSlot: () => "select-separator",
+  axes: MENU_SEPARATOR.axes,
+  columnAxis: "size",
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
 const keyOf = (label: string): string => label.toLowerCase().replaceAll(" ", "-");
 
 /** The Check a selected row's indicator holds, fixed, so no swap property picks it. */

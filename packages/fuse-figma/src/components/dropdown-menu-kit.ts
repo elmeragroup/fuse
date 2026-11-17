@@ -1,3 +1,5 @@
+import { dropdownMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
+
 /**
  * Dropdown menu, as component sets on a page of their own. The shared `Menu group label` on the
  * Select page draws Dropdown menu's caption as its `menu` and `menu inset` kinds.
@@ -38,8 +40,7 @@
  * while the others fill (probe PM), and a row instance that hugs draws its text at its own width
  * while the row set's text fills (see U39-T3's report).
  */
-import { dropdownMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
-
+import type { SetManifest } from "../capture/manifest";
 import type {
   AncestorDefinition,
   Cell,
@@ -315,3 +316,72 @@ export const DROPDOWN_MENU_RADIO_ITEM: ComponentDefinition = checkableRow({
   characters: DROPDOWN_MENU_RADIO_TEXT,
   group: [RADIO_GROUP_ANCESTOR],
 });
+
+/** The sub trigger's manifest, which the capture-backed build reads with `captures/dropdown-menu-sub-trigger.json`. */
+export const DROPDOWN_MENU_SUB_TRIGGER_MANIFEST: SetManifest = {
+  key: "dropdown-menu-sub-trigger",
+  name: "Dropdown menu sub trigger",
+  slot: "dropdown-menu-sub-trigger",
+  axes: DROPDOWN_MENU_SUB_TRIGGER.axes,
+  columnAxis: "state",
+  label: DROPDOWN_MENU_SUB_TRIGGER.label,
+  iconsFor: () => {
+    const { classes: _classes, ...caret } = CARET;
+    return [caret];
+  },
+  swapProperties: [],
+};
+
+/** The row's manifest, which the capture-backed build reads with `captures/dropdown-menu-item.json`. */
+export const DROPDOWN_MENU_ITEM_MANIFEST: SetManifest = {
+  key: "dropdown-menu-item",
+  name: "Dropdown menu item",
+  slot: "dropdown-menu-item",
+  axes: DROPDOWN_MENU_ITEM.axes,
+  columnAxis: "state",
+  previewWidth: DROPDOWN_ROW_CELL_WIDTH,
+  label: DROPDOWN_MENU_ITEM.label,
+  iconsFor: () => [USER],
+  parts: [
+    {
+      key: "shortcut",
+      slot: "dropdown-menu-shortcut",
+      after: "label",
+      shownIn: always,
+      optional: { name: "Shortcut", defaultValue: true },
+      label: SHORTCUT.label,
+      iconsFor: () => [],
+    },
+  ],
+  swapProperties: DROPDOWN_MENU_ITEM.swapProperties,
+};
+
+/** A checkable row's manifest, as {@link checkableRow} draws the row. */
+function checkableRowManifest(row: ComponentDefinition, indicator: string): SetManifest {
+  return {
+    key: row.key,
+    name: row.name,
+    slot: row.slot,
+    axes: row.axes,
+    columnAxis: "state",
+    previewWidth: DROPDOWN_ROW_CELL_WIDTH,
+    label: row.label,
+    iconsFor: () => [],
+    parts: [
+      { key: "indicator", slot: indicator, shownIn: isChecked, label: undefined, iconsFor: () => [CHECK] },
+    ],
+    swapProperties: [],
+  };
+}
+
+/** The checkbox row's manifest, which the capture-backed build reads with `captures/dropdown-menu-checkbox-item.json`. */
+export const DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST: SetManifest = checkableRowManifest(
+  DROPDOWN_MENU_CHECKBOX_ITEM,
+  "dropdown-menu-checkbox-item-indicator"
+);
+
+/** The radio row's manifest, which the capture-backed build reads with `captures/dropdown-menu-radio-item.json`. */
+export const DROPDOWN_MENU_RADIO_ITEM_MANIFEST: SetManifest = checkableRowManifest(
+  DROPDOWN_MENU_RADIO_ITEM,
+  "dropdown-menu-radio-item-indicator"
+);

@@ -34,7 +34,7 @@ import {
 } from "./box-sizing";
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import type { BoxCascade, Feed, LayerStyle, SpecField } from "./cascade";
+import type { BoxCascade, Feed, LayerStyle, PartElement, SpecField } from "./cascade";
 import type {
   BoxDefinition,
   BuildContext,
@@ -442,9 +442,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // label's characters sit in, beside the ones the definition draws no layer for.
   const undrawn = box.undrawnChildren?.(cell);
   const elementChildren =
-    undrawn === undefined
+    cascade.elementChildren ??
+    (undrawn === undefined
       ? undefined
-      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn;
+      : shown.length + empty.length + slots.length + (label?.textElement === undefined ? 0 : 1) + undrawn);
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));
   const flowingAfter = trailing.filter((part) => !outOfFlow(part.cascade.style));
@@ -514,7 +515,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const growing = readGrowth(
     holder,
     flowing.map((part) => part.cascade.style),
-    box.underMaxHeight
+    box.underMaxHeight ?? cascade.measured?.underMaxHeight
   );
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
@@ -532,7 +533,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     )
       ? last.cascade.style
       : undefined;
-  readWraps(holder, growing, box.fitsOneLine);
+  const fitsOneLine = box.fitsOneLine ?? cascade.measured?.fitsOneLine;
+  readWraps(holder, growing, fitsOneLine);
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
   const clipped: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
@@ -541,7 +543,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // A popup that hugs its rows hugs the one that sets its width and fills the others.
   const across = rowsAcross(
     { layout, width: sizing.horizontal, limits },
-    flowing.map((part) => holdsWidthRow(part.kind === "instance" ? part.visit.part : part.child, cell))
+    flowing.map(
+      (part) =>
+        holdsWidthRow(part.kind === "instance" ? part.visit.part : part.child, cell) ||
+        part.cascade.measured?.holdsWidest === true
+    )
   );
   const minimum =
     across === undefined ? undefined : rowMinimum(limits.minWidth, room, reader, context.variables);
@@ -586,7 +592,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       clamp,
       variant,
       path: [...cascade.path, shown.key],
-      fitsOneLine: box.fitsOneLine,
+      fitsOneLine,
     };
     // A TEXT value gave the label other characters in place, so its layout follows its variant's.
     return shown === box.label || box.label === undefined
@@ -943,11 +949,7 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         cascade: cascade.part(
           child.classesFor(cell),
           name,
-          {
-            key: child.key,
-            slot: child.slot,
-            tag: child.slot === undefined ? child.element?.tag : child.tag,
-          },
+          elementOf(child),
           {
             inline: child.styleFor?.(cell) ?? [],
             defaults: child.elementDefaults ?? [],
@@ -956,6 +958,21 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
         ),
       };
     });
+}
+
+/**
+ * What finds a frame part's element: its key, its `data-slot` or the tag a direct-child selector
+ * reaches it by, and its place, where a capture-backed build finds a part without a `data-slot`.
+ */
+function elementOf(child: PartDefinition): PartElement {
+  const element: PartElement = {
+    key: child.key,
+    slot: child.slot,
+    tag: child.slot === undefined ? child.element?.tag : child.tag,
+  };
+  const placed = child.place === undefined ? element : { ...element, place: child.place };
+  const optional = child.optional === undefined ? placed : { ...placed, optional: true as const };
+  return child.after === undefined ? optional : { ...optional, after: child.after };
 }
 
 /**
@@ -984,7 +1001,12 @@ function mapPart(
   first: boolean
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
-  const minimum = namedMinimum(part.kind === "instance" ? part.visit.part : part.child, scope.cell, room);
+  const minimum = namedMinimum(
+    part.kind === "instance" ? part.visit.part : part.child,
+    scope.cell,
+    room,
+    part.cascade.measured?.widest === true
+  );
   if (part.kind === "instance") {
     const fixed = fixedPlace(
       { own: part.visit.part.of.viewport, composite: scope.viewport, style: part.cascade.style },

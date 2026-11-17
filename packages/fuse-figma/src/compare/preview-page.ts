@@ -72,7 +72,13 @@ export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 528, slotHeight:
  */
 export type CellContent =
   | { readonly _tag: "Static"; readonly html: string }
-  | { readonly _tag: "Client"; readonly set: string; readonly cell: Cell };
+  | {
+      readonly _tag: "Client";
+      readonly set: string;
+      readonly cell: Cell;
+      /** The BOOLEAN properties the cell turns on, where it turns any on, as a capture renders an optional part. */
+      readonly turnedOn?: readonly string[];
+    };
 
 /** A cell's place on the page: its id, what its slot holds, and the elements its box spans. */
 export type PageCell = {
@@ -375,10 +381,15 @@ function slotHtml(cell: PageCell, { x, y, width }: PageRect): string {
     case "Static":
       return `<div data-compare-cell="${cell.id}" style="${style}">${cell.content.html}</div>`;
     case "Client": {
-      const marks = attributes({
+      const own = {
         "data-compare-client": cell.content.set,
         "data-compare-props": JSON.stringify(cell.content.cell),
-      });
+      };
+      const marks = attributes(
+        cell.content.turnedOn === undefined
+          ? own
+          : { ...own, "data-compare-on": JSON.stringify(cell.content.turnedOn) }
+      );
       return `<div data-compare-cell="${cell.id}"${marks} style="${style}"></div>`;
     }
   }

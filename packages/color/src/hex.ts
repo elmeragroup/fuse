@@ -34,6 +34,31 @@ export function parse(input: string): Result<Srgb.Srgb, InvalidColor> {
   return ok(getOrThrow(Srgb.make(channels)));
 }
 
+const TRANSLUCENT_HEX_COLOR = /^#[0-9a-f]{8}$/i;
+
+/**
+ * Parse an eight-digit CSS hex color, `#rrggbbaa` in either case, whose fourth byte is the alpha
+ * (CSS Color 4 §5.2): the form {@link format} writes a translucent color in, and a minifier writes
+ * one in, as Fuse's built `styles.css` writes `shadow-xs`'s `#0000000d`. A token literal is opaque,
+ * which {@link parse} keeps to six digits.
+ *
+ * @param input - The text to parse, without surrounding whitespace.
+ * @returns The color, or `InvalidColor` when the input is not eight-digit hex notation.
+ */
+export function parseTranslucent(input: string): Result<Srgb.Srgb, InvalidColor> {
+  if (!TRANSLUCENT_HEX_COLOR.test(input)) {
+    return err(new InvalidColor("hex", input));
+  }
+  // A byte divided by 255 is in 0..1, so the channels always construct.
+  const channels = {
+    r: byte(input.slice(1, 3)),
+    g: byte(input.slice(3, 5)),
+    b: byte(input.slice(5, 7)),
+    alpha: byte(input.slice(7, 9)),
+  };
+  return ok(getOrThrow(Srgb.make(channels)));
+}
+
 function byte(pair: string): number {
   return Number.parseInt(pair, 16) / 255;
 }
