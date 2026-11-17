@@ -15,6 +15,7 @@ import type {
   KitSpec,
   NumberSpec,
   TextLayerSpec,
+  TextStyleSpec,
 } from "../../src/components/kit-spec.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { aliasOf, color, fixtureFile, GLYPH_FONT, string } from "./fake-fixtures.ts";
@@ -56,7 +57,29 @@ const ONE_PAGE = {
   icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
 } as const satisfies Pick<KitSpec, "pages" | "icons">;
 
-/** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
+/**
+ * The one text style the kit's docs link, in Roboto Medium, which the kit bundles, at literal type so
+ * it binds no variable the fixture file lacks.
+ */
+const FIXTURE_STYLE: TextStyleSpec = {
+  key: "text-style/caption",
+  name: "Caption",
+  description: "The docs' captions.",
+  fontFamily: { kind: "literal", value: "Roboto" },
+  fontWeight: { kind: "literal", style: "Medium" },
+  fontSize: literal(12),
+  lineHeight: literal(16),
+  letterSpacing: { unit: "PERCENT", value: 0 },
+  textCase: "ORIGINAL",
+  textDecoration: "NONE",
+  textWrapStyle: "AUTO",
+};
+
+/**
+ * A kit with one Button variant, no icons and no previews, which bundles Roboto Medium, and the
+ * minimal docs every kit page holds: a title, the Button's labels, the `Examples` header and the
+ * Button's example.
+ */
 export const KIT: KitSpec = {
   ...ONE_PAGE,
   fonts: [{ family: "Roboto", style: "Medium" }],
@@ -99,7 +122,47 @@ export const KIT: KitSpec = {
     },
   ],
   previews: [],
-  textStyles: [],
+  textStyles: [FIXTURE_STYLE],
+  docs: [
+    {
+      page: "page",
+      title: {
+        kind: "text",
+        key: "docs/page/title",
+        name: "Header",
+        page: "page",
+        text: "Fuse components",
+        style: FIXTURE_STYLE.key,
+      },
+      labels: [
+        {
+          kind: "labels",
+          key: "docs/page/labels/button",
+          name: "Button labels",
+          page: "page",
+          componentSet: "button",
+          nameStyle: FIXTURE_STYLE.key,
+          axisStyle: FIXTURE_STYLE.key,
+        },
+      ],
+      examplesHeader: {
+        kind: "text",
+        key: "docs/page/examples-header",
+        name: "Header",
+        page: "page",
+        text: "Examples",
+        style: FIXTURE_STYLE.key,
+      },
+      example: {
+        kind: "example",
+        key: "docs/page/example",
+        name: "Example",
+        page: "page",
+        componentSet: "button",
+        variant: "button/size=md",
+      },
+    },
+  ],
 };
 
 /** An axis that fills the room its parent's auto layout gives the layer. */
@@ -265,12 +328,11 @@ export async function buttonVariant(file: FakeFigma): Promise<ComponentNode> {
 }
 
 /**
- * The lines a plan that changes anything in the Button set ends with: it lays out the set's grid
- * and the page again.
+ * The line a plan that changes anything in the Button set ends with: it lays out the page again,
+ * the set's grid with it.
  */
 export const RELAYOUT = [
-  "Button: lay out 1 variants in 1 columns and 1 rows",
-  "Fuse components: place Button and Icons in a row",
+  "Fuse components: place Button and Icons, with their labels and the page's title and example, in a row",
 ];
 
 /**

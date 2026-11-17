@@ -31,7 +31,8 @@ import { describeNumber, near } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { requireFont, resolveOnPage } from "./fonts.ts";
 import { findOwned, indexSiblings, keyOf, setKey, staleOwned } from "./identity.ts";
-import { change } from "./plan.ts";
+import { change, existing } from "./plan.ts";
+import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
 
 /** The label of the change lines that add or remove a style. */
@@ -255,8 +256,12 @@ function writeType(run: Run, style: TextStyle, spec: TextStyleSpec, font: FontNa
   }
 }
 
-/** Plan one style the file holds: its name, its description and its type. */
-function planStyle(run: Run, style: TextStyle, spec: TextStyleSpec, font: FontName): void {
+/**
+ * Plan one style the file holds: its name, its description and its type.
+ *
+ * @returns Whether the plan rewrites its type, which resizes every text that links it.
+ */
+function planStyle(run: Run, style: TextStyle, spec: TextStyleSpec, font: FontName): boolean {
   const label = `${LABEL} / ${spec.name}`;
   if (style.name !== spec.name) {
     change(run.plan, label, `rename from ${style.name}`, () => {
@@ -269,11 +274,24 @@ function planStyle(run: Run, style: TextStyle, spec: TextStyleSpec, font: FontNa
     });
   }
   const drift = typeDrift(run, style, spec, font);
-  if (drift.length > 0) {
-    requireFont(run, label, font);
-    change(run.plan, label, drift.join(", "), () => writeType(run, style, spec, font));
+  if (drift.length === 0) {
+    return false;
   }
+  requireFont(run, label, font);
+  change(run.plan, label, drift.join(", "), () => writeType(run, style, spec, font));
+  return true;
 }
+
+/** A text style as the plan leaves it, and the font its writes set, which a text that links it takes. */
+export type PlannedTextStyle = {
+  readonly style: Target<TextStyle>;
+  readonly font: FontName;
+  /**
+   * Whether the plan creates the style or rewrites its type, which resizes every text that links it,
+   * so a page whose layout reads such a text lays out again.
+   */
+  readonly retypes: boolean;
+};
 
 /**
  * Plan the kit's text styles against the file's local ones: delete the keyed styles the kit dropped,
@@ -281,8 +299,9 @@ function planStyle(run: Run, style: TextStyle, spec: TextStyleSpec, font: FontNa
  * requires the font its write sets, so Plan fails where Apply would.
  *
  * @param specs - The styles, in the order the plugin creates them.
- * @returns The Effect that plans them. It fails with `LayerConflict` when two styles carry one key,
- *   and with `FileNotSynced` when a family or weight variable does not resolve to a font.
+ * @returns The Effect that plans them, and gives each style by its key, which a layer that links it
+ *   reads when its operation runs. It fails with `LayerConflict` when two styles carry one key, and
+ *   with `FileNotSynced` when a family or weight variable does not resolve to a font.
  */
 export const planTextStyles = Effect.fnUntraced(function* (specs: readonly TextStyleSpec[]) {
   const run = yield* currentRun;
@@ -296,20 +315,38 @@ export const planTextStyles = Effect.fnUntraced(function* (specs: readonly TextS
     }
   }
   const siblings = indexSiblings(local);
+  const planned = new Map<string, PlannedTextStyle>();
   for (const spec of specs) {
     const font = yield* fontOf(run, spec);
     const found = yield* findOwned(siblings, LABEL, spec.key, spec.name, isTextStyle, "text style");
     if (found !== undefined) {
-      planStyle(run, found, spec, font);
+      planned.set(spec.key, { style: existing(found), font, retypes: planStyle(run, found, spec, font) });
       continue;
     }
     requireFont(run, `${LABEL} / ${spec.name}`, font);
+    let made: TextStyle | undefined;
     change(run.plan, LABEL, `create ${spec.name}`, () => {
-      const made = run.figma.createTextStyle();
-      setKey(made, spec.key);
-      made.name = spec.name;
-      made.description = spec.description;
-      writeType(run, made, spec, font);
+      const style = run.figma.createTextStyle();
+      made = style;
+      setKey(style, spec.key);
+      style.name = spec.name;
+      style.description = spec.description;
+      writeType(run, style, spec, font);
+    });
+    planned.set(spec.key, {
+      style: {
+        existing: undefined,
+        get: () => {
+          if (made === undefined) {
+            throw new Error(`${spec.name} is read before the operation that creates it runs.`);
+          }
+          return made;
+        },
+      },
+      font,
+      retypes: true,
     });
   }
+  const styles: ReadonlyMap<string, PlannedTextStyle> = planned;
+  return styles;
 });

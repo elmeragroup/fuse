@@ -38,9 +38,11 @@ import type {
   IconLibrarySpec,
   KitSpec,
   ModeRef,
+  PageDocsSpec,
   PageSpec,
   PreviewInstanceSpec,
   PreviewSpec,
+  SetLabelsSpec,
 } from "./kit-spec";
 import { buildTextStyles } from "./text-styles";
 import { compileUtilities } from "./utility-css";
@@ -71,6 +73,80 @@ export function previewInstances(
     return shown === undefined ? [] : [{ variant: shown, booleans: { [name]: !defaultValue } }];
   });
   return [...variants.map((variant): PreviewInstanceSpec => ({ variant })), ...toggled];
+}
+
+/** The text style a page's title links. */
+const TITLE_STYLE = "text-style/heading/2";
+
+/** The text style a set's name and a page's section header link. */
+const CAPTION_STYLE = "text-style/text/sm/medium";
+
+/** The text style each row and column header of a set's grid links. */
+const AXIS_STYLE = "text-style/span/xs/regular";
+
+/**
+ * The docs of a component page, as the Obra kit's pages read: the page's title, the labels around
+ * each of its sets' grids, the section header `Examples` and its usage example, its example set's
+ * default variant.
+ *
+ * @param page - The page.
+ * @param registry - The kit's sets.
+ * @param sets - The built sets, by key.
+ * @returns The page's docs, or `KitSourceInvalid` where its example names a set the kit does not build.
+ */
+function pageDocs(
+  page: KitPage,
+  registry: readonly KitEntry[],
+  sets: ReadonlyMap<string, Omit<ComponentSetSpec, "page">>
+): Result.Result<PageDocsSpec, KitSourceInvalid> {
+  const pageKey = pageSpec(page).key;
+  const prefix = `docs/${page.slug}`;
+  const [variant] = sets.get(page.example)?.variants ?? [];
+  if (variant === undefined) {
+    return Result.fail(
+      new KitSourceInvalid({
+        message: `the ${page.name} page names ${page.example} as its example, which the kit does not build`,
+      })
+    );
+  }
+  return Result.succeed({
+    page: pageKey,
+    title: {
+      kind: "text",
+      key: `${prefix}/title`,
+      name: "Header",
+      page: pageKey,
+      text: page.name,
+      style: TITLE_STYLE,
+    },
+    labels: registry
+      .filter((entry) => entry.page.slug === page.slug)
+      .map(({ manifest }): SetLabelsSpec => ({
+        kind: "labels",
+        key: `${prefix}/labels/${manifest.key}`,
+        name: `${manifest.name} labels`,
+        page: pageKey,
+        componentSet: manifest.key,
+        nameStyle: CAPTION_STYLE,
+        axisStyle: AXIS_STYLE,
+      })),
+    examplesHeader: {
+      kind: "text",
+      key: `${prefix}/examples-header`,
+      name: "Header",
+      page: pageKey,
+      text: "Examples",
+      style: CAPTION_STYLE,
+    },
+    example: {
+      kind: "example",
+      key: `${prefix}/example`,
+      name: "Example",
+      page: pageKey,
+      componentSet: page.example,
+      variant: variant.key,
+    },
+  });
 }
 
 /** A theme the previews pin: Fjordkraft private in one identity, color scheme and density. */
@@ -476,6 +552,10 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     })
   );
 
+  const docs: PageDocsSpec[] = [];
+  for (const page of componentPages) {
+    docs.push(yield* Effect.fromResult(pageDocs(page, registry, setsByKey)));
+  }
   const fontStyles = [...new Set(built.flatMap((set) => set.fontStyles))];
   const spec: KitSpec = {
     pages: [...componentPages.map(pageSpec), ICONS_PAGE],
@@ -486,6 +566,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     componentSets: built.map((set) => set.componentSet),
     previews,
     textStyles: yield* buildTextStyles(variables),
+    docs,
   };
   yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
   const kit: BuiltKit = { spec, coverage: built.flatMap((set) => set.coverage) };

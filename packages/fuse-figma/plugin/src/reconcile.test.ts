@@ -49,7 +49,12 @@ describe("reconcileKit on a file without the component set", () => {
       "Fuse components: delete Old preview",
       "Fuse components: create the Icons frame with 0 icons",
       "Fuse components: create the component set Button with 1 variants",
-      "Fuse components: place Button and Icons in a row",
+      "Text styles: create Caption",
+      "Fuse components: create the text Fuse components",
+      "Fuse components: create the labels Button labels",
+      "Fuse components: create the text Examples",
+      "Fuse components: create the example Example",
+      "Fuse components: place Button and Icons, with their labels and the page's title and example, in a row",
     ]);
     expect(file.writes.slice(setup)).toEqual([]);
   });

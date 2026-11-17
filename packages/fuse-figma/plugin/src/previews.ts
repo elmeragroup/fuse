@@ -24,7 +24,6 @@ import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
-import { settleInstances } from "./settle.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
 export type WrapGrid = {
@@ -46,20 +45,8 @@ const GROUP_GRID: WrapGrid = {
   padding: 0,
 };
 
-/** The space between component sets, between the sets and the first preview, and between previews. */
-const SET_SPACING = 64;
-const PREVIEW_MARGIN = 64;
-const PREVIEW_SPACING = 32;
-
 /** Previews paint the theme's background, so a dark preview reads as dark. */
 export const PREVIEW_BACKGROUND = { collection: "Fuse tokens", name: "background" } as const;
-
-/** A component set or preview frame, and where the page layout puts it. */
-type Placed = {
-  readonly node: ComponentSetNode | FrameNode;
-  readonly x: number;
-  readonly y: number;
-};
 
 const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
@@ -276,7 +263,17 @@ function planInstances(
   });
 }
 
-const planGroupFields = Effect.fnUntraced(function* (
+/**
+ * Plan a group frame of instances, as a preview holds one per set: its name, its wrapping rows and
+ * its instances.
+ *
+ * @param group - The group frame.
+ * @param label - The group's label, for change lines.
+ * @param previewKey - The key the instances' keys start with.
+ * @param spec - The group.
+ * @param set - The set whose variants the instances show.
+ */
+export const planGroupFields = Effect.fnUntraced(function* (
   group: FrameNode,
   label: string,
   previewKey: string,
@@ -368,84 +365,3 @@ export const planPreviews = Effect.fnUntraced(function* (
   }
   return frames;
 });
-
-/** A node of a page's row, such as a component set, and its name for the change line. */
-type RowNode = {
-  readonly name: string;
-  readonly node: Target<ComponentSetNode | FrameNode>;
-};
-
-/**
- * The page layout: the row's nodes from where the first one sits, then the previews stacked below
- * the tallest of them, left-aligned with the first node. Each preview's instances, and the instances
- * nested in them, settle before its height is read (`settle.ts`).
- */
-function pageLayout(row: readonly RowNode[], frames: readonly Target<FrameNode>[]): Placed[] {
-  const nodes = row.map((entry) => entry.node.get());
-  const [first] = nodes;
-  if (first === undefined) {
-    return [];
-  }
-  const placed: Placed[] = [];
-  let x = first.x;
-  for (const node of nodes) {
-    placed.push({ node, x, y: first.y });
-    x += node.width + SET_SPACING;
-  }
-  let y = first.y + Math.max(...nodes.map((node) => node.height)) + PREVIEW_MARGIN;
-  for (const target of frames) {
-    const frame = target.get();
-    settleInstances(frame);
-    placed.push({ node: frame, x: first.x, y });
-    y += frame.height + PREVIEW_SPACING;
-  }
-  return placed;
-}
-
-/** `A`, `A and B`, or `A, B and C`. */
-function listed(names: readonly string[]): string {
-  const last = names.at(-1) ?? "";
-  return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
-}
-
-/**
- * Plan a page's layout: its component sets, or its icon library, in a row, and its previews
- * stacked below them. The layout reads the sizes of what it places when its operation runs,
- * after the writes that change them.
- *
- * @param run - The run.
- * @param page - The page.
- * @param row - The nodes of the row, in order.
- * @param frames - The preview frames, in spec order.
- * @param changed - Whether the plan changes anything on the page, which may move or resize
- *   what the layout reads.
- */
-export function placePageContents(
-  run: Run,
-  page: PlannedPage,
-  row: readonly RowNode[],
-  frames: readonly Target<FrameNode>[],
-  changed: boolean
-): void {
-  // The first node stays where it is and leads the row, so a lone node needs no layout.
-  if (row.length === 0 || row.length + frames.length === 1) {
-    return;
-  }
-  const settled =
-    !changed &&
-    row.every((entry) => entry.node.existing !== undefined) &&
-    frames.every((frame) => frame.existing !== undefined);
-  if (
-    settled &&
-    pageLayout(row, frames).every((placed) => near(placed.node.x, placed.x) && near(placed.node.y, placed.y))
-  ) {
-    return;
-  }
-  const stack = frames.length === 0 ? "" : ` and stack ${frames.length} previews below them`;
-  change(run.plan, page.spec.name, `place ${listed(row.map((entry) => entry.name))} in a row${stack}`, () => {
-    for (const placed of pageLayout(row, frames)) {
-      placed.node.x = placed.x;
-      placed.node.y = placed.y;
-    }
-  });
-}

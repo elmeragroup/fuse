@@ -966,6 +966,81 @@ export type TextStyleSpec = {
   readonly textWrapStyle: "AUTO" | "BALANCE" | "PRETTY";
 };
 
+/**
+ * A text layer that heads a page or a section of it, named `Header`, as the Obra kit names its
+ * component-name captions and its section labels.
+ */
+export type DocTextSpec = {
+  readonly kind: "text";
+  readonly key: string;
+  readonly name: string;
+  readonly page: string;
+  /** The text, such as the page's name or `Examples`. */
+  readonly text: string;
+  /** The key of the local text style the text links. */
+  readonly style: string;
+};
+
+/**
+ * The labels around a component set's grid: a frame beside the set, outside it, holding the set's
+ * name above the grid, a header above each column naming its value on the set's column axis, and a
+ * header beside each row that holds a variant, naming its values on the other axes.
+ */
+export type SetLabelsSpec = {
+  readonly kind: "labels";
+  readonly key: string;
+  readonly name: string;
+  readonly page: string;
+  /** The key of the set the labels read. */
+  readonly componentSet: string;
+  /** The key of the local text style the set's name links. */
+  readonly nameStyle: string;
+  /** The key of the local text style each row and column header links. */
+  readonly axisStyle: string;
+};
+
+/**
+ * A page's usage example: a group frame, as a preview's, holding an instance of one of the page's
+ * sets at the page's own modes, such as the open Select the docs default demo shows.
+ */
+export type PageExampleSpec = {
+  readonly kind: "example";
+  readonly key: string;
+  readonly name: string;
+  readonly page: string;
+  /** The key of the set the example shows. */
+  readonly componentSet: string;
+  /** The key of the variant the example's instance shows. */
+  readonly variant: string;
+};
+
+/** A node that documents a page, outside the page's sets and previews. */
+export type DocSpec = DocTextSpec | SetLabelsSpec | PageExampleSpec;
+
+/**
+ * The docs of one component page, complete: its title, the labels of each set it holds, the
+ * `Examples` header and its example.
+ */
+export type PageDocsSpec = {
+  /** The page's key. */
+  readonly page: string;
+  readonly title: DocTextSpec;
+  /** One labels frame per set on the page, in the page's set order. */
+  readonly labels: readonly SetLabelsSpec[];
+  readonly examplesHeader: DocTextSpec;
+  readonly example: PageExampleSpec;
+};
+
+/**
+ * A kit's doc nodes, one after another, as the plugin finds each by its key.
+ *
+ * @param docs - The kit's docs, a record per component page.
+ * @returns Each page's title, labels, `Examples` header and example, page by page.
+ */
+export function docNodes(docs: readonly PageDocsSpec[]): readonly DocSpec[] {
+  return docs.flatMap((page) => [page.title, ...page.labels, page.examplesHeader, page.example]);
+}
+
 /** Everything the plugin reconciles, on the pages it lists. */
 export type KitSpec = {
   /** The kit's pages, in the order the plugin creates them. */
@@ -978,16 +1053,20 @@ export type KitSpec = {
   readonly previews: readonly PreviewSpec[];
   /** The local text styles, in the order the plugin creates them. */
   readonly textStyles: readonly TextStyleSpec[];
+  /** The docs of each component page, one record per page that holds a set. */
+  readonly docs: readonly PageDocsSpec[];
 };
 
 /**
  * The kit's top-level nodes, each of which sits on one of the kit's pages.
  *
  * @param kit - The kit.
- * @returns The icon library, then the component sets, then the previews.
+ * @returns The icon library, then the component sets, then the previews, then the docs.
  */
-export function topLevelSpecs(kit: KitSpec): readonly (IconLibrarySpec | ComponentSetSpec | PreviewSpec)[] {
-  return [kit.icons, ...kit.componentSets, ...kit.previews];
+export function topLevelSpecs(
+  kit: KitSpec
+): readonly (IconLibrarySpec | ComponentSetSpec | PreviewSpec | DocSpec)[] {
+  return [kit.icons, ...kit.componentSets, ...kit.previews, ...docNodes(kit.docs)];
 }
 
 /**
