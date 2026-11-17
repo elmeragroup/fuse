@@ -43,13 +43,16 @@ function inLocale(field: ReactElement): ReactElement {
  * Clears what surrounds the measured stepper in the crop, which the kit's stepper variant draws
  * alone: the decrease stepper beside it, hidden in place, and the group's border, fill and shadow
  * around it. The stepper's own classes read nothing of either. The group's are important, so they beat
- * the field box's own fill, border and shadow, which Fuse's stylesheet writes later.
+ * the field box's own fill, border and shadow, which Fuse's stylesheet writes later. The shadow clears
+ * `box-shadow` itself, where `shadow-none!` would also set `--tw-shadow`: DevTools lists that
+ * important custom property in some captures of one page and not others, so the capture's bytes
+ * would change from run to run.
  */
 const STEPPER_ALONE = [
   "[&_[data-slot=number-field-decrement]]:invisible",
   "[&_[data-size]]:border-transparent!",
   "[&_[data-size]]:bg-transparent!",
-  "[&_[data-size]]:shadow-none!",
+  "[&_[data-size]]:[box-shadow:none]!",
 ] as const;
 
 /** A `number-field-stepper` cell: the field's increase stepper at rest, hovered, disabled at its bound or read-only. */

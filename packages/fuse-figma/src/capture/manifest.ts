@@ -115,6 +115,11 @@ export type SetManifest = BoxManifest & {
   readonly addedAxes?: ReadonlySet<string>;
   readonly columnAxis: string;
   readonly statePart?: string;
+  /**
+   * The place of the element that takes the set's states where it carries no `data-slot`, as
+   * Number field's `<input>` sits at `field/1/0/0`, by the element-ordinal path a part's place names.
+   */
+  readonly statePlace?: string;
   readonly statePeer?: string;
   readonly focusPart?: string;
   /** The width of the host the sample renders in, in CSS pixels. */
@@ -163,6 +168,7 @@ export const MANIFEST_FIELDS = {
     "addedAxes",
     "columnAxis",
     "statePart",
+    "statePlace",
     "statePeer",
     "focusPart",
     "previewWidth",
@@ -227,6 +233,7 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     union: _union,
     sideOffset,
     alignItemWithTrigger: _alignItemWithTrigger,
+    statePlace: _statePlace,
     ...rest
   } = manifest;
   const plain: ComponentDefinition = {

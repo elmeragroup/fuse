@@ -63,6 +63,15 @@
       "path": "variants[*].root.clips",
       "verdict": "fix-in-new",
       "reason": "CSS clips nothing here (`overflow` is `visible` initially, CSS Overflow 3 §3) and the set's root casts no shadow in any cell, so the capture-backed root leaves its layers unclipped, and a ring at its edge shows as in the browser. A root that casts a shadow still clips, since Figma draws a spread only from a clipping frame (PR2)."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "an element of the component's markup around the root, which the kit draws no layer for"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture cascades every declaration the component's elements around the root win, as the recipe cascade cascades an ancestor its definition names; what no layer reads drops with the element's reason."
     }
   ]
 }

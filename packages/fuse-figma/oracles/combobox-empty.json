@@ -147,6 +147,15 @@
       },
       "verdict": "old-was-wrong",
       "reason": "The recipe build reads no `motion-safe:` variant, so it leaves #707's motion classes unmapped; the capture reads the winners of the media query and drops them as motion."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "an element of the component's markup around the root, which the kit draws no layer for"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture cascades every declaration the component's elements around the root win, as the recipe cascade cascades an ancestor its definition names; what no layer reads drops with the element's reason."
     }
   ]
 }

@@ -285,6 +285,51 @@
       "pattern": "*: plan again once *'s changes land",
       "verdict": "fix-in-new",
       "reason": "An instance of a set the lines above change, which Plan settles once that set's changes land."
+    },
+    {
+      "pattern": "Number field stepper / state=rest: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the stepper and it casts no shadow, as number-field-stepper.json classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Number field stepper / state=hover: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the stepper and it casts no shadow, as number-field-stepper.json classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Number field stepper / state=disabled: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the stepper and it casts no shadow, as number-field-stepper.json classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Number field stepper / state=readonly: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the stepper and it casts no shadow, as number-field-stepper.json classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Number field / state=rest / number-field / group / input: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
+    },
+    {
+      "pattern": "Number field / state=focus / number-field / group / input: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
+    },
+    {
+      "pattern": "Number field / state=disabled / number-field / group / input: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
+    },
+    {
+      "pattern": "Number field / state=readonly / number-field / group / input: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
+    },
+    {
+      "pattern": "Number field / state=invalid / number-field / group / input: clipsContent → true",
+      "verdict": "fix-in-new",
+      "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
     }
   ]
 }

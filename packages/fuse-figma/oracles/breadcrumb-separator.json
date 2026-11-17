@@ -85,6 +85,15 @@
       "path": "variants[*].root.direction",
       "verdict": "fix-in-new",
       "reason": "The `<li>` is a list item with no marker, its resolved `list-style-type` and `list-style-image` `none`, so it lays out as the block box it is around its one layer: a vertical auto layout from its start, where the recipe build drew a centred row. A frame that hugs its one layer draws it the same in either direction and alignment."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "an element of the component's markup around the root, which the kit draws no layer for"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture cascades every declaration the component's elements around the root win, as the recipe cascade cascades an ancestor its definition names; what no layer reads drops with the element's reason."
     }
   ]
 }

@@ -19,6 +19,7 @@
  *   box above whose child selector reached it, and that element's origin owns the row.
  */
 
+import { percentHeightBasis } from "../components/box-sizing.ts";
 import { KitUnmappable } from "../components/build-errors.ts";
 import {
   CellLedger,
@@ -45,6 +46,7 @@ import type {
   BuildContext,
   Cell,
   ComponentDefinition,
+  PreviewLength,
   IconSlot,
   InstanceDefinition,
   OuterDeclaration,
@@ -662,6 +664,22 @@ function borderLonghands(
 }
 
 /**
+ * Declarations with each border shorthand split into its longhands, as {@link borderLonghands} says,
+ * so the cascade decides each side's width, style and color by its usual precedence.
+ */
+function withBorderLonghands(applied: readonly Applied[]): Applied[] {
+  return applied.map((each) => ({
+    ...each,
+    declarations: each.declarations.flatMap(({ property, value }) =>
+      (borderLonghands(property, value) ?? [[property, value] as const]).map(([longhand, part]) => ({
+        property: longhand,
+        value: part,
+      }))
+    ),
+  }));
+}
+
+/**
  * Whether a side of a pseudo-element's border paints: its resolved style draws, and its width does
  * not resolve to zero, a width the build cannot resolve counting as painting. Undefined for a style
  * that resolves to no border style.
@@ -732,17 +750,7 @@ function readPseudoElements(
     if (pseudo === "placeholder") {
       continue;
     }
-    // The border shorthands split into their longhands first, so the cascade decides each side's
-    // width, style and color by its usual precedence.
-    const applied = appliedOf(read, indexes, placed, () => true, new Set()).map((each) => ({
-      ...each,
-      declarations: each.declarations.flatMap(({ property, value }) =>
-        (borderLonghands(property, value) ?? [[property, value] as const]).map(([longhand, part]) => ({
-          property: longhand,
-          value: part,
-        }))
-      ),
-    }));
+    const applied = withBorderLonghands(appliedOf(read, indexes, placed, () => true, new Set()));
     const pseudoLayer = ledger.add(inheritance(layer, read.context), applied, layer);
     const style = new LayerStyle(ledger, pseudoLayer, [...path, `::${pseudo}`]);
     const properties = style.ownProperties();
@@ -773,8 +781,15 @@ function readPseudoElements(
   }
 }
 
-/** The elements around a root as the cascade placed them, and the layer of the innermost one. */
-type AroundPath = { readonly placed: readonly Placed[]; readonly layer: Layer | undefined };
+/**
+ * The elements around a root as the cascade placed them, the layer of the innermost one, and the
+ * layers of the component's own elements around it, outermost first.
+ */
+type AroundPath = {
+  readonly placed: readonly Placed[];
+  readonly layer: Layer | undefined;
+  readonly own: readonly Layer[];
+};
 
 /** The cascade of one cell, read from its capture. */
 export class CaptureCellCascade {
@@ -817,7 +832,7 @@ export class CaptureCellCascade {
         });
       }
       const path = this.#aroundPath(first.around);
-      return new CaptureBoxCascade(
+      const box = new CaptureBoxCascade(
         this.#read,
         this.#ledger,
         [...path.placed, this.#placed(first.root, part)],
@@ -828,6 +843,14 @@ export class CaptureCellCascade {
           applied: [],
         }
       );
+      // The elements around the root and the root itself, from which box sizing reads the basis.
+      box.heightBasis = normalizeCss(box.style.resolved("height") ?? "").endsWith("%")
+        ? percentHeightBasis(
+            [...path.own.map((layer) => new LayerStyle(this.#ledger, layer, [])), box.style],
+            this.#read.context.variables
+          )
+        : undefined;
+      return box;
     }
     if (open._tag === "anchored") {
       const path = this.#aroundPath([]);
@@ -906,29 +929,35 @@ export class CaptureCellCascade {
   }
 
   /**
-   * The layers of the page's elements and of the component's own elements around a root, each
-   * passing down what inherits. A page element's synced variables stay out, so a `var()` of the root's
-   * keeps binding the variable as the recipe cascade's page leaves it.
+   * The layers of the page's elements and of the component's own elements around a root. A page
+   * element passes down what inherits, its synced variables left out, so a `var()` of the root's
+   * keeps binding the variable as the recipe cascade's page leaves it. The component's own elements
+   * cascade every declaration they win, as the recipe cascade cascades an ancestor its definition
+   * names, so a root's `100%` height can read the height around it, and each declaration nothing
+   * reads drops with the element's reason.
    */
   #aroundPath(around: readonly CapturedElement[]): AroundPath {
     const { context } = this.#read;
     const { origin } = this.#ledger.scope;
     let parent: Layer | undefined;
     const path: Placed[] = [];
+    const layers: Layer[] = [];
     const elements = [
       ...this.#page.map((element) => ({ element, undrawn: PAGE_UNDRAWN, page: true })),
       ...around.map((element) => ({ element, undrawn: AROUND_UNDRAWN, page: false })),
     ];
     for (const { element, undrawn, page } of elements) {
       path.push({ element, name: undrawnName(element), origin });
+      const own = appliedOf(
+        this.#read,
+        element.declarations,
+        path,
+        ({ property }) => !page || (inheritsProperty(property, context) && !context.variables.owns(property))
+      );
       const applied = [
         ...(parent === undefined ? [initialFontSize(origin)] : []),
-        ...appliedOf(
-          this.#read,
-          element.declarations,
-          path,
-          ({ property }) => inheritsProperty(property, context) && !(page && context.variables.owns(property))
-        ),
+        // A border's sides cascade one by one, so the content height around the root reads them.
+        ...(page ? own : withBorderLonghands(own)),
       ];
       parent = this.#ledger.add(
         parent === undefined ? new Map() : inheritance(parent, context),
@@ -938,8 +967,11 @@ export class CaptureCellCascade {
           undrawn,
         }
       );
+      if (!page) {
+        layers.push(parent);
+      }
     }
-    return { placed: path, layer: parent };
+    return { placed: path, layer: parent, own: layers };
   }
 
   /**
@@ -1259,6 +1291,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly markerContent: boolean | undefined;
   /** What the capture measured of the box's element. */
   readonly measured: MeasuredBox | undefined;
+  /** The content height around a root whose height is a percentage, as {@link percentHeightBasis} reads it. */
+  heightBasis: PreviewLength | undefined = undefined;
 
   /**
    * @param read - The cell's declarations.

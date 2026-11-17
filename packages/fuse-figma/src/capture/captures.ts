@@ -57,6 +57,8 @@ import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
 import menuSeparator from "../../captures/menu-separator.json" with { type: "json" };
 import meter from "../../captures/meter.json" with { type: "json" };
+import numberFieldStepper from "../../captures/number-field-stepper.json" with { type: "json" };
+import numberField from "../../captures/number-field.json" with { type: "json" };
 import paginationEdge from "../../captures/pagination-edge.json" with { type: "json" };
 import paginationEllipsis from "../../captures/pagination-ellipsis.json" with { type: "json" };
 import paginationLink from "../../captures/pagination-link.json" with { type: "json" };
@@ -93,6 +95,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["field-description", fieldDescription],
   ["field-error", fieldError],
   ["text-field", textField],
+  ["number-field-stepper", numberFieldStepper],
+  ["number-field", numberField],
   ["button", button],
   ["alert", alert],
   ["select-trigger", selectTrigger],
