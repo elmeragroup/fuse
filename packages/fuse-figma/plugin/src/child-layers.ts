@@ -110,14 +110,17 @@ const planIcon = Effect.fnUntraced(function* (
   label: string,
   spec: IconLayerSpec,
   icon: PlannedIcon,
-  links: LayerLinks
+  links: LayerLinks,
+  origin: "found" | "new"
 ) {
   const run = yield* currentRun;
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
-  const main = yield* Effect.promise(() => instance.getMainComponentAsync());
-  const swapped = icon.node.existing === undefined || main?.id !== icon.node.existing.id;
+  // A new layer is made as an instance of the icon, so it shows the icon already.
+  const main = origin === "new" ? undefined : yield* Effect.promise(() => instance.getMainComponentAsync());
+  const swapped =
+    origin === "found" && (icon.node.existing === undefined || main?.id !== icon.node.existing.id);
   if (swapped) {
     change(run.plan, label, `show ${icon.spec.name}`, () => instance.swapComponent(icon.node.get()));
   }
@@ -335,7 +338,7 @@ function childKind(
     accept: isInstance,
     description,
     make: () => icon.node.get().createInstance(),
-    plan: (instance) => planIcon(instance, layerLabel, spec, icon, links),
+    plan: (instance, origin) => planIcon(instance, layerLabel, spec, icon, links, origin),
   } satisfies OwnedChild<InstanceNode, void>;
 }
 

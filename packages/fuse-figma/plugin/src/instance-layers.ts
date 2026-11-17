@@ -163,7 +163,10 @@ function desiredProperties(
     return {
       name: property.name,
       type: "INSTANCE_SWAP",
-      holds: (held) => held === icon.node.existing?.id,
+      // An icon this run makes reads as itself once made: the stages that compare with it run after
+      // its creation, as `changesFirst` defers them. Writing a swap the instance already shows
+      // replaces the nested icon with a bare one, which drops the fill its main gives the glyph.
+      holds: (held) => held === (icon.node.existing ?? icon.node.get()).id,
       value: () => icon.node.get().id,
       shown: icon.spec.name,
     };
