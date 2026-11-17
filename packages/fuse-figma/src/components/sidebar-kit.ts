@@ -29,6 +29,7 @@ import {
   sidebarMenuSubButtonVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { LabelManifest, SetManifest } from "../capture/manifest";
 import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot, OuterDeclaration } from "./component-spec";
 import { ownKey } from "./own-key";
@@ -293,6 +294,67 @@ export const SIDEBAR_MENU_BADGE: ComponentDefinition = {
     textProperty: "Count",
     shownIn: always,
   },
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** A label as a manifest names it, its text in the cell's element, which the capture reads. */
+function textManifest(characters: string, textProperty: string): LabelManifest {
+  return { key: "text", name: "text", characters, textProperty, shownIn: always };
+}
+
+/**
+ * The menu button's manifest, which the capture-backed build reads with
+ * `captures/sidebar-menu-button.json`. Its renderer gives it the row's host, which the capture
+ * measures.
+ */
+export const SIDEBAR_MENU_BUTTON_MANIFEST: SetManifest = {
+  key: "sidebar-menu-button",
+  name: "Sidebar menu button",
+  slot: "sidebar-menu-button",
+  axes: SIDEBAR_MENU_BUTTON.axes,
+  columnAxis: "state",
+  label: textManifest(SIDEBAR_MENU_BUTTON_TEXT, "Label"),
+  iconsFor: () => [HOUSE],
+  swapProperties: SIDEBAR_MENU_BUTTON.swapProperties,
+};
+
+/** The sub button's manifest, which the capture-backed build reads with `captures/sidebar-menu-sub-button.json`. */
+export const SIDEBAR_MENU_SUB_BUTTON_MANIFEST: SetManifest = {
+  key: "sidebar-menu-sub-button",
+  name: "Sidebar menu sub button",
+  slot: "sidebar-menu-sub-button",
+  axes: SIDEBAR_MENU_SUB_BUTTON.axes,
+  columnAxis: "state",
+  label: textManifest(SIDEBAR_SUB_BUTTON_TEXT, "Label"),
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/** The group label's manifest, which the capture-backed build reads with `captures/sidebar-group-label.json`. */
+export const SIDEBAR_GROUP_LABEL_MANIFEST: SetManifest = {
+  key: "sidebar-group-label",
+  name: "Sidebar group label",
+  slot: "sidebar-group-label",
+  axes: SIDEBAR_GROUP_LABEL.axes,
+  columnAxis: "state",
+  label: textManifest(SIDEBAR_GROUP_LABEL_TEXT, "Label"),
+  iconsFor: () => [],
+  swapProperties: [],
+};
+
+/**
+ * The badge's manifest, which the capture-backed build reads with `captures/sidebar-menu-badge.json`:
+ * its state lands on the menu button beside it, whose `peer-*` arms the badge reads.
+ */
+export const SIDEBAR_MENU_BADGE_MANIFEST: SetManifest = {
+  key: "sidebar-menu-badge",
+  name: "Sidebar menu badge",
+  slot: "sidebar-menu-badge",
+  statePeer: "sidebar-menu-button",
+  axes: SIDEBAR_MENU_BADGE.axes,
+  columnAxis: "state",
+  label: textManifest(SIDEBAR_BADGE_TEXT, "Count"),
   iconsFor: () => [],
   swapProperties: [],
 };

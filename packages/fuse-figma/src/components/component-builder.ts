@@ -41,6 +41,7 @@ import {
   framePartsOf,
   instancePartsOf,
   instanceRootSlotOf,
+  instancingSlots,
   partsOf,
   renderedSlots,
 } from "./definition-parts";
@@ -90,14 +91,16 @@ export function buildSetsInOrder<Entry extends { readonly definition: ComponentD
   source: (entry: Entry) => SetSource = (entry) => ({ definition: entry.definition, capture: undefined })
 ): readonly (readonly [Entry, BuiltComponent])[] {
   checkInstanceOrder(entries.map(({ definition }) => definition));
+  const sourced = entries.map((entry) => [entry, source(entry)] as const);
+  const holders = instancingSlots(sourced.map(([, { definition }]) => definition));
   const built = new Map<string, InnerSet>();
-  return entries.map((entry) => {
-    const { definition, capture, open } = source(entry);
+  return sourced.map(([entry, { definition, capture, open }]) => {
+    const instancedIn = holders.get(definition.key) ?? new Set<string>();
     const set = buildComponentSet(
       definition,
       context,
       built,
-      capture === undefined ? undefined : { capture, open }
+      capture === undefined ? undefined : { capture, open, instancedIn }
     );
     built.set(entry.definition.key, set.componentSet);
     return [entry, set] as const;
@@ -119,7 +122,7 @@ export function buildComponentSet(
   definition: ComponentDefinition,
   context: BuildContext,
   inner: ReadonlyMap<string, InnerSet> = new Map(),
-  captured?: { readonly capture: SetCapture; readonly open: OpenPlacement | undefined }
+  captured?: CapturedSource
 ): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
   const fontStyles = new Set<string>();
@@ -254,6 +257,16 @@ type CellEngine = {
   readonly settle: () => void;
 };
 
+/**
+ * A set's capture, which its cascade reads, how an open composite places its cells' roots, and the
+ * root `data-slot` of each set that holds it as an instance, which no root's fill reaches past.
+ */
+type CapturedSource = {
+  readonly capture: SetCapture;
+  readonly open: OpenPlacement | undefined;
+  readonly instancedIn: ReadonlySet<string>;
+};
+
 /** The cascade of a set's cells, as the builder drives it, and what records its logs once they cascaded. */
 type SetEngine = { readonly cell: (cell: Cell) => CellEngine; readonly finish: () => void };
 
@@ -262,11 +275,11 @@ function setCascade(
   definition: ComponentDefinition,
   context: BuildContext,
   record: (row: Omit<CoverageRow, "component">) => void,
-  source: { readonly capture: SetCapture; readonly open: OpenPlacement | undefined } | undefined,
+  source: CapturedSource | undefined,
   inner: ReadonlyMap<string, InnerSet>
 ): SetEngine {
   if (source !== undefined) {
-    const { capture, open } = source;
+    const { capture, open, instancedIn } = source;
     const captured = new CaptureSetCascade({
       capture,
       definition,
@@ -282,6 +295,7 @@ function setCascade(
           ? anchorWidth(definition, capture, cell, inner)
           : // A popup set alone has no anchor of its own: its sample's anchor fills the host it renders in.
             sampleAnchorWidth(definition, cell),
+      instancedIn,
     });
     return {
       cell: (cell) => {

@@ -10,7 +10,7 @@
  *   footer leave.
  * - Its widths are the Provider's `--sidebar-width` (16rem, 256px) and `--sidebar-width-icon` (3rem,
  *   48px), which the wrapper's style sets, so they draw as literals. An inset rail adds its 8px
- *   padding on each side and the 2px a floating ring takes, 66px.
+ *   padding on each side and 2px that nothing fills, 66px, 2px wider than its gap (#759).
  * - The `sidebar` variant draws its 1px edge border on the end side, in the layout, so its sections
  *   draw 255px wide, or 47px in the rail. The `inset` variant pads 8px instead, on the `sidebar` fill
  *   the Provider's wrapper paints behind it, so its sections draw 240px wide, or 50px in the rail.
@@ -31,6 +31,7 @@ import {
   sidebarWrapperVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import type {
   AncestorDefinition,
   Cell,
@@ -39,7 +40,14 @@ import type {
   OuterDeclaration,
 } from "./component-spec";
 import { always, never } from "./popup-facts";
-import { SIDEBAR_FOOTER, SIDEBAR_GROUP, SIDEBAR_HEADER } from "./sidebar-section-kit";
+import {
+  SIDEBAR_FOOTER,
+  SIDEBAR_FOOTER_MANIFEST,
+  SIDEBAR_GROUP,
+  SIDEBAR_GROUP_MANIFEST,
+  SIDEBAR_HEADER,
+  SIDEBAR_HEADER_MANIFEST,
+} from "./sidebar-section-kit";
 
 /** The height of the app frame demo's frame, `h-[28rem]`, which the Root's `h-full` takes. */
 export const SIDEBAR_PANEL_HEIGHT = 448;
@@ -193,6 +201,64 @@ export const SIDEBAR: ComponentDefinition = {
           ],
         },
         section("footer", SIDEBAR_FOOTER),
+      ],
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A section as the panel's manifest names it, as {@link section} draws it. */
+function sectionManifest(key: string, of: SetManifest): InstanceManifest {
+  return {
+    kind: "instance",
+    key,
+    of,
+    cell: (outer) => ({ collapsed: outer.collapsed ?? "off" }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/**
+ * The panel's manifest, which the capture-backed build reads with `captures/sidebar.json`, at the
+ * docs app frame demo's `h-[28rem]` height, which its root's `h-full` takes.
+ */
+export const SIDEBAR_MANIFEST: SetManifest = {
+  key: "sidebar",
+  name: "Sidebar",
+  slot: "sidebar-container",
+  previewHeight: { pixels: SIDEBAR_PANEL_HEIGHT },
+  axes: SIDEBAR.axes,
+  columnAxis: "collapsed",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "inner",
+      slot: "sidebar-inner",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        sectionManifest("header", SIDEBAR_HEADER_MANIFEST),
+        {
+          key: "content",
+          slot: "sidebar-content",
+          shownIn: always,
+          label: undefined,
+          iconsFor: () => [],
+          parts: [
+            sectionManifest("group", SIDEBAR_GROUP_MANIFEST),
+            {
+              key: "separator",
+              slot: "sidebar-separator",
+              shownIn: always,
+              label: undefined,
+              iconsFor: () => [],
+            },
+          ],
+        },
+        sectionManifest("footer", SIDEBAR_FOOTER_MANIFEST),
       ],
     },
   ],

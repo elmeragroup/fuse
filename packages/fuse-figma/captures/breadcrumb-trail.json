@@ -190,7 +190,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"oneLine":true},
+          "measured": {"coincidingAround":1,"oneLine":true},
           "children": [
             {
               "tag": "li",
@@ -355,7 +355,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"oneLine":true},
+          "measured": {"coincidingAround":1,"oneLine":true},
           "children": [
             {
               "tag": "li",

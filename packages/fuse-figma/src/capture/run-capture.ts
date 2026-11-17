@@ -39,7 +39,6 @@ import type { PreviewTheme } from "../compare/preview-theme.ts";
 import { matrixCells, variantKey } from "../components/component-spec.ts";
 import type { AxisSpec } from "../components/kit-spec.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH, CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
-import type { MeasuredFacts } from "./capture-format.ts";
 import type {
   CapturedCell,
   CapturedDeclaration,
@@ -49,6 +48,7 @@ import type {
   VariableSource,
 } from "./capture-format.ts";
 import type { InstanceManifest, PartManifest } from "./manifest.ts";
+import { measuredFacts } from "./page-facts.ts";
 import {
   CellNotFound,
   expandLonghands,
@@ -659,163 +659,6 @@ async function withInitial(cdp: CDPSession, raw: RawCell): Promise<RawCell | Unk
   }
   return { ...raw, around, root };
 }
-
-/**
- * Measure a root's tree in the page and keep what holds on any platform, by each element's
- * element-ordinal path from the root, `""` for the root:
- *
- * - `containerWidth`, on the root: the content width of the element around it, where the root's
- *   margin box fills it, widening with it, and one more character of the root's text leaves it as it
- *   is, so CSS sets it and not the text. A positioned element with an auto width, as Base UI's
- *   positioner, shrinks to its content, so it is no such container.
- * - `widest`: in a root as wide as its own content, at its `min-width` or past it, the leaf row with
- *   text that fills its parent and whose own text is the widest, more than half a pixel wider than
- *   the next. That row's text sets the root's width once it outgrows the minimum, as a longer label
- *   does, so the build hugs it and keeps the minimum as its own (PH3).
- * - `oneLine`: an element under a `max-width` whose own text sits on one line, or a wrapping flex
- *   row whose items do.
- * - `underMaxHeight`: an element more than half a pixel under its `max-height`.
- * - `lineFits`: an element whose one element child is an inline-level box and which holds no text
- *   of its own, whose content box's top and bottom edges are the child's margin box's, within half
- *   a pixel, at its own line height and at 2px more. Matching edges leave no baseline offset, which
- *   moves the child down a line taller than a fixed-height box, and a line 2px taller grows the strut
- *   by 1px above and below (CSS 2.1 §10.8.1), so the line box adds nothing to the child by at least
- *   that margin. The second reading holds only where the page's computed line height took the 2px
- *   and the child kept its own.
- *
- * The page restores every element it changes before it returns.
- */
-async function measuredFacts(cdp: CDPSession, nodeId: number): Promise<ReadonlyMap<string, MeasuredFacts>> {
-  const { object } = await cdp.send("DOM.resolveNode", { nodeId });
-  if (object.objectId === undefined) {
-    return new Map();
-  }
-  const { result } = await cdp.send("Runtime.callFunctionOn", {
-    objectId: object.objectId,
-    returnByValue: true,
-    functionDeclaration: MEASURE_IN_PAGE,
-  });
-  // SAFETY: the page function returns facts by path, as plain JSON.
-  return new Map(Object.entries((result.value ?? {}) as Record<string, MeasuredFacts>));
-}
-
-/** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `function () {
-  const root = this;
-  const out = {};
-  const put = (path, key, value) => { (out[path] ??= {})[key] = value; };
-  const contentWidth = (element) => {
-    const style = getComputedStyle(element);
-    return element.getBoundingClientRect().width - ["padding-left", "padding-right", "border-left-width", "border-right-width"].reduce((sum, name) => sum + (Number.parseFloat(style.getPropertyValue(name)) || 0), 0);
-  };
-  const texts = (element) => {
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const found = [];
-    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
-      if ((node.textContent ?? "").trim() !== "") { found.push(node); }
-    }
-    return found;
-  };
-  const withLonger = (element, read) => {
-    const nodes = texts(element);
-    const before = nodes.map((node) => node.textContent);
-    nodes.forEach((node) => { node.textContent += "W"; });
-    const value = read();
-    nodes.forEach((node, index) => { node.textContent = before[index]; });
-    return value;
-  };
-  const maxContent = (element) => {
-    const style = element.getAttribute("style");
-    element.style.width = "max-content";
-    const width = element.getBoundingClientRect().width;
-    if (style === null) { element.removeAttribute("style"); } else { element.setAttribute("style", style); }
-    return width;
-  };
-  const elements = [];
-  const walk = (element, path) => {
-    elements.push({ element, path });
-    if (element.localName === "svg") { return; }
-    [...element.children].forEach((child, index) => walk(child, path === "" ? String(index) : path + "/" + String(index)));
-  };
-  walk(root, "");
-  const parent = root.parentElement;
-  const shrinks = (element) => ["absolute", "fixed"].includes(getComputedStyle(element).position);
-  if (parent !== null && !shrinks(root) && !shrinks(parent)) {
-    const before = contentWidth(parent);
-    const style = parent.getAttribute("style");
-    const width = root.getBoundingClientRect().width;
-    parent.style.width = String(parent.getBoundingClientRect().width + 10) + "px";
-    const follows = Math.abs(root.getBoundingClientRect().width - width - 10) <= 0.5;
-    if (style === null) { parent.removeAttribute("style"); } else { parent.setAttribute("style", style); }
-    const own = getComputedStyle(root);
-    const margins = (Number.parseFloat(own.marginLeft) || 0) + (Number.parseFloat(own.marginRight) || 0);
-    const fills = Math.abs(width + margins - before) <= 0.5 && follows;
-    if (fills && withLonger(root, () => Math.abs(contentWidth(parent) - before) <= 0.01)) {
-      put("", "containerWidth", Math.round(before * 100) / 100);
-    }
-  }
-  const width = root.getBoundingClientRect().width;
-  if (Math.abs(maxContent(root) - width) <= 0.5) {
-    const rows = elements.filter(({ element }) => element !== root && element.hasAttribute("data-slot") && element.parentElement !== null && texts(element).length > 0 && Math.abs(element.getBoundingClientRect().width - contentWidth(element.parentElement)) <= 0.5);
-    const leaves = rows.filter((row) => !rows.some((other) => other !== row && row.element.contains(other.element)));
-    const widths = leaves.map(({ element, path }) => ({ path, width: maxContent(element) })).sort((left, right) => right.width - left.width);
-    const [first, second] = widths;
-    if (first !== undefined && (second === undefined || first.width - second.width > 0.5)) {
-      put(first.path, "widest", true);
-    }
-  }
-  for (const { element, path } of elements) {
-    const style = getComputedStyle(element);
-    const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
-    if (style.flexWrap.startsWith("wrap") && element.children.length > 1) {
-      let bottom = -Infinity;
-      let lines = 0;
-      for (const child of [...element.children].map((each) => each.getBoundingClientRect()).sort((left, right) => left.top - right.top)) {
-        if (child.top >= bottom - 0.5) { lines += 1; }
-        bottom = Math.max(bottom, child.bottom);
-      }
-      if (lines === 1) { put(path, "oneLine", true); }
-    } else if (own.length > 0 && style.maxWidth !== "none") {
-      const tops = new Set();
-      for (const node of own) {
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        for (const rect of range.getClientRects()) { tops.add(Math.round(rect.top)); }
-      }
-      if (tops.size === 1) { put(path, "oneLine", true); }
-    }
-    if (style.maxHeight !== "none" && element.getBoundingClientRect().height + 0.5 < Number.parseFloat(style.maxHeight)) {
-      put(path, "underMaxHeight", true);
-    }
-    const [child, ...others] = element.children;
-    const line = Number.parseFloat(style.lineHeight);
-    if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
-      const sum = (style, names) => names.reduce((total, name) => total + (Number.parseFloat(style.getPropertyValue(name)) || 0), 0);
-      const fits = () => {
-        const box = element.getBoundingClientRect();
-        const inner = getComputedStyle(element);
-        const top = box.top + sum(inner, ["border-top-width", "padding-top"]);
-        const bottom = box.bottom - sum(inner, ["border-bottom-width", "padding-bottom"]);
-        const outer = getComputedStyle(child);
-        const edges = child.getBoundingClientRect();
-        return Math.abs(edges.top - sum(outer, ["margin-top"]) - top) <= 0.5 && Math.abs(edges.bottom + sum(outer, ["margin-bottom"]) - bottom) <= 0.5;
-      };
-      if (fits()) {
-        const elementStyle = element.getAttribute("style");
-        const childStyle = child.getAttribute("style");
-        const childLine = getComputedStyle(child).lineHeight;
-        child.style.setProperty("line-height", childLine, "important");
-        element.style.setProperty("line-height", String(line + 2) + "px", "important");
-        const applied = Math.abs(Number.parseFloat(getComputedStyle(element).lineHeight) - line - 2) <= 0.01 && getComputedStyle(child).lineHeight === childLine;
-        const still = applied && fits();
-        if (elementStyle === null) { element.removeAttribute("style"); } else { element.setAttribute("style", elementStyle); }
-        if (childStyle === null) { child.removeAttribute("style"); } else { child.setAttribute("style", childStyle); }
-        if (still) { put(path, "lineFits", true); }
-      }
-    }
-  }
-  return out;
-}`;
 
 /**
  * A cell's roots with the anchored popup's root marked where the anchor beside it is more than half a

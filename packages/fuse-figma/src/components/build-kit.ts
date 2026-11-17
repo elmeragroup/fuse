@@ -33,6 +33,7 @@ import { KIT } from "./kit-registry";
 import type { KitEntry, KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
 import type {
+  NumberSpec,
   ComponentSetSpec,
   GlyphFontSpec,
   IconLibrarySpec,
@@ -138,6 +139,32 @@ function kitVariables(): Result.Result<KitVariables, KitSourceInvalid> {
     collections,
     variables,
     modes: modeViews(collections, variables, minimumOf, maximumOf),
+  });
+}
+
+/**
+ * The pixels a spec length draws in one mode of `Fuse density`, as the page that renders at that
+ * density lays it out: a literal's value, or the value a variable holds in that mode where the mode
+ * pins it to one, and undefined for any other length, whose pixels the mode does not decide.
+ *
+ * @param density - The density, as a theme names it: `dense` or `comfortable`.
+ * @returns The reader, or `KitSourceInvalid` where the variable set does not build or has no such mode.
+ */
+export function densityLengths(
+  density: string
+): Result.Result<(length: NumberSpec) => number | undefined, KitSourceInvalid> {
+  return Result.flatMap(kitVariables(), ({ modes }) => {
+    const mode = modes.find(({ name }) => name.toLowerCase() === `fuse density / ${density}`);
+    if (mode === undefined) {
+      return Result.fail(new KitSourceInvalid({ message: `Fuse density has no ${density} mode` }));
+    }
+    return Result.succeed((length: NumberSpec): number | undefined => {
+      if (length.kind === "literal") {
+        return length.value;
+      }
+      const least = mode.variables.minimum(length.variable);
+      return least !== undefined && least === mode.variables.maximum(length.variable) ? least : undefined;
+    });
   });
 }
 

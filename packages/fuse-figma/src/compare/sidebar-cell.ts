@@ -32,7 +32,8 @@
  *   `Sidebar.MenuSubItem`s, each a `Sidebar.MenuSubButton href size isActive` around its `<span>`, in a
  *   240px host.
  * - A `sidebar-menu-item-with-badge` cell renders the rich menu demo's first `Sidebar.MenuItem`, its
- *   `Orders` menu button, active where the cell is, and its `12` badge, in a 240px host. The badge's
+ *   `Orders` menu button, active where the cell is, and its `12` badge, in the demo's `Sidebar.Menu`,
+ *   whose preflight `list-style: none` leaves the item no marker, in a 240px host. The badge's
  *   crop is the item's, so the host leaves the badge where the item's end puts it.
  *
  * The panel renderer renders a `sidebar` cell as `sidebar-panel-kit.ts` draws it: the sections above
@@ -283,15 +284,19 @@ export const sidebarMenuItemWithBadge: CellRendering = {
     host(
       SIDEBAR_ROW_WIDTH,
       createElement(
-        Sidebar.MenuItem,
+        Sidebar.Menu,
         null,
         createElement(
-          Sidebar.MenuButton,
-          { isActive: cell.active === "on" },
-          rowIcon(SIDEBAR_BADGE_ROW.icon),
-          createElement("span", null, SIDEBAR_BADGE_ROW.label)
-        ),
-        createElement(Sidebar.MenuBadge, null, SIDEBAR_BADGE_TEXT)
+          Sidebar.MenuItem,
+          null,
+          createElement(
+            Sidebar.MenuButton,
+            { isActive: cell.active === "on" },
+            rowIcon(SIDEBAR_BADGE_ROW.icon),
+            createElement("span", null, SIDEBAR_BADGE_ROW.label)
+          ),
+          createElement(Sidebar.MenuBadge, null, SIDEBAR_BADGE_TEXT)
+        )
       ),
       rootAround(false)
     ),

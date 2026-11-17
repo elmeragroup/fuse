@@ -168,7 +168,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": []
         }
       }

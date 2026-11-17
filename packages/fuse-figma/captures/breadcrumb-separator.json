@@ -176,6 +176,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": [],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "svg",

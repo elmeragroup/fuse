@@ -38,15 +38,20 @@ import {
   sidebarSectionClass,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { DIV_BLOCK, LI_LIST_ITEM } from "./element-defaults";
-import { INPUT } from "./input-kit";
+import { INPUT, INPUT_MANIFEST } from "./input-kit";
 import { always } from "./popup-facts";
 import {
   SIDEBAR_GROUP_LABEL,
+  SIDEBAR_GROUP_LABEL_MANIFEST,
   SIDEBAR_MENU_BADGE,
+  SIDEBAR_MENU_BADGE_MANIFEST,
   SIDEBAR_MENU_BUTTON,
+  SIDEBAR_MENU_BUTTON_MANIFEST,
   SIDEBAR_MENU_SUB_BUTTON,
+  SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
   SIDEBAR_ROW_WIDTH,
   SIDEBAR_TEXT,
 } from "./sidebar-kit";
@@ -129,6 +134,17 @@ type MenuRow = {
   readonly active?: boolean;
 };
 
+/** A menu row's button cell: the default variant at rest, collapsed with its section, active where it is. */
+function menuButtonCell(outer: Cell, size: string, active: boolean): Cell {
+  return {
+    variant: "default",
+    size,
+    collapsed: outer.collapsed ?? "off",
+    active: active || outer.active === "on" ? "on" : "off",
+    state: "rest",
+  };
+}
+
 /**
  * A menu row at the default variant, at rest, as an instance of the menu button set, its label and
  * icon given, expanded or collapsed with its section.
@@ -141,13 +157,7 @@ function menuButton(
     kind: "instance",
     key,
     of: SIDEBAR_MENU_BUTTON,
-    cell: (outer) => ({
-      variant: "default",
-      size,
-      collapsed: outer.collapsed ?? "off",
-      active: active || outer.active === "on" ? "on" : "off",
-      state: "rest",
-    }),
+    cell: (outer) => menuButtonCell(outer, size, active),
     properties: () => ({ text: { Label: label }, swap: { Icon: icon } }),
     shownIn: always,
     exposed: true,
@@ -331,6 +341,164 @@ export const SIDEBAR_MENU_ITEM_WITH_BADGE: ComponentDefinition = {
       kind: "instance",
       key: "badge",
       of: SIDEBAR_MENU_BADGE,
+      cell: (outer) => ({ state: outer.active === "on" ? "active" : "rest" }),
+      shownIn: always,
+      exposed: true,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A part's frame with no label or icon of its own, as a manifest names it. */
+function frameManifest(
+  key: string,
+  slot: string,
+  parts: readonly (PartManifest | InstanceManifest)[]
+): PartManifest {
+  return { key, slot, shownIn: always, label: undefined, iconsFor: () => [], parts };
+}
+
+/** A menu row as a manifest names it, as {@link menuButton} draws it. */
+function menuButtonManifest(
+  key: string,
+  { label, icon, size = "default", active = false }: MenuRow
+): InstanceManifest {
+  return {
+    kind: "instance",
+    key,
+    of: SIDEBAR_MENU_BUTTON_MANIFEST,
+    cell: (outer) => menuButtonCell(outer, size, active),
+    properties: () => ({ text: { Label: label }, swap: { Icon: icon } }),
+    shownIn: always,
+    exposed: true,
+  };
+}
+
+/** The group label in an expanded or a collapsed group, as a manifest names it, as {@link groupLabel} draws it. */
+function groupLabelManifest(rail: boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: rail ? "label-collapsed" : "label",
+    of: SIDEBAR_GROUP_LABEL_MANIFEST,
+    cell: () => ({ state: "rest" }),
+    shownIn: (cell) => collapsed(cell) === rail,
+    exposed: true,
+  };
+}
+
+/** The group's manifest, which the capture-backed build reads with `captures/sidebar-group.json`. */
+export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
+  key: "sidebar-group",
+  name: "Sidebar group",
+  slot: "sidebar-group",
+  axes: SIDEBAR_GROUP.axes,
+  columnAxis: "collapsed",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    groupLabelManifest(false),
+    groupLabelManifest(true),
+    frameManifest("content", "sidebar-group-content", [
+      frameManifest(
+        "menu",
+        "sidebar-menu",
+        SIDEBAR_GROUP_ROWS.map((row) =>
+          frameManifest(`item-${row.label.toLowerCase()}`, "sidebar-menu-item", [
+            menuButtonManifest("button", { ...row, active: row.label === SIDEBAR_GROUP_ACTIVE_ROW }),
+          ])
+        )
+      ),
+    ]),
+  ],
+  swapProperties: [],
+};
+
+/** The header's manifest, which the capture-backed build reads with `captures/sidebar-header.json`. */
+export const SIDEBAR_HEADER_MANIFEST: SetManifest = {
+  key: "sidebar-header",
+  name: "Sidebar header",
+  slot: "sidebar-header",
+  axes: SIDEBAR_HEADER.axes,
+  columnAxis: "collapsed",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "input",
+      of: INPUT_MANIFEST,
+      cell: () => ({ content: "placeholder", state: "rest" }),
+      slot: "sidebar-input",
+      properties: () => ({ text: { Text: SIDEBAR_INPUT_PLACEHOLDER } }),
+      shownIn: always,
+      exposed: true,
+    },
+  ],
+  swapProperties: [],
+};
+
+/** The footer's manifest, which the capture-backed build reads with `captures/sidebar-footer.json`. */
+export const SIDEBAR_FOOTER_MANIFEST: SetManifest = {
+  key: "sidebar-footer",
+  name: "Sidebar footer",
+  slot: "sidebar-footer",
+  axes: SIDEBAR_FOOTER.axes,
+  columnAxis: "collapsed",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    frameManifest("menu", "sidebar-menu", [
+      frameManifest("item", "sidebar-menu-item", [
+        menuButtonManifest("button", { label: SIDEBAR_FOOTER_TEXT, icon: SIDEBAR_FOOTER_ICON, size: "lg" }),
+      ]),
+    ]),
+  ],
+  swapProperties: [],
+};
+
+/** The sub menu's manifest, which the capture-backed build reads with `captures/sidebar-menu-sub.json`. */
+export const SIDEBAR_MENU_SUB_MANIFEST: SetManifest = {
+  key: "sidebar-menu-sub",
+  name: "Sidebar sub menu",
+  slot: "sidebar-menu-sub",
+  axes: SIDEBAR_MENU_SUB.axes,
+  columnAxis: "rows",
+  label: undefined,
+  iconsFor: () => [],
+  parts: SIDEBAR_SUB_ROWS.map(({ key, label, size, active }) =>
+    frameManifest(`item-${key}`, "sidebar-menu-sub-item", [
+      {
+        kind: "instance",
+        key: "button",
+        of: SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
+        cell: () => ({ size, active: active ? "on" : "off", state: "rest" }),
+        properties: () => ({ text: { Label: label } }),
+        shownIn: always,
+        exposed: true,
+      },
+    ])
+  ),
+  swapProperties: [],
+};
+
+/**
+ * The menu item with a badge's manifest, which the capture-backed build reads with
+ * `captures/sidebar-menu-item-with-badge.json`.
+ */
+export const SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST: SetManifest = {
+  key: "sidebar-menu-item-with-badge",
+  name: "Sidebar menu item with badge",
+  slot: "sidebar-menu-item",
+  axes: SIDEBAR_MENU_ITEM_WITH_BADGE.axes,
+  columnAxis: "active",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    menuButtonManifest("button", SIDEBAR_BADGE_ROW),
+    {
+      kind: "instance",
+      key: "badge",
+      of: SIDEBAR_MENU_BADGE_MANIFEST,
       cell: (outer) => ({ state: outer.active === "on" ? "active" : "rest" }),
       shownIn: always,
       exposed: true,

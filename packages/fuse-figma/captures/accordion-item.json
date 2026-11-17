@@ -238,7 +238,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -325,7 +325,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -412,7 +412,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -499,7 +499,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -586,7 +586,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -699,7 +699,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -812,7 +812,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -925,7 +925,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1038,7 +1038,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1125,7 +1125,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1212,7 +1212,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1299,7 +1299,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1386,7 +1386,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1499,7 +1499,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1612,7 +1612,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1725,7 +1725,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1838,7 +1838,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -1925,7 +1925,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2012,7 +2012,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2099,7 +2099,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2186,7 +2186,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2299,7 +2299,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2412,7 +2412,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2525,7 +2525,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--primary-soft-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2638,7 +2638,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2725,7 +2725,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2812,7 +2812,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2899,7 +2899,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -2986,7 +2986,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3099,7 +3099,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3212,7 +3212,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3325,7 +3325,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3438,7 +3438,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3525,7 +3525,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3612,7 +3612,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3699,7 +3699,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3786,7 +3786,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -3899,7 +3899,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4012,7 +4012,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4125,7 +4125,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4238,7 +4238,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4325,7 +4325,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4412,7 +4412,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4499,7 +4499,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4586,7 +4586,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4699,7 +4699,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4812,7 +4812,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",
@@ -4925,7 +4925,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--card":{"_tag":"theme"},"--card-border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": [
             {
               "tag": "h3",

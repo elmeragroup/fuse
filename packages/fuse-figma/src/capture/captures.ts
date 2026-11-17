@@ -57,6 +57,11 @@ import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
 import menuSeparator from "../../captures/menu-separator.json" with { type: "json" };
 import meter from "../../captures/meter.json" with { type: "json" };
+import navigationMenuBarLink from "../../captures/navigation-menu-bar-link.json" with { type: "json" };
+import navigationMenuBarTrigger from "../../captures/navigation-menu-bar-trigger.json" with { type: "json" };
+import navigationMenuPopup from "../../captures/navigation-menu-popup.json" with { type: "json" };
+import navigationMenuRowLink from "../../captures/navigation-menu-row-link.json" with { type: "json" };
+import navigationMenuVerticalTrigger from "../../captures/navigation-menu-vertical-trigger.json" with { type: "json" };
 import numberFieldStepper from "../../captures/number-field-stepper.json" with { type: "json" };
 import numberField from "../../captures/number-field.json" with { type: "json" };
 import paginationEdge from "../../captures/pagination-edge.json" with { type: "json" };
@@ -75,6 +80,16 @@ import selectOpen from "../../captures/select-open.json" with { type: "json" };
 import selectPopup from "../../captures/select-popup.json" with { type: "json" };
 import selectTrigger from "../../captures/select-trigger.json" with { type: "json" };
 import separator from "../../captures/separator.json" with { type: "json" };
+import sidebarFooter from "../../captures/sidebar-footer.json" with { type: "json" };
+import sidebarGroupLabel from "../../captures/sidebar-group-label.json" with { type: "json" };
+import sidebarGroup from "../../captures/sidebar-group.json" with { type: "json" };
+import sidebarHeader from "../../captures/sidebar-header.json" with { type: "json" };
+import sidebarMenuBadge from "../../captures/sidebar-menu-badge.json" with { type: "json" };
+import sidebarMenuButton from "../../captures/sidebar-menu-button.json" with { type: "json" };
+import sidebarMenuItemWithBadge from "../../captures/sidebar-menu-item-with-badge.json" with { type: "json" };
+import sidebarMenuSubButton from "../../captures/sidebar-menu-sub-button.json" with { type: "json" };
+import sidebarMenuSub from "../../captures/sidebar-menu-sub.json" with { type: "json" };
+import sidebar from "../../captures/sidebar.json" with { type: "json" };
 import skeleton from "../../captures/skeleton.json" with { type: "json" };
 import switchCapture from "../../captures/switch.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
@@ -170,6 +185,21 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["item-link", itemLink],
   ["accordion-item", accordionItem],
   ["toolbar", toolbar],
+  ["sidebar-menu-button", sidebarMenuButton],
+  ["sidebar-menu-sub-button", sidebarMenuSubButton],
+  ["sidebar-group-label", sidebarGroupLabel],
+  ["sidebar-menu-badge", sidebarMenuBadge],
+  ["sidebar-group", sidebarGroup],
+  ["sidebar-header", sidebarHeader],
+  ["sidebar-footer", sidebarFooter],
+  ["sidebar-menu-sub", sidebarMenuSub],
+  ["sidebar-menu-item-with-badge", sidebarMenuItemWithBadge],
+  ["sidebar", sidebar],
+  ["navigation-menu-bar-trigger", navigationMenuBarTrigger],
+  ["navigation-menu-vertical-trigger", navigationMenuVerticalTrigger],
+  ["navigation-menu-bar-link", navigationMenuBarLink],
+  ["navigation-menu-row-link", navigationMenuRowLink],
+  ["navigation-menu-popup", navigationMenuPopup],
 ]);
 
 /**

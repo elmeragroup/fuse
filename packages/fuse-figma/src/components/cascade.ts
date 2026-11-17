@@ -906,7 +906,7 @@ export type BoxCascade = {
   ): BoxCascade;
   /** As {@link RecipeBoxCascade.labelElement} says. */
   labelElement(element: {
-    readonly tag: string;
+    readonly tag: string | undefined;
     readonly last: boolean;
     readonly key: string;
   }): LayerStyle | undefined;
@@ -1211,16 +1211,19 @@ export class RecipeBoxCascade implements BoxCascade {
    * reaches the element too, and stays unmapped, since the element's own layout decides whether the
    * label reads its style.
    *
-   * @param element - The tag of the element that holds the label, whether the label is the box's
-   *   last child in the cell, and the label's key.
-   * @returns The element's style, or undefined where no class of this box reaches it, so the label
-   *   reads this box's style.
+   * @param element - The tag of the element that holds the label, undefined where the definition
+   *   names none, whether the label is the box's last child in the cell, and the label's key.
+   * @returns The element's style, or undefined where the definition names no element or no class of
+   *   this box reaches it, so the label reads this box's style.
    */
   labelElement(element: {
-    readonly tag: string;
+    readonly tag: string | undefined;
     readonly last: boolean;
     readonly key: string;
   }): LayerStyle | undefined {
+    if (element.tag === undefined) {
+      return undefined;
+    }
     takeAll(this.#descendants);
     for (const { part, className, origin, declarations } of appliedOf(this.#descendants)) {
       for (const { property, value } of declarations) {

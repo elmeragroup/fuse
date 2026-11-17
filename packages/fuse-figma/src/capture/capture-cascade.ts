@@ -55,7 +55,13 @@ import type {
 import { CascadeLogs, routed } from "../components/coverage-log.ts";
 import type { Origin } from "../components/coverage-log.ts";
 import { exceptLastChildClass } from "../components/css-selector.ts";
-import { evaluateLength, normalizeCss, readColor, splitTopLevel } from "../components/css-values.ts";
+import {
+  evaluateLength,
+  evaluatePercentage,
+  normalizeCss,
+  readColor,
+  splitTopLevel,
+} from "../components/css-values.ts";
 import type { VariableIndex, Viewport } from "../components/css-values.ts";
 import { modalLayout } from "../components/fixed-placement.ts";
 import type { NumberSpec } from "../components/kit-spec.ts";
@@ -160,6 +166,8 @@ type CellRead = {
    * the cell has no anchor of a definite width, which leaves the property unset.
    */
   readonly anchorWidth: string | undefined;
+  /** The root `data-slot` of each set that holds this one as an instance, as {@link CaptureSetSource} says. */
+  readonly instancedIn: ReadonlySet<string>;
 };
 
 /**
@@ -186,6 +194,11 @@ export type CaptureSetSource = {
   readonly open: OpenPlacement | undefined;
   /** The width that stands for `--anchor-width` in a cell, as {@link CellRead} says. */
   readonly anchorWidth: (cell: Cell) => string | undefined;
+  /**
+   * The root `data-slot` of each set whose manifest holds this set as an instance part, as
+   * {@link instancingSlots} reads them, such as Select popup's `select-content` around Select item.
+   */
+  readonly instancedIn: ReadonlySet<string>;
 };
 
 /**
@@ -469,6 +482,7 @@ export class CaptureSetCascade {
         captured.roots.flatMap(({ around, root }) => around.map((each) => [each, root] as const))
       ),
       anchorWidth: this.#source.anchorWidth(cell),
+      instancedIn: this.#source.instancedIn,
     };
     this.#cells.push({ cell: captured, read });
     return new CaptureCellCascade(read, new CellLedger(scope), capture.page, captured, this.#source.open);
@@ -788,8 +802,133 @@ function readPseudoElements(
 type AroundPath = {
   readonly placed: readonly Placed[];
   readonly layer: Layer | undefined;
-  readonly own: readonly Layer[];
+  readonly own: readonly { readonly element: CapturedElement; readonly layer: Layer }[];
 };
+
+/** Why a background around the root stays unmapped, where the root cannot draw it as one fill. */
+const STACKED_BACKDROP =
+  "the background shows behind the root through or over another paint, which one fill on the root cannot draw";
+
+/** Why a background around the root stays unmapped, where the root or an element it shows through alters how it paints. */
+const ALTERED_BACKDROP =
+  "the root or an element between it and the background changes how it paints, by its opacity, corners, filter, backdrop filter, mask, clip or blend mode, which one opaque rectangular fill on the root cannot draw";
+
+/** A box's corner radii: the shorthand, which the cascade keeps whole, and each corner's longhand. */
+const CORNER_RADII = [
+  "border-radius",
+  "border-top-left-radius",
+  "border-top-right-radius",
+  "border-bottom-right-radius",
+  "border-bottom-left-radius",
+] as const;
+
+/**
+ * Whether an element changes how its background, and what shows through it, paints, beyond one
+ * opaque rectangle across its box: an opacity below 1 (CSS Color 4 §15.1), a rounded corner (CSS
+ * Backgrounds 3 §5), a filter (Filter Effects 1 §5), a backdrop filter, which filters what shows
+ * through the element but not its own background (Filter Effects 2 §3), a mask or a clip path (CSS
+ * Masking 1 §6, §7), or a blend mode other than `normal` (Compositing 1 §3.2). A value the build does
+ * not read counts as a change.
+ */
+function altersPaint(style: LayerStyle): boolean {
+  const value = (property: string, initial: string): string =>
+    normalizeCss(style.resolved(property) ?? initial).toLowerCase();
+  const opacity = value("opacity", "1");
+  const opaque = evaluatePercentage(opacity) === 1 || Number(opacity) === 1;
+  const square = CORNER_RADII.every((corner) => evaluateLength(value(corner, "0")) === 0);
+  return (
+    !opaque ||
+    !square ||
+    value("filter", "none") !== "none" ||
+    value("backdrop-filter", "none") !== "none" ||
+    value("-webkit-backdrop-filter", "none") !== "none" ||
+    value("mask", "none") !== "none" ||
+    value("mask-image", "none") !== "none" ||
+    value("clip-path", "none") !== "none" ||
+    value("mix-blend-mode", "normal") !== "normal"
+  );
+}
+
+/**
+ * The element around a root whose background the root shows across its box, where the root paints
+ * none: among the elements that lie exactly behind the root, as the capture measured them, the
+ * innermost whose background paints. A transparent background shows what lies further out, so the
+ * search goes on past it. An opaque color hides everything further out, so it is the fill, as the
+ * Sidebar Provider's wrapper paints `bg-sidebar` behind an inset panel's container. A synced
+ * variable is the fill where nothing further out among them paints. A translucent color, a
+ * background image, or a variable over another paint composites more than one layer, which one
+ * fill cannot draw, so those backgrounds stay unmapped and the root takes none. An element with
+ * padding around the root, as a popup's content around its rows, does not lie exactly behind it, so
+ * its background is no fill of the root's.
+ *
+ * The root draws a fill it takes through its own effects, so a root that changes how it paints, as
+ * {@link altersPaint} says, takes none, just as an element between it and the background does: a
+ * root at half opacity would fade a background that Chromium paints whole behind it.
+ *
+ * The search stops at the root element of a set that holds this one as an instance, as Select
+ * popup's `select-content` holds Select item's rows: that set draws the paint around its instances
+ * itself, so a row that took it would paint it twice. An element no such set roots, as the Sidebar
+ * Provider's wrapper, stays in the search.
+ *
+ * @param ledger - The cell's ledger.
+ * @param root - The root's style.
+ * @param around - The component's elements around the root, outermost first, with their layers.
+ * @param coinciding - How many of them, innermost first, lie exactly behind the root.
+ * @param variables - The synced variables a color can bind.
+ * @param instancedIn - The root `data-slot` of each set that holds this one as an instance.
+ * @returns The element's style, whose reads fill the root's fields, or undefined for none.
+ */
+function backdropAround(
+  ledger: CellLedger,
+  root: LayerStyle,
+  around: readonly { readonly element: CapturedElement; readonly layer: Layer }[],
+  coinciding: number,
+  variables: VariableIndex,
+  instancedIn: ReadonlySet<string>
+): LayerStyle | undefined {
+  const inward = around.toReversed().slice(0, coinciding);
+  const holder = inward.findIndex(({ element }) => instancedIn.has(element.attributes["data-slot"] ?? ""));
+  const behind = (holder === -1 ? inward : inward.slice(0, holder)).map(
+    ({ layer }) => new LayerStyle(ledger, layer, [])
+  );
+  const image = (style: LayerStyle): boolean =>
+    normalizeCss(style.resolved("background-image") ?? "none") !== "none";
+  const color = (style: LayerStyle) =>
+    style.has("background-color")
+      ? readColor(style.resolved("background-color") ?? "", variables)
+      : undefined;
+  const paints = (style: LayerStyle): boolean => {
+    const read = color(style);
+    return (
+      image(style) || (style.has("background-color") && !(read?.kind === "literal" && read.color.a === 0))
+    );
+  };
+  const refuse = (styles: readonly LayerStyle[], detail: string = STACKED_BACKDROP): undefined => {
+    for (const style of styles) {
+      for (const property of ["background-color", "background-image"]) {
+        style.mark(property, "unmapped", detail, []);
+      }
+    }
+    return undefined;
+  };
+  for (const [index, style] of behind.entries()) {
+    if (!paints(style)) {
+      continue;
+    }
+    const read = color(style);
+    const further = behind.slice(index + 1).filter(paints);
+    // The background reaches the root as one opaque rectangle only where nothing from the root out
+    // to the element that paints it changes how it paints.
+    if ([root, ...behind.slice(0, index + 1)].some(altersPaint)) {
+      return refuse([style, ...further], ALTERED_BACKDROP);
+    }
+    // A translucent color or an image shows what lies beneath it. A variable can be translucent in
+    // some mode, so it paints the root alone only where nothing else paints beneath it.
+    const solid = read?.kind === "literal" ? read.color.a >= 1 : read !== undefined && further.length === 0;
+    return image(style) || !solid ? refuse([style, ...further]) : style;
+  }
+  return undefined;
+}
 
 /** The cascade of one cell, read from its capture. */
 export class CaptureCellCascade {
@@ -798,6 +937,7 @@ export class CaptureCellCascade {
   readonly #page: readonly CapturedElement[];
   readonly #cell: CapturedCell;
   readonly #open: OpenPlacement | undefined;
+  #backdrop: LayerStyle | undefined;
 
   constructor(
     read: CellRead,
@@ -843,10 +983,18 @@ export class CaptureCellCascade {
           applied: [],
         }
       );
+      this.#backdrop = backdropAround(
+        this.#ledger,
+        box.style,
+        path.own,
+        first.root.measured?.coincidingAround ?? 0,
+        this.#read.context.variables,
+        this.#read.instancedIn
+      );
       // The elements around the root and the root itself, from which box sizing reads the basis.
       box.heightBasis = normalizeCss(box.style.resolved("height") ?? "").endsWith("%")
         ? percentHeightBasis(
-            [...path.own.map((layer) => new LayerStyle(this.#ledger, layer, [])), box.style],
+            [...path.own.map(({ layer }) => new LayerStyle(this.#ledger, layer, [])), box.style],
             this.#read.context.variables
           )
         : undefined;
@@ -941,7 +1089,7 @@ export class CaptureCellCascade {
     const { origin } = this.#ledger.scope;
     let parent: Layer | undefined;
     const path: Placed[] = [];
-    const layers: Layer[] = [];
+    const layers: { readonly element: CapturedElement; readonly layer: Layer }[] = [];
     const elements = [
       ...this.#page.map((element) => ({ element, undrawn: PAGE_UNDRAWN, page: true })),
       ...around.map((element) => ({ element, undrawn: AROUND_UNDRAWN, page: false })),
@@ -968,7 +1116,7 @@ export class CaptureCellCascade {
         }
       );
       if (!page) {
-        layers.push(parent);
+        layers.push({ element, layer: parent });
       }
     }
     return { placed: path, layer: parent, own: layers };
@@ -996,12 +1144,13 @@ export class CaptureCellCascade {
   }
 
   /**
-   * The capture names no ancestor that paints behind the root.
+   * The style of the element around the root that paints behind it, as {@link backdropAround}
+   * finds it, or undefined for none.
    *
-   * @returns Undefined.
+   * @returns The element's style.
    */
   backdrop(): LayerStyle | undefined {
-    return undefined;
+    return this.#backdrop;
   }
 
   /** Give every declaration no layer read its row, as the recipe cascade's cell does. */
@@ -1493,8 +1642,50 @@ class CaptureBoxCascade implements BoxCascade {
     return new CaptureBoxCascade(this.#read, ledger, placed, parent, path);
   }
 
-  labelElement(): LayerStyle | undefined {
-    return undefined;
+  /**
+   * Cascade the element the box holds its label's text in, as a Sidebar row holds its label in a
+   * `<span>`, where a rule of a class above the element reaches it, as `[&>span:last-child]:truncate`
+   * does. The element is the box's child of the label's tag that holds a text node and no
+   * `data-slot`, and the label is the box's last layer. Its path is the text layer's.
+   *
+   * @param element - The tag the definition names for the element that holds the label, or
+   *   undefined where the markup alone says, whether the label is the box's last layer, and the
+   *   label's key.
+   * @returns The element's style, or undefined where no rule of a class above it reaches it, so the
+   *   label reads this box's style.
+   */
+  labelElement(element: {
+    readonly tag: string | undefined;
+    readonly last: boolean;
+    readonly key: string;
+  }): LayerStyle | undefined {
+    const box = this.#placed.at(-1);
+    if (box === undefined || !element.last) {
+      return undefined;
+    }
+    const held = box.element.children.find(
+      (child) =>
+        (element.tag === undefined || child.tag === element.tag) &&
+        child.textIndex !== undefined &&
+        child.attributes["data-slot"] === undefined &&
+        !this.#claimed.has(child)
+    );
+    // A declaration's `owner` counts the steps up to the element whose class its rule names: 0 for
+    // the element itself, so any higher count names the box or an element above it.
+    if (
+      held === undefined ||
+      !held.declarations.some((index) => (this.#read.declarations[index]?.owner ?? 0) > 0)
+    ) {
+      return undefined;
+    }
+    this.#claimed.add(held);
+    const placed = [...this.#placed, { element: held, name: undrawnName(held), origin: box.origin }];
+    const layer = this.#ledger.add(
+      inheritance(this.#layer, this.#read.context),
+      appliedOf(this.#read, held.declarations, placed, () => true),
+      this.#layer
+    );
+    return new LayerStyle(this.#ledger, layer, [...this.path, element.key]);
   }
 
   icon(slot: IconSlot): LayerStyle {
