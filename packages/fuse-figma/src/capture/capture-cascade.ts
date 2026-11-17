@@ -46,13 +46,15 @@ import type {
   Cell,
   ComponentDefinition,
   IconSlot,
+  InstanceDefinition,
   OuterDeclaration,
+  PartDefinition,
 } from "../components/component-spec.ts";
 import { CascadeLogs, routed } from "../components/coverage-log.ts";
 import type { Origin } from "../components/coverage-log.ts";
 import { exceptLastChildClass } from "../components/css-selector.ts";
-import { evaluateLength } from "../components/css-values.ts";
-import type { Viewport } from "../components/css-values.ts";
+import { evaluateLength, normalizeCss, readColor, splitTopLevel } from "../components/css-values.ts";
+import type { VariableIndex, Viewport } from "../components/css-values.ts";
 import { modalLayout } from "../components/fixed-placement.ts";
 import type { NumberSpec } from "../components/kit-spec.ts";
 import type { StateTable } from "../components/state-table.ts";
@@ -554,6 +556,223 @@ export class CaptureSetCascade {
   }
 }
 
+/**
+ * The longhands a pseudo-element's style can set and still paint nothing a box shows: its place,
+ * size, spacing and box model, its border and outline styles and colors, which a zero width or no
+ * style leaves unpainted, its background's placement, which no image paints, the text style a
+ * pseudo-element with no text draws nothing with, and its motion.
+ */
+const PSEUDO_SILENT = new RegExp(
+  `^(?:${[
+    "--.*",
+    "position",
+    "top|right|bottom|left|inset.*",
+    "(?:min-|max-)?(?:width|height)",
+    "(?:margin|padding)(?:-.*)?",
+    "box-sizing|display|pointer-events|z-index|cursor|unicode-bidi|visibility|opacity",
+    "border-(?:.*-)?radius",
+    "outline-(?:color|offset|width)",
+    "background-(?:position.*|size|repeat|clip|origin|attachment)",
+    "color|font.*|line-height|letter-spacing|text-.*|white-space.*|word-.*",
+    "transition.*|animation.*|transform.*|translate|rotate|scale|will-change",
+  ].join("|")})$`
+);
+
+/** The border styles that draw no border, whatever its width (CSS Backgrounds 3 §4.2). */
+const NO_BORDER = new Set(["none", "hidden"]);
+
+/** The border width keywords, each above zero (CSS Backgrounds 3 §4.3). */
+const WIDTH_KEYWORDS: ReadonlyMap<string, number> = new Map([
+  ["thin", 1],
+  ["medium", 3],
+  ["thick", 5],
+]);
+
+/** The border styles a `border` shorthand names (CSS Backgrounds 3 §4.2). */
+const BORDER_STYLES = new Set([
+  "none",
+  "hidden",
+  "dotted",
+  "dashed",
+  "solid",
+  "double",
+  "groove",
+  "ridge",
+  "inset",
+  "outset",
+]);
+
+/** The sides of a box, in the order a one-to-four-value shorthand names them. */
+const SIDES = ["top", "right", "bottom", "left"] as const;
+
+/** The values of a one-to-four-value shorthand for each side, top, right, bottom and left (CSS Backgrounds 3 §4). */
+function perSide(values: readonly string[]): readonly string[] | undefined {
+  const [top, right, bottom, left] = values;
+  if (top === undefined || values.length > 4) {
+    return undefined;
+  }
+  const across = right ?? top;
+  return [top, across, bottom ?? top, left ?? across];
+}
+
+/**
+ * A border shorthand as the longhands it sets, each side's width, style and color, with the initial
+ * value for a part it leaves out: `medium`, `none` and `currentcolor` (CSS Backgrounds 3 §4). A
+ * `border` or a side's shorthand names each part at most once, in any order. Undefined for a
+ * property that is no border shorthand, and for one whose parts the build cannot tell apart, as a
+ * `var()` that stands for one of them.
+ */
+function borderLonghands(
+  property: string,
+  value: string
+): readonly (readonly [string, string])[] | undefined {
+  const tokens = splitTopLevel(normalizeCss(value), " ");
+  const side = /^border(?:-(top|right|bottom|left))?$/.exec(property);
+  if (side !== null) {
+    let width: string | undefined;
+    let lineStyle: string | undefined;
+    let color: string | undefined;
+    for (const token of tokens) {
+      const lower = token.toLowerCase();
+      if (token.includes("var(")) {
+        return undefined;
+      }
+      if (BORDER_STYLES.has(lower) && lineStyle === undefined) {
+        lineStyle = lower;
+      } else if ((evaluateLength(token) !== undefined || WIDTH_KEYWORDS.has(lower)) && width === undefined) {
+        width = token;
+      } else if (color === undefined) {
+        color = token;
+      } else {
+        return undefined;
+      }
+    }
+    const sides = side[1] === undefined ? SIDES : [side[1]];
+    return sides.flatMap((each) => [
+      [`border-${each}-width`, width ?? "medium"] as const,
+      [`border-${each}-style`, lineStyle ?? "none"] as const,
+      [`border-${each}-color`, color ?? "currentcolor"] as const,
+    ]);
+  }
+  const part = /^border-(width|style|color)$/.exec(property)?.[1];
+  const values = part === undefined ? undefined : perSide(tokens);
+  return part === undefined || values === undefined
+    ? undefined
+    : SIDES.map((each, index) => [`border-${each}-${part}`, values[index] ?? ""] as const);
+}
+
+/**
+ * Whether a side of a pseudo-element's border paints: its resolved style draws, and its width does
+ * not resolve to zero, a width the build cannot resolve counting as painting. Undefined for a style
+ * that resolves to no border style.
+ */
+function sidePaints(style: LayerStyle, side: string): boolean | undefined {
+  const lineStyle = normalizeCss(style.resolved(`border-${side}-style`) ?? "none").toLowerCase();
+  if (!BORDER_STYLES.has(lineStyle)) {
+    return undefined;
+  }
+  if (NO_BORDER.has(lineStyle)) {
+    return false;
+  }
+  const width = normalizeCss(style.resolved(`border-${side}-width`) ?? "medium").toLowerCase();
+  return (evaluateLength(width) ?? WIDTH_KEYWORDS.get(width)) !== 0;
+}
+
+/**
+ * Whether a property of a pseudo-element's resolved style paints, by its value, or undefined where the
+ * build does not tell. A border side's width, style and color paint together, as {@link sidePaints}
+ * reads them, and a border shorthand left unsplit is one the build does not tell.
+ */
+function pseudoPaint(
+  style: LayerStyle,
+  property: string,
+  properties: readonly string[],
+  variables: VariableIndex
+): boolean | undefined {
+  const value = normalizeCss(style.resolved(property) ?? "").toLowerCase();
+  if (property === "content") {
+    return !["", '""', "''", "none", "normal"].includes(value);
+  }
+  const side = /^border-(top|right|bottom|left)-(?:width|style|color)$/.exec(property)?.[1];
+  if (side !== undefined) {
+    return sidePaints(style, side);
+  }
+  if (property === "background-color" || property === "background") {
+    if (["transparent", "none"].includes(value)) {
+      return false;
+    }
+    const color = readColor(value, variables);
+    return color?.kind === "literal" ? color.color.a > 0 : true;
+  }
+  if (property === "background-image" || property === "box-shadow") {
+    return value !== "none";
+  }
+  if (property === "outline-style" || property === "outline") {
+    return !value.split(" ").every((token) => token === "none" || evaluateLength(token) === 0);
+  }
+  return PSEUDO_SILENT.test(property) ? false : undefined;
+}
+
+/**
+ * Cascade a box's `::before` and `::after` over the box, as the browser does, and note each
+ * declaration it sets itself, since the kit draws no layer for a pseudo-element: dropped where its
+ * resolved style paints nothing, as a control's hit area does with empty content and no fill,
+ * border, shadow or outline, and unmapped where it paints or sets a longhand the build does not
+ * read, such as a `backdrop-filter`, which blurs what lies behind it with no paint of its own.
+ */
+function readPseudoElements(
+  read: CellRead,
+  ledger: CellLedger,
+  placed: readonly Placed[],
+  layer: Layer,
+  path: readonly string[]
+): void {
+  const own = placed.at(-1)?.element;
+  for (const [pseudo, indexes] of Object.entries(own?.pseudo ?? {})) {
+    if (pseudo === "placeholder") {
+      continue;
+    }
+    // The border shorthands split into their longhands first, so the cascade decides each side's
+    // width, style and color by its usual precedence.
+    const applied = appliedOf(read, indexes, placed, () => true, new Set()).map((each) => ({
+      ...each,
+      declarations: each.declarations.flatMap(({ property, value }) =>
+        (borderLonghands(property, value) ?? [[property, value] as const]).map(([longhand, part]) => ({
+          property: longhand,
+          value: part,
+        }))
+      ),
+    }));
+    const pseudoLayer = ledger.add(inheritance(layer, read.context), applied, layer);
+    const style = new LayerStyle(ledger, pseudoLayer, [...path, `::${pseudo}`]);
+    const properties = style.ownProperties();
+    const verdicts = properties.map((property) => ({
+      property,
+      paints: pseudoPaint(style, property, properties, read.context.variables),
+    }));
+    const unread = verdicts.flatMap(({ property, paints }) => (paints === undefined ? [property] : []));
+    const paints = verdicts.flatMap(({ property, paints }) => (paints === true ? [property] : []));
+    const note: CoverageNote =
+      unread.length > 0
+        ? {
+            outcome: "unmapped",
+            detail: `the kit draws no layer for the \`::${pseudo}\` pseudo-element, and the build does not tell whether its ${unread.join(", ")} paints`,
+          }
+        : paints.length > 0
+          ? {
+              outcome: "unmapped",
+              detail: `the kit draws no layer for the \`::${pseudo}\` pseudo-element, whose ${paints.join(", ")} paints`,
+            }
+          : {
+              outcome: "dropped",
+              detail: `the \`::${pseudo}\` pseudo-element paints nothing: its content is empty and it sets no fill, border, shadow or outline`,
+            };
+    for (const property of properties) {
+      style.mark(property, note.outcome, note.detail, []);
+    }
+  }
+}
+
 /** The elements around a root as the cascade placed them, and the layer of the innermost one. */
 type AroundPath = { readonly placed: readonly Placed[]; readonly layer: Layer | undefined };
 
@@ -927,7 +1146,10 @@ function placementApplied(
  * The elements from below a box down to the element at a place, an element-ordinal path such as
  * `field/1/0` from the nearest element above with that `data-slot`.
  */
-function elementsAtPlace(path: readonly Placed[], place: string): readonly CapturedElement[] | undefined {
+function elementsAtPlace(
+  path: readonly { readonly element: CapturedElement }[],
+  place: string
+): readonly CapturedElement[] | undefined {
   const [slot, ...steps] = place.split("/");
   const from = path.findLast((placed) => placed.element.attributes["data-slot"] === slot)?.element;
   if (from === undefined) {
@@ -1031,6 +1253,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly #rooted: ReadonlyMap<string, readonly CapturedElement[]>;
   /** How many element children the box's element holds in the capture. */
   readonly elementChildren: number | undefined;
+  /** The tag of the box's element in the capture. */
+  readonly elementTag: string | undefined;
   /** What the capture measured of the box's element. */
   readonly measured: MeasuredBox | undefined;
 
@@ -1069,7 +1293,9 @@ class CaptureBoxCascade implements BoxCascade {
     );
     this.style = new LayerStyle(ledger, this.#layer, path);
     this.path = path;
+    readPseudoElements(read, ledger, placed, this.#layer, path);
     this.elementChildren = own?.element.children.length;
+    this.elementTag = own?.element.tag;
     this.measured = own === undefined ? undefined : measuredBox(own.element, read.declarations);
   }
 
@@ -1353,6 +1579,60 @@ export function castsShadowOrClips(capture: SetCapture): boolean {
       })
     )
   );
+}
+
+/**
+ * The parts of a definition whose element wins a `scale` in some cell of its capture, as Switch's
+ * thumb does while off, found by slot or by place as the cascade finds them, each box's parts
+ * claiming their elements in order. The build draws each as a slot around a dot, as it draws a part
+ * whose recipe classes set `scale`, so every cell has the same layer tree.
+ *
+ * @param capture - The set's capture.
+ * @param parts - The definition's parts.
+ * @returns The parts that scale.
+ */
+export function partsThatScaleIn(
+  capture: SetCapture,
+  parts: readonly (PartDefinition | InstanceDefinition)[]
+): ReadonlySet<PartDefinition> {
+  const found = new Set<PartDefinition>();
+  const scales = (element: CapturedElement): boolean =>
+    element.declarations.some((index) => capture.declarations[index]?.longhands.includes("scale") === true);
+  const visit = (
+    box: readonly { readonly element: CapturedElement }[],
+    below: readonly (PartDefinition | InstanceDefinition)[]
+  ): void => {
+    const claimed = new Set<CapturedElement>();
+    const element = box.at(-1)?.element;
+    for (const part of below) {
+      const slot = "kind" in part ? (part.slot ?? part.of.slot) : part.slot;
+      const elements =
+        element === undefined
+          ? undefined
+          : slot !== undefined
+            ? elementsWithSlot(element, slot, claimed)
+            : "kind" in part || part.place === undefined
+              ? undefined
+              : elementsAtPlace(box, part.place);
+      const target = elements?.at(-1);
+      if (target === undefined || elements === undefined) {
+        continue;
+      }
+      claimed.add(target);
+      if (!("kind" in part)) {
+        if (scales(target)) {
+          found.add(part);
+        }
+        visit([...box, ...elements.map((each) => ({ element: each }))], part.parts ?? []);
+      }
+    }
+  };
+  for (const { roots } of capture.cells) {
+    for (const { root } of roots) {
+      visit([{ element: root }], parts);
+    }
+  }
+  return found;
 }
 
 /**

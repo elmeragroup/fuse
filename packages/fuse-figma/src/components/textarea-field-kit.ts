@@ -18,16 +18,25 @@
  */
 import { cn, fieldFrameVariants, textareaFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type {
+  ComponentDefinition,
+  InstanceDefinition,
+  LabelDefinition,
+  PartDefinition,
+} from "./component-spec";
 import {
   FIELD_FRAME_DISABLED,
   FIELD_FRAME_SET,
   frameDescriptions,
   frameError,
   frameLabelRow,
+  frameLabelRowManifest,
+  frameMessagesManifest,
 } from "./field-frame-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
-import { TEXTAREA } from "./textarea-kit";
+import { TEXTAREA, TEXTAREA_MANIFEST } from "./textarea-kit";
 
 /** The label, the default of the Label instance's `Label` property: the docs Basic demo's label. */
 export const TEXTAREA_FIELD_LABEL = "Bio";
@@ -53,20 +62,26 @@ export const TEXTAREA_FIELD_COUNTER_PROPERTY = "Counter";
 const frame = fieldFrameVariants();
 const parts = textareaFieldVariants();
 
+/** The BOOLEAN property that shows the counter, which starts false. */
+const COUNTER_OPTIONAL = { name: TEXTAREA_FIELD_COUNTER_PROPERTY, defaultValue: false };
+
+/** The counter's text, which the `Count` property sets. */
+const COUNTER_TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: TEXTAREA_FIELD_COUNTER,
+  textProperty: "Count",
+  shownIn: always,
+};
+
 /** The `current/max` character counter at the end of the heading row, a bare `<span>`. */
 const COUNTER: PartDefinition = {
   key: "counter",
   slot: undefined,
   shownIn: always,
-  optional: { name: TEXTAREA_FIELD_COUNTER_PROPERTY, defaultValue: false },
+  optional: COUNTER_OPTIONAL,
   classesFor: () => parts.counter(),
-  label: {
-    key: "text",
-    name: "text",
-    characters: TEXTAREA_FIELD_COUNTER,
-    textProperty: "Count",
-    shownIn: always,
-  },
+  label: COUNTER_TEXT,
   iconsFor: () => [],
 };
 
@@ -112,4 +127,46 @@ export const TEXTAREA_FIELD: ComponentDefinition = {
     frameError(TEXTAREA_FIELD_ERROR),
     ...frameDescriptions(TEXTAREA_FIELD_DESCRIPTION),
   ],
+};
+
+/**
+ * The textarea field's manifest, which the capture-backed build reads with
+ * `captures/textarea-field.json`: the label row with the counter beside the label, the textarea,
+ * then the messages.
+ */
+export const TEXTAREA_FIELD_MANIFEST: SetManifest = {
+  key: "textarea-field",
+  name: "Textarea field",
+  slot: "field",
+  statePart: "field-control",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: TEXTAREA_FIELD.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    frameLabelRowManifest(TEXTAREA_FIELD_LABEL, "field/0", [
+      {
+        key: "counter",
+        slot: undefined,
+        place: "field/0/1",
+        shownIn: always,
+        optional: COUNTER_OPTIONAL,
+        label: COUNTER_TEXT,
+        iconsFor: () => [],
+      },
+    ]),
+    {
+      kind: "instance",
+      key: "textarea",
+      of: TEXTAREA_MANIFEST,
+      slot: "field-control",
+      cell: (outer) => ({ content: "placeholder", state: outer.state ?? "rest" }),
+      properties: () => ({ text: { Text: TEXTAREA_FIELD_PLACEHOLDER } }),
+      shownIn: always,
+      exposed: true,
+    },
+    ...frameMessagesManifest(TEXTAREA_FIELD_ERROR, TEXTAREA_FIELD_DESCRIPTION),
+  ],
+  swapProperties: [],
 };

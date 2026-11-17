@@ -20,6 +20,7 @@
  */
 import { cn, fieldFrameVariants, fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition } from "./component-spec";
 import { showsPlaceholder } from "./field-box-kit";
 import {
@@ -28,9 +29,12 @@ import {
   frameDescriptions,
   frameError,
   frameLabelRow,
+  frameLabelRowManifest,
+  frameMessagesManifest,
 } from "./field-frame-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
-import { SELECT_TRIGGER } from "./select-trigger-kit";
+import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 
 /** The label, the default of the Label instance's `Label` property: the docs Basic demo's label. */
 export const SELECT_FIELD_LABEL = "Plan";
@@ -49,22 +53,30 @@ export const SELECT_FIELD_ERROR = "Choose a plan to continue.";
 
 const frame = fieldFrameVariants();
 
-/** The trigger, a filling `Select trigger` instance, with the `w-full` SelectField passes it. */
-const TRIGGER: InstanceDefinition = {
-  kind: "instance",
-  key: "trigger",
-  of: SELECT_TRIGGER,
-  cell: (outer) => ({
+/** The trigger's cell: filling, at the default size, closed, in the field's state and content. */
+function triggerCell(outer: Cell): Cell {
+  return {
     width: "fill",
     size: "default",
     state: outer.state ?? "rest",
     content: outer.content ?? "placeholder",
     open: "off",
-  }),
+  };
+}
+
+/** The trigger's `Value`: the placeholder, or the selected item's label. */
+function triggerProperties(outer: Cell) {
+  return { text: { Value: showsPlaceholder(outer) ? SELECT_FIELD_PLACEHOLDER : SELECT_FIELD_VALUE } };
+}
+
+/** The trigger, a filling `Select trigger` instance, with the `w-full` SelectField passes it. */
+const TRIGGER: InstanceDefinition = {
+  kind: "instance",
+  key: "trigger",
+  of: SELECT_TRIGGER,
+  cell: triggerCell,
   classesFor: () => "w-full",
-  properties: (outer) => ({
-    text: { Value: showsPlaceholder(outer) ? SELECT_FIELD_PLACEHOLDER : SELECT_FIELD_VALUE },
-  }),
+  properties: triggerProperties,
   shownIn: always,
   exposed: true,
 };
@@ -94,4 +106,34 @@ export const SELECT_FIELD: ComponentDefinition = {
     frameError(SELECT_FIELD_ERROR),
     ...frameDescriptions(SELECT_FIELD_DESCRIPTION),
   ],
+};
+
+/**
+ * The select field's manifest, which the capture-backed build reads with
+ * `captures/select-field.json`: the label row, the trigger, then the messages.
+ */
+export const SELECT_FIELD_MANIFEST: SetManifest = {
+  key: "select-field",
+  name: "Select field",
+  slot: "field",
+  statePart: "select-trigger",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: SELECT_FIELD.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    frameLabelRowManifest(SELECT_FIELD_LABEL, "field/0"),
+    {
+      kind: "instance",
+      key: "trigger",
+      of: SELECT_TRIGGER_MANIFEST,
+      cell: triggerCell,
+      properties: triggerProperties,
+      shownIn: always,
+      exposed: true,
+    },
+    ...frameMessagesManifest(SELECT_FIELD_ERROR, SELECT_FIELD_DESCRIPTION),
+  ],
+  swapProperties: [],
 };

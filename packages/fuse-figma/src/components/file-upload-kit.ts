@@ -17,8 +17,15 @@
  */
 import { fileUploadVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { BUTTON } from "./button-kit";
-import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import { BUTTON, BUTTON_MANIFEST } from "./button-kit";
+import type {
+  Cell,
+  ComponentDefinition,
+  InstanceDefinition,
+  LabelDefinition,
+  PartDefinition,
+} from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
 import { always } from "./popup-facts";
 
@@ -33,18 +40,32 @@ export const FILE_UPLOAD_PREVIEW_WIDTH = 512;
 
 const slots = fileUploadVariants();
 
+/** The trigger's Button cell: small and default, with Plus at its start, focused or disabled with the zone. */
+function triggerCell(outer: Cell): Cell {
+  return {
+    variant: "default",
+    size: "sm",
+    state: outer.state === "focus" || outer.state === "disabled" ? outer.state : "rest",
+    icon: "start",
+  };
+}
+
+/** The description's text, which the `Description` property sets. */
+const DESCRIPTION_TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: FILE_UPLOAD_DESCRIPTION,
+  textProperty: "Description",
+  shownIn: always,
+};
+
 /** The trigger, a small default `Button` with Plus at its start, focused with the zone or disabled with it. */
 const TRIGGER: InstanceDefinition = {
   kind: "instance",
   key: "trigger",
   of: BUTTON,
   slot: "file-upload-trigger",
-  cell: (outer) => ({
-    variant: "default",
-    size: "sm",
-    state: outer.state === "focus" || outer.state === "disabled" ? outer.state : "rest",
-    icon: "start",
-  }),
+  cell: triggerCell,
   properties: () => ({ text: { Label: FILE_UPLOAD_TRIGGER } }),
   shownIn: always,
   exposed: true,
@@ -57,13 +78,7 @@ const DESCRIPTION: PartDefinition = {
   shownIn: always,
   classesFor: () => slots.description(),
   elementDefaults: userAgentDisplay("p"),
-  label: {
-    key: "text",
-    name: "text",
-    characters: FILE_UPLOAD_DESCRIPTION,
-    textProperty: "Description",
-    shownIn: always,
-  },
+  label: DESCRIPTION_TEXT,
   iconsFor: () => [],
 };
 
@@ -101,5 +116,38 @@ export const FILE_UPLOAD_DROPZONE: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [TRIGGER, DESCRIPTION],
+  swapProperties: [],
+};
+
+/** The dropzone's manifest, which the capture-backed build reads with `captures/file-upload-dropzone.json`. */
+export const FILE_UPLOAD_DROPZONE_MANIFEST: SetManifest = {
+  key: "file-upload-dropzone",
+  name: "File upload dropzone",
+  slot: "file-upload-dropzone",
+  focusPart: "file-upload-trigger",
+  previewWidth: FILE_UPLOAD_PREVIEW_WIDTH,
+  axes: FILE_UPLOAD_DROPZONE.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "trigger",
+      of: BUTTON_MANIFEST,
+      slot: "file-upload-trigger",
+      cell: triggerCell,
+      properties: () => ({ text: { Label: FILE_UPLOAD_TRIGGER } }),
+      shownIn: always,
+      exposed: true,
+    },
+    {
+      key: "description",
+      slot: "file-upload-description",
+      shownIn: always,
+      label: DESCRIPTION_TEXT,
+      iconsFor: () => [],
+    },
+  ],
   swapProperties: [],
 };

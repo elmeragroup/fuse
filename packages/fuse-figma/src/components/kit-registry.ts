@@ -27,7 +27,7 @@ import {
   BREADCRUMB_TRAIL,
 } from "./breadcrumb-kit";
 import { BUTTON, BUTTON_MANIFEST, ICON_BUTTON, ICON_BUTTON_MANIFEST } from "./button-kit";
-import { CHECKBOX } from "./checkbox-kit";
+import { CHECKBOX, CHECKBOX_MANIFEST } from "./checkbox-kit";
 import {
   COMBOBOX_EMPTY,
   COMBOBOX_EMPTY_MANIFEST,
@@ -77,7 +77,7 @@ import {
   FIELD_TITLE,
   FIELD_TITLE_MANIFEST,
 } from "./field-text-kit";
-import { FILE_UPLOAD_DROPZONE } from "./file-upload-kit";
+import { FILE_UPLOAD_DROPZONE, FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
 import { INPUT_GROUP, INPUT_GROUP_MANIFEST } from "./input-group-kit";
 import { INPUT, INPUT_MANIFEST } from "./input-kit";
 import { ITEM, ITEM_LINK } from "./item-kit";
@@ -108,11 +108,11 @@ import {
   POPOVER_OPEN,
   POPOVER_OPEN_MANIFEST,
 } from "./popover-kit";
-import { RADIO_GROUP } from "./radio-group-kit";
-import { RADIO_ICON_BUTTON } from "./radio-icon-button-kit";
-import { RADIO } from "./radio-kit";
-import { RADIO_ROW } from "./radio-row-kit";
-import { SELECT_FIELD } from "./select-field-kit";
+import { RADIO_GROUP, RADIO_GROUP_MANIFEST } from "./radio-group-kit";
+import { RADIO_ICON_BUTTON, RADIO_ICON_BUTTON_MANIFEST } from "./radio-icon-button-kit";
+import { RADIO, RADIO_MANIFEST } from "./radio-kit";
+import { RADIO_ROW, RADIO_ROW_MANIFEST } from "./radio-row-kit";
+import { SELECT_FIELD, SELECT_FIELD_MANIFEST } from "./select-field-kit";
 import {
   SELECT_ITEM,
   SELECT_ITEM_MANIFEST,
@@ -138,11 +138,11 @@ import {
   SIDEBAR_MENU_SUB,
 } from "./sidebar-section-kit";
 import { SKELETON, SKELETON_MANIFEST } from "./skeleton-kit";
-import { SWITCH } from "./switch-kit";
+import { SWITCH, SWITCH_MANIFEST } from "./switch-kit";
 import { TEXT_FIELD, TEXT_FIELD_MANIFEST } from "./text-field-kit";
-import { TEXTAREA_FIELD } from "./textarea-field-kit";
-import { TEXTAREA } from "./textarea-kit";
-import { TOGGLE_GROUP } from "./toggle-group-kit";
+import { TEXTAREA_FIELD, TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
+import { TEXTAREA, TEXTAREA_MANIFEST } from "./textarea-kit";
+import { TOGGLE_GROUP, TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE, ICON_TOGGLE_MANIFEST, TOGGLE, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR } from "./toolbar-kit";
 import {
@@ -371,7 +371,12 @@ export const KIT: readonly KitEntry[] = [
     manifest: ICON_TOGGLE_MANIFEST,
   },
   // A spaced Toggle group has no state, so its previews place every cell of its matrix.
-  { definition: TOGGLE_GROUP, page: TOGGLE_PAGE, previewCells: matrixCells(TOGGLE_GROUP.axes) },
+  {
+    definition: TOGGLE_GROUP,
+    page: TOGGLE_PAGE,
+    previewCells: matrixCells(TOGGLE_GROUP.axes),
+    manifest: TOGGLE_GROUP_MANIFEST,
+  },
   // A Badge has no state, so its previews place every cell of its matrix.
   {
     definition: BADGE,
@@ -391,10 +396,30 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(KBD_GROUP.axes),
     manifest: KBD_GROUP_MANIFEST,
   },
-  { definition: RADIO_ICON_BUTTON, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ICON_BUTTON.axes) },
-  { definition: RADIO, page: RADIO_PAGE, previewCells: matrixCells(RADIO.axes) },
-  { definition: CHECKBOX, page: CHECKBOX_PAGE, previewCells: matrixCells(CHECKBOX.axes) },
-  { definition: SWITCH, page: SWITCH_PAGE, previewCells: matrixCells(SWITCH.axes) },
+  {
+    definition: RADIO_ICON_BUTTON,
+    page: RADIO_PAGE,
+    previewCells: matrixCells(RADIO_ICON_BUTTON.axes),
+    manifest: RADIO_ICON_BUTTON_MANIFEST,
+  },
+  {
+    definition: RADIO,
+    page: RADIO_PAGE,
+    previewCells: matrixCells(RADIO.axes),
+    manifest: RADIO_MANIFEST,
+  },
+  {
+    definition: CHECKBOX,
+    page: CHECKBOX_PAGE,
+    previewCells: matrixCells(CHECKBOX.axes),
+    manifest: CHECKBOX_MANIFEST,
+  },
+  {
+    definition: SWITCH,
+    page: SWITCH_PAGE,
+    previewCells: matrixCells(SWITCH.axes),
+    manifest: SWITCH_MANIFEST,
+  },
   {
     definition: SEPARATOR,
     page: SEPARATOR_PAGE,
@@ -439,8 +464,18 @@ export const KIT: readonly KitEntry[] = [
     manifest: FIELD_TITLE_MANIFEST,
   },
   // The labelled radio rows and the group, which show Field's legend, description and error.
-  { definition: RADIO_ROW, page: RADIO_PAGE, previewCells: matrixCells(RADIO_ROW.axes) },
-  { definition: RADIO_GROUP, page: RADIO_PAGE, previewCells: matrixCells(RADIO_GROUP.axes) },
+  {
+    definition: RADIO_ROW,
+    page: RADIO_PAGE,
+    previewCells: matrixCells(RADIO_ROW.axes),
+    manifest: RADIO_ROW_MANIFEST,
+  },
+  {
+    definition: RADIO_GROUP,
+    page: RADIO_PAGE,
+    previewCells: matrixCells(RADIO_GROUP.axes),
+    manifest: RADIO_GROUP_MANIFEST,
+  },
   { definition: INPUT, page: INPUT_PAGE, previewCells: matrixCells(INPUT.axes), manifest: INPUT_MANIFEST },
   {
     definition: INPUT_GROUP,
@@ -454,8 +489,18 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(TEXT_FIELD.axes),
     manifest: TEXT_FIELD_MANIFEST,
   },
-  { definition: TEXTAREA, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA.axes) },
-  { definition: TEXTAREA_FIELD, page: TEXTAREA_PAGE, previewCells: matrixCells(TEXTAREA_FIELD.axes) },
+  {
+    definition: TEXTAREA,
+    page: TEXTAREA_PAGE,
+    previewCells: matrixCells(TEXTAREA.axes),
+    manifest: TEXTAREA_MANIFEST,
+  },
+  {
+    definition: TEXTAREA_FIELD,
+    page: TEXTAREA_PAGE,
+    previewCells: matrixCells(TEXTAREA_FIELD.axes),
+    manifest: TEXTAREA_FIELD_MANIFEST,
+  },
   {
     definition: AVATAR,
     page: AVATAR_PAGE,
@@ -513,7 +558,12 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(SELECT_TRIGGER.axes),
     manifest: SELECT_TRIGGER_MANIFEST,
   },
-  { definition: SELECT_FIELD, page: SELECT_PAGE, previewCells: matrixCells(SELECT_FIELD.axes) },
+  {
+    definition: SELECT_FIELD,
+    page: SELECT_PAGE,
+    previewCells: matrixCells(SELECT_FIELD.axes),
+    manifest: SELECT_FIELD_MANIFEST,
+  },
   {
     definition: MENU_GROUP_LABEL,
     page: SELECT_PAGE,
@@ -718,6 +768,7 @@ export const KIT: readonly KitEntry[] = [
     definition: FILE_UPLOAD_DROPZONE,
     page: FILE_UPLOAD_PAGE,
     previewCells: matrixCells(FILE_UPLOAD_DROPZONE.axes),
+    manifest: FILE_UPLOAD_DROPZONE_MANIFEST,
   },
   { definition: TOOLBAR, page: TOOLBAR_PAGE, previewCells: matrixCells(TOOLBAR.axes) },
   {

@@ -16,10 +16,8 @@ import type {
   IconSlot,
   InstanceDefinition,
   InstanceProperties,
-  LabelDefinition,
   PartDefinition,
   PreviewLength,
-  TextPlacement,
 } from "../components/component-spec.ts";
 import type { Viewport } from "../components/css-values.ts";
 import type { AxisSpec, BooleanPropertySpec, SwapPropertySpec } from "../components/kit-spec.ts";
@@ -192,21 +190,11 @@ export const MANIFEST_FIELDS = {
   icon: ["key", "name", "side", "direct", "dataIcon", "icon", "swapProperty", "optional"],
 } as const satisfies Record<string, readonly string[]>;
 
-/**
- * Where a form control's text sits: on one line, at the start of its content box and centred down
- * it, as the browser lays out an `<input>`'s value and placeholder (HTML §15.5.2).
- */
-const CONTROL_TEXT: TextPlacement = { horizontal: "start", vertical: "center", lines: "single" };
-
-/** The definition the mapper walks for a manifest label. */
-function labelDefinition(label: LabelManifest): LabelDefinition {
-  return label.textAttribute === undefined ? label : { ...label, placement: CONTROL_TEXT };
-}
-
 /** The definition the mapper walks for a manifest box's label and icons. */
 function boxDefinition(box: BoxManifest) {
   return {
-    label: box.label === undefined ? undefined : labelDefinition(box.label),
+    // A form control's label names no placement: the mapping takes it from the captured element.
+    label: box.label,
     iconsFor: (cell: Cell): readonly IconSlot[] => box.iconsFor(cell),
     classesFor: () => "",
   };

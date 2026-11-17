@@ -26,18 +26,20 @@ import {
   selectionGroupOrientationVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { SetManifest } from "../capture/manifest";
 import { BASE_UI_CHECKED_FACTS } from "./component-spec";
 import type {
   AncestorDefinition,
   Cell,
   ComponentDefinition,
   InstanceDefinition,
+  LabelDefinition,
   PartDefinition,
 } from "./component-spec";
 import { FIELD_ROOT, FIELD_ROOT_SR_ONLY, FIELD_ROOT_STRETCH, fillsWidth, HUG_OR_FILL } from "./field-box-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always, never } from "./popup-facts";
-import { RADIO } from "./radio-kit";
+import { RADIO, RADIO_MANIFEST } from "./radio-kit";
 
 /**
  * The facts of the fieldset around a radio group: it holds the radio group, and the group holds
@@ -81,12 +83,26 @@ export const RADIO_ROW_TEXT = "Fixed";
 
 const slots = radioRowVariants();
 
+/** The radio's cell: the row's checked value and state. */
+function radioCell(outer: Cell): Cell {
+  return { checked: outer.checked ?? "off", state: outer.state ?? "rest" };
+}
+
+/** The row's text, which the `Label` property sets. */
+const TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: RADIO_ROW_TEXT,
+  textProperty: "Label",
+  shownIn: always,
+};
+
 /** The radio, a `Radio` instance in the cell's checked value and state. */
 const RADIO_PART: InstanceDefinition = {
   kind: "instance",
   key: "radio",
   of: RADIO,
-  cell: (outer) => ({ checked: outer.checked ?? "off", state: outer.state ?? "rest" }),
+  cell: radioCell,
   shownIn: always,
 };
 
@@ -97,7 +113,7 @@ const CONTENT: PartDefinition = {
   element: { tag: "span", attributes: {} },
   shownIn: always,
   classesFor: () => slots.content(),
-  label: { key: "text", name: "text", characters: RADIO_ROW_TEXT, textProperty: "Label", shownIn: always },
+  label: TEXT,
   iconsFor: () => [],
 };
 
@@ -152,5 +168,43 @@ export const RADIO_ROW: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [],
   parts: [LABEL],
+  swapProperties: [],
+};
+
+/**
+ * The row's manifest, which the capture-backed build reads with `captures/radio-row.json`: the
+ * `<label>` at the row's first place, holding the radio and the content `<span>`. A filling row's
+ * host is the field width its renderer gives it, which the capture measures.
+ */
+export const RADIO_ROW_MANIFEST: SetManifest = {
+  key: "radio-row",
+  name: "Radio row",
+  slot: "field-item",
+  statePart: "radio-group-item",
+  axes: RADIO_ROW.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "label",
+      slot: undefined,
+      place: "field-item/0",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        { kind: "instance", key: "radio", of: RADIO_MANIFEST, cell: radioCell, shownIn: always },
+        {
+          key: "content",
+          slot: undefined,
+          place: "field-item/0/2",
+          shownIn: always,
+          label: TEXT,
+          iconsFor: () => [],
+        },
+      ],
+    },
+  ],
   swapProperties: [],
 };

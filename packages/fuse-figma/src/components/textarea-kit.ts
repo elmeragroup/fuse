@@ -15,11 +15,23 @@
  */
 import { textareaVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { ComponentDefinition } from "./component-spec";
+import type { SetManifest } from "../capture/manifest";
+import type { ComponentDefinition, LabelDefinition } from "./component-spec";
 import { FIELD_BOX_SET, FIELD_ROOT, showsPlaceholder } from "./field-box-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 
 /** The text every cell shows, the default of the `Text` property: the docs' basic placeholder. */
 export const TEXTAREA_TEXT = "Tell us more…";
+
+/** The text, in `placeholder` while the textarea shows it, which the `Text` property sets. */
+const TEXT: LabelDefinition = {
+  key: "text",
+  name: "text",
+  characters: TEXTAREA_TEXT,
+  textProperty: "Text",
+  shownIn: () => true,
+  textAttribute: (cell) => (showsPlaceholder(cell) ? "placeholder" : undefined),
+};
 
 /**
  * A textarea, as `<Textarea placeholder>` or `<Textarea defaultValue>` through `Field.Control`
@@ -34,13 +46,21 @@ export const TEXTAREA: ComponentDefinition = {
   // Every cell renders the textarea through `Field.Control` inside a Field root, as the docs' Field
   // demo does, and only an invalid cell's root is invalid.
   ancestorsFor: () => [FIELD_ROOT],
-  label: {
-    key: "text",
-    name: "text",
-    characters: TEXTAREA_TEXT,
-    textProperty: "Text",
-    shownIn: () => true,
-    placement: { horizontal: "start", vertical: "top", lines: "wrap" },
-    textAttribute: (cell) => (showsPlaceholder(cell) ? "placeholder" : undefined),
-  },
+  label: { ...TEXT, placement: { horizontal: "start", vertical: "top", lines: "wrap" } },
+};
+
+/**
+ * The textarea's manifest, which the capture-backed build reads with `captures/textarea.json`. Its
+ * text names no placement: a `<textarea>` sets it from its top left, wrapped.
+ */
+export const TEXTAREA_MANIFEST: SetManifest = {
+  key: "textarea",
+  name: "Textarea",
+  slot: "textarea",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: TEXTAREA.axes,
+  columnAxis: "state",
+  label: TEXT,
+  iconsFor: () => [],
+  swapProperties: [],
 };
