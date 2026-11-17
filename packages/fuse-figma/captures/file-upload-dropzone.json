@@ -244,6 +244,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":5},"--surface-pad-md":{"_tag":"element","up":5},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["has-focus-visible:border-muted-foreground/50","enabled-hover:border-muted-foreground/50","data-drop-target:border-solid","data-drop-target:border-primary","data-drop-target:bg-primary-soft","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "button",
@@ -330,6 +331,7 @@
           "pseudo": {},
           "variables": {"--default-transition-timing-function":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":5},"--surface-pad-md":{"_tag":"element","up":5},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["has-focus-visible:border-muted-foreground/50","data-drop-target:border-solid","data-drop-target:border-primary","data-drop-target:bg-primary-soft","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "button",
@@ -416,6 +418,7 @@
           "pseudo": {},
           "variables": {"--default-transition-timing-function":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":5},"--surface-pad-md":{"_tag":"element","up":5},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["enabled-hover:border-muted-foreground/50","data-drop-target:border-solid","data-drop-target:border-primary","data-drop-target:bg-primary-soft","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "button",
@@ -502,6 +505,7 @@
           "pseudo": {},
           "variables": {"--default-transition-timing-function":{"_tag":"theme"},"--primary":{"_tag":"theme"},"--primary-soft":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":5},"--surface-pad-md":{"_tag":"element","up":5},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["has-focus-visible:border-muted-foreground/50","enabled-hover:border-muted-foreground/50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "button",
@@ -588,6 +592,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":5},"--surface-pad-md":{"_tag":"element","up":5},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["has-focus-visible:border-muted-foreground/50","enabled-hover:border-muted-foreground/50","data-drop-target:border-solid","data-drop-target:border-primary","data-drop-target:bg-primary-soft","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error"],
+          "measured": {"coincidingAround":2},
           "children": [
             {
               "tag": "button",

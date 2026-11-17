@@ -1212,11 +1212,11 @@ function labelBox(
   label: LabelDefinition,
   growing: number | undefined
 ): Holder {
-  const tag = label.textElement?.tag;
-  const element =
-    tag === undefined
-      ? undefined
-      : cascade.labelElement({ tag, last: holder.layers.at(-1) === label.name, key: label.key });
+  const element = cascade.labelElement({
+    tag: label.textElement?.tag,
+    last: holder.layers.at(-1) === label.name,
+    key: label.key,
+  });
   return element === undefined ? holder : (labelElementHolder(holder, element, label, growing) ?? holder);
 }
 

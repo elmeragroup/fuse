@@ -264,7 +264,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -361,7 +361,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -458,7 +458,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":3}},
           "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -555,7 +555,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -652,7 +652,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -775,7 +775,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -898,7 +898,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":3}},
           "unmatched": ["data-disabled:pointer-events-none","data-disabled:opacity-50","data-inset:pl-[calc(var(--row-px)+1.5rem)]","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",
@@ -1021,7 +1021,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":3},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-inset:pl-[calc(var(--row-px)+1.5rem)]","focus:bg-accent","focus:text-accent-foreground","not-data-[variant=destructive]:focus:**:text-accent-foreground","data-[variant=destructive]:text-error","data-[variant=destructive]:focus:bg-error/10","data-[variant=destructive]:focus:text-error","data-[variant=destructive]:*:[svg]:text-error"],
-          "measured": {"containerWidth":160},
+          "measured": {"containerWidth":160,"coincidingAround":2},
           "children": [
             {
               "tag": "span",

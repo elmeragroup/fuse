@@ -186,6 +186,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--foreground":{"_tag":"theme"}},
           "unmatched": [],
+          "measured": {"coincidingAround":3},
           "children": []
         }
       }

@@ -25,5 +25,7 @@ export default defineConfig({
     testTimeout: HANG_GUARD_MS,
     hookTimeout: HANG_GUARD_MS,
     include: ["src/**/*.test.ts", "test/**/*.test.ts", "plugin/src/**/*.test.ts"],
+    // A test that drives Chromium runs under `vitest.chromium.config.ts`, in a job with a browser.
+    exclude: ["**/node_modules/**", "**/*.chromium.test.ts"],
   },
 });

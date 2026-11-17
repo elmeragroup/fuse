@@ -157,6 +157,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":4},"--label-text":{"_tag":"element","up":4}},
           "unmatched": ["group-data-disabled/field:opacity-50"],
+          "measured": {"coincidingAround":1},
           "children": []
         }
       }
@@ -192,6 +193,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":4},"--label-text":{"_tag":"element","up":4}},
           "unmatched": [],
+          "measured": {"coincidingAround":1},
           "children": []
         }
       }

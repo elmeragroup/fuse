@@ -101,11 +101,15 @@ import {
 import { METER, METER_MANIFEST } from "./meter-kit";
 import {
   NAVIGATION_MENU_BAR_LINK,
+  NAVIGATION_MENU_BAR_LINK_MANIFEST,
   NAVIGATION_MENU_BAR_TRIGGER,
+  NAVIGATION_MENU_BAR_TRIGGER_MANIFEST,
   NAVIGATION_MENU_ROW_LINK,
+  NAVIGATION_MENU_ROW_LINK_MANIFEST,
   NAVIGATION_MENU_VERTICAL_TRIGGER,
+  NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST,
 } from "./navigation-menu-kit";
-import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
+import { NAVIGATION_MENU_POPUP, NAVIGATION_MENU_POPUP_MANIFEST } from "./navigation-menu-popup-kit";
 import {
   NUMBER_FIELD,
   NUMBER_FIELD_MANIFEST,
@@ -145,17 +149,26 @@ import { SELECT_TRIGGER, SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 import { SEPARATOR, SEPARATOR_MANIFEST } from "./separator-kit";
 import {
   SIDEBAR_GROUP_LABEL,
+  SIDEBAR_GROUP_LABEL_MANIFEST,
   SIDEBAR_MENU_BADGE,
+  SIDEBAR_MENU_BADGE_MANIFEST,
   SIDEBAR_MENU_BUTTON,
+  SIDEBAR_MENU_BUTTON_MANIFEST,
   SIDEBAR_MENU_SUB_BUTTON,
+  SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
 } from "./sidebar-kit";
-import { SIDEBAR } from "./sidebar-panel-kit";
+import { SIDEBAR, SIDEBAR_MANIFEST } from "./sidebar-panel-kit";
 import {
   SIDEBAR_FOOTER,
+  SIDEBAR_FOOTER_MANIFEST,
   SIDEBAR_GROUP,
+  SIDEBAR_GROUP_MANIFEST,
   SIDEBAR_HEADER,
+  SIDEBAR_HEADER_MANIFEST,
   SIDEBAR_MENU_ITEM_WITH_BADGE,
+  SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST,
   SIDEBAR_MENU_SUB,
+  SIDEBAR_MENU_SUB_MANIFEST,
 } from "./sidebar-section-kit";
 import { SKELETON, SKELETON_MANIFEST } from "./skeleton-kit";
 import { SWITCH, SWITCH_MANIFEST } from "./switch-kit";
@@ -773,52 +786,91 @@ export const KIT: readonly KitEntry[] = [
     definition: SIDEBAR_MENU_BUTTON,
     page: SIDEBAR_PAGE,
     previewCells: matrixCells(SIDEBAR_MENU_BUTTON.axes),
+    manifest: SIDEBAR_MENU_BUTTON_MANIFEST,
   },
   {
     definition: SIDEBAR_MENU_SUB_BUTTON,
     page: SIDEBAR_PAGE,
     previewCells: matrixCells(SIDEBAR_MENU_SUB_BUTTON.axes),
+    manifest: SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
   },
   {
     definition: SIDEBAR_GROUP_LABEL,
     page: SIDEBAR_PAGE,
     previewCells: matrixCells(SIDEBAR_GROUP_LABEL.axes),
+    manifest: SIDEBAR_GROUP_LABEL_MANIFEST,
   },
-  { definition: SIDEBAR_MENU_BADGE, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes) },
-  { definition: SIDEBAR_GROUP, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_GROUP.axes) },
-  { definition: SIDEBAR_HEADER, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_HEADER.axes) },
-  { definition: SIDEBAR_FOOTER, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_FOOTER.axes) },
-  { definition: SIDEBAR_MENU_SUB, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR_MENU_SUB.axes) },
+  {
+    definition: SIDEBAR_MENU_BADGE,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_MENU_BADGE.axes),
+    manifest: SIDEBAR_MENU_BADGE_MANIFEST,
+  },
+  {
+    definition: SIDEBAR_GROUP,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_GROUP.axes),
+    manifest: SIDEBAR_GROUP_MANIFEST,
+  },
+  {
+    definition: SIDEBAR_HEADER,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_HEADER.axes),
+    manifest: SIDEBAR_HEADER_MANIFEST,
+  },
+  {
+    definition: SIDEBAR_FOOTER,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_FOOTER.axes),
+    manifest: SIDEBAR_FOOTER_MANIFEST,
+  },
+  {
+    definition: SIDEBAR_MENU_SUB,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR_MENU_SUB.axes),
+    manifest: SIDEBAR_MENU_SUB_MANIFEST,
+  },
   {
     definition: SIDEBAR_MENU_ITEM_WITH_BADGE,
     page: SIDEBAR_PAGE,
     previewCells: matrixCells(SIDEBAR_MENU_ITEM_WITH_BADGE.axes),
+    manifest: SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST,
   },
-  { definition: SIDEBAR, page: SIDEBAR_PAGE, previewCells: matrixCells(SIDEBAR.axes) },
+  {
+    definition: SIDEBAR,
+    page: SIDEBAR_PAGE,
+    previewCells: matrixCells(SIDEBAR.axes),
+    manifest: SIDEBAR_MANIFEST,
+  },
   {
     definition: NAVIGATION_MENU_BAR_TRIGGER,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_BAR_TRIGGER.axes),
+    manifest: NAVIGATION_MENU_BAR_TRIGGER_MANIFEST,
   },
   {
     definition: NAVIGATION_MENU_VERTICAL_TRIGGER,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_VERTICAL_TRIGGER.axes),
+    manifest: NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST,
   },
   {
     definition: NAVIGATION_MENU_BAR_LINK,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_BAR_LINK.axes),
+    manifest: NAVIGATION_MENU_BAR_LINK_MANIFEST,
   },
   {
     definition: NAVIGATION_MENU_ROW_LINK,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_ROW_LINK.axes),
+    manifest: NAVIGATION_MENU_ROW_LINK_MANIFEST,
   },
   {
     definition: NAVIGATION_MENU_POPUP,
     page: NAVIGATION_MENU_PAGE,
     previewCells: matrixCells(NAVIGATION_MENU_POPUP.axes),
+    manifest: NAVIGATION_MENU_POPUP_MANIFEST,
   },
   {
     definition: NUMBER_FIELD_STEPPER,

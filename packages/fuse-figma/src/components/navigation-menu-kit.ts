@@ -28,7 +28,8 @@
  */
 import { navigationMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import type { IconManifest, SetManifest } from "../capture/manifest";
+import type { Cell, ComponentDefinition, IconSlot, LabelDefinition } from "./component-spec";
 import { always } from "./popup-facts";
 
 /** The bar trigger's text, the default of its `Label` property: the docs Basic demo's first trigger. */
@@ -232,3 +233,58 @@ export const NAVIGATION_MENU_ROW_LINK: ComponentDefinition = {
     shownIn: always,
   },
 };
+
+/** The CaretDown a trigger renders after its label, as a manifest names it. */
+const CARET_MANIFEST: IconManifest = {
+  key: "caret",
+  name: "Caret",
+  side: "end",
+  direct: true,
+  dataIcon: undefined,
+  icon: "CaretDown",
+  swapProperty: undefined,
+};
+
+/** A manifest of a trigger or link set, as its definition names it, its host measured by the capture. */
+function navigationManifest(
+  definition: ComponentDefinition,
+  label: LabelDefinition | undefined
+): SetManifest {
+  return {
+    key: definition.key,
+    name: definition.name,
+    slot: definition.slot,
+    axes: definition.axes,
+    columnAxis: definition.columnAxis,
+    label,
+    iconsFor: () => (definition.slot === "navigation-menu-trigger" ? [CARET_MANIFEST] : []),
+    swapProperties: [],
+  };
+}
+
+/** The bar trigger's manifest, which the capture-backed build reads with `captures/navigation-menu-bar-trigger.json`. */
+export const NAVIGATION_MENU_BAR_TRIGGER_MANIFEST: SetManifest = navigationManifest(
+  NAVIGATION_MENU_BAR_TRIGGER,
+  NAVIGATION_MENU_BAR_TRIGGER.label
+);
+
+/**
+ * The vertical trigger's manifest, which the capture-backed build reads with
+ * `captures/navigation-menu-vertical-trigger.json`.
+ */
+export const NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST: SetManifest = navigationManifest(
+  NAVIGATION_MENU_VERTICAL_TRIGGER,
+  NAVIGATION_MENU_VERTICAL_TRIGGER.label
+);
+
+/** The bar link's manifest, which the capture-backed build reads with `captures/navigation-menu-bar-link.json`. */
+export const NAVIGATION_MENU_BAR_LINK_MANIFEST: SetManifest = navigationManifest(
+  NAVIGATION_MENU_BAR_LINK,
+  NAVIGATION_MENU_BAR_LINK.label
+);
+
+/** The row link's manifest, which the capture-backed build reads with `captures/navigation-menu-row-link.json`. */
+export const NAVIGATION_MENU_ROW_LINK_MANIFEST: SetManifest = navigationManifest(
+  NAVIGATION_MENU_ROW_LINK,
+  NAVIGATION_MENU_ROW_LINK.label
+);

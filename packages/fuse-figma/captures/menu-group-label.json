@@ -321,7 +321,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--row-px":{"_tag":"element","up":8},"--text-xs":{"_tag":"theme"},"--text-xs--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["data-inset:pl-[calc(var(--row-px)+1.5rem)]"],
-          "measured": {"containerWidth":136},
+          "measured": {"containerWidth":136,"coincidingAround":1},
           "children": []
         }
       }
@@ -405,7 +405,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--row-px":{"_tag":"element","up":8},"--text-xs":{"_tag":"theme"},"--text-xs--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":136},
+          "measured": {"containerWidth":136,"coincidingAround":1},
           "children": []
         }
       }

@@ -1,0 +1,253 @@
+{
+  "set": "navigation-menu-popup",
+  "entries": [
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "body *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe build models the docs body by hand; the capture reads the host page's body rule, under its own name."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "className": "user agent style sheet, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The definition's hand-written element default, which the capture reads from the browser's own style sheet, under its own name."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "body"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The page's body rule and Fuse's base layer on it, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "html"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight and Fuse's base layer on `<html>`, as the browser applies them."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "tailwind preflight"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Tailwind's preflight, which the capture page loads as the docs host does; its resets drop or read as the zero they set."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "fuse.css base layer"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Fuse's base layer, which the recipe build modelled only for the border color: box sizing, zero border, margin and padding."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "className": "user agent"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The browser's default style for the element, which the recipe build modelled only for `display`."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "no rule of the class wins a declaration on an element of any captured cell"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Each class that styles nothing in any cell, or whose rules matched and lost, found by the browser instead of listed by hand."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.shadows[*].color.color.a",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "literal",
+        "detail": "* drop shadow(s)"
+      },
+      "verdict": "old-was-wrong",
+      "reason": "The shipped `styles.css` writes the shadow's color in hex, `#0000000d` (13/255 alpha) for `rgb(0 0 0 / 0.05)` and `#0000001a` (26/255) for 0.1, which the browser paints; the recipe build read the source's decimal alpha."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "an element of the component's markup around the root, which the kit draws no layer for"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture cascades every declaration the component's elements around the root win, as the recipe cascade cascades an ancestor its definition names; what no layer reads drops with the element's reason."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-ending-style` on a transition's last frame*"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture drops a transition frame's class with its own reason, `data-starting-style` and `data-ending-style` set only while the element enters or leaves, listed below."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-starting-style` on a transition's first frame*"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The capture drops a transition frame's class with its own reason, `data-starting-style` and `data-ending-style` set only while the element enters or leaves, listed below."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "outcome": "dropped",
+        "detail": "Base UI sets `data-starting-style` and `data-ending-style` only while the element enters or leaves"
+      },
+      "verdict": "fix-in-new",
+      "reason": "A transition frame's class, which the kit draws at rest, as the recipe dropped it under its own reason."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "outcome": "unmapped",
+        "detail": "the definition neither models nor omits `motion-safe`"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe left the content's `motion-safe:` transition frames unmapped, since its definition named no `motion-safe` condition; the capture drops them as transition frames, which the kit draws at rest."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "navigation-menu-popup",
+        "className": "Base UI's popup, *"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The recipe wrote Base UI's measured `--popup-width` and `--popup-height` by hand; the capture reads what Base UI writes on the popup's `style`, `auto`, listed below."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "navigation-menu-popup",
+        "className": "inline style",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "The `auto` Base UI writes as the popup's `--popup-width` and `--popup-height`, which hugs."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "div",
+        "className": "inline style",
+        "outcome": "dropped",
+        "detail": "a custom property passes its value down, and no part or icon below reads it"
+      },
+      "verdict": "fix-in-new",
+      "reason": "Base UI's positioner writes the sizes it measured as custom properties on its `style`; the popup reads none of them, since it hugs its content."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.sizing.horizontal.kind",
+      "verdict": "fix-in-new",
+      "reason": "The popup's width is `auto` in a positioner Base UI sizes to what it measured, which no CSS declares, so the popup hugs its content. The content's `w-64` and `w-72` lists, plus `surface-pad-sm` on each side, are the authored source of its 264px and 296px, which the hugging popup draws."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.sizing.horizontal.length",
+      "verdict": "fix-in-new",
+      "reason": "As above: a popup that hugs holds no width of its own."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.children[viewport].sizing.horizontal.kind",
+      "verdict": "fix-in-new",
+      "reason": "The viewport's `size-full` takes 100% of a popup that hugs it, its only layer, which is the viewport's own width (CSS Sizing 3 §5.2.1), so it hugs."
+    },
+    {
+      "kind": "field",
+      "path": "variants[*].root.children[viewport].children[content].sizing.horizontal.kind",
+      "verdict": "fix-in-new",
+      "reason": "The content's `w-auto` block hugs the list inside a viewport that hugs it."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "navigation-menu-popup",
+        "className": "w-(--popup-width)",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the root's sizing above."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "navigation-menu-popup",
+        "className": "w-(--popup-width)",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the root's sizing above."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "viewport",
+        "className": "size-full",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the viewport's sizing above."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "viewport",
+        "className": "size-full",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the viewport's sizing above."
+    },
+    {
+      "kind": "row-lost",
+      "match": {
+        "part": "navigation-menu-content",
+        "className": "w-auto",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the content's sizing above."
+    },
+    {
+      "kind": "row-added",
+      "match": {
+        "part": "navigation-menu-content",
+        "className": "w-auto",
+        "outcome": "literal"
+      },
+      "verdict": "fix-in-new",
+      "reason": "As the content's sizing above."
+    }
+  ]
+}

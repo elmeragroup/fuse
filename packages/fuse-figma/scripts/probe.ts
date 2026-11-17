@@ -25,7 +25,7 @@ import { CompareBrowser } from "../src/compare/browser-render.ts";
 import { loadRenderers } from "../src/compare/cell-renderers.ts";
 import { locateFuseBuild, readPageAssets } from "../src/compare/page-assets.ts";
 import { PAGE_LAYOUT } from "../src/compare/preview-page.ts";
-import { buildComponentSets } from "../src/components/build-kit.ts";
+import { buildComponentSets, densityLengths } from "../src/components/build-kit.ts";
 import { matrixCells, variantKey } from "../src/components/component-spec.ts";
 
 const ORACLES = fileURLToPath(new URL("../oracles/", import.meta.url));
@@ -79,6 +79,8 @@ const main = Effect.fn("probe.main")(function* () {
   const renderers = yield* loadRenderers(new Set(targets.map((target) => target.key)));
   const browser = yield* CompareBrowser.launch(yield* readPageAssets(build, renderers));
   const sets = new Map((yield* buildComponentSets()).map((set) => [set.componentSet.key, set.componentSet]));
+  // The probe's page renders at the capture's density, so a bound length draws that mode's value.
+  const lengthOf = yield* Effect.fromResult(densityLengths(CAPTURE_THEME.density));
   let failed = false;
   let compared = 0;
   const kinds = new Map<string, number>();
@@ -118,7 +120,7 @@ const main = Effect.fn("probe.main")(function* () {
       found: all,
       compared: here,
       inferred,
-    } = contradictions(set, probed, keysBySlot(target.parts ?? []));
+    } = contradictions(set, probed, keysBySlot(target.parts ?? []), lengthOf);
     for (const [kind, count] of inferred) {
       kinds.set(kind, (kinds.get(kind) ?? 0) + count);
     }

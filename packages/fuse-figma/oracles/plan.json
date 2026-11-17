@@ -330,6 +330,216 @@
       "pattern": "Number field / state=invalid / number-field / group / input: clipsContent → true",
       "verdict": "fix-in-new",
       "reason": "The browser's own style sheet clips an `<input>`'s content, as number-field.json classifies; Plan clips the input's frame."
+    },
+    {
+      "pattern": "Sidebar group label / state=rest: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar menu badge / state=rest: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar menu badge / state=hover: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar menu badge / state=active: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar group / collapsed=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar group / collapsed=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar header / collapsed=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar header / collapsed=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar footer / collapsed=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar footer / collapsed=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar sub menu / rows=3: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar menu item with badge / active=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar menu item with badge / active=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar / variant=sidebar, collapsed=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar / variant=sidebar, collapsed=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar / variant=inset, collapsed=off: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar / variant=inset, collapsed=on: clipsContent → false",
+      "verdict": "fix-in-new",
+      "reason": "CSS clips nothing on the root and it casts no shadow, as the set's oracle file classifies; Plan unclips each variant's root."
+    },
+    {
+      "pattern": "Sidebar / variant=inset, collapsed=on: fill → none",
+      "verdict": "accepted-loss",
+      "reason": "The collapsed rail's 66px container overhangs the 64px wrapper behind it, so the wrapper's `bg-sidebar` is no fill of the root's, as sidebar.json classifies; Plan clears the fill."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=rest, open=off / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=rest, open=on / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=hover, open=off / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=hover, open=on / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=focus, open=off / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=focus, open=on / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=disabled, open=off / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu bar trigger / state=disabled, open=on / text: textAlignHorizontal → CENTER",
+      "verdict": "old-was-wrong",
+      "reason": "The browser's default style sheet centres a `<button>`'s text, as navigation-menu-bar-trigger.json classifies; Plan moves the trigger's label to centre."
+    },
+    {
+      "pattern": "Navigation menu popup / content=customers: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu popup / content=customers: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Navigation menu popup / content=customers / viewport: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu popup / content=customers / viewport / navigation-menu-content: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu popup / content=business: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu popup / content=business: shadows → #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, foreground/10 0 0 0 1 (holds #000000 at 10% 0 2 4 -2, #000000 at 10% 0 4 6 -1, variable, stored #0d0b0a at 10%, 0 0 0 1)",
+      "verdict": "old-was-wrong",
+      "reason": "The shipped stylesheet's hex shadow alpha, 26/255 for `shadow-md` and `shadow-lg`'s 0.1, as each set's shadow entry classifies. Plan prints the new value as it prints the held one, `#000000 at 10%`, so the alpha below a percent is the change."
+    },
+    {
+      "pattern": "Navigation menu popup / content=business / viewport: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu popup / content=business / viewport / navigation-menu-content: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft neutral private, light / Navigation menu popup / navigation-menu-popup/content=customers: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft neutral private, light / Navigation menu popup / navigation-menu-popup/content=business: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft neutral private, dark / Navigation menu popup / navigation-menu-popup/content=customers: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft neutral private, dark / Navigation menu popup / navigation-menu-popup/content=business: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft branded private, light / Navigation menu popup / navigation-menu-popup/content=customers: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft branded private, light / Navigation menu popup / navigation-menu-popup/content=business: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft branded private, dark / Navigation menu popup / navigation-menu-popup/content=customers: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
+    },
+    {
+      "pattern": "Navigation menu / Fjordkraft branded private, dark / Navigation menu popup / navigation-menu-popup/content=business: layoutSizingHorizontal → HUG",
+      "verdict": "fix-in-new",
+      "reason": "The popup hugs its content, whose `w-64` and `w-72` lists and padding are the authored source of its width, as navigation-menu-popup.json classifies; Plan hugs the popup, its viewport and its content, and the preview's instance with them."
     }
   ]
 }

@@ -230,7 +230,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-lg":{"_tag":"element","up":4}},
           "unmatched": [],
-          "measured": {"containerWidth":512},
+          "measured": {"containerWidth":512,"coincidingAround":1},
           "children": [
             {
               "tag": "div",
@@ -369,7 +369,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-lg":{"_tag":"element","up":4},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": [],
-          "measured": {"containerWidth":512},
+          "measured": {"containerWidth":512,"coincidingAround":1},
           "children": [
             {
               "tag": "div",
@@ -508,7 +508,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-lg":{"_tag":"element","up":4}},
           "unmatched": [],
-          "measured": {"containerWidth":512},
+          "measured": {"containerWidth":512,"coincidingAround":1},
           "children": [
             {
               "tag": "div",

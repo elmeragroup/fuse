@@ -173,7 +173,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-normal":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":5},"--label-text":{"_tag":"element","up":5},"--muted-foreground":{"_tag":"theme"}},
           "unmatched": ["group-has-data-horizontal/field:text-balance","[&>a]:underline","[&>a]:underline-offset-4","[&>a:hover]:text-primary","[[data-variant=legend]+&]:-mt-1.5"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":2},
           "children": []
         }
       }

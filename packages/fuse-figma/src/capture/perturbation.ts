@@ -19,6 +19,7 @@ import type {
   ChildLayerSpec,
   ComponentRootSpec,
   ComponentSetSpec,
+  NumberSpec,
   SizeSpec,
 } from "../components/kit-spec.ts";
 
@@ -143,13 +144,19 @@ export function inferKind(box: ProbedBox): InferredKind {
 export type MappedWidth = {
   readonly resizesWithParent: boolean;
   readonly heldAtMaximum: boolean;
+  /**
+   * Whether the layer hugs only layers whose widths are fixed, at any depth, so no text it holds
+   * widens it, and the width that hug draws is the width the probe measured, as the Navigation menu
+   * popup hugs its `w-64` list to the 264px the browser lays it out at.
+   */
+  readonly hugsMeasuredWidth: boolean;
 };
 
 /**
  * Whether a mapped horizontal sizing agrees with what the probe inferred. A root that fills its host
  * draws fixed at the host's width, since a component's root has no parent in Figma. A fixed layer
  * that resizes with its parent agrees with a box that fills, and a filling layer held at its maximum
- * agrees with a box that kept its width.
+ * agrees with a box that kept its width, as does a hugging layer that holds only fixed widths.
  *
  * @param inferred - The inferred kind.
  * @param mapped - The layer's horizontal sizing.
@@ -166,7 +173,11 @@ export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, 
     case "hug":
       return mapped.kind === "hug";
     case "fixed":
-      return mapped.kind === "fixed" || (mapped.kind === "fill" && width.heldAtMaximum);
+      return (
+        mapped.kind === "fixed" ||
+        (mapped.kind === "fill" && width.heldAtMaximum) ||
+        (mapped.kind === "hug" && width.hugsMeasuredWidth)
+      );
     case "not-fill":
       return mapped.kind !== "fill";
     case "tracks":
@@ -176,6 +187,65 @@ export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, 
     case "unknown":
       return true;
   }
+}
+
+/**
+ * The width a layer draws whatever text it holds, where nothing it holds can widen it: a fixed
+ * width, or a hug around in-flow layers that each draw such a width, its padding and, along a row,
+ * its gaps, held to its limits, each length in pixels as the probe's page draws it. A column's filling layer takes the width
+ * the others give it, so it adds nothing, and a row's filling layer or any text, instance or other
+ * width it cannot read leaves the width unknown. The hug draws the most of a column's widths, and
+ * the sum of a row's.
+ *
+ * @param layer - A layer of the spec.
+ * @param lengthOf - A length's pixels at the probe page's density, undefined where that does not decide them.
+ * @returns The width in pixels, or undefined where the layer's width is not fixed so.
+ */
+function fixedExtent(
+  layer: ChildLayerSpec | ComponentRootSpec,
+  lengthOf: (length: NumberSpec) => number | undefined
+): number | undefined {
+  const pixels = (length: NumberSpec | undefined): number | undefined =>
+    length === undefined ? undefined : lengthOf(length);
+  if (!("sizing" in layer) || ("kind" in layer && layer.kind === "instance")) {
+    return undefined;
+  }
+  const size = layer.sizing.horizontal;
+  if (size.kind === "fixed") {
+    return pixels(size.length);
+  }
+  if (size.kind !== "hug" || !("children" in layer) || !("direction" in layer)) {
+    return undefined;
+  }
+  const flowing = layer.children.filter((child) => !("absolute" in child));
+  const column = layer.direction === "VERTICAL";
+  const widths = flowing.flatMap((child) =>
+    column && "sizing" in child && child.sizing.horizontal.kind === "fill"
+      ? []
+      : [fixedExtent(child, lengthOf)]
+  );
+  const known = widths.filter((width) => width !== undefined);
+  const [left, right] = [pixels(layer.paddingLeft), pixels(layer.paddingRight)];
+  const gap = column ? 0 : pixels(layer.itemSpacing);
+  const { minWidth, maxWidth } = layer.limits;
+  const min = minWidth === undefined ? 0 : pixels(minWidth);
+  const max = maxWidth === undefined ? Infinity : pixels(maxWidth);
+  if (
+    known.length === 0 ||
+    known.length < widths.length ||
+    left === undefined ||
+    right === undefined ||
+    gap === undefined ||
+    min === undefined ||
+    max === undefined
+  ) {
+    return undefined;
+  }
+  const content = column
+    ? Math.max(...known)
+    : known.reduce((sum, width) => sum + width, 0) + gap * (known.length - 1);
+  // The minimum wins over the maximum (CSS 2.1 §10.4), as Figma's limits do.
+  return Math.max(min, Math.min(max, content + left + right));
 }
 
 /**
@@ -216,6 +286,16 @@ export async function probeCells(
           )
         );
       };
+      // A block with an auto width fills its parent's content box less its own margins (CSS 2.1
+      // §10.3.3), so the room a box's border box spans is the parent's content less those margins.
+      const roomOf = (element: Element): number => {
+        const style = getComputedStyle(element);
+        return (
+          contentWidth(element.parentElement) -
+          Number.parseFloat(style.marginLeft || "0") -
+          Number.parseFloat(style.marginRight || "0")
+        );
+      };
       const boxesOf = (root: Element): Box[] =>
         [root, ...root.querySelectorAll("[data-slot]")].map((element) => ({
           slot: element.getAttribute("data-slot") ?? "",
@@ -224,7 +304,7 @@ export async function probeCells(
             [...each.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "")
           ),
           width: element.getBoundingClientRect().width,
-          parent: contentWidth(element.parentElement),
+          parent: roomOf(element),
           fixed: getComputedStyle(element).position === "fixed",
         }));
       const measure = () =>
@@ -347,7 +427,7 @@ export async function probeCells(
             }
             const measured = {
               width: element.getBoundingClientRect().width,
-              parent: contentWidth(element.parentElement),
+              parent: roomOf(element),
               reaches: lengthened.some(({ between }) =>
                 between.every(
                   ({ element: up, width }) =>
@@ -362,7 +442,7 @@ export async function probeCells(
             }
             const longest = {
               width: element.getBoundingClientRect().width,
-              parent: contentWidth(element.parentElement),
+              parent: roomOf(element),
             };
             for (const { node, text } of lengthened) {
               node.textContent = text;
@@ -441,12 +521,14 @@ function layersByKey(root: ComponentRootSpec): ReadonlyMap<string, ChildLayerSpe
  * @param set - The built set.
  * @param probed - Each cell's boxes, by the variant key of its cell.
  * @param keyOfSlot - The key of the part each `data-slot` names in the manifest, where one part has it.
+ * @param lengthOf - A spec length's pixels at the density the probe's page renders, as `densityLengths` reads them.
  * @returns Each contradiction, and how many boxes the probe compared.
  */
 export function contradictions(
   set: Omit<ComponentSetSpec, "page">,
   probed: ReadonlyMap<string, ProbedCell>,
-  keyOfSlot: ReadonlyMap<string, string>
+  keyOfSlot: ReadonlyMap<string, string>,
+  lengthOf: (length: NumberSpec) => number | undefined
 ): Contradictions {
   const found: Contradiction[] = [];
   let compared = 0;
@@ -476,6 +558,10 @@ export function contradictions(
       const width: MappedWidth = {
         resizesWithParent: constraint === "SCALE" || constraint === "STRETCH",
         heldAtMaximum: maximum?.kind === "literal" && Math.abs(maximum.value - box.base) <= CHANGED,
+        hugsMeasuredWidth: (() => {
+          const extent = fixedExtent(layer, lengthOf);
+          return extent !== undefined && Math.abs(extent - box.base) <= CHANGED;
+        })(),
       };
       if (!agrees(inferred, layer.sizing.horizontal, isRoot, width)) {
         found.push({ cell: variant.key, slot: box.slot, inferred, mapped: layer.sizing.horizontal.kind });

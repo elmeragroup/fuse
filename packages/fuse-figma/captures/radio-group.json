@@ -256,7 +256,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",
@@ -572,7 +572,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",
@@ -888,7 +888,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"}},
           "unmatched": ["[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",
@@ -1217,7 +1217,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",
@@ -1534,7 +1534,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["data-invalid:text-error","[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",
@@ -1851,7 +1851,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--error":{"_tag":"theme"}},
           "unmatched": ["[&>.sr-only]:w-auto"],
-          "measured": {"containerWidth":384},
+          "measured": {"containerWidth":384,"coincidingAround":1},
           "children": [
             {
               "tag": "fieldset",

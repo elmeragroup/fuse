@@ -1,12 +1,20 @@
 /**
- * The probe's reading of a box's widths. Unit under test: `inferKind` and `agrees`. Oracle: the
- * rules the README's `figma:probe` paragraph states, applied by hand to boxes measured as the named
- * components measure. The probe in the browser only goes red where a mapped kind contradicts what it
- * infers, so a rule that stops inferring would pass it silently; these cases hold what each rule infers.
+ * The probe's reading of a box's widths. Unit under test: `inferKind`, `agrees` and, through
+ * `contradictions`, the hug a kept width allows. Oracle: the rules the README's `figma:probe`
+ * paragraph states, applied by hand to boxes measured as the named components measure, and
+ * Chromium's widths of built sets' samples under far longer text on 2026-11-18: the Navigation menu
+ * popup stays 264px around its `w-64` list, and a Badge widens with its text. Review round 2 of B4
+ * measured a 500px root that a hug of its 256px child does not draw. The probe in the browser only goes red where a
+ * mapped kind contradicts what it infers, so a rule that stops inferring would pass it silently;
+ * these cases hold what each rule infers.
  */
-import { describe, expect, it } from "vitest";
+import { Result } from "effect";
+import { beforeAll, describe, expect, it } from "vitest";
 
-import { agrees, inferKind } from "./perturbation.ts";
+import { builtKit } from "../../test/built-kit";
+import type { BuiltSets } from "../../test/built-kit";
+import { densityLengths } from "../components/build-kit.ts";
+import { agrees, contradictions, inferKind } from "./perturbation.ts";
 import type { InferredKind, MappedWidth, ProbedBox } from "./perturbation.ts";
 
 /** A 100px box below a widened root that widened neither with its container nor with its text. */
@@ -67,7 +75,7 @@ describe("inferKind", () => {
 });
 
 /** A layer's width as a plain frame in the flow decides it. */
-const PLAIN: MappedWidth = { resizesWithParent: false, heldAtMaximum: false };
+const PLAIN: MappedWidth = { resizesWithParent: false, heldAtMaximum: false, hugsMeasuredWidth: false };
 
 describe("agrees", () => {
   it.each<readonly [string, InferredKind, "fixed" | "fill" | "hug", MappedWidth, boolean]>([
@@ -88,11 +96,62 @@ describe("agrees", () => {
       true,
     ],
     ["a filling layer contradicts a box that does not fill", "not-fill", "fill", PLAIN, false],
+    ["a hugging layer contradicts a box that kept its width", "fixed", "hug", PLAIN, false],
+    [
+      "a hugging layer whose fixed layers draw the width the probe measured, as the Navigation menu popup round its w-64 list, agrees with a box that kept its width",
+      "fixed",
+      "hug",
+      { ...PLAIN, hugsMeasuredWidth: true },
+      true,
+    ],
   ])("%s", (_rule, inferred, mapped, width, agreed) => {
     const sizing =
       mapped === "fixed"
         ? { kind: mapped, length: { kind: "literal" as const, value: 100 } }
         : { kind: mapped };
     expect(agrees(inferred, sizing, false, width)).toBe(agreed);
+  });
+});
+
+describe("a hug the probe measured at a kept width", () => {
+  let built: BuiltSets;
+
+  beforeAll(async () => {
+    built = await builtKit();
+  }, 120_000);
+
+  /** What the probe finds against a set's first variant, whose root it measured at a kept width. */
+  const foundAt = (key: string, width: number) => {
+    const set = built.spec.componentSets.find((each) => each.key === key);
+    const variant = set?.variants[0];
+    if (set === undefined || variant === undefined) {
+      throw new Error(`the kit builds no set ${key}`);
+    }
+    const root: ProbedBox = {
+      ...KEPT,
+      slot: variant.root.name,
+      root: true,
+      base: width,
+      wider: width,
+      longer: width,
+    };
+    return contradictions(
+      set,
+      new Map([[variant.key, { id: "cell", boxes: [root], gap: undefined }]]),
+      new Map(),
+      Result.getOrThrow(densityLengths("dense"))
+    ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
+  };
+
+  it("agrees with the Navigation menu popup, which hugs its w-64 list at the 264px Chromium measures", () => {
+    expect(foundAt("navigation-menu-popup", 264)).toEqual([]);
+  });
+
+  it("contradicts the same hug where the probe measured the root at 500px, as an authored width holds it", () => {
+    expect(foundAt("navigation-menu-popup", 500)).toEqual(["fixed → hug"]);
+  });
+
+  it("contradicts a Badge, which hugs its text, where the probe measured its width kept", () => {
+    expect(foundAt("badge", 40)).toEqual(["fixed → hug"]);
   });
 });

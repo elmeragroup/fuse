@@ -157,6 +157,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":4},"--label-text":{"_tag":"element","up":4}},
           "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center","group-data-disabled/field:opacity-50"],
+          "measured": {"coincidingAround":1},
           "children": []
         }
       }
@@ -192,6 +193,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--label-leading":{"_tag":"element","up":4},"--label-text":{"_tag":"element","up":4}},
           "unmatched": ["has-[>[data-slot=field]]:rounded-md","has-[>[data-slot=field]]:border","has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)]","has-[>[data-slot=field]]:[--shell-corner:initial]","has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]","*:data-[slot=field]:p-(--surface-pad-md)","*:data-[slot=field]:[--inner-corner:var(--shell-inner)]","*:data-[slot=field]:[--shell-corner:initial]","*:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]","has-data-checked:border-primary/30","has-[>[data-slot=field]]:w-full","has-[>[data-slot=field]]:flex-col","has-[>[data-slot=checkbox]]:cursor-pointer","has-[>[data-slot=checkbox]]:items-center"],
+          "measured": {"coincidingAround":1},
           "children": []
         }
       }

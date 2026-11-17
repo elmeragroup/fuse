@@ -249,7 +249,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","focus:bg-accent","focus:text-accent-foreground","focus:**:text-accent-foreground","*:[span]:last:flex","*:[span]:last:items-center","*:[span]:last:gap-2"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",
@@ -334,7 +334,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-disabled:pointer-events-none","data-disabled:opacity-50","*:[span]:last:flex","*:[span]:last:items-center","*:[span]:last:gap-2"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",
@@ -419,7 +419,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","focus:bg-accent","focus:text-accent-foreground","focus:**:text-accent-foreground","*:[span]:last:flex","*:[span]:last:items-center","*:[span]:last:gap-2"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",
@@ -504,7 +504,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["data-disabled:pointer-events-none","data-disabled:opacity-50","focus:bg-accent","focus:text-accent-foreground","focus:**:text-accent-foreground"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",
@@ -614,7 +614,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["data-disabled:pointer-events-none","data-disabled:opacity-50"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",
@@ -724,7 +724,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":2},"--radius":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus:bg-accent","focus:text-accent-foreground","focus:**:text-accent-foreground"],
-          "measured": {"containerWidth":144},
+          "measured": {"containerWidth":144,"coincidingAround":3},
           "children": [
             {
               "tag": "div",

@@ -91,6 +91,12 @@ const MeasuredFactsSchema = Schema.Struct({
   widest: Schema.optionalKey(Schema.Literal(true)),
   /** The element's text, or a wrapping row's items, sits on one line under its `max-width`. */
   oneLine: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * On the root: how many of the elements around it, innermost first, lie exactly behind it, their
+   * padding box its border box with none of the paint the capture checks between (issue #766),
+   * whose background the root then shows.
+   */
+  coincidingAround: Schema.optionalKey(Schema.Finite),
   /** The element stays more than half a pixel under its `max-height`. */
   underMaxHeight: Schema.optionalKey(Schema.Literal(true)),
   /**

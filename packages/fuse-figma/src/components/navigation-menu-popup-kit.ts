@@ -20,9 +20,10 @@
  */
 import { navigationMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell, ComponentDefinition, InstanceDefinition, PartDefinition } from "./component-spec";
 import { DIV_BLOCK, LI_LIST_ITEM } from "./element-defaults";
-import { NAVIGATION_MENU_ROW_LINK } from "./navigation-menu-kit";
+import { NAVIGATION_MENU_ROW_LINK, NAVIGATION_MENU_ROW_LINK_MANIFEST } from "./navigation-menu-kit";
 import {
   NAVIGATION_MENU_POPUP_CONTENTS,
   NAVIGATION_MENU_POPUPS,
@@ -123,6 +124,82 @@ export const NAVIGATION_MENU_POPUP: ComponentDefinition = {
               iconsFor: () => [],
               parts: NAVIGATION_MENU_POPUP_CONTENTS.flatMap((name) =>
                 NAVIGATION_MENU_POPUPS[name].links.map((link) => itemOf(name, link))
+              ),
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  swapProperties: [],
+};
+
+/** A `<li>` of an item's list as a manifest names it, as {@link itemOf} draws it, at its place in the list. */
+function itemManifest(
+  name: NavigationMenuPopupContentName,
+  { href, text }: NavigationMenuPopupLink,
+  index: number
+): PartManifest {
+  const shownIn = (cell: Cell): boolean => cell.content === name;
+  return {
+    key: `item-${href.slice(1)}`,
+    slot: undefined,
+    place: `navigation-menu-content/0/${String(index)}`,
+    shownIn,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [
+      {
+        kind: "instance",
+        key: "link",
+        of: NAVIGATION_MENU_ROW_LINK_MANIFEST,
+        cell: () => ({ state: "rest", active: "off" }),
+        properties: () => ({ text: { Label: text } }),
+        shownIn,
+        exposed: true,
+      },
+    ],
+  };
+}
+
+/**
+ * The popup's manifest, which the capture-backed build reads with `captures/navigation-menu-popup.json`:
+ * Base UI's viewport at the popup's second place, after a focus guard, the content, and its list at the
+ * content's first place.
+ */
+export const NAVIGATION_MENU_POPUP_MANIFEST: SetManifest = {
+  key: "navigation-menu-popup",
+  name: "Navigation menu popup",
+  slot: "navigation-menu-popup",
+  axes: NAVIGATION_MENU_POPUP.axes,
+  columnAxis: "content",
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "viewport",
+      slot: undefined,
+      place: "navigation-menu-popup/1",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        {
+          key: "content",
+          slot: "navigation-menu-content",
+          shownIn: always,
+          label: undefined,
+          iconsFor: () => [],
+          parts: [
+            {
+              key: "list",
+              slot: undefined,
+              place: "navigation-menu-content/0",
+              shownIn: always,
+              label: undefined,
+              iconsFor: () => [],
+              parts: NAVIGATION_MENU_POPUP_CONTENTS.flatMap((name) =>
+                NAVIGATION_MENU_POPUPS[name].links.map((link, index) => itemManifest(name, link, index))
               ),
             },
           ],
