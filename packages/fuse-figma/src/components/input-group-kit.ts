@@ -18,8 +18,8 @@
  * - The control takes the states, and the root reads them from it. Only an invalid cell renders the
  *   group in a Field.
  * - The text is one TEXT property, `Text`, that starts as a placeholder.
- * - Block addons, a textarea, a kbd, read-only and `aria-disabled` controls are left out:
- *   neither Combobox nor Command renders them.
+ * - Block addons, a textarea, a kbd and `aria-disabled` controls are left out: neither Combobox nor
+ *   Command renders them. The read-only fill is left out too, a gap #524 tracks.
  */
 import type { IconManifest, InstanceManifest, SetManifest } from "../capture/manifest";
 import { ICON_BUTTON_MANIFEST } from "./button-kit";
