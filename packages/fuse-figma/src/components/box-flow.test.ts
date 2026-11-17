@@ -87,6 +87,7 @@ function stacksInlineChild(sample: {
       inside: [],
       markers: "resolved",
       lineFits,
+      trackFits: false,
     }
   );
   return layout.blocks;

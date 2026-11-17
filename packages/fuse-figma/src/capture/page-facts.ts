@@ -45,6 +45,11 @@ import { coincidingAround } from "./coinciding-around.ts";
  *   by 1px above and below (CSS 2.1 §10.8.1), so the line box adds nothing to the child by at least
  *   that margin. The second reading holds only where the page's computed line height took the 2px
  *   and the child kept its own.
+ * - `trackFits`: a grid with one column, as wide as its content box, whose column at the grid's
+ *   min-content width, with no `min-width` or `max-width` of its own, is at most four fifths of
+ *   that width less a pixel. Then every item's least width fits the content box with a fifth to
+ *   spare, so an `auto` column is the content box's width (CSS Grid 1 §11.5, §11.8), however a
+ *   font widens a word.
  *
  * The page restores every element it changes before it returns.
  *
@@ -198,6 +203,17 @@ const MEASURE_IN_PAGE = `function () {
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
     const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
+    const tracks = style.display.endsWith("grid") ? style.gridTemplateColumns.trim().split(/\\s+/) : [];
+    if (tracks.length === 1) {
+      const column = Number.parseFloat(tracks[0] ?? "");
+      const saved = element.getAttribute("style");
+      element.style.setProperty("width", "min-content", "important");
+      element.style.setProperty("min-width", "0px", "important");
+      element.style.setProperty("max-width", "none", "important");
+      const least = Number.parseFloat(getComputedStyle(element).gridTemplateColumns);
+      if (saved === null) { element.removeAttribute("style"); } else { element.setAttribute("style", saved); }
+      if (Math.abs(column - contentWidth(element)) <= 0.5 && least <= column * 0.8 - 1) { put(path, "trackFits", true); }
+    }
     if (style.flexWrap.startsWith("wrap") && element.children.length > 1) {
       let bottom = -Infinity;
       let lines = 0;

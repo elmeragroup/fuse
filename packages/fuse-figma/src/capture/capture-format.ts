@@ -111,6 +111,11 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   lineFits: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * A grid with one column whose column is its content box's width, and whose items' least widths
+   * fit that width with a fifth to spare, so an `auto` column stays as wide as the grid.
+   */
+  trackFits: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * On an anchored popup's root: the anchor beside it is more than half a pixel wider than the
    * popup's `min-width`, so Base UI widens the popup to the anchor.
    */

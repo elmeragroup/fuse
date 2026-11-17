@@ -1123,6 +1123,7 @@ export function readSizing(
     () => ({ outcome: "literal", detail: "the height hugs its content" }),
     reader.feed("sizing")
   );
+  readContainment(reader, room);
   // A `visible` axis beside one that clips computes to `auto` (CSS Overflow 3 §3), so either clips both.
   const clips = OVERFLOWS.map((property) =>
     reader.read(
@@ -1147,6 +1148,51 @@ export function readSizing(
       vertical: usedPixels(vertical, room.vertical.length),
     },
   };
+}
+
+/** Why inline-size containment drops on a box its parent stretches across. */
+const STRETCHED_CONTAINMENT =
+  "a column, a grid in one column or a block stretches the box across, which no content sizes";
+
+/** Why inline-size containment drops on a root the preview's host sets the width of. */
+const HOSTED_CONTAINMENT = "the root is block-level in the preview's block host, which sets its width";
+
+/**
+ * Read `container-type: inline-size`, which Tailwind's `@container` writes through the `container`
+ * shorthand, its name before a slash. Inline-size containment sizes a box's width as if it held
+ * nothing (CSS Containment 2 §3.2), which also drops the content-based minimum of a flex or grid
+ * item (CSS Flexbox 1 §4.5), so it changes nothing only where no content contributes to the width.
+ * The build knows two such widths, both with no `width` of the box's own:
+ *
+ * - a box its parent stretches across: a column's or a grid's item, whose cross size the parent
+ *   gives it, or a block in a block, whose width is its containing block's (CSS 2.1 §10.3.3);
+ * - a block-level root, which takes its preview's width in the block host it renders in.
+ *
+ * A declared width, a flex item that grows or shrinks along a row, and a box that hugs its content
+ * keep the containment unmapped, since there content or a sibling's share sets the width. A
+ * container name only lets a query find the box, so it draws nothing either way.
+ */
+function readContainment(reader: LayerStyle, room: Room): void {
+  const { auto, zeroBasis } = room.horizontal;
+  const detail =
+    reader.has("width") || zeroBasis === true
+      ? undefined
+      : auto.kind === "fill"
+        ? STRETCHED_CONTAINMENT
+        : auto.kind === "fixed"
+          ? HOSTED_CONTAINMENT
+          : undefined;
+  for (const property of ["container-type", "container"]) {
+    reader.read(
+      property,
+      (value) =>
+        detail !== undefined && normalizeCss(value.split("/").at(-1) ?? "") === "inline-size"
+          ? value
+          : undefined,
+      () => ({ outcome: "dropped", detail: detail ?? "" }),
+      []
+    );
+  }
 }
 
 /**

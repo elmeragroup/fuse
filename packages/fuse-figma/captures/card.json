@@ -195,6 +195,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--card-pad":{"_tag":"element","up":1},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
               "unmatched": ["has-data-[slot=card-action]:grid-cols-[1fr_auto]"],
+              "measured": {"trackFits":true},
               "children": [
                 {
                   "tag": "h3",
@@ -322,6 +323,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--card-pad":{"_tag":"element","up":1},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-md":{"_tag":"element","up":5}},
               "unmatched": ["has-data-[slot=card-action]:grid-cols-[1fr_auto]"],
+              "measured": {"trackFits":true},
               "children": [
                 {
                   "tag": "h3",

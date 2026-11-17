@@ -495,7 +495,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         (label === undefined ? (lastIcon.get("start") ?? flowingBefore.at(-1)?.cascade.style) : undefined),
       labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
     },
-    { sizing, limits, inside, markers, lineFits: cascade.measured?.lineFits === true }
+    {
+      sizing,
+      limits,
+      inside,
+      markers,
+      lineFits: cascade.measured?.lineFits === true,
+      trackFits: cascade.measured?.trackFits === true,
+    }
   );
   const { layout } = flow;
   // A class that spaces every child but the last draws as the item spacing only where each element
@@ -762,21 +769,6 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
     []
   );
-  // Inline-size containment sizes the box's width as if it held nothing (CSS Containment 2 §3.2),
-  // which a fixed width, or a width a column or block stretches across, never reads. The `container`
-  // shorthand writes its name before a slash, and a name only lets a query find the box.
-  const widthUnread =
-    sizing.horizontal.kind === "fixed" ||
-    (sizing.horizontal.kind === "fill" && room.horizontal.auto.kind === "fill");
-  for (const property of ["container-type", "container"]) {
-    reader.read(
-      property,
-      (value) =>
-        widthUnread && normalizeCss(value.split("/").at(-1) ?? "") === "inline-size" ? value : undefined,
-      () => ({ outcome: "dropped", detail: "the width is fixed or stretched, so no content sizes it" }),
-      []
-    );
-  }
   const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
   if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);
