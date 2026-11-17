@@ -14,7 +14,8 @@
  *   `data-popup-open` on the caret. The root holds no `Select.Content`, so no popup renders.
  * - `invalid` puts the root in an invalid `Field.Root`, the one source Base UI reads the trigger's
  *   validity from, which then marks it `aria-invalid="true"` and `data-invalid`, and passes its
- *   `data-invalid:text-error` down to a value.
+ *   `data-invalid:text-error` down to a value. A hugging trigger sits in a bare `<div>` there, since
+ *   the Field root stretches each child to its width.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -50,7 +51,10 @@ export const selectTrigger: CellRendering = {
         createElement(Select.Value, { placeholder: SELECT_TRIGGER_TEXT })
       )
     );
-    const field = cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, root) : root;
+    // A Field root stretches each child to its width, so a hugging trigger sits in a bare `<div>`
+    // there, which takes the stretch and lets the trigger hug, as it does outside a Field.
+    const invalid = fillsWidth(cell) ? root : createElement("div", null, root);
+    const field = cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, invalid) : root;
     return fillsWidth(cell)
       ? createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, field)
       : field;
