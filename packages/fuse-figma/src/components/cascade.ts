@@ -28,6 +28,7 @@ import type {
   IconSlot,
   InlineDeclaration,
   OuterDeclaration,
+  PreviewLength,
 } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { CascadeLogs, routed } from "./coverage-log";
@@ -936,6 +937,12 @@ export type BoxCascade = {
    * Undefined for the recipe cascade.
    */
   readonly measured?: MeasuredBox | undefined;
+  /**
+   * The content height the elements around a root give its percentage height, where a capture read
+   * them and the root's height is a percentage. Undefined for the recipe cascade, whose definitions
+   * name a `previewHeight`.
+   */
+  readonly heightBasis?: PreviewLength | undefined;
 };
 
 /** What a capture measured of a box's element, as {@link BoxCascade.measured} says. */

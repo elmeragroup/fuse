@@ -29,6 +29,7 @@ import type { FontNotLoaded } from "../compare/font-check.ts";
 import {
   cellSelector,
   forcedSelector,
+  measuredSelector,
   measuredSelectors,
   PAGE_LAYOUT,
   slotSpan,
@@ -79,6 +80,8 @@ export type CaptureTarget = {
   readonly axes: readonly AxisSpec[];
   readonly addedAxes?: ReadonlySet<string>;
   readonly statePart?: string;
+  /** The place of the element that takes the set's states, as the manifest's `statePlace` says. */
+  readonly statePlace?: string;
   readonly statePeer?: string;
   readonly focusPart?: string;
   /**
@@ -155,7 +158,8 @@ export function requestOf(
     measured: measuredSelectors(root, target.union),
     span: slotSpan(PAGE_LAYOUT, target.previewWidthFor?.(cell)),
     height: undefined,
-    forcedOn: forcedSelector(root, cell),
+    forcedOn:
+      target.statePlace === undefined ? forcedSelector(root, cell) : placeSelector(root, target.statePlace),
     forced,
     writesHighlightAttribute: writesHighlight,
     resting: forcesState({ forced, writesHighlightAttribute: writesHighlight })
@@ -164,6 +168,18 @@ export function requestOf(
     fallback: fallbackInteraction(cell),
     restsByDesign: false,
   };
+}
+
+/**
+ * The selector of the element at a place: from the measured root where the place starts at the
+ * root's own `data-slot`, else from the element inside it that carries that slot, each step down a
+ * child by its element ordinal, as `:nth-child()` counts elements.
+ */
+function placeSelector(root: Pick<CaptureTarget, "slot">, place: string): string {
+  const [slot = "", ...steps] = place.split("/");
+  const from =
+    slot === root.slot ? measuredSelector(root) : `${measuredSelector(root)} [data-slot="${slot}"]`;
+  return [from, ...steps.map((step) => `:nth-child(${String(Number(step) + 1)})`)].join(" > ");
 }
 
 /** An element on the path from `<html>` to an element, with its winners. */
@@ -606,7 +622,10 @@ function elementName(element: RawElement): string {
   return slot === undefined ? `<${element.tag}>` : `<${element.tag} data-slot=${slot}>`;
 }
 
-/** A cell's elements with the longhands each one's winners leave at their initial value. */
+/**
+ * A cell's elements, the root's tree and the elements around it, with the longhands each one's
+ * winners leave at their initial value.
+ */
 async function withInitial(cdp: CDPSession, raw: RawCell): Promise<RawCell | UnknownLayer> {
   const visit = async (element: RawElement): Promise<RawElement | UnknownLayer> => {
     const winners = resolveWinners(element.rules.filter(isRecorded));
@@ -627,7 +646,18 @@ async function withInitial(cdp: CDPSession, raw: RawCell): Promise<RawCell | Unk
     return { ...element, children, initial: await initialLonghands(cdp, element.nodeId, names) };
   };
   const root = await visit(raw.root);
-  return root instanceof UnknownLayer ? root : { ...raw, root };
+  if (root instanceof UnknownLayer) {
+    return root;
+  }
+  const around: RawElement[] = [];
+  for (const element of raw.around) {
+    const read = await visit(element);
+    if (read instanceof UnknownLayer) {
+      return read;
+    }
+    around.push(read);
+  }
+  return { ...raw, around, root };
 }
 
 /**

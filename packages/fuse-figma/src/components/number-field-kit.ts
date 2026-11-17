@@ -25,6 +25,7 @@
  */
 import { cn, fieldFrameVariants, fieldVariants, numberFieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import type { IconManifest, InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type {
   Cell,
   ComponentDefinition,
@@ -42,8 +43,11 @@ import {
   frameDescriptions,
   frameError,
   frameLabelRow,
+  frameLabelRowManifest,
+  frameMessagesManifest,
   isInvalid,
 } from "./field-frame-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The label: the docs Basic demo's. */
@@ -114,6 +118,34 @@ export const NUMBER_FIELD_STEPPER: ComponentDefinition = {
   label: undefined,
   iconsFor: () => [GLYPH],
   swapProperties: swapProperties([GLYPH]),
+};
+
+/** The stepper's glyph, as the manifest names it. */
+const GLYPH_MANIFEST: IconManifest = {
+  key: "icon",
+  name: "Icon",
+  side: "start",
+  direct: true,
+  dataIcon: undefined,
+  icon: "Plus",
+  swapProperty: "Icon",
+};
+
+/**
+ * The stepper's manifest, which the capture-backed build reads with
+ * `captures/number-field-stepper.json`: the increase `<button>` and its glyph. Its height is the
+ * group's content height, which the elements around it in the capture set.
+ */
+export const NUMBER_FIELD_STEPPER_MANIFEST: SetManifest = {
+  key: NUMBER_FIELD_STEPPER.key,
+  name: NUMBER_FIELD_STEPPER.name,
+  slot: NUMBER_FIELD_STEPPER.slot,
+  elementSlot: () => "number-field-increment",
+  axes: NUMBER_FIELD_STEPPER.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [GLYPH_MANIFEST],
+  swapProperties: NUMBER_FIELD_STEPPER.swapProperties,
 };
 
 /**
@@ -250,5 +282,107 @@ export const NUMBER_FIELD: ComponentDefinition = {
     NUMBER_ROOT,
     frameError(NUMBER_FIELD_ERROR),
     ...frameDescriptions(NUMBER_FIELD_DESCRIPTION),
+  ],
+};
+
+/** A stepper instance as the manifest names it, by the `data-slot` Fuse stamps on its `<button>`. */
+function stepperManifest(direction: "decrease" | "increase", invalid: boolean): InstanceManifest {
+  return {
+    kind: "instance",
+    key: invalid ? `${direction}-invalid` : direction,
+    of: NUMBER_FIELD_STEPPER_MANIFEST,
+    slot: `number-field-${direction === "decrease" ? "decrement" : "increment"}`,
+    cell: (outer) => ({
+      state: outer.state === "disabled" || outer.state === "readonly" ? outer.state : "rest",
+    }),
+    properties: () => ({ swap: { Icon: direction === "decrease" ? "Minus" : "Plus" } }),
+    shownIn: (cell) => isInvalid(cell) === invalid,
+  };
+}
+
+/** The group as the manifest names it: the input, the denomination and the steppers' row, by place. */
+const GROUP_MANIFEST: PartManifest = {
+  key: "group",
+  slot: undefined,
+  place: "field/1/0",
+  shownIn: always,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "input",
+      slot: undefined,
+      place: "field/1/0/0",
+      shownIn: always,
+      label: {
+        key: "text",
+        name: "text",
+        characters: String(NUMBER_FIELD_VALUE),
+        textProperty: "Value",
+        shownIn: always,
+        textAttribute: () => "value",
+      },
+      iconsFor: () => [],
+    },
+    {
+      key: "denomination",
+      slot: undefined,
+      place: "field/1/0/1",
+      shownIn: always,
+      optional: { name: NUMBER_FIELD_DENOMINATION_PROPERTY, defaultValue: false },
+      label: {
+        key: "text",
+        name: "text",
+        characters: NUMBER_FIELD_DENOMINATION,
+        textProperty: "Unit",
+        shownIn: always,
+      },
+      iconsFor: () => [],
+    },
+    {
+      key: "steppers",
+      slot: undefined,
+      place: "field/1/0/2",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [
+        stepperManifest("decrease", false),
+        stepperManifest("decrease", true),
+        stepperManifest("increase", false),
+        stepperManifest("increase", true),
+      ],
+    },
+  ],
+};
+
+/**
+ * The Number field's manifest, which the capture-backed build reads with
+ * `captures/number-field.json`: the label row, Base UI's NumberField root around the group, then the
+ * error and the description. The input takes the states.
+ */
+export const NUMBER_FIELD_MANIFEST: SetManifest = {
+  key: NUMBER_FIELD.key,
+  name: NUMBER_FIELD.name,
+  slot: "field",
+  statePlace: "field/1/0/0",
+  previewWidth: FIELD_BOX_PREVIEW_WIDTH,
+  axes: NUMBER_FIELD.axes,
+  columnAxis: "state",
+  label: undefined,
+  iconsFor: () => [],
+  swapProperties: [],
+  parts: [
+    frameLabelRowManifest(NUMBER_FIELD_LABEL, "field/0"),
+    {
+      key: "number-field",
+      slot: undefined,
+      place: "field/1",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [GROUP_MANIFEST],
+    },
+    ...frameMessagesManifest(NUMBER_FIELD_ERROR, NUMBER_FIELD_DESCRIPTION),
   ],
 };

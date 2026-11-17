@@ -175,7 +175,10 @@ export function buildComponentSet(
     // every child sits inside its padding, except a child's shadow at the root's edge, which a
     // root that paints nothing leaves unclipped through `rootOverflow`.
     const room = rootRoom(
-      { width: previewWidthIn(definition, cell), height: definition.previewHeight },
+      {
+        width: previewWidthIn(definition, cell),
+        height: definition.previewHeight ?? rootCascade.heightBasis,
+      },
       rootCascade.style,
       context.variables,
       definition.viewport

@@ -106,7 +106,12 @@ import {
   NAVIGATION_MENU_VERTICAL_TRIGGER,
 } from "./navigation-menu-kit";
 import { NAVIGATION_MENU_POPUP } from "./navigation-menu-popup-kit";
-import { NUMBER_FIELD, NUMBER_FIELD_STEPPER } from "./number-field-kit";
+import {
+  NUMBER_FIELD,
+  NUMBER_FIELD_MANIFEST,
+  NUMBER_FIELD_STEPPER,
+  NUMBER_FIELD_STEPPER_MANIFEST,
+} from "./number-field-kit";
 import {
   PAGINATION_EDGE,
   PAGINATION_EDGE_MANIFEST,
@@ -819,8 +824,14 @@ export const KIT: readonly KitEntry[] = [
     definition: NUMBER_FIELD_STEPPER,
     page: NUMBER_FIELD_PAGE,
     previewCells: matrixCells(NUMBER_FIELD_STEPPER.axes),
+    manifest: NUMBER_FIELD_STEPPER_MANIFEST,
   },
-  { definition: NUMBER_FIELD, page: NUMBER_FIELD_PAGE, previewCells: matrixCells(NUMBER_FIELD.axes) },
+  {
+    definition: NUMBER_FIELD,
+    page: NUMBER_FIELD_PAGE,
+    previewCells: matrixCells(NUMBER_FIELD.axes),
+    manifest: NUMBER_FIELD_MANIFEST,
+  },
   {
     definition: FILE_UPLOAD_DROPZONE,
     page: FILE_UPLOAD_PAGE,
