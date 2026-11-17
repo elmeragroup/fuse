@@ -412,6 +412,7 @@ export const PART_DENSITY = {
   "data-table-date": "fixed",
   "data-table-date-time": "fixed",
   "data-table-sort-button": "control",
+  "data-table-resize-handle": "fixed",
   "data-table-select-all": "fixed",
   "data-table-select-row": "fixed",
   "data-table-row-actions": "control",

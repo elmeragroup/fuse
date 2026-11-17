@@ -13,13 +13,15 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, Row } from "@tanstack/react-table";
+import type { ColumnDef, ColumnSizingState, Row, SortingState } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { axNodes, axProperty } from "../../../test/ax-tree";
 import {
   appColumns,
+  CompactTicketTable,
   features,
   NO_ORDERS,
   ORDERS,
@@ -28,15 +30,22 @@ import {
   plainColumns,
   registeredColumns,
   renderInEnglish,
+  PlainResizableTicketTable,
+  ResizableAssignmentTable,
+  ResizableTicketTable,
+  subjectCellRenders,
+  TICKET_COLUMN_SIZE,
   useFuseTable,
 } from "../../../test/data-table-fixtures";
 import type { Order } from "../../../test/data-table-fixtures";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { whilePointerPressed } from "../../../test/pointer-press";
+import { renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { expectVisuallyHidden } from "../../../test/visually-hidden";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Button } from "../button/button";
 import { DropdownMenu } from "../dropdown-menu";
+import { Frame } from "../frame/frame";
 import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
 import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
@@ -305,6 +314,13 @@ describe("DataTable column toggle", () => {
     await userEvent.click(roleNamed("menuitemcheckbox", "Amount"));
     await expect.element(page.getByRole("columnheader", { name: "Amount" })).toBeInTheDocument();
     expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("2");
+
+    // With every column hidden the table has no headers, and keeps the container's full width.
+    await userEvent.click(roleNamed("menuitemcheckbox", "Customer"));
+    await userEvent.click(roleNamed("menuitemcheckbox", "Amount"));
+    await expect.element(page.getByRole("columnheader")).not.toBeInTheDocument();
+    const table = roleNamed("cell", "No results.").closest("table");
+    expect(table?.getBoundingClientRect().width).toBe(table?.parentElement?.getBoundingClientRect().width);
   });
 });
 
@@ -931,5 +947,478 @@ describe("DataTable controlled popups", () => {
     await userEvent.click(roleNamed("combobox", "Rows per page"));
     expect(changes).toEqual([{ open: true, reason: "trigger-press" }]);
     expect(page.getByRole("listbox").query()).toBeNull();
+  });
+});
+
+describe("DataTable column resizing", () => {
+  /**
+   * A recorder for a table's `onSizing` prop.
+   *
+   * @returns Every `columnSizing` state the table commits, in order, and the callback that records them.
+   */
+  function recordSizings() {
+    const sizings: ColumnSizingState[] = [];
+    const onSizing = (sizing: ColumnSizingState): void => {
+      sizings.push(sizing);
+    };
+    return { sizings, onSizing };
+  }
+
+  /**
+   * Renders the ticket table and waits for the handles to name their header cells.
+   *
+   * @param props - The ticket table's `locked` prop.
+   * @returns Every `columnSizing` state the table commits, in order, and the render's `rerender`.
+   */
+  async function renderTickets({ locked = false }: { readonly locked?: boolean } = {}) {
+    const { sizings, onSizing } = recordSizings();
+    const { rerender } = renderInEnglish(<ResizableTicketTable onSizing={onSizing} locked={locked} />);
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    return { sizings, onSizing, rerender };
+  }
+
+  function widthOf(name: string): number {
+    return columnHeader(name).getBoundingClientRect().width;
+  }
+
+  function handle(name: string): HTMLElement {
+    return roleNamed("separator", `Resize ${name} column`);
+  }
+
+  /**
+   * Presses a handle, moves the pointer to each of `moves`, in px right of the press, runs `during`
+   * with the button held, then releases.
+   */
+  async function dragHandle(
+    name: string,
+    moves: number | readonly number[],
+    during?: () => void | Promise<void>
+  ): Promise<void> {
+    const separator = handle(name);
+    const start = separator.getBoundingClientRect();
+    const container = separator.closest("[data-slot=table-container]");
+    if (!(container instanceof HTMLElement)) {
+      throw new Error("expected the table container");
+    }
+    const box = container.getBoundingClientRect();
+    await userEvent.hover(separator);
+    await whilePointerPressed(async () => {
+      for (const dx of [moves].flat()) {
+        await userEvent.hover(container, {
+          position: {
+            x: start.left + start.width / 2 + dx - box.left,
+            y: start.top + start.height / 2 - box.top,
+          },
+        });
+      }
+      await during?.();
+    });
+  }
+
+  /**
+   * Listens for the next press on `element`.
+   *
+   * @returns A function that returns the pressing pointer's id once the press has happened.
+   */
+  function nextPointerId(element: HTMLElement): () => number {
+    let id: number | undefined;
+    element.addEventListener(
+      "pointerdown",
+      (event) => {
+        id = event.pointerId;
+      },
+      { once: true }
+    );
+    return () => {
+      if (id === undefined) {
+        throw new Error("expected a press on the element");
+      }
+      return id;
+    };
+  }
+
+  /** The value and maximum Chromium's accessibility tree exposes for a separator. */
+  async function exposedRange(name: string): Promise<{ value: number; max: number }> {
+    const node = (await axNodes()).find(
+      (each) => each.role?.value === "separator" && each.name?.value === name
+    );
+    if (node === undefined) {
+      throw new Error(`expected a separator named ${name} in the accessibility tree`);
+    }
+    return { value: Number(node.value?.value), max: Number(axProperty(node, "valuemax")) };
+  }
+
+  /** The width a handle announces, which its column must render at. */
+  function announced(separator: HTMLElement): number {
+    return Number(separator.getAttribute("aria-valuenow"));
+  }
+
+  // Oracle: the sizes and bounds the fixture's column definitions write by hand.
+  it("names each handle after its column, reports its width and bounds, and skips a column that cannot resize", async () => {
+    await renderTickets();
+
+    const subject = handle("Subject");
+    expect(subject.getAttribute("aria-orientation")).toBe("vertical");
+    expect(subject.tabIndex).toBe(0);
+    expect(subject.getAttribute("aria-valuenow")).toBe("160");
+    expect(subject.getAttribute("aria-valuemin")).toBe("120");
+    expect(subject.getAttribute("aria-valuemax")).toBe("200");
+    expect(subject.getAttribute("aria-valuetext")).toBe("160 pixels");
+    expect(widthOf("Subject")).toBe(announced(subject));
+    // The handle's name and width stay out of the header cell's name.
+    expect(subject.closest("th")).toBe(columnHeader("Subject"));
+
+    // The handle's 32px minimum raises TanStack's default `minSize` of 20. Without a `maxSize` the
+    // handle announces TanStack's resolved maximum, not ARIA's default of 100. Chromium keeps
+    // range values as 32-bit floats.
+    expect(handle("Status").getAttribute("aria-valuemin")).toBe("32");
+    expect(handle("Status").getAttribute("aria-valuemax")).toBe(String(Number.MAX_SAFE_INTEGER));
+    expect(await exposedRange("Resize Status column")).toEqual({
+      value: 100,
+      max: Math.fround(Number.MAX_SAFE_INTEGER),
+    });
+
+    expect(page.getByRole("separator", { name: "Resize Ticket column" }).query()).toBeNull();
+    expect(widthOf("Ticket")).toBe(TICKET_COLUMN_SIZE);
+    expect(page.getByRole("separator").elements()).toHaveLength(2);
+  });
+
+  // Oracle: the 10px step from the issue's keyboard model, and the fixture's 120 to 200px bounds.
+  it("resizes from the keyboard within the column's bounds, and resets on double-click", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    subject.focus();
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("170");
+    expect(widthOf("Subject")).toBe(announced(subject));
+
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("150");
+    expect(widthOf("Subject")).toBe(announced(subject));
+
+    await userEvent.keyboard("{Home}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("120");
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("120");
+    expect(widthOf("Subject")).toBe(announced(subject));
+
+    await userEvent.keyboard("{End}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("200");
+    await userEvent.keyboard("{ArrowRight}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("200");
+    expect(widthOf("Subject")).toBe(announced(subject));
+
+    // A key at a bound changes nothing, so it reports nothing.
+    expect(sizings).toEqual([
+      { subject: 170 },
+      { subject: 160 },
+      { subject: 150 },
+      { subject: 120 },
+      { subject: 200 },
+    ]);
+
+    await userEvent.dblClick(subject);
+    expect(subject.getAttribute("aria-valuenow")).toBe("160");
+    expect(sizings.at(-1)).toEqual({});
+  });
+
+  it("previews a pointer drag without rendering a row, commits once on release, and leaves sorting alone", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    const startWidth = widthOf("Subject");
+    const statusWidth = widthOf("Status");
+    const rendersBefore = subjectCellRenders.count;
+    await dragHandle("Subject", [-15, -30], () => {
+      expect(widthOf("Subject")).toBe(startWidth - 30);
+      expect(widthOf("Status")).toBe(statusWidth);
+      expect(subject.getAttribute("aria-valuenow")).toBe("130");
+      expect(subject.getAttribute("aria-valuetext")).toBe("130 pixels");
+      expect(subjectCellRenders.count).toBe(rendersBefore);
+      expect(sizings).toEqual([]);
+    });
+
+    expect(sizings).toEqual([{ subject: 130 }]);
+    expect(subject.getAttribute("aria-valuenow")).toBe("130");
+    expect(widthOf("Subject")).toBe(announced(subject));
+    expect(columnHeader("Subject").getAttribute("aria-sort")).toBe("none");
+  });
+
+  it("cuts a header wider than its column short with an ellipsis, clear of the handle", async () => {
+    renderInEnglish(<ResizableAssignmentTable />);
+    await expect.element(page.getByRole("columnheader", { name: "Queue", exact: true })).toBeInTheDocument();
+
+    const sortButton = roleNamed("button", "Assigned support queue");
+    const label = page.getByText("Assigned support queue", { exact: true }).element();
+    expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+    expect(getComputedStyle(label).textOverflow).toBe("ellipsis");
+    expect(sortButton.getBoundingClientRect().right).toBeLessThanOrEqual(
+      handle("Queue").getBoundingClientRect().left
+    );
+
+    // A plain-text header cuts its text at the cell, too.
+    const channel = columnHeader("Channel");
+    expect(getComputedStyle(channel).overflowX).toBe("hidden");
+    expect(getComputedStyle(channel).textOverflow).toBe("ellipsis");
+  });
+
+  it("previews a plain-parts drag on the dragged column alone", async () => {
+    renderInEnglish(<PlainResizableTicketTable />);
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    const subject = handle("Subject");
+    const subjectWidth = widthOf("Subject");
+    const statusWidth = widthOf("Status");
+
+    await dragHandle("Subject", -30, () => {
+      expect(widthOf("Subject")).toBe(subjectWidth - 30);
+      expect(widthOf("Status")).toBe(statusWidth);
+    });
+
+    expect(subject.getAttribute("aria-valuenow")).toBe("130");
+    expect(widthOf("Subject")).toBe(subjectWidth - 30);
+    expect(widthOf("Status")).toBe(statusWidth);
+  });
+
+  // Oracle: the header's own click handler, which a click on its label does reach.
+  it("keeps the handle's clicks and double-clicks from a click-to-sort header", async () => {
+    const sortings: SortingState[] = [];
+    renderInEnglish(
+      <PlainResizableTicketTable
+        onSorting={(sorting) => {
+          sortings.push(sorting);
+        }}
+      />
+    );
+    await expect
+      .element(page.getByRole("columnheader", { name: "Subject", exact: true }))
+      .toBeInTheDocument();
+
+    await userEvent.click(handle("Subject"));
+    await userEvent.dblClick(handle("Subject"));
+    expect(sortings).toEqual([]);
+
+    await userEvent.click(page.getByText("Subject", { exact: true }));
+    expect(sortings).toEqual([[{ id: "subject", desc: false }]]);
+  });
+
+  // Oracle: a key chord with Alt, Control or Meta belongs to the browser, as in the Calendar's matching
+  // test. One case per modifier: the handle checks them before it reads the key.
+  it.each([
+    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
+    ["Control+Arrow Right", { key: "ArrowRight", ctrlKey: true }],
+    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
+  ] as const)("leaves %s to the browser: no resize, no preventDefault", async (_keys, init) => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    subject.focus();
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    subject.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: CSS clipping, which the header cells of the same table already apply. `table.Content`
+  // renders the same `<colgroup>` through the same header rows, so the plain parts cover it too.
+  it("clips a plain-parts body cell wider than its column with an ellipsis", async () => {
+    renderInEnglish(<PlainResizableTicketTable />);
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    handle("Status").focus();
+    await userEvent.keyboard("{Home}");
+
+    const cell = roleNamed("cell", "Waiting");
+    expect(cell.scrollWidth).toBeGreaterThan(cell.clientWidth);
+    expect(getComputedStyle(cell).overflowX).toBe("hidden");
+    expect(getComputedStyle(cell).textOverflow).toBe("ellipsis");
+  });
+
+  // Oracle: ARIA needs a finite `aria-valuemax`, and TanStack reads a `maxSize` of `Infinity` as no
+  // maximum, as it does its default of `Number.MAX_SAFE_INTEGER`.
+  it("announces TanStack's unbounded maximum for a column whose maxSize is Infinity", async () => {
+    renderInEnglish(<ResizableAssignmentTable />);
+    await expect
+      .element(page.getByRole("columnheader", { name: "Channel", exact: true }))
+      .toBeInTheDocument();
+    expect(handle("Channel").getAttribute("aria-valuemax")).toBe(String(Number.MAX_SAFE_INTEGER));
+  });
+
+  // Oracle: ARIA requires `aria-valuemin` at most `aria-valuenow`, and Arrow Left in a left-to-right
+  // table narrows a column or leaves it alone.
+  it("never widens a column narrower than the handle's minimum on a shrink", async () => {
+    const { sizings, onSizing } = recordSizings();
+    renderInEnglish(<CompactTicketTable onSizing={onSizing} />);
+    await expect.element(page.getByRole("columnheader", { name: "Ticket", exact: true })).toBeInTheDocument();
+    const ticket = handle("Ticket");
+    const before = widthOf("Ticket");
+    expect(Number(ticket.getAttribute("aria-valuemin"))).toBeLessThanOrEqual(announced(ticket));
+
+    ticket.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(widthOf("Ticket")).toBeLessThanOrEqual(before);
+    await dragHandle("Ticket", -10);
+    expect(widthOf("Ticket")).toBeLessThanOrEqual(before);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: the cell's own box. A Frame pads a table's first and last cell with its text inset, 25px at
+  // comfortable density, and the fixed sizes leave room for it beside the checkbox and the trigger.
+  it("fits the selection checkbox and the row-actions trigger inside their cells in a Frame", async () => {
+    stampDensity("comfortable");
+    renderInEnglish(
+      <Frame.Root>
+        <ResizableTicketTable />
+        <CompactTicketTable />
+      </Frame.Root>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+
+    for (const control of [
+      roleNamed("checkbox", "Select ticket 101"),
+      roleNamed("button", "Actions for Invoice copy"),
+    ]) {
+      const cell = control.closest("td");
+      if (cell === null) {
+        throw new Error("expected the control's cell");
+      }
+      const inner = control.getBoundingClientRect();
+      const outer = cell.getBoundingClientRect();
+      expect(inner.left).toBeGreaterThanOrEqual(outer.left);
+      expect(inner.right).toBeLessThanOrEqual(outer.right);
+    }
+  });
+
+  // Oracle: stacking order, which `elementFromPoint` reports. A bar at `z-index: 10`, the usual value
+  // for a sticky bar, stays above a table that scrolls beneath it.
+  it("stays beneath a host's sticky bar that its table scrolls under", async () => {
+    renderInEnglish(
+      <div>
+        <header data-testid="bar" style={{ position: "sticky", top: 0, zIndex: 10, height: 80 }} />
+        <ResizableTicketTable />
+        <div style={{ height: 2000 }} />
+      </div>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    const bar = page.getByTestId("bar").element();
+    window.scrollTo(0, 40);
+    const at = handle("Subject").getBoundingClientRect();
+    const hit = document.elementFromPoint(at.left + at.width / 2, at.top + at.height / 2);
+    expect(at.bottom).toBeLessThan(bar.getBoundingClientRect().bottom);
+    expect(hit).toBe(bar);
+  });
+
+  // Oracle: a press focuses a focusable element, so the arrow keys can follow a drag.
+  it("takes focus from a pointer press", async () => {
+    await renderTickets();
+    await userEvent.click(handle("Subject"));
+    expect(document.activeElement).toBe(handle("Subject"));
+  });
+
+  // Oracle: the app's `columnSizing`, which the locked table never changes, so the column keeps the
+  // width it started at.
+  it("shows the width React renders again when the app refuses a released drag", async () => {
+    const { sizings } = await renderTickets({ locked: true });
+    const startWidth = widthOf("Subject");
+
+    await dragHandle("Subject", -30);
+
+    expect(sizings).toEqual([{ subject: 130 }]);
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(handle("Subject").getAttribute("aria-valuenow")).toBe("160");
+  });
+
+  // Oracle: the column's committed width, which a drag that never released never changed.
+  it("drops a drag's preview when resizing is turned off during it", async () => {
+    const { sizings, onSizing, rerender } = await renderTickets();
+    const startWidth = widthOf("Subject");
+
+    await dragHandle("Subject", -20, async () => {
+      rerender(<ResizableTicketTable onSizing={onSizing} canResize={false} />);
+      await expect
+        .element(page.getByRole("separator", { name: "Resize Subject column" }))
+        .not.toBeInTheDocument();
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: a canceled pointer ends its drag without a commit, so the column keeps its committed width.
+  it("ends a drag without committing when the pointer is canceled", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    const startWidth = widthOf("Subject");
+    const pointerId = nextPointerId(subject);
+
+    await dragHandle("Subject", -20, () => {
+      subject.dispatchEvent(new PointerEvent("pointercancel", { pointerId: pointerId(), bubbles: true }));
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: a handle that loses its pointer capture no longer follows the pointer, so its drag ends
+  // without a commit and the column keeps its committed width.
+  it("ends a drag without committing when the handle loses its pointer capture", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+    const startWidth = widthOf("Subject");
+    const pointerId = nextPointerId(subject);
+
+    await dragHandle("Subject", -20, async () => {
+      subject.releasePointerCapture(pointerId());
+      // The browser fires `lostpointercapture` before it dispatches the next pointer event.
+      await userEvent.hover(columnHeader("Status"));
+      expect(widthOf("Subject")).toBe(startWidth);
+    });
+
+    expect(widthOf("Subject")).toBe(startWidth);
+    expect(sizings).toEqual([]);
+  });
+
+  // Oracle: in a right-to-left table the handle sits at the column's left edge, so Arrow Left and a
+  // leftward drag move it away from the column's start and widen the column.
+  it("mirrors its keys and its drag in a right-to-left table", async () => {
+    const { sizings, onSizing } = recordSizings();
+    renderInEnglish(
+      <div dir="rtl">
+        <ResizableTicketTable onSizing={onSizing} />
+      </div>
+    );
+    await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
+    const subject = handle("Subject");
+    subject.focus();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    await userEvent.keyboard("{ArrowRight}");
+    await dragHandle("Subject", -20);
+
+    expect(sizings).toEqual([{ subject: 170 }, { subject: 160 }, { subject: 180 }]);
+    expect(widthOf("Subject")).toBe(announced(subject));
+  });
+
+  // Oracle: the fixture's 120 to 200px bounds for Subject, and Status, which sets no `maxSize`.
+  it("stops a drag at the column's bounds, and End does nothing without a maximum", async () => {
+    const { sizings } = await renderTickets();
+    const subject = handle("Subject");
+
+    await dragHandle("Subject", -60, () => {
+      expect(widthOf("Subject")).toBe(Number(subject.getAttribute("aria-valuemin")));
+    });
+    await dragHandle("Subject", 100, () => {
+      expect(widthOf("Subject")).toBe(Number(subject.getAttribute("aria-valuemax")));
+    });
+    expect(sizings).toEqual([{ subject: 120 }, { subject: 200 }]);
+
+    const statusWidth = widthOf("Status");
+    handle("Status").focus();
+    await userEvent.keyboard("{End}");
+    expect(sizings).toHaveLength(2);
+    expect(widthOf("Status")).toBe(statusWidth);
+    // The key stays with the handle. Left to the browser, End scrolls the page to its end.
+    const end = new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true });
+    handle("Status").dispatchEvent(end);
+    expect(end.defaultPrevented).toBe(true);
   });
 });

@@ -1,7 +1,9 @@
 import { describe, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
+import { ResizableAssignmentTable } from "../../test/data-table-fixtures";
 import { withLocale } from "../../test/locale-matrix";
 import { atHostRoots, expectTargetBoxes, expectTargets } from "../../test/target-size";
 import { renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
@@ -15,13 +17,15 @@ import { DENSITIES } from "../theme/density";
 
 /**
  * Unit under test: the WCAG 2.5.8 24px target floor that the control sizes set, on the smallest
- * targets Fuse draws: an icon-only inline Button, a NumberField's steppers inside the field box
- * and a Combobox chip's remove button, at both densities and at the 16px root and a 14px host root.
+ * targets Fuse draws: an icon-only inline Button, a NumberField's steppers inside the field box,
+ * a Combobox chip's remove button and the resize handles of a DataTable's first column and the
+ * column beside it, both at their narrowest, at both densities and at the 16px root and a 14px
+ * host root.
  * Oracle: the criterion's 24px square around each target's center, which `test/target-size.ts`
  * measures.
  */
 describe("the 24px target floor", () => {
-  it("holds for the smallest targets at both densities and both host roots", () => {
+  it("holds for the smallest targets at both densities and both host roots", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -44,6 +48,7 @@ describe("the 24px target floor", () => {
               <Combobox.ChipsInput aria-label="Fruit" />
             </Combobox.Chips>
           </Combobox.Root>
+          <ResizableAssignmentTable />
         </div>
       )
     );
@@ -53,7 +58,14 @@ describe("the 24px target floor", () => {
       roleNamed("button", "Decrease Amount"),
       roleNamed("button", "Remove Apple"),
       roleNamed("button", "Remove Banana"),
+      roleNamed("separator", "Resize Queue column"),
+      roleNamed("separator", "Resize Channel column"),
     ];
+    // Home takes each column to the narrowest width its handle allows.
+    for (const handle of targets.slice(-2)) {
+      handle.focus();
+      await userEvent.keyboard("{Home}");
+    }
     atHostRoots([16, 14], (root) => {
       for (const density of DENSITIES) {
         stampDensity(density);

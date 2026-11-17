@@ -14,4 +14,6 @@ export const nbNO = {
   selectAllOnPage: "Velg alle rader på denne siden",
   actions: "Handlinger",
   actionsFor: (vars: Variables) => `Handlinger for ${String(vars?.name)}`,
+  resizeColumn: (vars: Variables) => `Endre bredden på kolonnen ${String(vars?.name)}`,
+  columnWidth: (vars: Variables) => `${String(vars?.width)} piksler`,
 };

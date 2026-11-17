@@ -24,6 +24,7 @@ import {
   RegisteredColumnToggle,
   RegisteredContent,
   RegisteredPagination,
+  RegisteredResizeHandle,
   RegisteredRow,
   RegisteredSortButton,
   TextCell,
@@ -36,6 +37,7 @@ import type {
   RegisteredColumnToggleProps,
   RegisteredContentProps,
   RegisteredPaginationProps,
+  RegisteredResizeHandleProps,
   RegisteredRowProps,
   RegisteredSortButtonProps,
   TextCellProps,
@@ -101,7 +103,11 @@ export type FuseTableComponents<TFeatures extends TableFeatures, TData extends R
     }
   >;
 
-/** The header parts Fuse registers. `SortButton` appears only with `rowSortingFeature`. */
+/**
+ * The header parts Fuse registers. `SortButton` appears only with `rowSortingFeature`, and
+ * `ResizeHandle` only with both `columnSizingFeature` and `columnResizingFeature`, since the handle
+ * reads the sizing members.
+ */
 export type FuseHeaderComponents<TFeatures extends TableFeatures> = WithFeature<
   TFeatures,
   "rowSortingFeature",
@@ -109,7 +115,19 @@ export type FuseHeaderComponents<TFeatures extends TableFeatures> = WithFeature<
     /** The header's sort toggle. */
     SortButton: (props: RegisteredSortButtonProps) => ReactElement;
   }
->;
+> &
+  WithFeature<
+    TFeatures,
+    "columnSizingFeature",
+    WithFeature<
+      TFeatures,
+      "columnResizingFeature",
+      {
+        /** The header's column resize handle. */
+        ResizeHandle: (props: RegisteredResizeHandleProps) => ReactElement;
+      }
+    >
+  >;
 
 /** The default cells Fuse registers. An app replaces one by registering its own under the key. */
 export type FuseCellComponents = {
@@ -211,7 +229,7 @@ const FUSE_TABLE_COMPONENTS: ComponentRegistry = {
   ColumnToggle: RegisteredColumnToggle,
 };
 
-const FUSE_HEADER_COMPONENTS = { SortButton: RegisteredSortButton };
+const FUSE_HEADER_COMPONENTS = { SortButton: RegisteredSortButton, ResizeHandle: RegisteredResizeHandle };
 
 const FUSE_CELL_COMPONENTS: FuseCellComponents = {
   TextCell,
@@ -234,15 +252,16 @@ function mergeRegistry<TFuse extends ComponentRegistry, TApp extends ComponentRe
 /**
  * Binds an app's table features, default options and components into one `useFuseTable` hook, with
  * Fuse's parts registered: `table.Content`, `table.Row`, `table.Pagination`,
- * `table.ColumnToggle`, `header.SortButton` and the default cells `TextCell`, `NumberCell`,
- * `CurrencyCell`, `DateCell` and `DateTimeCell`.
+ * `table.ColumnToggle`, `header.SortButton`, `header.ResizeHandle` and the default cells `TextCell`,
+ * `NumberCell`, `CurrencyCell`, `DateCell` and `DateTimeCell`.
  *
  * It wraps TanStack's `createTableHook` and passes `features` and every default option through
  * untouched. Fuse adds no features of its own. The hook registers the app's components after Fuse's,
  * so registering `cellComponents: { NumberCell }` replaces Fuse's `NumberCell`, props included. A
  * registered part appears in the types only when its feature is in `features`: `Pagination` needs
- * `rowPaginationFeature`, `ColumnToggle` `columnVisibilityFeature` and `SortButton`
- * `rowSortingFeature`. Render the registered table parts inside `<table.AppTable>`.
+ * `rowPaginationFeature`, `ColumnToggle` `columnVisibilityFeature`, `SortButton`
+ * `rowSortingFeature`, and `ResizeHandle` both `columnSizingFeature` and `columnResizingFeature`.
+ * Render the registered table parts inside `<table.AppTable>`.
  *
  * @example
  * ```tsx
@@ -274,7 +293,7 @@ export function createFuseTableHook<
   // `TFeatures`, which TanStack's feature-mapped `Row` and `Column` keep TypeScript from relating
   // to the stock features.
   const fuseTableComponents = FUSE_TABLE_COMPONENTS as FuseTableComponents<TFeatures>;
-  // The header part's props name no feature, so it satisfies either branch of `WithFeature`.
+  // The header parts' props name no feature, so they satisfy either branch of each `WithFeature`.
   const fuseHeaderComponents: FuseHeaderComponents<TFeatures> = FUSE_HEADER_COMPONENTS;
   return createTableHook({
     ...options,

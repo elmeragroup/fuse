@@ -12,11 +12,15 @@ import type { ReactNode } from "react";
  * not pick, so the picks are instantiated with the unconstrained bases.
  */
 import type {
+  Column_ColumnResizing,
+  Column_ColumnSizing,
   Column_ColumnVisibility,
+  ColumnDef_ColumnSizing,
   Column_RowSorting,
   PaginationState,
   Row_RowSelection,
   RowData,
+  Table_ColumnSizing,
   Table_RowPagination,
   Table_RowSelection,
   TableFeatures,
@@ -39,12 +43,36 @@ export type SortColumnSource = Pick<
   "getCanSort" | "getIsSorted" | "getToggleSortingHandler"
 >;
 
-/** The header members `DataTable.Header` reads. Sorting is optional, and it drives `aria-sort`. */
+/**
+ * The header members `DataTable.Header` reads. Sorting is optional, and it drives `aria-sort`.
+ * `getSize` is present with `columnSizingFeature`, and it sizes the columns.
+ */
 export type HeaderSource = {
   readonly id: string;
   readonly colSpan: number;
   readonly isPlaceholder: boolean;
+  readonly getSize?: () => number;
   readonly column: { readonly id: string } & Partial<Pick<SortColumnSource, "getCanSort" | "getIsSorted">>;
+};
+
+/**
+ * A column's sizing and resizing members, present when `columnSizingFeature` and
+ * `columnResizingFeature` are registered. The bounds come from the column definition, and the
+ * table's `setColumnSizing` writes a new width.
+ */
+export type ResizeColumnSource = { readonly id: string } & Pick<
+  Column_ColumnSizing,
+  "getSize" | "resetSize"
+> &
+  Pick<Column_ColumnResizing, "getCanResize"> & {
+    readonly columnDef: Pick<ColumnDef_ColumnSizing, "minSize" | "maxSize">;
+    readonly table: Pick<Table_ColumnSizing, "setColumnSizing">;
+  };
+
+/** The header members `DataTable.ResizeHandle` reads. A header with sub-headers groups columns. */
+export type ResizeHeaderSource = {
+  readonly subHeaders: ReadonlyArray<unknown>;
+  readonly column: ResizeColumnSource;
 };
 
 /** The cell members `DataTable.Row` reads. */

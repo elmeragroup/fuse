@@ -8,10 +8,14 @@ import { LocalizedStringFormatter } from "@internationalized/string";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { actionsColumn } from "./actions-column";
+import type { ActionsColumnDef } from "./actions-column";
 import { skeletonRowCount } from "./data-table";
 import { cellValueText, formatCurrencyCell, formatDateCell, formatNumberCell } from "./data-table-format";
 import { pageStatus } from "./data-table-pagination-status";
 import { dataTableStrings } from "./intl";
+import { selectColumn } from "./select-column";
+import type { SelectColumnDef } from "./select-column";
 
 const NBSP = "\u00a0";
 
@@ -146,11 +150,19 @@ describe("dataTable dictionary", () => {
     "fi-FI": ["Toiminnot", "Toiminnot: Kontorstol"],
   } as const;
 
-  it("owns the same rows in all four locales and interpolates the page status and the row name", () => {
+  const RESIZE = {
+    "nb-NO": ["Endre bredden på kolonnen Status", "120 piksler"],
+    "sv-SE": ["Ändra bredden på kolumnen Status", "120 pixlar"],
+    "en-US": ["Resize Status column", "120 pixels"],
+    "fi-FI": ["Muuta sarakkeen Status leveyttä", "120 pikseliä"],
+  } as const;
+
+  it("owns the same rows in all four locales and interpolates the page status, the row name and the column width", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(dataTableStrings.getStringsForLocale(locale)).toSorted(), locale).toEqual([
         "actions",
         "actionsFor",
+        "columnWidth",
         "columns",
         "goToFirstPage",
         "goToLastPage",
@@ -159,6 +171,7 @@ describe("dataTable dictionary", () => {
         "noResults",
         "page",
         "pageOf",
+        "resizeColumn",
         "rowsPerPage",
         "selectAllOnPage",
       ]);
@@ -168,6 +181,29 @@ describe("dataTable dictionary", () => {
         [formatter.format("actions"), formatter.format("actionsFor", { name: "Kontorstol" })],
         locale
       ).toEqual(ACTIONS[locale]);
+      expect(
+        [
+          formatter.format("resizeColumn", { name: "Status" }),
+          formatter.format("columnWidth", { width: "120" }),
+        ],
+        locale
+      ).toEqual(RESIZE[locale]);
     }
+  });
+});
+
+describe("the display columns of a sized table", () => {
+  // Oracle: the 48px and 76px the issue sets. The browser suite checks that the controls fit, which
+  // a wider column also passes, so only this pin catches a column that falls back to TanStack's 150px.
+  it("sizes the selection column 48px and the row-actions column 76px", () => {
+    const select = selectColumn<unknown, SelectColumnDef<unknown>>(
+      { display: (column) => column },
+      { getRowLabel: () => "" }
+    );
+    const actions = actionsColumn<unknown, ActionsColumnDef<unknown>>(
+      { display: (column) => column },
+      { getRowName: () => "", items: () => null }
+    );
+    expect([select.size, actions.size]).toEqual([48, 76]);
   });
 });

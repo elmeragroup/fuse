@@ -27,6 +27,8 @@ import { cellValueText } from "./data-table-format";
 import type { CellValue } from "./data-table-format";
 import { DataTablePagination } from "./data-table-pagination";
 import type { DataTablePaginationProps } from "./data-table-pagination";
+import { DataTableResizeHandle } from "./data-table-resize-handle";
+import type { DataTableResizeHandleProps } from "./data-table-resize-handle";
 import { DataTableSortButton } from "./data-table-sort-button";
 import type { DataTableSortButtonProps } from "./data-table-sort-button";
 import type { NoComponents } from "./data-table-source";
@@ -173,6 +175,23 @@ export function RegisteredSortButton(props: RegisteredSortButtonProps): ReactEle
   );
 }
 
+/** Props for the registered `header.ResizeHandle`. */
+export type RegisteredResizeHandleProps = Omit<DataTableResizeHandleProps, "header">;
+
+/**
+ * The registered `header.ResizeHandle`, a `DataTable.ResizeHandle` for the header in context,
+ * subscribed to the column widths.
+ */
+export function RegisteredResizeHandle(props: RegisteredResizeHandleProps): ReactElement {
+  const table = fuseTableContexts.useTableContext();
+  const header = fuseTableContexts.useHeaderContext();
+  return (
+    <table.Subscribe source={table.atoms.columnSizing}>
+      {() => <DataTableResizeHandle header={header} {...props} />}
+    </table.Subscribe>
+  );
+}
+
 /** Props for the registered `cell.TextCell`. */
 export type TextCellProps = Omit<DataTableTextProps, "value">;
 /** Props for the registered `cell.NumberCell`. */
@@ -278,6 +297,7 @@ RegisteredRow.displayName = "table.Row";
 RegisteredPagination.displayName = "table.Pagination";
 RegisteredColumnToggle.displayName = "table.ColumnToggle";
 RegisteredSortButton.displayName = "header.SortButton";
+RegisteredResizeHandle.displayName = "header.ResizeHandle";
 TextCell.displayName = "cell.TextCell";
 NumberCell.displayName = "cell.NumberCell";
 CurrencyCell.displayName = "cell.CurrencyCell";

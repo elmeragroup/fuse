@@ -17,12 +17,20 @@ export type SelectColumnDef<TData> = {
   readonly id: "select";
   readonly enableSorting: false;
   readonly enableHiding: false;
+  readonly enableResizing: false;
+  readonly size: number;
   readonly header: (context: SelectHeaderContext) => ReactNode;
   readonly cell: (context: SelectCellContext<TData>) => ReactNode;
 };
 
 /** `DisplayColumnHelper` for `selectColumn`. */
 export type SelectColumnHelper<TData, TColumn> = DisplayColumnHelper<SelectColumnDef<TData>, TColumn>;
+
+/**
+ * The selection column's width in px under `columnSizingFeature`. It fits the checkbox after the
+ * widest start padding a cell takes, a Frame's 25px edge inset at comfortable density.
+ */
+const SELECT_COLUMN_SIZE = 48;
 
 /** Options for `selectColumn`. */
 export type SelectColumnOptions<TData> = {
@@ -35,7 +43,8 @@ export type SelectColumnOptions<TData> = {
 
 /**
  * Builds the selection column, with `DataTable.SelectAll` in the header and `DataTable.SelectRow` in
- * each cell, and sorting and hiding turned off. "Select all" covers only the current page.
+ * each cell, and sorting and hiding turned off. "Select all" covers only the current page. In a
+ * table with `columnSizingFeature` the column is 48px wide and cannot be resized.
  *
  * @template TData - The row data type, inferred from the column helper.
  * @template TColumn - The column definition type the helper returns.
@@ -51,6 +60,8 @@ export function selectColumn<TData, TColumn>(
     id: "select",
     enableSorting: false,
     enableHiding: false,
+    enableResizing: false,
+    size: SELECT_COLUMN_SIZE,
     header: ({ table }) => <DataTableSelectAll table={table} />,
     cell: ({ row }) => <DataTableSelectRow row={row} label={getRowLabel(row.original)} />,
   });

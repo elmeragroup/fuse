@@ -275,6 +275,7 @@ function namespaceElements(): ReactElement[] {
       "Row",
       "Pagination",
       "SortButton",
+      "ResizeHandle",
       "ColumnToggle",
       "SelectAll",
       "SelectRow",
