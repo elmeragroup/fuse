@@ -83,3 +83,34 @@ describe("a flex row's inline items the capture measures on one line", () => {
     expect(await pathsWith("inlineRow", markup)).toEqual([]);
   });
 });
+
+/**
+ * Unit under test: the page function's `fitsAlongMain` beside `freeAlongMain`, which one sweep
+ * measures from the same room. Oracle: Chromium's layout of a row holding a 100px item and a last
+ * 40px item with `margin-left: auto`, 8px apart (CSS Flexbox 1 §8.1, §9.7): with the margin at zero
+ * the items end at 148px. A 200px row leaves 52px past them, so they fit with 24px free; a 160px row
+ * leaves 12px, so they fit with less than 24px free. A 100px row overflows them, and a row 200px wide
+ * dense and 60px comfortable fits in one density and overflows in the other, so neither records
+ * either fact. The row exactly as wide as its items and gap, 148px, leaves no whole pixel and
+ * records neither.
+ */
+describe("a flex line the capture measures as fitting its items", () => {
+  /** Which of the two facts the row of the given width records. */
+  async function facts(width: string, className = "") {
+    const measured = await factsOf(
+      `<div id="root" class="${className}" style="display:flex;gap:8px;width:${width}"><div style="width:100px;flex:none"></div><div style="width:40px;flex:none;margin-left:auto"></div></div>`
+    );
+    const root = measured.get("");
+    return { fits: root?.fitsAlongMain === true, free: root?.freeAlongMain === true };
+  }
+
+  it.each([
+    ["200px", "", { fits: true, free: true }],
+    ["160px", "", { fits: true, free: false }],
+    ["100px", "", { fits: false, free: false }],
+    ["148px", "", { fits: false, free: false }],
+    ["200px", "narrows", { fits: false, free: false }],
+  ])("in a %s row %s: %o", async (width, className, expected) => {
+    expect(await facts(width, className)).toEqual(expected);
+  });
+});

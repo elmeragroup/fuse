@@ -22,6 +22,7 @@ import {
 } from "../../test/capture-fixtures";
 import type { MeasuredFacts } from "../capture/capture-format";
 import type { SetManifest } from "../capture/manifest";
+import { makeVariableIndex } from "./css-values";
 
 // Oracle: CSS Flexbox 1 §7.1.1, where `flex: none` is `0 0 auto`: the item neither grows nor
 // shrinks from its own size, which a fixed or hugging Figma layer keeps.
@@ -103,10 +104,12 @@ describe("a percentage limit beside a fixed width", () => {
 // Oracle: CSS Flexbox 1 §8.1 and the capture's `freeAlongMain` fact. An auto margin between two items
 // of a flex box takes the free space along its direction before `justify-content` does, so the items
 // sit at the box's two ends, as `space-between` places two items: a column's `mt-auto` on its last
-// item, and a row's `me-auto` on its first. Where the items and the gap overflow the box there is no
-// free space, the margin takes none, and Chromium keeps the second item after the first (a 100px
-// column with two 40px items 30px apart puts the second at 70px, where `space-between` puts it at
-// 60px), so without the capture's measurement of the room in every mode the margin stays unmapped.
+// item, a row's `me-auto` on its first and its `ms-auto` on its last. Where the items and the gap
+// overflow the box there is no free space, the margin takes none, and Chromium keeps the second item
+// after the first (a 100px column with two 40px items 30px apart puts the second at 70px, where
+// `space-between` puts it at 60px). Where they fill it exactly, as two 40px items 20px apart in a
+// 100px row, the margin takes nothing either. So without the capture's measurement of the room in
+// every mode the margin stays unmapped.
 describe("an auto margin between two layers", () => {
   const TWO: Partial<SetManifest> = {
     parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" })],
@@ -143,8 +146,11 @@ describe("an auto margin between two layers", () => {
     ]);
   });
 
-  it("spaces a row's two layers to its ends with me-auto on the first where the capture measured the room", async () => {
-    const { variant } = await buildTwo("flex w-[100px]", "size-[8px] me-auto", "size-[8px]", ROOM);
+  it.each([
+    ["me-auto on the first", "size-[8px] me-auto", "size-[8px]"],
+    ["ms-auto on the last", "size-[8px]", "size-[8px] ms-auto"],
+  ])("spaces a row's two layers to its ends with %s where the capture measured the room", async (_, a, b) => {
+    const { variant } = await buildTwo("flex w-[100px]", a, b, ROOM);
     expect(variant?.root.primaryAlign).toBe("SPACE_BETWEEN");
   });
 
@@ -156,6 +162,12 @@ describe("an auto margin between two layers", () => {
       "mt-auto",
     ],
     ["flex w-[100px]", "size-[8px] me-auto", "size-[8px]", "me-auto"],
+    [
+      "flex w-[100px] gap-[20px]",
+      "flex-none w-[40px] h-[8px]",
+      "flex-none w-[40px] h-[8px] ms-auto",
+      "ms-auto",
+    ],
   ])("leaves %s's auto margin unmapped without the measurement", async (classes, a, b, margin) => {
     const { variant, coverage } = await buildTwo(classes, a, b, {});
     expect(variant?.root.primaryAlign).not.toBe("SPACE_BETWEEN");
@@ -194,5 +206,57 @@ describe("margins on a row's growing item", () => {
       { parts: [part()] }
     );
     expect(notesOf(coverage, "mx-[8px]").map(([, outcome]) => outcome)).toEqual(["unmapped", "unmapped"]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §8.1 and §9.7. On the last of three layers, after the row's own text, an auto
+// start margin takes the row's free space, and a label that grows would take it first, so the margin
+// ends the row with the last layer at any free space of zero or more. A Figma label that fills that
+// room draws the same, since a text paints nothing past its characters. Where the layers overflow the
+// row, CSS keeps the text at its min-content width and Figma shrinks it, so the margin maps only where
+// the capture measured the row fitting its layers in every mode (`fitsAlongMain`), not 24px of room.
+describe("an auto start margin after a row's own text", () => {
+  /** Build a menu-like row: a dot, its own text and a shortcut with `ml-auto`, with the root's facts. */
+  function buildRow(measured: MeasuredFacts) {
+    return buildCaptured(
+      chip({
+        label: {
+          key: "label",
+          name: "label",
+          characters: "Profile",
+          textProperty: "Label",
+          shownIn: () => true,
+        },
+        parts: [part(), { ...part({ key: "shortcut", slot: "chip-shortcut" }), after: "label" }],
+      }),
+      rest({
+        slot: "chip",
+        classes: "flex w-[160px] items-center gap-[8px] font-sans text-[14px] leading-[20px] text-[#000000]",
+        text: "Profile",
+        textIndex: 1,
+        measured,
+        children: [
+          { slot: "chip-dot", classes: "size-[8px] shrink-0" },
+          { slot: "chip-shortcut", classes: "ml-auto size-[8px] shrink-0" },
+        ],
+      }),
+      {
+        variables: makeVariableIndex([
+          { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+        ]),
+      }
+    );
+  }
+
+  it("lets the label fill the room before the last layer where the capture measured the row fitting", async () => {
+    const { coverage } = await buildRow({ fitsAlongMain: true });
+    expect(notesOf(coverage, "ml-auto").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-left", "literal"],
+    ]);
+  });
+
+  it("stays unmapped without the measurement that the row fits in every mode", async () => {
+    const { coverage } = await buildRow({});
+    expect(notesOf(coverage, "ml-auto").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });

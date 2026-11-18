@@ -144,6 +144,7 @@ export function readFlow(
     readonly lineFits: boolean;
     readonly trackFits: boolean;
     readonly freeAlongMain: boolean;
+    readonly fitsAlongMain: boolean;
     readonly tableTiles: boolean;
   }
 ): Flow {
@@ -195,7 +196,13 @@ export function readFlow(
     flex &&
     (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
-  const autoStart = flex ? readAutoStart(reader, flow, { direction, free: box.freeAlongMain }) : undefined;
+  const autoStart = flex
+    ? readAutoStart(reader, flow, {
+        direction,
+        free: box.freeAlongMain,
+        fits: box.fitsAlongMain,
+      })
+    : undefined;
   const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
   // A box with free space spaces its layers out only where they map to leave it some, so the box
   // mapping reads its `space-between` once they map.
@@ -371,15 +378,29 @@ const MAIN_MARGINS = {
  * `justify-content` unset, so nothing else places them.
  *
  * - Between two layers, an auto start margin on the last that sets no end margin reads as spaced
- *   between the box's ends, as `space-between` places two layers: `spaced`. In a row this holds as
- *   the menu rows have drawn it. In a column, and for an auto end margin on the first part that sets
- *   no start margin, as `me-auto` writes it, the capture must have measured the box leaving the
- *   margin room in every mode (`freeAlongMain`): where the layers and the gap overflow the box, the
- *   margin takes none, and the box keeps them packed at its start where `space-between` would not.
+ *   between the box's ends, as `space-between` places two layers: `spaced`. So does an auto end
+ *   margin on the first part that sets no start margin, as `me-auto` writes it.
  * - In a row, an auto start margin on the last of more layers, with the row's own label right before
  *   it and the row setting its text from the left, makes the label fill the free space in Figma,
  *   where it paints nothing past its text, so the row packs at its start with its gap and draws what
  *   CSS draws: `label-fills`. The layers before the label keep their widths.
+ *
+ * The two readings need different proofs, which the capture measures in every mode (#773):
+ *
+ * - `spaced` needs the box to leave the margin room (`freeAlongMain`): where the layers and the gap
+ *   fill or overflow the box, the margin takes none, and the box keeps them packed at its start with
+ *   the gap, where `space-between` would not.
+ * - `label-fills` needs only the row to fit its layers (`fitsAlongMain`). The margin takes whatever
+ *   free space there is, or a label that grows takes it first (CSS Flexbox 1 §9.7 before §8.1), and a
+ *   filling label takes the same in Figma, so the two draw alike at any free space of zero or more.
+ *   Where the layers overflow, CSS stops the label at its min-content width and Figma shrinks it.
+ *   The capture measures the fact on the demo's sample text, and the label is a TEXT property a
+ *   designer types into. A longer label of several words still draws alike while the last layer's
+ *   text holds no space, as a menu shortcut's keys do: that layer cannot shrink below its own width,
+ *   so CSS and Figma both break the label between words inside the room. A word wider than the room
+ *   is a known limit. CSS keeps the word whole at its min-content width and pushes the last layer
+ *   past the row's end (CSS Flexbox 1 §4.5), while the filling Figma text breaks the word inside the
+ *   room.
  *
  * A row that leaves no free space, as one that hugs its layers along its direction or holds a layer
  * that grows, gives the margin nothing to take, and draws the same packed at its start, which the
@@ -388,24 +409,30 @@ const MAIN_MARGINS = {
  *
  * @param reader - The box's style.
  * @param flow - The box's layers in flow.
- * @param line - The box's direction, and whether the capture measured its flex line leaving room for
- *   the margin in every mode.
+ * @param line - The box's direction, and whether the capture measured its flex line leaving the
+ *   margin room (`free`) and fitting its layers (`fits`) in every mode.
  * @returns How the margin places the box's layers, or undefined where it stays unread.
  */
 function readAutoStart(
   reader: LayerStyle,
   flow: FlowLayers,
-  line: { readonly direction: DirectionSpec; readonly free: boolean }
+  line: { readonly direction: DirectionSpec; readonly free: boolean; readonly fits: boolean }
 ): "spaced" | "label-fills" | undefined {
-  const { direction, free } = line;
+  const { direction, free, fits } = line;
   const { start, end } = MAIN_MARGINS[direction];
   const auto = (style: LayerStyle | undefined, property: string) =>
     normalizeCss(style?.resolved(property) ?? "") === "auto";
   const count = flow.parts.length + flow.others.length;
   const [first] = flow.parts;
+  const labelFills =
+    direction === "HORIZONTAL" &&
+    count > 2 &&
+    flow.labelBeforeLast &&
+    FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""));
+  // Two layers spaced to the ends need the room the margin takes; a label that fills before the last
+  // layer needs only the row to fit, as the doc above says.
+  const proven = count === 2 ? free : labelFills && fits;
   // `me-auto` on the first of two parts places them as `ms-auto` on the second does.
-  // A row's start margin keeps the reading its menu rows were drawn by; the others need the room.
-  const proven = free || direction === "HORIZONTAL";
   const between =
     proven && auto(flow.last, start) && flow.last?.has(end) !== true
       ? { style: flow.last, property: start }
@@ -417,15 +444,7 @@ function readAutoStart(
         ? { style: first?.style, property: end }
         : undefined;
   const placing =
-    count === 2
-      ? "spaced"
-      : direction === "HORIZONTAL" &&
-          between?.property === start &&
-          count > 2 &&
-          flow.labelBeforeLast &&
-          FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""))
-        ? "label-fills"
-        : undefined;
+    count === 2 ? "spaced" : between?.property === start && labelFills ? "label-fills" : undefined;
   if (between?.style === undefined || placing === undefined || reader.has("justify-content")) {
     return undefined;
   }

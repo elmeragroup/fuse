@@ -155,9 +155,10 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   // Each date input sits in a `display: contents` wrapper, which stays unmapped. The field box wraps
-  // its row (`flex-wrap`), which keeps its inputs' `self-stretch` and the trigger's `ms-auto` (#773)
-  // unproven, and the root's `@container/picker` and the error's and description's blocks around a
-  // text span map to nothing yet.
+  // its row (`flex-wrap`), which keeps its inputs' `self-stretch` unproven, and the trigger's `ms-auto`
+  // too, since the capture measures `freeAlongMain` only on a row that does not wrap. The root's
+  // `@container/picker` and the error's and description's blocks around a text span map to nothing
+  // yet.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
   "description-list": { kind: "issue", issue: MISSING_SETS },
   dialog: {

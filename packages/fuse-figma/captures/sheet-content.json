@@ -295,7 +295,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--surface-gap-lg":{"_tag":"element","up":8}},
               "unmatched": [],
-              "measured": {"freeAlongMain":true},
+              "measured": {"freeAlongMain":true,"fitsAlongMain":true},
               "children": [
                 {
                   "tag": "div",

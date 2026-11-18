@@ -89,6 +89,7 @@ function stacksInlineChild(sample: {
       lineFits,
       trackFits: false,
       freeAlongMain: false,
+      fitsAlongMain: false,
       tableTiles: false,
     }
   );

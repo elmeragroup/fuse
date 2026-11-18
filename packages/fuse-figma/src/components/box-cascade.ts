@@ -140,6 +140,8 @@ export type MeasuredBox = {
   readonly underMaxWidth: boolean;
   /** The box's flex line leaves room for its items' auto margins along it in every mode. */
   readonly freeAlongMain: boolean;
+  /** The box's flex line fits its items, with its auto margins at zero, in every mode. */
+  readonly fitsAlongMain: boolean;
   /** The box is a table box whose parts tile it in every mode, as the capture measured. */
   readonly tableTiles: boolean;
   /** The box is a flex row's `inline` item, which sits on the row's one line in every mode. */
