@@ -105,8 +105,8 @@ export function readPivot(
       property,
       () => note,
       (decided) => decided,
-      style.feed("pivot")
+      style.feed("placement")
     );
   }
-  return { constraints: { horizontal: "CENTER", vertical: "MAX" }, centerOffset, bottomInset };
+  return { kind: "pivot", centerOffset, bottomInset };
 }

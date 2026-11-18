@@ -456,6 +456,27 @@ function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke 
   if (first === undefined) {
     return undefined;
   }
+  // Every side at a literal zero, as a pseudo-element's cascade splits the base layer's `border: 0
+  // solid` into, draws nothing whatever its style and color (CSS Backgrounds 3 §3).
+  const zero = (side: BorderSide): boolean => {
+    const width = readNumber(root.resolved(`border-${sideName(root, side)}-width`) ?? "", variables);
+    return width?.kind === "literal" && width.value === 0;
+  };
+  if (given.length === BORDER_SIDES.length && !root.has("border-width") && given.every(zero)) {
+    for (const side of given) {
+      const name = sideName(root, side);
+      root.read(
+        `border-${name}-width`,
+        (value) => value,
+        () => ({ outcome: "literal", detail: "no stroke" }),
+        root.feed("stroke")
+      );
+      for (const part of ["style", "color"]) {
+        root.mark(`border-${name}-${part}`, "dropped", "the border has no width, so it draws nothing", []);
+      }
+    }
+    return undefined;
+  }
   // `border-0` before a side's own width, as a Number field stepper's `border-0 border-s`, zeroes the
   // sides the box sets no width on; Tailwind writes the side's utility after it, so the side wins.
   root.read(

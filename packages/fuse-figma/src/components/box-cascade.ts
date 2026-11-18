@@ -141,6 +141,18 @@ export type BoxCascade = {
    * height is a percentage.
    */
   readonly heightBasis?: PreviewLength | undefined;
+  /**
+   * The box's `::before` and `::after` the mapping draws as layers of their own, `::before` first:
+   * each paints, and the capture measured it as an absolute box laid out against the box.
+   */
+  readonly pseudoElements: readonly PseudoCascade[];
+};
+
+/** A pseudo-element the mapping draws as a layer, as {@link BoxCascade.pseudoElements} lists it. */
+export type PseudoCascade = {
+  readonly pseudo: "before" | "after";
+  /** Its cascade, a box with no parts, icons or label of its own. */
+  readonly cascade: BoxCascade;
 };
 
 /**

@@ -350,7 +350,13 @@ export const KIT_PARITY = {
     missing: '`size="sm"`.',
     issue: MISSING_SETS,
   },
-  "timeline-list": { kind: "issue", issue: MISSING_SETS },
+  "timeline-list": {
+    kind: "partial",
+    sets: ["timeline-list"],
+    missing:
+      "A description that holds a link, as the links demo writes it, and `TimelineList.Title`'s `align`, `size` and `font`.",
+    issue: MISSING_SETS,
+  },
   toast: { kind: "issue", issue: MISSING_SETS },
   toggle: { kind: "sets", sets: ["toggle", "icon-toggle"] },
   "toggle-group": {

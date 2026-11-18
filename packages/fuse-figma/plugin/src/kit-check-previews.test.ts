@@ -11,7 +11,7 @@ import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";
-import type { KitSpec, PageDocsSpec } from "../../src/components/kit-spec.ts";
+import type { ChildLayerSpec, KitSpec, PageDocsSpec } from "../../src/components/kit-spec.ts";
 import { base64Decode } from "./fake/paints.ts";
 import { kitFixture } from "./kit-fixture.ts";
 
@@ -76,5 +76,38 @@ describe("the kit check's docs", () => {
   it("refuses a kit that documents no page", async () => {
     const { kit } = await kitFixture();
     expect(verdict({ ...kit, docs: [] })).toBe("The Button page has no docs.");
+  });
+});
+
+describe("the kit check's lengths a placement sets", () => {
+  /** A layer and the layers below it, with every `::before`'s placement dropped. */
+  const unplaced = (layer: ChildLayerSpec): ChildLayerSpec => {
+    if (layer.kind !== "frame") {
+      return layer;
+    }
+    const { placement: _placement, ...rest } = layer;
+    const own = layer.key === "::before" ? rest : layer;
+    return { ...own, children: own.children.map(unplaced) };
+  };
+
+  it("refuses a length left to a placement the layer does not hold", async () => {
+    const { kit } = await kitFixture();
+    const edited: KitSpec = {
+      ...kit,
+      componentSets: kit.componentSets.map((set) =>
+        set.key !== "timeline-list"
+          ? set
+          : {
+              ...set,
+              variants: set.variants.map((variant) => ({
+                ...variant,
+                root: { ...variant.root, children: variant.root.children.map(unplaced) },
+              })),
+            }
+      ),
+    };
+    expect(verdict(edited)).toBe(
+      "Timeline list: ::before in the variant timeline-list/state=rest leaves its vertical length to a placement that does not stretch it."
+    );
   });
 });

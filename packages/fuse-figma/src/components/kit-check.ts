@@ -251,6 +251,30 @@ function squareSides(layer: Exclude<ChildLayerSpec, { readonly kind: "text" }>):
 }
 
 /**
+ * Refuse a frame whose sizing leaves an axis's length to its placement (`placed`) where no placement
+ * stretches it along that axis, since nothing would set the length then: the plugin would leave the
+ * layer at whatever length it has, and no Plan would show it.
+ */
+function checkPlacedLengths(set: ComponentSetSpec): void {
+  for (const variant of set.variants) {
+    for (const layer of walkLayers(variant.root)) {
+      if (layer.kind !== "frame") {
+        continue;
+      }
+      for (const axis of ["horizontal", "vertical"] as const) {
+        const { placement } = layer;
+        const stretches = placement?.kind === "edges" && placement[axis].kind === "stretch";
+        if (layer.sizing[axis].kind === "placed" && !stretches) {
+          throw contradiction(
+            `${set.name}: ${layer.name} in the variant ${variant.key} leaves its ${axis} length to a placement that does not stretch it.`
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
  * Refuse a turn the plugin cannot draw as CSS does. CSS's `rotate` leaves the layout as it was,
  * while Figma lays a turned layer out by its turned box. On 2026-10-22 a real file kept a
  * half-turned layer's box in its auto layout slot (PR), and a 20 × 10 frame at -90 made its hugging
@@ -270,7 +294,7 @@ function checkRotations(set: ComponentSetSpec): void {
       const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
       // A frame placed by its centre sits outside the flow, so its turned box takes no room, and the
       // plugin places it after the turn, from its centre.
-      if (layer.kind === "frame" && layer.pivot !== undefined) {
+      if (layer.kind === "frame" && layer.placement?.kind === "pivot") {
         continue;
       }
       if (rotation % 90 !== 0) {
@@ -283,7 +307,7 @@ function checkRotations(set: ComponentSetSpec): void {
           `${where} turns a quarter turn without two equal fixed sides, and Figma lays a turned layer out by its turned box, where CSS leaves the layout as it was.`
         );
       }
-      if (layer.kind === "frame" && layer.absolute !== undefined) {
+      if (layer.kind === "frame" && layer.placement?.kind === "edges") {
         throw contradiction(
           `${where} is absolute and turns, and the plugin places an absolute layer by an x and y that a turn moves.`
         );
@@ -789,6 +813,7 @@ export function checkKitSpec(
       checkComponentSet(set);
       checkSizing(set);
       checkRotations(set);
+      checkPlacedLengths(set);
       checkStacking(set);
       checkImages(decodeBase64, set);
     }

@@ -10,12 +10,15 @@
  * plan compares the centre, never `x` and `y`, which follow the turn and sizes the run does not set.
  */
 import type { PivotSpec, RotationSpec } from "../../src/components/kit-spec.ts";
-import { holderOf, planConstraints } from "./anchoring.ts";
-import type { Holder } from "./anchoring.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { holderOf, planConstraints } from "./placing.ts";
+import type { Holder } from "./placing.ts";
 import { change } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
+
+/** The constraints that keep a pivot's place: CENTER across, MAX down. */
+const PIVOT_CONSTRAINTS: Constraints = { horizontal: "CENTER", vertical: "MAX" };
 
 /** The cosine and sine of a turn in degrees, counterclockwise as Figma counts it. */
 function turnOf(degrees: number) {
@@ -59,12 +62,12 @@ function heldCentre(frame: FrameNode, holder: Holder): Pick<PivotSpec, "centerOf
  *
  * @returns Whether the layer turns absolute or its constraints change in this run.
  */
-export function planPivotPositioning(run: Run, frame: FrameNode, label: string, spec: PivotSpec): boolean {
+export function planPivotPositioning(run: Run, frame: FrameNode, label: string): boolean {
   const turns = frame.layoutPositioning !== "ABSOLUTE";
   planScalar(run, label, "layoutPositioning", frame.layoutPositioning, "ABSOLUTE", () => {
     frame.layoutPositioning = "ABSOLUTE";
   });
-  const constrained = planConstraints(run, frame, label, spec.constraints);
+  const constrained = planConstraints(run, frame, label, PIVOT_CONSTRAINTS);
   return turns || !constrained;
 }
 

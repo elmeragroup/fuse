@@ -425,6 +425,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Date picker",
     sets: [{ key: "date-picker", name: "Date picker", variants: 10, previewed: 10 }],
   },
+  // The docs default demo's three events, each item's connector and dot drawn by its place.
+  {
+    slug: "timeline-list",
+    name: "Timeline list",
+    sets: [{ key: "timeline-list", name: "Timeline list", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

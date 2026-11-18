@@ -351,42 +351,45 @@ export type RotationSpec = number;
  */
 export type ConstraintSpec = "STRETCH" | "SCALE" | "MAX" | "CENTER";
 
-/** A constraint that keeps the layer's place as the spec's `x` and `y` set it, at the parent's start. */
-type PlacingConstraint = Extract<ConstraintSpec, "STRETCH" | "SCALE">;
+/**
+ * Where a layer outside its parent's auto layout sits on one axis, by its distances in pixels to its
+ * parent's outer edges or centre, each kept by a Figma constraint as the parent resizes:
+ *
+ * - `start`: the layer's start edge `start` from the parent's start edge, which MIN keeps;
+ * - `end`: the layer's end edge `end` inside the parent's end edge, which MAX keeps;
+ * - `centre`: the layer's centre `offset` from the parent's centre, toward the end, which CENTER keeps;
+ * - `stretch`: the layer spans the parent less `start` and `end`, which STRETCH keeps;
+ * - `scale`: the layer starts `start` from the parent's start edge, its start and length keeping their
+ *   shares of the parent's length, which SCALE keeps.
+ *
+ * An axis other than `start` follows the parent's length, which the plugin reads once the parent's
+ * other layers are planned, and a `stretch` sets the layer's length too.
+ */
+export type AxisPlacementSpec =
+  | { readonly kind: "start"; readonly start: number }
+  | { readonly kind: "end"; readonly end: number }
+  | { readonly kind: "centre"; readonly offset: number }
+  | { readonly kind: "stretch"; readonly start: number; readonly end: number }
+  | { readonly kind: "scale"; readonly start: number };
+
+/** The places an instance takes on an axis: one that keeps the length the instance's main gives it. */
+export type InstanceAxisPlacementSpec = Extract<
+  AxisPlacementSpec,
+  { readonly kind: "start" | "end" | "centre" }
+>;
 
 /**
  * A layer outside its parent's auto layout, as `position: absolute` takes a box out of its parent's
- * flow: at `x` and `y` in pixels from the parent's top left, following the parent's resize as its
- * constraints say.
+ * flow, placed on each axis against its containing block. `within` names that block: `parent`, the
+ * frame that holds the layer, whose outer edges the distances measure from, the one block the kit
+ * draws a place against.
  */
-export type AbsoluteSpec = {
-  readonly x: number;
-  readonly y: number;
-  readonly constraints: { readonly horizontal: PlacingConstraint; readonly vertical: PlacingConstraint };
+export type EdgePlacementSpec<Axis extends AxisPlacementSpec = AxisPlacementSpec> = {
+  readonly kind: "edges";
+  readonly within: "parent";
+  readonly horizontal: Axis;
+  readonly vertical: Axis;
 };
-
-/**
- * An instance outside its parent's auto layout at the parent's end, and down either centred, as a
- * Sidebar menu badge sits over the end of its row, or a fixed distance below the parent's top, as an
- * overlay's corner close sits in its popup's top right. The instance hugs its content, so its `x` and
- * `y` follow a width only Figma knows: the spec holds what MAX and CENTER or MIN keep instead, and the
- * plugin places the instance from them once its size and its parent's have settled.
- */
-export type AnchoredSpec = {
-  /** The pixels from the instance's end to its parent's, which MAX keeps. */
-  readonly endInset: number;
-} & (
-  | {
-      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "CENTER" };
-      /** The pixels from the parent's centre down to the instance's centre, which CENTER keeps. */
-      readonly centerOffset: number;
-    }
-  | {
-      readonly constraints: { readonly horizontal: "MAX"; readonly vertical: "MIN" };
-      /** The pixels from the parent's top edge down to the instance's top, which MIN keeps. */
-      readonly topInset: number;
-    }
-);
 
 /**
  * A frame outside its parent's auto layout placed by its centre: across, a fixed distance from the
@@ -398,12 +401,24 @@ export type AnchoredSpec = {
  * parent resizes.
  */
 export type PivotSpec = {
-  readonly constraints: { readonly horizontal: "CENTER"; readonly vertical: "MAX" };
+  readonly kind: "pivot";
   /** The pixels from the parent's horizontal centre to the layer's centre, rightward. */
   readonly centerOffset: number;
   /** The pixels from the layer's centre down to the parent's bottom edge. */
   readonly bottomInset: number;
 };
+
+/** Where a frame sits outside its parent's auto layout: by its edges, or a turned frame by its centre. */
+export type PlacementSpec = EdgePlacementSpec | PivotSpec;
+
+/** The Figma constraint that keeps each axis's place, as {@link AxisPlacementSpec} names them. */
+export const AXIS_CONSTRAINT = {
+  start: "MIN",
+  end: "MAX",
+  centre: "CENTER",
+  stretch: "STRETCH",
+  scale: "SCALE",
+} as const satisfies Record<AxisPlacementSpec["kind"], string>;
 
 /**
  * A frame layer below a component root, such as a checkbox's indicator around its icon. It
@@ -414,12 +429,7 @@ export type FrameLayerSpec = BoxSpec & {
   readonly key: string;
   readonly name: string;
   /** Where the layer sits outside its parent's auto layout, absent for a layer the auto layout places. */
-  readonly absolute?: AbsoluteSpec;
-  /**
-   * Where a layer outside its parent's auto layout sits by its centre, as a Tooltip's arrow does,
-   * absent for every other layer. A layer holds `absolute` or `pivot`, never both.
-   */
-  readonly pivot?: PivotSpec;
+  readonly placement?: PlacementSpec;
   /**
    * The BOOLEAN property of the set that shows or hides the layer, which links its `visible`, absent
    * for a layer that shows wherever its variant holds it.
@@ -521,24 +531,22 @@ export type InstanceLayerSpec = {
    */
   readonly visibleProperty?: string;
   /** Where the instance sits outside its parent's auto layout, absent for one the auto layout places. */
-  readonly absolute?: AnchoredSpec;
+  readonly placement?: EdgePlacementSpec<InstanceAxisPlacementSpec>;
 };
 
 /** A layer inside a component root or a frame layer. */
 export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | InstanceLayerSpec;
 
 /**
- * Whether a layer sits outside its parent's auto layout: an absolute frame or instance, or a frame
- * placed by its centre, which takes no room in the flow and counts toward no hug (P8).
+ * Whether a layer sits outside its parent's auto layout: a frame or an instance with a placement,
+ * which takes no room in the flow and counts toward no hug (P8). Every reader of a box's flow asks
+ * this, so a placement of any kind leaves the flow alike.
  *
  * @param layer - The layer.
- * @returns True for an absolute layer.
+ * @returns True for a placed layer.
  */
 export function outOfLayout(layer: ChildLayerSpec): boolean {
-  return (
-    ((layer.kind === "frame" || layer.kind === "instance") && layer.absolute !== undefined) ||
-    (layer.kind === "frame" && layer.pivot !== undefined)
-  );
+  return (layer.kind === "frame" || layer.kind === "instance") && layer.placement !== undefined;
 }
 
 /**
@@ -568,7 +576,13 @@ export type DirectionSpec = "HORIZONTAL" | "VERTICAL";
 export type SizeSpec =
   | { readonly kind: "fixed"; readonly length: NumberSpec }
   | { readonly kind: "hug" }
-  | { readonly kind: "fill" };
+  | { readonly kind: "fill" }
+  /**
+   * The length a `stretch` placement leaves the layer between its distances to its parent's edges,
+   * where the build cannot tell the parent's length: the plugin sets it once the parent's other layers
+   * are planned, and no geometry reads it. A stretch whose length the build can tell is `fixed`.
+   */
+  | { readonly kind: "placed" };
 
 /** The sizing of a box along each axis. */
 export type SizingSpec = {

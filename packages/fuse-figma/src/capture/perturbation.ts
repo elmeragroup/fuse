@@ -15,6 +15,7 @@
 import type { Page } from "playwright";
 
 import { cellSelector } from "../compare/preview-page.ts";
+import { AXIS_CONSTRAINT } from "../components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentRootSpec,
@@ -567,8 +568,9 @@ export function contradictions(
       counts.set(inferred, (counts.get(inferred) ?? 0) + 1);
       const isRoot = layer === variant.root;
       const maximum = "limits" in layer ? layer.limits.maxWidth : undefined;
+      const placement = "placement" in layer ? layer.placement : undefined;
       const constraint: string | undefined =
-        "absolute" in layer ? layer.absolute.constraints.horizontal : undefined;
+        placement?.kind === "edges" ? AXIS_CONSTRAINT[placement.horizontal.kind] : undefined;
       const width: MappedWidth = {
         resizesWithParent: constraint === "SCALE" || constraint === "STRETCH",
         heldAtMaximum: maximum?.kind === "literal" && Math.abs(maximum.value - box.base) <= CHANGED,

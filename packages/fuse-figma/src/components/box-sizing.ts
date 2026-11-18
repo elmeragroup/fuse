@@ -62,6 +62,18 @@ type AxisRoom = {
    * no literal.
    */
   readonly outer?: { readonly length: NumberSpec; readonly inset: number };
+  /**
+   * Where `absolute-placement.ts` stretches the box between its distances to its parent's edges: the
+   * note its length reads with, and the length the place leaves it where the build knows the parent's
+   * padding box, which the box draws as a literal, or none, which the spec names `placed`. Absent
+   * elsewhere.
+   */
+  readonly placed?: {
+    /** The coverage table's note on the length's declaration. */
+    readonly detail: string;
+    /** The length the placement leaves the box, where the parent's padding box is a literal. */
+    readonly length: number | undefined;
+  };
 };
 
 /**
@@ -106,6 +118,8 @@ export type Room = {
 };
 
 const HUG: SizeSpec = { kind: "hug" };
+/** The length a box's placement leaves it where the build cannot tell its parent's, as `SizeSpec` says. */
+const PLACED: SizeSpec = { kind: "placed" };
 const FILL: SizeSpec = { kind: "fill" };
 const NO_BASIS: PercentBasis = { kind: "none" };
 
@@ -1394,6 +1408,18 @@ function readAxis(
     readonly under: boolean;
   }
 ): AxisRead & { readonly known: boolean } {
+  if (room.placed !== undefined) {
+    const { detail, length } = room.placed;
+    reader.read(
+      axis.length,
+      (value) => value,
+      () => ({ outcome: "literal", detail }),
+      reader.feed("sizing")
+    );
+    const size: SizeSpec =
+      length === undefined ? PLACED : { kind: "fixed", length: { kind: "literal", value: length } };
+    return { size, min: undefined, max: undefined, notes: new Map(), known: length !== undefined };
+  }
   if (capsAtParent(reader, axis, room, variables)) {
     reader.read(
       axis.length,
@@ -1713,6 +1739,8 @@ function readLength(
           };
         case "fill":
           return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };
+        case "placed":
+          return { outcome: "literal", detail: "the box's placement sets the length" };
         case "fixed": {
           if (share === undefined || percent.kind !== "length" || size.length.kind !== "literal") {
             return describeNumber(size.length);

@@ -23,7 +23,7 @@ describe("absolute MAX × MIN instances", () => {
     const anchored = spec.componentSets.flatMap(({ variants }) =>
       variants.flatMap((variant) =>
         instancesIn(variant.root.children)
-          .filter((layer) => layer.absolute?.constraints.vertical === "MIN")
+          .filter((layer) => layer.placement?.vertical.kind === "start")
           .map((layer) => {
             const main = variantRoot(spec, layer.variant);
             return [variant.key, layer.variant, main.direction] as const;

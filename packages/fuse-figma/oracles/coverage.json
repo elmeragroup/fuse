@@ -6612,6 +6612,14 @@
         "date-picker/content=value,state=readonly 0/root/0/0",
         "date-picker/content=value,state=rest 0/root/0/0"
       ]
+    },
+    {
+      "set": "timeline-list",
+      "part": "timeline-list-item",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["timeline-list/state=rest 0/root/0::before", "timeline-list/state=rest 0/root/1::before"]
     }
   ]
 }
