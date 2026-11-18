@@ -172,7 +172,7 @@
     {"property":"border-inline-start-style","value":"var(--tw-border-style)","important":false,"longhands":["border-left-style"],"source":"fuse","layer":"","selector":".border-s","className":"border-s","owner":0},
     {"property":"border-inline-start-width","value":"1px","important":false,"longhands":["border-left-width"],"source":"fuse","layer":"","selector":".border-s","className":"border-s","owner":0},
     {"property":"border-color","value":"var(--input)","important":false,"longhands":["border-top-color","border-right-color","border-bottom-color","border-left-color"],"source":"fuse","layer":"","selector":".border-input","className":"border-input","owner":0},
-    {"property":"background-color","value":"var(--background)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-background","className":"bg-background","owner":0},
+    {"property":"background-color","value":"#0000","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-transparent","className":"bg-transparent","owner":0},
     {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"","selector":".p-0","className":"p-0","owner":0},
     {"property":"color","value":"var(--foreground)","important":false,"longhands":["color"],"source":"fuse","layer":"","selector":".text-foreground","className":"text-foreground","owner":0},
     {"property":"transition-property","value":"color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to","important":false,"longhands":["transition-property"],"source":"fuse","layer":"","selector":".transition-colors","className":"transition-colors","owner":0},
@@ -255,12 +255,12 @@
         "root": {
           "tag": "button",
           "attributes": {"aria-controls":"base-ui-1","aria-disabled":"false","aria-label":"Increase Quantity","data-slot":"number-field-increment","id":"_R_1ml_-increase","tabindex":"-1","type":"button"},
-          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-background","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-transparent","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "text": "",
           "declarations": [108,109,110,111,112,113,64,68,114,115,116,117,118,119,120,75,70,100,121,122,123,78,124,125,126,127,128,129,130,131,132,133,134,135,136],
-          "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,131,133,134,135],
+          "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,130,131,133,134,135],
           "pseudo": {},
-          "variables": {"--background":{"_tag":"theme"},"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
+          "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "children": [
             {
@@ -350,7 +350,7 @@
         "root": {
           "tag": "button",
           "attributes": {"aria-controls":"base-ui-1","aria-disabled":"false","aria-label":"Increase Quantity","data-slot":"number-field-increment","id":"_R_1ml_-increase","tabindex":"-1","type":"button"},
-          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-background","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-transparent","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "text": "",
           "declarations": [108,109,110,111,112,113,64,68,114,115,116,117,118,119,120,75,70,100,121,122,123,78,124,125,126,127,128,129,131,132,133,134,135,137,136],
           "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,131,133,134,135],
@@ -445,7 +445,7 @@
         "root": {
           "tag": "button",
           "attributes": {"aria-controls":"base-ui-1","aria-disabled":"true","aria-label":"Increase Quantity","data-disabled":"","data-slot":"number-field-increment","disabled":"","id":"_R_1ml_-increase","tabindex":"-1","type":"button"},
-          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-background","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-transparent","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "text": "",
           "declarations": [108,109,110,111,112,113,64,68,114,115,116,117,118,119,120,75,70,100,121,122,78,124,125,126,127,128,129,131,133,134,135,138,139,140,136],
           "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,131,133,134,135],
@@ -540,12 +540,12 @@
         "root": {
           "tag": "button",
           "attributes": {"aria-controls":"base-ui-1","aria-disabled":"true","aria-label":"Increase Quantity","data-readonly":"","data-slot":"number-field-increment","id":"_R_1ml_-increase","tabindex":"-1","type":"button"},
-          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-background","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "classes": ["box-border","flex","h-full","w-[max(var(--control-h-xs),24px)]","shrink-0","cursor-default","items-center","justify-center","border-0","border-s","border-input","bg-transparent","p-0","text-foreground","transition-colors","disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "text": "",
           "declarations": [108,109,110,111,112,113,64,68,114,115,116,117,118,119,120,75,70,100,121,122,123,78,124,125,126,127,128,129,130,131,132,133,134,135,136],
-          "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,131,133,134,135],
+          "initial": [108,109,110,111,112,64,68,115,116,117,118,119,126,130,131,133,134,135],
           "pseudo": {},
-          "variables": {"--background":{"_tag":"theme"},"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
+          "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
           "children": [
             {
