@@ -48,6 +48,7 @@ import type {
   SetCapture,
   VariableSource,
 } from "./capture-format.ts";
+import { factsOfWinners } from "./declared-facts.ts";
 import type { InstanceManifest, PartManifest } from "./manifest.ts";
 import { measuredFacts } from "./page-facts.ts";
 import {
@@ -394,7 +395,8 @@ function captureElement(
     children,
   };
   const placed = element.textIndex === undefined ? written : { ...written, textIndex: element.textIndex };
-  return element.measured === undefined ? placed : { ...placed, measured: element.measured };
+  const measured = factsOfWinners(element.measured, kept);
+  return measured === undefined ? placed : { ...placed, measured };
 }
 
 /** The classes of an element a rule is written for, and no rule written for them matched through. */

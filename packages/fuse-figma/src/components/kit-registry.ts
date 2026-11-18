@@ -37,6 +37,8 @@ import { COMMAND_ITEM_MANIFEST, COMMAND_LIST_MANIFEST } from "./command-kit";
 import { isPossible, possibleCells } from "./component-spec";
 import type { Cell, ImpossibleCells } from "./component-spec";
 import { CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
+import { DATE_FIELD_MANIFEST } from "./date-field-kit";
+import { DATE_PICKER_MANIFEST } from "./date-picker-kit";
 import { DIALOG_CONTENT_MANIFEST, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
@@ -244,6 +246,12 @@ const ACTION_BAR_PAGE: KitPage = { slug: "action-bar", name: "Action bar", examp
 
 /** The page the calendar sets sit on. */
 const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar", example: "calendar-day" };
+
+/** The page Date field sits on alone. */
+const DATE_FIELD_PAGE: KitPage = { slug: "date-field", name: "Date field", example: "date-field" };
+
+/** The page Date picker sits on alone. */
+const DATE_PICKER_PAGE: KitPage = { slug: "date-picker", name: "Date picker", example: "date-picker" };
 
 /** The page Sheet content sits on alone. */
 const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
@@ -833,5 +841,15 @@ export const KIT: readonly KitEntry[] = [
     page: CALENDAR_PAGE,
     previewCells: possibleCells(CALENDAR_DAY_MANIFEST),
     manifest: CALENDAR_DAY_MANIFEST,
+  },
+  {
+    page: DATE_FIELD_PAGE,
+    previewCells: possibleCells(DATE_FIELD_MANIFEST),
+    manifest: DATE_FIELD_MANIFEST,
+  },
+  {
+    page: DATE_PICKER_PAGE,
+    previewCells: possibleCells(DATE_PICKER_MANIFEST),
+    manifest: DATE_PICKER_MANIFEST,
   },
 ];

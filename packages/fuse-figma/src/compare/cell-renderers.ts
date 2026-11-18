@@ -446,6 +446,16 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./card-cell.ts")).card,
   },
   {
+    set: "date-field",
+    entry: "dist/date-field.js",
+    load: async () => (await import("./date-field-cell.ts")).dateField,
+  },
+  {
+    set: "date-picker",
+    entry: "dist/date-picker.js",
+    load: async () => (await import("./date-picker-cell.ts")).datePicker,
+  },
+  {
     set: "calendar-day",
     entry: "dist/calendar.js",
     load: async () => (await import("./calendar-day-cell.ts")).calendarDay,

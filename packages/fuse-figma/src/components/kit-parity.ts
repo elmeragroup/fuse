@@ -141,8 +141,23 @@ export const KIT_PARITY = {
   },
   "data-table": { kind: "excluded", reason: "It is an example composition, not a set." },
   "data-table-filter": { kind: "issue", issue: MISSING_SETS },
-  "date-field": { kind: "issue", issue: MISSING_SETS },
-  "date-picker": { kind: "issue", issue: MISSING_SETS },
+  "date-field": {
+    kind: "partial",
+    sets: ["date-field"],
+    missing: "The `sm` size, and the time segments of a date and time, its hour cycles and its time zone.",
+    issue: MISSING_SETS,
+  },
+  "date-picker": {
+    kind: "partial",
+    sets: ["date-picker"],
+    missing:
+      "The calendar popup, which waits on the Calendar set; the `sm` size, the trigger at the start, and a date and time.",
+    issue: MISSING_SETS,
+  },
+  // Each date input sits in a `display: contents` wrapper, which stays unmapped. The field box wraps
+  // its row (`flex-wrap`), which keeps its inputs' `self-stretch` and the trigger's `ms-auto` (#773)
+  // unproven, and the root's `@container/picker` and the error's and description's blocks around a
+  // text span map to nothing yet.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
   "description-list": { kind: "issue", issue: MISSING_SETS },
   dialog: {

@@ -2961,6 +2961,578 @@
         "part": "arrow",
         "className": "data-[side=right]:-translate-y-1/2"
       }
+    ],
+    "date-field": [
+      {
+        "part": "day-separator",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "data-placeholder:italic"
+      },
+      {
+        "part": "day-separator",
+        "className": "data-placeholder:text-muted-foreground"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "day",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "day",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "day",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "day",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "day",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "day",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "day",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "day",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:border-error"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-2"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-ring"
+      },
+      {
+        "part": "field",
+        "className": "[&>.sr-only]:w-auto"
+      },
+      {
+        "part": "month-separator",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "data-placeholder:italic"
+      },
+      {
+        "part": "month-separator",
+        "className": "data-placeholder:text-muted-foreground"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "month",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "month",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "month",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "month",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "year",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "year",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "year",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "year",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "year",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "year",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "year",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "year",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      }
+    ],
+    "date-picker": [
+      {
+        "part": "date-picker-input",
+        "className": "entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]"
+      },
+      {
+        "part": "day-separator",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "data-placeholder:italic"
+      },
+      {
+        "part": "day-separator",
+        "className": "data-placeholder:text-muted-foreground"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "day-separator",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "day",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "day",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "day",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "day",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "day",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "day",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "day",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "day",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "day",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:border-error"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-2"
+      },
+      {
+        "part": "field-group",
+        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-ring"
+      },
+      {
+        "part": "field",
+        "className": "[&>.sr-only]:w-auto"
+      },
+      {
+        "part": "month-separator",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "data-placeholder:italic"
+      },
+      {
+        "part": "month-separator",
+        "className": "data-placeholder:text-muted-foreground"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "month-separator",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "month-separator",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "month",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "month",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "month",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "month",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "month",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      },
+      {
+        "part": "year",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "year",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "year",
+        "className": "data-[type=literal]:px-0"
+      },
+      {
+        "part": "year",
+        "className": "data-[type=literal]:whitespace-pre"
+      },
+      {
+        "part": "year",
+        "className": "focus-visible:outline-none"
+      },
+      {
+        "part": "year",
+        "className": "focus-visible:ring-0"
+      },
+      {
+        "part": "year",
+        "className": "focus:bg-primary"
+      },
+      {
+        "part": "year",
+        "className": "focus:text-primary-foreground"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:data-disabled:text-[GrayText]"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:focus:bg-[Highlight]"
+      },
+      {
+        "part": "year",
+        "className": "forced-colors:focus:text-[HighlightText]"
+      }
     ]
   },
   "unreached": [
@@ -5918,6 +6490,44 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
       "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
+    },
+    {
+      "set": "date-field",
+      "part": "field-label",
+      "className": "w-fit",
+      "property": "width",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "date-field/content=placeholder,state=disabled 0/root/0/0",
+        "date-field/content=placeholder,state=focus 0/root/0/0",
+        "date-field/content=placeholder,state=invalid 0/root/0/0",
+        "date-field/content=placeholder,state=readonly 0/root/0/0",
+        "date-field/content=placeholder,state=rest 0/root/0/0",
+        "date-field/content=value,state=disabled 0/root/0/0",
+        "date-field/content=value,state=focus 0/root/0/0",
+        "date-field/content=value,state=invalid 0/root/0/0",
+        "date-field/content=value,state=readonly 0/root/0/0",
+        "date-field/content=value,state=rest 0/root/0/0"
+      ]
+    },
+    {
+      "set": "date-picker",
+      "part": "field-label",
+      "className": "w-fit",
+      "property": "width",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "date-picker/content=placeholder,state=disabled 0/root/0/0",
+        "date-picker/content=placeholder,state=focus 0/root/0/0",
+        "date-picker/content=placeholder,state=invalid 0/root/0/0",
+        "date-picker/content=placeholder,state=readonly 0/root/0/0",
+        "date-picker/content=placeholder,state=rest 0/root/0/0",
+        "date-picker/content=value,state=disabled 0/root/0/0",
+        "date-picker/content=value,state=focus 0/root/0/0",
+        "date-picker/content=value,state=invalid 0/root/0/0",
+        "date-picker/content=value,state=readonly 0/root/0/0",
+        "date-picker/content=value,state=rest 0/root/0/0"
+      ]
     }
   ]
 }
