@@ -107,7 +107,7 @@ function surfaceMutedForegroundAt(element: Element): string {
 const NOTHING = toSrgb("rgba(0, 0, 0, 0)");
 
 /** The color the fills behind an element paint, composited from the element down to the first opaque one. */
-function paintedFill(element: Element): Srgb.Srgb {
+export function paintedFill(element: Element): Srgb.Srgb {
   let painted = NOTHING;
   for (let current: Element | null = element; current !== null; current = current.parentElement) {
     painted = Srgb.compositeOver(painted, toSrgb(getComputedStyle(current).backgroundColor));
@@ -128,7 +128,7 @@ function roleFill(element: HTMLElement, layers: readonly Layer[]): Srgb.Srgb {
 }
 
 /** Whether two colors match to within one 8-bit step per channel. */
-function expectSameColor(actual: Srgb.Srgb, expected: Srgb.Srgb): void {
+export function expectSameColor(actual: Srgb.Srgb, expected: Srgb.Srgb): void {
   const [painted, promised] = [rounded(actual), rounded(expected)];
   const message = `${painted.join(", ")} against ${promised.join(", ")}`;
   for (const [index, component] of painted.entries()) {

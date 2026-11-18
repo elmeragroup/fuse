@@ -7,14 +7,18 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { expectSameColor, paintedFill, toSrgb } from "../../../test/surface-paint";
 import {
+  cssVarColor,
   fieldRootFrom,
+  guenBranded,
   renderThemed,
   textboxNamed,
   formNamed,
   inputNamed,
   roleNamed,
 } from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme";
 import { Field } from "../field";
 import { NumberField } from "./number-field";
 
@@ -301,6 +305,35 @@ describe("NumberField", () => {
       expect(groupFrom("Quantity").getAttribute("aria-invalid")).toBe(invalid);
       await expect.element(textboxNamed("Quantity")).toHaveAccessibleDescription(description);
       expect(page.getByRole("alert").query()?.textContent ?? "").toBe(description);
+    }
+  );
+
+  it.each([
+    ["an editable", "light", {}, "--card"],
+    ["an editable", "dark", {}, "--card"],
+    ["a read-only", "light", { isReadOnly: true }, "--muted"],
+    ["a read-only", "dark", { isReadOnly: true }, "--muted"],
+  ] as const)(
+    "shows the box's fill behind the steppers of %s field on a tinted page, guen %s",
+    (_label, scheme, props, boxToken) => {
+      // Unit under test: the fill a stepper shows, composited from the stepper down to the first
+      // opaque fill behind it. Oracle: the group's own fill, the `--card` that `field-box.ts`
+      // gives every field box, or the `--muted` of a read-only one. A read-only stepper is
+      // `aria-disabled`, not `:disabled`, so it takes no disabled fill of its own.
+      const field = (
+        <ThemeScope theme={guenBranded}>
+          <NumberField label="Quantity" defaultValue={2} {...props} />
+        </ThemeScope>
+      );
+      renderField(scheme === "dark" ? <div data-theme="dark">{field}</div> : field);
+      const group = groupFrom("Quantity");
+      const boxFill = cssVarColor(group, boxToken);
+      // Oracle sanity: guen tints the page apart from the box, so a stepper on the page fill fails.
+      expect(cssVarColor(group, "--background")).not.toBe(boxFill);
+      expect(getComputedStyle(group).backgroundColor).toBe(boxFill);
+      for (const word of ["Decrease", "Increase"] as const) {
+        expectSameColor(paintedFill(stepperOf("Quantity", word)), toSrgb(boxFill));
+      }
     }
   );
 

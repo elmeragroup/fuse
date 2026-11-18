@@ -19,13 +19,14 @@ import { withinFocusRingControlClass } from "../../styles/utils";
  * - `denomination` is the muted unit suffix between the input and the steppers, inset by the xs
  *   control padding, `--control-px-xs`.
  * - `steppers` is the full-height row that holds the two steppers.
- * - `stepper` is one stepper. It is a part of the control, not a whole control: the group's
- *   within-target state face dims the disabled field once, steppers included. A stepper disabled
- *   on its own at a bound keeps the part look, a muted fill and glyph with the `not-allowed`
- *   cursor, and its hover fill sits behind the `enabled-hover:` gate. Each stepper is a
- *   full-height column `--control-h-xs` wide, floored at 24px for a host root below 16px, so its
- *   target meets the 24px floor at both densities. Stacked steppers cannot fit two 24px targets in
- *   the dense control height.
+ * - `stepper` is one stepper. It is a part of the control, not a whole control. At rest it paints
+ *   no fill of its own and shows the group's, so it matches the box in every theme, and the
+ *   group's within-target state face dims the disabled field once, steppers included. A stepper
+ *   disabled on its own at a bound keeps the part look, a muted fill and glyph with the
+ *   `not-allowed` cursor, and its hover fill sits behind the `enabled-hover:` gate. Each stepper
+ *   is a full-height column `--control-h-xs` wide, floored at 24px for a host root below 16px, so
+ *   its target meets the 24px floor at both densities. Stacked steppers cannot fit two 24px
+ *   targets in the dense control height.
  */
 export const numberFieldVariants = tv({
   slots: {
@@ -41,7 +42,7 @@ export const numberFieldVariants = tv({
     denomination: "text-sm px-(--control-px-xs) py-1 text-muted-foreground",
     steppers: "flex h-full",
     stepper:
-      "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted",
+      "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-transparent p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted",
   },
   variants: {
     size: {
