@@ -6,6 +6,7 @@
  * gap, and to settle the text declarations of a box that shows no label.
  */
 
+import type { CapturedText } from "./box-cascade";
 import { describeColor } from "./box-paint";
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
@@ -23,6 +24,7 @@ import type {
   TextLayerSpec,
   TextSizingSpec,
 } from "./kit-spec";
+import { checkLabelText } from "./label-text";
 import type { CoverageNote, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 import { readType } from "./typography";
@@ -85,6 +87,8 @@ export type LabelScope = {
    * first character and the ellipsis, where the browser and a Figma text both draw it.
    */
   readonly ellipsisFits: boolean;
+  /** The text the capture recorded for the label in the cell, which `label-text.ts` checks its characters against. */
+  readonly captured: CapturedText;
 };
 
 /** The text properties a label reads, which a box without a label drops. */
@@ -406,6 +410,7 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
   }
   const lines = label.placement?.lines;
   const characters = labelCharacters(label, scope.cell);
+  checkLabelText(style, characters, scope.captured, scope);
   const layout: LabelLayout =
     lines === undefined
       ? readLabelLayout(

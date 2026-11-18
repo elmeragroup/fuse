@@ -24,8 +24,11 @@ export const ACTION_BAR_HOST_WIDTH = 576;
 /** How many rows the docs default demo selects, which the count shows. */
 export const ACTION_BAR_COUNT = 2;
 
-/** The count's text in en-US for {@link ACTION_BAR_COUNT}, the default of its `Count` property. */
-export const ACTION_BAR_COUNT_TEXT = "2 selected";
+/**
+ * The count's text in en-US for {@link ACTION_BAR_COUNT}, the default of its `Count` property. Fuse's
+ * `countOf` joins the number and the word with a no-break space, so the two never part.
+ */
+export const ACTION_BAR_COUNT_TEXT = "2\u00A0selected";
 
 /** An action of the docs default demo: its words and the icon its `Start icon` property picks. */
 type Action = { readonly key: string; readonly label: string; readonly icon: string };

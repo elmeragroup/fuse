@@ -587,3 +587,93 @@ describe("a label under whitespace-pre", () => {
     ]);
   });
 });
+
+// Oracle: the text the browser rendered, as the capture recorded it for the label's element (#779),
+// under the label's white space rules (CSS Text 3 §4.1.1): `normal` folds runs of spaces, tabs and
+// line feeds, `pre-line` keeps the line feeds, `pre` keeps every character, and a no-break space
+// (U+00A0) is no white space. The label's text is its element's text nodes and those of the elements
+// below it that draw no layer, in order, each where it is visible (CSS 2.1 §11.2). The kit draws a
+// label's manifest copy, so copy that differs from that text, as a day of `5` where the browser
+// renders `05`, would show text the component never renders, and the build refuses it. A label none
+// of whose text paints may differ.
+describe("a label's manifest copy beside the captured text", () => {
+  /** A label that shows the given characters. */
+  const showing = (characters: string): LabelManifest => ({ ...LABEL, characters });
+
+  it.each([
+    ["the same text", "flex", { text: "Label" }, "Label"],
+    ["text whose white space `normal` folds", "flex", { text: "  La \n bel " }, "La bel"],
+    ["the spaces `pre` keeps", "flex whitespace-pre", { text: "A  B" }, "A  B"],
+    [
+      "the line feed `pre-line` keeps",
+      "flex whitespace-pre-line",
+      { text: "Line one  \n  Line two" },
+      "Line one\nLine two",
+    ],
+    ["a no-break space", "flex", { text: "1\u00A0234" }, "1\u00A0234"],
+    [
+      "text split across its own node and a span",
+      "flex",
+      { text: "Hel", textIndex: 0, children: [{ tag: "span", text: "lo" }] },
+      "Hello",
+    ],
+    [
+      "text split across two spans",
+      "flex",
+      {
+        text: "",
+        children: [
+          { tag: "span", text: "La" },
+          { tag: "span", text: "bel" },
+        ],
+      },
+      "Label",
+    ],
+    ["text that paints nothing", "flex invisible", { text: "30" }, "Label"],
+  ])("builds with %s", async (_, classes, root, characters) => {
+    const { variant } = await buildLabelled(classes, root, showing(characters));
+    expect(textOf(variant?.root)?.characters).toBe(characters);
+  });
+
+  it.each([
+    ["another word", "flex", { text: "Lable" }, "Label", '"Label", where the browser renders "Lable"'],
+    [
+      "spaces `pre` keeps",
+      "flex whitespace-pre",
+      { text: "A  B" },
+      "A B",
+      '"A B", where the browser renders "A  B"',
+    ],
+    [
+      "a line feed `pre-line` keeps",
+      "flex whitespace-pre-line",
+      { text: "Line one\nLine two" },
+      "Line one Line two",
+      'renders "Line one\\nLine two"',
+    ],
+    ["a space for a no-break space", "flex", { text: "1\u00A0234" }, "1 234", 'renders "1\u00A0234"'],
+    [
+      "text split across two spans",
+      "flex",
+      {
+        text: "",
+        children: [
+          { tag: "span", text: "La" },
+          { tag: "span", text: "bel" },
+        ],
+      },
+      "Wrong",
+      '"Wrong", where the browser renders "Label"',
+    ],
+    ["an element with no text", "flex", { text: "" }, "Label", '"Label", where the browser renders ""'],
+    [
+      "a visible span under a hidden box",
+      "flex invisible",
+      { text: "", children: [{ tag: "span", classes: "visible", text: "Actual" }] },
+      "Wrong",
+      'renders "Actual"',
+    ],
+  ])("fails against %s", async (_, classes, root, characters, message) => {
+    await expect(buildLabelled(classes, root, showing(characters))).rejects.toThrow(message);
+  });
+});

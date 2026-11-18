@@ -106,6 +106,17 @@ export type BoxCascade = {
     readonly key: string;
   }): { readonly style: LayerStyle; readonly measured: MeasuredBox } | undefined;
   /**
+   * The text the capture recorded for this box's label: the value of the attribute a control holds
+   * its text in, such as an `<input>`'s `placeholder`, or else the box element's own text nodes and
+   * those of the elements below it that no layer draws, in document order, each where its element is
+   * visible.
+   *
+   * @param attribute - The attribute the label's text is in, or undefined for text nodes.
+   * @returns The text and where it came from, `Hidden` where none of it paints, or `Unresolved`
+   *   with why the capture holds no text for it.
+   */
+  capturedText(attribute: string | undefined): CapturedText;
+  /**
    * Cascade an icon this box shows, over what this box passes down.
    *
    * @param slot - The icon.
@@ -131,6 +142,15 @@ export type BoxCascade = {
    */
   readonly heightBasis?: PreviewLength | undefined;
 };
+
+/**
+ * The text the capture recorded for a label, as {@link BoxCascade.capturedText} reads it: painted, from
+ * an attribute or from text nodes; hidden, where nothing of it paints; or unresolved, with why.
+ */
+export type CapturedText =
+  | { readonly _tag: "Painted"; readonly source: "attribute" | "nodes"; readonly text: string }
+  | { readonly _tag: "Hidden" }
+  | { readonly _tag: "Unresolved"; readonly reason: string };
 
 /** What a capture measured of a box's element, as {@link BoxCascade.measured} says. */
 export type MeasuredBox = {

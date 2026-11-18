@@ -5,7 +5,8 @@
  * - `Command palette` is `Command.Content`'s Dialog popup, `<div role="dialog"
  *   data-slot="command-content">`, 1 cell. It is fixed in its viewport (`COMMAND_DIALOG_VIEWPORT`).
  *   It holds:
- *   - the input, `Command.Input`, an `Input group` instance in its search form;
+ *   - the input, `Command.Input`, an `Input group` instance in its search form, its `Text` the
+ *     input's en-US placeholder;
  *   - the empty message, `Command.Empty`, which holds nothing while rows match and so draws no layer;
  *   - the list, `Command.List`, the demo's six commands as `Command item` instances at rest. Base UI
  *     highlights the first on open, and the compare page clears every highlight a client slot shows,
@@ -21,6 +22,7 @@ import {
   COMMAND_DIALOG_COMMANDS,
   COMMAND_DIALOG_EMPTY_TEXT,
   COMMAND_DIALOG_HINTS,
+  COMMAND_DIALOG_PLACEHOLDER,
   COMMAND_DIALOG_VIEWPORT,
 } from "./command-dialog-text";
 import { COMMAND_ITEM_MANIFEST } from "./command-kit";
@@ -70,6 +72,7 @@ export const COMMAND_PALETTE_MANIFEST: SetManifest = {
       of: INPUT_GROUP_MANIFEST,
       slot: "command-input",
       cell: () => ({ form: "search", state: "rest" }),
+      properties: () => ({ text: { Text: COMMAND_DIALOG_PLACEHOLDER } }),
       shownIn: always,
       exposed: true,
     },
