@@ -529,6 +529,22 @@ describe("fuseVariableSet", () => {
         dense: 8,
         comfortable: 12,
       },
+      // A Tabs trigger is its list's content height less 1px: --control-h-md, 2.25rem dense and
+      // 2.75rem comfortable, less the default list's 4px padding on each side, or the line list's 3px.
+      {
+        name: "tabs-trigger-h",
+        webSyntax: "calc(var(--control-h-md) - 8px - 1px)",
+        scopes: ["WIDTH_HEIGHT"],
+        dense: 27,
+        comfortable: 35,
+      },
+      {
+        name: "tabs-line-trigger-h",
+        webSyntax: "calc(var(--control-h-md) - 6px - 1px)",
+        scopes: ["WIDTH_HEIGHT"],
+        dense: 29,
+        comfortable: 37,
+      },
     ] as const;
     for (const { name, webSyntax, scopes, dense, comfortable } of formulas) {
       expect(spec("Fuse density", name)).toMatchObject({ type: "FLOAT", scopes, webSyntax });

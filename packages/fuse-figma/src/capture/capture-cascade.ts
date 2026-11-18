@@ -29,7 +29,6 @@ import type {
   MeasuredBox,
   PseudoCascade,
 } from "../components/box-cascade.ts";
-import { percentHeightBasis } from "../components/box-sizing.ts";
 import { KitUnmappable } from "../components/build-errors.ts";
 import { variantKey } from "../components/component-spec.ts";
 import type {
@@ -58,6 +57,7 @@ import type {
   Layer,
   Recorder,
 } from "../components/layer-style.ts";
+import { percentHeightBasis } from "../components/percent-height.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH } from "./capture-format.ts";
 import type {
   CapturedCell,
@@ -857,10 +857,11 @@ export class CaptureCellCascade {
         this.#read.instancedIn
       );
       // The elements around the root and the root itself, from which box sizing reads the basis.
-      box.heightBasis = normalizeCss(box.style.resolved("height") ?? "").endsWith("%")
+      box.heightBasis = normalizeCss(box.style.resolved("height") ?? "").includes("%")
         ? percentHeightBasis(
             [...path.own.map(({ layer }) => new LayerStyle(this.#ledger, layer, [])), box.style],
-            this.#read.context.variables
+            this.#read.context.variables,
+            { lengthAsDeclared: first.root.measured?.basisAsDeclared === true }
           )
         : undefined;
       return box;
@@ -1878,6 +1879,7 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     underMaxWidth: facts?.underMaxWidth === true,
     freeAlongMain: facts?.freeAlongMain === true,
     fitsAlongMain: facts?.fitsAlongMain === true,
+    itemsAtContent: facts?.itemsAtContent === true,
     tableTiles: facts?.tableTiles === true,
     inlineRow: facts?.inlineRow === true,
     widest: facts?.widest === true,

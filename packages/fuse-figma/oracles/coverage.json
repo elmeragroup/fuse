@@ -197,6 +197,13 @@
       "className": "h-[var(--field-h,var(--control-h-md))]",
       "property": "height",
       "reason": "The field box's height sets the content height the stepper's `h-full` takes, which binds `field-box-content-h` on the stepper's own row."
+    },
+    {
+      "set": "tabs-trigger",
+      "part": "tabs-list",
+      "className": "group-data-horizontal/tabs:h-(--control-h-md)",
+      "property": "height",
+      "reason": "The list's height sets the content height the trigger's `h-[calc(100%-1px)]` takes, which binds `tabs-trigger-h` or `tabs-line-trigger-h` on the trigger's own row."
     }
   ],
   "unshown": {
@@ -3617,7 +3624,124 @@
         "part": "year",
         "className": "forced-colors:focus:text-[HighlightText]"
       }
-    ]
+    ],
+    "tabs-trigger": [
+      {
+        "part": "tabs-trigger",
+        "className": "[&_svg:not([class*='size-'])]:size-4"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "[&_svg]:pointer-events-none"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "[&_svg]:shrink-0"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:border-error"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:ring-3"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "aria-invalid:ring-error/20"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:border-error"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:ring-3"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "data-invalid:ring-error/20"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "disabled:cursor-not-allowed"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "disabled:opacity-50"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-vertical/tabs:after:-right-1"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-vertical/tabs:after:inset-y-0"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-vertical/tabs:after:w-0.5"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-vertical/tabs:justify-start"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-vertical/tabs:w-full"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-icon-md)"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-icon-md)"
+      }
+    ],
+    "tabs-list": [
+      {
+        "part": "tabs-list",
+        "className": "group-data-vertical/tabs:flex-col"
+      },
+      {
+        "part": "tabs-list",
+        "className": "group-data-vertical/tabs:h-fit"
+      }
+    ],
+    "tabs-content": []
   },
   "unreached": [
     {
@@ -6620,6 +6744,25 @@
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["timeline-list/state=rest 0/root/0::before", "timeline-list/state=rest 0/root/1::before"]
+    },
+    {
+      "set": "tabs-trigger",
+      "part": "tabs-trigger",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": [
+        "tabs-trigger/variant=default,state=active 0/root::after",
+        "tabs-trigger/variant=default,state=disabled 0/root::after",
+        "tabs-trigger/variant=default,state=focus 0/root::after",
+        "tabs-trigger/variant=default,state=hover 0/root::after",
+        "tabs-trigger/variant=default,state=rest 0/root::after",
+        "tabs-trigger/variant=line,state=active 0/root::after",
+        "tabs-trigger/variant=line,state=disabled 0/root::after",
+        "tabs-trigger/variant=line,state=focus 0/root::after",
+        "tabs-trigger/variant=line,state=hover 0/root::after",
+        "tabs-trigger/variant=line,state=rest 0/root::after"
+      ]
     }
   ]
 }

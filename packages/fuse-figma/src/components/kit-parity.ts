@@ -330,7 +330,13 @@ export const KIT_PARITY = {
   span: { kind: "excluded", reason: TEXT_STYLE },
   switch: { kind: "partial", sets: ["switch"], missing: "The invalid focus ring.", issue: MISSING_SETS },
   table: { kind: "issue", issue: MISSING_SETS },
-  tabs: { kind: "issue", issue: MISSING_SETS },
+  tabs: {
+    kind: "partial",
+    sets: ["tabs-trigger", "tabs-list", "tabs-content"],
+    missing:
+      "The vertical orientation, triggers with icons, and an active trigger hovered or focused, since the trigger's one `state` axis holds active beside them.",
+    issue: MISSING_SETS,
+  },
   text: { kind: "excluded", reason: TEXT_STYLE },
   "text-field": {
     kind: "partial",

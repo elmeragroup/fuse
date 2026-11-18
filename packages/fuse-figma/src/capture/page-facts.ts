@@ -81,6 +81,16 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   margins at zero, leave at least {@link FIT_CLEARANCE_PX} between the last and its content box's
  *   end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the line's items fit it
  *   and none shrinks (CSS Flexbox 1 §9.7).
+ * - `basisAsDeclared`, on the root: a root whose computed `height` holds a percentage, as CSS Typed
+ *   OM gives it, where the first element above it whose computed `height` is a length is as tall as
+ *   that length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}, so no flex column
+ *   around it grew or shrank it and the root's percentage resolves against it.
+ * - `itemsAtContent`: a flex row that neither wraps nor reverses, with two or more in-flow items that
+ *   grow, each as wide as its own max-content width and that as wide as its min-content width, within
+ *   {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have loaded. It holds
+ *   for the text the capture renders, and shows Chromium sizing a row that hugs its items as wide as
+ *   their content widths together (CSS Flexbox 1 §9.7). `content-shares.ts` reads it only beside
+ *   declarations that keep it for any text.
  * - `ellipsisFits`: an element that ends its one line of text in an ellipsis, `text-overflow:
  *   ellipsis` on a box that hides its overflow and keeps to one line, whose content box is at least
  *   a pixel wider than its first character and the ellipsis together. Chromium keeps the first
@@ -640,6 +650,52 @@ const MEASURE_IN_PAGE = `async function () {
     }
     return top < bottom;
   };
+  // A flex row's items that grow, each as wide as its own max-content width: the row's free space,
+  // spread from their bases, leaves none of them wider than its content.
+  const growing = (element) => [...element.children].filter(inFlow).filter((child) => (Number.parseFloat(getComputedStyle(child).flexGrow) || 0) > 0);
+  const atContent = (element) => {
+    const style = getComputedStyle(element);
+    if (!style.display.endsWith("flex") || style.flexDirection !== "row" || style.flexWrap !== "nowrap") { return false; }
+    const items = growing(element);
+    // Each item is as wide as its max-content, and that is its min-content too, for the text the
+    // capture renders; the build reads the fact only where declarations keep it for any text.
+    return items.length > 1 && items.every((item) => {
+      const width = item.getBoundingClientRect().width;
+      const most = withStyles([[item, "flex", "none"], [item, "width", "max-content"]], () => item.getBoundingClientRect().width);
+      const least = withStyles([[item, "flex", "none"], [item, "width", "min-content"]], () => item.getBoundingClientRect().width);
+      return Math.abs(width - most) < ${String(LAYOUT_UNIT_PX)} && Math.abs(most - least) < ${String(LAYOUT_UNIT_PX)};
+    });
+  };
+  // A root whose height is a percentage, and the first element above it whose computed height is a
+  // length: that element is as tall as that length, so a column around it neither grew nor shrank it.
+  const pxHeight = (element) => {
+    const value = element.computedStyleMap().get("height");
+    return value !== null && value !== undefined && "unit" in value && value.unit === "px" ? value.value : undefined;
+  };
+  const percentHeight = (element) => {
+    const value = element.computedStyleMap().get("height");
+    return value !== null && value !== undefined && !("value" in value && typeof value.value === "string") && pxHeight(element) === undefined;
+  };
+  const lengthAbove = (element) => {
+    for (let up = element.parentElement; up !== null; up = up.parentElement) {
+      if (pxHeight(up) !== undefined) { return up; }
+    }
+    return undefined;
+  };
+  const basisAsDeclared = (element) => {
+    const above = lengthAbove(element);
+    if (above === undefined) { return false; }
+    const style = getComputedStyle(above);
+    const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
+    const box = above.getBoundingClientRect().height;
+    const used = style.boxSizing === "border-box" ? box : box - px("padding-top") - px("padding-bottom") - px("border-top-width") - px("border-bottom-width");
+    return Math.abs(used - (pxHeight(above) ?? Number.NaN)) < ${String(LAYOUT_UNIT_PX)};
+  };
+  if (percentHeight(root) && (await holdsInEveryMode([{ element: root, path: "" }], basisAsDeclared)).length > 0) {
+    put("", "basisAsDeclared", true);
+  }
+  const growingRows = elements.filter(({ element }) => getComputedStyle(element).display.endsWith("flex") && growing(element).length > 1);
+  for (const { path } of await holdsInEveryMode(growingRows, atContent)) { put(path, "itemsAtContent", true); }
   for (const { inline } of await holdsInEveryMode(inlineRows, oneRow)) {
     for (const item of inline) {
       const path = pathOf.get(item);

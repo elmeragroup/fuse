@@ -328,7 +328,7 @@
           "pseudo": {},
           "variables": {"--sidebar-border":{"_tag":"theme"},"--sidebar-width":{"_tag":"element","up":2},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-(--sidebar-width-icon)","group-data-[side=right]:border-l"],
-          "measured": {"coincidingAround":3},
+          "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",
@@ -841,7 +841,7 @@
           "pseudo": {},
           "variables": {"--sidebar-border":{"_tag":"theme"},"--sidebar-width-icon":{"_tag":"element","up":2},"--tw-border-style":{"_tag":"unset"}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[side=right]:border-l"],
-          "measured": {"coincidingAround":3},
+          "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",
@@ -1348,7 +1348,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width":{"_tag":"element","up":2}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"],
-          "measured": {"coincidingAround":3},
+          "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",
@@ -1861,6 +1861,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width-icon":{"_tag":"element","up":2}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]"],
+          "measured": {"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",

@@ -98,6 +98,9 @@ import sidebarMenuSub from "../../captures/sidebar-menu-sub.json" with { type: "
 import sidebar from "../../captures/sidebar.json" with { type: "json" };
 import skeleton from "../../captures/skeleton.json" with { type: "json" };
 import switchCapture from "../../captures/switch.json" with { type: "json" };
+import tabsContent from "../../captures/tabs-content.json" with { type: "json" };
+import tabsList from "../../captures/tabs-list.json" with { type: "json" };
+import tabsTrigger from "../../captures/tabs-trigger.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
 import textareaField from "../../captures/textarea-field.json" with { type: "json" };
 import textarea from "../../captures/textarea.json" with { type: "json" };
@@ -170,6 +173,9 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["calendar-day", calendarDay],
   ["date-field", dateField],
   ["date-picker", datePicker],
+  ["tabs-trigger", tabsTrigger],
+  ["tabs-list", tabsList],
+  ["tabs-content", tabsContent],
   ["confirm-button", confirmButton],
   ["toggle", toggle],
   ["icon-toggle", iconToggle],

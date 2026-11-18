@@ -36,7 +36,7 @@ afterAll(async () => {
 /** Measure the root `#root` of the markup: each element's facts, by its path from the root. */
 async function factsOf(markup: string): Promise<ReadonlyMap<string, MeasuredFacts>> {
   await page.setContent(
-    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important}</style><main data-compare-cell>${markup}</main>`
+    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important} :root[data-density="comfortable"] .widens{width:300px!important}</style><main data-compare-cell>${markup}</main>`
   );
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
@@ -112,5 +112,44 @@ describe("a flex line the capture measures as fitting its items", () => {
     ["200px", "narrows", { fits: false, free: false }],
   ])("in a %s row %s: %o", async (width, className, expected) => {
     expect(await facts(width, className)).toEqual(expected);
+  });
+});
+
+/**
+ * Unit under test: the page function's `itemsAtContent`. Oracle: Chromium's layout of a row of two
+ * `flex: 1` items holding one word each, `a` and `bbbbbbbb` (CSS Flexbox 1 §9.7). A `fit-content` row
+ * is as wide as their content together, and the wider word's min-content passes its half of that, so
+ * each item ends at its own content width. A 300px row shares its free space between them, so each is
+ * wider than its word, and a row that is 300px in the comfortable density does so there. Two items
+ * holding `cc cc` that may wrap sit at their content in a `fit-content` row, but a narrower share
+ * would wrap them rather than keep them at it, so they record nothing either.
+ */
+describe("a flex row's growing items the capture measures at their content widths", () => {
+  /** Whether the row of the given style and class records `itemsAtContent`, around two items of the given text and wrapping. */
+  async function atContent(
+    style: string,
+    className = "",
+    items: { readonly a: string; readonly b: string; readonly wrap: string } = {
+      a: "a",
+      b: "bbbbbbbb",
+      wrap: "nowrap",
+    }
+  ): Promise<boolean> {
+    const facts = await factsOf(
+      `<div id="root" class="${className}" style="display:flex;${style}"><span style="flex:1;white-space:${items.wrap}">${items.a}</span><span style="flex:1;white-space:${items.wrap}">${items.b}</span></div>`
+    );
+    return facts.get("")?.itemsAtContent === true;
+  }
+
+  it.each([
+    ["a fit-content row", "width:fit-content", "", true],
+    ["a 300px row", "width:300px", "", false],
+    ["a fit-content row 300px wide comfortable", "width:fit-content", "widens", false],
+  ])("in %s: %s", async (_, style, className, expected) => {
+    expect(await atContent(style, className)).toBe(expected);
+  });
+
+  it("records nothing where the items' text can wrap, though each sits at its content", async () => {
+    expect(await atContent("width:fit-content", "", { a: "cc cc", b: "cc cc", wrap: "normal" })).toBe(false);
   });
 });

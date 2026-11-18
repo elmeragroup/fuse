@@ -110,6 +110,7 @@ import {
 } from "./sidebar-section-kit";
 import { SKELETON_MANIFEST } from "./skeleton-kit";
 import { SWITCH_MANIFEST } from "./switch-kit";
+import { TABS_CONTENT_MANIFEST, TABS_LIST_MANIFEST, TABS_TRIGGER_MANIFEST } from "./tabs-kit";
 import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA_MANIFEST } from "./textarea-kit";
@@ -253,6 +254,9 @@ const DATE_FIELD_PAGE: KitPage = { slug: "date-field", name: "Date field", examp
 
 /** The page Date picker sits on alone. */
 const DATE_PICKER_PAGE: KitPage = { slug: "date-picker", name: "Date picker", example: "date-picker" };
+
+/** The page Tabs trigger and Tabs list share. */
+const TABS_PAGE: KitPage = { slug: "tabs", name: "Tabs", example: "tabs-list" };
 
 /** The page Sheet content sits on alone. */
 const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
@@ -860,6 +864,13 @@ export const KIT: readonly KitEntry[] = [
     previewCells: possibleCells(DATE_PICKER_MANIFEST),
     manifest: DATE_PICKER_MANIFEST,
   },
+  {
+    page: TABS_PAGE,
+    previewCells: possibleCells(TABS_TRIGGER_MANIFEST),
+    manifest: TABS_TRIGGER_MANIFEST,
+  },
+  { page: TABS_PAGE, previewCells: possibleCells(TABS_LIST_MANIFEST), manifest: TABS_LIST_MANIFEST },
+  { page: TABS_PAGE, previewCells: possibleCells(TABS_CONTENT_MANIFEST), manifest: TABS_CONTENT_MANIFEST },
   {
     page: TIMELINE_LIST_PAGE,
     previewCells: possibleCells(TIMELINE_LIST_MANIFEST),

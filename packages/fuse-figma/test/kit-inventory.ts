@@ -425,6 +425,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Date picker",
     sets: [{ key: "date-picker", name: "Date picker", variants: 10, previewed: 10 }],
   },
+  {
+    slug: "tabs",
+    name: "Tabs",
+    sets: [
+      // The trigger in the list's 2 variants and 5 states.
+      { key: "tabs-trigger", name: "Tabs trigger", variants: 10, previewed: 10 },
+      // The default demo's list in its 2 variants.
+      { key: "tabs-list", name: "Tabs list", variants: 2, previewed: 2 },
+      // The default demo's first panel, at rest and focused.
+      { key: "tabs-content", name: "Tabs content", variants: 2, previewed: 2 },
+    ],
+  },
   // The docs default demo's three events, each item's connector and dot drawn by its place.
   {
     slug: "timeline-list",
