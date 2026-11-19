@@ -129,6 +129,8 @@ const TEXT_ALIGNS = new Map<string, Readonly<Record<LineDirection, Across>>>([
   ["center", { ltr: "CENTER", rtl: "CENTER" }],
   ["right", { ltr: "RIGHT", rtl: "RIGHT" }],
   ["end", { ltr: "RIGHT", rtl: "LEFT" }],
+  // Chromium's default style sheet centers a caption's text so, which a `revert` rolls back to.
+  ["-webkit-center", { ltr: "CENTER", rtl: "CENTER" }],
 ]);
 
 /** The direction a label's lines run in, which `direction` sets and a box passes down. */

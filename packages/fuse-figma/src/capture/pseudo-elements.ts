@@ -193,7 +193,8 @@ export type PseudoVerdict = CoverageNote & {
 
 /**
  * What becomes of a pseudo-element's declarations where the kit draws no layer for it: dropped where
- * its resolved style paints nothing, as a control's hit area does with empty content and no fill,
+ * its `display` is `none`, which generates no box, or where its resolved style paints nothing, as a
+ * control's hit area does with empty content and no fill,
  * border, shadow or outline, and unmapped where it paints or sets a longhand the build does not
  * read, such as a `backdrop-filter`, which blurs what lies behind it with no paint of its own.
  *
@@ -203,6 +204,15 @@ export type PseudoVerdict = CoverageNote & {
  * @returns The note each declaration takes, and whether the pseudo-element paints.
  */
 export function pseudoVerdict(style: LayerStyle, pseudo: string, variables: VariableIndex): PseudoVerdict {
+  // A pseudo-element whose `display` is `none` generates no box (CSS Display 3 §2.5), so whatever
+  // else it sets paints nothing.
+  if (normalizeCss(style.resolved("display") ?? "").toLowerCase() === "none") {
+    return {
+      outcome: "dropped",
+      detail: `the \`::${pseudo}\` pseudo-element generates no box, since its \`display\` is \`none\``,
+      paints: false,
+    };
+  }
   const properties = style.ownProperties();
   const verdicts = properties.map((property) => ({
     property,

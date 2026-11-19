@@ -56,6 +56,13 @@ const CapturedDeclarationSchema = Schema.Struct({
   className: Schema.String,
   /** How many elements up the class sits: 0 for the element itself, 1 for its parent. */
   owner: Schema.Finite,
+  /**
+   * The value the browser's default style sheet gives the declaration's longhand on the element,
+   * which a `revert` in the value rolls the cascade back to (CSS Cascade 4 §7.3.3), as a caption's
+   * `text-align: var(--table-caption-align, revert)` takes Chromium's `-webkit-center`. Recorded
+   * only where the value names `revert` and that style sheet sets the longhand.
+   */
+  revertsTo: Schema.optionalKey(Schema.String),
 });
 
 /** One winning declaration of an element. */
@@ -140,6 +147,12 @@ const MeasuredFactsSchema = Schema.Struct({
    * density and theme, so no column or row stretches a cell past what it holds.
    */
   tableTiles: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * A table row whose table collapses its borders in every density and theme, so its borders sit on
+   * the grid lines between the cells (CSS 2.1 §17.6.2) and take no room in its own box, and whose
+   * bordered edges no other box that shares them sets a border on (CSS 2.1 §17.6.2.1).
+   */
+  bordersCollapse: Schema.optionalKey(Schema.Literal(true)),
   /**
    * An item of a flex row whose own display is `inline`, which the row blockifies, where in every
    * density and theme the row's items sit on its one line in source order, each one box with its

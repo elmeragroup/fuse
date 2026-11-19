@@ -117,10 +117,7 @@ export type AccountedSet = {
  * box, so its clip clips nothing and its children paint.
  */
 function rendersNothing(element: CapturedElement, declarations: readonly CapturedDeclaration[]): boolean {
-  const won = (longhand: string): string | undefined =>
-    element.declarations
-      .map((index) => declarations[index])
-      .findLast((declaration) => declaration?.longhands.includes(longhand) === true)?.value;
+  const won = (longhand: string): string | undefined => wonBy(element.declarations, declarations, longhand);
   const display = won("display")?.trim();
   if (display === "none") {
     return true;
@@ -138,6 +135,56 @@ function rendersNothing(element: CapturedElement, declarations: readonly Capture
   }
   const [top = 0, right = top, bottom = top, left = right] = percents.map(Number);
   return top + bottom >= 100 || left + right >= 100;
+}
+
+/** The value of the declaration that wins a longhand among the given ones, or undefined. */
+function wonBy(
+  indexes: readonly number[],
+  declarations: readonly CapturedDeclaration[],
+  longhand: string
+): string | undefined {
+  return indexes
+    .map((index) => declarations[index])
+    .findLast((declaration) => declaration?.longhands.includes(longhand) === true)?.value;
+}
+
+/** An author declaration the check covers on one box of an element. */
+type CheckedDeclaration = {
+  /** The box it styles: "" for the element's own, `::before` for that pseudo-element's. */
+  readonly box: string;
+  /** Its index in the capture's declarations. */
+  readonly index: number;
+  readonly declaration: CapturedDeclaration;
+};
+
+/**
+ * The declarations the check covers on an element that renders something, box by box: the element's
+ * own, then each pseudo-element's, but none of a pseudo-element whose own `display` is `none`, which
+ * generates no box (CSS Display 3 §2.5), so nothing it sets shows. The browser's own style sheet is no
+ * author's and is left out, and so is a reset to the initial value. A set's own walk and an inner
+ * set's claim on a composite's declaration both read this, so an inner set lends only what its own
+ * walk checks.
+ */
+function checkedDeclarations(
+  element: CapturedElement,
+  declarations: readonly CapturedDeclaration[]
+): readonly CheckedDeclaration[] {
+  const boxes = [
+    ["", element.declarations] as const,
+    ...Object.entries(element.pseudo)
+      .filter(([, indexes]) => wonBy(indexes, declarations, "display")?.trim() !== "none")
+      .map(([pseudo, indexes]) => [`::${pseudo}`, indexes] as const),
+  ];
+  return boxes.flatMap(([box, indexes]) =>
+    indexes.flatMap((index) => {
+      const declaration = declarations[index];
+      return declaration === undefined ||
+        declaration.source === "user-agent" ||
+        isReset(declaration, index, element.initial)
+        ? []
+        : [{ box, index, declaration }];
+    })
+  );
 }
 
 /** The element at a place in a cell, as `0/root/1/0` names it, or undefined. */
@@ -178,9 +225,8 @@ function matchingChild(
  * own capture holds the same declaration, by class, property, value and source, at the element of
  * the inner cell that stands for the composite's, step by step below the inner root, as
  * {@link matchingChild} pairs them, and the inner set's own walk checks it there: no element on the
- * way renders nothing, and the inner declaration is neither the browser's own nor a reset. The inner
- * declaration styles the same box: the element's own for the element's, the same pseudo-element's
- * for a pseudo-element's. That set accounts for it in its own capture; anything else stays the
+ * way renders nothing, and {@link checkedDeclarations} holds the inner declaration on the same box,
+ * the element's own for the element's, the same pseudo-element's for a pseudo-element's. That set accounts for it in its own capture; anything else stays the
  * composite's to account for.
  */
 function ownedByInner(
@@ -217,19 +263,14 @@ function ownedByInner(
     composite = child;
     target = next;
   }
-  const boxed = box === "" ? target.declarations : (target.pseudo[box.slice(2)] ?? []);
-  return boxed.some((index) => {
-    const own = inner.declarations[index];
-    return (
-      own !== undefined &&
-      own.source !== "user-agent" &&
-      !isReset(own, index, target.initial) &&
-      own.className === declaration.className &&
-      own.property === declaration.property &&
-      own.value === declaration.value &&
-      own.source === declaration.source
-    );
-  });
+  return checkedDeclarations(target, inner.declarations).some(
+    (own) =>
+      own.box === box &&
+      own.declaration.className === declaration.className &&
+      own.declaration.property === declaration.property &&
+      own.declaration.value === declaration.value &&
+      own.declaration.source === declaration.source
+  );
 }
 
 /**
@@ -240,7 +281,7 @@ function ownedByInner(
  * same place is that set's, which its own check accounts for, whichever of the instances around the
  * element shows it; one no inner set holds there is the composite's, which passes it. The browser's own style sheet is no author's and is left out, and so is a reset to
  * the initial value. An element that renders nothing visible, and every element below it, is left
- * out too: no frame can show what it styles.
+ * out too, and so is a pseudo-element whose `display` is `none`: no frame can show what it styles.
  *
  * @param key - The set's key.
  * @param setOf - Each built set's capture and accounting, by key.
@@ -270,18 +311,8 @@ export function unaccountedDeclarations(
       // pass the declaration to the instance inside it, as Input group passes its button's classes.
       const holders = instances.filter((each) => place === each.place || place.startsWith(`${each.place}/`));
       // A pseudo-element's declarations are its own box's, so its place names it.
-      const boxes = [
-        ["", element.declarations] as const,
-        ...Object.entries(element.pseudo).map(([pseudo, indexes]) => [`::${pseudo}`, indexes] as const),
-      ];
-      for (const [box, index] of boxes.flatMap(([box, indexes]) =>
-        indexes.map((each) => [box, each] as const)
-      )) {
-        const declaration = capture.declarations[index];
+      for (const { box, index, declaration } of checkedDeclarations(element, capture.declarations)) {
         if (
-          declaration === undefined ||
-          declaration.source === "user-agent" ||
-          isReset(declaration, index, element.initial) ||
           accounting?.accounted.has(`${place}#${String(index)}`) === true ||
           holders.some((holder) => ownedByInner(declaration, cell, place, box, holder, setOf))
         ) {

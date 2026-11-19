@@ -356,6 +356,9 @@ function appliedOf(
   });
 }
 
+/** The keyword `revert`, apart from `revert-layer`. */
+const REVERT = /(?<![\w-])revert(?![\w-])/i;
+
 /**
  * A declaration's value, with a symbol the capture keeps in place of Base UI's measured pixels
  * resolved. The anchor's width is the cell's anchor's as the build maps it. Where the anchor hugs its
@@ -364,7 +367,8 @@ function appliedOf(
  * as every sample's is, and too narrow for a wider one, which the kit cannot draw yet (a composite's
  * popup instance carries no `min-width` of its own). The popup's width never follows its rows. The
  * anchor's centre, along a centred popup's side, is the popup's centre less half the element's own
- * size there; for a popup aligned to the anchor's start or end it does not resolve.
+ * size there; for a popup aligned to the anchor's start or end it does not resolve. A `revert` takes
+ * the value the browser's default style sheet gives the longhand, as the capture recorded it.
  */
 function resolvedValue(
   read: CellRead,
@@ -373,6 +377,11 @@ function resolvedValue(
 ): string | undefined {
   if (declaration.value === ANCHOR_WIDTH) {
     return read.anchorWidth ?? ownMinimum(read, element) ?? "auto";
+  }
+  if (declaration.revertsTo !== undefined) {
+    // `revert` is a CSS-wide keyword, so it stands for the whole value wherever it takes effect,
+    // a `var()`'s fallback included (CSS Variables 1 §3), and rolls back to the browser's value.
+    return declaration.value.replace(REVERT, declaration.revertsTo);
   }
   if (declaration.value !== ANCHOR_CENTRE) {
     return declaration.value;
@@ -2013,6 +2022,7 @@ function measuredBox(
     fitsAlongMain: facts?.fitsAlongMain === true,
     itemsAtContent: facts?.itemsAtContent === true,
     tableTiles: facts?.tableTiles === true,
+    bordersCollapse: facts?.bordersCollapse === true,
     inlineRow: facts?.inlineRow === true,
     widest: facts?.widest === true,
     holdsWidest: holds(element),

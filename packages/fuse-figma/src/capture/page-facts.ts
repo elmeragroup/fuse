@@ -68,10 +68,17 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   space between, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}: a table's or
  *   a group's rows down it, each as wide as it; a row's cells across it, each as tall as it; a cell's
  *   one child filling it and keeping its size where the cell shrinks to fit it as a block, so the
- *   child sizes itself, or its own text at the width and height the cell sets itself; and a table,
- *   a group or a row tiles only where each part it holds tiles in turn. Neither the
- *   columns nor the rows (CSS 2.1 §17.5) stretch a cell past what it holds, and no border spacing
- *   lies between them, so each box draws as an auto layout that hugs its parts.
+ *   child sizes itself, or its own text at the width and height the cell sets itself, or, where it
+ *   sets a height and no width and its text does not wrap, at that height and the width it takes as a
+ *   block at its max-content width; and a table, a group or a row tiles only where each part it holds tiles in turn. A row or
+ *   a row group of a table that collapses its borders sets them on the grid lines (CSS 2.1
+ *   §17.6.2), so its parts tile its border box. Neither the columns nor the rows (CSS 2.1 §17.5)
+ *   stretch a cell past what it holds, and no border spacing lies between them, so each box draws as
+ *   an auto layout that hugs its parts.
+ * - `bordersCollapse`: a table row whose table collapses its borders, in every mode of
+ *   {@link EVERY_MODE}, so its borders take no room in its own box (CSS 2.1 §17.6.2), and whose
+ *   borders are its own: no other box that can share one of its bordered edges sets a border there,
+ *   which could win that edge (CSS 2.1 §17.6.2.1).
  * - `inlineRow`: an item of a flex row whose own display is `inline`, which the row blockifies (CSS
  *   Display 3 §2.7), where in every mode of {@link EVERY_MODE}, once its faces have loaded, the row is
  *   a flex container that neither wraps nor reverses, the item is one of its in-flow items, and those
@@ -625,11 +632,21 @@ const MEASURE_IN_PAGE = `async function () {
   }
   // A table box whose parts tile its content box with no space between, each part as the box lays
   // it out: a table or a row group its rows down it, each as wide as it, a row its cells across it,
-  // each as tall as it, and a cell its one child, or its own text at the cell's own length, so no
-  // column or row stretches a cell past what it holds.
+  // each as tall as it, and a cell its one child, or its own text at the cell's own length, or, where
+  // it sets no width, at the width it takes as a block at its max-content width, so no column or row
+  // stretches a cell past what it holds.
   const near = (left, right) => Math.abs(left - right) < ${String(LAYOUT_UNIT_PX)};
+  // A row or a row group whose table collapses its borders sets them on the grid lines between the
+  // cells (CSS 2.1 §17.6.2), not inside its own box, so its parts span its border box.
+  const collapsesInto = (element) => {
+    const style = getComputedStyle(element);
+    return style.borderCollapse === "collapse" && ["table-row", "table-row-group", "table-header-group", "table-footer-group"].includes(style.display);
+  };
   const contentBox = (element) => {
     const box = element.getBoundingClientRect();
+    if (collapsesInto(element)) {
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+    }
     const style = getComputedStyle(element);
     const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
     return {
@@ -675,7 +692,24 @@ const MEASURE_IN_PAGE = `async function () {
       const box = element.getBoundingClientRect();
       const width = ownLength(element, "width");
       const height = ownLength(element, "height");
-      return width !== undefined && height !== undefined && near(box.width, width) && near(box.height, height);
+      if (width !== undefined && height !== undefined) {
+        return near(box.width, width) && near(box.height, height);
+      }
+      // A cell that sets a height and no width holds its text at its own height where the text
+      // fits it, and at the width it takes as a block at its max-content width, where no column
+      // stretches it, so it hugs its text across. Its text must not wrap, as Fuse's Table cells set
+      // with \`whitespace-nowrap\`: a designer's narrower column would otherwise wrap it to more lines
+      // than the fixed height holds.
+      const unwrapped = getComputedStyle(element).textWrapMode === "nowrap";
+      return unwrapped && width === undefined && height !== undefined && near(box.height, height) && withStyles([
+        [element, "display", "block"],
+        [element, "width", "max-content"],
+        [element, "height", "auto"],
+        [element, "min-height", height + "px"],
+      ], () => {
+        const alone = element.getBoundingClientRect();
+        return near(alone.width, box.width) && near(alone.height, box.height);
+      });
     }
     const across = display === "table-row";
     const wanted = across ? ["table-cell"] : ["table-row", "table-row-group", "table-header-group", "table-footer-group"];
@@ -695,6 +729,47 @@ const MEASURE_IN_PAGE = `async function () {
     return near(edge, across ? inner.right : inner.bottom) && parts.every((part) => tiles(part));
   };
   for (const { path } of await holdsInEveryMode(tableTiles, tiles)) { put(path, "tableTiles", true); }
+  // A row's collapsed border is its own only where no other box on the same grid line sets one: a
+  // wider one, a \`hidden\` one or a cell's equal one wins the line instead (CSS 2.1 §17.6.2.1).
+  // The check errs toward leaving a border out. On each side the row sets, none of these may set a
+  // border: its own cells, the next row on that side and that row's cells, the table, and any
+  // column, row group or spanning cell of the table.
+  const SIDES = ["top", "right", "bottom", "left"];
+  const OPPOSITE = { top: "bottom", bottom: "top", left: "right", right: "left" };
+  const borders = (element, side) => {
+    const style = getComputedStyle(element);
+    const kind = style.getPropertyValue("border-" + side + "-style");
+    return kind === "hidden" || (kind !== "none" && Number.parseFloat(style.getPropertyValue("border-" + side + "-width")) > 0);
+  };
+  const tableAround = (element) => {
+    let up = element.parentElement;
+    while (up !== null && !["table", "inline-table"].includes(getComputedStyle(up).display)) { up = up.parentElement; }
+    return up;
+  };
+  const ownsBorders = (row) => {
+    const own = SIDES.filter((side) => borders(row, side));
+    const table = tableAround(row);
+    if (own.length === 0) { return true; }
+    if (table === null) { return false; }
+    const boxes = (displays) => [...table.querySelectorAll("*")].filter((element) => displays.includes(getComputedStyle(element).display) && tableAround(element) === table);
+    const rows = boxes(["table-row"]);
+    const at = rows.indexOf(row);
+    const cellsOf = (element) => element === undefined ? [] : [...element.children].filter((cell) => getComputedStyle(cell).display === "table-cell");
+    const anywhere = [
+      ...boxes(["table-column", "table-column-group", "table-row-group", "table-header-group", "table-footer-group"]),
+      ...boxes(["table-cell"]).filter((cell) => cell.rowSpan > 1),
+    ];
+    const across = { top: rows[at - 1], bottom: rows[at + 1] };
+    return own.every((side) => {
+      const neighbor = across[side];
+      const same = [table, ...cellsOf(row)].map((box) => [box, side]);
+      const facing = (neighbor === undefined ? [] : [neighbor, ...cellsOf(neighbor)]).map((box) => [box, OPPOSITE[side]]);
+      const either = anywhere.flatMap((box) => [[box, side], [box, OPPOSITE[side]]]);
+      return ![...same, ...facing, ...either].some(([box, edge]) => borders(box, edge));
+    });
+  };
+  const tableRows = tableTiles.filter(({ element }) => getComputedStyle(element).display === "table-row");
+  for (const { path } of await holdsInEveryMode(tableRows, (row) => collapsesInto(row) && ownsBorders(row))) { put(path, "bordersCollapse", true); }
   // A flex row's items whose own display is \`inline\`, which the row blockifies: the page reads
   // each item's display with the row a block for a moment, where nothing blockifies it.
   const pathOf = new Map(elements.map(({ element, path }) => [element, path]));

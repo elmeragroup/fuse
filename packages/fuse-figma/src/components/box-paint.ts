@@ -89,6 +89,10 @@ function readBackgroundBlur(reader: LayerStyle): NumberSpec | undefined {
  * @param image - The bytes of the picture the box shows, or undefined for a box that shows none.
  * @param variables - The synced variables a paint can bind.
  * @param variant - The cell's variant key, for the error.
+ * @param collapsed - Whether the box is a table row whose table collapses its borders and whose
+ *   borders no box sharing their edges contests, as the capture read it, so its border takes no
+ *   room, on every side or on some, as {@link COLLAPSED} says. A row or row group without it leaves
+ *   its border unmapped, as {@link unownedRowBorder} says.
  * @returns The box's fill, stroke and shadows.
  * @throws When a box that shows a picture sets no `object-fit`, as {@link readImage} says.
  */
@@ -96,13 +100,15 @@ export function readPaint(
   reader: LayerStyle,
   image: (() => Uint8Array) | undefined,
   variables: VariableIndex,
-  variant: string
+  variant: string,
+  collapsed: boolean
 ): BoxPaint {
   const sided = BORDER_SIDES.some((side) => setsSide(reader, side));
-  const border =
-    reader.has("border-width") && !(sided && zeroesEverySide(reader, variables))
-      ? readStroke(reader, variables)
-      : readSideStroke(reader, variables);
+  const border = unownedRowBorder(reader, variables, sided, collapsed)
+    ? undefined
+    : reader.has("border-width") && !(sided && zeroesEverySide(reader, variables))
+      ? readStroke(reader, variables, collapsed)
+      : readSideStroke(reader, variables, collapsed);
   const cleared = readClearOutline(reader, variables);
   // A box holds one stroke, so its border keeps it.
   const bordered = reader.has("border-width") || sided;
@@ -320,9 +326,14 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
  * dashed stroke, as {@link dashesOf} says. A border with no style or any other style stays
  * unmapped, and so does one with no color, which would otherwise draw no stroke and leave no row. A
  * border of no width paints nothing whatever its style and color (CSS Backgrounds 3 §3), as a
- * Sidebar row's `border-0` resets its `<button>`'s, so it draws no stroke.
+ * Sidebar row's `border-0` resets its `<button>`'s, so it draws no stroke. A table row whose table
+ * collapses its borders takes no room for them, as {@link COLLAPSED} says.
  */
-function readStroke(root: LayerStyle, variables: VariableIndex): EverySideStroke | undefined {
+function readStroke(
+  root: LayerStyle,
+  variables: VariableIndex,
+  collapsed: boolean
+): EverySideStroke | undefined {
   if (!root.has("border-width")) {
     return undefined;
   }
@@ -345,7 +356,15 @@ function readStroke(root: LayerStyle, variables: VariableIndex): EverySideStroke
     "no class or base rule colors the border, so the stroke is left out"
   );
   const stroke = root.feed("stroke");
-  const weight = root.read("border-width", (value) => readNumber(value, variables), describeNumber, stroke);
+  const weight = root.read(
+    "border-width",
+    (value) => readNumber(value, variables),
+    (read) => {
+      const note = describeNumber(read);
+      return collapsed ? { ...note, detail: `${note.detail}, a stroke that ${COLLAPSED}` } : note;
+    },
+    stroke
+  );
   const style = root.read(
     "border-style",
     (value) => borderStyle(normalizeCss(value), weight),
@@ -356,10 +375,62 @@ function readStroke(root: LayerStyle, variables: VariableIndex): EverySideStroke
   if (style === undefined || weight === undefined || color === undefined) {
     return undefined;
   }
-  return style.dashPattern === undefined
-    ? { color, weight }
-    : { color, weight, dashPattern: style.dashPattern };
+  const drawn =
+    style.dashPattern === undefined ? { color, weight } : { color, weight, dashPattern: style.dashPattern };
+  return collapsed ? { ...drawn, inLayout: false } : drawn;
 }
+
+/**
+ * Why a table row's border takes no room where its table collapses its borders. CSS sets them on the
+ * grid lines between the rows (CSS 2.1 §17.6.2): Chromium keeps the row as tall as its cells and paints
+ * a 1px rule on the first pixel row below it, whatever sides the border sets. Figma draws the stroke
+ * inside the row, out of the layout, on its outer pixels, the nearest a stroke that stays in the row's
+ * own box comes, so the row's cells keep their height.
+ */
+const COLLAPSED =
+  "takes no room, since the table collapses its borders onto the grid lines between its rows (CSS 2.1 §17.6.2)";
+
+/** The displays of a table row and its row groups, whose borders a table sets on its grid lines. */
+const ROW_BOXES: ReadonlySet<string> = new Set([
+  "table-row",
+  "table-row-group",
+  "table-header-group",
+  "table-footer-group",
+]);
+
+/** A longhand of a box's border: a width, style or color, on every side or on one. */
+const BORDER_LONGHAND =
+  /^border-(?:(?:top|right|bottom|left|block|inline)(?:-start|-end)?-)?(?:width|style|color)$/;
+
+/**
+ * Whether a row's or a row group's border stays unmapped, and note it so: one that draws on some
+ * side, where the capture did not measure it as the row's own in a collapsed table
+ * (`bordersCollapse`). There, a box that shares one of its edges may win that edge (CSS 2.1
+ * §17.6.2.1), and a row group's border always lies on lines its rows and cells share. A separated
+ * table paints neither (CSS 2.1 §17.6.1). In each case no stroke on the box draws what the browser
+ * paints.
+ */
+function unownedRowBorder(
+  reader: LayerStyle,
+  variables: VariableIndex,
+  sided: boolean,
+  collapsed: boolean
+): boolean {
+  const draws = sided || (reader.has("border-width") && !zeroesEverySide(reader, variables));
+  if (collapsed || !draws || !ROW_BOXES.has(normalizeCss(reader.raw("display") ?? ""))) {
+    return false;
+  }
+  for (const property of reader.ownProperties()) {
+    if (BORDER_LONGHAND.test(property)) {
+      reader.mark(property, "unmapped", UNOWNED_ROW_BORDER, []);
+    }
+  }
+  return true;
+}
+
+/** Why a row's or a row group's border stays unmapped, as {@link unownedRowBorder} says. */
+const UNOWNED_ROW_BORDER =
+  "a table row's or row group's border, which the capture did not measure as the row's own on its grid lines (CSS 2.1 §17.6.2.1), so the stroke is left out";
 
 /** A box with no border, whose padding box is its border box. */
 const NO_BORDER = "none";
@@ -449,8 +520,14 @@ const sideWidth = (side: BorderSide) => `border-${side}-width`;
  * before the side's own width does. A box that also sets a `border-width` other than 0 takes the
  * stroke {@link readStroke} reads, and its sides stay unread, and so unmapped. A side's width that is no literal, a style other than solid, or no color leaves the
  * stroke out, with the sides that do not map unmapped.
+ *
+ * A table row whose table collapses its borders takes no room for them, as {@link COLLAPSED} says.
  */
-function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke | undefined {
+function readSideStroke(
+  root: LayerStyle,
+  variables: VariableIndex,
+  collapsed: boolean
+): SideStroke | undefined {
   const given = BORDER_SIDES.filter((side) => setsSide(root, side));
   const [first] = given;
   if (first === undefined) {
@@ -509,7 +586,9 @@ function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke 
       },
       (weight) => ({
         outcome: "literal",
-        detail: `a ${weight}px ${side} stroke that takes its room on that side (PS)`,
+        detail: collapsed
+          ? `a ${weight}px ${side} stroke that ${COLLAPSED}`
+          : `a ${weight}px ${side} stroke that takes its room on that side (PS)`,
       }),
       stroke
     );
@@ -526,7 +605,10 @@ function readSideStroke(root: LayerStyle, variables: VariableIndex): SideStroke 
     }
   }
   const color = root.read("border-color", (value) => readColor(value, variables), describeColor, stroke);
-  return complete && color !== undefined ? { color, sides } : undefined;
+  if (!complete || color === undefined) {
+    return undefined;
+  }
+  return collapsed ? { color, sides, inLayout: false } : { color, sides };
 }
 
 /** A border style the stroke draws: the dash pattern of a dashed one, and its coverage detail. */

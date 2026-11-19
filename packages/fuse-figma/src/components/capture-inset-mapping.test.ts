@@ -126,14 +126,17 @@ describe("an absolute part whose containing block lies above its static parent",
   });
 });
 
-/** A `relative` root whose `::before` paints a 1px line from 32px down to its full height. */
-function connector(measured: FixtureElement["measured"]) {
+/**
+ * A `relative` root whose `::before` paints a 1px line from 32px down to its full height, or, with
+ * `hidden`, generates no box.
+ */
+function connector(measured: FixtureElement["measured"], hidden = false) {
   const root: FixtureElement = {
     slot: "chip",
     classes: "relative",
     pseudo: {
       before: {
-        classes: "absolute top-8 left-[4px] h-full w-px bg-black",
+        classes: `absolute top-8 left-[4px] h-full w-px bg-black${hidden ? " hidden" : ""}`,
         written: [{ className: "before:content-['']", property: "content", value: '""' }],
       },
     },
@@ -318,6 +321,21 @@ describe("a painting ::before", () => {
       true,
     ]);
     expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // Oracle: CSS Display 3 §2.5. A `::before` whose `display` is `none` generates no box, as a
+  // Table body's `not-framed-table:before:hidden` leaves its shadow outside a frame.
+  it("draws no layer and drops its rows as generating no box where its display is none", async () => {
+    const { variant, coverage } = await connector(undefined, true);
+    expect(variant?.root.children).toEqual([]);
+    expect(unmapped(coverage)).toEqual([]);
+    expect([
+      ...new Set(
+        coverage
+          .filter((row) => row.className.startsWith("absolute") || row.property === "display")
+          .map((row) => row.detail)
+      ),
+    ]).toEqual(["the `::before` pseudo-element generates no box, since its `display` is `none`"]);
   });
 
   it("draws no layer and keeps its rows unmapped where the capture measured no box", async () => {

@@ -254,9 +254,15 @@ function singleVar(value: string): VarCall | undefined {
  * on the element that declared the property, as a child inherits it (CSS Custom Properties 1 §2),
  * so substitution takes it as it is. A computed value is undefined where a `var()` with no value and
  * no fallback left the property guaranteed-invalid (§3), and the reading `var()` takes its fallback.
+ *
+ * A declared value whose own `var()`s fail to resolve is invalid at computed-value time (§3): an
+ * unregistered property then holds the guaranteed-invalid value, and the reading `var()` takes its
+ * fallback, while a property registered with `@property` computes as `unset` would (CSS Properties
+ * and Values API 1), to its parent's computed value where it inherits and to its initial value
+ * where it does not, which `unset` computes only where the declared value fails.
  */
 export type CustomValue =
-  | { readonly value: string; readonly computed: false }
+  | { readonly value: string; readonly computed: false; readonly unset?: () => string | undefined }
   | { readonly value: string | undefined; readonly computed: true };
 
 /**
@@ -310,11 +316,18 @@ export function substituteVars(
       result += ownValue;
       continue;
     }
-    const replacement = ownValue ?? call.fallback;
-    if (replacement === undefined) {
-      return undefined;
+    const declared =
+      own?.computed === false && ownValue !== undefined
+        ? (substituteVars(ownValue, resolve, keep, read, depth + 1) ?? own.unset?.())
+        : undefined;
+    if (declared !== undefined) {
+      result += declared;
+      continue;
     }
-    const substituted = substituteVars(replacement, resolve, keep, read, depth + 1);
+    // The property holds the guaranteed-invalid value: nothing sets it, it is `initial`, or its own
+    // value read one with no fallback, so the reading `var()` takes its fallback.
+    const substituted =
+      call.fallback === undefined ? undefined : substituteVars(call.fallback, resolve, keep, read, depth + 1);
     if (substituted === undefined) {
       return undefined;
     }

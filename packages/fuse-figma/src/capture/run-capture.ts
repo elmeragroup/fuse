@@ -194,8 +194,36 @@ function resolveElement(element: RawElement, path: readonly Resolved[]): Resolve
   if (kept instanceof UnknownLayer) {
     return kept;
   }
+  const browser = resolveWinners(element.rules.filter((rule) => rule.source === "user-agent"));
+  if (browser instanceof UnknownLayer) {
+    return browser;
+  }
   const classes = classesUp(element, path);
-  return { element, all, kept: kept.map((winner) => capturedDeclaration(winner, classes)) };
+  return {
+    element,
+    all,
+    kept: kept.map((winner) => withRevert(capturedDeclaration(winner, classes), browser)),
+  };
+}
+
+/** The keyword `revert`, apart from `revert-layer`. */
+const REVERT = /(?<![\w-])revert(?![\w-])/i;
+
+/**
+ * A winner whose value names `revert`, with the value the browser's default style sheet gives its
+ * longhand on the element, which `revert` rolls the cascade back to (CSS Cascade 4 §7.3.3). Any
+ * other winner is as it was.
+ */
+function withRevert(
+  declaration: CapturedDeclaration,
+  browser: readonly Winner<RawRule>[]
+): CapturedDeclaration {
+  const [longhand] = declaration.longhands;
+  if (!REVERT.test(declaration.value) || declaration.longhands.length !== 1 || longhand === undefined) {
+    return declaration;
+  }
+  const reverted = browser.findLast(({ longhands }) => longhands.includes(longhand));
+  return reverted === undefined ? declaration : { ...declaration, revertsTo: reverted.property.value };
 }
 
 const VARIABLE = /var\(\s*(--[\w-]+)/g;

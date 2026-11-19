@@ -182,8 +182,9 @@ export type EverySideStroke = {
   readonly dashPattern?: readonly number[];
   /**
    * False for a stroke drawn from a CSS outline, which takes no room in the box's layout (CSS Basic
-   * UI 4 §5), so the box's layers keep their room under it, as Figma's `strokesIncludedInLayout`
-   * false draws. Absent for a border, which takes its room, as `box-sizing: border-box` counts it.
+   * UI 4 §5), or from a table row's border where its table collapses its borders (CSS 2.1 §17.6.2),
+   * so the box's layers keep their room under it, as Figma's `strokesIncludedInLayout` false draws.
+   * Absent for any other border, which takes its room, as `box-sizing: border-box` counts it.
    */
   readonly inLayout?: false;
 };
@@ -196,6 +197,13 @@ export type EverySideStroke = {
 export type SideStroke = {
   readonly color: ColorSpec;
   readonly sides: Readonly<Record<StrokeSide, number>>;
+  /**
+   * False for a table row's border where its table collapses its borders, which CSS sets on the grid
+   * line between rows (CSS 2.1 §17.6.2) and not inside the row, so the row's layers keep their room
+   * under it, as Figma's `strokesIncludedInLayout` false draws. Absent for a border that takes its
+   * room.
+   */
+  readonly inLayout?: false;
 };
 
 /** A side of a box's stroke. */
@@ -214,10 +222,10 @@ export function strokeRoom(stroke: StrokeSpec | undefined, side: StrokeSide): Nu
   if (stroke === undefined) {
     return ZERO;
   }
-  if ("sides" in stroke) {
-    return { kind: "literal", value: stroke.sides[side] };
+  if (stroke.inLayout === false) {
+    return ZERO;
   }
-  return stroke.inLayout === false ? ZERO : stroke.weight;
+  return "sides" in stroke ? { kind: "literal", value: stroke.sides[side] } : stroke.weight;
 }
 
 /**

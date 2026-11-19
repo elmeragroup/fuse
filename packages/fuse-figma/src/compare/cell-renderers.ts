@@ -461,6 +461,26 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./timeline-list-cell.ts")).timelineList,
   },
   {
+    set: "table-head",
+    entry: "dist/table.js",
+    load: async () => (await import("./table-cell.ts")).tableHead,
+  },
+  {
+    set: "table-cell",
+    entry: "dist/table.js",
+    load: async () => (await import("./table-cell.ts")).tableCell,
+  },
+  {
+    set: "table-row",
+    entry: "dist/table.js",
+    load: async () => (await import("./table-cell.ts")).tableRow,
+  },
+  {
+    set: "table-caption",
+    entry: "dist/table.js",
+    load: async () => (await import("./table-cell.ts")).tableCaption,
+  },
+  {
     set: "selection-item",
     entry: "dist/selection-item.js",
     load: async () => (await import("./selection-item-cell.ts")).selectionItem,
