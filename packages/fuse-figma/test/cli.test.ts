@@ -232,6 +232,40 @@ describe("fuse-figma check", () => {
   );
 });
 
+/** The distinct groups `depth` path segments deep, in the order a collection lists them. */
+function groups(names: readonly string[], depth: number): string[] {
+  return [...new Set(names.map((name) => name.split("/").slice(0, depth).join("/")))];
+}
+
+/** The scheme, identity and segment groups of `Fuse brand`, branded first inside each scheme. */
+const BRAND_GROUPS = [
+  "light/branded/private",
+  "light/branded/company",
+  "light/neutral/private",
+  "light/neutral/company",
+  "dark/branded/private",
+  "dark/branded/company",
+  "dark/neutral/private",
+  "dark/neutral/company",
+];
+
+describe("the order Figma lists the hidden variables in", () => {
+  it.effect("lists branded variables before neutral ones in a new file", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(groups(figma.variableNames("Fuse brand"), 3), BRAND_GROUPS);
+      assert.deepStrictEqual(groups(figma.variableNames("Fuse segment"), 2), [
+        "light/branded",
+        "light/neutral",
+        "dark/branded",
+        "dark/neutral",
+      ]);
+    })
+  );
+});
+
 describe("fuse-figma talking to Figma", () => {
   it.effect("waits out a rate-limited read for as long as Retry-After asks", () =>
     Effect.gen(function* () {

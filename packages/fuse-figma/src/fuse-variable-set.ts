@@ -837,9 +837,25 @@ const HIDDEN_METADATA = {
   description: "",
 } as const satisfies Pick<VariableSpec, "scopes" | "webSyntax" | "description">;
 
-/** Every scheme, identity and segment, in the order the hidden collections list them. */
+/**
+ * The identities in the order `Fuse segment` and `Fuse brand` list their variables, branded
+ * first. Figma lists a new collection's variables in the order the sync creates them. Branded
+ * values differ from brand to brand, while most neutral values repeat across brands, so the
+ * branded rows are the ones worth reading first. The `Fuse identity` modes keep
+ * `THEME_IDENTITIES` order, so a frame that pins no identity still gets Neutral.
+ */
+const LISTED_IDENTITIES: readonly ThemeIdentity[] = [
+  "branded",
+  ...THEME_IDENTITIES.filter((identity) => identity !== "branded"),
+];
+
+/**
+ * Every scheme, identity and segment, in the order the hidden collections list them. Scheme
+ * and segment keep the order of their modes, so light and private, which a frame that pins no
+ * mode shows, come first inside their group.
+ */
 const THEME_PATHS: readonly ThemePath[] = SCHEMES.flatMap((scheme) =>
-  THEME_IDENTITIES.flatMap((identity) => THEME_SEGMENTS.map((segment) => ({ scheme, identity, segment })))
+  LISTED_IDENTITIES.flatMap((identity) => THEME_SEGMENTS.map((segment) => ({ scheme, identity, segment })))
 );
 
 /**
@@ -896,7 +912,7 @@ function brandModeName(code: BrandCode): string {
 /** One variable per bound variable for each scheme and identity, aliasing the brand leaf of each segment. */
 function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
   const variables = SCHEMES.flatMap((scheme) =>
-    THEME_IDENTITIES.flatMap((identity) =>
+    LISTED_IDENTITIES.flatMap((identity) =>
       bound.map((variable): VariableSpec => ({
         name: segmentVariableName(scheme, identity, variable.name),
         type: variable.type,
