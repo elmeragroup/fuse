@@ -1,7 +1,7 @@
 /**
  * The kit check that reads only the kit. It refuses a spec that contradicts itself: a page key
  * listed twice, a node on a page the kit does not list, a set whose variants, axes or properties
- * disagree, a sizing, turn or stacking Figma cannot draw as CSS does, an instance layer the plugin
+ * disagree, a sizing, turn, stacking or grid Figma cannot draw as CSS does, an instance layer the plugin
  * cannot plan, a glyph it cannot draw in the glyph font, image bytes Figma cannot store or a hash
  * they do not give, and a preview that places what the kit lacks.
  *
@@ -13,6 +13,7 @@
 
 import { Data, Result } from "effect";
 
+import { gridFault } from "./grid-check.ts";
 import {
   coveredShadow,
   fixedLength,
@@ -168,6 +169,10 @@ const AXES = [
  * Figma refuses FILL on an absolute layer, as a real file did on 2026-10-22 (P8).
  */
 function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, name: string): void {
+  const grid = gridFault(box);
+  if (grid !== undefined) {
+    throw contradiction(`${set.name}: ${name} in the variant ${variant.key} ${grid}.`);
+  }
   for (const { axis, length, limits } of AXES) {
     const absolute = box.children.find(
       (child) => child.kind !== "icon" && outOfLayout(child) && child.sizing[axis].kind === "fill"
@@ -184,8 +189,9 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
         `${set.name}: ${name} in the variant ${variant.key} sets ${limit} on its fixed ${length}. Fold the limit into the ${length}, as CSS resolves a ${length} against its own limits.`
       );
     }
+    // A grid's layer fills its cell, whose track sets its length.
     const filling = box.children.find((child) => child.kind !== "icon" && child.sizing[axis].kind === "fill");
-    if (filling === undefined || box.sizing[axis].kind !== "hug") {
+    if (filling === undefined || box.sizing[axis].kind !== "hug" || box.grid !== undefined) {
       continue;
     }
     const across = (box.direction === "HORIZONTAL" ? "vertical" : "horizontal") === axis;

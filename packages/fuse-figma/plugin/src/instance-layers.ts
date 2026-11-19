@@ -43,7 +43,6 @@ import { planCorners, planLimit, planPaints, planScalar, planEffects, planVisibl
 import type { Held, Run } from "./fields.ts";
 import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
 import type { InnerSpecs } from "./fonts.ts";
-import { planGlyphRanges } from "./glyph-font.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
@@ -53,6 +52,7 @@ import { changeLater, changeWith, planWhenRun } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
+import { planGlyphFaces } from "./text-layer.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 type InnerVariant = {
@@ -629,7 +629,7 @@ function planOverrides(
 
 /**
  * Plan the glyph font on the glyph ranges of each label a TEXT property sets, in the characters it
- * shows. A TEXT write on the instance resets the label to one style, the default value included (G5),
+ * shows, and the weight binding of a label that binds one, as a main's label takes them. A TEXT write on the instance resets the label to one style, the default value included (G5),
  * and a range written after holds until the next (G6). A label at its default shows the main's
  * ranges (G4), so it plans nothing.
  */
@@ -638,7 +638,7 @@ function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root:
     const spec = layerAt(root, layer.path);
     const linked = spec !== undefined && "kind" in spec && spec.kind === "text" ? spec : undefined;
     if (layer.node.type === "TEXT" && linked?.textProperty !== undefined) {
-      planGlyphRanges(run, layer.node, layer.label, layer.node.characters, linked.fontStyle, false);
+      planGlyphFaces(run, layer.node, layer.label, linked, layer.node.characters, false);
     }
   }
 }

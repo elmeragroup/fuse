@@ -63,8 +63,12 @@
  *    changes, and binds no character. On `⌘K` a range binding of `⌘` to a STRING variable holding
  *    Inter gave `⌘` Inter bound to it, a range write of Inter Regular kept that binding, and a null
  *    range binding then left `⌘` Inter unbound and `K` Roboto bound to `font-sans` (G11). So a null
- *    range binding unbinds its range and keeps the font. No probe wrote a font over a bound
- *    `fontStyle` or `fontWeight`, so those bindings stay. `getStyledTextSegments` splits the
+ *    range binding unbinds its range and keeps the font. A whole `fontName` write over a text whose
+ *    `fontWeight` bound a FLOAT variable dropped that binding on 2026-11-18 (PG8), and a range write
+ *    drops it on its range, which PG13's whole-text binding written after the range writes, binding
+ *    every range, points to, as the fake models it; no probe has written a range's font after binding
+ *    its weight. No probe wrote a font over a bound `fontStyle`,
+ *    so that binding stays. `getStyledTextSegments` splits the
  *    characters where the fields it is asked for differ. It reads `fontName`, `fontSize` and
  *    `boundVariables` alone and throws for another field.
  * 51. Linking a text's characters resets it to its base style. On 2026-10-26, in a component, writing
@@ -106,8 +110,12 @@
  *    link then reset the text to Roboto Regular 18 bound to `v`, its family bound to `font-sans`
  *    (G12b). So the binding gives every character and the base style its value, and binds the
  *    characters whose family is the base style's, and the base style. The probe bound `fontSize`
- *    alone, and the fake treats `lineHeight`, `fontStyle` and `fontWeight` the same. It left open
- *    whether Figma tells the characters apart by their family or by the family binding they lost.
+ *    alone, and the fake treats `lineHeight` and `fontStyle` the same. It left open whether Figma
+ *    tells the characters apart by their family or by the family binding they lost. A `fontWeight`
+ *    binding binds every character: on 2026-11-18 a whole-text binding of a 400/500 FLOAT variable on
+ *    `⌘K Search`, its `⌘` set to Inter Regular by `setRangeFontName` first, bound every range, and a
+ *    mode switch moved `⌘` to Inter Medium and the rest to Roboto Medium, each in its own family
+ *    (PG13). A range binding bound only its range, which a mode switch then moved alone (PG13).
  */
 
 import { nearestInstance, propertyValue, rootMain } from "./overrides.ts";
@@ -267,9 +275,12 @@ export function bindWholeText(
     requireFont(state, font, field);
   }
   const { family } = state.baseStyle.font;
+  // A weight binds every character, each in its own family (PG13); another field only the base
+  // family's (G12b).
   restyleWhole(state, (style) => ({
     ...update(style),
-    bindings: style.font.family === family ? withBinding(style, field, id) : style.bindings,
+    bindings:
+      field === "fontWeight" || style.font.family === family ? withBinding(style, field, id) : style.bindings,
   }));
   write(state, `bind ${field}`);
 }
@@ -327,14 +338,21 @@ function boundUpdate(state: NodeState, field: VariableBindableTextField, variabl
 
 /**
  * A character's style once a font is written over it, which keeps its family binding only where its
- * family stays (rule 50).
+ * family stays and drops its weight binding (rule 50, PG8).
  */
 export function withFont(style: CharacterStyle, font: FontName): CharacterStyle {
   return {
     ...style,
     font: { family: font.family, style: font.style },
-    bindings:
-      style.font.family === font.family ? style.bindings : withBinding(style, "fontFamily", undefined),
+    bindings: withBinding(
+      {
+        ...style,
+        bindings:
+          style.font.family === font.family ? style.bindings : withBinding(style, "fontFamily", undefined),
+      },
+      "fontWeight",
+      undefined
+    ),
   };
 }
 

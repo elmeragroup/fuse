@@ -252,6 +252,16 @@ export type TruncationSpec = {
   readonly maxLines: number;
 };
 
+/**
+ * A text layer's weight bound to a FLOAT variable, which gives the layer in each mode the face its
+ * family names for the weight there, and every face it can show, which the plugin loads first.
+ */
+export type TextWeightSpec = {
+  readonly variable: VariableRef;
+  /** Each face the variable's weights name, lightest first, as `FONT_WEIGHT_STYLES` names them. */
+  readonly faces: readonly string[];
+};
+
 /** A text layer. `textProperty` names the component's TEXT property that sets its characters. */
 export type TextLayerSpec = {
   readonly kind: "text";
@@ -260,8 +270,13 @@ export type TextLayerSpec = {
   readonly characters: string;
   readonly textProperty: string | undefined;
   readonly fontFamily: StringSpec;
-  /** The Figma style of the font family, such as `Medium`, which the plugin loads. */
+  /**
+   * The Figma style of the font family, such as `Medium`, which the plugin loads: the face of the
+   * lightest weight where `weight` binds a variable.
+   */
   readonly fontStyle: string;
+  /** The variable the layer's `fontWeight` binds, absent for a layer whose weight is a literal. */
+  readonly weight?: TextWeightSpec;
   readonly fontSize: NumberSpec;
   readonly lineHeight: LineHeightSpec;
   readonly color: ColorSpec;
@@ -563,11 +578,38 @@ export type CounterAlignSpec = "MIN" | "CENTER" | "MAX";
 export type PrimaryAlignSpec = CounterAlignSpec | "SPACE_BETWEEN";
 
 /**
- * The axis along which an auto layout box places its children: a row or a column. No box is without
- * auto layout, which an absolute MAX instance needs to keep its end inset as density resizes it
+ * How an auto layout box places its children: along a row, down a column, or in the cells of a grid,
+ * Figma's `layoutMode` GRID, whose tracks and cells the box's `grid` holds. No box is without auto
+ * layout, which an absolute MAX instance needs to keep its end inset as density resizes it
  * (W5-P14b); `anchored-instances.test.ts` pins that.
  */
-export type DirectionSpec = "HORIZONTAL" | "VERTICAL";
+export type DirectionSpec = "HORIZONTAL" | "VERTICAL" | "GRID";
+
+/**
+ * One track of a grid, a column or a row, as Figma's `GridTrackSize` sizes it: `fixed` at a length in
+ * pixels; `flex`, a share of the room the fixed and hugging tracks leave, as CSS's `fr` takes it; or
+ * `hug`, as wide as what it holds, as CSS's `fit-content(100%)` takes it.
+ */
+export type GridTrackSpec =
+  | { readonly kind: "fixed"; readonly length: number }
+  | { readonly kind: "flex"; readonly share: number }
+  | { readonly kind: "hug" };
+
+/** Where one of a grid's layers sits: its row and column, from 0, each one track wide. */
+export type GridCellSpec = { readonly key: string; readonly row: number; readonly column: number };
+
+/**
+ * A grid's tracks, the gaps between them and the cell each of its layers in flow takes, which a box
+ * whose `direction` is GRID holds, and only such a box.
+ */
+export type GridSpec = {
+  readonly columns: readonly GridTrackSpec[];
+  readonly rows: readonly GridTrackSpec[];
+  readonly columnGap: NumberSpec;
+  readonly rowGap: NumberSpec;
+  /** Each layer in flow by its key, in the box's layer order. */
+  readonly cells: readonly GridCellSpec[];
+};
 
 /**
  * How a box sizes along one axis: a fixed length, the size of its content, or the room its
@@ -631,6 +673,8 @@ export type BoxSpec = {
   readonly paddingBottom: NumberSpec;
   readonly paddingLeft: NumberSpec;
   readonly itemSpacing: NumberSpec;
+  /** The grid a box whose `direction` is GRID lays its layers out in, absent for any other box. */
+  readonly grid?: GridSpec;
   /** Where the children sit along the direction, as `justify-content` places them. */
   readonly primaryAlign: PrimaryAlignSpec;
   /** Where the children sit across the direction, as `align-items` places them. */

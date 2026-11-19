@@ -62,6 +62,8 @@ function boxRefs(box: BoxSpec): BoundRef[] {
       box.paddingBottom,
       box.paddingLeft,
       box.itemSpacing,
+      box.grid?.columnGap,
+      box.grid?.rowGap,
       ...cornerLengths(box.cornerRadius),
       box.stroke !== undefined && "weight" in box.stroke ? box.stroke.weight : undefined,
       ...box.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
@@ -95,6 +97,7 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
     case "text":
       return [
         ...boundString(layer.fontFamily),
+        ...(layer.weight === undefined ? [] : [{ ref: layer.weight.variable, type: "FLOAT" as const }]),
         ...[
           layer.fontSize,
           layer.lineHeight.kind === "percent" ? undefined : layer.lineHeight,

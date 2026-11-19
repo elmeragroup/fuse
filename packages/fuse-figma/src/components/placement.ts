@@ -25,6 +25,7 @@ import {
   sumAffine,
 } from "./css-values";
 import type { AffineLength, VariableIndex, Viewport } from "./css-values";
+import type { GridPlan } from "./grid-layout";
 import { AXIS_CONSTRAINT, fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
@@ -53,9 +54,10 @@ export type Layout = {
   readonly blocks: boolean;
   /**
    * The flex box's direction, a row or a column. A `-webkit-box` that clamps its text and a box that
-   * stacks blocks are columns, and every other box is horizontal.
+   * stacks blocks are columns, and every other box is horizontal, a grid that draws as a Figma grid
+   * included, whose `grid` the box mapping draws as the spec's GRID direction.
    */
-  readonly direction: DirectionSpec;
+  readonly direction: Exclude<DirectionSpec, "GRID">;
   readonly primaryAlign: PrimaryAlignSpec;
   readonly counterAlign: CounterAlignSpec;
   /** Where `justify-content` packs the layers, or `unset` where nothing sets it. */
@@ -76,6 +78,11 @@ export type Layout = {
    * `readTableFlow` in `table-layout.ts` reads it. Absent elsewhere.
    */
   readonly table?: true;
+  /**
+   * The tracks and cells of a grid of two or more columns that draws as a Figma grid, as `planGrid`
+   * in `grid-layout.ts` plans it. Absent elsewhere.
+   */
+  readonly grid?: GridPlan;
   /**
    * True for a flex box of fixed or filling length whose `justify-content: space-between` the flow
    * leaves unread, since whether it spaces anything out depends on the layers it maps. The box mapping

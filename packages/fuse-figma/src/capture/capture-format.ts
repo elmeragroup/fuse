@@ -161,6 +161,34 @@ const MeasuredFactsSchema = Schema.Struct({
    * boxes laid out against the element, its containing block, so the kit draws each as a layer.
    */
   pseudoBoxes: Schema.optionalKey(Schema.Array(Schema.Literals(["before", "after"]))),
+  /**
+   * On a grid of two or more columns: the columns, from 0, that in every density and theme are as
+   * wide as their widest item at max-content, which a Figma HUG track draws.
+   */
+  gridHugs: Schema.optionalKey(Schema.Array(Schema.Finite)),
+  /**
+   * On a grid of two or more columns: the columns, from 0, that in every density and theme are wider
+   * than each of their items at min-content by a clearance no platform's font moves, so an `auto`
+   * floor under a flexible column binds nowhere.
+   */
+  gridHolds: Schema.optionalKey(Schema.Array(Schema.Finite)),
+  /**
+   * On a grid of two or more columns: for each column, the item, by its place among the grid's items,
+   * that in every density and theme is at least as wide as every other item in the column, or -1.
+   */
+  gridWidest: Schema.optionalKey(Schema.Array(Schema.Finite)),
+  /** The same for each row and the item at least as tall as every other item in it. */
+  gridTallest: Schema.optionalKey(Schema.Array(Schema.Finite)),
+  /** On such a grid, how many items it lays out, the same in every density and theme. */
+  gridItems: Schema.optionalKey(Schema.Finite),
+  /** On an item of such a grid, its place among the grid's items, from 0. */
+  gridItem: Schema.optionalKey(Schema.Finite),
+  /**
+   * In every density and theme, the element generates no box and adds nothing to its parent's flow
+   * but its children's boxes: `display: contents`, no text of its own and no `::before` or `::after`
+   * in flow (CSS Display 3 §2.5).
+   */
+  noBox: Schema.optionalKey(Schema.Literal(true)),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

@@ -451,6 +451,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./timeline-list-cell.ts")).timelineList,
   },
   {
+    set: "selection-item",
+    entry: "dist/selection-item.js",
+    load: async () => (await import("./selection-item-cell.ts")).selectionItem,
+  },
+  {
     set: "date-field",
     entry: "dist/date-field.js",
     load: async () => (await import("./date-field-cell.ts")).dateField,

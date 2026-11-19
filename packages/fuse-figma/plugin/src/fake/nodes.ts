@@ -3,6 +3,21 @@
  * public nodes, which `fake-figma.ts` gives the file for the modules below.
  */
 
+import {
+  alignOf,
+  autoTracksOf,
+  cellOf,
+  gapOf,
+  positioningOf,
+  requireGridAlignment,
+  setAlign,
+  setAutoTracks,
+  setGap,
+  setPositioning,
+  setTrackCount,
+  setTrackSizes,
+  tracksOf,
+} from "./grid.ts";
 import { guard } from "./guard.ts";
 import {
   addProperty,
@@ -72,7 +87,15 @@ import {
   stateOf,
   write,
 } from "./state.ts";
-import type { BindableField, CharacterStyle, Made, NodeState, NodeType, Sizing } from "./state.ts";
+import type {
+  BindableField,
+  CharacterStyle,
+  GridChildAlign,
+  Made,
+  NodeState,
+  NodeType,
+  Sizing,
+} from "./state.ts";
 import { linkTextStyle } from "./styles.ts";
 import {
   alignmentOf,
@@ -217,6 +240,32 @@ function pinMode(state: NodeState, collection: VariableCollection, modeId: strin
 
 /** The members every layer has. */
 class FakeSceneNode extends FakeBaseNode {
+  /** The row of the cell the layer takes in its grid (rule 61). */
+  get gridRowAnchorIndex(): number {
+    return cellOf(live(this), "gridRowAnchorIndex").row;
+  }
+
+  /** The column of the cell the layer takes in its grid (rule 61). */
+  get gridColumnAnchorIndex(): number {
+    return cellOf(live(this), "gridColumnAnchorIndex").column;
+  }
+
+  get gridChildHorizontalAlign(): GridChildAlign {
+    return alignOf(live(this), "horizontal");
+  }
+
+  set gridChildHorizontalAlign(value: GridChildAlign) {
+    setAlign(live(this), "horizontal", value);
+  }
+
+  get gridChildVerticalAlign(): GridChildAlign {
+    return alignOf(live(this), "vertical");
+  }
+
+  set gridChildVerticalAlign(value: GridChildAlign) {
+    setAlign(live(this), "vertical", value);
+  }
+
   /**
    * The page or layer that holds the layer, as the typings name it, or null where none does. The
    * plugin reads it to find a hidden child's fill (rule 42).
@@ -789,6 +838,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set primaryAxisAlignItems(value: FrameNode["primaryAxisAlignItems"]) {
     const state = live(this);
+    requireGridAlignment(state, "primaryAxisAlignItems", value);
     write(state, "primaryAxisAlignItems");
     state.primaryAxisAlignItems = value;
   }
@@ -811,6 +861,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
         `BASELINE can only be set on horizontal auto-layout frames, and ${state.id} has ${state.layoutMode}.`
       );
     }
+    requireGridAlignment(state, "counterAxisAlignItems", value);
     write(state, "counterAxisAlignItems");
     state.counterAxisAlignItems = value;
   }
@@ -853,6 +904,70 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "paddingLeft");
     state.padding.left = f32(value);
+  }
+
+  get gridItemsPositioning(): GridLayoutMixin["gridItemsPositioning"] {
+    return positioningOf(live(this));
+  }
+
+  set gridItemsPositioning(value: GridLayoutMixin["gridItemsPositioning"]) {
+    setPositioning(live(this), value);
+  }
+
+  get gridAutoTracks(): GridLayoutMixin["gridAutoTracks"] {
+    return autoTracksOf(live(this));
+  }
+
+  set gridAutoTracks(value: GridLayoutMixin["gridAutoTracks"]) {
+    setAutoTracks(live(this), value);
+  }
+
+  get gridColumnCount(): number {
+    return tracksOf(live(this), "columnSizes").length;
+  }
+
+  set gridColumnCount(value: number) {
+    setTrackCount(live(this), "columnSizes", value);
+  }
+
+  get gridRowCount(): number {
+    return tracksOf(live(this), "rowSizes").length;
+  }
+
+  set gridRowCount(value: number) {
+    setTrackCount(live(this), "rowSizes", value);
+  }
+
+  get gridColumnSizes(): GridTrackSize[] {
+    return tracksOf(live(this), "columnSizes").map((size) => ({ ...size }));
+  }
+
+  set gridColumnSizes(value: GridTrackSize[]) {
+    setTrackSizes(live(this), "columnSizes", value);
+  }
+
+  get gridRowSizes(): GridTrackSize[] {
+    return tracksOf(live(this), "rowSizes").map((size) => ({ ...size }));
+  }
+
+  set gridRowSizes(value: GridTrackSize[]) {
+    setTrackSizes(live(this), "rowSizes", value);
+  }
+
+  get gridColumnGap(): number {
+    return gapOf(live(this), "columnGap");
+  }
+
+  set gridColumnGap(value: number) {
+    setGap(live(this), "columnGap", value);
+  }
+
+  get gridRowGap(): number {
+    return gapOf(live(this), "rowGap");
+  }
+
+  set gridRowGap(value: number) {
+    setGap(live(this), "rowGap", value);
   }
 
   get itemSpacing(): number {

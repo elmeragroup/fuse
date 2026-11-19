@@ -7,7 +7,7 @@
 
 import { Effect } from "effect";
 
-import { walkLayers } from "../../src/components/kit-spec.ts";
+import { FONT_WEIGHT_STYLES, glyphRanges, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentSetSpec,
@@ -71,13 +71,46 @@ export function heldFonts(run: Run, text: TextNode): FontName[] {
  * its modes from. The kit check has already confirmed that the variable holds a string.
  */
 export function fontFor(run: Run, consumer: SceneNode, spec: TextLayerSpec): FontName {
+  const style = weightFace(run, consumer, spec);
   if (spec.fontFamily.kind === "literal") {
-    return { family: spec.fontFamily.value, style: spec.fontStyle };
+    return { family: spec.fontFamily.value, style };
   }
   const resolved = run.variables.variable(spec.fontFamily.variable).resolveForConsumer(consumer);
   // SAFETY: the kit check confirmed the font family variable is a STRING variable, which
   // resolves to a string.
-  return { family: resolved.value as string, style: spec.fontStyle };
+  return { family: resolved.value as string, style };
+}
+
+/**
+ * The face a text layer takes in `consumer`'s modes: the one its bound weight names there, where
+ * the spec binds one, as Figma gives a text bound to a `fontWeight` variable (rule 10 of the fake),
+ * and the spec's style otherwise.
+ */
+function weightFace(run: Run, consumer: SceneNode, spec: TextLayerSpec): string {
+  if (spec.weight === undefined) {
+    return spec.fontStyle;
+  }
+  const resolved = run.variables.variable(spec.weight.variable).resolveForConsumer(consumer);
+  // SAFETY: the kit check confirmed the weight variable is a FLOAT variable, which resolves to a number.
+  return FONT_WEIGHT_STYLES.get(resolved.value as number) ?? spec.fontStyle;
+}
+
+/**
+ * Every font a text layer can show, so the run loads each before it writes the layer: each face its
+ * bound weight names in some mode, or its one style, in its family and, where its characters hold the
+ * glyph font's glyphs, in the glyph font's family too, since a `fontWeight` binding gives each range
+ * the face its own family names for the weight (rule 10 of the fake).
+ *
+ * @param run - The run, which names the glyph font.
+ * @param spec - The text layer.
+ * @param family - The family the layer's own characters take.
+ * @returns The fonts.
+ */
+export function fontsOf(run: Run, spec: TextLayerSpec, family: string): readonly FontName[] {
+  const faces = spec.weight?.faces ?? [spec.fontStyle];
+  const glyphs = spec.weight !== undefined && glyphRanges(spec.characters, run.glyphFont).length > 0;
+  const families = glyphs ? [family, run.glyphFont.family] : [family];
+  return families.flatMap((each) => faces.map((style) => ({ family: each, style })));
 }
 
 function isAlias(value: VariableValue): value is VariableAlias {
@@ -177,7 +210,9 @@ export const requireNewSetFonts = Effect.fnUntraced(function* (
         }
       }
       if (family !== undefined) {
-        requireFont(run, `${set.name} / ${layer.name}`, { family, style: layer.fontStyle });
+        for (const font of fontsOf(run, layer, family)) {
+          requireFont(run, `${set.name} / ${layer.name}`, font);
+        }
       }
     }
   }
@@ -200,7 +235,10 @@ export function requireNewTextFonts(
 ): void {
   for (const layer of layers) {
     if (layer.kind === "text") {
-      requireFont(run, `${label} / ${layer.name}`, fontFor(run, consumer, layer));
+      const { family } = fontFor(run, consumer, layer);
+      for (const font of fontsOf(run, layer, family)) {
+        requireFont(run, `${label} / ${layer.name}`, font);
+      }
     }
   }
 }
@@ -219,8 +257,24 @@ export function fontLayers(
   innerOf: InnerSpecs
 ): readonly ChildLayerSpec[] {
   return layers.flatMap((layer): readonly ChildLayerSpec[] =>
-    layer.kind === "instance" ? linkedLabels(innerOf(layer)) : [layer]
+    layer.kind === "instance" ? shownLabels(layer, innerOf(layer)) : [layer]
   );
+}
+
+/**
+ * The labels of an inner variant that a TEXT property sets, each with the characters the instance
+ * layer gives it, or its own where the layer sets none. Characters an instance gives can hold the
+ * glyph font's glyphs where the inner label's own do not, and then need its faces too.
+ *
+ * @param layer - The instance layer.
+ * @param variant - The inner variant it shows.
+ * @returns The text layers that link a TEXT property, at the characters the instance shows.
+ */
+export function shownLabels(layer: InstanceLayerSpec, variant: VariantSpec): readonly TextLayerSpec[] {
+  return linkedLabels(variant).map((label) => {
+    const shown = label.textProperty === undefined ? undefined : layer.properties?.text?.[label.textProperty];
+    return shown === undefined ? label : { ...label, characters: shown };
+  });
 }
 
 /**

@@ -9,6 +9,8 @@ import type { Density } from "@elmeragroup/fuse/theme-catalog";
 
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
+import { gridColumns } from "./grid-facts.ts";
+import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
 
@@ -119,6 +121,17 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   {@link TRACK_CLEARANCE_PX} narrower than its column at the captured width. The items' least
  *   widths then fit inside the content box, so the `auto` column is the content box's width (CSS
  *   Grid 1 §11.5, §11.8), on both platforms the capture runs on.
+ * - `gridHugs`, `gridHolds`, `gridWidest` and `gridTallest`: on a grid of two or more columns, the
+ *   columns as wide as their widest item at max-content, as rendered and with each text one
+ *   character longer, the columns wider than their items at min-content by
+ *   {@link GRID_CLEARANCE_PX}, and the item that sets each column's width and each row's height, its
+ *   track's only item or one leading every other by that clearance, each in every mode of
+ *   {@link EVERY_MODE} once its faces have loaded, as `grid-facts.ts` reads them.
+ * - `noBox`: an element that, in every mode of {@link EVERY_MODE} once its faces have loaded,
+ *   generates no box and adds nothing to its parent's flow but its children's boxes, as `no-box.ts`
+ *   decides.
+ * - `gridItems` and `gridItem`: on such a grid, how many items it lays out, and on each item its
+ *   place among them, which `gridWidest` and `gridTallest` number, where every mode finds the same.
  * - `pseudoBoxes`: each of an element's `::before` and `::after` that paints its box and, in every
  *   mode of {@link EVERY_MODE} once its faces have loaded, is an absolute box laid out against the
  *   element, as `pseudo-boxes.ts` decides.
@@ -186,6 +199,15 @@ function pseudoPaints(
  * side, so `figma:capture --check` in the Linux image is what shows each kept capture agrees.
  */
 const TRACK_CLEARANCE_PX = 1;
+
+/**
+ * The least lead, in CSS pixels, by which the page counts a grid's column as wider than its items'
+ * min-content width, or one item as setting its track over the others (`gridHolds`, `gridWidest`,
+ * `gridTallest`). The same Roboto file sets "Selection" at 14px 57.59px wide on macOS and 56px wide in
+ * Playwright's Linux image (C5 review, 2026-11-18), a gap wider than {@link TRACK_CLEARANCE_PX}, so the
+ * page keeps two whole pixels.
+ */
+const GRID_CLEARANCE_PX = 2;
 
 /** The page threw while it measured a root's facts, so the capture has none to keep. */
 export class FactsUnmeasured extends Error {
@@ -701,6 +723,44 @@ const MEASURE_IN_PAGE = `async function () {
       const path = pathOf.get(item);
       if (path !== undefined) { put(path, "inlineRow", true); }
     }
+  }
+  // The columns of each grid of two or more that hug their items, and whether every column holds its
+  // items, in every mode: a column hugs only where each mode measured it so.
+  const holdsOwnText = (${holdsOwnText.toString()});
+  const pseudoInFlow = (${pseudoInFlow.toString()});
+  const generatesNoBox = (${generatesNoBox.toString()});
+  const addsBox = (element) => holdsOwnText(element) || pseudoInFlow(element);
+  // An element that generates no box and adds nothing to its parent's flow but its children's boxes.
+  const wrappers = elements.filter(({ element }) => generatesNoBox(element, holdsOwnText, pseudoInFlow));
+  for (const { path } of await holdsInEveryMode(wrappers, (each) => generatesNoBox(each, holdsOwnText, pseudoInFlow))) { put(path, "noBox", true); }
+  const gridColumns = (${gridColumns.toString()});
+  const gridHelpers = (element) => ({ withStyles, longer: (read) => withLonger(element, read), addsBox, unit: ${String(LAYOUT_UNIT_PX)}, clearance: ${String(GRID_CLEARANCE_PX)} });
+  const grids = elements.flatMap(({ element, path }) => {
+    const first = gridColumns(element, gridHelpers(element));
+    return first === undefined ? [] : [{ element, path, hugs: new Set(first.hugs), holds: new Set(first.holds), widest: first.widest, tallest: first.tallest, items: first.items }];
+  });
+  if (grids.length > 0) {
+    await inEveryMode(() => {
+      for (const grid of grids) {
+        const read = gridColumns(grid.element, gridHelpers(grid.element));
+        grid.hugs = new Set([...grid.hugs].filter((column) => read?.hugs.includes(column) === true));
+        grid.holds = new Set([...grid.holds].filter((column) => read?.holds.includes(column) === true));
+        // A track's longest item counts only where every mode measured the same one.
+        grid.widest = grid.widest.map((item, column) => (read?.widest[column] === item ? item : -1));
+        grid.tallest = grid.tallest.map((item, row) => (read?.tallest[row] === item ? item : -1));
+        // The grid counts as measured only where every mode finds the same items.
+        grid.items = grid.items !== undefined && read !== undefined && read.items.length === grid.items.length && read.items.every((item, index) => item === grid.items[index]) ? grid.items : undefined;
+      }
+    });
+  }
+  for (const { path, hugs, holds, widest, tallest, items } of grids) {
+    if (items === undefined) { continue; }
+    put(path, "gridItems", items.length);
+    items.forEach((item, index) => { const at = pathOf.get(item); if (at !== undefined) { put(at, "gridItem", index); } });
+    if (hugs.size > 0) { put(path, "gridHugs", [...hugs].sort((left, right) => left - right)); }
+    if (holds.size > 0) { put(path, "gridHolds", [...holds].sort((left, right) => left - right)); }
+    if (widest.some((item) => item >= 0)) { put(path, "gridWidest", widest); }
+    if (tallest.some((item) => item >= 0)) { put(path, "gridTallest", tallest); }
   }
   // An absolute ::before or ::after laid out in every mode, with the paint its box computes to, which
   // \`pseudoPaints\` judges outside the page.

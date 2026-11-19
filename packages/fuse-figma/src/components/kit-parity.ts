@@ -293,7 +293,13 @@ export const KIT_PARITY = {
     missing: '`size="sm"`, and the read-only fill.',
     issue: MISSING_SETS,
   },
-  "selection-item": { kind: "issue", issue: MISSING_SETS },
+  "selection-item": {
+    kind: "partial",
+    sets: ["selection-item"],
+    missing:
+      "A checked, disabled or hovered row, the control at the end, sub-sections, and rows stacked in a group.",
+    issue: MISSING_SETS,
+  },
   separator: { kind: "sets", sets: ["separator"] },
   sheet: {
     kind: "partial",

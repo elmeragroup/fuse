@@ -76,7 +76,7 @@ function stacksInlineChild(sample: {
   const { layout } = readFlow(
     parent.style,
     {
-      parts: [{ key: "child", name: "child", style: child.style, sizing: [] }],
+      parts: [{ key: "child", name: "child", style: child.style, sizing: [], editable: false }],
       others: [],
       last: child.style,
       labelBeforeLast: false,
@@ -91,6 +91,8 @@ function stacksInlineChild(sample: {
       freeAlongMain: false,
       fitsAlongMain: false,
       tableTiles: false,
+      grid: { hugs: [], holds: [], widest: [], tallest: [], items: undefined, places: [] },
+      outOfFlow: 0,
     }
   );
   return layout.blocks;

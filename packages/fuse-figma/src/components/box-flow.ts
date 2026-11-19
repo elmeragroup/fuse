@@ -7,6 +7,8 @@ import type { ChildSpacing } from "./box-cascade";
 import { BLOCK_LEVEL, heightBounds, listNames } from "./box-sizing";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { planGrid } from "./grid-layout";
+import type { GridMeasure } from "./grid-layout";
 import type {
   ChildLayerSpec,
   CounterAlignSpec,
@@ -101,7 +103,7 @@ function readAlign<Align extends PrimaryAlignSpec>(
 }
 
 /** The direction `flex-direction` gives a flex box, by the value Tailwind compiles. */
-const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly detail: string }>([
+const DIRECTIONS = new Map<string, { readonly direction: FlexDirection; readonly detail: string }>([
   ["row", { direction: "HORIZONTAL", detail: "a row, its layers left to right" }],
   ["column", { direction: "VERTICAL", detail: "a column, its layers top to bottom" }],
 ]);
@@ -128,8 +130,10 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  *   direction with no minimum, so `justify-content` has no free space to distribute, and the sizing
  *   of the layers inside it, which a column's `align-items` decides as it stretches them or not, and
  *   how its cascade knows whether a list item draws a marker, whether the capture measured a
- *   one-column grid's column as wide as its content box, and whether it measured the box's flex line
- *   leaving room for auto margins along it in every mode.
+ *   one-column grid's column as wide as its content box, whether it measured the box's flex line
+ *   leaving room for auto margins along it in every mode, and what it measured of a wider grid's
+ *   columns and how many of its parts sit out of its flow, which `planGrid` in `grid-layout.ts`
+ *   reads.
  * @returns The box's layout, and the alignment its parts set, which {@link settleFlow}
  *   settles once the parts map.
  */
@@ -146,11 +150,33 @@ export function readFlow(
     readonly freeAlongMain: boolean;
     readonly fitsAlongMain: boolean;
     readonly tableTiles: boolean;
+    readonly grid: GridMeasure;
+    readonly outOfFlow: number;
   }
 ): Flow {
   const table = readTableFlow(reader, box.tableTiles);
   if (table !== undefined) {
     return { layout: table, self: undefined };
+  }
+  const grid = planGrid(reader, flow.parts, flow.others.length, {
+    sizing: box.sizing,
+    limits: box.limits,
+    measure: box.grid,
+    outOfFlow: box.outOfFlow,
+  });
+  if (grid !== undefined) {
+    return {
+      layout: {
+        flex: false,
+        blocks: false,
+        direction: "HORIZONTAL",
+        primaryAlign: "MIN",
+        counterAlign: "MIN",
+        justify: "unset",
+        grid,
+      },
+      self: undefined,
+    };
   }
   const display = normalizeCss(reader.raw("display") ?? "");
   const rowsHug = box.sizing.vertical.kind === "hug" && box.limits.minHeight === undefined;
@@ -368,7 +394,10 @@ const FROM_LEFT: ReadonlySet<string> = new Set(["", "start", "left"]);
 const MAIN_MARGINS = {
   HORIZONTAL: { start: "margin-left", end: "margin-right" },
   VERTICAL: { start: "margin-top", end: "margin-bottom" },
-} as const satisfies Record<DirectionSpec, { readonly start: string; readonly end: string }>;
+} as const satisfies Record<FlexDirection, { readonly start: string; readonly end: string }>;
+
+/** The directions of a flex box, whose auto margins share its free space along it. */
+type FlexDirection = Exclude<DirectionSpec, "GRID">;
 
 /**
  * Read an auto margin between the layers of a flex box along its direction, as a menu row's shortcut
@@ -416,7 +445,7 @@ const MAIN_MARGINS = {
 function readAutoStart(
   reader: LayerStyle,
   flow: FlowLayers,
-  line: { readonly direction: DirectionSpec; readonly free: boolean; readonly fits: boolean }
+  line: { readonly direction: FlexDirection; readonly free: boolean; readonly fits: boolean }
 ): "spaced" | "label-fills" | undefined {
   const { direction, free, fits } = line;
   const { start, end } = MAIN_MARGINS[direction];
@@ -643,7 +672,12 @@ export type FlowLayer = { readonly key: string; readonly name: string };
  * fills, and its icons and label.
  */
 export type FlowLayers = {
-  readonly parts: readonly (FlowLayer & { readonly style: LayerStyle; readonly sizing: Feed })[];
+  /** The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read. */
+  readonly parts: readonly (FlowLayer & {
+    readonly style: LayerStyle;
+    readonly sizing: Feed;
+    readonly editable: boolean;
+  })[];
   readonly others: readonly FlowLayer[];
   /**
    * The style of the box's last layer in flow, a part or an icon, which {@link readAutoStart} reads,

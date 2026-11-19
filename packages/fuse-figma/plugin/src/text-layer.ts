@@ -28,7 +28,7 @@ import {
   solidPaint,
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { fontFor, requireFont } from "./fonts.ts";
+import { fontFor, fontsOf, requireFont } from "./fonts.ts";
 import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
 import { change, recordsAny } from "./plan.ts";
 
@@ -118,8 +118,11 @@ function planFont(
   // The spec sets the style as a literal, and the family too unless it binds one. A variable
   // that any character binds to one of those fields would override the literal in another
   // theme, so the font write clears it in the same operation.
+  // A bound weight keeps its `fontWeight` binding, which `planTypography` writes.
+  const styleFields =
+    spec.weight === undefined ? STYLE_FIELDS : STYLE_FIELDS.filter((field) => field !== "fontWeight");
   const literalFields: readonly VariableBindableTextField[] =
-    spec.fontFamily.kind === "literal" ? ["fontFamily", ...STYLE_FIELDS] : STYLE_FIELDS;
+    spec.fontFamily.kind === "literal" ? ["fontFamily", ...styleFields] : styleFields;
   const unbind = literalFields.filter((field) => textBinding(run, text, field) !== null);
   if (!differs && unbind.length === 0) {
     return false;
@@ -154,6 +157,12 @@ export function planText(
   parent: Held
 ): void {
   const fontName = fontFor(run, text, spec);
+  // A bound weight can show any face it names, in each family the layer's characters take.
+  if (spec.weight !== undefined) {
+    for (const font of fontsOf(run, spec, fontName.family)) {
+      requireFont(run, label, font);
+    }
+  }
   const replaced = planFont(run, text, label, spec, fontName, writesCharacters(text, spec, propertyIds));
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
@@ -395,6 +404,43 @@ function bindsFamily(run: Run, text: TextNode, variable: Variable, rewrites: boo
 }
 
 /**
+ * Plan the glyph font on a label's glyph ranges, in the face its bound weight names in the label's
+ * modes as the rest of it takes, and then its weight binding. A weight binding gives every character
+ * the face its family names for the weight in the label's modes, the face the font writes give it, so
+ * it changes no font the run did not load (rule 10). A `fontName` write drops it (PG8), and so does a
+ * range font write on its range, so a label whose font or glyph ranges the run writes binds it again,
+ * after the characters and glyph ranges and before the layout, which the face it shows sizes. A
+ * whole-text binding written after the ranges binds every range, a glyph range in the glyph font's
+ * family included (PG13). A label an instance shows takes the same, after a TEXT write on the
+ * instance resets it (G5).
+ *
+ * @param characters - The characters the label shows once the run's earlier operations have run.
+ * @param rewritten - Whether an earlier operation of the run writes the font of every character.
+ */
+export function planGlyphFaces(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: TextLayerSpec,
+  characters: string,
+  rewritten: boolean
+): void {
+  const refonted = recordsAny(run.plan, () =>
+    planGlyphRanges(run, text, label, characters, fontFor(run, text, spec).style, rewritten)
+  );
+  if (spec.weight === undefined) {
+    return;
+  }
+  const variable = run.variables.variable(spec.weight.variable);
+  const binding = textBinding(run, text, "fontWeight");
+  if (rewritten || refonted || binding === run.figma.mixed || binding?.id !== variable.id) {
+    change(run.plan, label, `fontWeight → ${spec.weight.variable.name}`, () =>
+      text.setBoundVariable("fontWeight", variable)
+    );
+  }
+}
+
+/**
  * Plan a text's typography, its characters among them, then the glyph font on its glyph ranges, which
  * a font write or new or linked characters before it reset (G3, G8). A family binding binds only the
  * characters already in the variable's family and changes no font (G10), so it comes after the font
@@ -439,7 +485,7 @@ function planTypography(
   planCharacters(run, text, label, spec, propertyIds);
   // New or linked characters reset the ranges too (G3), and `planFont` then counts the ranges' glyph
   // font among the label's own, so a text that holds a range gets a font write first.
-  planGlyphRanges(run, text, label, spec.characters, spec.fontStyle, replaced);
+  planGlyphFaces(run, text, label, spec, spec.characters, replaced);
   planTextLayout(run, text, label, spec, parent);
   const { horizontal, vertical } = spec.align;
   planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {

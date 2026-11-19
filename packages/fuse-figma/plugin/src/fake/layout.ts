@@ -211,6 +211,7 @@
  *    written is half a pixel, rather than approve a place the real file does not keep.
  */
 
+import { newGrid, placedCell } from "./grid.ts";
 import { isHidden, markOverride, noteOverride } from "./overrides.ts";
 import { bindingTargets, CORNERS, f32, isAutoLayout, isTextField, sourceOf, write } from "./state.ts";
 import type {
@@ -441,9 +442,17 @@ export function rescale(state: NodeState, scale: number): void {
   }
 }
 
+/**
+ * Whether an axis is the primary one of an auto layout: its direction, and a grid's width, which the
+ * fake gives a grid's primary sizing mode and its layers' `layoutGrow` (rule 61).
+ */
+export function primaryOn(mode: FrameNode["layoutMode"], axis: Axis): boolean {
+  return mode === axis || (mode === "GRID" && axis === "HORIZONTAL");
+}
+
 /** The sizing mode of an auto layout frame that covers an axis: the primary one along its direction. */
 function modeOn(state: NodeState, axis: Axis): "primaryAxisSizingMode" | "counterAxisSizingMode" {
-  return state.layoutMode === axis ? "primaryAxisSizingMode" : "counterAxisSizingMode";
+  return primaryOn(state.layoutMode, axis) ? "primaryAxisSizingMode" : "counterAxisSizingMode";
 }
 
 /** Whether a node sets its own place: it sits outside any auto layout's flow, or absolute in one (rule 24). */
@@ -457,7 +466,7 @@ export function fills(state: NodeState, axis: Axis): boolean {
   if (parent === undefined || !isAutoLayout(parent)) {
     return false;
   }
-  return parent.layoutMode === axis ? state.layoutGrow === 1 : state.layoutAlign === "STRETCH";
+  return primaryOn(parent.layoutMode, axis) ? state.layoutGrow === 1 : state.layoutAlign === "STRETCH";
 }
 
 /**
@@ -669,8 +678,21 @@ export function lengthOn(state: NodeState, axis: Axis): number {
     return wrapHeight(state);
   }
   const given = boundLength(state, state, axis) ?? (axis === "HORIZONTAL" ? state.width : state.height);
-  const own = hugsInstances(state, axis) ? huggedLength(state, axis) : given;
+  const grid =
+    state.layoutMode === "GRID" && state.type !== "INSTANCE" && state[modeOn(state, axis)] === "AUTO"
+      ? huggedGrid(state, axis)
+      : undefined;
+  const own = grid ?? (hugsInstances(state, axis) ? huggedLength(state, axis) : given);
   const parent = state.parent;
+  // A layer that fills its grid cell is as long as the cell's track (rule 61).
+  if (parent?.layoutMode === "GRID" && fills(state, axis) && !isHidden(state)) {
+    const cell = placedCell(parent, state);
+    const track = axis === "HORIZONTAL" ? cell?.column : cell?.row;
+    const length = track === undefined || track < 0 ? undefined : gridTracks(parent, axis)[track];
+    if (length !== undefined) {
+      return length;
+    }
+  }
   // A fill never widens a 0-wide text (rule 31).
   const stuck = state.type === "TEXT" && axis === "HORIZONTAL" && own === 0;
   if (
@@ -678,6 +700,7 @@ export function lengthOn(state: NodeState, axis: Axis): number {
     parent === undefined ||
     !isAutoLayout(parent) ||
     parent.layoutMode === axis ||
+    parent.layoutMode === "GRID" ||
     parent[modeOn(parent, axis)] !== "AUTO" ||
     !fills(state, axis)
   ) {
@@ -714,7 +737,7 @@ function textHugs(state: NodeState, axis: Axis): boolean {
 
 /** Stop filling an axis of the parent, as a hug or fixed size does. */
 function stopFilling(state: NodeState, axis: Axis): void {
-  if (state.parent?.layoutMode === axis) {
+  if (state.parent !== undefined && primaryOn(state.parent.layoutMode, axis)) {
     state.layoutGrow = 0;
   } else {
     state.layoutAlign = "INHERIT";
@@ -727,6 +750,9 @@ function stopFilling(state: NodeState, axis: Axis): void {
  */
 export function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
   const member = `set_layoutSizing${axis === "HORIZONTAL" ? "Horizontal" : "Vertical"}`;
+  if (state.parent?.layoutMode === "GRID") {
+    retainTracks(state.parent);
+  }
   const ownLayout = isAutoLayout(state);
   const inLayout = isAutoLayout(state.parent);
   if (value !== "FIXED" && !ownLayout && !inLayout) {
@@ -749,7 +775,7 @@ export function setSizing(state: NodeState, axis: Axis, value: Sizing): void {
   }
   write(state, member.slice(4));
   if (value === "FILL") {
-    if (state.parent?.layoutMode === axis) {
+    if (state.parent !== undefined && primaryOn(state.parent.layoutMode, axis)) {
       state.layoutGrow = 1;
     } else {
       state.layoutAlign = "STRETCH";
@@ -779,7 +805,7 @@ function setTextSizing(state: NodeState, axis: Axis, value: Sizing, member: stri
       throw new Error(`The fake Figma file does not model ${member} FILL on a text.`);
     }
     write(state, member);
-    if (state.parent?.layoutMode === axis) {
+    if (state.parent !== undefined && primaryOn(state.parent.layoutMode, axis)) {
       state.layoutGrow = 1;
     } else {
       state.layoutAlign = "STRETCH";
@@ -800,13 +826,92 @@ function setTextSizing(state: NodeState, axis: Axis, value: Sizing, member: stri
   }
 }
 
-/** Write `layoutMode`: turning auto layout on includes the strokes in it (rule 57). */
+/**
+ * Write `layoutMode`: turning auto layout on includes the strokes in it (rule 57), and turning into a
+ * grid gives the frame a new grid and fixes its sizing on both axes (rule 61, PG7).
+ */
 export function setLayoutMode(state: NodeState, value: FrameNode["layoutMode"]): void {
   write(state, "layoutMode");
   if (state.layoutMode === "NONE" && value !== "NONE") {
     state.strokesIncludedInLayout = true;
   }
+  if (value === "GRID" && state.layoutMode !== "GRID") {
+    state.grid = newGrid(state.grid);
+    state.primaryAxisSizingMode = "FIXED";
+    state.counterAxisSizingMode = "FIXED";
+  }
   state.layoutMode = value;
+}
+
+/**
+ * The lengths of a grid's tracks along an axis (rule 61), read without changing the file. A FIXED
+ * track is its value. A HUG track is its longest layer that does not fill that axis, so a filling
+ * layer never sets it, and one that holds only filling layers keeps the length {@link retainTracks}
+ * kept for it (PG2). The FLEX tracks share what the grid's length leaves past its padding, the other
+ * tracks and the gaps, by their values, whatever their layers hold, which overflow a track too short
+ * for them (PG12).
+ */
+function gridTracks(grid: NodeState, axis: Axis): number[] {
+  const across = axis === "HORIZONTAL";
+  const sizes = across ? grid.grid.columnSizes : grid.grid.rowSizes;
+  const flow = childrenOf(grid).filter((child) => child.layoutPositioning !== "ABSOLUTE" && !isHidden(child));
+  const held = grid.grid.held[axis];
+  const lengths = sizes.map((size, track) => {
+    if (size.type === "FIXED") {
+      return size.value ?? 0;
+    }
+    if (size.type === "FLEX") {
+      return undefined;
+    }
+    const setting = flow
+      .filter((child) => {
+        const cell = placedCell(grid, child);
+        return (across ? cell?.column : cell?.row) === track && !fills(child, axis);
+      })
+      .map((child) => lengthOn(child, axis));
+    return setting.length === 0 ? (held[track] ?? 0) : Math.max(...setting);
+  });
+  const gap = across ? grid.grid.columnGap : grid.grid.rowGap;
+  const padding = across
+    ? inset(grid, "left") + inset(grid, "right")
+    : inset(grid, "top") + inset(grid, "bottom");
+  const set = lengths.reduce<number>((sum, length) => sum + (length ?? 0), 0);
+  const room = (across ? grid.width : grid.height) - padding - set - gap * Math.max(0, sizes.length - 1);
+  const shares = sizes.reduce((sum, size) => sum + (size.type === "FLEX" ? (size.value ?? 1) : 0), 0);
+  // No probe has shown how Figma shares out FLEX tracks whose shares sum to 0.
+  if (shares === 0 && lengths.includes(undefined)) {
+    throw new Error("The fake Figma file does not model FLEX tracks whose shares sum to 0.");
+  }
+  return lengths.map((length, track) => length ?? (Math.max(0, room) * (sizes[track]?.value ?? 1)) / shares);
+}
+
+/**
+ * Keep the length of each of a grid's HUG tracks as it stands, which a track keeps once every layer
+ * in it fills it (PG2). The fake keeps them when a layer of the grid changes its sizing, the write
+ * after which a track can hold only filling layers.
+ */
+export function retainTracks(grid: NodeState): void {
+  for (const axis of ["HORIZONTAL", "VERTICAL"] as const) {
+    grid.grid.held[axis] = gridTracks(grid, axis);
+  }
+}
+
+/**
+ * A grid's length on an axis it hugs, its tracks, gaps and padding, or undefined where a FLEX track
+ * shares that axis, which keeps the grid's length (PG3).
+ */
+function huggedGrid(grid: NodeState, axis: Axis): number | undefined {
+  const sizes = axis === "HORIZONTAL" ? grid.grid.columnSizes : grid.grid.rowSizes;
+  if (sizes.some((size) => size.type === "FLEX")) {
+    return undefined;
+  }
+  const tracks = gridTracks(grid, axis);
+  const gap = axis === "HORIZONTAL" ? grid.grid.columnGap : grid.grid.rowGap;
+  const padding =
+    axis === "HORIZONTAL"
+      ? inset(grid, "left") + inset(grid, "right")
+      : inset(grid, "top") + inset(grid, "bottom");
+  return padding + tracks.reduce((sum, length) => sum + length, 0) + gap * Math.max(0, tracks.length - 1);
 }
 
 /** Write `strokesIncludedInLayout`, which only an auto layout takes (rule 58). */
@@ -908,6 +1013,12 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
       return;
     case "opacity":
       state.opacity = f32(value);
+      return;
+    case "gridColumnGap":
+      state.grid.columnGap = f32(value);
+      return;
+    case "gridRowGap":
+      state.grid.rowGap = f32(value);
       return;
     default:
       throw new Error(`The fake Figma file does not model binding ${field}.`);
