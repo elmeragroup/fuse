@@ -441,6 +441,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandDialogOpen" },
   },
   {
+    set: "aspect-ratio",
+    entry: "dist/aspect-ratio.js",
+    load: async () => (await import("./aspect-ratio-cell.ts")).aspectRatio,
+  },
+  {
     set: "card",
     entry: "dist/card.js",
     load: async () => (await import("./card-cell.ts")).card,

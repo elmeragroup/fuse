@@ -1,6 +1,6 @@
 /**
- * The picture the kit's image cells show: Avatar's image and Item's image media. Both draw the
- * docs Avatar portrait, so the kit ships one PNG for them.
+ * The picture the kit's image cells show: Avatar's image, Item's image media and the image in
+ * Aspect ratio's frame. Each draws the docs Avatar portrait, so the kit ships one PNG for them.
  */
 import { readFileSync } from "node:fs";
 

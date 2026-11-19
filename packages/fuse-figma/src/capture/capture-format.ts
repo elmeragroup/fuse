@@ -130,6 +130,12 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   basisAsDeclared: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * An element with an aspect ratio and an `auto` height, whose border box is as tall as its width
+   * times the ratio and keeps its width, height and ratio in every density and theme, so the ratio
+   * sets its height. It holds the border box's width and height, in CSS pixels.
+   */
+  ratioHeight: Schema.optionalKey(Schema.Struct({ width: Schema.Finite, height: Schema.Finite })),
+  /**
    * A table box whose rows, cells or one child tile its content box with no space between, in every
    * density and theme, so no column or row stretches a cell past what it holds.
    */

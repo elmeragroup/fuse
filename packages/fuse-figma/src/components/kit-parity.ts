@@ -68,7 +68,7 @@ export const KIT_PARITY = {
     missing: "Every content size other than `md`.",
     issue: MISSING_SETS,
   },
-  "aspect-ratio": { kind: "issue", issue: MISSING_SETS },
+  "aspect-ratio": { kind: "sets", sets: ["aspect-ratio"] },
   attachment: { kind: "issue", issue: MISSING_SETS },
   // The Combobox sets do not draw it: its rows keep no room for a check, and no Input group form
   // holds an input with no addon.

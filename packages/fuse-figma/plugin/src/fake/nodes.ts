@@ -127,6 +127,26 @@ import {
 } from "./tree.ts";
 import { alias, boundCollections, modeFor, nodeBindings } from "./variables.ts";
 
+/** A layer's aspect lock: its own, or its source's for an instance or a sublayer (rule 62). */
+function heldLock(state: NodeState): Vector | null {
+  const source = sourceOf(state);
+  return source === undefined ? state.targetAspectRatio : heldLock(source);
+}
+
+/**
+ * A layer that holds its own aspect lock.
+ *
+ * @throws For an instance or a sublayer, whose lock no probe wrote (rule 62).
+ */
+function ownLock(state: NodeState): NodeState {
+  if (sourceOf(state) !== undefined) {
+    throw new Error(
+      `The fake Figma file models no aspect lock written on an instance or a sublayer (rule 62), and ${state.id} is one.`
+    );
+  }
+  return state;
+}
+
 /** The members every node has. */
 class FakeBaseNode {
   get id(): string {
@@ -772,6 +792,24 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "clipsContent");
     state.clipsContent = value;
+  }
+
+  get targetAspectRatio(): Vector | null {
+    return heldLock(live(this));
+  }
+
+  /** Lock the ratio of the layer's width and height as they stand (rule 62). */
+  lockAspectRatio(): void {
+    const state = ownLock(live(this));
+    write(state, "lockAspectRatio");
+    state.targetAspectRatio = { x: state.width, y: state.height };
+  }
+
+  /** Unlock the layer's ratio (rule 62). */
+  unlockAspectRatio(): void {
+    const state = ownLock(live(this));
+    write(state, "unlockAspectRatio");
+    state.targetAspectRatio = null;
   }
 
   get itemReverseZIndex(): boolean {

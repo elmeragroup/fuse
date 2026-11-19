@@ -249,6 +249,60 @@ describe("a one-column grid's column the capture measures as fitting", () => {
   });
 });
 
+/**
+ * Unit under test: the page function's `ratioHeight` on a 448px `aspect-ratio: 16 / 9` box. Oracle:
+ * Chromium's own layout, read beside the fact. Empty, the box is 252px tall, the width times the
+ * ratio (CSS Sizing 4 §4.2), so the fact records 448 by 252. A 400px child grows a box with
+ * `overflow: visible` to 400px (§4.3), and a `min-height: 300px` raises it to 300px, so the fact does
+ * not hold. With `overflow: hidden` the same child leaves the box at 252px, and the fact holds. A box
+ * with a height of its own is no candidate, though its height is the ratio's. A 100px flex row
+ * shrinks the box to 100px (CSS Flexbox 1 §9.7), and the ratio follows to 56.25px, which the fact
+ * records, so the build can tell it from the 448px `width`. A box that a comfortable density widens
+ * to 480px, or whose ratio a comfortable density turns to 1 / 1, is 252px tall in the page's own mode
+ * and another height there, so the fact does not hold.
+ */
+describe("an aspect ratio the capture measures as setting the height", () => {
+  /** The box's border box as Chromium lays it out, and what the page function records as `ratioHeight`. */
+  async function measure(style: string, child: string, className = "", around = "") {
+    await page.setContent(
+      `<style>[data-density=comfortable] .wide { width: 480px !important } .ratio { --ratio: 16 / 9 } [data-density=comfortable] .ratio { --ratio: 1 / 1 }</style><main data-compare-cell><div style="${around}"><div id="root" class="${className}" style="width:448px;aspect-ratio:16/9;${style}">${child}</div></div></main>`
+    );
+    const [width, height] = await page
+      .locator("#root")
+      .evaluate((box) => [box.getBoundingClientRect().width, box.getBoundingClientRect().height]);
+    return { width, height, fact: (await factsOfRoot()).facts?.ratioHeight };
+  }
+
+  const TALL = '<div style="height:400px"></div>';
+  const BOX = { width: 448, height: 252 };
+
+  it.each([
+    ["empty", 252, BOX, "", ""],
+    ["holding a 400px child", 400, undefined, "", TALL],
+    ["holding a 400px child it clips", 252, BOX, "overflow:hidden", TALL],
+    ["at a 300px minimum", 300, undefined, "min-height:300px", ""],
+    ["with a 252px height of its own", 252, undefined, "height:252px", ""],
+  ])("%s, is %spx tall, and the fact records %o", async (_case, height, fact, style, child) => {
+    expect(await measure(style, child)).toEqual({ width: 448, height, fact });
+  });
+
+  it("records the width a flex row shrinks it to, and the ratio's height there", async () => {
+    expect(await measure("", "", "", "display:flex;width:100px")).toEqual({
+      width: 100,
+      height: 56.25,
+      fact: { width: 100, height: 56.25 },
+    });
+  });
+
+  it.each([
+    ["a density moves the width", "", "wide"],
+    ["a density changes the ratio", "aspect-ratio:var(--ratio)", "ratio"],
+  ])("does not hold where %s", async (_case, style, className) => {
+    // The page's own mode stamps no density, so the box is 448 by 252 there.
+    expect(await measure(style, "", className)).toEqual({ ...BOX, fact: undefined });
+  });
+});
+
 /** Measure the root `#root` of the page's markup, and read back its `style` attribute. */
 async function factsOfRoot(): Promise<{
   readonly facts: MeasuredFacts | undefined;

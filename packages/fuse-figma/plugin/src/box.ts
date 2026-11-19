@@ -110,6 +110,40 @@ function planDashPattern(run: Run, node: LayerParent, label: string, desired: re
 }
 
 /**
+ * Plan Figma's aspect lock against the spec's `aspectLock`: locked at the ratio of its width and
+ * height, or unlocked where the spec has none. `lockAspectRatio()` locks the ratio of the box's
+ * size as it stands, and a later resize moves the lock to the new size (rule 62), so the plan writes
+ * the lock after every write that can resize the box, and it compares ratios, since the box may be
+ * resized in this run. A lock at another ratio locks again. A 32-bit float holds the lock, so the
+ * ratio matches where it gives the spec's height within a hundredth of a pixel.
+ */
+function planAspectLock(run: Run, node: LayerParent, label: string, desired: BoxSpec["aspectLock"]): void {
+  const held = node.targetAspectRatio;
+  const matches =
+    desired === undefined
+      ? held === null
+      : held !== null && held.x > 0 && near((held.y / held.x) * desired.width, desired.height);
+  if (matches) {
+    return;
+  }
+  const holds = held === null ? "none" : `${String(held.x)} by ${String(held.y)}`;
+  if (desired === undefined) {
+    change(run.plan, label, `aspect lock → none (holds ${holds})`, () => {
+      node.unlockAspectRatio();
+    });
+    return;
+  }
+  change(
+    run.plan,
+    label,
+    `aspect lock → ${String(desired.width)} by ${String(desired.height)} (holds ${holds})`,
+    () => {
+      node.lockAspectRatio();
+    }
+  );
+}
+
+/**
  * Where the box a plan draws sits. A variant's `root` sits in its component set, which never turns,
  * and gets the fill a spread shadow needs from {@link ringFill}. A `frame` below the root takes the
  * fill its spec holds, where the build already put that fill and clipping for a ring (PR2). Its
@@ -245,6 +279,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     }
   });
   const resizes = laidOut || stroked;
+  planAspectLock(run, node, label, spec.aspectLock);
   if (stroke !== undefined) {
     planDashPattern(run, node, label, "sides" in stroke ? [] : (stroke.dashPattern ?? []));
   }

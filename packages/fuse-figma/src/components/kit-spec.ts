@@ -668,6 +668,13 @@ export type BoxSpec = {
   readonly limits: LimitsSpec;
   /** Whether the box hides what overflows it, as `overflow: hidden` does. */
   readonly clips: boolean;
+  /**
+   * The width and height whose ratio Figma's aspect lock keeps, `targetAspectRatio`, on a box whose
+   * CSS aspect ratio sets its height from its width. The box's fixed lengths, so a lock taken after
+   * the box is resized to them holds the CSS ratio, and an instance that fills a host's width keeps
+   * the ratio's height there (PG19). Absent for a box with no lock.
+   */
+  readonly aspectLock?: { readonly width: number; readonly height: number };
   readonly paddingTop: NumberSpec;
   readonly paddingRight: NumberSpec;
   readonly paddingBottom: NumberSpec;
