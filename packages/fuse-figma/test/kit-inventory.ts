@@ -401,11 +401,11 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Action bar",
     sets: [{ key: "action-bar", name: "Action bar", variants: 1, previewed: 1 }],
   },
-  // The "No close button" demo's panel on the right side.
+  // The "No close button" demo's panel on the right side, and again with the `Close` property on.
   {
     slug: "sheet",
     name: "Sheet",
-    sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 1 }],
+    sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 2 }],
   },
   // One day of the month grid, by where it sits in the selection, its state and whether it is outside.
   {

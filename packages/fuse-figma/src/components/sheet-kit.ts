@@ -6,15 +6,23 @@
  * viewport (`SHEET_VIEWPORT`). It holds the `sheet-content-inner` column, and in it the header, the
  * title over the muted description, and the footer, the outline Button `Sheet.Close` renders, which
  * the footer's `mt-auto` holds at the panel's bottom. Each text is the demo's, behind a TEXT property.
+ * The corner close `showCloseButton` appends to the column sits behind the `Close button` BOOLEAN,
+ * false by default. Its containing block is the popup, which the column spans, so it draws in the
+ * column's frame, as `absolute-placement.ts` says.
  *
- * The set draws no corner close, which sits at the panel's top right by `position: absolute` in the
- * popup around the column it is a child of, no body, and no panel open over the scrim, whose
- * Backdrop the kit places only around a centred or top popup.
+ * The set draws no body, and no panel open over the scrim, whose Backdrop the kit places only around
+ * a centred or top popup.
  */
 import type { InstanceManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
-import { BUTTON_MANIFEST } from "./button-kit";
+import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { always } from "./popup-facts";
-import { SHEET_CLOSE_LABEL, SHEET_DESCRIPTION, SHEET_TITLE, SHEET_VIEWPORT } from "./sheet-text";
+import {
+  SHEET_CLOSE_LABEL,
+  SHEET_CORNER_CLOSE_PROPERTY,
+  SHEET_DESCRIPTION,
+  SHEET_TITLE,
+  SHEET_VIEWPORT,
+} from "./sheet-text";
 
 /** A text the given property sets. */
 function text(characters: string, textProperty: string): LabelManifest {
@@ -35,6 +43,22 @@ const FOOTER_CLOSE: InstanceManifest = {
   cell: () => ({ variant: "outline", size: "default", state: "rest", icon: "none" }),
   properties: () => ({ text: { Label: SHEET_CLOSE_LABEL } }),
   shownIn: always,
+  exposed: true,
+};
+
+/**
+ * The corner close, `Sheet.Close` rendering the ghost `icon-sm` Icon button with X, which
+ * `showCloseButton` appends to the inner column, behind the `Close button` property.
+ */
+const CORNER_CLOSE: InstanceManifest = {
+  kind: "instance",
+  key: "corner-close",
+  of: ICON_BUTTON_MANIFEST,
+  slot: "sheet-close",
+  cell: () => ({ variant: "ghost", size: "icon-sm", state: "rest" }),
+  properties: () => ({ swap: { Icon: "X" } }),
+  shownIn: always,
+  optional: { name: SHEET_CORNER_CLOSE_PROPERTY, defaultValue: false },
   exposed: true,
 };
 
@@ -76,6 +100,7 @@ export const SHEET_CONTENT_MANIFEST: SetManifest = {
           iconsFor: () => [],
           parts: [FOOTER_CLOSE],
         },
+        CORNER_CLOSE,
       ],
     },
   ],

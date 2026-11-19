@@ -4,7 +4,10 @@
  * measure from its containing block's padding edge (CSS 2.1 §10.3.7, §10.6.4), and Figma places a
  * layer from its parent's outer edge, so each distance is the offset and the parent's border on that
  * side. The parent is the containing block where it is positioned, or where the definition names the
- * positioned element around it with its border box.
+ * positioned element around it with its border box. A static parent with no border also places the
+ * part where the capture measured its border box as the padding box of a containing block above it
+ * (`parentSpansBlock`), as Sheet's column spans the popup that places its corner close. There the
+ * parent's outer edge is the block's padding edge, so each distance is the offset alone.
  *
  * On each axis the part sits one of five ways, each kept by its Figma constraint as the parent
  * resizes:
@@ -104,6 +107,11 @@ export type PlacementContext = {
   readonly parent: LayerStyle;
   /** The positioned element around the box with its border box, where the definition names one. */
   readonly positionedBy: string | undefined;
+  /**
+   * Whether the capture measured the parent's border box as the padding box of the part's
+   * containing block, an element above the parent, in every mode (`parentSpansBlock`).
+   */
+  readonly parentSpansBlock: boolean;
   /** The styles of the parts in the parent's flow, which a centre offset's parent height reads. */
   readonly flow: readonly LayerStyle[];
   /** How many layers sit in the parent's flow: its parts, icons and label. */
@@ -139,6 +147,8 @@ const refused = (why: string): Refused => ({ kind: "refused", why });
 
 const NOT_POSITIONED =
   "the absolute part's containing block lies above its parent, which the set does not draw";
+const BORDERED_SPAN =
+  "the absolute part's containing block lies above its parent, which spans it but draws a border inside the block's padding box";
 const MOVED = "a turn, a translate or a scale moves the absolute part off its offsets";
 const UNPLACED = refused(
   "the absolute part's offsets and lengths place it neither by its parent's edges nor its centre in every mode"
@@ -373,8 +383,17 @@ export function planPlacement(
   const positioned =
     POSITIONED.has(normalizeCss(context.parent.resolved("position") ?? "static")) ||
     context.positionedBy !== undefined;
-  if (!positioned) {
+  if (!positioned && !context.parentSpansBlock) {
     return refused(NOT_POSITIONED);
+  }
+  // `planAxis` adds the parent's border to each offset, which holds only where the parent is the
+  // block. A parent that spans the block has its outer edge on the block's padding edge, so it must
+  // draw no border.
+  const bordered = [HORIZONTAL, VERTICAL].some((axis) =>
+    [axis.startBorder, axis.endBorder].some((side) => border(context.parent, side) !== 0)
+  );
+  if (!positioned && bordered) {
+    return refused(BORDERED_SPAN);
   }
   if (MOVES.some((property) => !["", "none"].includes(normalizeCss(style.resolved(property) ?? "")))) {
     return refused(MOVED);

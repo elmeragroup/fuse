@@ -2151,6 +2151,7 @@
     "select-trigger TEXT Value",
     "selection-item TEXT Description",
     "selection-item TEXT Title",
+    "sheet-content BOOLEAN Close button",
     "sheet-content TEXT Description",
     "sheet-content TEXT Title",
     "sidebar-group-label TEXT Label",

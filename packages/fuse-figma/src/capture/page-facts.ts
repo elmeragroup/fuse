@@ -13,6 +13,7 @@ import { coincidingAround } from "./coinciding-around.ts";
 import type { Rect } from "./coinciding-around.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
+import { parentSpansBlock } from "./parent-spans-block.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
 
@@ -138,6 +139,10 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  * - `pseudoBoxes`: each of an element's `::before` and `::after` that paints its box and, in every
  *   mode of {@link EVERY_MODE} once its faces have loaded, is an absolute box laid out against the
  *   element, as `pseudo-boxes.ts` decides.
+ * - `parentSpansBlock`: an absolute element below the root whose static parent has, as its border
+ *   box, the padding box of the element's containing block, the root or an element below it, in
+ *   every mode of {@link EVERY_MODE} once
+ *   its faces have loaded, as `parent-spans-block.ts` decides.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -821,5 +826,9 @@ const MEASURE_IN_PAGE = `async function () {
       put(path, "pseudoPaint", { ...(out[path]?.pseudoPaint ?? {}), [name]: pseudoPaintOf(element, pseudo) });
     }
   }
+  // An absolute element whose parent spans its containing block, in every mode.
+  const parentSpansBlock = (${parentSpansBlock.toString()});
+  const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root));
+  for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root))) { put(path, "parentSpansBlock", true); }
   return out;
 }`;
