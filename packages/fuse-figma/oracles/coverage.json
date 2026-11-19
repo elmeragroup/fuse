@@ -61,7 +61,7 @@
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",
       "property": "margin-left",
-      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every mode (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
     },
     {
       "set": "dropdown-menu-popup",
@@ -89,7 +89,7 @@
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",
       "property": "margin-left",
-      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every mode (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
     },
     {
       "set": "dropdown-menu-sub-content",
@@ -117,7 +117,7 @@
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",
       "property": "margin-left",
-      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every mode (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
     },
     {
       "set": "dropdown-menu-open",

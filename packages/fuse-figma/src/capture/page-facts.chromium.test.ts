@@ -330,17 +330,21 @@ async function factsByPath(): Promise<ReadonlyMap<string, MeasuredFacts>> {
  * maximum is narrowed by it already; and a 400px box under `min-content`, which Chromium narrows to
  * its 100px content, takes no `calc()` of it, so nothing proves the maximum idle. A box 200px wide
  * dense and 230px comfortable under a 240px maximum keeps 40px of room dense but 10px comfortable,
- * so the fact fails in a mode the capture does not render. The page leaves the box's inline style and
- * the document's mode as it found them.
+ * so the fact fails in a mode the capture does not render. A box 200px wide in the light scheme and
+ * 230px in the dark one, under the same maximum, fails it the same way in the dark scheme, which a
+ * host can key a length on as well as a color. The page leaves the box's inline style and the
+ * document's mode as it found them.
  */
 describe("a maximum the capture measures as never narrowing its box", () => {
   async function measure(box: string, inner: string) {
     await page.setContent(
-      `<style>:root[data-density="comfortable"] .wider { width: 230px !important }</style><main data-compare-cell><div style="width:300px"><div id="root" style="${box}"><div class="${inner}" style="width:${inner === "wider" ? "200px" : inner};height:10px;flex-shrink:0"></div></div></div></main>`
+      `<style>:root[data-density="comfortable"] .wider, :root[data-theme="dark"] .darker { width: 230px !important }</style><main data-compare-cell><div style="width:300px"><div id="root" style="${box}"><div class="${inner}" style="width:${inner === "wider" || inner === "darker" ? "200px" : inner};height:10px;flex-shrink:0"></div></div></div></main>`
     );
     const { facts, style } = await factsOfRoot();
-    const density = await page.evaluate(() => document.documentElement.getAttribute("data-density"));
-    return { under: facts?.underMaxWidth === true, style, density };
+    const mode = await page.evaluate(() =>
+      ["data-density", "data-theme"].map((name) => document.documentElement.getAttribute(name))
+    );
+    return { under: facts?.underMaxWidth === true, style, mode };
   }
 
   it.each([
@@ -349,8 +353,9 @@ describe("a maximum the capture measures as never narrowing its box", () => {
     ["display:flex;width:fit-content;max-width:100%", "400px", false],
     ["display:flex;width:400px;max-width:min-content", "100px", false],
     ["display:flex;width:fit-content;max-width:240px", "wider", false],
+    ["display:flex;width:fit-content;max-width:240px", "darker", false],
   ])("on %s around a %s child: %s", async (box, inner, under) => {
-    expect(await measure(box, inner)).toEqual({ under, style: box, density: null });
+    expect(await measure(box, inner)).toEqual({ under, style: box, mode: [null, null] });
   });
 });
 
