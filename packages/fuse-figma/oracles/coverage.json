@@ -4055,6 +4055,96 @@
         "part": "attachment-title",
         "className": "group-data-[state=uploading]/attachment:shimmer"
       }
+    ],
+    "description-list-item": [
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:basis-[min-content]"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:grow"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:max-w-max"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:min-w-0"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:ms-auto"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:not-first-of-type:max-w-full"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:py-0"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:text-end"
+      },
+      {
+        "part": "description-list-details",
+        "className": "[:where([data-layout=inline]>*)>&]:wrap-break-word"
+      },
+      {
+        "part": "description-list-item",
+        "className": "[:where([data-layout=inline])>&]:border-none"
+      },
+      {
+        "part": "description-list-item",
+        "className": "[:where([data-layout=inline])>&]:flex"
+      },
+      {
+        "part": "description-list-item",
+        "className": "[:where([data-layout=inline])>&]:flex-wrap"
+      },
+      {
+        "part": "description-list-item",
+        "className": "[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:basis-[min-content]"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:grow"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:max-w-max"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:not-last-of-type:basis-full"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:not-last-of-type:max-w-full"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:p-0"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:shrink-0"
+      },
+      {
+        "part": "description-list-term",
+        "className": "[:where([data-layout=inline]>*)>&]:wrap-break-word"
+      }
     ]
   },
   "unreached": [

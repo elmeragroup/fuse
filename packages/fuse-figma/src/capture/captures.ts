@@ -36,6 +36,8 @@ import commandPalette from "../../captures/command-palette.json" with { type: "j
 import confirmButton from "../../captures/confirm-button.json" with { type: "json" };
 import dateField from "../../captures/date-field.json" with { type: "json" };
 import datePicker from "../../captures/date-picker.json" with { type: "json" };
+import descriptionListItem from "../../captures/description-list-item.json" with { type: "json" };
+import descriptionList from "../../captures/description-list.json" with { type: "json" };
 import dialogContent from "../../captures/dialog-content.json" with { type: "json" };
 import dialogOpen from "../../captures/dialog-open.json" with { type: "json" };
 import dropdownMenuCheckboxItem from "../../captures/dropdown-menu-checkbox-item.json" with { type: "json" };
@@ -186,6 +188,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["sheet-content", sheetContent],
   ["code", code],
   ["attachment", attachment],
+  ["description-list-item", descriptionListItem],
+  ["description-list", descriptionList],
   ["calendar-day", calendarDay],
   ["date-field", dateField],
   ["date-picker", datePicker],

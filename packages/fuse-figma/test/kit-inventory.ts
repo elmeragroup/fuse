@@ -479,6 +479,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Attachment",
     sets: [{ key: "attachment", name: "Attachment", variants: 6, previewed: 6 }],
   },
+  // The docs default demo's first Item, first or after another, with dividers or without, and the
+  // demo's list of five Items with dividers or without.
+  {
+    slug: "description-list",
+    name: "Description list",
+    sets: [
+      { key: "description-list-item", name: "Description list item", variants: 4, previewed: 4 },
+      { key: "description-list", name: "Description list", variants: 2, previewed: 2 },
+    ],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

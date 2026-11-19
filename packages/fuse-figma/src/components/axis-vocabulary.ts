@@ -157,6 +157,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "Which row of a Table the cell draws: the header row, a body row, or the body's last row, which draws no rule under it.",
     },
   ],
+  [
+    "position",
+    {
+      values: ["first", "later"],
+      draws:
+        "Where a Description list Item sits in its list: first, which draws no rule above it, or after another Item, which draws one where the list shows dividers.",
+    },
+  ],
   ["keys", { values: ["2"], draws: "How many Kbd caps a Kbd group holds." }],
   ["avatars", { values: ["3"], draws: "How many Avatars an Avatar group holds." }],
   ["pages", { values: ["3"], draws: "How many page links a Pagination row holds." }],

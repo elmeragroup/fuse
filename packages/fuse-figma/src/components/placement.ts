@@ -43,6 +43,7 @@ import type { LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
 import { readPivot } from "./pivot-part";
 import { wrapPlaced } from "./placement-wrapper";
+import type { SubgridLayout } from "./subgrid-row";
 
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
@@ -70,10 +71,17 @@ export type Layout = {
    */
   readonly labelFills?: true;
   /**
-   * True for a grid that puts every item in one column, as `placesInOneColumn` in `box-flow.ts`
-   * reads it, which the box draws as a flex column. Absent elsewhere.
+   * True for a grid that stacks its items in rows of their own, which the box draws as a flex column:
+   * one that puts every item in one column, as `placesInOneColumn` in `box-flow.ts` reads it, or a
+   * list whose items each span its columns, as `readSubgridFlow` in `subgrid-row.ts` reads it.
+   * Absent elsewhere.
    */
   readonly oneColumnGrid?: true;
+  /**
+   * A list whose items each span its columns, or a subgrid Item in one, as `readSubgridFlow` in
+   * `subgrid-row.ts` reads them, which reads their `display` itself. Absent elsewhere.
+   */
+  readonly subgrid?: SubgridLayout;
   /**
    * True for a table, a row group, a row or a cell whose parts the capture measured tiling it, as
    * `readTableFlow` in `table-layout.ts` reads it. Absent elsewhere.

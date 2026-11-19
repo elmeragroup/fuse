@@ -67,14 +67,17 @@ type PageHelpers = {
  *
  * @param grid - The grid element.
  * @param helpers - What the page hands in.
- * @returns What the columns hold, or undefined for no grid of two or more columns.
+ * @returns What the columns hold, or undefined for no grid of two or more columns whose computed
+ *   tracks are all lengths.
  */
 export function gridColumns(grid: Element, helpers: PageHelpers): GridColumns | undefined {
   const { withStyles, longer, addsBox, unit, clearance } = helpers;
   const tracksNow = (): string[] => getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/);
   const style = getComputedStyle(grid);
   const tracks = style.display.endsWith("grid") ? tracksNow() : [];
-  if (tracks.length < 2 || addsBox(grid)) {
+  // The page reads each column from its used width, so a track list that holds anything else, such
+  // as a subgrid's `subgrid [] [] []` (CSS Grid 2 §9) or a line name, records nothing.
+  if (tracks.length < 2 || !tracks.every((track) => track.endsWith("px")) || addsBox(grid)) {
     return undefined;
   }
   const wrappers: Element[] = [];

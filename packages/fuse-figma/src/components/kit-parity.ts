@@ -172,7 +172,13 @@ export const KIT_PARITY = {
   // `@container/picker` and the error's and description's blocks around a text span map to nothing
   // yet.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
-  "description-list": { kind: "issue", issue: MISSING_SETS },
+  "description-list": {
+    kind: "partial",
+    sets: ["description-list-item", "description-list"],
+    missing:
+      "The inline layout, the stacked layout below `sm`, and a details word wider than its column, which CSS widens the column for in every Item where the kit breaks the word.",
+    issue: MISSING_SETS,
+  },
   dialog: {
     kind: "partial",
     sets: ["dialog-content", "dialog-open"],
