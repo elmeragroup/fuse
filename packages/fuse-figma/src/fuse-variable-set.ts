@@ -74,6 +74,7 @@ import {
   KIT_FONT_DESCRIPTIONS,
   KIT_FONT_NAMES,
   KIT_HEADING_FAMILY,
+  KIT_MONO_FAMILY,
 } from "./kit-fonts.ts";
 import type { KitFontName } from "./kit-fonts.ts";
 import { FILL_SCOPES, makeVariableSet } from "./variable-set.ts";
@@ -816,7 +817,7 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
 /**
  * The kit's font variables, which follow the role tokens as the contract once listed them. Fuse's
  * themes name no fonts, so `kit-fonts.ts` holds the families: Roboto for body text, which headings
- * follow, and Neo Sans for headings in Fjordkraft's branded themes.
+ * follow, Neo Sans for headings in Fjordkraft's branded themes, and Roboto Mono for code.
  */
 function kitFontVariables(): readonly BoundVariable[] {
   return KIT_FONT_NAMES.map((name): BoundVariable => ({
@@ -828,6 +829,9 @@ function kitFontVariables(): readonly BoundVariable[] {
     leafIn: (_scheme, path, brand) => {
       if (name === "font-sans") {
         return { _tag: "String", value: KIT_BODY_FAMILY };
+      }
+      if (name === "font-mono") {
+        return { _tag: "String", value: KIT_MONO_FAMILY };
       }
       return hasOwnHeadingFamily(path.identity, brand)
         ? { _tag: "String", value: KIT_HEADING_FAMILY }

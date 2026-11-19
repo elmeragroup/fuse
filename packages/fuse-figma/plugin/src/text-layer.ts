@@ -167,17 +167,76 @@ export function planText(
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
   });
-  planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
-    text.fills = paints;
-  });
+  if (spec.ranges === undefined) {
+    planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
+      text.fills = paints;
+    });
+  }
 
   const typeset = recordsAny(run.plan, () =>
     planTypography(run, text, label, spec, propertyIds, parent, replaced)
   );
+  if (spec.ranges !== undefined) {
+    // A font write leaves the label in the new font alone, so a repair of a font Figma cannot load
+    // needs only the new one. The glyph ranges' writes load their own.
+    planRangeFills(run, text, label, spec, replaced || typeset, replaced ? [fontName] : [...held, fontName]);
+  }
   if (!replaced && typeset) {
     for (const font of [...held, fontName]) {
       requireFont(run, label, font);
     }
+  }
+}
+
+/**
+ * Plan the color of a text whose characters take colors of their own: the text's color, then each
+ * range's, through `setRangeFills` with a paint bound by `setBoundVariableForPaint`, as the typings
+ * say a range's fills bind. On 2026-11-19 a real file's whole `fills` write reset the ranges, and a
+ * `characters` write, even of the same text, gave every character the first character's fill, while
+ * `fontSize` and `fontName` writes kept them. So the ranges go after every other write of the label,
+ * and a label any earlier operation of the run writes takes them all again, which costs one
+ * operation on a label the run already changes.
+ *
+ * @param rewritten - Whether the run writes the label's font, characters or type before this.
+ * @param fonts - The fonts the label holds once the run's font write, if any, has run, which a range
+ *   write needs loaded. A label whose font the run replaces holds only the new one.
+ */
+function planRangeFills(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: TextLayerSpec,
+  rewritten: boolean,
+  fonts: readonly FontName[]
+): void {
+  const ranges = spec.ranges ?? [];
+  const colors: ColorSpec[] = Array.from({ length: spec.characters.length }, () => spec.color);
+  for (const range of ranges) {
+    colors.fill(range.color, range.start, range.end);
+  }
+  const shown =
+    !rewritten &&
+    text.characters === spec.characters &&
+    text.getStyledTextSegments(["fills"]).every((segment) => {
+      const [paint, ...rest] = segment.fills;
+      return (
+        paint !== undefined &&
+        rest.length === 0 &&
+        colors.slice(segment.start, segment.end).every((color) => paintMatches(run, paint, color))
+      );
+    });
+  if (shown) {
+    return;
+  }
+  const described = ranges.map((range) => `${range.start}-${range.end} ${describeColor(range.color)}`);
+  change(run.plan, label, `text color → ${describeColor(spec.color)}, ${described.join(", ")}`, () => {
+    text.fills = [solidPaint(run, spec.color)];
+    for (const range of ranges) {
+      text.setRangeFills(range.start, range.end, [solidPaint(run, range.color)]);
+    }
+  });
+  for (const font of fonts) {
+    requireFont(run, label, font);
   }
 }
 

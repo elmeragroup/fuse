@@ -17,6 +17,7 @@ catalog:
   "@figma/plugin-typings": 1.141.0
   "@fontsource/inter": 5.3.0
   "@fontsource/roboto": 5.3.0
+  "@fontsource/roboto-mono": 5.3.0
   "@internationalized/string": 3.2.10
   "@paper-design/shaders-react": 0.0.81
   "@phosphor-icons/react": 2.1.10

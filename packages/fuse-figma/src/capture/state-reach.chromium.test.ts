@@ -24,8 +24,8 @@ const ASSETS = {
   themes: "",
   preflight: "",
   fontCss: "",
-  fontDirectory: "",
-  fontPackage: "",
+  fontDirectories: new Map(),
+  fontPackages: [],
   hostCss: "",
   client: "",
 };

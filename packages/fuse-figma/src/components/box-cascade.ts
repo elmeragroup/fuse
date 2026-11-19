@@ -117,6 +117,18 @@ export type BoxCascade = {
    */
   capturedText(attribute: string | undefined): CapturedText;
   /**
+   * The box's text nodes and those of the elements below it that no layer draws, in document order,
+   * each with the style of every element between the box and the text node, outermost first, as
+   * Code's highlighter holds each token in a span inside a line span. The box's own text has no
+   * element between. Defined only where such an element sets a declaration beyond the base layers',
+   * as a token's inline `color` is, and undefined where the box's own style speaks for all of its
+   * text.
+   *
+   * @param label - The label's key, which each element's reads fill.
+   * @returns The runs, or undefined.
+   */
+  textRuns(label: string): readonly TextRun[] | undefined;
+  /**
    * Cascade an icon this box shows, over what this box passes down.
    *
    * @param slot - The icon.
@@ -165,6 +177,13 @@ export type CapturedText =
   | { readonly _tag: "Painted"; readonly source: "attribute" | "nodes"; readonly text: string }
   | { readonly _tag: "Hidden" }
   | { readonly _tag: "Unresolved"; readonly reason: string };
+
+/** A text node of a label and the styles of the elements it sits in below the box, as {@link BoxCascade.textRuns} reads it. */
+export type TextRun = {
+  readonly text: string;
+  /** The style of each element between the box and the text node, outermost first. */
+  readonly elements: readonly LayerStyle[];
+};
 
 /** What a capture measured of a box's element, as {@link BoxCascade.measured} says. */
 export type MeasuredBox = {

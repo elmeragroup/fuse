@@ -53,6 +53,8 @@ export type FixtureElement = {
   readonly text?: string;
   /** How many element children precede the element's own text, as the capture records it. */
   readonly textIndex?: number;
+  /** The element's text nodes between its element children, where `text` and `textIndex` lose some. */
+  readonly texts?: readonly string[];
   /** The classes whose compiled declarations the element wins, in cascade order, space-separated. */
   readonly classes?: string;
   /** The classes of the parent whose child selector puts their declarations on this element. */
@@ -204,7 +206,8 @@ export async function buildCaptured(
     };
     const indexed =
       fixture.textIndex === undefined ? captured : { ...captured, textIndex: fixture.textIndex };
-    return fixture.measured === undefined ? indexed : { ...indexed, measured: fixture.measured };
+    const ordered = fixture.texts === undefined ? indexed : { ...indexed, texts: fixture.texts };
+    return fixture.measured === undefined ? ordered : { ...ordered, measured: fixture.measured };
   };
   const capture: SetCapture = {
     format: CAPTURE_FORMAT,

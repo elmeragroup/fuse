@@ -4,17 +4,18 @@
  * host's build would. The Fuse build is the one `pnpm --filter @elmeragroup/fuse build` writes, which
  * the comparison also renders the components from.
  *
- * The font comes from `@fontsource/roboto`, Google's Roboto, the family Figma renders for the
- * kit's labels. The page sets `--font-sans` with Roboto first in every theme (`kit-fonts.ts`), and
- * it checks that the face it uses has loaded, so a missing font file fails the run instead of
- * falling back to a system font.
+ * The fonts come from `@fontsource/roboto` and `@fontsource/roboto-mono`, Google's Roboto and
+ * Roboto Mono, the families Figma renders for the kit's labels. The page sets `--font-sans` with
+ * Roboto first and `--font-mono` with Roboto Mono first in every theme (`kit-fonts.ts`), and it
+ * checks that the face it uses has loaded, so a missing font file fails the run instead of falling
+ * back to a system font.
  */
 
 import { Effect, FileSystem, Option } from "effect";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { compileHostUtilities } from "../components/utility-css.ts";
+import { compileHostUtilities, compilePreflight } from "../components/utility-css.ts";
 import { KIT_HEADING_FAMILY } from "../kit-fonts.ts";
 import { isClientRenderer, RENDERER_ENTRIES } from "./cell-renderers.ts";
 import type { AnyCellRenderer } from "./cell-renderers.ts";
@@ -30,8 +31,14 @@ const BUILD_OUTPUTS: readonly string[] = [
   ...new Set(["dist/styles.css", "dist/themes.css", "dist/icons.js", ...RENDERER_ENTRIES]),
 ];
 
-/** The font weights the page can load, each in the upright and italic cuts the package ships. */
-const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
+/**
+ * The font packages the page loads, by the name its font files sit under in
+ * {@link ASSET_PATHS.fontFiles}, each with the weights it ships in upright and italic cuts.
+ */
+const FONT_PACKAGES = [
+  { name: "roboto", weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+  { name: "roboto-mono", weights: [100, 200, 300, 400, 500, 600, 700] },
+] as const;
 
 /**
  * Licensed families neither the compare page nor the real file ships, by name, with why. Where a
@@ -56,14 +63,14 @@ export type PageAssets = {
   readonly styles: string;
   /** Fuse's built `themes.css`. */
   readonly themes: string;
-  /** Tailwind's preflight. */
+  /** Tailwind's preflight, compiled as a Tailwind-source host compiles it. */
   readonly preflight: string;
-  /** `@font-face` rules whose sources point at {@link ASSET_PATHS.fontFiles}. */
+  /** `@font-face` rules whose sources point below {@link ASSET_PATHS.fontFiles}, by package name. */
   readonly fontCss: string;
-  /** The directory that holds the font files. */
-  readonly fontDirectory: string;
-  /** The font package's directory, whose pnpm path names its version, for the report. */
-  readonly fontPackage: string;
+  /** The directory that holds each package's font files, by the package's name. */
+  readonly fontDirectories: ReadonlyMap<string, string>;
+  /** Each font package's directory, whose pnpm path names its version, for the report. */
+  readonly fontPackages: readonly string[];
   /** The rules of every class a renderer names as the host's own. */
   readonly hostCss: string;
   /** The bundle that mounts the client cells, empty when no renderer is a client renderer. */
@@ -146,14 +153,20 @@ export const readPageAssets = Effect.fnUntraced(function* (
   build: FuseBuild,
   renderers: ReadonlyMap<string, AnyCellRenderer>
 ) {
-  const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
-  const fonts = yield* Effect.forEach(
-    FONT_WEIGHTS.flatMap((weight) => [`${String(weight)}.css`, `${String(weight)}-italic.css`]),
-    (file) => readText(join(fontPackage, file))
+  const packages = FONT_PACKAGES.map((font) => ({
+    ...font,
+    directory: dirname(fileURLToPath(import.meta.resolve(`@fontsource/${font.name}/400.css`))),
+  }));
+  const fonts = yield* Effect.forEach(packages, (font) =>
+    Effect.forEach(
+      font.weights.flatMap((weight) => [`${String(weight)}.css`, `${String(weight)}-italic.css`]),
+      (file) =>
+        Effect.map(readText(join(font.directory, file)), (css) =>
+          css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}${font.name}/`)
+        )
+    )
   );
-  const fontCss = fonts
-    .map((css) => css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}`))
-    .join("\n");
+  const fontCss = fonts.flat().join("\n");
   const hostCss = yield* compileHostUtilities(
     [...renderers.values()].flatMap((renderer) => renderer.hostClasses ?? [])
   );
@@ -161,10 +174,10 @@ export const readPageAssets = Effect.fnUntraced(function* (
   const assets: PageAssets = {
     styles: yield* readText(join(build.root, "dist/styles.css")),
     themes: yield* readText(join(build.root, "dist/themes.css")),
-    preflight: yield* readText(fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))),
+    preflight: yield* compilePreflight(),
     fontCss,
-    fontDirectory: join(fontPackage, "files"),
-    fontPackage,
+    fontDirectories: new Map(packages.map((font) => [font.name, join(font.directory, "files")])),
+    fontPackages: packages.map((font) => font.directory),
     hostCss,
     client,
   };

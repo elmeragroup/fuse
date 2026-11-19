@@ -11,7 +11,6 @@ import { keptCapture } from "../capture/captures";
 import { manifestDefinition } from "../capture/manifest";
 import type { SetManifest } from "../capture/manifest";
 import { fuseVariableSet } from "../fuse-variable-set";
-import { KIT_BODY_FAMILY } from "../kit-fonts";
 import type { CollectionSpec, LiteralValue, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder, inPlacementOrder } from "./component-builder";
@@ -566,11 +565,12 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
   for (const page of componentPages) {
     docs.push(yield* Effect.fromResult(pageDocs(page, registry, setsByKey)));
   }
-  const fontStyles = [...new Set(built.flatMap((set) => set.fontStyles))];
+  const fonts = new Map(
+    built.flatMap((set) => set.fonts).map((font) => [`${font.family} ${font.style}`, font])
+  );
   const spec: KitSpec = {
     pages: [...componentPages.map(pageSpec), ICONS_PAGE],
-    // A kit label binds `font-sans`, which holds the kit's body family in every theme.
-    fonts: fontStyles.map((style) => ({ family: KIT_BODY_FAMILY, style })),
+    fonts: [...fonts.values()],
     glyphFont: GLYPH_FONT,
     icons,
     componentSets: built.map((set) => set.componentSet),

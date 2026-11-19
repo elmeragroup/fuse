@@ -9,7 +9,7 @@ import type { CellAccounting } from "../capture/capture-cascade.ts";
 import { KitUnmappable } from "./build-errors.ts";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
-import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, SwapPropertySpec } from "./kit-spec";
+import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, FontSpec, SwapPropertySpec } from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
 
 /**
@@ -335,8 +335,8 @@ export type BuildContext = {
 export type BuiltComponent = {
   readonly componentSet: Omit<ComponentSetSpec, "page">;
   readonly coverage: readonly CoverageRow[];
-  /** Each font style the text layers use. */
-  readonly fontStyles: readonly string[];
+  /** Each font the text layers use, by the family their family variable holds in Figma. */
+  readonly fonts: readonly FontSpec[];
   /** What each cell's cascade put into its layers, by the cell's key, which the coverage oracle reads. */
   readonly accounting: ReadonlyMap<string, CellAccounting>;
 };

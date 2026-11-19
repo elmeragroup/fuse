@@ -1278,17 +1278,58 @@ function writeUnderlineField<Field extends UnderlineField>(
   }
 }
 
+/**
+ * The fills each character a text shows paints with: the paints a range write gave it, or the
+ * layer's (rule 65). The whole `fills`, a range's fills and the segments all read these, so a
+ * character a range write gave the layer's own paints reads the same as one it never touched.
+ */
+function characterFills(state: NodeState): readonly (readonly Paint[])[] {
+  const layer = shown(state, "fills");
+  return shownStyles(state).map((style) => style.fills ?? layer);
+}
+
+/** The fills a run of characters shares, or `figma.mixed` where any two differ, bound variables included. */
+function sharedFills(fills: readonly (readonly Paint[])[]): readonly Paint[] | PluginAPI["mixed"] {
+  const [first, ...rest] = fills;
+  return first === undefined || rest.some((paints) => JSON.stringify(paints) !== JSON.stringify(first))
+    ? MIXED
+    : first;
+}
+
 class FakeText extends FakeSceneNode {
   get type(): "TEXT" {
     return "TEXT";
   }
 
+  /** The fills every character paints with, `figma.mixed` where the characters differ (rule 65). */
   get fills(): ReadonlyArray<Paint> | PluginAPI["mixed"] {
-    return shown(live(this), "fills");
+    return sharedFills(characterFills(live(this)));
   }
 
+  /** A whole write gives every character the layer's fills (rule 65). */
   set fills(paints: ReadonlyArray<Paint> | PluginAPI["mixed"]) {
-    writeFills(live(this), paints);
+    const state = live(this);
+    writeFills(state, paints);
+    restyleWhole(state, ({ fills: _ranged, ...style }) => style);
+  }
+
+  getRangeFills(start: number, end: number): Paint[] | PluginAPI["mixed"] {
+    const state = live(this);
+    requireRange(state, start, end);
+    const fills = sharedFills(characterFills(state).slice(start, end));
+    return fills === MIXED ? MIXED : [...fills];
+  }
+
+  /** The range's fonts need loading, as the typings say, and the write leaves the base style (rule 65). */
+  setRangeFills(start: number, end: number, paints: Paint[]): void {
+    const state = live(this);
+    requireRange(state, start, end);
+    for (const font of distinctFonts(state.styles.slice(start, end))) {
+      requireFont(state, font, `fills ${start}-${end}`);
+    }
+    write(state, `fills ${start}-${end}`);
+    const fills = paints.map((paint) => storePaint(state.file, paint));
+    restyle(state, start, end, (style) => ({ ...style, fills }));
   }
 
   /** Rule 34: a sublayer shows the TEXT property value its instance sets. */
@@ -1542,15 +1583,19 @@ class FakeText extends FakeSceneNode {
     restyle(state, start, end, (style) => ({ ...style, fontSize }));
   }
 
-  /** The runs of characters whose `fontName`, `fontSize` and `boundVariables` agree (rule 50). */
+  /** The runs of characters whose `fontName`, `fontSize`, `boundVariables` and `fills` agree (rules 50 and 65). */
   getStyledTextSegments(
     fields: readonly (keyof Omit<StyledTextSegment, "characters" | "start" | "end">)[],
     start?: number,
     end?: number
-  ): Pick<StyledTextSegment, "characters" | "start" | "end" | "fontName" | "fontSize" | "boundVariables">[] {
+  ): Pick<
+    StyledTextSegment,
+    "characters" | "start" | "end" | "fontName" | "fontSize" | "boundVariables" | "fills"
+  >[] {
     const state = live(this);
     const unmodelled = fields.filter(
-      (field) => field !== "fontName" && field !== "fontSize" && field !== "boundVariables"
+      (field) =>
+        field !== "fontName" && field !== "fontSize" && field !== "boundVariables" && field !== "fills"
     );
     if (unmodelled.length > 0) {
       throw new Error(`The fake Figma file does not model the segment fields ${unmodelled.join(", ")}.`);
@@ -1563,20 +1608,29 @@ class FakeText extends FakeSceneNode {
     }
     requireRange(state, from, to);
     const styles = shownStyles(state);
-    const segments: { readonly start: number; end: number; readonly style: CharacterStyle }[] = [];
+    const painted = characterFills(state);
+    const segments: {
+      readonly start: number;
+      end: number;
+      readonly style: CharacterStyle;
+      readonly fills: readonly Paint[];
+      readonly key: string;
+    }[] = [];
     for (let index = from; index < to; index += 1) {
       const style = styles[index];
-      if (style === undefined) {
+      const fills = painted[index];
+      if (style === undefined || fills === undefined) {
         throw new Error(`${state.id} holds no style for its character ${index}.`);
       }
+      const key = segmentKey(style, fills, fields);
       const last = segments.at(-1);
-      if (last !== undefined && segmentKey(last.style, fields) === segmentKey(style, fields)) {
+      if (last?.key === key) {
         last.end = index + 1;
       } else {
-        segments.push({ start: index, end: index + 1, style });
+        segments.push({ start: index, end: index + 1, style, fills, key });
       }
     }
-    // Each segment holds the three modelled fields, the ones asked for among them.
+    // Each segment holds the four modelled fields, the ones asked for among them.
     return segments.map((segment) => ({
       characters: characters.slice(segment.start, segment.end),
       start: segment.start,
@@ -1584,6 +1638,7 @@ class FakeText extends FakeSceneNode {
       fontName: { ...segment.style.font },
       fontSize: segment.style.fontSize,
       boundVariables: segmentBindings(segment.style),
+      fills: [...segment.fills],
     }));
   }
 

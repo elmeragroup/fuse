@@ -765,6 +765,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const own: LabelScope = {
       cell,
       variables: context.variables,
+      context,
       color: textColor,
       clamp,
       variant,
@@ -772,6 +773,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       fitsOneLine,
       ellipsisFits: labelSource.ellipsisFits,
       captured: cascade.capturedText(shown.textAttribute?.(cell)),
+      runs: shown.textAttribute?.(cell) === undefined ? cascade.textRuns(shown.key) : undefined,
     };
     // A TEXT value gave the label other characters in place, so its layout follows its variant's.
     return shown === box.label || box.label === undefined

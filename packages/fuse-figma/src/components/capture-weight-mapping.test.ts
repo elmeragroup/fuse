@@ -54,9 +54,9 @@ function weighted(minimum: number, maximum: number) {
 
 describe("a label whose weight reads a synced variable", () => {
   it("binds the variable, takes the lightest face, and loads every face the weights name", async () => {
-    const { variant, fontStyles } = await weighted(400, 500);
+    const { variant, fonts } = await weighted(400, 500);
     const label = textOf(variant?.root);
-    expect([label?.weight, label?.fontStyle, [...fontStyles].toSorted()]).toEqual([
+    expect([label?.weight, label?.fontStyle, fonts.map((font) => font.style).toSorted()]).toEqual([
       { variable: { collection: "Fuse tokens", name: "title-weight" }, faces: ["Regular", "Medium"] },
       "Regular",
       ["Medium", "Regular"],

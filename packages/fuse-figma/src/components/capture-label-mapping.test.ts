@@ -106,7 +106,52 @@ describe("a block box that holds only its label", () => {
     const { variant } = await buildLabelled(`block w-[100px] ${height}`);
     expect(variant?.root.counterAlign).toBe("MIN");
   });
+
+  // Oracle: CSS Text 3 §6.1. `text-align` places each line box's content across the block's width,
+  // so a line that never wraps sits where the box's text alignment says, as a `<pre>` sets its lines
+  // from the start.
+  it.each([
+    ["", "MIN"],
+    ["text-center", "CENTER"],
+    ["text-right", "MAX"],
+  ])("places a line that never wraps where %s sets it", async (align, place) => {
+    const { variant } = await buildLabelled(`block w-[100px] whitespace-pre ${align}`);
+    expect([textOf(variant?.root)?.sizing, variant?.root.primaryAlign]).toEqual([HUGGING, place]);
+  });
+
+  // Oracle: CSS Text 3 §6.1 and CSS Writing Modes 4 §2.1. `start`, the initial value, and `end` name
+  // the edges the inherited `direction` starts and ends the line at, so under `rtl` `start` is the
+  // right; `left` stays the left. A right-to-left box also orders its layers from the right, so its
+  // `direction` stays unmapped.
+  it.each([
+    ["", "MAX", "RIGHT"],
+    ["text-start", "MAX", "RIGHT"],
+    ["text-end", "MIN", "LEFT"],
+    ["text-left", "MIN", "LEFT"],
+  ])("places a right-to-left line where %s sets it", async (align, place, lines) => {
+    const { variant, coverage } = await buildCaptured(
+      chip({ label: LABEL }),
+      rest({
+        slot: "chip",
+        classes: `${TEXT_STYLE} block w-[100px] whitespace-pre ${align}`,
+        text: textOfLabel(LABEL),
+      }).map((cell) => ({ ...cell, around: [{ written: [RIGHT_TO_LEFT] }] })),
+      FONT_SANS
+    );
+    expect([variant?.root.primaryAlign, textOf(variant?.root)?.align.horizontal]).toEqual([place, lines]);
+    expect(coverage.filter((row) => row.property === "direction").map((row) => row.outcome)).toEqual([
+      "unmapped",
+    ]);
+  });
 });
+
+/** A `direction: rtl` an element around the root writes, which the root inherits. */
+const RIGHT_TO_LEFT = {
+  className: "inline style",
+  property: "direction",
+  value: "rtl",
+  source: "inline",
+} as const;
 
 // Oracle: CSS Text 3 and CSS Sizing 3. A label laid out in a definite content width, fixed or filling,
 // breaks its lines there (`white-space: normal`), as a Figma text that fills the width and hugs its

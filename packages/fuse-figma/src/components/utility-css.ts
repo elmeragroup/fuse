@@ -125,6 +125,35 @@ export function compileHostUtilities(
   return Effect.map(buildConsumerCss(classes), (nodes) => nodes.flatMap(select).map(toCss).join("\n"));
 }
 
+/** The layer {@link compilePreflight} imports preflight into, so its rules stand apart in the output. */
+const PREFLIGHT_LAYER = "fuse-figma-preflight";
+
+/**
+ * Compile Tailwind's preflight as a Tailwind-source host's build compiles `@import "tailwindcss"`
+ * with `fuse.css`: each `--theme(--name, fallback)` it calls becomes `var(--name, fallback)`. A
+ * browser reads an uncompiled `--theme()` as a function no rule defines and drops the declaration,
+ * so the capture and comparison pages load this compile, as a host's pages do.
+ *
+ * @returns Preflight's rules, one per line. The Effect fails as {@link compileUtilities} does.
+ */
+export function compilePreflight(): Effect.Effect<string, KitSourceInvalid | KitToolFailed> {
+  const preflight: AtRule = {
+    kind: "at-rule",
+    name: "@import",
+    params: `"tailwindcss/preflight.css" layer(${PREFLIGHT_LAYER})`,
+    nodes: [],
+  };
+  const [theme, ...rest] = consumerEntry();
+  const entry = theme === undefined ? [preflight, ...rest] : [theme, preflight, ...rest];
+  const layered = (node: AstNode): AstNode[] =>
+    node.kind === "at-rule" && node.name === "@layer" && node.params === PREFLIGHT_LAYER
+      ? node.nodes
+      : node.kind === "context" || node.kind === "at-root"
+        ? node.nodes.flatMap(layered)
+        : [];
+  return Effect.map(buildConsumerCss([], entry), (nodes) => nodes.flatMap(layered).map(toCss).join("\n"));
+}
+
 /**
  * Serialize a node of Tailwind's syntax tree. Tailwind's own printer is not exported. Comments
  * print nothing, and the compiler's context and at-root wrappers print their children.
@@ -149,12 +178,18 @@ function toCss(node: AstNode): string {
   }
 }
 
-/** Build the candidates against the standalone consumer entry and `fuse.css`. */
+/**
+ * Build the candidates against the standalone consumer entry and `fuse.css`.
+ *
+ * @param entry - The stylesheet the build compiles, the consumer's entry unless a caller adds to it.
+ */
 function buildConsumerCss(
-  candidates: readonly string[]
+  candidates: readonly string[],
+  entry: AstNode[] = consumerEntry()
 ): Effect.Effect<AstNode[], KitSourceInvalid | KitToolFailed> {
   const stylesheets = new Map<string, string>([
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
+    ["tailwindcss/preflight.css", fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
     ["./fuse.css", fileURLToPath(import.meta.resolve("@elmeragroup/fuse/css"))],
     // `fuse.css` imports its private sheets from beside itself.
@@ -172,7 +207,7 @@ function buildConsumerCss(
     ],
   ]);
   return runTool("tailwindcss", async () => {
-    const compiler = await compileAst(consumerEntry(), {
+    const compiler = await compileAst(entry, {
       base: "/",
       loadStylesheet: async (id, base) => {
         const path = stylesheets.get(id);

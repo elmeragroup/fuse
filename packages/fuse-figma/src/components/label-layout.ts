@@ -6,12 +6,12 @@
  * gap, and to settle the text declarations of a box that shows no label.
  */
 
-import type { CapturedText } from "./box-cascade";
+import type { CapturedText, TextRun } from "./box-cascade";
 import { describeColor } from "./box-paint";
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
 import type { Holder, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
-import type { Cell, LabelDefinition } from "./component-spec";
+import type { BuildContext, Cell, LabelDefinition } from "./component-spec";
 import { evaluateLength, evaluateNumber, inFont, normalizeCss, readColor, splitTopLevel } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { readFaceStyle } from "./italic-face";
@@ -27,6 +27,7 @@ import type {
 import { checkLabelText } from "./label-text";
 import type { CoverageNote, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+import { readRanges } from "./text-ranges";
 import { readType } from "./typography";
 import { weightBinding } from "./weight-binding";
 
@@ -61,6 +62,8 @@ export type MappedLabel = {
 export type LabelScope = {
   readonly cell: Cell;
   readonly variables: VariableIndex;
+  /** The build's context, which says which properties a span inherits. */
+  readonly context: BuildContext;
   /** The box's text color, which the label takes. */
   readonly color: ColorSpec | undefined;
   /** The lines the box clamps its label to, as {@link readLineClamp} decides, or undefined for none. */
@@ -88,6 +91,11 @@ export type LabelScope = {
    * first character and the ellipsis, where the browser and a Figma text both draw it.
    */
   readonly ellipsisFits: boolean;
+  /**
+   * The label's text run by run with the spans each run sits in, where a span below the box styles
+   * some of it, as the box cascade's `textRuns` reads them, or undefined.
+   */
+  readonly runs?: readonly TextRun[] | undefined;
   /** The text the capture recorded for the label in the cell, which `label-text.ts` checks its characters against. */
   readonly captured: CapturedText;
 };
@@ -110,14 +118,30 @@ const TEXT_PROPERTIES = [
   "overflow-wrap",
 ] as const;
 
-/** Where `text-align` sets a label's lines, by the value Tailwind compiles, in a left-to-right page. */
-const TEXT_ALIGNS = new Map<string, { readonly align: TextAlignSpec["horizontal"]; readonly where: string }>([
-  ["left", { align: "LEFT", where: "at the left" }],
-  ["start", { align: "LEFT", where: "at the left" }],
-  ["center", { align: "CENTER", where: "in the center" }],
-  ["right", { align: "RIGHT", where: "at the right" }],
-  ["end", { align: "RIGHT", where: "at the right" }],
+/**
+ * Where `text-align` sets a label's lines, by the value Tailwind compiles, under each `direction`.
+ * `start` and `end` name the edges the line's direction starts and ends at, and `left` and `right`
+ * name the same edges under either (CSS Text 3 §6.1).
+ */
+const TEXT_ALIGNS = new Map<string, Readonly<Record<LineDirection, Across>>>([
+  ["left", { ltr: "LEFT", rtl: "LEFT" }],
+  ["start", { ltr: "LEFT", rtl: "RIGHT" }],
+  ["center", { ltr: "CENTER", rtl: "CENTER" }],
+  ["right", { ltr: "RIGHT", rtl: "RIGHT" }],
+  ["end", { ltr: "RIGHT", rtl: "LEFT" }],
 ]);
+
+/** The direction a label's lines run in, which `direction` sets and a box passes down. */
+type LineDirection = "ltr" | "rtl";
+
+/**
+ * The direction a label's lines run in. It decides only where `start` and `end` put them, so the
+ * `direction` row stays unmapped: a right-to-left box also orders its layers from the right, which
+ * the build does not draw.
+ */
+function lineDirection(style: LayerStyle): LineDirection {
+  return normalizeCss(style.resolved("direction") ?? "") === "rtl" ? "rtl" : "ltr";
+}
 
 /** The text alignment across each horizontal placement a definition names takes. */
 const PLACED_ACROSS = { start: "LEFT", center: "CENTER", end: "RIGHT" } as const;
@@ -415,6 +439,17 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
   const lines = label.placement?.lines;
   const characters = labelCharacters(label, scope.cell);
   checkLabelText(style, characters, scope.captured, scope);
+  const ranges =
+    scope.runs === undefined
+      ? []
+      : readRanges(scope.runs, style, color, characters, { variables, context: scope.context }, scope);
+  // A TEXT write on an instance writes its characters, which on 2026-11-19 gave every character the
+  // first character's fill, even where the text stayed the same.
+  if (ranges.length > 0 && label.textProperty !== undefined) {
+    throw new KitUnmappable({
+      message: `${scope.variant}: the label ${path.join("/")} colors runs of its text and links the ${label.textProperty} property, whose writes give every character the first character's color`,
+    });
+  }
   const layout: LabelLayout =
     lines === undefined
       ? readLabelLayout(
@@ -452,14 +487,41 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     align: readTextAlign(style, fills ? label.placement : undefined, path),
     truncation: layout.truncation,
   };
-  const weighted = weight === undefined ? layer : { ...layer, weight };
+  const block = blockPlace(holder, label, layer);
+  const colored = ranges.length === 0 ? layer : { ...layer, ranges };
+  const weighted = weight === undefined ? colored : { ...colored, weight };
   const wraps = layout.maxWidth === undefined ? weighted : { ...weighted, maxWidth: layout.maxWidth };
   const placed = placeInBox(holder, label.placement);
   return {
     layer: letterSpacing === undefined ? wraps : { ...wraps, letterSpacing },
-    primaryAlign: layout.packsAtStart ? "MIN" : placed.primaryAlign,
+    primaryAlign: layout.packsAtStart ? "MIN" : (block ?? placed.primaryAlign),
     counterAlign: placed.counterAlign,
   };
+}
+
+/** The box alignment that puts a hugging text where its lines' alignment would set them across a box. */
+const ALONG_OF = { LEFT: "MIN", CENTER: "CENTER", RIGHT: "MAX" } as const;
+
+/**
+ * Where a block box puts its own text that hugs its width inside a width of the box's own, as a
+ * `<pre>` holds lines that never wrap. A block container sets each line box across its content width
+ * and places its text in it by `text-align` (CSS Text 3 §6.1), so the text sits where its lines' own
+ * alignment says, which the frame's alignment along its row draws. `start` and `end` have resolved
+ * against the lines' `direction` by then, so a right-to-left `start` sits at MAX. A flex or grid box places its text
+ * as an item, and a box that hugs its width has no room to place the text in.
+ *
+ * @returns The frame's alignment along its row, or undefined where the box places the text otherwise.
+ */
+function blockPlace(holder: Holder, label: PlacedLabel, layer: TextLayerSpec): CounterAlignSpec | undefined {
+  const { layout, sizing } = holder;
+  const placesLines =
+    textItem(holder) === undefined &&
+    !layout.blocks &&
+    layout.direction === "HORIZONTAL" &&
+    sizing.horizontal.kind !== "hug" &&
+    layer.sizing.horizontal.kind === "hug" &&
+    label.placement === undefined;
+  return placesLines ? ALONG_OF[layer.align.horizontal] : undefined;
 }
 
 /**
@@ -715,7 +777,8 @@ function readUnderline(
  * Read where a label sets its lines in its box. A `text-align` the box sets or inherits sets them
  * across. Otherwise the definition's placement does, for a label that fills its box's width. The
  * label hugs its height, so its lines start at the top of its own box. CSS sets a box's text from
- * the top left, which a label without either keeps.
+ * the top at its `start`, the left unless the lines run right to left, which a label without either
+ * keeps.
  *
  * @param placement - The placement across that a filling label takes, or undefined for none.
  */
@@ -724,20 +787,30 @@ function readTextAlign(
   placement: TextPlacement | undefined,
   path: readonly string[]
 ): TextAlignSpec {
+  const direction = lineDirection(style);
   const across = style.read(
     "text-align",
-    (value) => TEXT_ALIGNS.get(normalizeCss(value)),
-    ({ where }) => ({ outcome: "literal", detail: `the label sets its lines ${where}` }),
+    (value) => TEXT_ALIGNS.get(normalizeCss(value))?.[direction],
+    (align) => ({ outcome: "literal", detail: `the label sets its lines ${LINES_WHERE[align]}` }),
     style.feed("align", path)
-  )?.align;
-  const placed = placement === undefined ? TOP_LEFT.horizontal : PLACED_ACROSS[placement.horizontal];
-  return { horizontal: across ?? placed, vertical: TOP_LEFT.vertical };
+  );
+  return { horizontal: across ?? unsetAcross(direction, placement), vertical: TOP_LEFT.vertical };
 }
 
 /** Where a label that fills its box would set its lines, as {@link readTextAlign} reads it, without a read. */
 function linesAcross(style: LayerStyle, placement: TextPlacement | undefined): Across {
-  const css = TEXT_ALIGNS.get(normalizeCss(style.resolved("text-align") ?? ""))?.align;
-  return css ?? (placement === undefined ? "LEFT" : PLACED_ACROSS[placement.horizontal]);
+  const direction = lineDirection(style);
+  const css = TEXT_ALIGNS.get(normalizeCss(style.resolved("text-align") ?? ""))?.[direction];
+  return css ?? unsetAcross(direction, placement);
+}
+
+/** Where a label sets its lines with no `text-align` to read: the definition's placement, or `start`. */
+function unsetAcross(direction: LineDirection, placement: TextPlacement | undefined): Across {
+  return placement === undefined
+    ? direction === "rtl"
+      ? "RIGHT"
+      : "LEFT"
+    : PLACED_ACROSS[placement.horizontal];
 }
 
 /** A place across a box, named as text alignment names it. */

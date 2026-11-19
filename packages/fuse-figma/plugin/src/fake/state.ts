@@ -37,6 +37,8 @@ export type CharacterStyle = {
   readonly fontSize: number;
   readonly lineHeight: LineHeight;
   readonly bindings: ReadonlyMap<VariableBindableTextField, string>;
+  /** The fills a range write gave the character, absent where it shows the layer's (rule 65). */
+  readonly fills?: readonly Paint[];
 };
 
 /** A TEXT, BOOLEAN or INSTANCE_SWAP property of a component set or a component. */

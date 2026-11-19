@@ -116,6 +116,20 @@
  *    `⌘K Search`, its `⌘` set to Inter Regular by `setRangeFontName` first, bound every range, and a
  *    mode switch moved `⌘` to Inter Medium and the rest to Roboto Medium, each in its own family
  *    (PG13). A range binding bound only its range, which a mode switch then moved alone (PG13).
+ * 65. A text's fills are per character, as the typings' `setRangeFills` and `getRangeFills` and the
+ *    `fills` of a `StyledTextSegment` say. A range write needs the range's fonts loaded, as the
+ *    typings say, gives its characters the paints, and leaves the base style. A whole `fills` write
+ *    gives every character the layer's paints, and `fills` reads `figma.mixed` where the characters
+ *    differ. The whole `fills`, a range's fills and the segments read one fill per character, its
+ *    range's or the layer's, so characters with equal fills read as one. On 2026-11-19 a real
+ *    file's range fills, each bound to a variable, read back through `getStyledTextSegments(['fills'])`
+ *    as merged runs, each paint with its variable. They survived `fontSize` and `fontName` writes,
+ *    followed the frame's light and dark modes, and showed on an instance, which followed later range
+ *    writes on its main. A whole `fills` write reset them, and a `characters` write, even of the same
+ *    text, gave every character the first character's fill. The fake keeps them through every write
+ *    but those two and the writes that give every character one style: a text style link (rule 60)
+ *    and a TEXT link or write (rules 51 and 52). Its characters write gives every character the first
+ *    one's style, as rule 10 says.
  */
 
 import { nearestInstance, propertyValue, rootMain } from "./overrides.ts";
@@ -420,11 +434,16 @@ export function resetStyles(state: NodeState): void {
   state.styles = Array.from({ length: Math.max(1, charactersOf(state).length) }, () => base);
 }
 
-/** What a segment compares of a character's style: the fields asked for (rule 50). */
-export function segmentKey(style: CharacterStyle, fields: readonly string[]): string {
+/** What a segment compares of a character: the fields asked for, with the fills it paints with (rules 50 and 65). */
+export function segmentKey(
+  style: CharacterStyle,
+  fills: readonly Paint[],
+  fields: readonly string[]
+): string {
   return JSON.stringify([
     fields.includes("fontName") ? fontKey(style.font) : "",
     fields.includes("fontSize") ? style.fontSize : "",
+    fields.includes("fills") ? fills : "",
     fields.includes("boundVariables")
       ? [...style.bindings].sort(([left], [right]) => left.localeCompare(right))
       : [],
