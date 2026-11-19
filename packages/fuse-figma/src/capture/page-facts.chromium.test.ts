@@ -6,7 +6,8 @@
  * wrapper's red, and the wrapper lies behind the root. Where it draws an SVG, a generated `::after`
  * box or an image, the center shows the child's blue, and so does a generated `::after` box of the
  * wrapper's own, so nothing lies exactly behind the root. The center also shows blue under a box that
- * overflows a zero-size child and black under a child whose `backdrop-filter` darkens the red.
+ * overflows a zero-size child and black under a child whose `backdrop-filter` darkens the red. In a
+ * blue wrapper, it shows a child's opaque black or red fill.
  *
  * Some paint lies outside the boxes the page reads, or in no box it reads at all. The center shows
  * blue under the wrapper's own full blocks, indented 250px past the root, whose `text-shadow` moves
@@ -38,6 +39,7 @@ const STYLE = `
   .shadowed #root { position: absolute; inset: 0 }
   .marked { display: list-item; list-style: inside url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='blue'/%3E%3C/svg%3E") }
   .marked #root { position: absolute; inset: 0 }
+  .blue { background: blue }
 `;
 
 let browser: Browser;
@@ -162,6 +164,19 @@ describe("the elements the capture finds lying exactly behind a root", () => {
         '<div class="over" id="host"></div><script>document.querySelector("#host").attachShadow({ mode: "open" }).innerHTML = \'<div style="width:100px;height:100px;background:blue"></div>\'; document.currentScript.remove()</script>'
       )
     ).toEqual({ pixel: BLUE, coinciding: 0 });
+  });
+
+  // Chromium serializes both fills as \`rgb()\` with a last component of 0, the blue channel, which a
+  // check on that component alone would read as clear. The wrapper is blue here, so the pixel tells
+  // the child's fill from the wrapper's.
+  it.each([
+    ["black", [0, 0, 0]],
+    ["red", RED],
+  ])("exclude one whose other child fills the root's box in opaque %s", async (fill, pixel) => {
+    expect(await behind("blue", `<div class="over" style="background:${fill}"></div>`)).toEqual({
+      pixel,
+      coinciding: 0,
+    });
   });
 
   it("exclude one whose other child filters the red behind it to black", async () => {

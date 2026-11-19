@@ -2,8 +2,8 @@
  * Whether an element's `::before` or `::after` draws a box the kit can draw as a layer of its own.
  * The capture's page function calls `pseudoBox` and `pseudoPaintOf` on each element of a root's tree:
  * `pseudoBox` must hold in every mode the page stamps, and `pseudoPaintOf` reads the paint the box
- * computes to, which `paints` then judges here, outside the page, where `@elmeragroup/color` parses
- * its colors. The two page functions are passed to the page as their source, so neither reads
+ * computes to, which `paints` then judges here, outside the page, through `clearFill` for its fill.
+ * The two page functions are passed to the page as their source, so neither reads
  * anything outside its own body.
  *
  * A pseudo-element has no node the page can measure with `getBoundingClientRect`, so the page reads
@@ -12,7 +12,7 @@
  * `left` in pixels too. A pseudo-element that generates no box, as one whose `content` computes to
  * `none`, keeps `auto` there.
  */
-import * as CssColor from "@elmeragroup/color/css-color";
+import { clearFill } from "./clear-fill.ts";
 
 /** The paint a pseudo-element's box computes to, as the page reads it. */
 export type PseudoPaint = {
@@ -77,17 +77,15 @@ const drawsWidth = (width: string): boolean => Number.parseFloat(width) > 0;
 
 /**
  * Whether a pseudo-element's box paints something of its own: a fill whose alpha is above zero, a
- * background image, a shadow, a border side that draws, or an outline. A fill whose color the parser
- * cannot read counts as painting, since nothing shows it clear.
+ * background image, a shadow, a border side that draws, or an outline, as `clearFill` judges the
+ * fill.
  *
  * @param paint - The paint the box computes to.
  * @returns True where the box paints.
  */
 export function paints(paint: PseudoPaint): boolean {
-  const fill = CssColor.parse(paint.backgroundColor);
   return (
-    fill._tag === "err" ||
-    CssColor.toSrgb(fill.value).alpha > 0 ||
+    !clearFill(paint.backgroundColor) ||
     paint.backgroundImage !== "none" ||
     paint.boxShadow !== "none" ||
     paint.borders.some(([style, width]) => style !== "none" && style !== "hidden" && drawsWidth(width)) ||
