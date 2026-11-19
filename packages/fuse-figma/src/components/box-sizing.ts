@@ -1,4 +1,6 @@
 import type { MeasuredBox } from "./box-cascade";
+import { readCentredGrowth } from "./centred-row";
+import type { CentredGrowth } from "./centred-row";
 import type { PreviewLength } from "./component-spec";
 import { readContentShares } from "./content-shares";
 import {
@@ -41,6 +43,7 @@ import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";
 import { readSize } from "./sizing-value";
 import type { PercentBasis } from "./sizing-value";
+import { spannedWidth, spansBesideBlocks, spansParent, SPANS_HUGGING_PARENT } from "./spanning-block";
 import { horizontal, subgridCellRoom } from "./subgrid-row";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
@@ -721,9 +724,8 @@ export function roomInside(holder: Holder, index: number): Room {
     // room around it that could bind, as `hugsUncapped` says. Otherwise the percentage takes the
     // width those set (CSS Sizing 3 §5.2.1), which the build does not resolve.
     const alone = layout.blocks && layers.length === 1;
-    return layout.flex || layout.blocks
-      ? { kind: "hugging", only: alone && hugsUncapped(holder) && !setsMinimumWidth(holder.style) }
-      : NO_BASIS;
+    const uncapped = hugsUncapped(holder) && !setsMinimumWidth(holder.style);
+    return layout.flex || layout.blocks ? { kind: "hugging", only: alone && uncapped, uncapped } : NO_BASIS;
   };
   if (layout.centresLone === true) {
     return centredRoom(holder);
@@ -1002,11 +1004,14 @@ export function unstretched(holder: Holder, parts: readonly LayerStyle[]): Missi
 }
 
 /**
- * The part that grows along its box's direction and fills the room there: its place among the parts
- * in the box's flow, and whether it is the box's one layer, which grows from its content, as
- * `loneGrowth` reads it, where a `flex: 1` part grows from a zero basis.
+ * The part that grows along its box's direction: its place among the parts in the box's flow, and
+ * whether it `fills` the room there, and is the box's one layer, which grows from its content, as
+ * `loneGrowth` reads it, where a `flex: 1` part grows from a zero basis, or is `centred` between two
+ * others, as `readCentredGrowth` in `centred-row.ts` reads it.
  */
-export type Growth = { readonly place: number; readonly alone: boolean };
+export type Growth =
+  | { readonly kind: "fills"; readonly place: number; readonly alone: boolean }
+  | CentredGrowth;
 
 /** The properties that size a flex item along its line, which nothing reads outside a flex box. */
 const FLEX_ITEM = ["flex", "flex-grow", "flex-shrink", "flex-basis"] as const;
@@ -1022,14 +1027,14 @@ const NO_FLEX_ITEM =
  *
  * @param holder - The box.
  * @param parts - The style of each part in the box's flow.
- * @param measured - What {@link readGrowth} reads from the capture's measurement.
+ * @param measured - What {@link readGrowth} reads from the capture's measurement and the parts.
  * @param block - Whether the box is a plain block container, as `isPlainBlock` reads it.
  * @returns The part that fills the box along its direction, or undefined for none.
  */
 export function readItemSizing(
   holder: Holder,
   parts: readonly LayerStyle[],
-  measured: { readonly underMaxHeight: string | undefined; readonly itemsAtContent: boolean },
+  measured: GrowthMeasure,
   block: boolean
 ): Growth | undefined {
   if (!block) {
@@ -1062,13 +1067,14 @@ export function readItemSizing(
  * @param holder - The box.
  * @param parts - The style of each part in the box's flow.
  * @param measured - The capture's measurement that the box's content stays under its `max-height`,
- *   and that its growing parts each stay at their own content width.
+ *   and that its growing parts each stay at their own content width, and which parts hold only a
+ *   label.
  * @returns The part that fills the box along its direction, or undefined for none.
  */
 function readGrowth(
   holder: Holder,
   parts: readonly LayerStyle[],
-  measured: { readonly underMaxHeight: string | undefined; readonly itemsAtContent: boolean }
+  measured: GrowthMeasure
 ): Growth | undefined {
   const { underMaxHeight } = measured;
   const { layout, sizing, style } = holder;
@@ -1109,12 +1115,20 @@ function readGrowth(
       }),
       only.feed("sizing")
     );
-    return fills === undefined ? undefined : { place: parts.indexOf(only), alone: false };
+    return fills === undefined ? undefined : { kind: "fills", place: parts.indexOf(only), alone: false };
+  }
+  const centred = readCentredGrowth(holder, parts, measured.labelOnly, keepsOwnWidth);
+  if (centred !== undefined) {
+    return centred;
   }
   // A zero minimum never lengthens the box, and any other limit along the axis can. A maximum the
   // definition's measurement says the content stays under never limits the box at all.
   const capped = style.has(axis.max) && !(axis === HEIGHT && underMaxHeight !== undefined);
-  const limited = capped || (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0);
+  // A least width the box takes from beside it, as `spannedWidth` gives one, leaves room past its layers too.
+  const limited =
+    capped ||
+    (style.has(axis.min) && evaluateLength(style.resolved(axis.min) ?? "") !== 0) ||
+    (horizontal && holder.limits.minWidth !== undefined);
   if (!limited) {
     only.read(
       "flex",
@@ -1187,8 +1201,15 @@ function loneGrowth(
     () => ({ outcome: "literal", detail: LONE_GROWTH }),
     lone.feed("sizing")
   );
-  return grows === undefined ? undefined : { place: 0, alone: true };
+  return grows === undefined ? undefined : { kind: "fills", place: 0, alone: true };
 }
+
+/** What {@link readGrowth} reads besides the box and its parts' styles, as its `measured` says. */
+type GrowthMeasure = {
+  readonly underMaxHeight: string | undefined;
+  readonly itemsAtContent: boolean;
+  readonly labelOnly: readonly boolean[];
+};
 
 /**
  * Whether a growing layer sets its own minimum along its parent's direction, which replaces the
@@ -1558,7 +1579,7 @@ export function readSizing(
   variables: VariableIndex,
   fit: FitContent,
   inside: Feed,
-  measured: Pick<MeasuredBox, "underMaxWidth" | "ratioHeight">
+  measured: Pick<MeasuredBox, "underMaxWidth" | "ratioHeight" | "spansBeside">
 ): BoxSizing {
   // A parent that hugs its width with nothing bounding it is as wide as each layer it holds.
   const roomy = room.horizontal.percent.kind === "hugging" && room.unbounded;
@@ -1567,6 +1588,7 @@ export function readSizing(
     inside,
     roomy,
     under: measured.underMaxWidth,
+    beside: measured.spansBeside,
   });
   const vertical = readAspectRatio(
     reader,
@@ -1576,6 +1598,7 @@ export function readSizing(
       inside,
       roomy: false,
       under: false,
+      beside: undefined,
     }),
     measured
   );
@@ -1899,12 +1922,15 @@ function readAxis(
     inside,
     roomy,
     under,
+    beside,
   }: {
     readonly fit: FitContent;
     readonly inside: Feed;
     readonly roomy: boolean;
     /** Whether the capture measured the box as wide with its maximum 24px lower, on the width only. */
     readonly under: boolean;
+    /** The width the capture measured beside a box that spans its parent, on the width only. */
+    readonly beside: number | undefined;
   }
 ): AxisRead & { readonly known: boolean } {
   if (room.placed !== undefined) {
@@ -1934,8 +1960,9 @@ function readAxis(
     );
     return { size: FILL, min: undefined, max: undefined, notes: new Map(), known: true };
   }
+  const spanned = axis === WIDTH ? spannedWidth(reader, room.percent, beside) : undefined;
   const read = reader.has(axis.length)
-    ? readLength(reader, axis, room, variables, { fit, inside })
+    ? readLength(reader, axis, room, variables, { fit, inside }, spanned)
     : room.auto;
   const size = read ?? HUG;
   const maximum = reader.resolved(axis.max);
@@ -1996,7 +2023,10 @@ function readAxis(
       feed
     );
   }
-  return { ...limited, known: read !== undefined };
+  // The width beside a box that spans its parent is the least width the parent leaves it.
+  return spanned === undefined || read?.kind !== "hug"
+    ? { ...limited, known: read !== undefined }
+    : { ...limited, min: { kind: "literal", value: spanned }, known: true };
 }
 
 /**
@@ -2140,37 +2170,14 @@ function usedLength(length: number, min: number | undefined, max: number | undef
   return min === undefined ? capped : Math.max(capped, min);
 }
 
-/** Why a `100%` width hugs in a parent that hugs it. */
-const SPANS_HUGGING_PARENT =
-  "100% of a parent that hugs the box, its only layer, resolves to the box's own width, since the parent shrinks to fit the box's content (CSS Sizing 3 §5.2.1), which a hug draws";
-
-/**
- * Whether a box's `100%` width is its own content width: it is the only block of a parent that
- * stacks blocks and hugs its width, which CSS shrinks to fit the box's content (CSS 2.1 §10.3.7), the
- * percentage counting as `auto` while it does (CSS Sizing 3 §5.2.1), and the box's border box spans
- * that width. So the box has no
- * horizontal margin, and its padding and border sit inside its width, under `border-box` or at
- * zero, as the Navigation menu popup's `size-full` viewport spans the popup that hugs its list.
- */
-function spansHuggingParent(reader: LayerStyle, percent: PercentBasis): boolean {
-  if (percent.kind !== "hugging" || !percent.only) {
-    return false;
-  }
-  const zero = (property: string): boolean => evaluateLength(reader.resolved(property) ?? "0") === 0;
-  const borderBox = normalizeCss(reader.resolved("box-sizing") ?? "content-box") === "border-box";
-  return (
-    ["margin-left", "margin-right"].every(zero) &&
-    (borderBox || ["padding-left", "padding-right", "border-left-width", "border-right-width"].every(zero))
-  );
-}
-
 /**
  * Read `width` or `height` as its axis's sizing, through {@link readSize}. A `100%` along a flex
  * box's direction beside other layers stays unmapped: CSS sizes it at the whole length and then
  * shrinks or overflows it with them (CSS Flexbox 1 §9.7), where a fill takes only the room they
  * leave. A `fit-content` width fills a room that stretches it where `fit` says it draws so, as
  * {@link FitContent} says, and hugs otherwise. The read fills the sizing of the layers inside too,
- * as `inside` names it.
+ * as `inside` names it. `spanned` is the least width {@link spannedWidth} gives a box that spans
+ * its parent beside other blocks.
  *
  * @returns The sizing, or undefined when the value does not map.
  */
@@ -2179,7 +2186,8 @@ function readLength(
   axis: AxisProperties,
   room: AxisRoom,
   variables: VariableIndex,
-  { fit, inside }: { readonly fit: FitContent; readonly inside: Feed }
+  { fit, inside }: { readonly fit: FitContent; readonly inside: Feed },
+  spanned: number | undefined
 ): SizeSpec | undefined {
   const { siblings, percent } = room;
   if (room.zeroBasis === true) {
@@ -2207,7 +2215,7 @@ function readLength(
         return { size: { kind: "fitted" } as const, share: undefined };
       }
       const share = evaluatePercentage(value);
-      if (share === 1 && axis.length === "width" && spansHuggingParent(reader, percent)) {
+      if (share === 1 && axis.length === "width" && spansParent(reader, percent, spanned)) {
         return { size: HUG, share };
       }
       // A percentage that computes to `auto` sizes the box by its content, so siblings share nothing.
@@ -2237,11 +2245,13 @@ function readLength(
             detail:
               percent.kind === "auto" && share !== undefined
                 ? AUTO_HEIGHT
-                : share === 1 && percent.kind === "hugging"
-                  ? SPANS_HUGGING_PARENT
-                  : share === 1 && percent.kind === "unset"
-                    ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
-                    : "the box hugs its content",
+                : spanned !== undefined
+                  ? spansBesideBlocks(spanned)
+                  : share === 1 && percent.kind === "hugging"
+                    ? SPANS_HUGGING_PARENT
+                    : share === 1 && percent.kind === "unset"
+                      ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
+                      : "the box hugs its content",
           };
         case "fill":
           return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };

@@ -553,6 +553,16 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./calendar-day-cell.ts")).calendarDay,
   },
   {
+    set: "calendar",
+    entry: "dist/calendar.js",
+    load: async () => (await import("./calendar-cell.ts")).calendar,
+  },
+  {
+    set: "range-calendar",
+    entry: "dist/range-calendar.js",
+    load: async () => (await import("./calendar-cell.ts")).rangeCalendar,
+  },
+  {
     set: "action-bar",
     entry: "dist/action-bar.js",
     load: async () => (await import("./action-bar-cell.ts")).actionBar,

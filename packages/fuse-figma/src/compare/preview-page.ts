@@ -45,7 +45,7 @@ export const MOUNTED = "data-compare-mounted";
 export const MOUNTED_DONE = "done";
 
 /** The layers Fuse's built `styles.css` declares, in its order. */
-const STYLES_LAYERS = ["properties", "theme", "base", "components", "utilities"] as const;
+export const STYLES_LAYERS = ["properties", "theme", "base", "components", "utilities"] as const;
 
 /** How the page lays out its cells, in CSS pixels. */
 export type PageLayout = {

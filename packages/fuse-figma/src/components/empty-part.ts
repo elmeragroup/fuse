@@ -102,8 +102,8 @@ function stacksWithoutGap(parent: LayerStyle): boolean {
   );
 }
 
-/** Whether a box's own declarations paint nothing. */
-function paintsNothing(style: LayerStyle): boolean {
+/** Whether a box's own declarations paint nothing: no background, border, shadow or outline. */
+export function paintsNothing(style: LayerStyle): boolean {
   return PAINTS.every((property) => {
     const value = style.resolved(property);
     switch (property) {

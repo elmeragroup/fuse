@@ -133,6 +133,24 @@ const TEXT_ALIGNS = new Map<string, Readonly<Record<LineDirection, Across>>>([
   ["-webkit-center", { ltr: "CENTER", rtl: "CENTER" }],
 ]);
 
+/**
+ * Where a box's `text-align` sets its lines, or undefined where no Figma alignment reads it.
+ * Chromium's default style sheet gives a `<th>` `-internal-center`, which centers its text where its
+ * parent's `text-align` is the initial `start` (HTML, Rendering §15.3.8) and otherwise computes to
+ * the parent's value (`th-center.chromium.test.ts`), so it reads as centered only under a parent
+ * the kit draws at `start`.
+ */
+function linesOf(style: LayerStyle, value: string, direction: LineDirection): Across | undefined {
+  const align = normalizeCss(value);
+  if (align === "-internal-center") {
+    const parent = style.parent();
+    return parent !== undefined && normalizeCss(parent.resolved("text-align") ?? "start") === "start"
+      ? "CENTER"
+      : undefined;
+  }
+  return TEXT_ALIGNS.get(align)?.[direction];
+}
+
 /** The direction a label's lines run in, which `direction` sets and a box passes down. */
 type LineDirection = "ltr" | "rtl";
 
@@ -862,7 +880,7 @@ function readTextAlign(
   const direction = lineDirection(style);
   const across = style.read(
     "text-align",
-    (value) => TEXT_ALIGNS.get(normalizeCss(value))?.[direction],
+    (value) => linesOf(style, value, direction),
     (align) => ({ outcome: "literal", detail: `the label sets its lines ${LINES_WHERE[align]}` }),
     style.feed("align", path)
   );
@@ -872,7 +890,7 @@ function readTextAlign(
 /** Where a label that fills its box would set its lines, as {@link readTextAlign} reads it, without a read. */
 function linesAcross(style: LayerStyle, placement: TextPlacement | undefined): Across {
   const direction = lineDirection(style);
-  const css = TEXT_ALIGNS.get(normalizeCss(style.resolved("text-align") ?? ""))?.[direction];
+  const css = linesOf(style, style.resolved("text-align") ?? "", direction);
   return css ?? unsetAcross(direction, placement);
 }
 

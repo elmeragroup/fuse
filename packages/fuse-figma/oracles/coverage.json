@@ -57,6 +57,20 @@
       "reason": "The panel's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
     },
     {
+      "set": "calendar",
+      "part": "calendar",
+      "className": "bg-clip-padding",
+      "property": "background-clip",
+      "reason": "The card's 1px border is `--border`, which the neutral dark theme sets to white at 10%, so the card's fill shows through it in Figma, where CSS clips the fill at the border and shows the page behind it. The other themes draw an opaque border, which hides the fill under it either way."
+    },
+    {
+      "set": "range-calendar",
+      "part": "range-calendar",
+      "className": "bg-clip-padding",
+      "property": "background-clip",
+      "reason": "The card's 1px border is `--border`, which the neutral dark theme sets to white at 10%, so the card's fill shows through it in Figma, where CSS clips the fill at the border and shows the page behind it. The other themes draw an opaque border, which hides the fill under it either way."
+    },
+    {
       "set": "dropdown-menu-popup",
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",

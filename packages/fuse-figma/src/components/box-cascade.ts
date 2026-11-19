@@ -248,6 +248,12 @@ export type MeasuredBox = {
    */
   readonly oneLength: ReadonlySet<"horizontal" | "vertical">;
   /**
+   * The box's width is 100% of a parent block that fits its content, and this is the widest
+   * max-content width of the parent's other in-flow children, one length in every mode, in CSS
+   * pixels, as the capture measured. Undefined otherwise.
+   */
+  readonly spansBeside: number | undefined;
+  /**
    * The box is a child of the root whose positive `z-index` paints it over every other box of the
    * root, as the root's last child, in every mode, as the capture measured.
    */

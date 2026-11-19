@@ -26,6 +26,7 @@ import {
 } from "./breadcrumb-kit";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CALENDAR_DAY_MANIFEST } from "./calendar-day-kit";
+import { CALENDAR_MANIFEST, RANGE_CALENDAR_MANIFEST } from "./calendar-kit";
 import { CARD_MANIFEST } from "./card-kit";
 import { CHECKBOX_CARD_MANIFEST } from "./checkbox-card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
@@ -275,8 +276,8 @@ const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
 /** The page Action bar sits on alone. */
 const ACTION_BAR_PAGE: KitPage = { slug: "action-bar", name: "Action bar", example: "action-bar" };
 
-/** The page the calendar sets sit on. */
-const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar", example: "calendar-day" };
+/** The page Calendar, Range calendar and the day they share sit on. */
+const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar", example: "calendar" };
 
 /** The page Date field sits on alone. */
 const DATE_FIELD_PAGE: KitPage = { slug: "date-field", name: "Date field", example: "date-field" };
@@ -902,6 +903,16 @@ export const KIT: readonly KitEntry[] = [
     page: CALENDAR_PAGE,
     previewCells: possibleCells(CALENDAR_DAY_MANIFEST),
     manifest: CALENDAR_DAY_MANIFEST,
+  },
+  {
+    page: CALENDAR_PAGE,
+    previewCells: possibleCells(CALENDAR_MANIFEST),
+    manifest: CALENDAR_MANIFEST,
+  },
+  {
+    page: CALENDAR_PAGE,
+    previewCells: possibleCells(RANGE_CALENDAR_MANIFEST),
+    manifest: RANGE_CALENDAR_MANIFEST,
   },
   {
     page: DATE_FIELD_PAGE,
