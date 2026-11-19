@@ -11,18 +11,29 @@ import {
   buildCaptured,
   buildChip,
   chip,
+  FILL,
   fixed,
   fixedSize,
   frameOf,
+  ICON,
   literal,
   notesOf,
   part,
   rest,
+  textOf,
   UNLIMITED,
 } from "../../test/capture-fixtures";
+import type { FixtureOptions } from "../../test/capture-fixtures";
 import type { MeasuredFacts } from "../capture/capture-format";
 import type { SetManifest } from "../capture/manifest";
 import { makeVariableIndex } from "./css-values";
+
+/** A build whose `font-sans` binds the synced family, as every kit label's does. */
+const FONT_SANS: FixtureOptions = {
+  variables: makeVariableIndex([
+    { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+  ]),
+};
 
 // Oracle: CSS Flexbox 1 §7.1.1, where `flex: none` is `0 0 auto`: the item neither grows nor
 // shrinks from its own size, which a fixed or hugging Figma layer keeps.
@@ -240,11 +251,7 @@ describe("an auto start margin after a row's own text", () => {
           { slot: "chip-shortcut", classes: "ml-auto size-[8px] shrink-0" },
         ],
       }),
-      {
-        variables: makeVariableIndex([
-          { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
-        ]),
-      }
+      FONT_SANS
     );
   }
 
@@ -258,5 +265,38 @@ describe("an auto start margin after a row's own text", () => {
   it("stays unmapped without the measurement that the row fits in every mode", async () => {
     const { coverage } = await buildRow({});
     expect(notesOf(coverage, "ml-auto").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §9.7 and §8.1, which Chromium showed on 2026-11-19 for a 120px Dropdown menu
+// sub trigger. The row's text is an anonymous item that shrinks to the room the `shrink-0` caret and
+// the gap leave, so a typed label of several words wraps between them there and the caret ends the
+// row. Only a label that fills that room draws it in Figma, whose hugging text stays on one line, so
+// a one-word sample a TEXT property sets fills as a multi-word one does, and the row packs at its start.
+describe("a two-layer row's one-word text before an ml-auto icon", () => {
+  it("fills the room the icon leaves, so a longer typed label wraps there", async () => {
+    const { variant } = await buildCaptured(
+      chip({
+        label: {
+          key: "label",
+          name: "label",
+          characters: "Share",
+          textProperty: "Label",
+          shownIn: () => true,
+        },
+        iconsFor: () => [{ ...ICON, side: "end" }],
+      }),
+      rest({
+        slot: "chip",
+        classes:
+          "flex w-[120px] items-center gap-[8px] px-[8px] font-sans text-[14px] leading-[20px] text-[#000000]",
+        text: "Share",
+        textIndex: 0,
+        measured: { freeAlongMain: true },
+        children: [{ tag: "svg", classes: "ml-auto size-[16px] shrink-0" }],
+      }),
+      FONT_SANS
+    );
+    expect([textOf(variant?.root)?.sizing.horizontal, variant?.root.primaryAlign]).toEqual([FILL, "MIN"]);
   });
 });
