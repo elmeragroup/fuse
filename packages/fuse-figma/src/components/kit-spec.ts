@@ -580,8 +580,9 @@ export type PrimaryAlignSpec = CounterAlignSpec | "SPACE_BETWEEN";
 /**
  * How an auto layout box places its children: along a row, down a column, or in the cells of a grid,
  * Figma's `layoutMode` GRID, whose tracks and cells the box's `grid` holds. No box is without auto
- * layout, which an absolute MAX instance needs to keep its end inset as density resizes it
- * (W5-P14b); `anchored-instances.test.ts` pins that.
+ * layout, which an absolute MAX instance needs to keep its end inset in its outer component's main as
+ * density resizes it (W5-P14b). In an instance of the outer component only a placement wrapper keeps
+ * it (PG14b, PG16); `anchored-instances.test.ts` pins both.
  */
 export type DirectionSpec = "HORIZONTAL" | "VERTICAL" | "GRID";
 

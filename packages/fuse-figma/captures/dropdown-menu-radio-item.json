@@ -276,6 +276,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": []
             }
           ]
@@ -373,6 +374,7 @@
               "pseudo": {},
               "variables": {"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": []
             }
           ]
@@ -470,6 +472,7 @@
               "pseudo": {},
               "variables": {"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": []
             }
           ]
@@ -567,6 +570,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": []
             }
           ]
@@ -664,6 +668,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "span",
@@ -787,6 +792,7 @@
               "pseudo": {},
               "variables": {"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "span",
@@ -910,6 +916,7 @@
               "pseudo": {},
               "variables": {"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "span",
@@ -1033,6 +1040,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":9}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "span",

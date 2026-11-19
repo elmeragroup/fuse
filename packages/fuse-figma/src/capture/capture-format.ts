@@ -201,6 +201,12 @@ const MeasuredFactsSchema = Schema.Struct({
    * that block grown, so the kit places the element in the parent's frame.
    */
   parentSpansBlock: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * On an absolute element below the root: the axes along which its border box is one length, within
+   * a 64th of a pixel, in every density and theme, so its place at its parent's end does not move as
+   * a mode changes its length.
+   */
+  oneLength: Schema.optionalKey(Schema.Array(Schema.Literals(["horizontal", "vertical"]))),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

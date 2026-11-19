@@ -219,6 +219,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"oneLength":["horizontal","vertical"]},
                   "children": []
                 },
                 {
@@ -284,6 +285,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"oneLength":["horizontal","vertical"]},
                   "children": []
                 },
                 {
@@ -348,6 +350,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"}},
                   "unmatched": [],
+                  "measured": {"oneLength":["horizontal","vertical"]},
                   "children": []
                 },
                 {

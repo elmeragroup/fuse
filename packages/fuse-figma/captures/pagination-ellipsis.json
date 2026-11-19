@@ -176,6 +176,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": []
             }
           ]

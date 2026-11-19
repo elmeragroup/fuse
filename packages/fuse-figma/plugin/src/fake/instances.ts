@@ -355,7 +355,9 @@ export function editProperty(
  * The fields `overrides` lists for each override the fake notes (rule 37): N1 listed an instance's
  * `name`, `width` and `height`, and N3 its `fills`, `effects` and "the corner fields", which the fake
  * takes as the four corners the typings name and `cornerRadius`, and a sublayer's `fills`. G19 listed
- * `boundVariables` after an instance's own unbind of its width (rule 56).
+ * `boundVariables` after an instance's own unbind of its width (rule 56). An auto layout frame's own
+ * padding and alignment (rule 64) list under the names the typings' `NodeChangeProperty` gives them
+ * (`@figma/plugin-typings` 1.141.0); no probe has read `overrides` after such a write.
  */
 export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]> = new Map<
   string,
@@ -377,6 +379,12 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["minHeight", ["minHeight"]],
   ["componentProperties", ["componentProperties"]],
   ["layoutPositioning", ["layoutPositioning"]],
+  ["paddingTop", ["paddingTop"]],
+  ["paddingRight", ["paddingRight"]],
+  ["paddingBottom", ["paddingBottom"]],
+  ["paddingLeft", ["paddingLeft"]],
+  ["primaryAxisAlignItems", ["primaryAxisAlignItems"]],
+  ["counterAxisAlignItems", ["counterAxisAlignItems"]],
 ]);
 
 /**

@@ -143,8 +143,8 @@
  *    own size differed from its main's, never `x`, `y` or `constraints` (N11). So the fake keeps an
  *    anchored child's end inset and centre offset and reads `x` and `y` from them and the sizes as they
  *    stand. A sublayer an instance shows reads its source's anchor and constraints as they stand until
- *    its own are written, and places itself against its own parent, as the outer instance's badge
- *    followed the main's from 197 to 221. A bound length resolves in the modes of the layer that reads
+ *    its own are written, and sits where rule 63 puts it against its own parent, as the outer
+ *    instance's badge followed the main's from 197 to 221. A bound length resolves in the modes of the layer that reads
  *    it, an instance's through its main, and an instance whose main hugs nested instances hugs its own
  *    by its main's layout as that stands, each settled from its source as that stands (rule 32).
  *    Writing ABSOLUTE on an instance lists `layoutPositioning`.
@@ -220,6 +220,43 @@
  *    instance resizes. A clone keeps its source's lock, the fake's own choice, since no probe cloned
  *    a locked layer. The fake does not keep the ratio when an auto layout parent resizes a locked
  *    layer, as PG19 showed Figma does for an instance that fills its host's width.
+ * 63. In an instance, a placed sublayer moves only as its parent's length changes, never as its own
+ *    does. On 2026-11-19 a scratch file placed a close instance at MAX across and MIN down, 16px from
+ *    the right and top of an auto layout column, its size bound to a density variable (PG14, PG14b).
+ *    In the outer component's main, a density switch that grew the close from 24 to 32 moved it from
+ *    x 260 to 252, as rule 47 keeps an end inset. In an instance of the outer component the same
+ *    switch kept x 260, so the right inset fell from 16 to 8, and resizing that instance kept the 8.
+ *    So the fake reads such a sublayer, until its own place is written, at its source's place, moved
+ *    by the whole difference between its parent's length and its source's parent's under MAX and by
+ *    half of it under CENTER. N11's badge and W5-P11's arrow kept their sizes in the instances that
+ *    read them, so this rule places them where rules 47 and 59 do. PG14b changed the length by a
+ *    density switch; no probe has changed it by a TEXT override on the outer instance, where the fake
+ *    reads the same rule.
+ * 64. An absolute auto layout frame places its one layer in flow by its padding and alignment. On
+ *    2026-11-19 a scratch file held a frame with no fill and no clip, ABSOLUTE and STRETCH across an
+ *    auto layout column, at x 0 and the column's width, HORIZONTAL with `primaryAxisAlignItems` MAX,
+ *    padded 16 on the right and the top and hugging its height, around the close of rule 63 in flow
+ *    (PG16). The close kept 16px from the column's right and top edges through resizes of the column,
+ *    a density switch in an instance of the outer component that grew it from 24 to 32, and a BOOLEAN
+ *    that hid and showed it, and the column's own layout did not change. So the fake reads the `x`
+ *    and `y` of such a frame's one shown layer in flow from the frame's length, its padding and the
+ *    layer's length: at the start padding under MIN, and against the end padding under MAX. A
+ *    turned layer keeps that slot as rule 26 keeps one in any flow, so its `x` and `y` read the
+ *    turned origin. A CENTER alignment, more than one layer in flow and a wrapping frame stay
+ *    unmodelled, and reading one throws.
+ *    Such a frame an instance shows takes its padding and alignment from its main's frame as that
+ *    stands. On 2026-11-19 a change to the main frame's top padding moved the close in an instance of
+ *    the outer component from 16 to 20 below the top, and the property value and fill a designer had
+ *    set on that close stayed (PG20). So the fake reads a layer's padding and alignment from its
+ *    source until the layer writes its own. No probe wrote them on an instance's layer. The fake
+ *    keeps such a write when the main's changes, as rule 38 keeps an instance's other overrides
+ *    (N3). It lists the write in `overrides` under the field's name in the typings'
+ *    `NodeChangeProperty`, and `removeOverrides` clears it, so the layer follows its source again.
+ *    A padding the layer binds counts as its own write. After `removeOverrides` the fake reads the
+ *    source's padding and keeps the binding, which no probe has checked. A frame that hugs keeps the
+ *    length its main's padding gives it after the instance's own padding write, as rule 32 hugs by
+ *    the main's layout. A layer's `x` and `y`, its boxes on the page and its transform all read the
+ *    place rules 47, 59, 63 and 64 give it.
  */
 
 import { newGrid, placedCell } from "./grid.ts";
@@ -365,19 +402,63 @@ function lengthsOn(state: NodeState, parent: NodeState, axis: Axis): Lengths {
 }
 
 /**
+ * A layer's `x` or `y` as a read gives it: where its anchor keeps it (rules 47, 59, 63), where an
+ * absolute auto layout frame places it in flow (rule 64), else as stored. Every read of a place, a
+ * box or a transform goes through it, so they agree.
+ */
+export function placeOn(state: NodeState, axis: Axis): number {
+  return anchoredPlace(state, axis) ?? flowPlace(state, axis) ?? (axis === "HORIZONTAL" ? state.x : state.y);
+}
+
+/** The padding side each padding field names. */
+const PADDING_SIDES = {
+  paddingTop: "top",
+  paddingRight: "right",
+  paddingBottom: "bottom",
+  paddingLeft: "left",
+} as const;
+
+/** A padding field of an auto layout frame. */
+export type PaddingField = keyof typeof PADDING_SIDES;
+
+/** An alignment field of an auto layout frame. */
+export type AlignField = "primaryAxisAlignItems" | "counterAxisAlignItems";
+
+/** The layer whose padding or alignment a layer shows (rule 64): the layer once it writes its own, else its source's. */
+function flowSource(state: NodeState, field: PaddingField | AlignField): NodeState {
+  const source = sourceOf(state);
+  return source !== undefined && !state.overridden.has(field) ? flowSource(source, field) : state;
+}
+
+/** A padding as a layer shows it, its source's until it writes its own (rule 64). */
+export function shownPadding(state: NodeState, field: PaddingField): number {
+  return flowSource(state, field).padding[PADDING_SIDES[field]];
+}
+
+/** An alignment as a layer shows it, its source's until it writes its own (rule 64). */
+export function shownAlign<Field extends AlignField>(state: NodeState, field: Field): NodeState[Field] {
+  return flowSource(state, field)[field];
+}
+
+/**
  * Where an anchored layer sits on an axis (rules 47, 59): under MAX its parent's length less its end
- * inset and its own length, under CENTER its parent's centre moved by its centre offset. The place is
+ * inset and its own length, under CENTER its parent's centre moved by its centre offset. A sublayer
+ * an instance shows sits where its source does, moved by its parent's resize alone (rule 63). The place is
  * the layer's `x` or `y`, the origin of a turned layer's transform, which moves with the parent's
  * length as the unturned box's would.
  *
  * @returns The `x` or `y`, or undefined for a layer that keeps the one written.
  */
-export function anchoredPlace(state: NodeState, axis: Axis): number | undefined {
+function anchoredPlace(state: NodeState, axis: Axis): number | undefined {
   const anchor = anchorOf(state, axis);
   const parent = state.parent;
   const kind = anchoredOn(state, axis);
   if (anchor === undefined || parent === undefined || kind === undefined) {
     return undefined;
+  }
+  const source = anchorSource(state, axis);
+  if (source !== state && source.parent !== undefined) {
+    return mirroredPlace(source, source.parent, parent, axis, kind);
   }
   const { own, outer } = lengthsOn(state, parent, axis);
   if (kind === "centre") {
@@ -387,6 +468,92 @@ export function anchoredPlace(state: NodeState, axis: Axis): number | undefined 
     });
   }
   return f32(kind === "end" ? outer - anchor - own : outer / 2 + anchor - own / 2);
+}
+
+/**
+ * Where a sublayer an instance shows sits on an axis while its source holds its place (rule 63): at
+ * the source's place, moved by the whole change from the source's parent's length to its own
+ * parent's under MAX and by half of it under CENTER, whatever its own length.
+ */
+function mirroredPlace(
+  source: NodeState,
+  sourceParent: NodeState,
+  parent: NodeState,
+  axis: Axis,
+  kind: "end" | "centre"
+): number {
+  const shift = lengthOn(settled(parent), axis) - lengthOn(settled(sourceParent), axis);
+  const placed = placeOn(source, axis);
+  if (kind === "centre") {
+    refuseHalfShift({ own: 0, outer: 0 }, { own: 0, outer: shift });
+  }
+  return f32(placed + (kind === "end" ? shift : shift / 2));
+}
+
+/**
+ * Where an absolute auto layout frame puts its one shown layer in flow on an axis (rule 64): at the
+ * start padding under MIN, and against the end padding under MAX.
+ *
+ * @returns The `x` or `y`, or undefined for a hidden layer or one no such frame places.
+ * @throws For an alignment, a flow or a wrap rule 64 does not model.
+ */
+function flowPlace(state: NodeState, axis: Axis): number | undefined {
+  const frame = state.parent;
+  if (
+    frame === undefined ||
+    !isAutoLayout(frame) ||
+    frame.layoutMode === "GRID" ||
+    frame.layoutPositioning !== "ABSOLUTE" ||
+    state.layoutPositioning === "ABSOLUTE" ||
+    isHidden(state)
+  ) {
+    return undefined;
+  }
+  const flow = childrenOf(frame).filter(
+    (child) => child.layoutPositioning !== "ABSOLUTE" && !isHidden(child)
+  );
+  if (flow.length !== 1 || frame.layoutWrap === "WRAP") {
+    throw new Error(
+      `The fake Figma file does not model where the absolute frame ${frame.id} places ${String(flow.length)} layers in flow, or a wrapping one.`
+    );
+  }
+  const align = shownAlign(
+    frame,
+    primaryOn(frame.layoutMode, axis) ? "primaryAxisAlignItems" : "counterAxisAlignItems"
+  );
+  const [start, end] =
+    axis === "HORIZONTAL"
+      ? [shownPadding(frame, "paddingLeft"), shownPadding(frame, "paddingRight")]
+      : [shownPadding(frame, "paddingTop"), shownPadding(frame, "paddingBottom")];
+  const own = settled(state);
+  const turned = (slot: number): number =>
+    turnedOrigin(state.rotation, lengthOn(own, "HORIZONTAL"), lengthOn(own, "VERTICAL"), axis, slot);
+  if (align === "MIN") {
+    return turned(start);
+  }
+  if (align === "MAX") {
+    return turned(lengthOn(settled(frame), axis) - end - lengthOn(own, axis));
+  }
+  throw new Error(`The fake Figma file does not model ${align} in the absolute frame ${frame.id}.`);
+}
+
+/**
+ * The `x` or `y` of a layer turned in its slot in an auto layout flow (rule 26): the origin that
+ * keeps the turned box's centre where the unturned box's is, for an unturned box at `start`.
+ */
+export function turnedOrigin(
+  rotation: number,
+  width: number,
+  height: number,
+  axis: Axis,
+  start: number
+): number {
+  const { cos, sin } = turnOf(rotation);
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+  return axis === "HORIZONTAL"
+    ? f32(start + halfWidth - (cos * halfWidth + sin * halfHeight))
+    : f32(start + halfHeight - (cos * halfHeight - sin * halfWidth));
 }
 
 /**
@@ -1047,6 +1214,12 @@ export function bindNodeField(
 ): void {
   const targets = bindingTargets(field);
   const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
+  // A padding the layer binds or unbinds is its own from then on (rule 64).
+  for (const target of targets) {
+    if (Object.hasOwn(PADDING_SIDES, target)) {
+      markOverride(state, target);
+    }
+  }
   if (variable === null) {
     if (length !== undefined) {
       // An instance's own unbind keeps the length it shows, from then on (rule 56, G19).
@@ -1125,8 +1298,8 @@ export function absoluteBox(state: NodeState): Rect {
     let x = 0;
     let y = 0;
     for (const node of chain) {
-      x += node.x;
-      y += node.y;
+      x += placeOn(node, "HORIZONTAL");
+      y += placeOn(node, "VERTICAL");
     }
     return { x, y, width, height };
   }
@@ -1178,8 +1351,8 @@ export function readBackRotation(degrees: number): number {
 export function relativeTransform(state: NodeState): Transform {
   const { cos, sin } = turnOf(state.rotation);
   return [
-    [cos, sin, state.x],
-    [-sin, cos, state.y],
+    [cos, sin, placeOn(state, "HORIZONTAL")],
+    [-sin, cos, placeOn(state, "VERTICAL")],
   ];
 }
 

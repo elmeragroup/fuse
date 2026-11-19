@@ -151,6 +151,9 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   box, the padding box of the element's containing block, the root or an element below it, in
  *   every mode of {@link EVERY_MODE} once
  *   its faces have loaded, as `parent-spans-block.ts` decides.
+ * - `oneLength`: on an absolute element below the root, the axes along which its border box is one
+ *   length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have
+ *   loaded.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -862,5 +865,23 @@ const MEASURE_IN_PAGE = `async function () {
   const parentSpansBlock = (${parentSpansBlock.toString()});
   const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root));
   for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root))) { put(path, "parentSpansBlock", true); }
+  // The lengths of each absolute element below the root in every mode, kept on the axes where they agree.
+  const absolutes = elements
+    .filter(({ element }) => element !== root && getComputedStyle(element).position === "absolute")
+    .map((each) => ({ ...each, widths: [], heights: [] }));
+  if (absolutes.length > 0) {
+    await inEveryMode(() => {
+      for (const each of absolutes) {
+        const box = each.element.getBoundingClientRect();
+        each.widths.push(box.width);
+        each.heights.push(box.height);
+      }
+    });
+  }
+  const agree = (lengths) => Math.max(...lengths) - Math.min(...lengths) <= ${String(LAYOUT_UNIT_PX)};
+  for (const { path, widths, heights } of absolutes) {
+    const axes = [...(agree(widths) ? ["horizontal"] : []), ...(agree(heights) ? ["vertical"] : [])];
+    if (axes.length > 0) { put(path, "oneLength", axes); }
+  }
   return out;
 }`;

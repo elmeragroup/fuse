@@ -666,6 +666,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
               parent: reader,
               positionedBy: box.positionedBy,
               parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
+              oneLength: part.cascade.measured?.oneLength ?? new Set(),
               flow: flowing.map((each) => each.cascade.style),
               layers: holder.layers.length,
               paddingBox: paddingBoxOf(absoluteRoom(holder)),
@@ -877,12 +878,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     endInFlow,
     plans
   );
-  // Placement gives an absolute instance a new layer, which paints what the layer it replaces does.
+  // Placement gives an absolute instance a new layer, which paints what the layer it replaces does,
+  // and the instance a placement wrapper holds paints it too.
   placement.layers.forEach((layer, index) => {
     const before = parts[index]?.layer;
     const drawn = before?.kind === "instance" && layer !== before ? scope.painted.resolve(before) : undefined;
-    if (layer.kind === "instance" && drawn?.kind === "frame") {
-      scope.painted.note(layer, drawn);
+    const [held] = layer.kind === "frame" ? layer.children : [layer];
+    if (held?.kind === "instance" && drawn?.kind === "frame") {
+      scope.painted.note(held, drawn);
     }
   });
   // A Figma grid spaces its tracks by its own gaps, which `readGrid` reads.

@@ -10,10 +10,12 @@
  * 37. `overrides` lists each layer of an instance that holds an override, from the instance down, with
  *    its fields: the instance's own `name`, `width` and `height` (N1), its `fills`, `effects` and "the
  *    corner fields", and a sublayer's `fills` (N3). N3 did not name the corner fields, so the fake
- *    lists `cornerRadius` and the four corners the typings name. A property value is no override
- *    (N1). A fill written equal to the main's left no `fills` override, and `overrides` listed only
- *    the instance's `name` (NS), so a fill, stroke, effects or corner the fake stores equal to what
- *    the layer's source shows clears that override, and the field follows the source again.
+ *    lists `cornerRadius` and the four corners the typings name. No probe listed a frame's own
+ *    padding or alignment, so the fake lists them under their names in the typings (rule 64). A
+ *    property value is no override (N1). A fill written equal to the main's left no `fills`
+ *    override, and `overrides` listed only the instance's `name` (NS), so a fill, stroke, effects or
+ *    corner the fake stores equal to what the layer's source shows clears that override, and the
+ *    field follows the source again.
  *    `removeOverrides` exists (N3), and the fake follows the typings' "removes all direct
  *    overrides": it clears what `overrides` lists and keeps the property values, apart from the
  *    lengths of an instance its modes hold (rule 56).

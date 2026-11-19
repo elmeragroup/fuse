@@ -40,7 +40,6 @@ import {
 } from "./instances.ts";
 import {
   absoluteBox,
-  anchoredPlace,
   bindNodeField,
   bindTextField,
   constraintsOf,
@@ -48,6 +47,7 @@ import {
   lengthOn,
   mapPoint,
   place,
+  placeOn,
   placesItself,
   readBackRotation,
   relativeTransform,
@@ -59,8 +59,10 @@ import {
   setSizing,
   setStrokesIncludedInLayout,
   settled,
+  shownAlign,
+  shownPadding,
   sizingOn,
-  turnOf,
+  turnedOrigin,
 } from "./layout.ts";
 import { isHidden, markOverride, noteOverride, shown } from "./overrides.ts";
 import {
@@ -306,8 +308,7 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get x(): number {
-    const state = live(this);
-    return anchoredPlace(state, "HORIZONTAL") ?? state.x;
+    return placeOn(live(this), "HORIZONTAL");
   }
 
   set x(value: number) {
@@ -322,8 +323,7 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get y(): number {
-    const state = live(this);
-    return anchoredPlace(state, "VERTICAL") ?? state.y;
+    return placeOn(live(this), "VERTICAL");
   }
 
   set y(value: number) {
@@ -350,9 +350,8 @@ class FakeSceneNode extends FakeBaseNode {
       const halfWidth = state.width / 2;
       const halfHeight = state.height / 2;
       const center = mapPoint(relativeTransform(state), halfWidth, halfHeight);
-      const { cos, sin } = turnOf(rotation);
-      state.x = f32(center.x - (cos * halfWidth + sin * halfHeight));
-      state.y = f32(center.y - (cos * halfHeight - sin * halfWidth));
+      state.x = turnedOrigin(rotation, state.width, state.height, "HORIZONTAL", center.x - halfWidth);
+      state.y = turnedOrigin(rotation, state.width, state.height, "VERTICAL", center.y - halfHeight);
     }
     write(state, "rotation");
     state.rotation = rotation;
@@ -468,8 +467,8 @@ class FakeSceneNode extends FakeBaseNode {
     write(state, "constraints");
     markOverride(state, "constraints");
     const held = {
-      HORIZONTAL: anchoredPlace(state, "HORIZONTAL") ?? state.x,
-      VERTICAL: anchoredPlace(state, "VERTICAL") ?? state.y,
+      HORIZONTAL: placeOn(state, "HORIZONTAL"),
+      VERTICAL: placeOn(state, "VERTICAL"),
     };
     state.constraints = { ...value };
     place(state, "HORIZONTAL", held.HORIZONTAL);
@@ -871,18 +870,19 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   get primaryAxisAlignItems(): FrameNode["primaryAxisAlignItems"] {
-    return live(this).primaryAxisAlignItems;
+    return shownAlign(live(this), "primaryAxisAlignItems");
   }
 
   set primaryAxisAlignItems(value: FrameNode["primaryAxisAlignItems"]) {
     const state = live(this);
     requireGridAlignment(state, "primaryAxisAlignItems", value);
     write(state, "primaryAxisAlignItems");
+    markOverride(state, "primaryAxisAlignItems");
     state.primaryAxisAlignItems = value;
   }
 
   get counterAxisAlignItems(): FrameNode["counterAxisAlignItems"] {
-    return live(this).counterAxisAlignItems;
+    return shownAlign(live(this), "counterAxisAlignItems");
   }
 
   /** Rule 17: no STRETCH, and BASELINE only in a row. */
@@ -901,46 +901,51 @@ class FakeFrameLikeNode extends FakeSceneNode {
     }
     requireGridAlignment(state, "counterAxisAlignItems", value);
     write(state, "counterAxisAlignItems");
+    markOverride(state, "counterAxisAlignItems");
     state.counterAxisAlignItems = value;
   }
 
   get paddingTop(): number {
-    return live(this).padding.top;
+    return shownPadding(live(this), "paddingTop");
   }
 
   set paddingTop(value: number) {
     const state = live(this);
     write(state, "paddingTop");
+    markOverride(state, "paddingTop");
     state.padding.top = f32(value);
   }
 
   get paddingRight(): number {
-    return live(this).padding.right;
+    return shownPadding(live(this), "paddingRight");
   }
 
   set paddingRight(value: number) {
     const state = live(this);
     write(state, "paddingRight");
+    markOverride(state, "paddingRight");
     state.padding.right = f32(value);
   }
 
   get paddingBottom(): number {
-    return live(this).padding.bottom;
+    return shownPadding(live(this), "paddingBottom");
   }
 
   set paddingBottom(value: number) {
     const state = live(this);
     write(state, "paddingBottom");
+    markOverride(state, "paddingBottom");
     state.padding.bottom = f32(value);
   }
 
   get paddingLeft(): number {
-    return live(this).padding.left;
+    return shownPadding(live(this), "paddingLeft");
   }
 
   set paddingLeft(value: number) {
     const state = live(this);
     write(state, "paddingLeft");
+    markOverride(state, "paddingLeft");
     state.padding.left = f32(value);
   }
 
