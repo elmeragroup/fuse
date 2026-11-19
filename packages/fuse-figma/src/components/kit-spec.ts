@@ -306,6 +306,12 @@ export type TextLayerSpec = {
         readonly color: ColorSpec | undefined;
       }
     | undefined;
+  /**
+   * A line through the text, which `text-decoration-line: line-through` draws, in the text's own
+   * fill at the thickness the renderer chooses, as Figma draws a `STRIKETHROUGH` text. Absent for
+   * none, and never beside an underline.
+   */
+  readonly strikethrough?: true;
   readonly sizing: TextSizingSpec;
   readonly align: TextAlignSpec;
   /** Where the text cuts its characters off, or undefined where it shows them all. */

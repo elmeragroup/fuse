@@ -104,7 +104,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["calendar-day"],
     missing:
-      "The calendar around its days: the header, whose `w-full` beside the month grid stays unmapped, and the month grid; a day marked as today, an unavailable day, and a range day at a week's start or end.",
+      "The calendar around its days: the header, whose `w-full` beside the month grid stays unmapped, and the month grid; and a day both unavailable and focused or hovered.",
     issue: CALENDAR_DAY,
   },
   card: {
@@ -303,7 +303,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["calendar-day"],
     missing:
-      "The range calendar around its days: the header and the month grid, and a range day at a week's start or end.",
+      "The range calendar around its days: the header and the month grid; and a day both unavailable and focused or hovered.",
     issue: CALENDAR_DAY,
   },
   "scroll-area": { kind: "issue", issue: MISSING_SETS },

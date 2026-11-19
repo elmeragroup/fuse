@@ -332,15 +332,17 @@ function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLa
 }
 
 /**
- * Plan the underline as one operation, because Figma holds an underline offset, thickness and color
- * only while the layer is underlined. An unset color writes `AUTO`, the text's own fill.
+ * Plan the text's decoration as one operation, because Figma holds an underline offset, thickness
+ * and color only while the layer is underlined. An unset color writes `AUTO`, the text's own fill. A
+ * line through the text takes none of them, and draws in the text's own fill.
  */
-function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
+function planDecoration(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
   const underline = spec.underline;
   if (underline === undefined) {
-    if (text.textDecoration !== "NONE") {
-      change(run.plan, label, "textDecoration → NONE", () => {
-        text.textDecoration = "NONE";
+    const decoration = spec.strikethrough === true ? "STRIKETHROUGH" : "NONE";
+    if (text.textDecoration !== decoration) {
+      change(run.plan, label, `textDecoration → ${decoration}`, () => {
+        text.textDecoration = decoration;
       });
     }
     return;
@@ -538,7 +540,7 @@ function planTypography(
   );
   planLineHeight(run, text, label, spec.lineHeight);
   planLetterSpacing(run, text, label, spec);
-  planUnderline(run, text, label, spec);
+  planDecoration(run, text, label, spec);
   // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
   // the characters go in before the layout.
   planCharacters(run, text, label, spec, propertyIds);

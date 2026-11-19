@@ -1,23 +1,39 @@
 /**
  * The calendar day, as one component set on the Calendar page (#677): one day of the month grid
- * that Calendar and RangeCalendar share, its cell and its button, 17 cells.
+ * that Calendar and RangeCalendar share, its cell and its button.
  *
  * - The root is `Calendar.DayGridCell`'s `<td data-slot="calendar-day-grid-cell">`, which paints a
  *   range's band and rounds its ends.
  * - The button is `Calendar.DayButton`'s `<button data-slot="calendar-day-button">`, holding the
  *   day's number behind the `Day` TEXT property.
  * - `selection` is where the day sits in the selection: none, the one selected day of a Calendar, or
- *   the start, a middle day or the end of a RangeCalendar's range. `state` is rest, hover, focus or
- *   disabled, and `outside` a day of a neighboring month, whose button the grid hides.
+ *   the start, a middle day or the end of a RangeCalendar's range, mid-week or on the week's first or
+ *   last day, where the row rounds the range's band. `state` is rest, hover, focus, disabled or
+ *   unavailable, `outside` a day of a neighboring month, whose button the grid hides, and `today`
+ *   the day Calendar marks as today.
  *
- * Each in-month cell shows Tuesday 10 November 2026, so every cell sits mid-week, where a range's
- * middle day rounds no corner of its own. An outside cell shows 30 November in December's grid; its
- * button is hidden, so the number it holds draws nothing and the set keeps `10`. The set draws no
- * day marked as today, which Calendar marks from the clock in an effect, no unavailable day, and no
- * range day at a week's start or end.
+ * Each in-month cell shows a 10th: a Tuesday mid-week, a Sunday at a week's start or a Saturday at
+ * its end. An outside cell shows 30 November in December's grid; its button is hidden, so the
+ * number it holds draws nothing and the set keeps `10`. A range's start on the week's first day and
+ * its end on the week's last day draw as a start and an end mid-week, and a range of one day draws
+ * as a start on the week's last day.
  */
 import type { PartManifest, SetManifest } from "../capture/manifest";
 import { always } from "./popup-facts";
+
+/** The places in a range a range cell's day takes, mid-week and at a week's edge. */
+const RANGE_SELECTIONS = [
+  "start",
+  "middle",
+  "end",
+  "start-week-end",
+  "middle-week-start",
+  "middle-week-end",
+  "end-week-start",
+] as const;
+
+/** Every value of the `selection` axis: no selection, Calendar's one selected day, or a range's day. */
+const SELECTIONS = ["none", "selected", ...RANGE_SELECTIONS] as const;
 
 /** The number every cell's button shows, the `Day` property's default. */
 export const CALENDAR_DAY_NUMBER = "10";
@@ -48,26 +64,30 @@ export const CALENDAR_DAY_MANIFEST: SetManifest = {
   api: { page: "calendar", parts: ["Calendar.DayGridCell"] },
   slot: "calendar-day-grid-cell",
   axes: [
-    { name: "selection", values: ["none", "selected", "start", "middle", "end"] },
+    { name: "selection", values: [...SELECTIONS] },
     { name: "outside", values: ["false", "true"] },
-    { name: "state", values: ["rest", "hover", "focus", "disabled"] },
+    { name: "state", values: ["rest", "hover", "focus", "disabled", "unavailable"] },
+    { name: "today", values: ["false", "true"] },
   ],
+  // The today axis came after the set's first release, so a day that is not today keeps the key it
+  // had then (W5-P2).
+  addedAxes: new Set(["today"]),
   impossible: [
     {
       where: { state: "disabled", selection: "selected" },
       fact: "Calendar's `dayStatus` and `Calendar.DayGridCell` give a disabled day no selection flags (`calendar-parts.tsx`), so it never shows as selected.",
     },
-    ...(["start", "middle", "end"] as const).map((selection) => ({
+    ...RANGE_SELECTIONS.map((selection) => ({
       where: { state: "disabled", selection },
       fact: "Calendar's `dayStatus` and `Calendar.DayGridCell` give a disabled day no selection flags (`calendar-parts.tsx`), so it is never part of a range.",
     })),
-    ...(["selected", "start", "middle", "end"] as const).map((selection) => ({
+    ...(["selected", ...RANGE_SELECTIONS] as const).map((selection) => ({
       where: { outside: "true", selection },
       fact: "Calendar's `dayStatus` disables every day of a neighboring month, and a disabled day holds no selection flags (`calendar-parts.tsx`).",
     })),
-    ...(["rest", "hover", "focus"] as const).map((state) => ({
+    ...(["rest", "hover", "focus", "unavailable"] as const).map((state) => ({
       where: { outside: "true", state },
-      fact: "Calendar's `dayStatus` disables every day of a neighboring month (`calendar-dates.ts`), so its button is always disabled.",
+      fact: "Calendar's `dayStatus` disables every day of a neighboring month and marks none unavailable (`calendar-dates.ts`), so its button is always disabled.",
     })),
   ],
   columnAxis: "state",

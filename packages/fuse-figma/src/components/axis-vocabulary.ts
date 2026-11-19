@@ -36,11 +36,12 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "drop-target",
         "pending",
         "disabled",
+        "unavailable",
         "readonly",
         "invalid",
       ],
       draws:
-        "The interaction or validity state the cell forces or the component's props set: a pointer over it, keyboard focus, the highlighted row of a menu, an open submenu, a hovered or active row's badge, a file dragged over it, an action in flight, disabled, read-only or invalid. A set with one static cell names it `rest`.",
+        "The interaction or validity state the cell forces or the component's props set: a pointer over it, keyboard focus, the highlighted row of a menu, an open submenu, a hovered or active row's badge, a file dragged over it, an action in flight, disabled, a calendar day the user can reach but not pick, read-only or invalid. A set with one static cell names it `rest`.",
     },
   ],
   [
@@ -172,9 +173,19 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
   [
     "selection",
     {
-      values: ["none", "selected", "start", "middle", "end"],
+      values: [
+        "none",
+        "selected",
+        "start",
+        "middle",
+        "end",
+        "start-week-end",
+        "middle-week-start",
+        "middle-week-end",
+        "end-week-start",
+      ],
       draws:
-        "Where a calendar day sits in the selection: not in it, the one selected day, or the first, a middle or the last day of a selected range.",
+        "Where a calendar day sits in the selection: not in it, the one selected day, or the first, a middle or the last day of a selected range, mid-week or, where its row rounds the range's band, on the week's first or last day.",
     },
   ],
   ...(
@@ -192,6 +203,7 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "outside",
         "Whether a calendar day belongs to a neighboring month, which the grid shows without its number.",
       ],
+      ["today", "Whether a calendar day is today, whose number Calendar sets in a heavier weight."],
     ] as const
   ).map(([name, draws]): readonly [string, FigmaAxis] => [name, { values: BOOLEAN_VALUES, draws }]),
 ]);
