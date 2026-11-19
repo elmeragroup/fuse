@@ -155,9 +155,10 @@ const CHANGES = [
   "Text styles: create Caption",
   "Fuse components: create the text Fuse components",
   "Fuse components: create the labels Button labels",
+  "Fuse components: create the text Themes",
   "Fuse components: create the text Examples",
   "Fuse components: create the example Example",
-  "Fuse components: place Button and Icons, with their labels and the page's title and example, in a row",
+  "Fuse components: place Button and Icons, with their labels and the page's title and example, in sections",
 ];
 
 describe("the plugin bundle", () => {

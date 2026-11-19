@@ -982,9 +982,10 @@ export type DocTextSpec = {
 };
 
 /**
- * The labels around a component set's grid: a frame beside the set, outside it, holding the set's
- * name above the grid, a header above each column naming its value on the set's column axis, and a
- * header beside each row that holds a variant, naming its values on the other axes.
+ * The labels around a component set's grid, which make the set's section of its page: a frame
+ * behind the set, outside it, holding the set's name in the page's label column, a header above
+ * each column naming its value on the set's column axis, and a header beside each row that holds a
+ * variant, naming its values on the other axes.
  */
 export type SetLabelsSpec = {
   readonly kind: "labels";
@@ -1019,7 +1020,7 @@ export type DocSpec = DocTextSpec | SetLabelsSpec | PageExampleSpec;
 
 /**
  * The docs of one component page, complete: its title, the labels of each set it holds, the
- * `Examples` header and its example.
+ * `Themes` header beside the previews, the `Examples` header and its example.
  */
 export type PageDocsSpec = {
   /** The page's key. */
@@ -1027,6 +1028,7 @@ export type PageDocsSpec = {
   readonly title: DocTextSpec;
   /** One labels frame per set on the page, in the page's set order. */
   readonly labels: readonly SetLabelsSpec[];
+  readonly themesHeader: DocTextSpec;
   readonly examplesHeader: DocTextSpec;
   readonly example: PageExampleSpec;
 };
@@ -1035,10 +1037,16 @@ export type PageDocsSpec = {
  * A kit's doc nodes, one after another, as the plugin finds each by its key.
  *
  * @param docs - The kit's docs, a record per component page.
- * @returns Each page's title, labels, `Examples` header and example, page by page.
+ * @returns Each page's title, labels, `Themes` header, `Examples` header and example, page by page.
  */
 export function docNodes(docs: readonly PageDocsSpec[]): readonly DocSpec[] {
-  return docs.flatMap((page) => [page.title, ...page.labels, page.examplesHeader, page.example]);
+  return docs.flatMap((page) => [
+    page.title,
+    ...page.labels,
+    page.themesHeader,
+    page.examplesHeader,
+    page.example,
+  ]);
 }
 
 /** Everything the plugin reconciles, on the pages it lists. */

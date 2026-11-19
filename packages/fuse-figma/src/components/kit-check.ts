@@ -704,7 +704,7 @@ function checkDocs(kit: KitSpec): void {
     if (others.length > 0) {
       throw contradiction(`The ${page.name} page has ${String(records.length)} docs records.`);
     }
-    for (const node of [record.title, ...record.labels, record.examplesHeader, record.example]) {
+    for (const node of docNodes([record])) {
       if (node.page !== page.key) {
         throw contradiction(`${node.name} documents the ${page.name} page from another page.`);
       }
@@ -738,6 +738,7 @@ function checkDocs(kit: KitSpec): void {
     }
     const used = [
       record.title.style,
+      record.themesHeader.style,
       record.examplesHeader.style,
       ...record.labels.flatMap((labels) => [labels.nameStyle, labels.axisStyle]),
     ];

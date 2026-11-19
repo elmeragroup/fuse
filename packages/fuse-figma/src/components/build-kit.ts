@@ -86,8 +86,8 @@ const AXIS_STYLE = "text-style/span/xs/regular";
 
 /**
  * The docs of a component page, as the Obra kit's pages read: the page's title, the labels around
- * each of its sets' grids, the section header `Examples` and its usage example, its example set's
- * default variant.
+ * each of its sets' grids, the section header `Themes` beside its previews, and the section header
+ * `Examples` beside its usage example, its example set's default variant.
  *
  * @param page - The page.
  * @param registry - The kit's sets.
@@ -130,6 +130,14 @@ function pageDocs(
         nameStyle: CAPTION_STYLE,
         axisStyle: AXIS_STYLE,
       })),
+    themesHeader: {
+      kind: "text",
+      key: `${prefix}/themes-header`,
+      name: "Header",
+      page: pageKey,
+      text: "Themes",
+      style: CAPTION_STYLE,
+    },
     examplesHeader: {
       kind: "text",
       key: `${prefix}/examples-header`,
