@@ -1,9 +1,11 @@
-import type { ChildSpacing } from "./box-cascade";
 /**
  * How a box lays out the layers in its flow, as `box-mapping.ts` maps it: the direction and the
  * alignments its flex, grid or block layout gives them, a column's stretch, and the alignment a row's
  * parts set through `align-self`, which settles once the parts map.
  */
+import { readAutoMargins } from "./auto-margins";
+import type { FlexDirection } from "./auto-margins";
+import type { ChildSpacing } from "./box-cascade";
 import { BLOCK_LEVEL, heightBounds, listNames } from "./box-sizing";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
@@ -12,7 +14,6 @@ import type { GridMeasure } from "./grid-layout";
 import type {
   ChildLayerSpec,
   CounterAlignSpec,
-  DirectionSpec,
   FrameLayerSpec,
   InstanceLayerSpec,
   LimitsSpec,
@@ -239,26 +240,40 @@ export function readFlow(
     flex &&
     (column ? box.sizing.vertical : box.sizing.horizontal).kind === "hug" &&
     (column ? box.limits.minHeight : box.limits.minWidth) === undefined;
-  const autoStart = flex
-    ? readAutoStart(reader, flow, {
+  const autoMargins = flex
+    ? readAutoMargins(reader, flow, {
         direction,
         free: box.freeAlongMain,
         fits: box.fitsAlongMain,
       })
     : undefined;
+  if (autoMargins === "centred") {
+    return {
+      layout: {
+        flex,
+        blocks: false,
+        direction,
+        primaryAlign: "CENTER",
+        counterAlign: "CENTER",
+        justify: "CENTER",
+        centresLone: true,
+      },
+      self: undefined,
+    };
+  }
   const alignments = hugged ? HUGGED_ALIGNMENTS : PRIMARY_ALIGNMENTS;
   // A box with free space spaces its layers out only where they map to leave it some, so the box
   // mapping reads its `space-between` once they map.
   const spaceBetweenUnread =
     flex &&
     !hugged &&
-    autoStart === undefined &&
+    autoMargins === undefined &&
     normalizeCss(reader.resolved("justify-content") ?? "") === "space-between";
   // A label that fills before the margin leaves no free space, so the row packs at its start.
   const primaryAlign =
-    autoStart === "label-fills"
+    autoMargins === "label-fills"
       ? "MIN"
-      : autoStart === "spaced"
+      : autoMargins === "spaced"
         ? (alignments.get("space-between")?.align ?? unset)
         : spaceBetweenUnread
           ? "SPACE_BETWEEN"
@@ -271,7 +286,7 @@ export function readFlow(
     primaryAlign,
     counterAlign,
     justify:
-      autoStart !== undefined ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
+      autoMargins !== undefined ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
   };
   // A flex item sits in no line box, so `vertical-align` does not apply to it (CSS Flexbox 1 §3), as
   // an avatar's `align-middle` in an Avatar group.
@@ -283,7 +298,7 @@ export function readFlow(
       []
     );
   }
-  if (autoStart === "label-fills") {
+  if (autoMargins === "label-fills") {
     return { layout: { ...layout, labelFills: true }, self };
   }
   return { layout: spaceBetweenUnread ? { ...layout, spaceBetweenUnread: true } : layout, self };
@@ -392,129 +407,6 @@ const ONE_COLUMN_GRID: Layout = {
   oneColumnGrid: true,
 };
 
-/** How the coverage table names an auto margin {@link readAutoStart} reads between two layers. */
-const AUTO_START =
-  "the auto margin takes the row's free space, which ends the row with the layer, as space-between places two layers";
-
-/** How the coverage table names an auto margin {@link readAutoStart} reads between a column's two layers. */
-const AUTO_START_DOWN =
-  "the auto margin takes the column's free space, which ends the column with the last layer, as space-between places two layers";
-
-/** How the coverage table names an auto start margin {@link readAutoStart} reads after the label. */
-const AUTO_START_AFTER_LABEL =
-  "the auto margin takes the row's free space after the label, which fills that space in Figma and paints nothing past its text, so the layer ends the row";
-
-/** The `text-align` values that set a label's text from its left, where a filling label draws as one at its own width. */
-const FROM_LEFT: ReadonlySet<string> = new Set(["", "start", "left"]);
-
-/** The margins before and after a layer along a flex box's direction. */
-const MAIN_MARGINS = {
-  HORIZONTAL: { start: "margin-left", end: "margin-right" },
-  VERTICAL: { start: "margin-top", end: "margin-bottom" },
-} as const satisfies Record<FlexDirection, { readonly start: string; readonly end: string }>;
-
-/** The directions of a flex box, whose auto margins share its free space along it. */
-type FlexDirection = Exclude<DirectionSpec, "GRID">;
-
-/**
- * Read an auto margin between the layers of a flex box along its direction, as a menu row's shortcut
- * or caret ends the row and a Sheet's `mt-auto` footer ends its column. Auto margins take the box's
- * free space before `justify-content` distributes it (CSS Flexbox 1 §8.1), so the margin ends the
- * box with the layers after it and packs the others at the start. The box must leave
- * `justify-content` unset, so nothing else places them.
- *
- * - Between two layers, an auto start margin on the last that sets no end margin reads as spaced
- *   between the box's ends, as `space-between` places two layers: `spaced`. So does an auto end
- *   margin on the first part that sets no start margin, as `me-auto` writes it.
- * - In a row, an auto start margin on the last of more layers, with the row's own label right before
- *   it and the row setting its text from the left, makes the label fill the free space in Figma,
- *   where it paints nothing past its text, so the row packs at its start with its gap and draws what
- *   CSS draws: `label-fills`. The layers before the label keep their widths.
- *
- * The two readings need different proofs, which the capture measures in every mode (#773):
- *
- * - `spaced` needs the box to leave the margin room (`freeAlongMain`): where the layers and the gap
- *   fill or overflow the box, the margin takes none, and the box keeps them packed at its start with
- *   the gap, where `space-between` would not. A row whose first layer is its own label, which a TEXT
- *   property sets, draws the label filling the room the last layer leaves, whatever the sample's
- *   word count, as `spacedFirst` in `label-layout.ts` says, so a longer label wraps between words
- *   there as CSS wraps it. The capture measures the room on the sample text. One word wider than the
- *   room is a known limit, as for `label-fills` below.
- * - `label-fills` needs only the row to fit its layers (`fitsAlongMain`). The margin takes whatever
- *   free space there is, or a label that grows takes it first (CSS Flexbox 1 §9.7 before §8.1), and a
- *   filling label takes the same in Figma, so the two draw alike at any free space of zero or more.
- *   Where the layers overflow, CSS stops the label at its min-content width and Figma shrinks it.
- *   The capture measures the fact on the demo's sample text, and the label is a TEXT property a
- *   designer types into. A longer label of several words still draws alike while the last layer's
- *   text holds no space, as a menu shortcut's keys do: that layer cannot shrink below its own width,
- *   so CSS and Figma both break the label between words inside the room. A word wider than the room
- *   is a known limit. CSS keeps the word whole at its min-content width and pushes the last layer
- *   past the row's end (CSS Flexbox 1 §4.5), while the filling Figma text breaks the word inside the
- *   room.
- *
- * A row that leaves no free space, as one that hugs its layers along its direction or holds a layer
- * that grows, gives the margin nothing to take, and draws the same packed at its start, which the
- * mapping decides once its layers map, as `spacesNothingOut` in `box-mapping.ts` says. An auto margin
- * anywhere else stays unread, so it lands unmapped.
- *
- * @param reader - The box's style.
- * @param flow - The box's layers in flow.
- * @param line - The box's direction, and whether the capture measured its flex line leaving the
- *   margin room (`free`) and fitting its layers (`fits`) in every mode.
- * @returns How the margin places the box's layers, or undefined where it stays unread.
- */
-function readAutoStart(
-  reader: LayerStyle,
-  flow: FlowLayers,
-  line: { readonly direction: FlexDirection; readonly free: boolean; readonly fits: boolean }
-): "spaced" | "label-fills" | undefined {
-  const { direction, free, fits } = line;
-  const { start, end } = MAIN_MARGINS[direction];
-  const auto = (style: LayerStyle | undefined, property: string) =>
-    normalizeCss(style?.resolved(property) ?? "") === "auto";
-  const count = flow.parts.length + flow.others.length;
-  const [first] = flow.parts;
-  const labelFills =
-    direction === "HORIZONTAL" &&
-    count > 2 &&
-    flow.labelBeforeLast &&
-    FROM_LEFT.has(normalizeCss(reader.resolved("text-align") ?? ""));
-  // Two layers spaced to the ends need the room the margin takes; a label that fills before the last
-  // layer needs only the row to fit, as the doc above says.
-  const proven = count === 2 ? free : labelFills && fits;
-  // `me-auto` on the first of two parts places them as `ms-auto` on the second does.
-  const between =
-    proven && auto(flow.last, start) && flow.last?.has(end) !== true
-      ? { style: flow.last, property: start }
-      : free &&
-          count === 2 &&
-          flow.others.length === 0 &&
-          auto(first?.style, end) &&
-          first?.style.has(start) !== true
-        ? { style: first?.style, property: end }
-        : undefined;
-  const placing =
-    count === 2 ? "spaced" : between?.property === start && labelFills ? "label-fills" : undefined;
-  if (between?.style === undefined || placing === undefined || reader.has("justify-content")) {
-    return undefined;
-  }
-  between.style.read(
-    between.property,
-    (value) => value,
-    () => ({
-      outcome: "literal",
-      detail:
-        placing === "label-fills"
-          ? AUTO_START_AFTER_LABEL
-          : direction === "VERTICAL"
-            ? AUTO_START_DOWN
-            : AUTO_START,
-    }),
-    reader.feed("primaryAlign")
-  );
-  return placing;
-}
-
 /**
  * How a box's cascade knows whether a list item draws a marker: `resolved` where it read the element
  * and the page's style sheets, as a capture does, and its `::marker` sets no `content` beyond
@@ -595,6 +487,10 @@ function stacksBlocks(
  *   its 36px and 44px link in a 24px line, and, with the link's own line height held, first taller
  *   at a 32px line for Previous, whose caret sets its baseline, and 37px for a page link at Dense,
  *   40px and 45px at Comfortable.
+ * - An inline flex or inline grid box at a `width` of `100%`, where the capture measured that the
+ *   line box adds nothing to it, as List detail's `<li>` holds its `w-full` Button. The box is as
+ *   wide as the container's content box, so it fills the one line (CSS 2.1 §10.3.9), and the line
+ *   box is as tall as the box, as `lineFits` measures in every mode.
  *
  * @param flow - The box's layers.
  * @param hugs - Whether the box hugs its width.
@@ -606,10 +502,11 @@ function spansItsLine(flow: FlowLayers, hugs: boolean, lineFits: boolean): boole
     return false;
   }
   const display = normalizeCss(only.style.raw("display") ?? "");
-  if (display === "inline-block" && normalizeCss(only.style.resolved("width") ?? "") === "100%") {
+  const full = normalizeCss(only.style.resolved("width") ?? "") === "100%";
+  if (display === "inline-block" && full) {
     return true;
   }
-  return hugs && lineFits && (display === "inline-block" || INLINE_BOXES.has(display));
+  return lineFits && (display === "inline-block" || INLINE_BOXES.has(display)) && (hugs || full);
 }
 
 /** The inline-level displays whose box lays out its own content, as a block would sit on a line. */
@@ -694,16 +591,21 @@ export type FlowLayer = { readonly key: string; readonly name: string };
  * fills, and its icons and label.
  */
 export type FlowLayers = {
-  /** The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read. */
+  /**
+   * The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read, and
+   * whether it shows its own text and no icon or part, which `readCentredLone` in `auto-margins.ts`
+   * reads.
+   */
   readonly parts: readonly (FlowLayer & {
     readonly style: LayerStyle;
     readonly sizing: Feed;
     readonly editable: boolean;
+    readonly onlyText: boolean;
   })[];
   readonly others: readonly FlowLayer[];
   /**
-   * The style of the box's last layer in flow, a part or an icon, which {@link readAutoStart} reads,
-   * or undefined where the label ends the flow or the box holds no layer.
+   * The style of the box's last layer in flow, a part or an icon, which `readAutoStart` in
+   * `auto-margins.ts` reads, or undefined where the label ends the flow or the box holds no layer.
    */
   readonly last: LayerStyle | undefined;
   /** Whether the box's own label sits right before the last of three or more layers in flow. */

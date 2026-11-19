@@ -196,8 +196,12 @@ function borderless(style: LayerStyle, except?: string): boolean {
  * Whether a box lays its lines horizontally: its own `writing-mode`, or where it sets none or
  * takes its parent's, the nearest box above it that sets one (CSS Writing Modes 3 §3.1). The build
  * passes no `writing-mode` down, so this walks up from the box.
+ *
+ * @param box - The box's style, or undefined above the outermost box, which lays its lines
+ *   horizontally as the initial `horizontal-tb` does.
+ * @returns True for a horizontal writing mode.
  */
-function horizontal(box: LayerStyle | undefined): boolean {
+export function horizontal(box: LayerStyle | undefined): boolean {
   if (box === undefined) {
     return true;
   }

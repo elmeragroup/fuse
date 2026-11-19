@@ -92,6 +92,7 @@ function overrideInTheme(override: InstanceOverride, paint: ThemeColor): Instanc
   switch (override.field) {
     case "cornerRadius":
     case "textAlign":
+    case "primaryAlign":
       return override;
     case "effects":
       return {

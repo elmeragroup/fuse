@@ -100,9 +100,10 @@ const EVERY_MODE: readonly PageMode[] = SCHEMES.flatMap((scheme) =>
  *   end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the line's items fit it
  *   and none shrinks (CSS Flexbox 1 §9.7).
  * - `basisAsDeclared`, on the root: a root whose computed `height` holds a percentage, as CSS Typed
- *   OM gives it, where the first element above it whose computed `height` is a length is as tall as
- *   that length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}, so no flex column
- *   around it grew or shrank it and the root's percentage resolves against it.
+ *   OM gives it, or is `auto` in a flex row that does not wrap, where the first element above it whose
+ *   computed `height` is a length is as tall as that length, within {@link LAYOUT_UNIT_PX}, in every
+ *   mode of {@link EVERY_MODE}, so no flex column around it grew or shrank it and the root's
+ *   percentage, or the rows that stretch it, resolve against it.
  * - `ratioHeight`: an element with a preferred aspect ratio, none of it `auto`, and a computed
  *   `height` of `auto`, as tall as its width times the ratio within {@link LAYOUT_UNIT_PX}, and with
  *   the width, height and computed `aspect-ratio` of the page's own mode in every mode of
@@ -136,7 +137,8 @@ const EVERY_MODE: readonly PageMode[] = SCHEMES.flatMap((scheme) =>
  *   closed shadow root's, goes unseen. Issue #766 tracks measuring the fact from Chromium's pixels.
  * - `lineFits`: an element whose one element child is an inline-level box and which holds no text
  *   of its own, whose content box's top and bottom edges are the child's margin box's, within half
- *   a pixel, at its own line height and at 2px more. Matching edges leave no baseline offset, which
+ *   a pixel, at its own line height and at 2px more, in every mode of {@link EVERY_MODE} once its
+ *   faces have loaded. Matching edges leave no baseline offset, which
  *   moves the child down a line taller than a fixed-height box, and a line 2px taller grows the strut
  *   by 1px above and below (CSS 2.1 §10.8.1), so the line box adds nothing to the child by at least
  *   that margin. The second reading holds only where the page's computed line height took the 2px
@@ -465,6 +467,7 @@ const MEASURE_IN_PAGE = `async function () {
   const underMaxWidth = [];
   const freeAlongMain = [];
   const tableTiles = [];
+  const lineBoxes = [];
   const TABLE_BOXES = new Set(["table", "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-cell"]);
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
@@ -515,31 +518,7 @@ const MEASURE_IN_PAGE = `async function () {
     if (style.display.endsWith("flex") && !style.flexWrap.startsWith("wrap") && autoMargins(element).length > 0) { freeAlongMain.push({ element, path }); }
     if (TABLE_BOXES.has(style.display)) { tableTiles.push({ element, path }); }
     const [child, ...others] = element.children;
-    const line = Number.parseFloat(style.lineHeight);
-    if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
-      const sum = (style, names) => names.reduce((total, name) => total + (Number.parseFloat(style.getPropertyValue(name)) || 0), 0);
-      const fits = () => {
-        const box = element.getBoundingClientRect();
-        const inner = getComputedStyle(element);
-        const top = box.top + sum(inner, ["border-top-width", "padding-top"]);
-        const bottom = box.bottom - sum(inner, ["border-bottom-width", "padding-bottom"]);
-        const outer = getComputedStyle(child);
-        const edges = child.getBoundingClientRect();
-        return Math.abs(edges.top - sum(outer, ["margin-top"]) - top) <= 0.5 && Math.abs(edges.bottom + sum(outer, ["margin-bottom"]) - bottom) <= 0.5;
-      };
-      if (fits()) {
-        const elementStyle = element.getAttribute("style");
-        const childStyle = child.getAttribute("style");
-        const childLine = getComputedStyle(child).lineHeight;
-        child.style.setProperty("line-height", childLine, "important");
-        element.style.setProperty("line-height", String(line + 2) + "px", "important");
-        const applied = Math.abs(Number.parseFloat(getComputedStyle(element).lineHeight) - line - 2) <= 0.01 && getComputedStyle(child).lineHeight === childLine;
-        const still = applied && fits();
-        if (elementStyle === null) { element.removeAttribute("style"); } else { element.setAttribute("style", elementStyle); }
-        if (childStyle === null) { child.removeAttribute("style"); } else { child.setAttribute("style", childStyle); }
-        if (still) { put(path, "lineFits", true); }
-      }
-    }
+    if (child !== undefined && others.length === 0 && own.length === 0) { lineBoxes.push({ element, path }); }
   }
   // The facts that must hold in every mode a designer can pick: each candidate is measured with the
   // page stamped in each mode, once the faces the mode's text needs have loaded, and keeps the fact
@@ -615,6 +594,32 @@ const MEASURE_IN_PAGE = `async function () {
       Math.abs(element.getBoundingClientRect().width - width) < ${String(LAYOUT_UNIT_PX)});
   };
   for (const { path } of await holdsInEveryMode(underMaxWidth, underMax)) { put(path, "underMaxWidth", true); }
+  // An element whose one element child is an inline-level box and which holds no text of its own,
+  // whose content box's top and bottom edges are the child's margin box's at its own line height and
+  // at 2px more, the child's line height held.
+  const lineFits = (element) => {
+    const [child] = element.children;
+    const style = getComputedStyle(element);
+    const line = Number.parseFloat(style.lineHeight);
+    if (child === undefined || !getComputedStyle(child).display.startsWith("inline-") || !Number.isFinite(line)) { return false; }
+    const sum = (style, names) => names.reduce((total, name) => total + (Number.parseFloat(style.getPropertyValue(name)) || 0), 0);
+    const fits = () => {
+      const box = element.getBoundingClientRect();
+      const inner = getComputedStyle(element);
+      const top = box.top + sum(inner, ["border-top-width", "padding-top"]);
+      const bottom = box.bottom - sum(inner, ["border-bottom-width", "padding-bottom"]);
+      const outer = getComputedStyle(child);
+      const edges = child.getBoundingClientRect();
+      return Math.abs(edges.top - sum(outer, ["margin-top"]) - top) <= 0.5 && Math.abs(edges.bottom + sum(outer, ["margin-bottom"]) - bottom) <= 0.5;
+    };
+    if (!fits()) { return false; }
+    const childLine = getComputedStyle(child).lineHeight;
+    return withStyles([[child, "line-height", childLine], [element, "line-height", String(line + 2) + "px"]], () => {
+      const applied = Math.abs(Number.parseFloat(getComputedStyle(element).lineHeight) - line - 2) <= 0.01 && getComputedStyle(child).lineHeight === childLine;
+      return applied && fits();
+    });
+  };
+  for (const { path } of await holdsInEveryMode(lineBoxes, lineFits)) { put(path, "lineFits", true); }
   // The room a flex line leaves along its direction past its items and the gaps between them, once
   // the auto margins along it give their room back, or -Infinity for a line in neither direction.
   const roomAlong = (element) => {
@@ -861,7 +866,13 @@ const MEASURE_IN_PAGE = `async function () {
     const used = style.boxSizing === "border-box" ? box : box - px("padding-top") - px("padding-bottom") - px("border-top-width") - px("border-bottom-width");
     return Math.abs(used - (pxHeight(above) ?? Number.NaN)) < ${String(LAYOUT_UNIT_PX)};
   };
-  if (percentHeight(root) && (await holdsInEveryMode([{ element: root, path: "" }], basisAsDeclared)).length > 0) {
+  // A root of \`auto\` height that its parent's flex row may stretch, as List detail's pane.
+  const stretchable = (element) => {
+    const parent = element.parentElement;
+    const around = parent === null ? undefined : getComputedStyle(parent);
+    return String(element.computedStyleMap().get("height")) === "auto" && around !== undefined && around.display.endsWith("flex") && around.flexDirection === "row" && around.flexWrap === "nowrap";
+  };
+  if ((percentHeight(root) || stretchable(root)) && (await holdsInEveryMode([{ element: root, path: "" }], basisAsDeclared)).length > 0) {
     put("", "basisAsDeclared", true);
   }
   // An element with a preferred aspect ratio and an \`auto\` height, as tall as its width times the

@@ -250,7 +250,12 @@ export const KIT_PARITY = {
   },
   kbd: { kind: "sets", sets: ["kbd", "kbd-group"] },
   link: { kind: "partial", sets: ["link"], missing: "`weight` and `truncate`.", issue: MISSING_SETS },
-  "list-detail": { kind: "issue", issue: MISSING_SETS },
+  "list-detail": {
+    kind: "partial",
+    sets: ["list-detail-pane", "list-detail"],
+    missing: "The overlay layout, whose Sheet holds the detail and `ListDetail.Close`.",
+    issue: MISSING_SETS,
+  },
   loader: { kind: "sets", sets: ["loader"] },
   meter: { kind: "sets", sets: ["meter"] },
   "navigation-menu": {

@@ -41,7 +41,7 @@ import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";
 import { readSize } from "./sizing-value";
 import type { PercentBasis } from "./sizing-value";
-import { subgridCellRoom } from "./subgrid-row";
+import { horizontal, subgridCellRoom } from "./subgrid-row";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
@@ -162,7 +162,9 @@ export const BLOCK_LEVEL: ReadonlySet<string> = new Set([
  *
  * @param preview - The width the root's container gives it, which its percentage width takes, and
  *   the height its containing block gives it, which its percentage height takes, each undefined
- *   where the definition names none.
+ *   where the definition names none, and the host's height where the flex rows around a root of
+ *   `auto` height stretch it there, which its unset height takes, as `stretchedToHost` in
+ *   `percent-height.ts` reads it.
  * @param style - The root's style, whose `display` says whether the root is block-level and whose
  *   `position` whether it sits in its container's flow.
  * @param variables - The synced variables a margin can read, with the values they hold in each mode.
@@ -174,6 +176,7 @@ export function rootRoom(
   preview: {
     readonly width: number | undefined;
     readonly height: PreviewLength | undefined;
+    readonly stretched?: number | undefined;
   },
   style: LayerStyle,
   variables: VariableIndex,
@@ -206,7 +209,10 @@ export function rootRoom(
         previewHeight === undefined
           ? NO_BASIS
           : { kind: "length", value: previewHeight.pixels, of: "the preview", css: previewHeight.css },
-      auto: HUG,
+      auto:
+        preview.stretched === undefined
+          ? HUG
+          : { kind: "fixed", length: { kind: "literal", value: preview.stretched } },
       siblings: [],
       length: undefined,
     },
@@ -441,12 +447,18 @@ const SELF_STRETCH =
   "the item stretches across the counter axis to the flex line less its margins, as a layer that fills that axis does";
 
 /**
- * The room of a flex item that its own `align-self: stretch` stretches across its parent's direction,
- * as Toolbar's separator stretches across the bar. Where the item's length across is unset or `auto`
- * and no margin across is `auto`, it is as long as the flex line less its margins (CSS Flexbox 1 §9.4
- * step 11), which a layer that fills the axis draws, its margin box carrying the margins. That holds
- * only in a single-line flex box, whose one line is the box's content length across (§9.4 step 15).
- * Every other room stays as it was, and the `align-self` stays unread.
+ * The room of a flex item that stretches across its parent's direction: by its own `align-self:
+ * stretch`, as Toolbar's separator stretches across the bar, or, in a row of a fixed height, by an
+ * `align-self` and an `align-items` that neither the item nor the row sets, whose `auto` and `normal`
+ * stretch it (CSS Box Alignment 3 §6.1), as List detail's root stretches its list and its pane down.
+ * A row that hugs its height keeps its items' own heights: there Figma's fill sizes against the row's
+ * other layers, and the kit check refuses a layer that fills a hugging parent beside none that sets
+ * its height, as Radio row's label would. Where the item's
+ * length across is unset or `auto` and no margin across is `auto`, it is as long as the flex line
+ * less its margins (CSS Flexbox 1 §9.4 step 11), which a layer that fills the axis draws, its margin
+ * box carrying the margins. That holds only in a single-line flex box, whose one line is the box's
+ * content length across (§9.4 step 15). A column's unset `align-items` stretches its layers through
+ * `roomInside`. Every other room stays as it was, and an `align-self` stays unread.
  *
  * @param holder - The item's parent.
  * @param style - The item's style.
@@ -457,21 +469,29 @@ export function selfStretchedRoom(holder: Holder, style: LayerStyle, room: Room)
   const across = holder.layout.direction === "HORIZONTAL" ? "vertical" : "horizontal";
   const length = across === "vertical" ? "height" : "width";
   const margins = across === "vertical" ? ["margin-top", "margin-bottom"] : ["margin-left", "margin-right"];
+  const own = normalizeCss(style.resolved("align-self") ?? "auto") === "stretch";
+  const unset =
+    across === "vertical" &&
+    holder.sizing.vertical.kind === "fixed" &&
+    !style.has("align-self") &&
+    !holder.style.has("align-items");
   const stretches =
     holder.layout.flex &&
     normalizeCss(holder.style.resolved("flex-wrap") ?? "nowrap") === "nowrap" &&
-    normalizeCss(style.resolved("align-self") ?? "auto") === "stretch" &&
+    (own || unset) &&
     normalizeCss(style.resolved(length) ?? "auto") === "auto" &&
     margins.every((margin) => normalizeCss(style.resolved(margin) ?? "0px") !== "auto");
   if (!stretches) {
     return room;
   }
-  style.read(
-    "align-self",
-    (read) => read,
-    () => ({ outcome: "literal", detail: SELF_STRETCH }),
-    style.feed("sizing")
-  );
+  if (own) {
+    style.read(
+      "align-self",
+      (read) => read,
+      () => ({ outcome: "literal", detail: SELF_STRETCH }),
+      style.feed("sizing")
+    );
+  }
   return { ...room, [across]: { ...room[across], auto: FILL } };
 }
 
@@ -507,16 +527,37 @@ const AXIS_BORDERS = {
   vertical: ["border-top-width", "border-bottom-width"],
 } as const;
 
+/** The logical inline border sides, which `border-s` and `border-e` set alone. */
+const INLINE_BORDERS = ["border-inline-start-width", "border-inline-end-width"] as const;
+
+/** The logical shorthand of both inline border sides' widths, which `border-x` sets. */
+const INLINE_BORDER = "border-inline-width";
+
 /**
  * The pixels a box's borders take on one axis: each side's own width where the box sets one, as
- * `border-r` does, or `border-width` otherwise.
+ * `border-r` does, or `border-width` otherwise. A box that sets its borders across by their logical
+ * inline sides instead, as `border-s` sets `border-inline-start-width`, takes those. A horizontal
+ * writing mode puts them on the left and right in either direction (CSS Logical Properties 1 §4.1),
+ * so their sum is the same.
  *
- * @returns The two sides' widths together, or undefined where one is no literal length.
+ * @returns The two sides' widths together, or undefined where one is no literal length. It is
+ *   undefined too where the box sets a logical inline border in a vertical writing mode, or beside a
+ *   physical side across, since the build reads neither that axis nor the cascade order between them.
  */
 function bordersOn(style: LayerStyle, axis: keyof Extent): number | undefined {
-  const sides = AXIS_BORDERS[axis].map((side) =>
-    literalPixels(style, style.has(side) ? side : "border-width")
-  );
+  const physical = (side: string) => literalPixels(style, style.has(side) ? side : "border-width");
+  const inline = (side: string) =>
+    literalPixels(style, style.has(side) ? side : style.has(INLINE_BORDER) ? INLINE_BORDER : "border-width");
+  const logical = [...INLINE_BORDERS, INLINE_BORDER].some((property) => style.has(property));
+  const sides = !logical
+    ? AXIS_BORDERS[axis].map(physical)
+    : !horizontal(style)
+      ? [undefined]
+      : axis === "vertical"
+        ? AXIS_BORDERS.vertical.map(physical)
+        : AXIS_BORDERS.horizontal.some((side) => style.has(side))
+          ? [undefined]
+          : INLINE_BORDERS.map(inline);
   return sides.some((side) => side === undefined)
     ? undefined
     : sides.reduce<number>((sum, side) => sum + (side ?? 0), 0);
@@ -642,7 +683,7 @@ function definite({ layout }: Holder, size: SizeSpec): boolean {
 }
 
 /** Whether a box sets a `min-width` above zero, which can widen it past what it holds. */
-function setsMinimumWidth(style: LayerStyle): boolean {
+export function setsMinimumWidth(style: LayerStyle): boolean {
   const minimum = normalizeCss(style.resolved("min-width") ?? "auto");
   return !["auto", "0", "0px"].includes(minimum);
 }
@@ -684,6 +725,9 @@ export function roomInside(holder: Holder, index: number): Room {
       ? { kind: "hugging", only: alone && hugsUncapped(holder) && !setsMinimumWidth(holder.style) }
       : NO_BASIS;
   };
+  if (layout.centresLone === true) {
+    return centredRoom(holder);
+  }
   const siblings = layers.filter((_name, place) => place !== index);
   const along = (axis: DirectionSpec): readonly string[] =>
     (layout.flex || layout.blocks) && layout.direction === axis ? siblings : [];
@@ -703,6 +747,30 @@ export function roomInside(holder: Holder, index: number): Room {
     },
     widthCap: widthCapInside(holder, index),
     unbounded: hugsUncapped(holder),
+  };
+}
+
+/**
+ * The room a flex column gives the one layer its auto margins centre, as `readCentredLone` in
+ * `auto-margins.ts` reads it. Auto margins across stop the stretch, so the layer hugs its width up to the
+ * column's content width (CSS Flexbox 1 §9.4 step 11), which caps the text inside it. The content
+ * width is the column's measured length, or its fixed literal width, less its border and padding. The
+ * layer's height hugs. A content width the build cannot read in pixels leaves the cap unread.
+ *
+ * @param holder - The column.
+ * @returns The layer's room.
+ */
+function centredRoom(holder: Holder): Room {
+  const { outer } = outerOf(holder, "horizontal");
+  const width =
+    innerLength(holder, "horizontal", "content") ??
+    (outer?.length.kind === "literal" ? outer.length.value - outer.inset : undefined);
+  const vertical = innerLength(holder, "vertical", "content");
+  return {
+    horizontal: { percent: NO_BASIS, auto: HUG, siblings: [], length: width },
+    vertical: { percent: NO_BASIS, auto: HUG, siblings: [], length: vertical },
+    widthCap: width === undefined ? UNREAD_CAP : { kind: "pixels", value: width },
+    unbounded: false,
   };
 }
 

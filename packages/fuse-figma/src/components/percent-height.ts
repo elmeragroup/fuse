@@ -245,3 +245,67 @@ export function percentHeightBasis(
   }
   return undefined;
 }
+
+/** The `align-items` and `align-self` values that stretch a flex item across its line. */
+const STRETCHING: ReadonlySet<string> = new Set(["normal", "stretch"]);
+
+/** Whether a box's vertical padding and borders are all zero, so its content height is its height. */
+function noVerticalEdges(style: LayerStyle): boolean {
+  return VERTICAL_EDGES.every(([edge, side]) => evaluateLength(edgeValue(style, edge, side)) === 0);
+}
+
+/**
+ * Whether a container stretches its in-flow child down to the container's content height: a flex
+ * row on one line, whose line is then as tall as the container's content box where that is definite
+ * (CSS Flexbox 1 §9.4 step 15), placing the child by `stretch` (step 11). The child sets no height,
+ * minimum or maximum of its own, no `align-self` but `auto` or `stretch`, and no vertical margin,
+ * which the stretch would leave out. The container sets no height, padding or border down, so its
+ * content height is the height it takes from the row around it.
+ */
+function stretchesChild(container: LayerStyle, child: LayerStyle): boolean {
+  const display = normalizeCss(container.resolved("display") ?? "inline");
+  const value = (style: LayerStyle, property: string, initial: string) =>
+    normalizeCss(style.resolved(property) ?? initial);
+  return (
+    (display === "flex" || display === "inline-flex") &&
+    value(container, "flex-direction", "row") === "row" &&
+    value(container, "flex-wrap", "nowrap") === "nowrap" &&
+    STRETCHING.has(value(container, "align-items", "normal")) &&
+    value(container, "height", "auto") === "auto" &&
+    !constrainsHeight(container) &&
+    noVerticalEdges(container) &&
+    ["auto", ...STRETCHING].includes(value(child, "align-self", "auto")) &&
+    value(child, "height", "auto") === "auto" &&
+    !constrainsHeight(child) &&
+    ["margin-top", "margin-bottom"].every((margin) => evaluateLength(value(child, margin, "0")) === 0) &&
+    inFlowHeighted(child)
+  );
+}
+
+/**
+ * Whether the flex rows around a root of `auto` height stretch it to the height of the sample's host,
+ * the outermost element around it, as List detail's pane stretches to its root's height and the root
+ * to the docs demo's `h-80` row. Each row on one line stretches its child to its content height (CSS
+ * Flexbox 1 §9.4 steps 11 and 15), as {@link stretchesChild} says, from the root up to the host. The
+ * host's height is the one its manifest names as the preview height, which its renderer sets, and the
+ * capture must measure the host as tall as that in every mode (`basisAsDeclared`), since the build
+ * does not know the host's own container.
+ *
+ * Anything else leaves the root hugging its height: a row that wraps, aligns its items or pads them,
+ * and a root or row that sets a height, minimum, maximum or margin down.
+ *
+ * @param chain - The styles of the component's elements around the root, outermost first, then the root's.
+ * @param measured - Whether the capture measured the host as tall as its length in every mode.
+ * @returns True where the rows provably stretch the root to the host's height.
+ */
+export function stretchedToHost(
+  chain: readonly LayerStyle[],
+  measured: { readonly lengthAsDeclared: boolean }
+): boolean {
+  const pairs = chain.slice(0, -1).map((container, index) => ({ container, child: chain[index + 1] }));
+  return (
+    measured.lengthAsDeclared &&
+    pairs.length > 0 &&
+    pairs.every(({ container, child }) => child !== undefined && stretchesChild(container, child))
+  );
+}

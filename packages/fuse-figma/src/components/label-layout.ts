@@ -880,7 +880,7 @@ function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): bo
 /**
  * Whether a flex row's text item draws as a text that fills the room before the row's last layer,
  * whose auto start margin takes the free space (CSS Flexbox 1 §8.1), as `readAutoStart` in
- * `box-flow.ts` reads it for three or more layers: the label sits right before that layer and sets its
+ * `auto-margins.ts` reads it for three or more layers: the label sits right before that layer and sets its
  * lines from the start. The label then paints nothing past its text, so a fill draws what CSS draws
  * at any length of text that fits.
  */

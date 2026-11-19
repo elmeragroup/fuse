@@ -156,6 +156,11 @@ export type BoxCascade = {
    */
   readonly heightBasis?: PreviewLength | undefined;
   /**
+   * Whether the flex rows around a root of `auto` height provably stretch it to the height of its
+   * sample's host, which the manifest names as the preview height. Absent elsewhere.
+   */
+  readonly stretchedToHost?: boolean;
+  /**
    * The box's `::before` and `::after` the mapping draws as layers of their own, `::before` first:
    * each paints, and the capture measured it as an absolute box laid out against the box.
    */

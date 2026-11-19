@@ -2,9 +2,9 @@
  * The in-place diff of an instance part: what the inner component's root, built where the composite
  * renders it, draws differently from the inner set's variant, and what the instance layer carries for
  * each difference. A Figma instance takes everything from its main component but its property values,
- * the paints, corners, shadows and text alignments it overrides, and its own sizing in its parent's
- * auto layout, so a difference the instance cannot carry stays unmapped, and the composite cannot
- * drift from its parts.
+ * the paints, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
+ * layout, so a difference the instance cannot carry stays unmapped, and the composite cannot drift
+ * from its parts.
  */
 import { isDeepStrictEqual } from "node:util";
 
@@ -50,7 +50,7 @@ export type InstanceDiff = {
   readonly swap: Readonly<Record<string, string>>;
   /** The TEXT values of exposed instances inside the root that differ, at their key paths. */
   readonly nested: readonly NestedPropertiesSpec[];
-  /** The paints, corners and shadows that differ, in layer order, the root first. */
+  /** The paints, corners, shadows and alignments that differ, in layer order, the root first. */
   readonly overrides: readonly InstanceOverride[];
   /** The sizing of the root built in place, which the instance takes in its parent's auto layout. */
   readonly sizing: SizingSpec;
@@ -88,6 +88,11 @@ type FieldValue =
 
 /** What the diff gathers as it walks the two roots. */
 type Found = {
+  /**
+   * The root's alignment along its direction where it differs, noted unmapped at `unmapped`'s index
+   * until the walk ends, and the place among the overrides it takes if nothing else stays unmapped.
+   */
+  aligned: { readonly override: InstanceOverride; readonly at: number } | undefined;
   /** The sizing of the inner root built in place, which the instance takes. */
   readonly root: SizingSpec;
   readonly text: Map<string, string>;
@@ -106,6 +111,16 @@ type Found = {
  * - A fill, a stroke's color, a text's color, an icon's glyph color, a corner and shadows become
  *   overrides at the layer's key path. The root's fill is the one its ring needs, as the plugin
  *   writes it.
+ * - The root's `primaryAlign` becomes an override where the instance fills its parent along the
+ *   root's direction and the alignment is its one difference no other field carries, as a
+ *   `justify-start` on a Button that fills its row draws. On 2026-11-19 a real file kept such a
+ *   Button instance's `primaryAxisAlignItems` override, which its `overrides` listed, through a variant
+ *   switch, a TEXT property change, a density switch and nesting in another component's instance
+ *   (LD1). The alignment places the root's layers, so beside a layer the diff leaves unmapped it would
+ *   not place them where CSS does, and it stays unmapped with that layer, as in a Dropdown menu row
+ *   whose shortcut margin stays unmapped (#773). An instance that hugs or takes a fixed length along
+ *   its direction, and a frame below the root, keep the alignment unmapped, since the probe covered
+ *   neither.
  * - The root's sizing is the instance's, whatever the outer layout makes of each axis: a fill, a
  *   length or a hug (N4). The layers inside guard it, since a layer that sizes against the root's
  *   length draws another way where that length changes.
@@ -129,6 +144,7 @@ type Found = {
  */
 export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootSpec): InstanceDiff {
   const found: Found = {
+    aligned: undefined,
     root: inPlace.sizing,
     text: new Map(),
     swap: new Map(),
@@ -138,14 +154,20 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
     unmapped: [],
   };
   diffBox(found, [], inPlace, variant, "root");
+  // The alignment the walk noted unmapped becomes an override where it is the one difference left.
+  const { aligned } = found;
+  const carried = aligned !== undefined && found.unmapped.length === 1 ? aligned : undefined;
   return {
     text: Object.fromEntries(found.text),
     swap: Object.fromEntries(found.swap),
     nested: found.nested,
-    overrides: found.overrides,
+    overrides:
+      carried === undefined
+        ? found.overrides
+        : [...found.overrides.slice(0, carried.at), carried.override, ...found.overrides.slice(carried.at)],
     sizing: inPlace.sizing,
     mirrored: found.mirrored,
-    unmapped: found.unmapped,
+    unmapped: carried === undefined ? found.unmapped : [],
   };
 }
 
@@ -208,6 +230,15 @@ function diffBox(
       case "stroke":
         diffStroke(found, path, inPlace.stroke, variant.stroke);
         break;
+      case "primaryAlign":
+        if (kind === "root" && fillsAlong(inPlace) && inPlace.primaryAlign !== variant.primaryAlign) {
+          found.aligned = {
+            override: { path, field: "primaryAlign", value: inPlace.primaryAlign },
+            at: found.overrides.length,
+          };
+        }
+        diffField(found, path, field, built.get(field), held.get(field));
+        break;
       case "cornerRadius":
         if (!isDeepStrictEqual(inPlace.cornerRadius, variant.cornerRadius)) {
           found.overrides.push({ path, field: "cornerRadius", value: inPlace.cornerRadius });
@@ -230,6 +261,11 @@ function diffBox(
         diffField(found, path, field, built.get(field), held.get(field));
     }
   }
+}
+
+/** Whether a root fills its parent along its own direction, as the instance LD1 probed did. */
+function fillsAlong(root: BoxSpec): boolean {
+  return (root.direction === "VERTICAL" ? root.sizing.vertical : root.sizing.horizontal).kind === "fill";
 }
 
 /** How many of a box's layers its auto layout places, hidden ones included. */

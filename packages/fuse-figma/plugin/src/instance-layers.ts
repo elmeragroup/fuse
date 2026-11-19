@@ -2,7 +2,8 @@
  * Instance layers: an instance of another kit set's variant inside a variant, such as an Alert's
  * action Button, so the composite stays linked to the set that draws the part. The plan points the
  * instance at the variant, sets the inner set's properties, overrides paints, corners and shadows on
- * it and on the layers below it, and a text's alignment across its lines, sizes it in its parent's
+ * it and on the layers below it, its own alignment along its auto layout's direction (LD1), and a
+ * text's alignment across its lines, sizes it in its parent's
  * auto layout, links its visibility to the outer set's BOOLEAN property and marks whether it is
  * exposed.
  *
@@ -32,6 +33,7 @@ import type {
   InstanceLayerSpec,
   InstanceOverride,
   NestedPropertiesSpec,
+  PrimaryAlignSpec,
   ShadowSpec,
   TextLayerSpec,
   VariantSpec,
@@ -394,7 +396,8 @@ type OverrideWrite =
   | { readonly field: "fill" | "strokeColor" | "textColor" | "glyph"; readonly paint: FillSpec | undefined }
   | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] }
-  | { readonly field: "textAlign"; readonly horizontal: TextLayerSpec["align"]["horizontal"] };
+  | { readonly field: "textAlign"; readonly horizontal: TextLayerSpec["align"]["horizontal"] }
+  | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec };
 
 /** The write an override of the spec asks for. */
 function writeOf(override: InstanceOverride): OverrideWrite {
@@ -405,6 +408,8 @@ function writeOf(override: InstanceOverride): OverrideWrite {
       return { field: override.field, shadows: override.shadows };
     case "textAlign":
       return { field: override.field, horizontal: override.horizontal };
+    case "primaryAlign":
+      return { field: override.field, value: override.value };
     default:
       return { field: override.field, paint: override.color };
   }
@@ -470,6 +475,13 @@ function planOverride(run: Run, layer: HeldLayer, write: OverrideWrite): void {
       planCorners(run, box, label, write.value);
       return;
     }
+    case "primaryAlign": {
+      const box = boxOf(layer, write.field);
+      planScalar(run, label, "primaryAxisAlignItems", box.primaryAxisAlignItems, write.value, () => {
+        box.primaryAxisAlignItems = write.value;
+      });
+      return;
+    }
     case "effects":
       // An instance's shadow override holds no background blur: no kit instance whose main blurs
       // what lies behind it overrides its shadows.
@@ -501,6 +513,8 @@ function innerValue(
         return { field, value: layer.cornerRadius };
       case "effects":
         return { field, shadows: layer.shadows };
+      case "primaryAlign":
+        return { field, value: layer.primaryAlign };
       default:
         return undefined;
     }
@@ -558,6 +572,7 @@ const BOX_FIELDS: ReadonlyMap<NodeChangeProperty, OverrideWrite["field"]> = new 
   ["topRightRadius", "cornerRadius"],
   ["bottomLeftRadius", "cornerRadius"],
   ["bottomRightRadius", "cornerRadius"],
+  ["primaryAxisAlignItems", "primaryAlign"],
 ]);
 
 /**

@@ -505,11 +505,12 @@ export type NestedPropertiesSpec = {
 };
 
 /**
- * A paint, corner, shadow or text alignment an instance layer overrides on the inner variant's root, at
+ * A paint, corner, shadow or alignment an instance layer overrides on the inner variant's root, at
  * the empty `path`, or on a layer below it, at the keys of the layers from the root down. `fill`,
- * `strokeColor`, `cornerRadius` and `effects` apply to the root or a frame, `textColor` and
- * `textAlign`, the alignment across a text's lines, to a text, and `glyph` to an icon's glyph. A `fill`
- * or `strokeColor` of undefined paints none.
+ * `strokeColor`, `cornerRadius` and `effects` apply to the root or a frame, `primaryAlign`, where the
+ * auto layout places its layers along its direction, to the root alone, `textColor` and `textAlign`,
+ * the alignment across a text's lines, to a text, and `glyph` to an icon's glyph. A `fill` or
+ * `strokeColor` of undefined paints none.
  */
 export type InstanceOverride =
   | {
@@ -524,14 +525,15 @@ export type InstanceOverride =
       readonly horizontal: TextAlignSpec["horizontal"];
     }
   | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
+  | { readonly path: readonly string[]; readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
   | { readonly path: readonly string[]; readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
 
 /**
  * An instance layer: an instance of another component set's variant inside a variant, such as an
  * Alert's action Button, so the composite stays linked to the set that draws the part. The inner set
  * owns every layer inside the instance, so {@link walkLayers} stops at it. The layer sets the inner
- * set's properties, overrides paints, corners and shadows, and sizes itself in its parent's auto
- * layout.
+ * set's properties, overrides paints, corners, shadows and alignments, and sizes itself in its
+ * parent's auto layout.
  */
 export type InstanceLayerSpec = {
   readonly kind: "instance";

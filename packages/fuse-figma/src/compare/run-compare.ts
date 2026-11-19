@@ -224,8 +224,12 @@ export function planCells(
         id: `c${String(index)}`,
         content: content(cell),
         measured: measuredSelectors(root, isClientRenderer(renderer) ? renderer.union : undefined),
-        // A fixed root in a declared viewport takes a host as wide as the viewport.
-        span: slotSpan(layout, previewWidthIn(definition, cell) ?? definition.viewport?.width),
+        // A renderer's wider host spans its slots, and a fixed root in a declared viewport takes a
+        // host as wide as the viewport.
+        span: slotSpan(
+          layout,
+          renderer.hostWidth ?? previewWidthIn(definition, cell) ?? definition.viewport?.width
+        ),
         // and a row as tall as the viewport where that is taller than a slot.
         height: definition.viewport?.height,
         forcedOn: forcedSelector(root, cell),

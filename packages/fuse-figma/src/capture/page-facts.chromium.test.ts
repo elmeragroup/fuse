@@ -383,6 +383,32 @@ describe("a flex line the capture measures as leaving room for an auto margin", 
   });
 });
 
+/**
+ * Unit under test: the page function's `lineFits`. Oracle: Chromium's own layout of a block in a
+ * 24px line around one `inline-flex` box at `width: 100%`, a 16px label in its 20px line centred in
+ * it, as List detail's `<li>` holds its `w-full` Button, in standards mode, as the capture's page
+ * renders, since the quirks mode's line height calculation drops the strut. A 36px box is taller
+ * than the strut above and below its baseline, so the block is exactly as tall as the box in every mode, and with its line
+ * 2px taller (CSS 2.1 §10.8). A 10px box leaves the strut's 24px line taller than it. A box 36px dense
+ * and 10px comfortable fits only dense, so the fact fails in a mode the capture does not render.
+ */
+describe("a line box the capture measures as adding nothing to its one inline-level child", () => {
+  async function measure(height: string) {
+    await page.setContent(
+      `<!doctype html><style>:root[data-density="comfortable"] .shrinks { height: 10px !important }</style><main data-compare-cell><div id="root" style="font:16px/24px sans-serif;width:200px"><span class="${height === "shrinks" ? "shrinks" : ""}" style="display:inline-flex;align-items:center;width:100%;line-height:20px;height:${height === "shrinks" ? "36px" : height}">Henrik Aasen</span></div></main>`
+    );
+    return (await factsOfRoot()).facts?.lineFits === true;
+  }
+
+  it.each([
+    ["36px", true],
+    ["10px", false],
+    ["shrinks", false],
+  ])("around a child %s tall: %s", async (height, fits) => {
+    expect(await measure(height)).toBe(fits);
+  });
+});
+
 /** The bytes of a Roboto face the package's `@fontsource/roboto` ships. */
 function roboto(weight: 400 | 500): Buffer {
   return readFileSync(

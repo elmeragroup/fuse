@@ -64,6 +64,8 @@ import kbdGroup from "../../captures/kbd-group.json" with { type: "json" };
 import kbd from "../../captures/kbd.json" with { type: "json" };
 import label from "../../captures/label.json" with { type: "json" };
 import link from "../../captures/link.json" with { type: "json" };
+import listDetailPane from "../../captures/list-detail-pane.json" with { type: "json" };
+import listDetail from "../../captures/list-detail.json" with { type: "json" };
 import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
 import menuSeparator from "../../captures/menu-separator.json" with { type: "json" };
@@ -192,6 +194,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["attachment", attachment],
   ["description-list-item", descriptionListItem],
   ["description-list", descriptionList],
+  ["list-detail-pane", listDetailPane],
+  ["list-detail", listDetail],
   ["calendar-day", calendarDay],
   ["date-field", dateField],
   ["date-picker", datePicker],

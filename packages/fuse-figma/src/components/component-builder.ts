@@ -148,6 +148,11 @@ export function buildComponentSet(
       {
         width: previewWidthIn(definition, cell),
         height: definition.previewHeight ?? rootCascade.heightBasis,
+        // A root the rows around it stretch to its host takes the host's height, the preview's.
+        stretched:
+          rootCascade.stretchedToHost === true && definition.previewHeight?.css === undefined
+            ? definition.previewHeight?.pixels
+            : undefined,
       },
       rootCascade.style,
       context.variables,

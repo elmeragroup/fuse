@@ -381,6 +381,7 @@ const OVERRIDDEN_FIELD = {
   textColor: "color",
   textAlign: "align",
   glyph: "color",
+  primaryAlign: "primaryAlign",
 } as const satisfies Record<InstanceOverride["field"], SpecField>;
 
 /** Whether a feed's target is a spec field at a path. */
@@ -433,10 +434,20 @@ function classified(row: Row, visit: Visit): Row {
   };
 }
 
-/** Why a difference stays unmapped: the field, the two values, the inner variant and the fix. */
+/**
+ * Why a difference stays unmapped: the field, the two values, the inner variant, what an instance
+ * carries of that field and the fix. The root's alignment along its direction is the one field an
+ * instance carries only in some shapes, as `diffInstance` in `instance-diff.ts` says, so its
+ * difference names those shapes.
+ */
 function differenceDetail(visit: Visit, difference: InstanceDifference): string {
-  const layer = difference.path.length === 0 ? "the root" : difference.path.join(" / ");
-  return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and an instance carries only property values, paints, corners, shadows, text alignments and its own sizing, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
+  const root = difference.path.length === 0;
+  const layer = root ? "the root" : difference.path.join(" / ");
+  const carries =
+    root && difference.field === "primaryAlign"
+      ? "an instance carries its root's alignment only where it fills its parent along the root's direction and no other difference stays unmapped"
+      : "an instance carries only property values, paints, corners, shadows, text alignments and its own sizing";
+  return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and ${carries}, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
 }
 
 /** The property values an instance layer gives the inner set, undefined where none differs from its default. */
