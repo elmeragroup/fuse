@@ -411,8 +411,9 @@ describe("a flex row's last part that holds its own text, or sits alone in its r
   });
 
   /**
-   * Build a 300px row around one label that centres a 16px control and its content, as Radio row's
-   * label does.
+   * Build a 300px row around one label that centres a 16px control and its content down the row, as
+   * Radio row's label does, and along it by `justify-center`. CSS sizes the label to its layers, so
+   * the centring shows only in a label drawn at the room the row leaves.
    *
    * @param content - The content's classes.
    */
@@ -440,7 +441,7 @@ describe("a flex row's last part that holds its own text, or sits alone in its r
               {
                 tag: "label",
                 slot: "label",
-                classes: "flex items-center gap-[8px]",
+                classes: "flex items-center justify-center gap-[8px]",
                 children: [
                   { slot: "control", classes: "size-[16px] shrink-0" },
                   { slot: "content", classes: `block ${content}`, text: SENTENCE },
