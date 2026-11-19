@@ -134,6 +134,36 @@ export const KIT: KitSpec = {
         text: "Fuse components",
         style: FIXTURE_STYLE.key,
       },
+      description: {
+        kind: "text",
+        key: "docs/page/description",
+        name: "Description",
+        page: "page",
+        text: "Triggers an action.",
+        style: FIXTURE_STYLE.key,
+      },
+      docsLink: {
+        kind: "link",
+        key: "docs/page/docs-link",
+        name: "View documentation",
+        page: "page",
+        text: "View documentation",
+        style: FIXTURE_STYLE.key,
+        url: "https://fuse.elmeragroup.no/components/button",
+        color: { kind: "literal", color: { r: 0.1, g: 0.1, b: 0.1, a: 1 } },
+        underline: {
+          offset: 2.8,
+          thickness: 1,
+          color: { kind: "literal", color: { r: 0.1, g: 0.1, b: 0.1, a: 0.35 } },
+        },
+      },
+      rule: {
+        kind: "rule",
+        key: "docs/page/rule",
+        name: "Rule",
+        page: "page",
+        color: { kind: "literal", color: { r: 0.9, g: 0.9, b: 0.9, a: 1 } },
+      },
       labels: [
         {
           kind: "labels",

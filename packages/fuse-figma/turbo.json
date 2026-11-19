@@ -1,6 +1,22 @@
 {
   "extends": ["//"],
   "tasks": {
+    // The unit and fake-file suites. The kit build reads each component's docs page lede, and a
+    // test reads the docs origin the merge workflow publishes at, so an edit to either reruns them.
+    "test": {
+      "dependsOn": ["@elmeragroup/fuse#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/page.mdx",
+        "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts",
+        "$TURBO_ROOT$/.github/workflows/merge.yml"
+      ]
+    },
+    // The type check reads the docs frontmatter reader, which `src/components/docs-pages.ts`
+    // imports from outside the package.
+    "type-check": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"]
+    },
     // The capture check in Chromium: each capture-backed set captured again and compared with its
     // kept file, the perturbation probe, the differential oracle and the fake-file Plan differential.
     // It runs in CI's `figma-capture` job and stays out of the local `check` gate. Like
@@ -12,7 +28,9 @@
         "!README.md",
         "!test/**",
         "$TURBO_ROOT$/packages/color/src/**",
-        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/api.json"
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/api.json",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/page.mdx",
+        "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"
       ]
     },
     // `figma:compare --self-check` in Chromium: every kit cell rendered twice and compared, and each
@@ -29,7 +47,9 @@
         "!test/**",
         "!plugin/**",
         "!**/*.test.ts",
-        "$TURBO_ROOT$/packages/color/src/**"
+        "$TURBO_ROOT$/packages/color/src/**",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/page.mdx",
+        "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"
       ]
     }
   }

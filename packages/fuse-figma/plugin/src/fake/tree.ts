@@ -175,6 +175,7 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     maxLines: source.maxLines,
     autoRename: source.autoRename,
     textStyleId: source.textStyleId,
+    hyperlink: source.hyperlink === null ? null : { ...source.hyperlink },
   };
 }
 
@@ -306,6 +307,7 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
     maxLines: null,
     autoRename: type === "TEXT",
     textStyleId: "",
+    hyperlink: null,
   };
   // The guard reads a getter on the object itself, so the object and the guarded node both
   // lead to the state.

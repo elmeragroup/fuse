@@ -267,6 +267,8 @@ export type NodeState = {
   autoRename: boolean;
   /** The id of the local text style a text layer links, or the empty string for none (rule 60). */
   textStyleId: string;
+  /** The URL or node the whole text links to, or null for none (rule 66). */
+  hyperlink: HyperlinkTarget | null;
 };
 
 /** The style a new text layer types in. */

@@ -146,6 +146,11 @@ export type KitPage = {
    * docs default demo where the page has one, such as Select (open) on the Select page.
    */
   readonly example: string;
+  /**
+   * The slug of the component's docs page, `apps/docs/src/app/(docs)/components/<docs>`, where it
+   * differs from the page's own, as Radio's docs page is `radio-group`.
+   */
+  readonly docs?: string;
 };
 
 /** The page Button, Icon button and Confirm button share. */
@@ -161,7 +166,7 @@ const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge", example: "badge" };
 const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd", example: "kbd-group" };
 
 /** The page of the radio controls, Radio icon button first, then Radio. */
-const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio", example: "radio-group" };
+const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio", example: "radio-group", docs: "radio-group" };
 
 /** The page Checkbox sits on alone. */
 const CHECKBOX_PAGE: KitPage = { slug: "checkbox", name: "Checkbox", example: "checkbox" };

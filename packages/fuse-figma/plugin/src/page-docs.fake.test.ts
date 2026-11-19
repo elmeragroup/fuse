@@ -204,7 +204,10 @@ describe("a Badge page a designer edited", () => {
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     const applied = await kitPage(file, "page/badge");
-    const texts = applied.children.filter(isText).map((text) => [keyOf(text), text.characters]);
+    const texts = applied.children
+      .filter(isText)
+      .filter((text) => text.name === "Header")
+      .map((text) => [keyOf(text), text.characters]);
     expect(texts).toEqual([
       ["docs/badge/title", "Badge"],
       ["docs/badge/themes-header", "Themes"],

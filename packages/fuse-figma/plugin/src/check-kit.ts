@@ -20,6 +20,7 @@ import type {
   InstanceOverride,
   KitSpec,
   NumberSpec,
+  PageDocsSpec,
   StringSpec,
   TextStyleSpec,
   VariableRef,
@@ -140,9 +141,18 @@ function textStyleRefs(style: TextStyleSpec): BoundRef[] {
   ];
 }
 
+/** The variables a page's docs bind: the docs link's fill and underline, and the rule's fill. */
+function docsRefs(docs: PageDocsSpec): BoundRef[] {
+  return [
+    ...boundColor(docs.docsLink.color),
+    ...boundColor(docs.docsLink.underline.color),
+    ...boundColor(docs.rule.color),
+  ];
+}
+
 /**
  * Every variable the run binds: the sets', the icon library's glyph color, the background the
- * previews and the library paint, and the text styles'.
+ * previews and the library paint, the text styles' and the page docs'.
  */
 function boundRefs(kit: KitSpec): BoundRef[] {
   const refs = kit.componentSets.flatMap((set) => set.variants.flatMap((variant) => rootRefs(variant.root)));
@@ -151,6 +161,7 @@ function boundRefs(kit: KitSpec): BoundRef[] {
     ...boundColor(kit.icons.color),
     { ref: PREVIEW_BACKGROUND, type: "COLOR" },
     ...kit.textStyles.flatMap(textStyleRefs),
+    ...kit.docs.flatMap(docsRefs),
   ];
 }
 

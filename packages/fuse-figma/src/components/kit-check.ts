@@ -769,6 +769,8 @@ function checkDocs(kit: KitSpec): void {
     }
     const used = [
       record.title.style,
+      record.description.style,
+      record.docsLink.style,
       record.themesHeader.style,
       record.examplesHeader.style,
       ...record.labels.flatMap((labels) => [labels.nameStyle, labels.axisStyle]),

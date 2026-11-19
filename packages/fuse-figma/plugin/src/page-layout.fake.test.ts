@@ -1,3 +1,5 @@
+import { beforeAll, describe, expect, it } from "vitest";
+
 /**
  * The sections of each component page of a file the plugin applied the whole kit to, on the
  * in-memory file in `fake-figma.ts`. Unit under test: the page layout in `page-docs.ts`. Oracles,
@@ -8,10 +10,15 @@
  * previews sit side by side, and no two top-level nodes overlap. The label column is 240px wide, and a
  * label too wide for it widens it.
  *
+ * The page's head, also by hand: the title, then the description and the `View documentation` link
+ * under it at the title's left edge, the link opening the component's page on the published docs
+ * site, then a rule under them, above the first section, bound to `border` and running from the
+ * title's left edge to the right edge of whatever on the page reaches furthest right.
+ *
  * The fake measures a text as 0 high, so the vertical checks read frames and sets, which have
  * heights, and a text only by its top.
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { linkVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import { inventoryPage, KIT_PAGES, pageKey, previewsOn } from "../../test/kit-inventory.ts";
 import type { InventoryPage } from "../../test/kit-inventory.ts";
@@ -19,6 +26,24 @@ import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
 import { appliedFile, kitFixture, kitPage } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
+
+/**
+ * The underline Fuse's Link rests with, read from its recipe's `underline-offset-[<n>em]` and
+ * `decoration-[max(1px,<n>em)]` and resolved at `Text/sm`'s 14px, so a recipe change reaches the
+ * expectation. The offset is rounded to hundredths of a pixel, as a Plan line shows it.
+ */
+const LINK_UNDERLINE = (() => {
+  const classes = linkVariants({ underline: "always" });
+  const offset = /(?:^|\s)underline-offset-\[([\d.]+)em\]/.exec(classes)?.[1];
+  const thickness = /(?:^|\s)decoration-\[max\(1px,([\d.]+)em\)\]/.exec(classes)?.[1];
+  if (offset === undefined || thickness === undefined) {
+    throw new Error(`Link's recipe no longer sets its underline in ems: ${classes}`);
+  }
+  return {
+    offset: Math.round(Number(offset) * 14 * 100) / 100,
+    thickness: Math.max(1, Number(thickness) * 14),
+  };
+})();
 
 /** A box on the page. */
 type Box = {
@@ -184,6 +209,107 @@ describe("the sections of each component page", () => {
       expect(clashes).toEqual([]);
     }
   );
+
+  it.each(KIT_PAGES.map((inventory) => [inventory.name, inventory] as const))(
+    "%s heads the page with its description and docs link, and a rule above the first section",
+    async (_name, inventory) => {
+      const page = await kitPage(file, pageKey(inventory));
+      const docs = `docs/${inventory.slug}`;
+      const { title, sections } = sectionsOf(page, inventory);
+      const description = topLevel(page, `${docs}/description`);
+      const link = topLevel(page, `${docs}/docs-link`);
+      const rule = topLevel(page, `${docs}/rule`);
+      const [first] = sections;
+      if (first === undefined || description.type !== "TEXT" || link.type !== "TEXT") {
+        throw new Error(`${inventory.name} has no section, description or link text`);
+      }
+      const firstTop = around([first.label, ...first.content]).y;
+      const route = inventory.docs ?? inventory.slug;
+      const others = page.children.filter((node) => node.visible && node !== rule).map((node) => boxOf(node));
+      const variables = await file.figma.variables.getLocalVariablesAsync();
+      const fills = rule.type === "FRAME" && Array.isArray(rule.fills) ? rule.fills : [];
+      const named = (paint: Paint): string | undefined =>
+        paint.type === "SOLID"
+          ? variables.find((variable) => variable.id === paint.boundVariables?.color?.id)?.name
+          : undefined;
+      const linkFills = Array.isArray(link.fills) ? link.fills : [];
+      const underline = link.textDecorationColor;
+      expect({
+        lefts: [description.x, link.x, rule.x],
+        descriptionBelowTitle: description.y > title.y,
+        linkBelowDescription: link.y > description.y,
+        ruleBelowLink: rule.y > link.y,
+        ruleAboveFirstSection: rule.y + rule.height < firstTop,
+        ruleHeight: rule.height,
+        ruleRight: rule.x + rule.width,
+        ruleFill: fills.map(named),
+        oneLine: description.characters.length > 0 && !/[\n`]/u.test(description.characters),
+        link: [link.characters, link.hyperlink],
+        linkLook: {
+          fill: linkFills.map(named),
+          decoration: link.textDecoration,
+          // Figma keeps the offset as a 32-bit float, so it reads to the nearest thousandth.
+          offset:
+            link.textDecorationOffset === null ||
+            link.textDecorationOffset === file.figma.mixed ||
+            link.textDecorationOffset.unit === "AUTO"
+              ? link.textDecorationOffset
+              : {
+                  ...link.textDecorationOffset,
+                  value: Math.round(link.textDecorationOffset.value * 1000) / 1000,
+                },
+          thickness: link.textDecorationThickness,
+          underline:
+            underline === null || underline === file.figma.mixed || underline.value === "AUTO"
+              ? underline
+              : named(underline.value),
+        },
+      }).toEqual({
+        lefts: [title.x, title.x, title.x],
+        descriptionBelowTitle: true,
+        linkBelowDescription: true,
+        ruleBelowLink: true,
+        ruleAboveFirstSection: true,
+        ruleHeight: 1,
+        ruleRight: Math.ceil(around(others).x + around(others).width),
+        ruleFill: ["border"],
+        oneLine: true,
+        link: [
+          "View documentation",
+          { type: "URL", value: `https://fuse.elmeragroup.no/components/${route}` },
+        ],
+        // Fuse's Link at rest: `text-inherit`, which a page's text reads as `foreground`, underlined
+        // in it at 35%, its recipe's offset and thickness in ems at the lede's 14px.
+        linkLook: {
+          fill: ["foreground"],
+          decoration: "UNDERLINE",
+          offset: { unit: "PIXELS", value: LINK_UNDERLINE.offset },
+          thickness: { unit: "PIXELS", value: LINK_UNDERLINE.thickness },
+          underline: "foreground/35",
+        },
+      });
+    }
+  );
+
+  // Copied by hand from each docs page's `lede`. Select, File upload and Selection item hold inline
+  // code, which the docs page shows as code and the kit shows without its backticks.
+  it.each([
+    ["button", "Triggers an action."],
+    ["radio", "Radio controls, with a labeled group and a selectable card variant."],
+    [
+      "select",
+      "A dropdown for picking one option, or several with multiple. For a labeled select in a form, use SelectField.",
+    ],
+    [
+      "file-upload",
+      "An area that takes files from the picker, a drop or a paste, and checks them against accept.",
+    ],
+    ["selection-item", "The card row behind CheckboxItem and RadioItem. It needs a Field.Root for context."],
+  ])("describes the %s page with its docs page's lede", async (slug, lede) => {
+    const page = await kitPage(file, pageKey(inventoryPage(slug)));
+    const description = topLevel(page, `docs/${slug}/description`);
+    expect(description.type === "TEXT" ? description.characters : description.type).toBe(lede);
+  });
 
   it("grows the Button page's Themes section to the right, its previews side by side", async () => {
     const inventory = inventoryPage("button");

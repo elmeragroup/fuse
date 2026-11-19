@@ -130,6 +130,23 @@
  *    but those two and the writes that give every character one style: a text style link (rule 60)
  *    and a TEXT link or write (rules 51 and 52). Its characters write gives every character the first
  *    one's style, as rule 10 says.
+ * 66. A text's `hyperlink` is a `HyperlinkTarget`, a URL or a node, or null, as the typings say. A real
+ *    file showed (live probe 2026-11-19, HL1–HL4): a URL written on a whole text reads back
+ *    exactly as written and draws no underline and no color, `textDecoration` staying NONE and the
+ *    fills as they were; the link stays through a `characters` write, of the same text or a
+ *    new one, and through `setTextStyleIdAsync` and a `fontSize` write;
+ *    `setRangeHyperlink` on part of a linked text makes the whole read `figma.mixed`. The fake
+ *    keeps one link for the whole text, which the plugin writes whole, and so never reads
+ *    `figma.mixed`; it keeps the link through every write and changes no fill or decoration with it.
+ *    A link write in a fresh run raised no error without a `loadFontAsync` call, but the font may
+ *    have stayed loaded from earlier, so the fake still requires the text's fonts, as for
+ *    `textAutoResize` (rule 20), and Plan fails where Apply might. The same file showed (live probe
+ *    2026-11-19, DS1–DS3): an underline, offset, thickness or decoration color write keeps a text
+ *    linked to its style; a `characters` write keeps the underline, its offset and thickness and the
+ *    style link; a style link resets `textDecoration` to NONE and `textDecorationOffset` to null, as
+ *    `Text/sm/regular` sets no decoration; and an offset of 2.8px reads back as 2.799999952. The
+ *    fake resets those two fields on a style link and leaves the thickness and color, which the probe
+ *    did not read after one.
  */
 
 import { nearestInstance, propertyValue, rootMain } from "./overrides.ts";

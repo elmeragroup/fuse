@@ -17,6 +17,7 @@ import { readFileSync } from "node:fs";
 
 import type { PageSection } from "../../src/lib/docs-model.ts";
 import { slugifyHeading } from "../../src/lib/slug.ts";
+import { parseFrontmatter, splitFrontmatter } from "./page-frontmatter.ts";
 
 /** One demo the page renders, in authored order. */
 export type PageDemo = {
@@ -79,7 +80,6 @@ export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
   ["tour", "A tour's definition, Provider, targets and Popup render apart, and none is a prop of another."],
 ]);
 
-const FRONTMATTER_FENCE = "---";
 const CODE_FENCE = /^\s*(?:```|~~~)/;
 const HEADING = /^(#{2,4})\s+(.+?)\s*#*\s*$/;
 const DEMO_TAG = /<Demo\s([^>]*?)\/?>/g;
@@ -88,89 +88,6 @@ const ATTRIBUTE = /([A-Za-z][\w-]*)="([^"]*)"/g;
 const LEVEL_ATTRIBUTE = /\blevel=\{(\d+)\}/;
 const FENCED_BLOCK = /^\s*(?:```|~~~)[^\n]*\n([\s\S]*?)^\s*(?:```|~~~)\s*$/gmu;
 const DEMO_ATTRIBUTES = ["slug", "id", "title", "file"] as const;
-
-type SplitPage = {
-  frontmatter: string;
-  body: string;
-};
-
-/** Splits the `---` fenced frontmatter block off the top of the file. */
-function splitFrontmatter(source: string, file: string): SplitPage {
-  const normalised = source.startsWith("﻿") ? source.slice(1) : source;
-  if (!normalised.startsWith(`${FRONTMATTER_FENCE}\n`)) {
-    throw new Error(`${file}: a component page must open with a frontmatter block`);
-  }
-  const end = normalised.indexOf(`\n${FRONTMATTER_FENCE}`, FRONTMATTER_FENCE.length);
-  if (end === -1) {
-    throw new Error(`${file}: the frontmatter block is never closed`);
-  }
-  return {
-    frontmatter: normalised.slice(FRONTMATTER_FENCE.length + 1, end),
-    body: normalised.slice(end + 1 + FRONTMATTER_FENCE.length),
-  };
-}
-
-function unquote(value: string): string {
-  const trimmed = value.trim();
-  const quote = trimmed.slice(0, 1);
-  if (trimmed.length >= 2 && (quote === '"' || quote === "'") && trimmed.endsWith(quote)) {
-    return trimmed.slice(1, -1);
-  }
-  return trimmed;
-}
-
-/** Reads a `>`-folded (or `|`-literal) block scalar's indented continuation lines. */
-function readBlockScalar(lines: readonly string[], start: number, fold: boolean): [string, number] {
-  const collected: string[] = [];
-  let index = start;
-  while (index < lines.length) {
-    const line = lines[index] ?? "";
-    if (line.trim() !== "" && !line.startsWith("  ")) {
-      break;
-    }
-    collected.push(line.trim());
-    index += 1;
-  }
-  while (collected[collected.length - 1] === "") {
-    collected.pop();
-  }
-  return [fold ? collected.join(" ").trim() : collected.join("\n"), index];
-}
-
-/** The page's lede — the only editorial metadata a page declares — or a failure. */
-function parseFrontmatter(frontmatter: string, file: string): string {
-  const lines = frontmatter.split("\n");
-  let lede: string | null = null;
-  let index = 0;
-  while (index < lines.length) {
-    const line = lines[index] ?? "";
-    if (line.trim() === "" || line.trim().startsWith("#")) {
-      index += 1;
-      continue;
-    }
-    const match = /^([A-Za-z][\w-]*):\s*(.*)$/.exec(line);
-    const key = match?.[1];
-    if (match === null || key === undefined) {
-      throw new Error(`${file}: unparsable frontmatter line: ${line}`);
-    }
-    if (key !== "lede") {
-      throw new Error(`${file}: unknown frontmatter key "${key}" — a page declares only its lede`);
-    }
-    const rawValue = (match[2] ?? "").trim();
-    if (rawValue === ">" || rawValue === "|") {
-      const [value, next] = readBlockScalar(lines, index + 1, rawValue === ">");
-      lede = value;
-      index = next;
-      continue;
-    }
-    lede = unquote(rawValue);
-    index += 1;
-  }
-  if (lede === null || lede === "") {
-    throw new Error(`${file}: frontmatter key "lede" is required`);
-  }
-  return lede;
-}
 
 /**
  * The body with fenced code blocks blanked out, so a leading `#` or a `<Demo …>` shown
