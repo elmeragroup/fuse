@@ -26,12 +26,15 @@ import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
   boxHeightBounds,
+  fitsRoom,
+  fittingRoom,
   growingRoom,
   hugsUncapped,
+  leastContentWidth,
   lessMargins,
   outOfFlow,
   partShare,
-  readGrowth,
+  readItemSizing,
   readSizing,
   roomInside,
   selfStretchedRoom,
@@ -62,6 +65,7 @@ import {
 } from "./css-values";
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
+import { drawsAtRoom, fitsRowEnd } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
@@ -70,7 +74,7 @@ import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import { readInlineItem } from "./inline-item";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
-import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, ZERO } from "./kit-spec";
+import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, weightedIconName, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -110,6 +114,7 @@ import {
 } from "./placement";
 import type { Layout } from "./placement";
 import { pseudoParts } from "./pseudo-layers";
+import { dropShownStackRest, readStackDisplay, readStackedCell, STACK_HIDDEN } from "./stacked-cell";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
 import { tableDisplayDetail } from "./table-layout";
@@ -173,6 +178,8 @@ function readDisplay(
     readonly inside: Feed;
     readonly markers: MarkerReading;
     readonly inlineRow: boolean;
+    /** Whether the box is a one-cell stack of icons, as `stacked-cell.ts` reads it. */
+    readonly stacked: boolean;
   }
 ): boolean {
   const { width, inside, markers } = box;
@@ -200,6 +207,10 @@ function readDisplay(
         lays
       );
     }
+    return false;
+  }
+  if (box.stacked) {
+    readStackDisplay(reader, lays);
     return false;
   }
   if (layout.grid !== undefined || layout.subgrid !== undefined) {
@@ -499,8 +510,25 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const end: ChildLayerSpec[] = [];
   // The style of the last icon on each side, where a row's last layer can set an auto margin.
   const lastIcon = new Map<IconSlot["side"], LayerStyle>();
-  for (const slot of slots) {
-    const style = cascade.icon(slot);
+  const iconStyles = slots.map((slot) => cascade.icon(slot));
+  const stack = readStackedCell(
+    reader,
+    sizing,
+    iconStyles,
+    label !== undefined || (box.parts ?? []).some((child) => child.shownIn(cell))
+  );
+  for (const [place, slot] of slots.entries()) {
+    const style = iconStyles[place];
+    if (style === undefined) {
+      continue;
+    }
+    if (stack !== undefined && place !== stack.shown) {
+      style.dropOwn(STACK_HIDDEN);
+      continue;
+    }
+    if (stack !== undefined) {
+      dropShownStackRest(style);
+    }
     const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
       (slot.side === "start" ? start : end).push(icon);
@@ -625,14 +653,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       ...flowingAfter.map((part) => partShare(part.cascade.style)),
     ],
   };
-  const growing = readGrowth(
+  const growth = readItemSizing(
     holder,
     flowing.map((part) => part.cascade.style),
     {
       underMaxHeight: cascade.measured?.underMaxHeight,
       itemsAtContent: cascade.measured?.itemsAtContent === true,
-    }
+    },
+    isPlainBlock(reader, markers)
   );
+  const growing = growth?.place;
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
   const inFlowEnd =
@@ -719,11 +749,25 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   }
   const drawn = shown.filter((part) => !unplaced.includes(part));
   const drawnBefore = before.filter((part) => !unplaced.includes(part));
+  const flowingStyles = flowing.map((each) => each.cascade.style);
   const mapped = drawn.map((part): MappedPart => {
     const index = flowing.indexOf(part);
+    const fits =
+      index !== -1 &&
+      fitsRowEnd(holder, flowingStyles, index, {
+        growing,
+        holdsOnlyParts:
+          part.kind === "frame" &&
+          part.pseudo !== true &&
+          part.child.label === undefined &&
+          (part.child.parts ?? []).length > 0,
+      });
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
       const room = rowRoom(inside, across?.[index], minimum);
+      if (fits) {
+        return fittingRoom(holder, layerIndex(index), room);
+      }
       return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
     const room =
@@ -746,7 +790,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
               vertical: hugs("vertical"),
             },
           };
-    return mapPart(
+    const result = mapPart(
       part,
       room,
       layout,
@@ -757,6 +801,19 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       drawn.indexOf(part) === 0,
       keepsRoom
     );
+    // The fill draws the part's fitted width only where nothing in it paints, moves or keeps it wider at the room's.
+    if (fits && !drawsAtRoom(result.layer, room.horizontal.length, context.variables)) {
+      part.cascade.style.missing("width", "display", UNFITTED);
+    }
+    // The row's one growing layer is as wide as its least width where that is wider than the row.
+    if (
+      growth?.alone === true &&
+      index === growing &&
+      !fitsRoom(result.layer, leastContentWidth(holder, context.variables), context.variables)
+    ) {
+      part.cascade.style.missing("width", "flex-grow", OVERGROWN);
+    }
+    return result;
   });
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
@@ -831,6 +888,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     inside,
     markers,
     inlineRow: cascade.measured?.inlineRow === true,
+    stacked: stack !== undefined,
   });
   const width = fixedLength(sizing.horizontal);
   // Separators that cancel a column's padding move the padding onto sections around the runs between them.
@@ -1351,6 +1409,17 @@ type KeptRoom =
   | { readonly kind: "none" }
   | { readonly kind: "kept"; readonly hugs: { readonly horizontal: boolean; readonly vertical: boolean } };
 
+/**
+ * Why a row's last part that fits its content to the room the row leaves it stays unmapped where a
+ * fill would draw it otherwise, as `fitting-part.ts` says.
+ */
+const UNFITTED =
+  "the part fits its content to the room the row leaves it, and a fill draws that room, where it or a layer inside it paints, turns, does not start at its start, holds a text that does not wrap or may be wider than the room, so it would draw wider or elsewhere";
+
+/** Why the width of a row's one growing layer stays unmapped where it may not fit the row. */
+const OVERGROWN =
+  "the row's one layer grows into the row and keeps its least width, and that width may be wider than the row in a mode or is unknown, so the layer would draw wider than the fill";
+
 /** Why a hidden part draws as a hidden layer. */
 const HIDDEN =
   "the layer is hidden, which paints nothing of it or of what it holds, and the box it fills keeps its size without it";
@@ -1587,7 +1656,7 @@ function mapIcon(
     kind: "icon",
     key: slot.key,
     name: slot.name,
-    icon: iconKey(slot.icon),
+    icon: iconKey(weightedIconName(slot.icon, slot.weight)),
     swapProperty: slot.swapProperty,
     size: width,
     color,

@@ -27,6 +27,7 @@ import {
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CALENDAR_DAY_MANIFEST } from "./calendar-day-kit";
 import { CARD_MANIFEST } from "./card-kit";
+import { CHECKBOX_CARD_MANIFEST } from "./checkbox-card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
 import { CODE_MANIFEST } from "./code-kit";
 import {
@@ -303,6 +304,13 @@ const SELECTION_ITEM_PAGE: KitPage = {
   slug: "selection-item",
   name: "Selection item",
   example: "selection-item",
+};
+
+/** The page Checkbox card sits on alone. */
+const CHECKBOX_CARD_PAGE: KitPage = {
+  slug: "checkbox-card",
+  name: "Checkbox card",
+  example: "checkbox-card",
 };
 
 /** The page Link sits on alone. */
@@ -942,5 +950,10 @@ export const KIT: readonly KitEntry[] = [
     page: DESCRIPTION_LIST_PAGE,
     previewCells: possibleCells(DESCRIPTION_LIST_MANIFEST),
     manifest: DESCRIPTION_LIST_MANIFEST,
+  },
+  {
+    page: CHECKBOX_CARD_PAGE,
+    previewCells: possibleCells(CHECKBOX_CARD_MANIFEST),
+    manifest: CHECKBOX_CARD_MANIFEST,
   },
 ];

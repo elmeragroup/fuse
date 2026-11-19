@@ -4145,6 +4145,16 @@
         "part": "description-list-term",
         "className": "[:where([data-layout=inline]>*)>&]:wrap-break-word"
       }
+    ],
+    "checkbox-card": [
+      {
+        "part": "card-content",
+        "className": "[:where([data-slot=card-section])>&]:p-0"
+      },
+      {
+        "part": "card-content",
+        "className": "not-first:pt-0"
+      }
     ]
   },
   "unreached": [

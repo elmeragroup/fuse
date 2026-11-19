@@ -496,6 +496,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./table-cell.ts")).tableCaption,
   },
   {
+    set: "checkbox-card",
+    entry: "dist/checkbox-card.js",
+    load: async () => (await import("./checkbox-card-cell.ts")).checkboxCard,
+  },
+  {
     set: "selection-item",
     entry: "dist/selection-item.js",
     load: async () => (await import("./selection-item-cell.ts")).selectionItem,

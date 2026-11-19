@@ -25,7 +25,7 @@ import type {
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
-import { fuseIcons, ICON_SIZE } from "./icon-library";
+import { fuseIcons, ICON_SIZE, weightedIcons } from "./icon-library";
 import { checkKitSpec } from "./kit-check";
 import { KIT } from "./kit-registry";
 import type { KitEntry, KitPage } from "./kit-registry";
@@ -517,7 +517,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     page: ICONS_PAGE.key,
     size: ICON_SIZE,
     color: glyphColor,
-    icons: yield* fuseIcons,
+    icons: yield* fuseIcons(weightedIcons(registry.map(({ manifest }) => manifestDefinition(manifest)))),
   };
   for (const { componentSet } of built) {
     yield* Effect.fromResult(checkIconReferences(componentSet, icons));

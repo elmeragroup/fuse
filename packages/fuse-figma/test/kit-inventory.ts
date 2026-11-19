@@ -489,6 +489,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "description-list", name: "Description list", variants: 2, previewed: 2 },
     ],
   },
+  // The docs default demo's card, unchecked and checked, at rest, focused and disabled, in each variant.
+  {
+    slug: "checkbox-card",
+    name: "Checkbox card",
+    sets: [{ key: "checkbox-card", name: "Checkbox card", variants: 12, previewed: 12 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */
