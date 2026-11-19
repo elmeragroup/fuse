@@ -473,6 +473,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "table-caption", name: "Table caption", variants: 1, previewed: 1 },
     ],
   },
+  // The docs default demo's row at each size, at rest and waiting to upload.
+  {
+    slug: "attachment",
+    name: "Attachment",
+    sets: [{ key: "attachment", name: "Attachment", variants: 6, previewed: 6 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

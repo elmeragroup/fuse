@@ -446,6 +446,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./aspect-ratio-cell.ts")).aspectRatio,
   },
   {
+    set: "attachment",
+    entry: "dist/attachment.js",
+    load: async () => (await import("./attachment-cell.ts")).attachment,
+  },
+  {
     set: "card",
     entry: "dist/card.js",
     load: async () => (await import("./card-cell.ts")).card,

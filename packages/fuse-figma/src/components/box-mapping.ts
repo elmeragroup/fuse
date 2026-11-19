@@ -98,7 +98,7 @@ import type { Feed, LayerStyle, SpecField } from "./layer-style";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
 import { liftParts } from "./no-box";
-import { arrangePaint, inPaintOrder } from "./paint-order";
+import { arrangePaint, inPaintOrder, readRaisedLevels } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
 import {
   endsBesideLabel,
@@ -1019,6 +1019,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
   const ordered =
     firstOnTop || painting.unplaceable.size > 0 ? children : inPaintOrder(children, painting.order);
+  readRaisedLevels(
+    drawn.map((part) => ({
+      key: part.key,
+      paintsLast: part.cascade.measured?.paintsLast === true,
+      style: part.cascade.style,
+    })),
+    { order: ordered.map(({ key }) => key), firstOnTop }
+  );
   const painted: BoxSpec = { ...mappedBox, children: ordered };
   return firstOnTop ? { ...painted, firstOnTop: true } : painted;
 }

@@ -2039,5 +2039,6 @@ function measuredBox(
     noBox: facts?.noBox === true,
     parentSpansBlock: drawnParent && facts?.parentSpansBlock === true,
     oneLength: new Set(facts?.oneLength ?? []),
+    paintsLast: facts?.paintsLast === true,
   };
 }

@@ -69,7 +69,13 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   "aspect-ratio": { kind: "sets", sets: ["aspect-ratio"] },
-  attachment: { kind: "issue", issue: MISSING_SETS },
+  attachment: {
+    kind: "partial",
+    sets: ["attachment"],
+    missing:
+      "The vertical tile, the `error`, `uploading` and `processing` states, image media, `Attachment.AspectRatio`, `Attachment.Trigger` and `Attachment.Group`.",
+    issue: MISSING_SETS,
+  },
   // The Combobox sets do not draw it: its rows keep no room for a check, and no Input group form
   // holds an input with no addon.
   autocomplete: { kind: "issue", issue: MISSING_SETS },
@@ -203,6 +209,13 @@ export const KIT_PARITY = {
   "file-trigger": { kind: "excluded", reason: "It renders a Button, which the Button sets draw." },
   "file-upload": { kind: "sets", sets: ["file-upload-dropzone"] },
   form: { kind: "excluded", reason: "It adds behavior only." },
+  // A build of the docs default demo at `layout="gutter"` leaves rows unmapped that no paint order
+  // settles. The panels' corners are `max(0px, radius-xl - 1px - surface-pad-sm)`, and their
+  // highlight's 1px less, and `fuse-variable-set.ts` syncs no formula variable for either. The build
+  // reads the panels' `shadow-[shadow:0_var(--frame-shadow-y,1px)_…]/5` as
+  // `0 1px 2px 0  oklab(0% 0 0 / .05)`, which no Figma field reads. And the root and the panels clip
+  // their fill at the border, whose `--border` is translucent in the neutral dark theme, as Sheet
+  // content's is.
   frame: { kind: "issue", issue: MISSING_SETS },
   heading: { kind: "excluded", reason: TEXT_STYLE },
   input: {

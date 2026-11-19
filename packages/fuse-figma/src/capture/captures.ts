@@ -11,6 +11,7 @@ import alertDialogContent from "../../captures/alert-dialog-content.json" with {
 import alertDialogOpen from "../../captures/alert-dialog-open.json" with { type: "json" };
 import alert from "../../captures/alert.json" with { type: "json" };
 import aspectRatio from "../../captures/aspect-ratio.json" with { type: "json" };
+import attachment from "../../captures/attachment.json" with { type: "json" };
 import avatarGroup from "../../captures/avatar-group.json" with { type: "json" };
 import avatar from "../../captures/avatar.json" with { type: "json" };
 import badge from "../../captures/badge.json" with { type: "json" };
@@ -184,6 +185,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
   ["code", code],
+  ["attachment", attachment],
   ["calendar-day", calendarDay],
   ["date-field", dateField],
   ["date-picker", datePicker],
