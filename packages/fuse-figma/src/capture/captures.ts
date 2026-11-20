@@ -128,6 +128,7 @@ import toolbar from "../../captures/toolbar.json" with { type: "json" };
 import tooltipContent from "../../captures/tooltip-content.json" with { type: "json" };
 import tooltipOpen from "../../captures/tooltip-open.json" with { type: "json" };
 import tourPopup from "../../captures/tour-popup.json" with { type: "json" };
+import tourStep from "../../captures/tour-step.json" with { type: "json" };
 import { decodeCapture } from "./capture-format.ts";
 import type { CaptureUnreadable, SetCapture } from "./capture-format.ts";
 
@@ -203,6 +204,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["list-detail", listDetail],
   ["data-table-filter-bar", dataTableFilterBar],
   ["tour-popup", tourPopup],
+  ["tour-step", tourStep],
   ["toast", toast],
   ["calendar-day", calendarDay],
   ["calendar", calendar],

@@ -438,9 +438,9 @@ export const KIT_PARITY = {
   },
   tour: {
     kind: "partial",
-    sets: ["tour-popup"],
+    sets: ["tour-popup", "tour-step"],
     missing:
-      "The default demo's step card with `Tour.Progress`, `Tour.Skip` and `Tour.Prev`, whose footer places Skip at its start by `me-auto` (#824), a title that wraps beside Close (#825), Done's padding in branded dense (#521), the last step, `Tour.Spotlight`, `Tour.Ring`, `Tour.Beacon` and the popup open against its step's element.",
+      "A title that wraps beside Close (#825), Done's padding in branded dense (#521), the step card at its last step, `Tour.Spotlight`, `Tour.Ring`, `Tour.Beacon` and the popup open against its step's element.",
     issue: MISSING_SETS,
   },
 } as const satisfies Readonly<Record<string, KitParityRow>>;

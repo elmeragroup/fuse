@@ -378,6 +378,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("tour-cell.ts", import.meta.url), name: "tourPopup" },
   },
   {
+    set: "tour-step",
+    entry: "dist/tour.js",
+    module: { url: new URL("tour-cell.ts", import.meta.url), name: "tourStep" },
+  },
+  {
     set: "toast",
     entry: "dist/toast.js",
     module: { url: new URL("toast-cell.ts", import.meta.url), name: "toast" },

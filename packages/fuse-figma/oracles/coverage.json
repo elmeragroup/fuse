@@ -4164,6 +4164,24 @@
         "className": "focus-visible:outline-hidden"
       }
     ],
+    "tour-step": [
+      {
+        "part": "dot-2",
+        "className": "data-current:bg-primary"
+      },
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:ring-2"
+      },
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:ring-ring"
+      },
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:outline-hidden"
+      }
+    ],
     "toast": [
       {
         "part": "toast-close",
@@ -7811,6 +7829,78 @@
       "property": "padding",
       "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
       "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-width",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "margin",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "padding",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-step/content=step 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-prev",
+      "className": "aria-disabled:cursor-not-allowed",
+      "property": "cursor",
+      "reason": "#754: `Tour.Prev` is disabled at the first step and stays focusable, so Button styles it through its `aria-disabled:` arm, which only the composite's markup turns on and which leaves no row in the composite's coverage. The instance is Button's `state=disabled` variant, which draws the same 50% opacity and cursor from Button's `disabled:` arm.",
+      "at": ["tour-step/content=step 0/root/3/1"]
+    },
+    {
+      "set": "tour-step",
+      "part": "tour-prev",
+      "className": "aria-disabled:opacity-50",
+      "property": "opacity",
+      "reason": "#754: `Tour.Prev` is disabled at the first step and stays focusable, so Button styles it through its `aria-disabled:` arm, which only the composite's markup turns on and which leaves no row in the composite's coverage. The instance is Button's `state=disabled` variant, which draws the same 50% opacity and cursor from Button's `disabled:` arm.",
+      "at": ["tour-step/content=step 0/root/3/1"]
     },
     {
       "set": "toast",
