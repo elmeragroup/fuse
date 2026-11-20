@@ -27,6 +27,16 @@ import type {
   NumberSpec,
 } from "./kit-spec";
 
+/**
+ * The key of the wrapper that holds an instance, as the module comment says.
+ *
+ * @param key - The instance's key.
+ * @returns The wrapper's key.
+ */
+export function placementKey(key: string): string {
+  return `${key} placement`;
+}
+
 /** A literal length. */
 const literal = (value: number): NumberSpec => ({ kind: "literal", value });
 
@@ -55,7 +65,7 @@ export function wrapPlaced(
     );
   }
   const { placement: _place, ...held } = instance;
-  const key = `${instance.key} placement`;
+  const key = placementKey(instance.key);
   const layer: FrameLayerSpec = {
     kind: "frame",
     key,

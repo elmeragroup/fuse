@@ -54,6 +54,12 @@ export type BoxCascade = {
   /** The box's computed style. */
   readonly style: LayerStyle;
   /**
+   * How many elements lie above the box's element in the capture, from `<html>` down, which tells a
+   * box whose element is an absolute part's containing block (`blockSteps`). Undefined for a box with
+   * no element of its own.
+   */
+  readonly depth: number | undefined;
+  /**
    * The keys of the layers from the root down to the box's, the root of an instance part built in
    * place counting as a root, which the fields its reads fill name.
    */
@@ -280,6 +286,25 @@ export type MeasuredBox = {
    * every mode, as the capture measured.
    */
   readonly parentSpansBlock: boolean;
+  /**
+   * On an absolute box whose containing block lies above its parent, how many steps up the block's
+   * element sits, where the box paints as the last layer of the block's frame and sits on its offsets
+   * in every mode, as the capture measured (`blockSteps`). Undefined where the capture measured none.
+   * The capture can also measure that the box's parent spans the block (`parentSpansBlock`), and
+   * `part-preparation.ts` decides which of the two facts places the box.
+   */
+  readonly blockSteps: number | undefined;
+  /**
+   * For each absolute element below the box's with `blockSteps`, other than a child whose parent
+   * spans the block, how many steps above the box's element that block sits, 0 for the box's element
+   * itself.
+   */
+  readonly blocksBelow: ReadonlySet<number>;
+  /**
+   * The same steps for each child of the box's element with `blockSteps` whose parent, the box's
+   * element, the capture measured as spanning the block (`parentSpansBlock`).
+   */
+  readonly spannedBelow: ReadonlySet<number>;
   /**
    * The axes along which the box, absolute, is one length in every mode, as the capture measured.
    */

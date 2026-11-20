@@ -1,11 +1,11 @@
 /**
- * The CSS paint-order reads that `paints-last.ts` and `parent-spans-block.ts` both make about a box:
- * the `display` of the element that lays it out, the `z-index` level that applies to it, and
- * whether an `order` between it and an ancestor can change where it paints. Each fact keeps its own rules for which
- * boxes it refuses. These reads decide the CSS facts those rules compare, so the two facts agree on
- * every box.
+ * The CSS paint-order reads that `paints-last.ts`, `parent-spans-block.ts` and `block-frame.ts` make
+ * about a box: the `display` of the element that lays it out, the `z-index` level that applies to
+ * it, and whether an `order` between it and an ancestor can change where it paints. Each fact keeps
+ * its own rules for which boxes it refuses. These reads decide the CSS facts those rules compare, so
+ * the facts agree on every box.
  *
- * The capture's page function hands the functions to both facts as {@link Stacking}. Each is passed
+ * The capture's page function hands the functions to each fact as {@link Stacking}. Each is passed
  * to the page as its source, so it reads nothing outside its own body and its arguments.
  */
 

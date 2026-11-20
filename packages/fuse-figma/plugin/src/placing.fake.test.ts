@@ -7,8 +7,9 @@
  * before:h-full`), so it is as tall as the item; MIN keeps a start distance, STRETCH both; and both
  * paint over the item's text, after it, as CSS paints positioned boxes (CSS 2.1 Appendix E). The fake
  * lays out no hugging frame, so an item stays 100px tall, its height before the kit's first write.
- * Dialog's and Sheet's corner closes keep 16px from their popup's right and top in every preview, and
- * a placement wrapper still hugs its height after Apply; their oracles sit beside them.
+ * Dialog's and Sheet's corner closes keep 16px from their popup's right and top in every preview,
+ * Toast's close 8px from the toast's, and a placement wrapper still hugs its height after Apply;
+ * their oracles sit beside them.
  */
 import { describe, expect, it } from "vitest";
 
@@ -98,6 +99,16 @@ function layersOf(node: BaseNode): readonly BaseNode[] {
   return [node, ...("children" in node ? node.children.flatMap(layersOf) : [])];
 }
 
+/** Whether a layer and every layer above it, up to its page, is visible. */
+function shown(node: BaseNode): boolean {
+  for (let each: BaseNode | null = node; each !== null && each.type !== "PAGE"; each = each.parent) {
+    if ("visible" in each && !each.visible) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Each shown instance below a page's preview frames whose key is `key`, with the box it is placed in: the
  * nearest layer above it that sits in its own parent's flow, so a placement wrapper is passed over.
@@ -147,6 +158,33 @@ describe("an overlay's corner close", () => {
     expect(widths.size).toBeGreaterThan(1);
     expect(placed.map(({ part, holder }) => insets(part, holder))).toEqual(
       placed.map(() => ({ right: 16, top: 16 }))
+    );
+  });
+
+  // Oracle: Toast's `absolute top-2 right-2` close takes the toast's root as its containing block
+  // (CSS 2.1 §10.1), so it sits 8px inside the root's right and top edges in every density, however
+  // the frames between draw. The toast is the instance of a status variant that each preview holds,
+  // and it shows one close.
+  it("on page/toast sits 8px from the toast's right and top in every preview", async () => {
+    const file = await appliedFile();
+    const page = await kitPage(file, "page/toast");
+    const toasts = page.children
+      .filter((node) => keyOf(node).startsWith("preview/"))
+      .flatMap(layersOf)
+      .flatMap((node) =>
+        node.type === "INSTANCE" && /\/toast\/status=[a-z]+$/.test(keyOf(node)) ? [node] : []
+      );
+    const held = toasts.map((toast) => ({
+      toast,
+      closes: layersOf(toast).flatMap((part) =>
+        keyOf(part) === "close" && part.type === "INSTANCE" && shown(part) ? [part] : []
+      ),
+    }));
+    expect([held.length > 0, held.map(({ closes }) => closes.length)]).toEqual([true, held.map(() => 1)]);
+    const placed = held.flatMap(({ toast, closes: [part] }) => (part === undefined ? [] : [{ part, toast }]));
+    expect(new Set(placed.map(({ part }) => part.width)).size).toBeGreaterThan(1);
+    expect(placed.map(({ part, toast }) => insets(part, toast))).toEqual(
+      placed.map(() => ({ right: 8, top: 8 }))
     );
   });
 });

@@ -227,6 +227,13 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   parentSpansBlock: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * On an absolute element below the root whose containing block is an element above its parent:
+   * how many steps up that block sits, the same in every mode, where the element paints as the last
+   * layer of the block's frame and sits on its offsets from the block's padding edge with the block
+   * grown, so the kit can draw it in the block's frame (`block-frame.ts`).
+   */
+  blockSteps: Schema.optionalKey(Schema.Finite),
+  /**
    * On an absolute element below the root: the axes along which its border box is one length, within
    * a 64th of a pixel, in every mode, so its place at its parent's end does not move as
    * a mode changes its length.

@@ -250,6 +250,7 @@ export class PseudoBoxCascade implements BoxCascade {
   readonly path: readonly string[];
   readonly #inPlace: InPlace | undefined;
   readonly elementChildren = 0;
+  readonly depth = undefined;
   readonly elementTag = undefined;
   readonly elementText = undefined;
   readonly markerContent = false;

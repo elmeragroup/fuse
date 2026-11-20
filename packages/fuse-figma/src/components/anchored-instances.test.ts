@@ -1,12 +1,14 @@
 /**
  * Unit under test: the built kit's absolute instances at their parent's end, and the frames that
  * hold them there. Oracles: CSS 2.1 §10.3.7, under which Dialog's and Sheet's `absolute top-4
- * right-4` closes keep 16px from the right and top whatever their size; probes PG14 and PG14b, under
- * which an instance at MAX in an instance of the outer component keeps its `x` when a density switch
- * resizes it, so its right inset drifts by the change, where in the outer component's own main it
- * keeps the inset (as W5-P14b found); and probe PG16, under which an absolute auto layout frame
- * STRETCH across the parent, aligned to its end, padded 16 on the right and top and hugging its height
- * keeps the close in its flow 16px from both edges.
+ * right-4` closes keep 16px from the right and top whatever their size, and Toast's `absolute top-2
+ * right-2` close keeps 8px from its root's right and top edges, since the root is its containing
+ * block and draws no border; probes PG14 and PG14b, under which an instance at MAX in an instance of
+ * the outer component keeps its `x` when a density switch resizes it, so its right inset drifts by
+ * the change, where in the outer component's own main it keeps the inset (as W5-P14b found); and
+ * probe PG16, under which an absolute auto layout frame STRETCH across the parent, aligned to its
+ * end, padded by the offsets on the right and top and hugging its height, keeps the close in its flow
+ * that far from both edges.
  *
  * The closes bind their size to `control-h-sm`, which density changes, so each sits in such a frame.
  * The Sidebar menu badge stays at MAX itself: the capture measured it one width in every mode, and
@@ -51,14 +53,14 @@ describe("absolute instances at their parent's end", () => {
         )
       )
     );
-    const close = (variant: string, key: string) =>
+    const close = (variant: string, key: string, inset = 16) =>
       [
         variant,
         `${key} placement`,
         { kind: "stretch", start: 0, end: 0 },
         { kind: "start", start: 0 },
         "MAX",
-        [16, 16, 0, 0],
+        [inset, inset, 0, 0],
         "hug",
         [key],
       ] as const;
@@ -66,6 +68,9 @@ describe("absolute instances at their parent's end", () => {
       close("dialog-content/content=basic", "close"),
       close("dialog-content/content=footer-close", "close"),
       close("sheet-content/side=right", "corner-close"),
+      ...["neutral", "info", "success", "warning", "error", "loading"].map((status) =>
+        close(`toast/status=${status}`, "close", 8)
+      ),
     ]);
   });
 
