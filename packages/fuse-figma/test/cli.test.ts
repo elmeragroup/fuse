@@ -176,14 +176,19 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse brand: create mode Telinet (private only)");
-      assert.include(printed, "Fuse brand: create variable ×1856");
-      assert.notInclude(printed, "Fuse brand: create variable light/branded/private/primary");
-      assert.include(printed, "Fuse segment: create variable ×928");
-      assert.include(printed, "Fuse identity: create variable ×464");
       assert.include(printed, "Fuse density: create mode Dense");
       assert.notInclude(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×63");
+      // A sync of the same empty file creates the variables the plan lists or counts.
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const expected = figma.collectionNames().flatMap((collection) => {
+        const names = figma.variableNames(collection);
+        return names.length > 10
+          ? [`${collection}: create variable ×${String(names.length)}`]
+          : names.map((name) => `${collection}: create variable ${name}`);
+      });
+      const created = printed.split("\n").filter((line) => line.includes(": create variable"));
+      assert.deepStrictEqual(created.toSorted(), expected.toSorted());
     })
   );
 
