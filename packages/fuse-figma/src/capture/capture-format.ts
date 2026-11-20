@@ -228,6 +228,13 @@ const MeasuredFactsSchema = Schema.Struct({
    * draws it last as well is the mapping's to check.
    */
   paintsLast: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * On a block whose width is 100% of a parent block that fits its content, where every mode keeps
+   * it so: the widest max-content width among the parent's other in-flow children, one length within
+   * a 64th of a pixel in every mode, in CSS pixels. The parent is then as wide as the block's own content or that width,
+   * whichever is wider.
+   */
+  spansBeside: Schema.optionalKey(Schema.Finite),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

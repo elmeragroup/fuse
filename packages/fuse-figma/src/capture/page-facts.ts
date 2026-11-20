@@ -4,52 +4,17 @@
  */
 import type { CDPSession } from "playwright";
 
-import { BRAND_CODES, BRANDS, THEME_IDENTITIES, themeAxisAttributes } from "@elmeragroup/fuse/theme-catalog";
-import type { Density, ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
-
 import type { MeasuredFacts } from "./capture-format.ts";
 import { clearFill } from "./clear-fill.ts";
 import { coincidingAround } from "./coinciding-around.ts";
 import type { Rect } from "./coinciding-around.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
+import { EVERY_MODE } from "./page-modes.ts";
 import { paintsLast } from "./paints-last.ts";
 import { parentSpansBlock } from "./parent-spans-block.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
-
-/**
- * A mode a designer can pick for a kit frame, as the page stamps it: the color scheme and the
- * density on `<html>`, and the theme's `data-theme-*` attributes on `<body>`. `themes.css` matches the
- * dark scheme as `[data-theme="dark"]` on an ancestor of the themed element.
- */
-type PageMode = {
-  readonly root: Readonly<Record<"data-theme", ResolvedColorScheme> & Record<"data-density", Density>>;
-  readonly body: ReturnType<typeof themeAxisAttributes>;
-};
-
-/** The color schemes, which a host's rule can key a length or a `z-index` on as well as a color. */
-const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];
-
-/** The densities the role metrics follow, which change the type and the lengths of a box. */
-const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
-
-/**
- * Every color scheme and density with every legal theme: each identity and brand, with each segment
- * the brand allows. A fact that must hold wherever a designer puts the kit is measured in each.
- */
-const EVERY_MODE: readonly PageMode[] = SCHEMES.flatMap((scheme) =>
-  DENSITIES.flatMap((density) =>
-    THEME_IDENTITIES.flatMap((identity) =>
-      BRAND_CODES.flatMap((brand) =>
-        BRANDS[brand].segments.map((segment): PageMode => ({
-          root: { "data-theme": scheme, "data-density": density },
-          body: themeAxisAttributes({ identity, brand, segment }),
-        }))
-      )
-    )
-  )
-);
 
 /**
  * Measure a root's tree in the page and keep what holds on any platform, by each element's
@@ -172,6 +137,15 @@ const EVERY_MODE: readonly PageMode[] = SCHEMES.flatMap((scheme) =>
  * - `oneLength`: on an absolute element below the root, the axes along which its border box is one
  *   length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have
  *   loaded.
+ * - `spansBeside`: on an in-flow element below the root whose computed `width` is `100%`, with no
+ *   horizontal margin, in a parent with a `display` of `block` or `flow-root` whose computed `width`
+ *   is `fit-content` or `max-content`, beside other in-flow children with no horizontal margin: the
+ *   content width the parent fits to with the element taking no room, its other children's widest
+ *   max-content width. Every mode of {@link EVERY_MODE}, once its faces have loaded, must meet each of
+ *   these conditions and measure the same width within {@link LAYOUT_UNIT_PX}, since a mode's rule can
+ *   halve the element's width or make the parent a flex column. The parent shrinks to fit its widest child, the
+ *   percentage counting as `auto` meanwhile (CSS Sizing 3 §5.2.1), and the element then spans it,
+ *   so it is as wide as its own content or that width, whichever is wider.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -981,6 +955,32 @@ const MEASURE_IN_PAGE = `async function () {
   for (const { path, widths, heights } of absolutes) {
     const axes = [...(agree(widths) ? ["horizontal"] : []), ...(agree(heights) ? ["vertical"] : [])];
     if (axes.length > 0) { put(path, "oneLength", axes); }
+  }
+  // A block that spans a parent which fits its content, and the widest max-content width beside it in every mode.
+  const typed = (element, property) => String(element.computedStyleMap().get(property));
+  const fitsContent = (element) => ["block", "flow-root"].includes(getComputedStyle(element).display) && ["fit-content", "max-content"].includes(typed(element, "width"));
+  const unmargined = (element) => ["margin-left", "margin-right"].every((side) => getComputedStyle(element).getPropertyValue(side) === "0px");
+  // The block's in-flow siblings, where it spans a parent that fits its content beside them, all
+  // with no horizontal margin, or undefined where it does not.
+  const besideSpan = (element) => {
+    const parent = element.parentElement;
+    if (!inFlow(element) || typed(element, "width") !== "100%" || !unmargined(element) || !fitsContent(parent)) { return undefined; }
+    const beside = [...parent.children].filter((child) => child !== element && inFlow(child));
+    return beside.length > 0 && beside.every(unmargined) ? beside : undefined;
+  };
+  const spanning = elements
+    .filter(({ element }) => element !== root && element.parentElement !== null && root.contains(element.parentElement) && besideSpan(element) !== undefined)
+    .map((each) => ({ ...each, widths: [] }));
+  if (spanning.length > 0) {
+    await inEveryMode(() => {
+      // Each mode checks the block anew, and the parent fits the others alone once the block takes no room.
+      for (const each of spanning) {
+        each.widths.push(besideSpan(each.element) === undefined ? NaN : withStyles([[each.element, "display", "none"]], () => contentWidth(each.element.parentElement)));
+      }
+    });
+  }
+  for (const { path, widths } of spanning) {
+    if (widths.every(Number.isFinite) && agree(widths)) { put(path, "spansBeside", Math.round(widths[0] * 64) / 64); }
   }
   return out;
 }`;

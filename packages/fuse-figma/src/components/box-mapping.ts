@@ -45,6 +45,7 @@ import {
 import type { Holder, Room, RowShare } from "./box-sizing";
 import { dropIdleOrigin, readRotation } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
+import { centresBesideSpan, foldGap, holdsOnlyLabel, padCentred } from "./centred-row";
 import type {
   BoxDefinition,
   BuildContext,
@@ -511,6 +512,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     {
       underMaxWidth: cascade.measured?.underMaxWidth === true,
       ratioHeight: cascade.measured?.ratioHeight,
+      spansBeside: cascade.measured?.spansBeside,
     }
   );
 
@@ -668,10 +670,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     {
       underMaxHeight: cascade.measured?.underMaxHeight,
       itemsAtContent: cascade.measured?.itemsAtContent === true,
+      labelOnly: flowing.map(holdsOnlyLabel),
     },
     isPlainBlock(reader, markers)
   );
-  const growing = growth?.place;
+  const growing = growth?.kind === "fills" ? growth.place : undefined;
+  const centred = growth?.kind === "centred" ? growth : undefined;
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);
   const inFlowEnd =
@@ -817,13 +821,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     }
     // The row's one growing layer is as wide as its least width where that is wider than the row.
     if (
-      growth?.alone === true &&
+      growth?.kind === "fills" &&
+      growth.alone &&
       index === growing &&
       !fitsRoom(result.layer, leastContentWidth(holder, context.variables), context.variables)
     ) {
       part.cascade.style.missing("width", "flex-grow", OVERGROWN);
     }
-    return result;
+    return index === centred?.place
+      ? { ...result, layer: padCentred(result.layer, result.framed === true, centred.padding, variant) }
+      : result;
   });
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
@@ -979,6 +986,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
   const itemSpacing =
     (grid === undefined ? undefined : ZERO) ??
+    (centred === undefined ? undefined : foldGap(reader)) ??
     space ??
     spaced ??
     (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
@@ -987,7 +995,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     (layout.flex && layout.direction === "HORIZONTAL" ? number("column-gap", "itemSpacing") : undefined) ??
     ZERO;
   const counterAlign =
-    placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
+    placed?.counterAlign ??
+    centresBesideSpan(layout, sizing.horizontal, flowing, (part) => mapped[drawn.indexOf(part)]?.layer) ??
+    (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and
   // the parts after the label last.
   const first = placement.layers.slice(0, drawnBefore.length);
@@ -1032,6 +1042,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign:
       placed?.primaryAlign ??
+      (centred === undefined ? undefined : "SPACE_BETWEEN") ??
       (packsAtStart ||
       leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children) ||
       unspaced !== undefined
@@ -1408,7 +1419,8 @@ function mapPart(
     optional === undefined && readHidden(part.cascade.style, keepsRoom, wrapped)
       ? { ...wrapped, hidden: true as const }
       : wrapped;
-  return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined };
+  const framed = wrapped !== turned;
+  return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined, framed };
 }
 
 /**
@@ -1524,6 +1536,8 @@ type MappedPart = {
    * it, absent for any other part.
    */
   readonly wrapped?: InstanceLayerSpec;
+  /** Whether a frame part's layer is the frame that draws its margins. */
+  readonly framed?: boolean;
 };
 
 /**

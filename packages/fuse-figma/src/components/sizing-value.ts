@@ -47,8 +47,11 @@ export type PercentBasis =
       /** The length's CSS, where it changes by mode, which a whole `100%` reads as its own value. */
       readonly css?: string | undefined;
     }
-  /** A parent's auto layout that hugs the axis, `only` where the box is the one block it stacks. */
-  | { readonly kind: "hugging"; readonly only: boolean }
+  /**
+   * A parent's auto layout that hugs the axis, `only` where the box is the one block it stacks and
+   * nothing but its blocks sets its width, `uncapped` where nothing but its blocks does, alone or not.
+   */
+  | { readonly kind: "hugging"; readonly only: boolean; readonly uncapped: boolean }
   | { readonly kind: "auto" }
   | { readonly kind: "unset" }
   | { readonly kind: "none" };

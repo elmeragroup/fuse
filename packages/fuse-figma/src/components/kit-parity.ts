@@ -102,9 +102,9 @@ export const KIT_PARITY = {
   "button-group": { kind: "issue", issue: MISSING_SETS },
   calendar: {
     kind: "partial",
-    sets: ["calendar-day"],
+    sets: ["calendar", "calendar-day"],
     missing:
-      "The calendar around its days: the header, whose `w-full` beside the month grid stays unmapped, and the month grid; and a day both unavailable and focused or hovered.",
+      "The card's fill clipped inside a translucent border; more than one month, a month of four or six weeks, and a disabled calendar; and a day both unavailable and focused or hovered.",
     issue: CALENDAR_DAY,
   },
   card: {
@@ -167,8 +167,7 @@ export const KIT_PARITY = {
   "date-picker": {
     kind: "partial",
     sets: ["date-picker"],
-    missing:
-      "The calendar popup, which waits on the Calendar set; the `sm` size, the trigger at the start, and a date and time.",
+    missing: "The calendar popup; the `sm` size, the trigger at the start, and a date and time.",
     issue: MISSING_SETS,
   },
   // Each date input sits in a `display: contents` wrapper, which stays unmapped. The field box wraps
@@ -301,9 +300,9 @@ export const KIT_PARITY = {
   },
   "range-calendar": {
     kind: "partial",
-    sets: ["calendar-day"],
+    sets: ["range-calendar", "calendar-day"],
     missing:
-      "The range calendar around its days: the header and the month grid; and a day both unavailable and focused or hovered.",
+      "The card's fill clipped inside a translucent border; more than one month, a month of four or six weeks, and a disabled calendar; a day both unavailable and focused or hovered; and the band a hovered day draws while the user picks a range's end.",
     issue: CALENDAR_DAY,
   },
   "scroll-area": { kind: "issue", issue: MISSING_SETS },

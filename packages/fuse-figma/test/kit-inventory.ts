@@ -408,11 +408,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 2 }],
   },
   // One day of the month grid, by where it sits in the selection, its state, whether it is outside and
-  // whether it is today.
+  // whether it is today, and the default demos' months of Calendar and RangeCalendar around it.
   {
     slug: "calendar",
     name: "Calendar",
-    sets: [{ key: "calendar-day", name: "Calendar day", variants: 76, previewed: 76 }],
+    sets: [
+      { key: "calendar-day", name: "Calendar day", variants: 76, previewed: 76 },
+      { key: "calendar", name: "Calendar", variants: 1, previewed: 1 },
+      { key: "range-calendar", name: "Range calendar", variants: 1, previewed: 1 },
+    ],
   },
   // The labelled field, empty or filled, in the field box's five states.
   {

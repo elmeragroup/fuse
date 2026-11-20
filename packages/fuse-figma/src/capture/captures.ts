@@ -22,6 +22,7 @@ import breadcrumbSeparator from "../../captures/breadcrumb-separator.json" with 
 import breadcrumbTrail from "../../captures/breadcrumb-trail.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
 import calendarDay from "../../captures/calendar-day.json" with { type: "json" };
+import calendar from "../../captures/calendar.json" with { type: "json" };
 import card from "../../captures/card.json" with { type: "json" };
 import checkboxCard from "../../captures/checkbox-card.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
@@ -87,6 +88,7 @@ import radioGroup from "../../captures/radio-group.json" with { type: "json" };
 import radioIconButton from "../../captures/radio-icon-button.json" with { type: "json" };
 import radioRow from "../../captures/radio-row.json" with { type: "json" };
 import radio from "../../captures/radio.json" with { type: "json" };
+import rangeCalendar from "../../captures/range-calendar.json" with { type: "json" };
 import selectField from "../../captures/select-field.json" with { type: "json" };
 import selectItem from "../../captures/select-item.json" with { type: "json" };
 import selectOpen from "../../captures/select-open.json" with { type: "json" };
@@ -197,6 +199,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["list-detail-pane", listDetailPane],
   ["list-detail", listDetail],
   ["calendar-day", calendarDay],
+  ["calendar", calendar],
+  ["range-calendar", rangeCalendar],
   ["date-field", dateField],
   ["date-picker", datePicker],
   ["tabs-trigger", tabsTrigger],

@@ -494,6 +494,34 @@ describe("a line through a label's text", () => {
   });
 });
 
+// Oracle: HTML, Rendering §15.3.8, and Chromium's layout (`th-center.chromium.test.ts`). The default
+// style sheet's `text-align: -internal-center` on a `<th>` centers its text under a parent at the
+// initial `start`, and under a parent that sets another value the cell takes that value, while the
+// default style sheet's declaration still wins its cascade.
+describe("a table header cell's text", () => {
+  const INTERNAL_CENTER = {
+    className: "user agent",
+    property: "text-align",
+    value: "-internal-center",
+    source: "user-agent",
+  } as const;
+
+  it("centers under a parent at the initial text-align", async () => {
+    const { variant, coverage } = await buildWithPart("", { tag: "th", written: [INTERNAL_CENTER] });
+    expect(textOf(variant?.root)?.align.horizontal).toBe("CENTER");
+    expect(notesOf(coverage, "user agent").filter(([property]) => property === "text-align")).toEqual([
+      ["text-align", "literal", "the label sets its lines in the center"],
+    ]);
+  });
+
+  it("stays unmapped under a parent that sets its own text-align", async () => {
+    const { coverage } = await buildWithPart("text-right", { tag: "th", written: [INTERNAL_CENTER] });
+    expect(notesOf(coverage, "user agent").filter(([property]) => property === "text-align")).toEqual([
+      ["text-align", "unmapped", "no Figma field reads -internal-center"],
+    ]);
+  });
+});
+
 // Oracle: HTML's rendering of a text `<input>`, which draws its value on one line across its content
 // box from the start, whatever the box's `display` or `white-space` say, so the label fills the width
 // and ends in an ellipsis after one line (`DECISIONS.md` round 2), and of a `<textarea>`, which wraps
