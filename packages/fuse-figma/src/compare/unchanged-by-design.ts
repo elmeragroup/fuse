@@ -14,7 +14,6 @@ import { isDeepStrictEqual } from "node:util";
 
 import { resolveThemeCatalog, THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
 
-import { variantKey } from "../components/component-spec.ts";
 import type { BoxSpec, ColorSpec, ComponentSetSpec, InstanceOverride } from "../components/kit-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import { forcedPseudoClasses, restingTwin } from "./cells.ts";
@@ -41,12 +40,14 @@ export function unchangedByDesign(
 ): ReadonlySet<string> {
   const unchanged = new Set<string>();
   for (const set of componentSets) {
-    const byKey = new Map(set.variants.map((variant) => [variant.key, variant]));
     for (const variant of set.variants) {
       if (forcedPseudoClasses(variant.properties).length === 0) {
         continue;
       }
-      const twin = byKey.get(variantKey(set, restingTwin(variant.properties)));
+      // The twin is found by its properties, since a built set's spec keeps no record of the axes
+      // added after its first release, which its variant keys leave out at their first value.
+      const resting = restingTwin(variant.properties);
+      const twin = set.variants.find((each) => isDeepStrictEqual(each.properties, resting));
       if (
         twin !== undefined &&
         isDeepStrictEqual(inTheme(twin.root, colorOf), inTheme(variant.root, colorOf))
