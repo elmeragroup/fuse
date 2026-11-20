@@ -2,7 +2,7 @@
  * How the build sizes a flex row's part from its content and the room the row leaves it, as
  * Checkbox card's label grows across its content row and its text column sits beside its control, and
  * as File upload's description, Card's footer paragraph and Radio row's label fit their own text.
- * The unit under test is `buildComponentSet` on hand-built captures (`test/capture-fixtures.ts`), whose
+ * The unit under test is `buildSetsInOrder` on hand-built captures (`test/capture-fixtures.ts`), whose
  * `div`s set `block` as the browser's style sheet does.
  * Oracles, measured in Chromium on 2026-11-19 with 16px Arial on 24px lines:
  *

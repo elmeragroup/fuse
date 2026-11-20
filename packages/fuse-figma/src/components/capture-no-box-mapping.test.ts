@@ -1,6 +1,6 @@
 /**
  * How the build draws a part whose element generates no box, as Selection item's `<label>` around
- * its control and text. The unit under test is `buildComponentSet` on hand-built captures of
+ * its control and text. The unit under test is `buildSetsInOrder` on hand-built captures of
  * one-cell `chip` sets (`test/capture-fixtures.ts`). Oracles: CSS Display 3 §2.5, under which a
  * `display: contents` element generates no box and its children take its place in its parent's flow,
  * so the parent lays out the wrapper's parts and the wrapper's own box properties set nothing, while

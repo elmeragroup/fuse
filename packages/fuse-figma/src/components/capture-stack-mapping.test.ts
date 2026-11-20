@@ -1,6 +1,6 @@
 /**
  * How the build draws a grid of one cell whose icons stack in it, one shown, as Checkbox card's
- * control crossfades its unchecked and checked icons. The unit under test is `buildComponentSet` on
+ * control crossfades its unchecked and checked icons. The unit under test is `buildSetsInOrder` on
  * hand-built captures (`test/capture-fixtures.ts`). Oracles:
  *
  * - CSS Grid 1 §7.5 and §8.3, measured in Chromium on 2026-11-19: in a 24px `inline-grid`, two 24px

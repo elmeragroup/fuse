@@ -1,7 +1,7 @@
 /**
  * How the build draws a list whose items each span its columns `min(50%, <length>) auto` as a
  * subgrid of two cells, as Description list's responsive layout does. The unit under test is
- * `buildComponentSet` on hand-built captures (`test/capture-fixtures.ts`). Oracles:
+ * `buildSetsInOrder` on hand-built captures (`test/capture-fixtures.ts`). Oracles:
  *
  * - CSS Grid 1 §7.2.4 and §11.8: the first column is `min(50%, 20rem)` of the list's width and the
  *   `auto` column stretches over the rest, so Chromium sets a 576px list's cells at 288 and 288 and an

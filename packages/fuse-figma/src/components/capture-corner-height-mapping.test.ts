@@ -1,7 +1,7 @@
 /**
  * How the build rounds the corners of a box whose height hugs its layers, as Selection item's shell
  * sets `first:rounded-t-lg last:rounded-b-lg` around rows whose height follows their text. The unit
- * under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Oracles: CSS Backgrounds 3 §5.5, under which CSS scales every radius
  * down only where the radii along a side add up past it, and probe P10, under which Figma caps a
  * radius at half the shorter side. A 200px-wide column whose one layer is at least 40px tall in every

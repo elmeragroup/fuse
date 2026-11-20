@@ -1,7 +1,7 @@
 /**
  * How the build draws a flex row's `display: inline` items and an italic label, as DateInput's
  * segments and its placeholder segments have them.
- * The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle, the CSS specification that says what the
  * browser draws, under the coverage contract, where a declaration that does not reach Figma is
  * `unmapped`.

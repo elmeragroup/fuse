@@ -1,5 +1,5 @@
 /**
- * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers and a row's stretch. The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers and a row's stretch. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is

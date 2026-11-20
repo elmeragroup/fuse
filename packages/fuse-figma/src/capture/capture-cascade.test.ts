@@ -33,7 +33,7 @@ import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { readBackdrop } from "../components/box-paint.ts";
-import { buildComponentSet } from "../components/component-builder.ts";
+import { buildSetsInOrder } from "../components/component-builder.ts";
 import type { BuildContext } from "../components/component-spec.ts";
 import type { CoverageRow } from "../components/coverage.ts";
 import { makeVariableIndex } from "../components/css-values.ts";
@@ -365,14 +365,10 @@ describe("a 100% wide box alone in a box that hugs it", () => {
         },
       ],
     };
-    const built = buildComponentSet(manifestDefinition(manifest), context, new Map(), {
-      capture,
-      open: undefined,
-      instancedIn: new Set(),
-    });
-    const hugRoot = built.componentSet.variants[0]?.root;
+    const [built] = buildSetsInOrder([{ definition: manifestDefinition(manifest), capture }], context);
+    const hugRoot = built?.componentSet.variants[0]?.root;
     const viewport = hugRoot?.children[0];
-    const width = built.coverage.find((row) => row.part === "viewport" && row.property === "width");
+    const width = built?.coverage.find((row) => row.part === "viewport" && row.property === "width");
     return [
       hugRoot?.sizing.horizontal.kind,
       viewport && "sizing" in viewport ? viewport.sizing.horizontal.kind : undefined,

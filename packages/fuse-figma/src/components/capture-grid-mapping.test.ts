@@ -1,5 +1,5 @@
 /**
- * How the build lays out a CSS grid of two columns. The unit under test is `buildComponentSet` on
+ * How the build lays out a CSS grid of two columns. The unit under test is `buildSetsInOrder` on
  * hand-built captures of one-cell `chip` sets (`test/capture-fixtures.ts`). Oracles: CSS Grid 1,
  * under which items with no placement of their own fill the explicit columns row by row in source
  * order (§8.5), and `grid-template-columns: auto minmax(0, 1fr)` gives the first column its content

@@ -1,6 +1,6 @@
 /**
  * How the build maps a label whose text sits in spans that color it, as Code's highlighter wraps
- * each token in a span with an inline `color`. The unit under test is `buildComponentSet` on a
+ * each token in a span with an inline `color`. The unit under test is `buildSetsInOrder` on a
  * hand-built capture of a one-cell `chip` set (`test/capture-fixtures.ts`). Oracles:
  *
  * - A Figma text holds a fill per character (`setRangeFills` in the typings), so each run of
