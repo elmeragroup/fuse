@@ -2,7 +2,7 @@
  * The in-place diff of an instance part: what the inner component's root, built where the composite
  * renders it, draws differently from the inner set's variant, and what the instance layer carries for
  * each difference. A Figma instance takes everything from its main component but its property values,
- * the paints, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
+ * the paints, stroke weights, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
  * layout, so a difference the instance cannot carry stays unmapped, and the composite cannot drift
  * from its parts.
  */
@@ -10,7 +10,7 @@ import { isDeepStrictEqual } from "node:util";
 
 import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
 import { drawsAtOwnWidth } from "./hugging-rows";
-import { outOfLayout, ringFill } from "./kit-spec";
+import { outOfLayout, ringFill, solidSides } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -119,6 +119,9 @@ type Found = {
  * - A fill, a stroke's color, a text's color, an icon's glyph color, a corner and shadows become
  *   overrides at the layer's key path. The root's fill is the one its ring needs, as the plugin
  *   writes it.
+ * - A solid stroke on some sides becomes an override of the four weights where the variant's stroke
+ *   is solid with literal weights and both take their room in the layout alike, as a chip segment's
+ *   `border-0 border-s` keeps the start edge of Button's 1px border.
  * - The root's `primaryAlign` becomes an override where the instance fills its parent along the
  *   root's direction and the alignment is its one difference no other field carries, as a
  *   `justify-start` on a Button that fills its row draws. On 2026-11-19 a real file kept such a
@@ -343,8 +346,11 @@ function diffFill(
 }
 
 /**
- * Diff a stroke. Only its color can differ, which becomes an override, since its weight, dashes and
- * room in the layout shape the box, and a stroke only one of the two draws stays unmapped.
+ * Diff a stroke. Its color becomes an override. A solid stroke on some sides in place, over a solid
+ * stroke of the variant on its sides or of one literal weight on every side, becomes an override of
+ * the four weights, as a chip segment's `border-0 border-s` keeps only its start edge of Button's
+ * 1px border. Both strokes must take their room in the layout alike. Any other difference, a dash, a
+ * bound weight or a stroke only one of the two draws, stays unmapped.
  */
 function diffStroke(
   found: Found,
@@ -361,6 +367,15 @@ function diffStroke(
     isDeepStrictEqual({ ...inPlace, color: variant.color }, variant)
   ) {
     found.overrides.push({ path, field: "strokeColor", color: inPlace.color });
+    return;
+  }
+  const sides = inPlace !== undefined && "sides" in inPlace ? inPlace.sides : undefined;
+  const held = variant === undefined ? undefined : solidSides(variant);
+  if (sides !== undefined && held !== undefined && inPlace?.inLayout === variant?.inLayout) {
+    found.overrides.push({ path, field: "strokeSides", sides });
+    if (!isDeepStrictEqual(inPlace?.color, variant?.color) && inPlace !== undefined) {
+      found.overrides.push({ path, field: "strokeColor", color: inPlace.color });
+    }
     return;
   }
   noteUnmapped(found, path, "stroke", inPlace, variant);

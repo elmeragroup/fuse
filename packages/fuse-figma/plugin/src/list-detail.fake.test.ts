@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import type { ChildLayerSpec, KitSpec } from "../../src/components/kit-spec.ts";
+import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { childNamed } from "./fake-fixtures.ts";
-import { appliedFile, kitFixture, kitPage, setOn } from "./kit-fixture.ts";
+import { kitFixture } from "./kit-fixture.ts";
+import { firstRow, onFirstRowButton } from "./list-detail-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
 /** The changes a Plan, or an Apply where `apply` is true, of `kit`, the built kit by default, lists on `file`. */
@@ -22,52 +22,12 @@ async function reconcile(file: FakeFigma, apply = false, kit?: KitSpec) {
   return (await reconcileKit(file.figma, spec, apply)).changes;
 }
 
-/** The layers with the first row's Button left without its alignment override. */
-function withoutAlignment(layers: readonly ChildLayerSpec[]): readonly ChildLayerSpec[] {
-  return layers.map((layer) => {
-    if (layer.kind === "frame") {
-      return { ...layer, children: withoutAlignment(layer.children) };
-    }
-    return layer.kind === "instance" && layer.key === "button"
-      ? { ...layer, overrides: (layer.overrides ?? []).filter(({ field }) => field !== "primaryAlign") }
-      : layer;
-  });
-}
-
 /** The kit with `List detail`'s `content=empty` first row's Button no longer overriding its alignment. */
 function firstRowAtMain(kit: KitSpec): KitSpec {
-  return {
-    ...kit,
-    componentSets: kit.componentSets.map((set) =>
-      set.name !== "List detail"
-        ? set
-        : {
-            ...set,
-            variants: set.variants.map((variant) =>
-              variant.properties.content !== "empty"
-                ? variant
-                : {
-                    ...variant,
-                    root: {
-                      ...variant.root,
-                      children: variant.root.children.map((list) =>
-                        list.kind === "frame" && list.key === "list"
-                          ? {
-                              ...list,
-                              children: list.children.map((row) =>
-                                row.kind === "frame" && row.key === "row-1"
-                                  ? { ...row, children: withoutAlignment(row.children) }
-                                  : row
-                              ),
-                            }
-                          : list
-                      ),
-                    },
-                  }
-            ),
-          }
-    ),
-  };
+  return onFirstRowButton(kit, (button) => ({
+    ...button,
+    overrides: (button.overrides ?? []).filter(({ field }) => field !== "primaryAlign"),
+  }));
 }
 
 /** The alignment along its direction of the variant the `content=empty` first row's Button points at. */
@@ -83,14 +43,6 @@ function mainAlignment(kit: KitSpec) {
     : kit.componentSets
         .find(({ key }) => key === button.componentSet)
         ?.variants.find(({ key }) => key === button.variant)?.root.primaryAlign;
-}
-
-/** The first row's Button in the `List detail` set's `content=empty` variant of a freshly applied file. */
-async function firstRow() {
-  const file = await appliedFile();
-  const set = setOn(await kitPage(file, "page/list-detail"), "List detail");
-  const list = childNamed(childNamed(set, "COMPONENT", "content=empty"), "FRAME", "list-detail-list");
-  return { file, button: childNamed(childNamed(list, "FRAME", "row-1"), "INSTANCE", "button") };
 }
 
 describe("List detail's row Buttons on an applied file", () => {

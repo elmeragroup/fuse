@@ -355,6 +355,7 @@ function checkStacking(set: ComponentSetSpec): void {
 const OVERRIDE_TARGETS = {
   fill: "box",
   strokeColor: "box",
+  strokeSides: "box",
   cornerRadius: "box",
   effects: "box",
   textColor: "text",
