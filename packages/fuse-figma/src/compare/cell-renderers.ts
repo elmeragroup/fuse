@@ -451,6 +451,16 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./attachment-cell.ts")).attachment,
   },
   {
+    set: "description-list-item",
+    entry: "dist/description-list.js",
+    load: async () => (await import("./description-list-cell.ts")).descriptionListItem,
+  },
+  {
+    set: "description-list",
+    entry: "dist/description-list.js",
+    load: async () => (await import("./description-list-cell.ts")).descriptionList,
+  },
+  {
     set: "card",
     entry: "dist/card.js",
     load: async () => (await import("./card-cell.ts")).card,

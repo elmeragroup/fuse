@@ -597,6 +597,18 @@ export class LayerStyle {
     this.#layer.inPlace?.relocate(move);
   }
 
+  /**
+   * The style of the element that holds this layer's, drawn or around the root, as a subgrid reads
+   * the columns its parent sets. Its reads note the parent's declarations and fill fields on this
+   * style's path.
+   *
+   * @returns The parent's style, or undefined for the outermost layer.
+   */
+  parent(): LayerStyle | undefined {
+    const parent = this.#ledger.parentOf(this.#layer.id);
+    return parent === undefined ? undefined : new LayerStyle(this.#ledger, parent, this.path);
+  }
+
   /** Whether the computed style sets the property. */
   has(property: string): boolean {
     return this.#layer.style.has(property);

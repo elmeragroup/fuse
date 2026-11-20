@@ -39,6 +39,7 @@ import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";
 import { readSize } from "./sizing-value";
 import type { PercentBasis } from "./sizing-value";
+import { subgridCellRoom } from "./subgrid-row";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
@@ -121,6 +122,8 @@ export type Room = {
    * around it, as `hugging-rows.ts` reads it. Absent elsewhere.
    */
   readonly rowMinimum?: NumberSpec;
+  /** The width a subgrid row's cell fills up to, as `subgridCellRoom` gives it. Absent elsewhere. */
+  readonly maximumWidth?: NumberSpec;
 };
 
 const HUG: SizeSpec = { kind: "hug" };
@@ -632,6 +635,9 @@ export function roomInside(holder: Holder, index: number): Room {
   const { layout, sizing, layers } = holder;
   if (layout.grid !== undefined) {
     return cellRoom(layout.grid, index);
+  }
+  if (layout.subgrid?.kind === "item") {
+    return subgridCellRoom(layout.subgrid, index);
   }
   const percent = (size: SizeSpec, axis: keyof Extent): PercentBasis => {
     if (definite(holder, size)) {

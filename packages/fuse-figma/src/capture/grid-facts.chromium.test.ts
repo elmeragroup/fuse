@@ -125,4 +125,15 @@ describe("a grid's columns as the capture measures them", () => {
     );
     expect([auto?.gridHugs, fixed?.gridHugs]).toEqual([[0], undefined]);
   });
+
+  it("records nothing on a subgrid, whose columns its parent sizes", async () => {
+    // Chromium computes a subgrid's `grid-template-columns` as `subgrid` and its line names, not as
+    // track widths (CSS Grid 2 §9), so no column of it reads as a length.
+    const parent = "main { display:grid; width:200px; grid-template-columns:auto minmax(0,1fr) }";
+    const items = [30, 10]
+      .map((width) => `<div style="width:${String(width)}px;height:10px"></div>`)
+      .join("");
+    const facts = await factsOf("grid-column:1/-1;grid-template-columns:subgrid", items, parent);
+    expect([facts?.gridItems, facts?.gridWidest, facts?.gridHugs]).toEqual([undefined, undefined, undefined]);
+  });
 });

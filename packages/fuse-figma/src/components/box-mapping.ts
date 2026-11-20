@@ -145,9 +145,10 @@ const ONE_COLUMN_GAP = "the grid lays its items in one column, which has no colu
 /**
  * Read `display` once the box's layers are known. A flex box is an auto layout along its direction.
  * A grid with no template stacks each layer in a row of its own, so a grid with
- * `place-content: center` is an auto layout centered on both axes only around one layer. Any other
- * grid stays unmapped. A block box with no layers lays nothing out, so it is a frame like any
- * other. One that holds only its label sets the text in lines across its width, which the label's
+ * `place-content: center` is an auto layout centered on both axes only around one layer. A grid whose
+ * items each span its columns, and a subgrid Item in it, read their own `display` in
+ * `subgrid-row.ts`. Any other grid stays unmapped. A block box with no layers lays nothing out, so it
+ * is a frame like any other. One that holds only its label sets the text in lines across its width, which the label's
  * own sizing draws, as `label-layout.ts` reads it for a block box. One that stacks block-level parts
  * is a vertical auto layout where its width is fixed or fills, which its parts fill. One with any
  * other layer stays unmapped. A `-webkit-box` maps only where it clamps its label, as
@@ -201,8 +202,9 @@ function readDisplay(
     }
     return false;
   }
-  if (layout.grid !== undefined) {
-    // `readGrid` reads a Figma grid's display with its tracks.
+  if (layout.grid !== undefined || layout.subgrid !== undefined) {
+    // `readGrid` reads a Figma grid's display with its tracks, and `readSubgridFlow` a subgrid
+    // list's or Item's.
     return false;
   }
   const inert = inertClamp(reader);
@@ -1303,7 +1305,14 @@ function mapPart(
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
   const frame = mapBox(part.child, part.cascade, scope, room);
-  const own = minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
+  const floored =
+    minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
+  // A subgrid row's first cell fills the row up to its column's cap, which no class of its own sets.
+  const { maximumWidth } = room;
+  const own =
+    maximumWidth === undefined
+      ? floored
+      : { ...floored, limits: { ...floored.limits, maxWidth: maximumWidth } };
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
   const ringed = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
   const box = readContentBox(part.cascade.style, ringed, part.cascade.inPlace() !== undefined);

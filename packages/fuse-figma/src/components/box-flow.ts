@@ -22,6 +22,7 @@ import type {
 } from "./kit-spec";
 import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+import { readSubgridFlow } from "./subgrid-row";
 import { readTableFlow } from "./table-layout";
 
 /** Where `align-items` places a box's children across its direction, by the value Tailwind compiles. */
@@ -118,7 +119,9 @@ const DIRECTIONS = new Map<string, { readonly direction: FlexDirection; readonly
  * map, as `leavesRoomAtEnd` in `box-mapping.ts` decides. A column takes CSS's start on both axes, and
  * its unset `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid
  * that puts every item in one column, as {@link placesInOneColumn} says, and whose capture measured
- * its column as wide as its content box (`trackFits`), is such a column. Any other
+ * its column as wide as its content box (`trackFits`), is such a column. A grid whose items each
+ * span its columns `min(50%, <length>) auto` is a column too, and each such item that is a subgrid
+ * a row, as `subgrid-row.ts` reads them. Any other
  * grid places its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay
  * unread. `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row
  * whose parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
@@ -157,6 +160,20 @@ export function readFlow(
   const table = readTableFlow(reader, box.tableTiles);
   if (table !== undefined) {
     return { layout: table, self: undefined };
+  }
+  const subgrid = readSubgridFlow(
+    reader,
+    flow.parts.map(({ style }) => style),
+    {
+      others: flow.others.length,
+      outOfFlow: box.outOfFlow,
+      sizing: box.sizing,
+      limits: box.limits,
+      inside: box.inside,
+    }
+  );
+  if (subgrid !== undefined) {
+    return { layout: subgrid, self: undefined };
   }
   const grid = planGrid(reader, flow.parts, flow.others.length, {
     sizing: box.sizing,

@@ -42,6 +42,7 @@ import type { Cell, ImpossibleCells } from "./component-spec";
 import { CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
 import { DATE_FIELD_MANIFEST } from "./date-field-kit";
 import { DATE_PICKER_MANIFEST } from "./date-picker-kit";
+import { DESCRIPTION_LIST_ITEM_MANIFEST, DESCRIPTION_LIST_MANIFEST } from "./description-list-kit";
 import { DIALOG_CONTENT_MANIFEST, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
   DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
@@ -255,6 +256,13 @@ const ASPECT_RATIO_PAGE: KitPage = { slug: "aspect-ratio", name: "Aspect ratio",
 
 /** The page Attachment sits on alone. */
 const ATTACHMENT_PAGE: KitPage = { slug: "attachment", name: "Attachment", example: "attachment" };
+
+/** The page Description list's Item and list sit on. */
+const DESCRIPTION_LIST_PAGE: KitPage = {
+  slug: "description-list",
+  name: "Description list",
+  example: "description-list",
+};
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -924,5 +932,15 @@ export const KIT: readonly KitEntry[] = [
     page: ATTACHMENT_PAGE,
     previewCells: possibleCells(ATTACHMENT_MANIFEST),
     manifest: ATTACHMENT_MANIFEST,
+  },
+  {
+    page: DESCRIPTION_LIST_PAGE,
+    previewCells: possibleCells(DESCRIPTION_LIST_ITEM_MANIFEST),
+    manifest: DESCRIPTION_LIST_ITEM_MANIFEST,
+  },
+  {
+    page: DESCRIPTION_LIST_PAGE,
+    previewCells: possibleCells(DESCRIPTION_LIST_MANIFEST),
+    manifest: DESCRIPTION_LIST_MANIFEST,
   },
 ];
