@@ -39,7 +39,7 @@
  */
 
 import { guard } from "./guard.ts";
-import { resolveNumber, resolveString } from "./modes.ts";
+import { ownNumber, resolveNumber, resolveString } from "./modes.ts";
 import { f32, SHARED_DATA_SEPARATOR } from "./state.ts";
 import { write } from "./state.ts";
 import type { FileState, NodeState, TextStyleState } from "./state.ts";
@@ -390,5 +390,6 @@ export function linkTextStyle(state: NodeState, styleId: string): void {
   // A text that hugs its characters takes their width at the style's size (rule 31).
   if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
     state.width = measuredWidth(state.characters, style.fontSize);
+    ownNumber(state, "width");
   }
 }

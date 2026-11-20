@@ -13,12 +13,18 @@
  *    lists `cornerRadius` and the four corners the typings name. No probe listed a frame's own
  *    padding or alignment, so the fake lists them under their names in the typings (rule 64). A
  *    property value is no override (N1). A fill written equal to the main's left no `fills`
- *    override, and `overrides` listed only the instance's `name` (NS), so a fill, stroke, effects or
- *    corner the fake stores equal to what the layer's source shows clears that override, and the
- *    field follows the source again.
+ *    override, and `overrides` listed only the instance's `name` (NS), so a fill, stroke or effects
+ *    the fake stores equal to what the layer's source shows clears that override, and the field
+ *    follows the source again. A number does not: a corner, gap, stroke weight or padding written or
+ *    bound equal to the main's stays listed with `boundVariables` (FM3, rule 8). The fake lists a
+ *    number other than a corner or a padding under its name in the typings. A whole `strokeWeight`
+ *    lists `strokeWeight` and the four sides, the top one as `stokeTopWeight`, as FM3 read it and
+ *    the typings spell it. A number write that changes a hugging instance's size lists its `width`
+ *    and `height` too, as `itemSpacing = 7` on a hugging row did (FM3), and the instance still hugs.
  *    `removeOverrides` exists (N3), and the fake follows the typings' "removes all direct
- *    overrides": it clears what `overrides` lists and keeps the property values, apart from the
- *    lengths of an instance its modes hold (rule 56).
+ *    overrides": it clears what `overrides` lists and the numbers a layer holds as its own with
+ *    their bindings (rule 8), and keeps the property values, apart from the lengths of an instance
+ *    its modes hold (rule 56).
  * 38. An instance and its sublayers show their main component's fills, strokes, effects and corners,
  *    and its corner bindings, until they override them. On 2026-10-23 a padding change and a fill
  *    rebound to `destructive` on the inner variant reached the nested instance, which kept its `Retry`
@@ -50,11 +56,12 @@
  */
 
 import { deepFrozen } from "../../../test/frozen.ts";
-import { CORNERS, EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf } from "./state.ts";
-import type { NodeState } from "./state.ts";
+import { shownBinding } from "./modes.ts";
+import { EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf } from "./state.ts";
+import type { NodeState, StoredNumberField } from "./state.ts";
 
 /** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
-type ShownField = "fills" | "strokes" | "effects" | "radii";
+type ShownField = "fills" | "strokes" | "effects";
 
 /** The paints and effects `shown` has deep frozen, so a value read again skips the walk. */
 const frozenShown = new WeakSet<object>();
@@ -62,8 +69,7 @@ const frozenShown = new WeakSet<object>();
 /**
  * A field as a layer shows it: its own where it overrides it or has no source, else its source's
  * (rule 38). Figma hands out frozen paints and effects, and a fork shares these values with the
- * file it came from, so the fake freezes what it hands out. Corners stay open: each layer holds its
- * own copy, the corner getters hand out numbers, and a corner write or binding sets them in place.
+ * file it came from, so the fake freezes what it hands out. A corner reads as a number (rule 8).
  */
 export function shown<Field extends ShownField>(state: NodeState, field: Field): NodeState[Field] {
   const source = sourceOf(state);
@@ -71,7 +77,7 @@ export function shown<Field extends ShownField>(state: NodeState, field: Field):
     return shown(source, field);
   }
   const value = state[field];
-  if (field !== "radii" && !frozenShown.has(value)) {
+  if (!frozenShown.has(value)) {
     frozenShown.add(deepFrozen(value));
   }
   return value;
@@ -98,38 +104,54 @@ export function noteOverride(state: NodeState, field: ShownField): void {
     fills: shown(source, "fills"),
     strokes: shown(source, "strokes"),
     effects: shown(source, "effects"),
-    radii: shown(source, "radii"),
   };
-  if (fieldKey(field, state, state.bindings) === fieldKey(field, shownBySource, shownBindings(source))) {
+  if (fieldKey(field, state) === fieldKey(field, shownBySource)) {
     state.overridden.delete(field);
   } else {
     state.overridden.add(field);
   }
 }
 
+/**
+ * List the numbers a write, a binding or an unbind made an instance's or a sublayer's own (rules 8,
+ * 37): `overrides` lists each from then on, the corners together, and `boundVariables` where the
+ * layer binds the field or its source showed it bound. On 2026-11-20 an instance that wrote 7 over
+ * its main's bound `itemSpacing`, `topLeftRadius`, `strokeWeight` or `paddingLeft`, then bound the
+ * main's own variable, listed the field and `boundVariables`, and still did once the main took a
+ * literal (FM3). So a number the layer holds equal to its source's stays its own.
+ */
+export function listNumbers(state: NodeState, fields: readonly StoredNumberField[]): void {
+  const source = sourceOf(state);
+  if (source === undefined) {
+    return;
+  }
+  for (const field of fields) {
+    if (CORNER_FIELDS.some((corner) => corner === field)) {
+      state.overridden.add("radii");
+    }
+    if (state.bindings.has(field) || shownBinding(source, field) !== undefined) {
+      state.overridden.add("boundVariables");
+    }
+  }
+}
+
+/** The four corner fields. */
+const CORNER_FIELDS = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+
 /** A plain value a key holds. */
 type KeyPart = string | number | boolean | null;
 
 /**
- * A layer's paints, effects or corners for a field, as text that two layers holding the same ones
- * share, whatever order their objects list their fields in.
+ * A layer's paints or effects for a field, as text that two layers holding the same ones share,
+ * whatever order their objects list their fields in.
  */
-function fieldKey(
-  field: ShownField,
-  layer: Pick<NodeState, ShownField>,
-  bindings: ReadonlyMap<VariableBindableNodeField, string>
-): string {
+function fieldKey(field: ShownField, layer: Pick<NodeState, ShownField>): string {
   switch (field) {
     case "fills":
     case "strokes":
       return JSON.stringify(layer[field].map(paintKey));
     case "effects":
       return JSON.stringify(layer.effects.map(effectKey));
-    case "radii": {
-      const { topLeft, topRight, bottomRight, bottomLeft } = layer.radii;
-      const corners = [...CORNERS].map((corner) => bindings.get(corner) ?? null);
-      return JSON.stringify([topLeft, topRight, bottomRight, bottomLeft, ...corners]);
-    }
   }
 }
 
@@ -211,28 +233,25 @@ export function propertyValue(state: NodeState, id: string): string | boolean | 
  * The variable each bound field follows, by id: its own, and on an instance or a sublayer the one
  * its source shows on each number it does not hold as its own, as it shows its source's corners
  * (rules 8, 38). An instance that binds no width or height of its own shows its source's binding
- * there (rule 56).
+ * there (rule 56), and a sublayer its main layer's until it holds its own length.
  */
 export function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNodeField, string> {
   const source = sourceOf(state);
   if (source === undefined) {
     return state.bindings;
   }
-  const inherited = shownBindings(source);
-  const lengths: [VariableBindableNodeField, string][] =
-    state.type === "INSTANCE"
-      ? (["width", "height"] as const).flatMap((field) => {
-          const id = inherited.get(field);
-          return state.bindings.has(field) || state.unboundLengths.has(field) || id === undefined
-            ? []
-            : [[field, id]];
-        })
-      : [];
-  const numbers = [...inherited].filter(
-    ([field]) =>
-      isStoredNumber(field) && !state.bindings.has(field) && !state.overridden.has(numberOwner(field))
-  );
-  return new Map([...state.bindings, ...lengths, ...numbers]);
+  const inherited = [...shownBindings(source)].filter(([field]) => {
+    if (state.bindings.has(field)) {
+      return false;
+    }
+    if (field === "width" || field === "height") {
+      return state.type === "INSTANCE"
+        ? !state.unboundLengths.has(field)
+        : !state.overridden.has(numberOwner(field));
+    }
+    return isStoredNumber(field) && !state.overridden.has(numberOwner(field));
+  });
+  return new Map([...state.bindings, ...inherited]);
 }
 
 /** The node a layer's property link reads from: its component set, or its component. */

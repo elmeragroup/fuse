@@ -119,7 +119,13 @@
  *    that axis from its children as they stand, their lengths and `itemSpacing` along its direction
  *    and the longest across, and its padding. A nested instance seen through an outer instance takes
  *    the size its main layer stands at. A new run settles a nested instance before the instances
- *    that show it. No other frame lays out.
+ *    that show it. No other frame lays out. An instance keeps the size it last settled at through a
+ *    literal edit to its main. A parent's measure settles it the first time and once its modes differ
+ *    from those it settled in, recording its size and modes together, so it hugs nested instances
+ *    in its own modes (rule 8). A nested instance hugs through its chain of sources to the layout
+ *    owner, unless an instance along it holds that length. A held length stays, as rule 56 holds one
+ *    its modes gave another size once read. A sublayer whose main layer hugs nested instances hugs
+ *    its own children the same way.
  * 40. Binding the width or height of an instance that hugs that axis records the binding and keeps
  *    the hug length: on 2026-10-23 a nested instance whose height bound `row-h` kept its 26px hug
  *    height (N4). The plugin therefore writes FIXED before it binds an instance's length. A binding
@@ -263,15 +269,15 @@
  */
 
 import { newGrid, placedCell } from "./grid.ts";
-import { ownNumber, resolveNumber, shownNumber, storeNumber, variableState } from "./modes.ts";
-import { isHidden, markOverride, noteOverride } from "./overrides.ts";
+import { modeKey, ownNumber, resolveNumber, shownNumber, storeNumber, variableState } from "./modes.ts";
+import { isHidden, listNumbers, markOverride } from "./overrides.ts";
 import {
   bindingTargets,
-  CORNERS,
   f32,
   isAutoLayout,
   isStoredNumber,
   isTextField,
+  numberOwner,
   sourceOf,
   write,
 } from "./state.ts";
@@ -296,12 +302,21 @@ import { fileVariable, requireType } from "./variables.ts";
  * 0-wide one that fills across keeps the fill, which the width lets take over (rule 31).
  */
 export function resize(state: NodeState, width: number, height: number): void {
+  // A size Figma refuses claims nothing, so the layer's lengths claim ownership only once applied.
+  applySize(state, width, height);
+  ownSize(state);
+}
+
+/**
+ * The size effects of a resize apart from the lengths it claims as the layer's own, which a binding
+ * claims one axis at a time (rule 8).
+ */
+function applySize(state: NodeState, width: number, height: number): void {
   const followsLines = state.type === "TEXT" && state.textAutoResize === "HEIGHT";
   if (width < 0.01 || (!followsLines && height < 0.01)) {
     throw new Error(`Cannot resize ${state.id} to ${width} × ${height}: both must be at least 0.01.`);
   }
   const stuckFill = followsLines && state.width === 0 && fills(state, "HORIZONTAL");
-  ownSize(state);
   state.width = f32(width);
   if (!followsLines) {
     state.height = f32(height);
@@ -611,13 +626,28 @@ export function place(state: NodeState, axis: Axis, value: number): void {
 
 /**
  * Note that an instance holds a width and a height of its own, which its main component's resize
- * leaves (rule 32), until a HUG on an axis lets that axis follow its content again.
+ * leaves (rule 32), until a HUG on an axis lets that axis follow its content again, and that a
+ * sublayer holds its own (rule 8).
  */
 export function ownSize(state: NodeState): void {
   if (state.type === "INSTANCE") {
     state.overridden.add("width");
     state.overridden.add("height");
     state.heldByModes = false;
+    return;
+  }
+  // A sublayer holds the lengths written on it from then on, apart from its main layer's (rule 8).
+  ownNumber(state, "width");
+  ownNumber(state, "height");
+}
+
+/** Claim one length as the layer's own, as a binding on that axis does (rules 8, 32). */
+function ownLength(state: NodeState, field: "width" | "height"): void {
+  if (state.type === "INSTANCE") {
+    state.overridden.add(field);
+    state.heldByModes = false;
+  } else {
+    ownNumber(state, field);
   }
 }
 
@@ -678,6 +708,8 @@ export function settled(state: NodeState): NodeState {
   if (state.type !== "INSTANCE" || source === undefined) {
     return state;
   }
+  // The size and the modes it was measured in are recorded together (rules 8, 32).
+  state.settledModes = modeKey(state);
   const held = (axis: Axis): boolean => state.overridden.has(lengthOverride(axis));
   const free = !held("HORIZONTAL") && !held("VERTICAL");
   const following = new Set<Axis>();
@@ -696,10 +728,12 @@ export function settled(state: NodeState): NodeState {
     }
   }
   // An instance its modes give another size than its main holds its lengths from then on (rule 56),
-  // unless the length that differs follows a binding (FM2).
+  // unless the length that differs follows a binding (FM2). A size its own numbers give it in the
+  // modes its main reads is no mode hold (FM3).
   const differs = (axis: Axis): boolean =>
     !following.has(axis) && (axis === "HORIZONTAL" ? state.width : state.height) !== lengthOn(source, axis);
-  if (free && state.mirrorOf === undefined && (differs("HORIZONTAL") || differs("VERTICAL"))) {
+  const otherModes = modeKey(state) !== modeKey(source);
+  if (free && otherModes && state.mirrorOf === undefined && (differs("HORIZONTAL") || differs("VERTICAL"))) {
     ownSize(state);
     state.heldByModes = true;
   }
@@ -739,7 +773,7 @@ function boundThrough(source: NodeState, consumer: NodeState, axis: Axis): numbe
  * children and the modes they read are the instance's own.
  */
 function ownHug(state: NodeState, source: NodeState, axis: Axis): number | undefined {
-  if (!hugsInstances(source, axis)) {
+  if (!hugsThrough(source, axis)) {
     return undefined;
   }
   for (const child of childrenOf(state)) {
@@ -748,6 +782,53 @@ function ownHug(state: NodeState, source: NodeState, axis: Axis): number | undef
     }
   }
   return huggedLength(state, axis, layoutOwner(source));
+}
+
+/**
+ * Whether a layer's source hugs an axis around nested instances, following the chain of instances
+ * between to its layout owner, as a nested instance's source is the instance its main holds (rule 32).
+ * An instance along the way that holds its own length on the axis stops the hug.
+ */
+function hugsThrough(
+  source: NodeState,
+  axis: Axis,
+  hugs: (owner: NodeState, axis: Axis) => boolean = hugsInstances
+): boolean {
+  let node = source;
+  for (let next = sourceOf(node); node.type === "INSTANCE" && next !== undefined; next = sourceOf(node)) {
+    if (node.overridden.has(lengthOverride(axis))) {
+      return false;
+    }
+    node = next;
+  }
+  return hugs(node, axis);
+}
+
+/**
+ * Apply a write on a layer and, on a hugging instance whose size it changes, record the new size it
+ * hugs and list its `width` and `height`, which it still hugs: on 2026-11-20 `itemSpacing = 7` on an
+ * instance of a hugging row listed both beside `itemSpacing` (FM3). Any other layer applies alone.
+ */
+export function noteHugChange(state: NodeState, apply: () => void): void {
+  const source = sourceOf(state);
+  if (state.type !== "INSTANCE" || source === undefined) {
+    apply();
+    return;
+  }
+  // FM3's row hugged two fixed frames, which the fake measures here though it lays out no such frame.
+  const hug = (axis: Axis): number | undefined =>
+    state.overridden.has(lengthOverride(axis)) || !hugsThrough(source, axis, hugsAxis)
+      ? undefined
+      : huggedLength(state, axis, layoutOwner(source));
+  const before = [hug("HORIZONTAL"), hug("VERTICAL")];
+  apply();
+  const [width, height] = [hug("HORIZONTAL"), hug("VERTICAL")];
+  if (width === before[0] && height === before[1]) {
+    return;
+  }
+  state.width = width ?? state.width;
+  state.height = height ?? state.height;
+  state.overridden.add("hugged");
 }
 
 /** The node a layer takes its layout from: the end of its chain of sources, its main's own layer. */
@@ -768,10 +849,73 @@ function layoutOwner(state: NodeState): NodeState {
  */
 function boundLength(state: NodeState, consumer: NodeState, axis: Axis): number | undefined {
   const field = axis === "HORIZONTAL" ? "width" : "height";
-  const bound = state.bindings.get(field);
+  const bound = lengthBinding(state, field);
   return bound === undefined || keepsHug(state, field)
     ? undefined
     : f32(resolveNumber(state.file, variableState(state.file, bound), consumer));
+}
+
+/**
+ * The variable a layer binds a length to: its own, or a sublayer's main layer's as that stands, until
+ * the sublayer holds its own length (rule 8). An instance's goes through `boundOfInstance`.
+ */
+function lengthBinding(state: NodeState, field: "width" | "height"): string | undefined {
+  for (let node = state; ;) {
+    const own = node.bindings.get(field);
+    const source = node.type === "INSTANCE" ? undefined : sourceOf(node);
+    if (own !== undefined || source === undefined || node.overridden.has(numberOwner(field))) {
+      return own;
+    }
+    node = source;
+  }
+}
+
+/**
+ * The length a layer is given on an axis before any layout: a bound one in its modes, an instance's
+ * through its main, or the one it stores (rule 8).
+ */
+function givenLength(state: NodeState, axis: Axis): number {
+  return boundLength(state, state, axis) ?? boundOfInstance(state, axis) ?? storedLength(state, axis);
+}
+
+/**
+ * The length a layer stores on an axis: its own, or a sublayer's main layer's as that stands until
+ * the sublayer holds its own length (rule 8), which a resize, a rescale or a text measure gives it.
+ */
+function storedLength(state: NodeState, axis: Axis): number {
+  const field = lengthOverride(axis);
+  let node = state;
+  for (let source = sourceOf(node); ; source = sourceOf(node)) {
+    if (node.type === "INSTANCE" || source === undefined || node.overridden.has(numberOwner(field))) {
+      return axis === "HORIZONTAL" ? node.width : node.height;
+    }
+    node = source;
+  }
+}
+
+/**
+ * The length a sublayer hugs on an axis its main layer hugs around nested instances, measured from
+ * its own children and its numbers in its modes, until it holds its own length (rules 8, 32).
+ */
+function sublayerHug(state: NodeState, axis: Axis): number | undefined {
+  if (state.type === "INSTANCE" || state.mirrorOf === undefined) {
+    return undefined;
+  }
+  const owner = layoutOwner(state);
+  return state.overridden.has(numberOwner(lengthOverride(axis))) || !hugsInstances(owner, axis)
+    ? undefined
+    : huggedLength(state, axis, owner);
+}
+
+/** Whether a frame or component of the file's own is an auto layout that hugs an axis without wrapping. */
+function hugsAxis(state: NodeState, axis: Axis): boolean {
+  return (
+    (state.type === "FRAME" || state.type === "COMPONENT") &&
+    state.mirrorOf === undefined &&
+    isAutoLayout(state) &&
+    state.layoutWrap !== "WRAP" &&
+    state[modeOn(state, axis)] === "AUTO"
+  );
 }
 
 /**
@@ -781,11 +925,7 @@ function boundLength(state: NodeState, consumer: NodeState, axis: Axis): number 
  */
 function hugsInstances(state: NodeState, axis: Axis): boolean {
   return (
-    (state.type === "FRAME" || state.type === "COMPONENT") &&
-    state.mirrorOf === undefined &&
-    isAutoLayout(state) &&
-    state.layoutWrap !== "WRAP" &&
-    state[modeOn(state, axis)] === "AUTO" &&
+    hugsAxis(state, axis) &&
     childrenOf(state).some(
       (child) =>
         child.type === "INSTANCE" &&
@@ -827,7 +967,7 @@ function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): 
  * its top and bottom padding.
  */
 function wrapHeight(state: NodeState): number {
-  const room = state.width - inset(state, "left") - inset(state, "right");
+  const room = lengthOn(state, "HORIZONTAL") - inset(state, "left") - inset(state, "right");
   const spacing = shownNumber(state, "itemSpacing");
   const rows: number[] = [];
   let rowWidth = 0;
@@ -896,15 +1036,18 @@ export function lengthOn(state: NodeState, axis: Axis): number {
   ) {
     return wrapHeight(state);
   }
-  const given =
-    boundLength(state, state, axis) ??
-    boundOfInstance(state, axis) ??
-    (axis === "HORIZONTAL" ? state.width : state.height);
+  // An instance measured for the first time, or in modes other than those it last settled in, settles
+  // first; a literal edit to its main waits for its next settle (rules 8, 32, PI).
+  if (state.type === "INSTANCE" && sourceOf(state) !== undefined && state.settledModes !== modeKey(state)) {
+    settled(state);
+  }
+  const given = boundLength(state, state, axis) ?? boundOfInstance(state, axis) ?? storedLength(state, axis);
   const grid =
     state.layoutMode === "GRID" && state.type !== "INSTANCE" && state[modeOn(state, axis)] === "AUTO"
       ? huggedGrid(state, axis)
       : undefined;
-  const own = grid ?? (hugsInstances(state, axis) ? huggedLength(state, axis) : given);
+  const own =
+    grid ?? (hugsInstances(state, axis) ? huggedLength(state, axis) : (sublayerHug(state, axis) ?? given));
   const parent = state.parent;
   // A layer that fills its grid cell is as long as the cell's track (rule 61).
   if (parent?.layoutMode === "GRID" && fills(state, axis) && !isHidden(state)) {
@@ -1097,11 +1240,16 @@ function gridTracks(grid: NodeState, axis: Axis): number[] {
   const padding = across
     ? inset(grid, "left") + inset(grid, "right")
     : inset(grid, "top") + inset(grid, "bottom");
+  if (!lengths.includes(undefined)) {
+    return lengths.map((length) => length ?? 0);
+  }
   const set = lengths.reduce<number>((sum, length) => sum + (length ?? 0), 0);
-  const room = (across ? grid.width : grid.height) - padding - set - gap * Math.max(0, sizes.length - 1);
+  // FLEX tracks share the length the grid is given, by its parent too (rule 8). A grid with a FLEX
+  // track does not hug that axis, so the length is no measure of these tracks.
+  const room = lengthOn(grid, axis) - padding - set - gap * Math.max(0, sizes.length - 1);
   const shares = sizes.reduce((sum, size) => sum + (size.type === "FLEX" ? (size.value ?? 1) : 0), 0);
   // No probe has shown how Figma shares out FLEX tracks whose shares sum to 0.
-  if (shares === 0 && lengths.includes(undefined)) {
+  if (shares === 0) {
     throw new Error("The fake Figma file does not model FLEX tracks whose shares sum to 0.");
   }
   return lengths.map((length, track) => length ?? (Math.max(0, room) * (sizes[track]?.value ?? 1)) / shares);
@@ -1180,10 +1328,12 @@ export function setLimit(state: NodeState, field: LimitField, value: number | nu
 function setNumberField(state: NodeState, field: VariableBindableNodeField, value: number): void {
   switch (field) {
     case "width":
-      resize(state, value, state.height);
+      applySize(state, value, givenLength(state, "VERTICAL"));
+      ownLength(state, "width");
       return;
     case "height":
-      resize(state, state.width, value);
+      applySize(state, givenLength(state, "HORIZONTAL"), value);
+      ownLength(state, "height");
       return;
     case "minWidth":
     case "maxWidth":
@@ -1199,49 +1349,81 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
   }
 }
 
-/**
- * The numbers a layer shows on the fields a binding's targets cover, before a write makes them its
- * own: each target, and all four corners where one is a corner, as the corners turn its own
- * together (rule 38).
- */
+/** The numbers a layer shows on the stored number fields among these, before a write makes them its own. */
 export function keptNumbers(
   state: NodeState,
   targets: readonly VariableBindableNodeField[]
-): [StoredNumberField, number][] {
-  const fields = targets.some((target) => CORNERS.has(target)) ? [...targets, ...CORNERS] : targets;
-  return [...new Set(fields)].filter(isStoredNumber).flatMap((field): [StoredNumberField, number][] => {
-    const value = shownNumber(state, field);
-    return value === null ? [] : [[field, value]];
-  });
+): [StoredNumberField, number | null][] {
+  return targets
+    .filter(isStoredNumber)
+    .map((field): [StoredNumberField, number | null] => [field, shownNumber(state, field)]);
 }
 
-/** Bind or unbind a field of a layer that is not text. */
+/**
+ * Make the fields a binding or an unbind sets the layer's own, once it has set them: a padding
+ * listed as an override from then on (rule 64), and each number and a sublayer's length apart from
+ * its source's (rule 8).
+ */
+function ownTargets(state: NodeState, targets: readonly VariableBindableNodeField[]): void {
+  for (const target of targets) {
+    if (Object.hasOwn(PADDING_SIDES, target)) {
+      markOverride(state, target);
+    }
+    if (
+      isStoredNumber(target) ||
+      (state.type !== "INSTANCE" && (target === "width" || target === "height"))
+    ) {
+      ownNumber(state, target);
+    }
+  }
+}
+
+/**
+ * Bind or unbind a field of a layer that is not text. A number's binding lists a hugging
+ * instance's lengths where it changes its size, as a write does (FM3), and a whole `strokeWeight`
+ * lists `strokeWeight` beside its sides.
+ */
 export function bindNodeField(
   state: NodeState,
   field: VariableBindableNodeField,
   variable: Variable | null
 ): void {
+  if (!bindingTargets(field).some(isStoredNumber)) {
+    bindField(state, field, variable);
+    return;
+  }
+  noteHugChange(state, () => bindField(state, field, variable));
+  if (field === "strokeWeight") {
+    markOverride(state, "strokeWeight");
+  }
+}
+
+function bindField(state: NodeState, field: VariableBindableNodeField, variable: Variable | null): void {
   const targets = bindingTargets(field);
   const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
-  // An unbind keeps the numbers the layer shows as its own (rule 8), the four corners together.
+  const axis = field === "width" ? "HORIZONTAL" : field === "height" ? "VERTICAL" : undefined;
+  // An unbind keeps the numbers and the length the layer shows as its own (rule 8).
   const kept = variable === null ? keptNumbers(state, targets) : [];
-  // A padding the layer binds or unbinds is its own from then on (rule 64).
-  for (const target of targets) {
-    if (Object.hasOwn(PADDING_SIDES, target)) {
-      markOverride(state, target);
-    }
-  }
   if (variable === null) {
     if (length !== undefined) {
       // An instance's own unbind keeps the length it shows, from then on (rule 56, G19).
       settled(state);
     }
+    // The length the layer shows, laid out and settled, before the binding goes.
+    const shownLength = axis === undefined ? undefined : lengthOn(state, axis);
     for (const target of targets) {
       state.bindings.delete(target);
     }
+    ownTargets(state, targets);
     for (const [target, value] of kept) {
       storeNumber(state, target, value);
-      ownNumber(state, target);
+    }
+    if (shownLength !== undefined) {
+      if (axis === "HORIZONTAL") {
+        state.width = shownLength;
+      } else {
+        state.height = shownLength;
+      }
     }
     if (length !== undefined) {
       state.unboundLengths.add(length);
@@ -1249,9 +1431,7 @@ export function bindNodeField(
         state.overridden.add(field);
       }
     }
-    if (targets.some((target) => CORNERS.has(target))) {
-      noteOverride(state, "radii");
-    }
+    listNumbers(state, targets.filter(isStoredNumber));
     write(state, `unbind ${field}`);
     return;
   }
@@ -1267,9 +1447,8 @@ export function bindNodeField(
     }
     state.bindings.set(target, bound.id);
   }
-  if (targets.some((target) => CORNERS.has(target))) {
-    noteOverride(state, "radii");
-  }
+  ownTargets(state, targets);
+  listNumbers(state, targets.filter(isStoredNumber));
   write(state, `bind ${field}`);
 }
 

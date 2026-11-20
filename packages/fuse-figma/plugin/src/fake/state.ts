@@ -241,6 +241,11 @@ export type NodeState = {
    * rather than through a resize of its own, so a swap gives it the new component's size (rule 56).
    */
   heldByModes: boolean;
+  /**
+   * The modes an instance read when it last settled its size from its main (rules 8, 32), so a
+   * parent measures it live only once its modes have changed since.
+   */
+  settledModes: string | undefined;
   /** The lengths an instance unbound itself, which no longer show its source's binding (rule 56). */
   readonly unboundLengths: Set<"width" | "height">;
   characters: string;
@@ -478,19 +483,21 @@ export function isStoredNumber(field: VariableBindableNodeField): field is Store
   return STORED_NUMBER_FIELDS.has(field);
 }
 
+/** The prefix of the keys in `overridden` that mark a field a layer holds as its own, which `overrides` never lists. */
+const OWN_PREFIX = "own ";
+
 /**
- * The key in `overridden` that makes a stored number a layer's own, so it stops showing its
- * source's (rules 8, 38, 64): a padding side's own name, `radii` for the four corners and
- * `strokeWeights` for the four sides, which a write sets together, and an unlisted key for the rest.
+ * The key in `overridden` that makes a field a layer's own, one side or corner at a time, so the
+ * layer stops showing its source's number or binding there (rules 8, 38, 64). `overrides` lists a
+ * corner or a padding under its own key, apart from this one.
  */
-export function numberOwner(field: StoredNumberField): string {
-  if (CORNERS.has(field)) {
-    return "radii";
-  }
-  if (bindingTargets("strokeWeight").includes(field)) {
-    return "strokeWeights";
-  }
-  return field.startsWith("padding") ? field : `own ${field}`;
+export function numberOwner(field: StoredNumberField | "width" | "height"): string {
+  return `${OWN_PREFIX}${field}`;
+}
+
+/** Whether a key in `overridden` marks a field the layer holds as its own (`numberOwner`). */
+export function isOwnKey(key: string): boolean {
+  return key.startsWith(OWN_PREFIX);
 }
 
 /** The value the characters share, or `figma.mixed` when they differ (rule 10). */
@@ -522,6 +529,7 @@ export type UncopiedField =
   | "overridden"
   | "unboundLengths"
   | "heldByModes"
+  | "settledModes"
   | "properties"
   | "propertyValues"
   | "exposedInstance"

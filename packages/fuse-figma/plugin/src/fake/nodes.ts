@@ -43,6 +43,7 @@ import {
   bindNodeField,
   bindTextField,
   keptNumbers,
+  noteHugChange,
   constraintsOf,
   fills,
   lengthOn,
@@ -65,8 +66,8 @@ import {
   sizingOn,
   turnedOrigin,
 } from "./layout.ts";
-import { modeFor, ownNumber, shownNumber, storeNumber } from "./modes.ts";
-import { isHidden, markOverride, noteOverride, shown } from "./overrides.ts";
+import { modeFor, ownNumber, shownNumber } from "./modes.ts";
+import { isHidden, listNumbers, markOverride, noteOverride, shown } from "./overrides.ts";
 import {
   heldColorBindings,
   storeEffect,
@@ -77,6 +78,8 @@ import {
 } from "./paints.ts";
 import {
   bindingTargets,
+  isOwnKey,
+  isStoredNumber,
   componentKey,
   componentOf,
   f32,
@@ -263,14 +266,19 @@ function pinMode(state: NodeState, collection: VariableCollection, modeId: strin
 }
 
 /**
- * Make the numbers a literal write sets the layer's own: drop the bindings it replaces, as
- * `paddingLeft = 7` unbound a bound padding (rule 8, FM2), and stop showing its source's.
+ * Make a literal write of numbers: apply it, drop the bindings it replaces, as `paddingLeft = 7`
+ * unbound a bound padding (rule 8, FM2), make the fields the layer's own and list them (FM3), and
+ * list the lengths of a hugging instance whose size the write changed (`noteHugChange`).
  */
-function unbindWritten(state: NodeState, ...fields: readonly StoredNumberField[]): void {
-  for (const field of fields) {
-    state.bindings.delete(field);
-    ownNumber(state, field);
-  }
+function writeNumbers(state: NodeState, fields: () => readonly StoredNumberField[]): void {
+  noteHugChange(state, () => {
+    const written = fields();
+    for (const field of written) {
+      state.bindings.delete(field);
+      ownNumber(state, field);
+    }
+    listNumbers(state, written);
+  });
 }
 
 /** The four corner fields, in the order `radii` holds them. */
@@ -289,34 +297,35 @@ function sharedNumber(
   state: NodeState,
   fields: readonly VariableBindableNodeField[]
 ): number | PluginAPI["mixed"] {
-  const values = new Set(keptNumbers(state, fields).map(([, value]) => value));
+  const values = new Set(keptNumbers(state, fields).flatMap(([, value]) => (value === null ? [] : [value])));
   const [value, ...others] = values;
   return value === undefined || others.length > 0 ? MIXED : value;
 }
 
-/** Store the numbers a layer shows on these fields, so a write that makes them its own keeps them. */
-function holdShown(state: NodeState, fields: readonly VariableBindableNodeField[]): void {
-  for (const [field, value] of keptNumbers(state, fields)) {
-    storeNumber(state, field, value);
-  }
-}
+/** The field of each stroke side. */
+const STROKE_SIDES = {
+  top: "strokeTopWeight",
+  right: "strokeRightWeight",
+  bottom: "strokeBottomWeight",
+  left: "strokeLeftWeight",
+} as const;
 
 /**
- * Write corners as literals (rules 8, 37): keep the corners the layer shows, drop the bindings the
- * write replaces, then note the override, so a literal equal to a bound corner its source shows
- * still lists `cornerRadius` and stops following the source.
+ * Write corners as literals (rules 8, 37): drop the bindings the write replaces and make each
+ * written corner the layer's own, then settle them against the source, so a literal equal to a
+ * bound corner its source shows still lists `cornerRadius` and stops following the source.
  */
 function writeCorners(
   state: NodeState,
   corners: readonly (typeof CORNER_FIELDS)[number][],
   radius: number
 ): void {
-  holdShown(state, corners);
-  for (const corner of corners) {
-    state.bindings.delete(corner);
-    state.radii[CORNER_KEYS[corner]] = radius;
-  }
-  noteOverride(state, "radii");
+  writeNumbers(state, () => {
+    for (const corner of corners) {
+      state.radii[CORNER_KEYS[corner]] = radius;
+    }
+    return corners;
+  });
 }
 
 /** The members every layer has. */
@@ -513,8 +522,10 @@ class FakeSceneNode extends FakeBaseNode {
   set opacity(value: number) {
     const state = live(this);
     write(state, "opacity");
-    state.opacity = f32(value);
-    unbindWritten(state, "opacity");
+    writeNumbers(state, () => {
+      state.opacity = f32(value);
+      return ["opacity"];
+    });
   }
 
   get constraints(): Constraints {
@@ -566,8 +577,10 @@ class FakeSceneNode extends FakeBaseNode {
 
   set minWidth(value: number | null) {
     const state = live(this);
-    setLimit(state, "minWidth", value);
-    unbindWritten(state, "minWidth");
+    writeNumbers(state, () => {
+      setLimit(state, "minWidth", value);
+      return ["minWidth"];
+    });
   }
 
   get maxWidth(): number | null {
@@ -576,8 +589,10 @@ class FakeSceneNode extends FakeBaseNode {
 
   set maxWidth(value: number | null) {
     const state = live(this);
-    setLimit(state, "maxWidth", value);
-    unbindWritten(state, "maxWidth");
+    writeNumbers(state, () => {
+      setLimit(state, "maxWidth", value);
+      return ["maxWidth"];
+    });
   }
 
   get minHeight(): number | null {
@@ -586,8 +601,10 @@ class FakeSceneNode extends FakeBaseNode {
 
   set minHeight(value: number | null) {
     const state = live(this);
-    setLimit(state, "minHeight", value);
-    unbindWritten(state, "minHeight");
+    writeNumbers(state, () => {
+      setLimit(state, "minHeight", value);
+      return ["minHeight"];
+    });
   }
 
   get maxHeight(): number | null {
@@ -596,8 +613,10 @@ class FakeSceneNode extends FakeBaseNode {
 
   set maxHeight(value: number | null) {
     const state = live(this);
-    setLimit(state, "maxHeight", value);
-    unbindWritten(state, "maxHeight");
+    writeNumbers(state, () => {
+      setLimit(state, "maxHeight", value);
+      return ["maxHeight"];
+    });
   }
 
   get boundVariables(): FrameNode["boundVariables"] {
@@ -700,9 +719,13 @@ class FakeFrameLikeNode extends FakeSceneNode {
     }
     write(state, "strokeWeight");
     const weight = f32(value);
-    state.strokeWeights = { top: weight, right: weight, bottom: weight, left: weight };
-    state.strokeWeightWritten = true;
-    unbindWritten(state, "strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight");
+    writeNumbers(state, () => {
+      state.strokeWeights = { top: weight, right: weight, bottom: weight, left: weight };
+      state.strokeWeightWritten = true;
+      return Object.values(STROKE_SIDES);
+    });
+    // A whole write lists `strokeWeight` beside the four sides (FM3).
+    markOverride(state, "strokeWeight");
   }
 
   get strokeTopWeight(): number {
@@ -711,10 +734,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeTopWeight(value: number) {
     const state = live(this);
-    holdShown(state, bindingTargets("strokeWeight"));
-    writeStrokeSide(state, "top", value);
+    writeNumbers(state, () => writeStrokeSide(state, "top", value).map((written) => STROKE_SIDES[written]));
     write(state, "strokeTopWeight");
-    unbindWritten(state, "strokeTopWeight");
   }
 
   get strokeRightWeight(): number {
@@ -723,10 +744,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeRightWeight(value: number) {
     const state = live(this);
-    holdShown(state, bindingTargets("strokeWeight"));
-    writeStrokeSide(state, "right", value);
+    writeNumbers(state, () => writeStrokeSide(state, "right", value).map((written) => STROKE_SIDES[written]));
     write(state, "strokeRightWeight");
-    unbindWritten(state, "strokeRightWeight");
   }
 
   get strokeBottomWeight(): number {
@@ -735,10 +754,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeBottomWeight(value: number) {
     const state = live(this);
-    holdShown(state, bindingTargets("strokeWeight"));
-    writeStrokeSide(state, "bottom", value);
+    writeNumbers(state, () =>
+      writeStrokeSide(state, "bottom", value).map((written) => STROKE_SIDES[written])
+    );
     write(state, "strokeBottomWeight");
-    unbindWritten(state, "strokeBottomWeight");
   }
 
   get strokeLeftWeight(): number {
@@ -747,10 +766,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeLeftWeight(value: number) {
     const state = live(this);
-    holdShown(state, bindingTargets("strokeWeight"));
-    writeStrokeSide(state, "left", value);
+    writeNumbers(state, () => writeStrokeSide(state, "left", value).map((written) => STROKE_SIDES[written]));
     write(state, "strokeLeftWeight");
-    unbindWritten(state, "strokeLeftWeight");
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {
@@ -981,8 +998,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "paddingTop");
     markOverride(state, "paddingTop");
-    state.padding.top = f32(value);
-    unbindWritten(state, "paddingTop");
+    writeNumbers(state, () => {
+      state.padding.top = f32(value);
+      return ["paddingTop"];
+    });
   }
 
   get paddingRight(): number {
@@ -993,8 +1012,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "paddingRight");
     markOverride(state, "paddingRight");
-    state.padding.right = f32(value);
-    unbindWritten(state, "paddingRight");
+    writeNumbers(state, () => {
+      state.padding.right = f32(value);
+      return ["paddingRight"];
+    });
   }
 
   get paddingBottom(): number {
@@ -1005,8 +1026,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "paddingBottom");
     markOverride(state, "paddingBottom");
-    state.padding.bottom = f32(value);
-    unbindWritten(state, "paddingBottom");
+    writeNumbers(state, () => {
+      state.padding.bottom = f32(value);
+      return ["paddingBottom"];
+    });
   }
 
   get paddingLeft(): number {
@@ -1017,8 +1040,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "paddingLeft");
     markOverride(state, "paddingLeft");
-    state.padding.left = f32(value);
-    unbindWritten(state, "paddingLeft");
+    writeNumbers(state, () => {
+      state.padding.left = f32(value);
+      return ["paddingLeft"];
+    });
   }
 
   get gridItemsPositioning(): GridLayoutMixin["gridItemsPositioning"] {
@@ -1075,8 +1100,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set gridColumnGap(value: number) {
     const state = live(this);
-    setGap(state, "columnGap", value);
-    unbindWritten(state, "gridColumnGap");
+    writeNumbers(state, () => {
+      setGap(state, "columnGap", value);
+      return ["gridColumnGap"];
+    });
   }
 
   get gridRowGap(): number {
@@ -1085,8 +1112,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set gridRowGap(value: number) {
     const state = live(this);
-    setGap(state, "rowGap", value);
-    unbindWritten(state, "gridRowGap");
+    writeNumbers(state, () => {
+      setGap(state, "rowGap", value);
+      return ["gridRowGap"];
+    });
   }
 
   get itemSpacing(): number {
@@ -1096,8 +1125,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set itemSpacing(value: number) {
     const state = live(this);
     write(state, "itemSpacing");
-    state.itemSpacing = f32(value);
-    unbindWritten(state, "itemSpacing");
+    writeNumbers(state, () => {
+      state.itemSpacing = f32(value);
+      return ["itemSpacing"];
+    });
   }
 
   get counterAxisSpacing(): number | null {
@@ -1107,8 +1138,10 @@ class FakeFrameLikeNode extends FakeSceneNode {
   set counterAxisSpacing(value: number | null) {
     const state = live(this);
     write(state, "counterAxisSpacing");
-    state.counterAxisSpacing = value === null ? null : f32(value);
-    unbindWritten(state, "counterAxisSpacing");
+    writeNumbers(state, () => {
+      state.counterAxisSpacing = value === null ? null : f32(value);
+      return ["counterAxisSpacing"];
+    });
   }
 }
 
@@ -1134,6 +1167,9 @@ class FakeComponent extends FakeFrameLikeNode {
     instance.bindings.clear();
     instance.propertyReferences = null;
     placeOnCurrentPage(main.file, instance);
+    // A new instance records its size and modes together, so only a change of modes remeasures it
+    // before a read settles it (rules 8, 32, PI).
+    settled(instance);
     write(instance, `create an instance of ${main.id}`);
     const node = instance.exposed;
     if (node.type !== "INSTANCE") {
@@ -1293,7 +1329,7 @@ class FakeInstance extends FakeFrameLikeNode {
   get overrides(): { id: string; overriddenFields: NodeChangeProperty[] }[] {
     const entries: { id: string; overriddenFields: NodeChangeProperty[] }[] = [];
     const visit = (state: NodeState): void => {
-      const fields = [...state.overridden].flatMap((field) => OVERRIDE_FIELDS.get(field) ?? []);
+      const fields = [...new Set([...state.overridden].flatMap((field) => OVERRIDE_FIELDS.get(field) ?? []))];
       if (fields.length > 0) {
         entries.push({ id: state.id, overriddenFields: fields });
       }
@@ -1324,6 +1360,21 @@ class FakeInstance extends FakeFrameLikeNode {
       for (const field of OVERRIDE_FIELDS.keys()) {
         if (!kept.has(field)) {
           layer.overridden.delete(field);
+        }
+      }
+      // The numbers and the bindings a layer holds as its own go too, so it shows its source's again
+      // (rules 8, 64). An instance's own length binding stays with its lengths (rule 56).
+      if (source !== undefined) {
+        for (const key of [...layer.overridden].filter(isOwnKey)) {
+          layer.overridden.delete(key);
+        }
+        for (const field of [...layer.bindings.keys()]) {
+          if (
+            isStoredNumber(field) ||
+            (layer.type !== "INSTANCE" && (field === "width" || field === "height"))
+          ) {
+            layer.bindings.delete(field);
+          }
         }
       }
       for (const child of childrenOf(layer)) {
@@ -1447,6 +1498,7 @@ class FakeText extends FakeSceneNode {
     // A text that hugs its characters takes their width, and an empty one is 0 wide (rule 31).
     if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
       state.width = measuredWidth(value, first.fontSize);
+      ownNumber(state, "width");
     }
   }
 
