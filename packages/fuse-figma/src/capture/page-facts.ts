@@ -134,6 +134,9 @@ import type { PseudoPaint } from "./pseudo-boxes.ts";
  * - `paintsLast`: a child of the root whose positive `z-index` paints it over every other box of the
  *   root, as the root's last child, in every mode of {@link EVERY_MODE} once its faces have loaded,
  *   as `paints-last.ts` decides.
+ * - `identityTransform`: an element whose `transform` computes to the identity matrix in every mode
+ *   of {@link EVERY_MODE} once its faces have loaded, as a translation by a `calc()` of zero does.
+ *   Chromium computes a transform to a matrix, and to `none` only where the element sets none.
  * - `oneLength`: on an absolute element below the root, the axes along which its border box is one
  *   length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have
  *   loaded.
@@ -938,6 +941,10 @@ const MEASURE_IN_PAGE = `async function () {
   const paintsLast = (${paintsLast.toString()});
   const raised = elements.filter(({ element }) => paintsLast(element, root));
   for (const { path } of await holdsInEveryMode(raised, (each) => paintsLast(each, root))) { put(path, "paintsLast", true); }
+  // An element that sets a transform which computes to the identity matrix, in every mode.
+  const identityMatrix = (element) => ["matrix(1, 0, 0, 1, 0, 0)", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"].includes(getComputedStyle(element).transform);
+  const unmoved = elements.filter(({ element }) => identityMatrix(element));
+  for (const { path } of await holdsInEveryMode(unmoved, identityMatrix)) { put(path, "identityTransform", true); }
   // The lengths of each absolute element below the root in every mode, kept on the axes where they agree.
   const absolutes = elements
     .filter(({ element }) => element !== root && getComputedStyle(element).position === "absolute")

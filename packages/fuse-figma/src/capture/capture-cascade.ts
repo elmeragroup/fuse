@@ -2044,5 +2044,6 @@ function measuredBox(
     oneLength: new Set(facts?.oneLength ?? []),
     spansBeside: facts?.spansBeside,
     paintsLast: facts?.paintsLast === true,
+    identityTransform: facts?.identityTransform === true,
   };
 }

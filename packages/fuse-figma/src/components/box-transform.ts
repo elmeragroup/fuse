@@ -11,6 +11,12 @@ import type { LayerStyle } from "./layer-style";
 /** The properties that transform a box about its `transform-origin`. */
 const TRANSFORMS = ["transform", "translate", "rotate", "scale"] as const;
 
+/** What the capture measured of a box's transform. */
+type MeasuredTransform = {
+  /** The box's `transform` computes to the identity matrix in every mode. */
+  readonly identityTransform: boolean;
+};
+
 /**
  * Drop a box's `transform-origin` where the box sets no transform at rest, as a popup's origin only
  * places the zoom of its enter animation. The origin moves nothing without a transform (CSS
@@ -18,9 +24,10 @@ const TRANSFORMS = ["transform", "translate", "rotate", "scale"] as const;
  * scales a layer about its center.
  *
  * @param style - The box's style.
+ * @param measured - What the capture measured of the box, undefined for a box no capture measured.
  */
-export function dropIdleOrigin(style: LayerStyle): void {
-  const identity = dropIdentityTransform(style);
+export function dropIdleOrigin(style: LayerStyle, measured: MeasuredTransform | undefined): void {
+  const identity = dropIdentityTransform(style, measured);
   if (TRANSFORMS.some((property) => style.has(property) && !(property === "transform" && identity))) {
     return;
   }
@@ -77,24 +84,33 @@ function isIdentityTransform(value: string): boolean {
 }
 
 /**
- * Drop a box's `transform` where it moves nothing at rest, as {@link isIdentityTransform} says, so
- * Figma's untransformed layer draws it.
+ * Drop a box's `transform` where it moves nothing at rest, so Figma's untransformed layer draws it:
+ * where its value is one {@link isIdentityTransform} reads as the identity, or where the capture
+ * measured it as the identity matrix in every mode. Chromium computes the matrix from any
+ * expression, as Toast's root nests its stack index in `calc()` and `max()`, which the value's
+ * reading does not evaluate, and which multiplies the root's height by 0 at the front of the stack.
  *
  * @param style - The box's style.
+ * @param measured - What the capture measured of the box, undefined for a box no capture measured.
  * @returns Whether the box's transform is the identity, false where it sets none.
  */
-function dropIdentityTransform(style: LayerStyle): boolean {
+function dropIdentityTransform(style: LayerStyle, measured: MeasuredTransform | undefined): boolean {
   const value = style.resolved("transform");
-  if (value === undefined || !isIdentityTransform(value)) {
+  if (value === undefined) {
+    return false;
+  }
+  const detail = isIdentityTransform(value)
+    ? "the transform moves nothing at rest, as an untransformed layer draws"
+    : measured?.identityTransform === true
+      ? "the capture measured the transform as the identity in every mode, as an untransformed layer draws"
+      : undefined;
+  if (detail === undefined) {
     return false;
   }
   style.read(
     "transform",
     (read) => read,
-    () => ({
-      outcome: "dropped",
-      detail: "the transform moves nothing at rest, as an untransformed layer draws",
-    }),
+    () => ({ outcome: "dropped", detail }),
     []
   );
   return true;

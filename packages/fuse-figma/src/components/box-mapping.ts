@@ -485,7 +485,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     variant,
     cascade.measured?.bordersCollapse === true
   );
-  dropIdleOrigin(reader);
+  dropIdleOrigin(reader, cascade.measured);
   const opacity = reader.read(
     "opacity",
     evaluateNumber,
