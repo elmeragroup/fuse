@@ -788,17 +788,23 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     const index = flowing.indexOf(part);
     const fits =
       index !== -1 &&
-      fitsRowEnd(holder, flowingStyles, index, {
-        growing,
-        frame: part.kind === "frame" && part.pseudo !== true,
-        tag: part.cascade.elementTag,
-        layer: layerIndex(index),
-        beside: [
-          ...start.map(besideIcon),
-          ...(label === undefined ? [] : [{ kind: "label" } as const]),
-          ...end.map(besideIcon),
-        ],
-      });
+      fitsRowEnd(
+        holder,
+        flowingStyles,
+        index,
+        {
+          growing,
+          frame: part.kind === "frame" && part.pseudo !== true,
+          tag: part.cascade.elementTag,
+          layer: layerIndex(index),
+          beside: [
+            ...start.map(besideIcon),
+            ...(label === undefined ? [] : [{ kind: "label" } as const]),
+            ...end.map(besideIcon),
+          ],
+        },
+        context.variables
+      );
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
       const room = rowRoom(inside, across?.[index], minimum);

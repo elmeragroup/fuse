@@ -40,6 +40,9 @@
  *   columns, around `Short` and around the sentence alike (HTML §4.10.11). A `<button>` in the
  *   paragraph's place is 90.7px and 264px wide, as the paragraph is. A label that centres a
  *   16px control and a 50px box that keeps its width, 8px apart, is 74px wide.
+ *   Measured on 2026-11-20: with `margin: 0` the paragraph is the same 264px. Beside a 32px control whose width reads a
+ *   variable it is 256px, and beside the 24px control with a 12px right margin 252px, both the room
+ *   a fill takes. A -4px right margin on the control gives it 268px, which no padding draws.
  * - The same rule beside a `shrink-0` 16px icon in the control's place, as Toast's status icon sits
  *   before its text column: the icon keeps its width, so the room is the row's less it. An icon that
  *   can shrink gives back part of the overflow, as the control does, so the room is unknown. A 100px
@@ -64,7 +67,10 @@ const FONTS = {
   ]),
 };
 
-/** The font family, and a density length that spans 200px to 400px across its modes. */
+/**
+ * The font family, a density length that spans 200px to 400px across its modes, and a control
+ * height that spans 24px to 40px, as an `icon-sm` Icon button's square size reads `--control-h-sm`.
+ */
 const WITH_DENSITY = {
   variables: makeVariableIndex([
     { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
@@ -73,6 +79,12 @@ const WITH_DENSITY = {
       webSyntax: "var(--column-min)",
       minimum: 200,
       maximum: 400,
+    },
+    {
+      ref: { collection: "Fuse density", name: "control-h" },
+      webSyntax: "var(--control-h)",
+      minimum: 24,
+      maximum: 40,
     },
   ]),
 };
@@ -474,6 +486,12 @@ describe("a flex row's last part that holds its own text, or sits alone in its r
     ["beside a control", { control: "size-[24px] shrink-0" }],
     ["alone in its row", {}],
     ["as a button beside a control", { control: "size-[24px] shrink-0", tag: "button" }],
+    ["with a zero margin across beside a control", { control: "size-[24px] shrink-0", note: "m-0" }],
+    [
+      "beside a control whose width binds a synced variable",
+      { control: "w-[var(--control-h)] h-[24px] shrink-0" },
+    ],
+    ["beside a control with a margin across", { control: "size-[24px] shrink-0 mr-[12px]" }],
   ])("draws the text part %s as a fill whose text fills it", async (_case, classes) => {
     expect(await noteOf(classes)).toEqual({ note: FILL, text: FILL, unmapped: [] });
   });
@@ -482,6 +500,10 @@ describe("a flex row's last part that holds its own text, or sits alone in its r
   it.each([
     ["the row hugs it", { row: "flex w-fit" }],
     ["it sets a minimum width of its own", { note: "min-w-[400px]" }],
+    [
+      "the control's negative margin gives it room no padding draws",
+      { control: "size-[24px] shrink-0 -mr-[4px]" },
+    ],
   ])("keeps the text part hugging where %s", async (_case, classes) => {
     expect((await noteOf(classes)).note).toEqual(HUG);
   });
