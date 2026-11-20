@@ -550,12 +550,12 @@ export type NestedPropertiesSpec = {
 };
 
 /**
- * A paint, stroke weight, corner, shadow or alignment an instance layer overrides on the inner
+ * A paint, stroke weight, font style, corner, shadow or alignment an instance layer overrides on the inner
  * variant's root, at the empty `path`, or on a layer below it, at the keys of the layers from the root
  * down. `fill`, `strokeColor`, `strokeSides`, `cornerRadius` and `effects` apply to the root or a
  * frame, `primaryAlign`, where the auto layout places its layers along its direction, to the root
- * alone, `textColor` and `textAlign`, the alignment across a text's lines, to a text, and `glyph` to
- * an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
+ * alone, `textColor`, `textAlign`, the alignment across a text's lines, and `fontStyle`, the face of
+ * a label whose weight is a literal, to a text, and `glyph` to an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
  */
 export type InstanceOverride = { readonly path: readonly string[] } & (
   | InstancePaintOverride
@@ -574,6 +574,7 @@ export type InstancePaintOverride =
 export type InstanceOverrideValue =
   | { readonly field: "textAlign"; readonly horizontal: TextAlignSpec["horizontal"] }
   | { readonly field: "strokeSides"; readonly sides: SideStroke["sides"] }
+  | { readonly field: "fontStyle"; readonly style: string }
   | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
   | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
@@ -887,20 +888,59 @@ export type InnerVariantSpec = {
 };
 
 /**
- * The labels of an inner variant that a TEXT property sets, each with the characters the instance
- * layer shows: the value it gives the property, or the property's default, which Apply writes where
- * it gives none. Those characters can hold the glyph font's glyphs where the inner label's own do
- * not, and then need its faces too.
+ * A label of an inner variant as an instance layer shows it: at the characters the instance shows,
+ * the value it gives the label's TEXT property or the property's default, which Apply writes where it
+ * gives none, or the label's own where no TEXT property sets it, and in the face the layer's override
+ * gives it. A face override is a literal face, which a font write gives the whole label, and that
+ * write drops a weight binding (PG8), so the label shows the face with no bound weight. The family
+ * stays the inner label's, which the face write lands in (`fontFor` in `plugin/src/fonts.ts`).
+ *
+ * @param layer - The instance layer.
+ * @param inner - The inner variant it shows, which holds the label, and the TEXT properties of its set.
+ * @param label - The label.
+ * @returns The label at the characters and face the instance shows.
+ */
+export function shownLabel(
+  layer: InstanceLayerSpec,
+  inner: InnerVariantSpec,
+  label: TextLayerSpec
+): TextLayerSpec {
+  const property = inner.textProperties.find((candidate) => candidate.name === label.textProperty);
+  const characters = property === undefined ? label.characters : instanceText(layer, property);
+  const [face] = (layer.overrides ?? []).flatMap((override) =>
+    override.field === "fontStyle" && layerAt(inner.variant.root, override.path) === label
+      ? [override.style]
+      : []
+  );
+  if (face === undefined) {
+    return { ...label, characters };
+  }
+  const { weight: _, ...literal } = label;
+  return { ...literal, characters, fontStyle: face };
+}
+
+/**
+ * The labels of an inner variant whose fonts the instance layer's writes need, as the layer shows
+ * them ({@link shownLabel}): each a TEXT property sets and each whose face the layer overrides. The
+ * characters an instance shows can hold the glyph font's glyphs where the inner label's own do not,
+ * and then need its faces too. A face only the override names is a font no other layer of the kit
+ * may need.
  *
  * @param layer - The instance layer.
  * @param inner - The inner variant it shows, and the TEXT properties of its set.
- * @returns The text layers that link a TEXT property, at the characters the instance shows.
+ * @returns The text layers, at the characters and face the instance shows.
  */
 export function shownLabels(layer: InstanceLayerSpec, inner: InnerVariantSpec): readonly TextLayerSpec[] {
-  return linkedLabels(inner.variant).map((label) => {
-    const property = inner.textProperties.find((candidate) => candidate.name === label.textProperty);
-    return property === undefined ? label : { ...label, characters: instanceText(layer, property) };
-  });
+  const faced = new Set(
+    (layer.overrides ?? []).flatMap((override) =>
+      override.field === "fontStyle" ? [layerAt(inner.variant.root, override.path)] : []
+    )
+  );
+  return walkLayers(inner.variant.root).flatMap((label) =>
+    label.kind === "text" && (label.textProperty !== undefined || faced.has(label))
+      ? [shownLabel(layer, inner, label)]
+      : []
+  );
 }
 
 /**

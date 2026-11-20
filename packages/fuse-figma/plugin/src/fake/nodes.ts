@@ -1539,6 +1539,7 @@ class FakeText extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as a font.");
     }
     writeWholeFont(state, font);
+    markOverride(state, "fontName");
   }
 
   get fontSize(): number | PluginAPI["mixed"] {

@@ -98,8 +98,9 @@ function weightFace(run: Run, consumer: SceneNode, spec: TextLayerSpec): string 
 /**
  * Every font a text layer can show, so the run loads each before it writes the layer: each face its
  * bound weight names in some mode, or its one style, in its family and, where its characters hold the
- * glyph font's glyphs, in the glyph font's family too, since a `fontWeight` binding gives each range
- * the face its own family names for the weight (rule 10 of the fake).
+ * glyph font's glyphs, in the glyph font's family too. A `fontWeight` binding gives each range the
+ * face its own family names for the weight (rule 10 of the fake), and the glyph ranges take the
+ * label's one style otherwise (`planGlyphRanges`).
  *
  * @param run - The run, which names the glyph font.
  * @param spec - The text layer.
@@ -108,7 +109,7 @@ function weightFace(run: Run, consumer: SceneNode, spec: TextLayerSpec): string 
  */
 export function fontsOf(run: Run, spec: TextLayerSpec, family: string): readonly FontName[] {
   const faces = spec.weight?.faces ?? [spec.fontStyle];
-  const glyphs = spec.weight !== undefined && glyphRanges(spec.characters, run.glyphFont).length > 0;
+  const glyphs = glyphRanges(spec.characters, run.glyphFont).length > 0;
   const families = glyphs ? [family, run.glyphFont.family] : [family];
   return families.flatMap((each) => faces.map((style) => ({ family: each, style })));
 }
@@ -259,4 +260,21 @@ export function fontLayers(
   return layers.flatMap((layer): readonly ChildLayerSpec[] =>
     layer.kind === "instance" ? shownLabels(layer, innerOf(layer)) : [layer]
   );
+}
+
+/**
+ * The font an instance shows a label of its inner variant in, as one face over the whole label: the
+ * inner label's family, resolved in the instance's modes, in the face of the label as the instance
+ * shows it (`shownLabel` in `kit-spec.ts`), a face override's or the inner label's own. The overrides
+ * stage writes it as the label's whole font, and the planning pass requires it, with the glyph font's
+ * family in the same face ({@link fontsOf}), so neither reads the family or the face from what the
+ * label holds.
+ *
+ * @param run - The run.
+ * @param instance - The instance, whose modes resolve a bound family and a bound weight.
+ * @param shown - The label as the instance shows it.
+ * @returns The font.
+ */
+export function shownFace(run: Run, instance: InstanceNode, shown: TextLayerSpec): FontName {
+  return fontFor(run, instance, shown);
 }

@@ -480,6 +480,7 @@ const OVERRIDDEN_FIELD = {
   effects: "shadows",
   textColor: "color",
   textAlign: "align",
+  fontStyle: "fontStyle",
   glyph: "color",
   primaryAlign: "primaryAlign",
 } as const satisfies Record<InstanceOverride["field"], SpecField>;
@@ -658,7 +659,7 @@ function differenceDetail(visit: Visit, difference: InstanceDifference): string 
   const carries =
     root && difference.field === "primaryAlign"
       ? "an instance carries its root's alignment only where it fills its parent along the root's direction and no other difference stays unmapped"
-      : "an instance carries only property values, paints, solid stroke weights, corners, shadows, text alignments and its own sizing";
+      : "an instance carries only property values, paints, solid stroke weights, corners, shadows, text alignments, literal font styles and its own sizing";
   return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and ${carries}, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
 }
 
