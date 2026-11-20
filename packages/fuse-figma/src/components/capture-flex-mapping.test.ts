@@ -221,6 +221,22 @@ describe("margins on a row's growing item", () => {
   });
 });
 
+// Oracle: CSS Box Alignment 3 §5.1.3. A flex row with no `justify-content` packs its layers at its
+// start, `normal` acting as `stretch` and so as `flex-start`, so a 16px layer in a row that fills a 200px column sits at
+// x 0 with 184px after it, as Data table filter's Trigger starts its bar. Figma's CENTER would put it
+// at x 92.
+describe("a filling row of fixed layers with no justify-content", () => {
+  it("packs its layers at its start", async () => {
+    const { variant } = await buildChip(
+      "flex flex-col w-[200px]",
+      [{ slot: "row", classes: "flex", children: [{ slot: "chip-dot", classes: "size-[16px] shrink-0" }] }],
+      { parts: [part({ key: "row", slot: "row", parts: [part()] })] }
+    );
+    const row = frameOf(variant?.root);
+    expect([row?.sizing.horizontal, row?.primaryAlign]).toEqual([FILL, "MIN"]);
+  });
+});
+
 // Oracle: CSS Flexbox 1 §8.1 and §9.7. On the last of three layers, after the row's own text, an auto
 // start margin takes the row's free space, and a label that grows would take it first, so the margin
 // ends the row with the last layer at any free space of zero or more. A Figma label that fills that

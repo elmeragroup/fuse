@@ -116,8 +116,8 @@ const DIRECTIONS = new Map<string, { readonly direction: FlexDirection; readonly
  * unless a column is set, that places its layers by `align-items` and `justify-content`. In a row an
  * unset alignment stays centered, as every published row was drawn. CSS packs a row's layers at the
  * start and stretches them, which shows only where a row has room to spare or layers of unequal
- * height. A fixed or filling row with room beside a hugging layer packs at its start once its layers
- * map, as `leavesRoomAtEnd` in `box-mapping.ts` decides. A column takes CSS's start on both axes, and
+ * height. A fixed or filling row with room beside a hugging layer, or a filling row of fixed layers,
+ * packs at its start once its layers map, as `leavesRoomAtEnd` in `box-mapping.ts` decides. A column takes CSS's start on both axes, and
  * its unset `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid
  * that puts every item in one column, as {@link placesInOneColumn} says, and whose capture measured
  * its column as wide as its content box (`trackFits`), is such a column. A grid whose items each

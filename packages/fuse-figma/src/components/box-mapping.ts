@@ -1128,12 +1128,13 @@ const POSITIONED_IN_FLOW: ReadonlySet<string> = new Set(["relative", "sticky"]);
 
 /**
  * Whether a flex row with no `justify-content` has room beside its layers, so CSS packs them at its
- * start (CSS Box Alignment 3 §5.3: `normal` acts as `flex-start` in a flex container), where the
+ * start (CSS Box Alignment 3 §5.1.3: `normal` acts as `stretch`, which acts as `flex-start` in a flex container), where the
  * unset alignment {@link readFlow} gives a row centers them. Such a row is a fixed length or fills
  * its parent, no layer in its flow fills the row, and one hugs its content, as Select's item text
- * hugs its label. A row that hugs its layers or holds one that fills it draws alike at either
- * alignment, and so may a row of fixed layers, as a Radio's 16px indicator fills its 16px circle, so
- * those keep their own.
+ * hugs its label. A row that fills its parent, where every in-flow layer has a fixed width and none is a direct icon
+ * layer, packs them at its start too, as Data table filter's bar sets its Trigger at the start of its 768px row. A row that hugs its
+ * layers or holds one that fills it draws alike at either alignment, and so may a fixed row of fixed
+ * layers, as a Radio's 16px indicator fills its 16px circle, so those keep their own.
  *
  * @param layout - The row's layout.
  * @param sizing - The row's sizing.
@@ -1155,7 +1156,10 @@ function leavesRoomAtEnd(
     aligned === layout.primaryAlign &&
     sizing.horizontal.kind !== "hug" &&
     flowing.every((child) => child.kind === "icon" || child.sizing.horizontal.kind !== "fill") &&
-    flowing.some((child) => child.kind !== "icon" && child.sizing.horizontal.kind === "hug")
+    (flowing.some((child) => child.kind !== "icon" && child.sizing.horizontal.kind === "hug") ||
+      (sizing.horizontal.kind === "fill" &&
+        flowing.length > 0 &&
+        flowing.every((child) => child.kind !== "icon" && child.sizing.horizontal.kind === "fixed")))
   );
 }
 
