@@ -4,8 +4,9 @@
  * range write of another family unbinds that range's family alone (G2, G9), so a text reads as
  * segments, the glyph font unbound between runs of the label's family bound. A range bound to a
  * variable that holds the glyph font keeps that binding through a write of the font, and a null range
- * binding unbinds it and keeps the font (G11). A whole-text family
- * binding leaves the glyph font as it is (G10), and a whole-text font write replaces it (G8). Linking
+ * binding unbinds it and keeps the font (G11). A whole-text family binding gives every character
+ * the label's family, apart from a glyph range that lost its family binding to the range write that
+ * drew it, which keeps the glyph font (G10, FT2). A whole-text font write replaces it (G8). Linking
  * a text's characters to a TEXT property (G3) and writing that property on an instance (G5) reset the
  * whole text to the label's own style (G7), so the ranges go on after both, and an instance's after
  * each of its TEXT writes (G6).

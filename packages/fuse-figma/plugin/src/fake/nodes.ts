@@ -54,6 +54,7 @@ import {
   readBackRotation,
   relativeTransform,
   rescale,
+  fitInstanceToText,
   resize,
   resizeWithConstraints,
   setLayoutMode,
@@ -67,7 +68,15 @@ import {
   turnedOrigin,
 } from "./layout.ts";
 import { modeFor, ownNumber, shownNumber } from "./modes.ts";
-import { isHidden, listNumbers, markOverride, noteOverride, shown } from "./overrides.ts";
+import {
+  charactersOf,
+  isHidden,
+  listNumbers,
+  markOverride,
+  noteOverride,
+  shown,
+  shownStyles,
+} from "./overrides.ts";
 import {
   heldColorBindings,
   storeEffect,
@@ -109,10 +118,9 @@ import { linkTextStyle } from "./styles.ts";
 import {
   alignmentOf,
   bindTextRange,
-  charactersOf,
   distinctFonts,
   heldFonts,
-  measuredWidth,
+  remeasure,
   requireFont,
   requireHeldFonts,
   requireRange,
@@ -120,9 +128,9 @@ import {
   restyleWhole,
   segmentBindings,
   segmentKey,
-  shownStyles,
-  withFont,
-  writeFont,
+  restyleAsFirst,
+  writeRangeFont,
+  writeWholeFont,
 } from "./text.ts";
 import {
   childrenOf,
@@ -1467,7 +1475,7 @@ class FakeText extends FakeSceneNode {
   setRangeFills(start: number, end: number, paints: Paint[]): void {
     const state = live(this);
     requireRange(state, start, end);
-    for (const font of distinctFonts(state.styles.slice(start, end))) {
+    for (const font of distinctFonts(shownStyles(state).slice(start, end))) {
       requireFont(state, font, `fills ${start}-${end}`);
     }
     write(state, `fills ${start}-${end}`);
@@ -1480,26 +1488,19 @@ class FakeText extends FakeSceneNode {
     return charactersOf(live(this));
   }
 
-  /** New characters take the style of the first character (rule 10). */
+  /** New characters take the style of the first character, which becomes the base style (rules 10 and 51). */
   set characters(value: string) {
     const state = live(this);
     requireHeldFonts(state, "characters");
     write(state, "characters");
     markOverride(state, "characters");
-    const [first] = state.styles;
-    if (first === undefined) {
-      throw new Error(`${state.id} holds no character style.`);
-    }
+    restyleAsFirst(state, value.length);
     state.characters = value;
-    state.styles = Array.from({ length: Math.max(1, value.length) }, () => first);
     if (state.autoRename) {
       state.name = value;
     }
     // A text that hugs its characters takes their width, and an empty one is 0 wide (rule 31).
-    if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
-      state.width = measuredWidth(value, first.fontSize);
-      ownNumber(state, "width");
-    }
+    remeasure(state);
   }
 
   /** The whole text's link, or null for none (rule 66). */
@@ -1537,12 +1538,11 @@ class FakeText extends FakeSceneNode {
     if (font === MIXED) {
       throw new Error("Cannot write figma.mixed as a font.");
     }
-    writeFont(state, 0, state.styles.length, font, "fontName");
-    state.baseStyle = withFont(state.baseStyle, font);
+    writeWholeFont(state, font);
   }
 
   get fontSize(): number | PluginAPI["mixed"] {
-    return shared(live(this), (style) => style.fontSize);
+    return shared(shownStyles(live(this)), (style) => style.fontSize);
   }
 
   set fontSize(value: number | PluginAPI["mixed"]) {
@@ -1557,7 +1557,7 @@ class FakeText extends FakeSceneNode {
   }
 
   get lineHeight(): LineHeight | PluginAPI["mixed"] {
-    return shared(live(this), (style) => style.lineHeight);
+    return shared(shownStyles(live(this)), (style) => style.lineHeight);
   }
 
   set lineHeight(value: LineHeight | PluginAPI["mixed"]) {
@@ -1717,28 +1717,30 @@ class FakeText extends FakeSceneNode {
 
   /**
    * The new font needs loading, as for `fontName` (rule 7), and the range keeps its family binding
-   * only where its family stays (rule 50). On a sublayer it marks no override (rule 53), and it
-   * leaves the base style (rule 51).
+   * only where its family stays (rule 50). On a sublayer it marks no override (rule 53). It leaves the
+   * base style unless every character then holds one style, which becomes the base (rule 51).
    */
   setRangeFontName(start: number, end: number, font: FontName): void {
     const state = live(this);
     requireRange(state, start, end);
-    writeFont(state, start, end, font, `fontName ${start}-${end}`);
+    writeRangeFont(state, start, end, font);
   }
 
   /**
-   * The range's fonts need loading, as for `fontSize` (rule 7). The write leaves the base style
-   * (rules 51 and 55).
+   * The range's fonts need loading, as for `fontSize` (rule 7). The write leaves the base style unless
+   * every character then holds one style, which becomes the base (rule 51).
    */
   setRangeFontSize(start: number, end: number, value: number): void {
     const state = live(this);
     requireRange(state, start, end);
-    for (const font of distinctFonts(state.styles.slice(start, end))) {
+    for (const font of distinctFonts(shownStyles(state).slice(start, end))) {
       requireFont(state, font, `fontSize ${start}-${end}`);
     }
     write(state, `fontSize ${start}-${end}`);
     const fontSize = f32(value);
+    const before = state.width;
     restyle(state, start, end, (style) => ({ ...style, fontSize }));
+    fitInstanceToText(state, before);
   }
 
   /** The runs of characters whose `fontName`, `fontSize`, `boundVariables` and `fills` agree (rules 50 and 65). */
@@ -1807,7 +1809,11 @@ class FakeText extends FakeSceneNode {
   ): VariableAlias | null | PluginAPI["mixed"] {
     const state = live(this);
     requireRange(state, start, end);
-    const ids = new Set(state.styles.slice(start, end).map((style) => style.bindings.get(field)));
+    const ids = new Set(
+      shownStyles(state)
+        .slice(start, end)
+        .map((style) => style.bindings.get(field))
+    );
     const [id, ...others] = ids;
     if (others.length > 0) {
       return MIXED;
@@ -1823,7 +1829,9 @@ class FakeText extends FakeSceneNode {
   ): void {
     const state = live(this);
     requireRange(state, start, end);
+    const before = state.width;
     bindTextRange(state, start, end, field, variable);
+    fitInstanceToText(state, before);
   }
 
   override setBoundVariable(field: BindableField, variable: Variable | null): void {

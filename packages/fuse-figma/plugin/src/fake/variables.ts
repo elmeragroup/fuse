@@ -19,7 +19,7 @@
 import type { CollectionSpec, VariableValue as SyncedValue } from "../../../src/variable-set.ts";
 import { guard } from "./guard.ts";
 import { modeFor, resolve, variableState } from "./modes.ts";
-import { shown, shownBindings } from "./overrides.ts";
+import { shown, shownBindings, shownStyles } from "./overrides.ts";
 import { EFFECT_FIELD_TYPES, f32, live, storeRgba, TEXT_FIELDS } from "./state.ts";
 import type { CollectionState, FileState, NodeState, StoredValue, VariableState } from "./state.ts";
 import { childrenOf } from "./tree.ts";
@@ -61,7 +61,7 @@ export function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVari
   }
   const textFields: { [field in VariableBindableTextField]?: VariableAlias[] } = {};
   // Characters typed in one style share its record, so each distinct style is read once.
-  const styles = [...new Set(state.styles)];
+  const styles = [...new Set(shownStyles(state))];
   for (const field of TEXT_FIELDS) {
     const ids = new Set(styles.flatMap((style) => style.bindings.get(field) ?? []));
     if (ids.size > 0) {
@@ -81,7 +81,7 @@ function layerBindings(state: NodeState): string[] {
       ? [...EFFECT_FIELD_TYPES.keys()].flatMap((field) => effect.boundVariables?.[field]?.id ?? [])
       : []
   );
-  const text = state.styles.flatMap((style) => [...style.bindings.values()]);
+  const text = shownStyles(state).flatMap((style) => [...style.bindings.values()]);
   return [...shownBindings(state).values(), ...text, ...paints, ...effects];
 }
 
