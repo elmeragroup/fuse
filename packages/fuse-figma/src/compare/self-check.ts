@@ -70,12 +70,14 @@ const PREVIEWS = [
 ] as const;
 
 /** How far a static cell's fake render bounds reach past the box, in canvas pixels. */
-const RENDER_MARGIN = 3;
+const RENDER_MARGIN = 4;
 
 /**
- * How far a cell's fake render bounds reach past its box. A static cell's reach 3 pixels, which
- * covers the 3px rings the kit draws. A client cell's reach the browser crop's whole padding, since
- * a popup's shadow spreads further, and Figma's render bounds hold a node's whole shadow.
+ * How far a cell's fake render bounds reach past its box. A static cell's reach 4 pixels, which
+ * covers the 3px rings the kit draws and a line Tabs trigger's active underline, a layer 2px tall
+ * whose bottom sits 4px below the trigger, which Figma's render bounds hold, as they hold every layer
+ * the node does not clip. A client cell's reach the browser crop's whole padding, since a popup's
+ * shadow spreads further, and Figma's render bounds hold a node's whole shadow.
  */
 function renderMargin(request: CellRequest, layout: PageLayout): number {
   return request.content._tag === "Client" ? layout.padding : RENDER_MARGIN;

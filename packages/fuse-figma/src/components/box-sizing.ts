@@ -1,4 +1,5 @@
 import type { PreviewLength } from "./component-spec";
+import { readContentShares } from "./content-shares";
 import {
   affineLength,
   describeNumber,
@@ -8,9 +9,8 @@ import {
   inViewport,
   normalizeCss,
   readNumber,
-  readSize,
 } from "./css-values";
-import type { PercentBasis, VariableIndex, Viewport } from "./css-values";
+import type { VariableIndex, Viewport } from "./css-values";
 import { outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
@@ -34,6 +34,9 @@ import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import { AUTO_HEIGHT, autoHeightBasis } from "./percent-height";
 import type { Layout } from "./placement";
 import { roomyMaximum, withRoom } from "./popup-room";
+import { readSize } from "./sizing-value";
+import type { PercentBasis } from "./sizing-value";
+import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
 type AxisRoom = {
@@ -517,6 +520,22 @@ function innerLength(holder: Holder, axis: keyof Extent, box: "content" | "paddi
   return sides.reduce<number>((rest, side) => rest - (side ?? 0), outer - borders);
 }
 
+/**
+ * The CSS of a box's content length on one axis, where the box's length is fixed and its border and
+ * padding there are literal: the length's own CSS, a variable's `var()` or pixels, less them.
+ */
+function contentCss(holder: Holder, axis: keyof Extent): string | undefined {
+  const outer = outerOf(holder, axis).outer;
+  if (outer === undefined) {
+    return undefined;
+  }
+  const length =
+    outer.length.kind === "literal"
+      ? `${String(outer.length.value)}px`
+      : `var(--${outer.length.variable.name})`;
+  return outer.inset === 0 ? length : `calc(${length} - ${String(outer.inset)}px)`;
+}
+
 /** A box's fixed length on one axis and its literal border and padding there, as {@link AxisRoom.outer}. */
 function outerOf(holder: Holder, axis: keyof Extent): Pick<AxisRoom, "outer"> {
   const size = holder.sizing[axis];
@@ -600,9 +619,13 @@ function setsMinimumWidth(style: LayerStyle): boolean {
  */
 export function roomInside(holder: Holder, index: number): Room {
   const { layout, sizing, layers } = holder;
-  const percent = (size: SizeSpec): PercentBasis => {
+  const percent = (size: SizeSpec, axis: keyof Extent): PercentBasis => {
     if (definite(holder, size)) {
-      return { kind: "parent" };
+      // Along a flex box's direction a part's length is its basis, which it grows or shrinks from
+      // beside its margins and its siblings, so only a part across the direction takes the whole
+      // content length as the length its own reads against.
+      const along = layout.flex && (axis === "horizontal") === (layout.direction === "HORIZONTAL");
+      return { kind: "parent", css: along ? undefined : contentCss(holder, axis) };
     }
     // A box that stacks blocks shrinks to fit its one block, which its whole width then spans, but
     // only where nothing sets that width but the block: no minimum or maximum of the box's own, and no
@@ -618,13 +641,13 @@ export function roomInside(holder: Holder, index: number): Room {
     (layout.flex || layout.blocks) && layout.direction === axis ? siblings : [];
   return {
     horizontal: {
-      percent: percent(sizing.horizontal),
+      percent: percent(sizing.horizontal, "horizontal"),
       auto: (stretches(holder) || layout.blocks) && definite(holder, sizing.horizontal) ? FILL : HUG,
       siblings: along("HORIZONTAL"),
       length: innerLength(holder, "horizontal", "content"),
     },
     vertical: {
-      percent: autoHeightBasis(layout, sizing.vertical) ?? percent(sizing.vertical),
+      percent: autoHeightBasis(layout, sizing.vertical) ?? percent(sizing.vertical, "vertical"),
       auto: HUG,
       siblings: along("VERTICAL"),
       length: innerLength(holder, "vertical", "content"),
@@ -848,18 +871,22 @@ export function unstretched(holder: Holder, parts: readonly LayerStyle[]): Missi
  * the room the others leave, which Figma's fill takes, where it sets no length of its own along the
  * direction, since its zero basis ignores one. Any other `flex` stays unread, so it lands unmapped: a
  * minimum can leave room past the layers and a maximum can take room away, and two parts that grow
- * share the free space by their grow.
+ * share the free space by their grow, except where the capture measured each at its own content
+ * width, as `content-shares.ts` reads them.
  *
  * @param holder - The box.
  * @param parts - The style of each part in the box's flow.
+ * @param measured - The capture's measurement that the box's content stays under its `max-height`,
+ *   and that its growing parts each stay at their own content width.
  * @returns The place in `parts` of the part that fills the box along its direction, or undefined
  *   for none.
  */
 export function readGrowth(
   holder: Holder,
   parts: readonly LayerStyle[],
-  underMaxHeight: string | undefined
+  measured: { readonly underMaxHeight: string | undefined; readonly itemsAtContent: boolean }
 ): number | undefined {
+  const { underMaxHeight } = measured;
   const { layout, sizing, style } = holder;
   const horizontal = layout.direction === "HORIZONTAL";
   const along = horizontal ? sizing.horizontal : sizing.vertical;
@@ -873,6 +900,9 @@ export function readGrowth(
     );
   }
   const growing = parts.filter((part) => part.has("flex") && !keepsOwnSize(part));
+  if (readContentShares(holder, growing, measured.itemsAtContent)) {
+    return undefined;
+  }
   const [only] = growing;
   if (!layout.flex || growing.length !== 1 || only === undefined) {
     return undefined;
@@ -1480,7 +1510,7 @@ function readAxis(
       ? []
       : [{ side, property, value: readLimit(value, variables, room.percent, size.kind === "fixed") }];
   });
-  const limited = resolveLimits(size, bounds, axis);
+  const limited = resolveLimits(size, bounds, axis, variables);
   // Each note was decided from the value the read substitutes, so the read only records it.
   for (const [bound, note] of limited.notes) {
     // A limit that stays a limit fills the box's limits, and one that folds into the length its sizing.
@@ -1508,11 +1538,17 @@ function readAxis(
  * minimum wins a conflict. Figma would clamp a fixed length to a limit on every resize, so the
  * limits fold into the length: one that moves it sets it, and one that never moves it drops. A
  * length bound to a variable that every limit binds too never moves in any mode, as the md control
- * size's `min-h-(--control-h-md)` beside its `h-(--control-h-md)`, so those limits drop. A fold to a
+ * size's `min-h-(--control-h-md)` beside its `h-(--control-h-md)`, so those limits drop, and so do
+ * literal limits its range never reaches, as `variable-limits.ts` decides. A fold to a
  * length of zero or less, and a limit that any other bound or non-literal value on either side keeps
  * from comparing, stay unmapped.
  */
-function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisProperties): AxisRead {
+function resolveLimits(
+  size: SizeSpec,
+  bounds: readonly Bound[],
+  axis: AxisProperties,
+  variables: VariableIndex
+): AxisRead {
   const isZeroMinimum = (bound: Bound): boolean =>
     bound.side === "min" && bound.value?.kind === "literal" && bound.value.value === 0;
   const kept = bounds.filter((bound) => !isZeroMinimum(bound));
@@ -1542,7 +1578,8 @@ function resolveLimits(size: SizeSpec, bounds: readonly Bound[], axis: AxisPrope
     };
   }
   const { length } = size;
-  if (kept.length > 0 && kept.every((bound) => sameVariable(bound.value, length))) {
+  const inertBesideVariable = limitsNeverMoveVariable(length, kept, variables);
+  if (kept.length > 0 && (inertBesideVariable || kept.every((bound) => sameVariable(bound.value, length)))) {
     return {
       size,
       min: undefined,
@@ -1771,199 +1808,4 @@ function readLength(
 export function listNames(names: readonly string[]): string {
   const last = names.at(-1) ?? "";
   return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
-}
-
-/** Why a declaration around a root counts: the root's percentage height takes what it sets. */
-const HEIGHT_AROUND =
-  "the root's percentage height resolves against the content height this element sets around it";
-
-/** The `display` values whose box a `height` sizes, as an inline box's does not (CSS 2.1 §10.5). */
-const HEIGHTED_DISPLAYS: ReadonlySet<string> = new Set([
-  "block",
-  "flow-root",
-  "list-item",
-  "inline-block",
-  "flex",
-  "inline-flex",
-  "grid",
-  "inline-grid",
-]);
-
-/** The `display` values of a block container, whose in-flow child's height its own does not change. */
-const BLOCK_CONTAINERS: ReadonlySet<string> = new Set(["block", "flow-root", "list-item", "inline-block"]);
-
-/**
- * Whether a box is in its parent's flow and takes its `height`: `position` static or relative, as
- * an absolute or fixed box resolves a percentage against its containing block's padding box (CSS 2.1
- * §10.1), and a `display` whose box a height sizes, as `contents` generates no box.
- */
-function inFlowHeighted(style: LayerStyle): boolean {
-  const position = normalizeCss(style.resolved("position") ?? "static");
-  const display = normalizeCss(style.resolved("display") ?? "inline");
-  return ["static", "relative"].includes(position) && HEIGHTED_DISPLAYS.has(display);
-}
-
-/**
- * Whether a container leaves its in-flow child's height as the child declares it. A block container
- * does (CSS 2.1 §10.6.3), and so does a flex row, where the height is the child's cross size and a
- * declared one is not stretched (CSS Flexbox 1 §9.4). A flex column makes the height the child's main
- * size, which it grows or shrinks unless both factors are 0 (§9.7), and which a basis other than
- * `auto` replaces (§9.2). The `flex` shorthand sets all three, so a child that declares it is never
- * taken to keep its height. A grid sizes its tracks first, so it is never taken to leave the height
- * alone.
- */
-function keepsChildHeight(container: LayerStyle, child: LayerStyle): boolean {
-  const display = normalizeCss(container.resolved("display") ?? "inline");
-  if (BLOCK_CONTAINERS.has(display)) {
-    return true;
-  }
-  if (display !== "flex" && display !== "inline-flex") {
-    return false;
-  }
-  if (normalizeCss(container.resolved("flex-direction") ?? "row").startsWith("row")) {
-    return true;
-  }
-  const factor = (property: string, initial: string) =>
-    Number(normalizeCss(child.resolved(property) ?? initial));
-  return (
-    !child.has("flex") &&
-    normalizeCss(child.resolved("flex-basis") ?? "auto") === "auto" &&
-    factor("flex-grow", "0") === 0 &&
-    factor("flex-shrink", "1") === 0
-  );
-}
-
-/**
- * Whether a box's `min-height` or `max-height` can change its used height (CSS 2.1 §10.7).
- */
-function constrainsHeight(style: LayerStyle): boolean {
-  const minimum = normalizeCss(style.resolved("min-height") ?? "auto");
-  const maximum = normalizeCss(style.resolved("max-height") ?? "none");
-  return !["auto", "0", "0px"].includes(minimum) || maximum !== "none";
-}
-
-/** The edges a border-box element's height holds above and below its content box, and their side. */
-const VERTICAL_EDGES = [
-  ["padding-top", undefined],
-  ["padding-bottom", undefined],
-  ["border-top-width", "top"],
-  ["border-bottom-width", "bottom"],
-] as const;
-
-/**
- * The value an edge takes room by: a padding as written, a border's width only where its style draws
- * a line, as `none` and `hidden` compute the width to 0 (CSS Backgrounds 3 §3.3).
- */
-function edgeValue(style: LayerStyle, edge: string, side: "top" | "bottom" | undefined): string {
-  if (side !== undefined) {
-    const line = normalizeCss(style.resolved(`border-${side}-style`) ?? "none");
-    if (line === "none" || line === "hidden") {
-      return "0";
-    }
-  }
-  return normalizeCss(style.resolved(edge) ?? "0");
-}
-
-/** A length in pixels with each synced variable it reads at its smallest, or undefined. */
-function leastPixels(css: string, variables: VariableIndex): number | undefined {
-  const length = affineLength(css);
-  if (length === undefined) {
-    return undefined;
-  }
-  let pixels = length.constant;
-  for (const [name, coefficient] of length.coefficients) {
-    const ref = variables.lookup(`var(${name})`);
-    const least =
-      ref === undefined ? undefined : coefficient >= 0 ? variables.minimum(ref) : variables.maximum(ref);
-    if (least === undefined) {
-      return undefined;
-    }
-    pixels += coefficient * least;
-  }
-  return pixels;
-}
-
-/**
- * The content height a root's `height: 100%` takes from the elements around it (CSS 2.1 §10.5),
- * where its used height provably is the declared one: from the root up, each box is in flow and takes
- * its height, sets no `min-height` or `max-height`, and sits in a container that leaves its height as
- * declared, as {@link keepsChildHeight} says; each `100%` takes its parent's content height, until an
- * element sets a length of its own. A `border-box` element's content height is its height less its
- * vertical padding and the borders it draws (CSS Box Sizing 3 §4), as Number field's group,
- * `h-[var(--field-h,var(--control-h-md))]` with a 1px border, leaves its stepper
- * `calc(var(--control-h-md) - 2px)`. The pixels are the least the length holds, each variable at its
- * smallest, the dense height the preview draws. The declarations it reads mark their rows so.
- *
- * Anything else stays unresolved, so the root's height stays unmapped rather than wrong: an absolute
- * or fixed root, whose percentage takes its containing block's padding box; a flex column's item,
- * which can grow or shrink from its declared height or take a basis in its place; a grid item; a
- * `display: contents` element; a length whose element sits outside the elements given, whose
- * container is not known; and edges that can outgrow a `border-box` height, whose content height
- * then floors at zero.
- *
- * @param chain - The styles of the component's elements around the root, outermost first, then the root's.
- * @param variables - The synced variables, with the values they hold in each mode.
- * @returns The height, or undefined where the used height is not provably the declared one.
- */
-export function percentHeightBasis(
-  chain: readonly LayerStyle[],
-  variables: VariableIndex
-): PreviewLength | undefined {
-  const root = chain.at(-1);
-  if (root === undefined || !inFlowHeighted(root) || constrainsHeight(root)) {
-    return undefined;
-  }
-  const read: { readonly style: LayerStyle; readonly property: string }[] = [];
-  let pixels = 0;
-  const terms: string[] = [];
-  let child = root;
-  for (let index = chain.length - 2; index >= 0; index -= 1) {
-    const style = chain[index];
-    if (style === undefined || !keepsChildHeight(style, child) || !inFlowHeighted(style)) {
-      return undefined;
-    }
-    const height = normalizeCss(style.resolved("height") ?? "auto");
-    if (height === "auto" || (height.includes("%") && height !== "100%") || constrainsHeight(style)) {
-      return undefined;
-    }
-    if (normalizeCss(style.resolved("box-sizing") ?? "content-box") === "border-box") {
-      for (const [edge, side] of VERTICAL_EDGES) {
-        const value = edgeValue(style, edge, side);
-        const length = evaluateLength(value);
-        if (length === undefined && affineLength(value) === undefined) {
-          return undefined;
-        }
-        if (length !== 0) {
-          read.push({ style, property: edge });
-          if (length === undefined) {
-            terms.push(value);
-          } else {
-            pixels += length;
-          }
-        }
-      }
-      read.push({ style, property: "box-sizing" });
-    }
-    read.push({ style, property: "height" });
-    if (height === "100%") {
-      child = style;
-      continue;
-    }
-    // The element's own container decides whether its declared length is its used height.
-    const container = chain[index - 1];
-    if (container === undefined || !keepsChildHeight(container, style)) {
-      return undefined;
-    }
-    const less = [...terms, ...(pixels === 0 ? [] : [`${String(pixels)}px`])];
-    const css = less.length === 0 ? height : `calc(${height} - ${less.join(" - ")})`;
-    const least = leastPixels(css, variables);
-    if (least === undefined || least < 0) {
-      return undefined;
-    }
-    for (const { style: marked, property } of read) {
-      marked.mark(property, "literal", HEIGHT_AROUND, []);
-    }
-    return { pixels: least, css };
-  }
-  return undefined;
 }

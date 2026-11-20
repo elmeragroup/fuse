@@ -461,6 +461,21 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./date-picker-cell.ts")).datePicker,
   },
   {
+    set: "tabs-trigger",
+    entry: "dist/tabs.js",
+    load: async () => (await import("./tabs-cell.ts")).tabsTrigger,
+  },
+  {
+    set: "tabs-list",
+    entry: "dist/tabs.js",
+    load: async () => (await import("./tabs-cell.ts")).tabsList,
+  },
+  {
+    set: "tabs-content",
+    entry: "dist/tabs.js",
+    load: async () => (await import("./tabs-cell.ts")).tabsContent,
+  },
+  {
     set: "calendar-day",
     entry: "dist/calendar.js",
     load: async () => (await import("./calendar-day-cell.ts")).calendarDay,

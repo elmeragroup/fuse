@@ -262,6 +262,7 @@
           "pseudo": {},
           "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "measured": {"basisAsDeclared":true},
           "children": [
             {
               "tag": "svg",
@@ -357,6 +358,7 @@
           "pseudo": {},
           "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground"],
+          "measured": {"basisAsDeclared":true},
           "children": [
             {
               "tag": "svg",
@@ -452,6 +454,7 @@
           "pseudo": {},
           "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--input":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["enabled-hover:bg-muted"],
+          "measured": {"basisAsDeclared":true},
           "children": [
             {
               "tag": "svg",
@@ -547,6 +550,7 @@
           "pseudo": {},
           "variables": {"--control-h-xs":{"_tag":"element","up":8},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--input":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["disabled:cursor-not-allowed","disabled:bg-muted","disabled:text-muted-foreground","enabled-hover:bg-muted"],
+          "measured": {"basisAsDeclared":true},
           "children": [
             {
               "tag": "svg",

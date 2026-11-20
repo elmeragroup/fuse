@@ -183,7 +183,7 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse density: create mode Dense");
       assert.notInclude(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×61");
+      assert.include(printed, "Fuse density: create variable ×63");
     })
   );
 

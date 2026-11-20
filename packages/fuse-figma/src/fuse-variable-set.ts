@@ -552,6 +552,27 @@ const FORMULA_VARIABLES = [
       "The height inside the 1px borders of the md field box, control-h-md less 2px, which the h-full of a Number field stepper fills. Figma variables cannot compute, so the sync writes the result for each density.",
   },
   {
+    name: "tabs-trigger-h",
+    reads: "density",
+    // The list's content height, control-h-md less its 4px padding on each side, less the 1px of
+    // the trigger's `h-[calc(100%-1px)]`.
+    formula: "calc(var(--control-h-md) - 8px - 1px)",
+    length: (metric) => metric("control-h-md") - 9,
+    scopes: ["WIDTH_HEIGHT"],
+    description:
+      "The height of a Tabs trigger in its list, control-h-md less the 4px padding of the list on each side and 1px. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
+    name: "tabs-line-trigger-h",
+    reads: "density",
+    // The line list pads 3px on each side, so its trigger is 2px taller than the default list's.
+    formula: "calc(var(--control-h-md) - 6px - 1px)",
+    length: (metric) => metric("control-h-md") - 7,
+    scopes: ["WIDTH_HEIGHT"],
+    description:
+      "The height of a Tabs trigger in a line list, control-h-md less the 3px padding of the list on each side and 1px. Figma variables cannot compute, so the sync writes the result for each density.",
+  },
+  {
     name: "frame-bar-inset",
     reads: "density",
     // `--frame-text-inset` less the gutter Frame's `--frame-overhang` of 0px.

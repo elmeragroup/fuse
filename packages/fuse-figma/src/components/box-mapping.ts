@@ -596,7 +596,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const growing = readGrowth(
     holder,
     flowing.map((part) => part.cascade.style),
-    cascade.measured?.underMaxHeight
+    {
+      underMaxHeight: cascade.measured?.underMaxHeight,
+      itemsAtContent: cascade.measured?.itemsAtContent === true,
+    }
   );
   // An absolute part that ends the row draws in flow there where the row's end padding keeps its room.
   const last = shown.at(-1);

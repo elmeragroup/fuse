@@ -33,7 +33,6 @@ import type {
   LabelDefinition,
 } from "./component-spec";
 import type { CoverageRow, RecordedRow } from "./coverage";
-import { normalizeCss } from "./css-values";
 import { framePartsOf, instanceRootSlotOf, instancingSlots } from "./definition-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
@@ -45,9 +44,9 @@ import type {
   TextPropertySpec,
   VariantSpec,
 } from "./kit-spec";
-import type { LayerStyle } from "./layer-style";
 import { booleanPropertiesOf, optionalParts } from "./optional-parts";
 import { placeRoot } from "./placement";
+import { clipsInCss, rootClips } from "./root-clip";
 import { PaintedInstances } from "./stacking";
 
 /** What a set builds from: the definition the mapping walks, and the capture its cascade reads. */
@@ -118,9 +117,8 @@ export function buildComponentSet(
   const optional = optionalParts(definition, cells, partName);
   const booleans = booleanPropertiesOf(definition.name, optional);
   const cascade = setCascade(definition, context, record, captured, inner);
-  // A root clips only where some cell's root casts a shadow, whose spread Figma draws only from a
-  // clipping frame, or CSS clips it; else its layers' rings show past its edge, as in the browser.
-  const unclippedRoot = !castsShadowOrClips(captured.capture);
+  // Whether some cell's root casts a shadow or clips in CSS, which `rootClips` reads.
+  const setClips = castsShadowOrClips(captured.capture);
   const instances = new InstanceParts(context, inner, record);
   // The capture says which parts win a `scale`.
   const scaling = partsThatScaleIn(captured.capture, definition.parts ?? []);
@@ -162,11 +160,13 @@ export function buildComponentSet(
         message: `${definition.name}: a root that leaves its layers unclipped must cast no shadow, and ${variantKey(definition, cell)} casts one`,
       });
     }
-    const unclipped = definition.rootOverflow === "visible" || unclippedRoot;
     const root: ComponentRootSpec = {
       name: definition.slot,
       ...mapped,
-      clips: !unclipped,
+      clips: rootClips(
+        { style: rootCascade.style, shadows: mapped.shadows, children: mapped.children },
+        { overflowVisible: definition.rootOverflow === "visible", castsShadowOrClips: setClips }
+      ),
     };
     placeRoot(rootCascade.style, room, context.variables, root.children, definition.viewport);
     if (root.clips && !clipsInCss(rootCascade.style)) {
@@ -268,22 +268,6 @@ function rootEffects(layer: InstanceLayerSpec): readonly ShadowSpec[] | undefine
     }
   }
   return undefined;
-}
-
-/** The `overflow` values that clip a box's content in CSS (CSS Overflow 3 §3). */
-const CSS_CLIPS: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll"]);
-
-/**
- * Whether a box clips its content down in CSS, through `overflow` or `overflow-y`, as Tailwind
- * compiles `overflow-hidden` to the shorthand. A `visible` axis beside one that clips computes to
- * `auto` (CSS Overflow 3 §3), so either one clipping clips both.
- */
-function clipsInCss(style: LayerStyle): boolean {
-  return ["overflow", "overflow-x", "overflow-y"].some((property) =>
-    normalizeCss(style.resolved(property) ?? "")
-      .split(" ")
-      .some((value) => CSS_CLIPS.has(value))
-  );
 }
 
 /** Why a coverage row lists a shadow that reaches past a variant's root, which the root's clip cuts. */

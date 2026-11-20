@@ -120,6 +120,16 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   fitsAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * A flex row of two or more items that grow, each as wide as its own max-content width in every
+   * density and theme, so none of them grows past its content.
+   */
+  itemsAtContent: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * A root whose height is a percentage, where the first element above it whose height is a length
+   * is as tall as that length in every density and theme, so the percentage resolves against it.
+   */
+  basisAsDeclared: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * A table box whose rows, cells or one child tile its content box with no space between, in every
    * density and theme, so no column or row stretches a cell past what it holds.
    */
