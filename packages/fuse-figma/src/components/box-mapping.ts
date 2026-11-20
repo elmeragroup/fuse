@@ -83,6 +83,7 @@ import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, weightedIconN
 import type {
   BoxSpec,
   ChildLayerSpec,
+  ComponentRootSpec,
   CounterAlignSpec,
   FrameLayerSpec,
   IconLayerSpec,
@@ -128,6 +129,7 @@ import { pseudoParts } from "./pseudo-layers";
 import { dropShownStackRest, readStackDisplay, readStackedCell, STACK_HIDDEN } from "./stacked-cell";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
+import { drawSubgridCell } from "./subgrid-row";
 import { tableDisplayDetail } from "./table-layout";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
 import type { CarriedTranslates } from "./translate-fold";
@@ -387,6 +389,13 @@ export type MapScope = {
    * none.
    */
   readonly viewport?: Viewport;
+  /**
+   * The root of the inner set's variant an instance part shows, where the box is that part's inner
+   * root or a layer below it built in place. A layer whose own classes would change the layers it
+   * holds keeps the main's, as a subgrid row's cell does, since an instance keeps its main's layers.
+   * Absent for a set's own cells.
+   */
+  readonly main?: ComponentRootSpec;
 };
 
 /** A box's paddings across, which a part that fills it spans inside. */
@@ -612,6 +621,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         editable: holdsEditableText(part.kind === "instance" ? part.visit.part : part.child),
         onlyText: part.kind === "frame" && part.pseudo !== true && showsOnlyText(part.child, cell),
         optional: (part.kind === "instance" ? part.visit.part : part.child).optional !== undefined,
+        instance: part.kind === "instance",
       })),
       others,
       // The flow ends with the last part after the label, else the last end icon, else the label, else
@@ -1485,12 +1495,10 @@ function mapPart(
   const frame = mapBox(part.child, part.cascade, scope, room);
   const floored =
     minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
-  // A subgrid row's first cell fills the row up to its column's cap, which no class of its own sets.
-  const { maximumWidth } = room;
   const own =
-    maximumWidth === undefined
+    room.subgridCell === undefined
       ? floored
-      : { ...floored, limits: { ...floored.limits, maxWidth: maximumWidth } };
+      : drawSubgridCell(part.cascade.style, floored, room.subgridCell, scope.main);
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
   const ringed = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
   const box = readContentBox(part.cascade.style, ringed, part.cascade.inPlace() !== undefined);
