@@ -15,7 +15,8 @@
  *    property value is no override (N1). A fill written equal to the main's left no `fills`
  *    override, and `overrides` listed only the instance's `name` (NS), so a fill, stroke, effects or
  *    corner the fake stores equal to what the layer's source shows clears that override, and the
- *    field follows the source again.
+ *    field follows the source again. A stroke weight differs: a side lists under its own field once a
+ *    write leaves it unlike the source's, and stays listed after a write of the source's weight (SW).
  *    `removeOverrides` exists (N3), and the fake follows the typings' "removes all direct
  *    overrides": it clears what `overrides` lists and keeps the property values, apart from the
  *    lengths of an instance its modes hold (rule 56).
@@ -70,6 +71,44 @@ export function shown<Field extends ShownField>(state: NodeState, field: Field):
     frozenShown.add(deepFrozen(value));
   }
   return value;
+}
+
+/**
+ * The field the fake notes for each side's stroke weight, as `overrides` lists it: on 2026-11-20 a
+ * real file listed the top side as `stokeTopWeight`, the spelling the typings' `NodeChangeProperty`
+ * gives, and never listed `strokeWeight` (SW).
+ */
+const SIDE_WEIGHT_FIELDS = {
+  top: "stokeTopWeight",
+  right: "strokeRightWeight",
+  bottom: "strokeBottomWeight",
+  left: "strokeLeftWeight",
+} as const satisfies Record<keyof NodeState["strokeWeights"], NodeChangeProperty>;
+
+/**
+ * Note a write of stroke weights on an instance or a sublayer (rule 37): each written side whose
+ * weight now differs from its source's becomes an override. On 2026-11-20 a real file listed only the
+ * side a one-side write changed, left a side written equal to the main's unlisted, and kept a listed
+ * side listed after the main's weight was written back on it, by side or by `strokeWeight` (SW).
+ * After four side writes it also listed the instance's `width` and `height`, which the fake leaves
+ * out, since no plan reads them as overrides.
+ *
+ * @param state - The layer written.
+ * @param sides - The sides the write set.
+ */
+export function noteStrokeSides(
+  state: NodeState,
+  sides: readonly (keyof NodeState["strokeWeights"])[]
+): void {
+  const source = sourceOf(state);
+  if (source === undefined) {
+    return;
+  }
+  for (const side of sides) {
+    if (state.strokeWeights[side] !== source.strokeWeights[side]) {
+      state.overridden.add(SIDE_WEIGHT_FIELDS[side]);
+    }
+  }
 }
 
 /** Note an override of a field on an instance or a sublayer (rule 37); any other layer has none. */

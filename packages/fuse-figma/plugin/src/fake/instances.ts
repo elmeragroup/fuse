@@ -368,6 +368,11 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["height", ["height"]],
   ["fills", ["fills"]],
   ["strokes", ["strokes"]],
+  // Each side's weight lists alone, the top one as `stokeTopWeight` (SW, `noteStrokeSides`).
+  ["stokeTopWeight", ["stokeTopWeight"]],
+  ["strokeRightWeight", ["strokeRightWeight"]],
+  ["strokeBottomWeight", ["strokeBottomWeight"]],
+  ["strokeLeftWeight", ["strokeLeftWeight"]],
   ["effects", ["effects"]],
   ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
   // SAFETY: G19 read `boundVariables` among an instance's overridden fields, which the typings'

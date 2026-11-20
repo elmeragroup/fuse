@@ -64,7 +64,7 @@ import {
   sizingOn,
   turnedOrigin,
 } from "./layout.ts";
-import { isHidden, markOverride, noteOverride, shown } from "./overrides.ts";
+import { isHidden, markOverride, noteOverride, noteStrokeSides, shown } from "./overrides.ts";
 import {
   heldColorBindings,
   storeEffect,
@@ -636,6 +636,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const weight = f32(value);
     state.strokeWeights = { top: weight, right: weight, bottom: weight, left: weight };
     state.strokeWeightWritten = true;
+    noteStrokeSides(state, ["top", "right", "bottom", "left"]);
   }
 
   get strokeTopWeight(): number {
@@ -646,6 +647,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "strokeTopWeight");
     writeStrokeSide(state, "top", value);
+    noteStrokeSides(state, ["top"]);
   }
 
   get strokeRightWeight(): number {
@@ -656,6 +658,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "strokeRightWeight");
     writeStrokeSide(state, "right", value);
+    noteStrokeSides(state, ["right"]);
   }
 
   get strokeBottomWeight(): number {
@@ -666,6 +669,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "strokeBottomWeight");
     writeStrokeSide(state, "bottom", value);
+    noteStrokeSides(state, ["bottom"]);
   }
 
   get strokeLeftWeight(): number {
@@ -676,6 +680,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const state = live(this);
     write(state, "strokeLeftWeight");
     writeStrokeSide(state, "left", value);
+    noteStrokeSides(state, ["left"]);
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {

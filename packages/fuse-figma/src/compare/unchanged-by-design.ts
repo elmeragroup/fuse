@@ -94,6 +94,7 @@ function overrideInTheme(override: InstanceOverride, paint: ThemeColor): Instanc
     case "cornerRadius":
     case "textAlign":
     case "primaryAlign":
+    case "strokeSides":
       return override;
     case "effects":
       return {
