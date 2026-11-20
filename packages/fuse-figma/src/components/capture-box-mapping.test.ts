@@ -1,7 +1,7 @@
 /**
  * How the build maps a box's own declarations, as a capture records the browser's winners: sizing,
  * percentages, limits, margins, position, alignment, corners, transforms, overflow and the outcomes of
- * the declarations that have no Figma form. The unit under test is `buildComponentSet` on hand-built
+ * the declarations that have no Figma form. The unit under test is `buildSetsInOrder` on hand-built
  * captures of one-cell `chip` sets (`test/capture-fixtures.ts`). Each case names its oracle: the CSS
  * specification that says what the browser draws, the Figma plugin typings or a probe that says what
  * Figma draws, or the coverage contract, under which a declaration that does not reach Figma is
@@ -533,6 +533,89 @@ describe("a box's margin", () => {
       { variables }
     );
     expect(variant?.root.sizing.horizontal).toEqual(fixed(literal(152)));
+  });
+
+  // A flex item's margins add to the space around it (CSS Flexbox 1 §4.2), so Toast's `mt-0.5` icon
+  // in an `items-start` row sits 2px below the row's top, where a frame padded 2px above it puts it.
+  it("draws an icon's margin in a flex row as the padding of a frame that holds the icon", async () => {
+    const { variant, coverage } = await buildChip(
+      "flex items-start text-[#000000]",
+      [{ tag: "svg", classes: "size-4 mt-0.5 shrink-0" }],
+      { iconsFor: () => [ICON] }
+    );
+    const [frame] = variant?.root.children ?? [];
+    expect(
+      frame?.kind === "frame"
+        ? [frame.name, frame.paddingTop, frame.paddingBottom, frame.children.map((child) => child.kind)]
+        : frame
+    ).toEqual(["Icon", literal(2), literal(0), ["icon"]]);
+    expect(notesOf(coverage, "mt-0.5").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-top", "literal"],
+    ]);
+  });
+
+  // The icon draws as `box` inside its margin frame, so in an instance a changed glyph color is an
+  // override at that layer, and a changed margin is the frame's padding, which no instance field
+  // carries (Figma plugin typings: an instance overrides fills, not auto layout padding).
+  describe("in an instance of a set that holds it", () => {
+    const badge = chip({ key: "review-badge", name: "Review badge", slot: "badge", iconsFor: () => [ICON] });
+    const icon = (classes: string): FixtureElement => ({
+      slot: "badge",
+      classes: "flex items-start",
+      children: [{ tag: "svg", classes: `size-4 shrink-0 ${classes}` }],
+    });
+    const inOuter = (classes: string) =>
+      buildCaptured(
+        chip({
+          parts: [
+            {
+              kind: "instance",
+              key: "badge",
+              of: badge,
+              cell: () => ({ state: "rest" }),
+              shownIn: () => true,
+            },
+          ],
+        }),
+        rest({ slot: "chip", classes: "flex", children: [icon(classes)] }),
+        { inner: [{ manifest: badge, cells: rest(icon("mt-0.5 text-[#000000]")) }] }
+      );
+
+    it("overrides the color of the icon inside the frame", async () => {
+      const { variant, coverage } = await inOuter("mt-0.5 text-[#ff0000]");
+      const [instance] = variant?.root.children ?? [];
+      expect(instance?.kind === "instance" ? instance.overrides : instance).toEqual([
+        {
+          path: ["icon", "box"],
+          field: "glyph",
+          color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } },
+        },
+      ]);
+      expect(notesOf(coverage, "text-[#ff0000]").map(([property, outcome]) => [property, outcome])).toEqual([
+        ["color", "literal"],
+      ]);
+    });
+
+    it("leaves a changed margin unmapped, since it is the frame's padding", async () => {
+      const { variant, coverage } = await inOuter("mt-1 text-[#000000]");
+      const [instance] = variant?.root.children ?? [];
+      expect(instance?.kind === "instance" ? instance.overrides : instance).toBeUndefined();
+      expect(notesOf(coverage, "mt-1").map(([property, outcome]) => [property, outcome])).toEqual([
+        ["margin-top", "unmapped"],
+      ]);
+    });
+  });
+
+  it("leaves an icon's margin unmapped in a parent that is no flex box, where it sits in a line of text", async () => {
+    const { variant, coverage } = await buildChip(
+      "block text-[#000000]",
+      [{ tag: "svg", classes: "size-4 mt-0.5" }],
+      { iconsFor: () => [ICON] }
+    );
+    expect(variant?.root.children[0]?.kind).toBe("icon");
+    expect(notesOf(coverage, "mt-0.5").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-top", "unmapped"],
+    ]);
   });
 
   it("drops the horizontal margins of a block whose width is its own", async () => {

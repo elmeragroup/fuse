@@ -5,8 +5,6 @@
  * table with what became of it. `component-spec.ts` holds the definition types this module reads.
  */
 
-import { Result } from "effect";
-
 import {
   anchoredPlacement,
   CaptureSetCascade,
@@ -15,7 +13,6 @@ import {
 } from "../capture/capture-cascade";
 import type { OpenPlacement } from "../capture/capture-cascade";
 import type { SetCapture } from "../capture/capture-format";
-import { keptCapture } from "../capture/captures";
 import { kitFamily } from "../kit-fonts";
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
@@ -61,7 +58,8 @@ export type SetSource = {
 
 /**
  * Build the component sets of a list of sources in its order, each with the sets before it at
- * hand, so a set builds after the sets its instance parts show.
+ * hand, so a set builds after the sets its instance parts show. A set that holds another as an
+ * instance reads the classes the composite passes from the inner set's capture in the list.
  *
  * @param sources - Each set's definition and capture, each set after the sets it holds instances of.
  * @param context - The compiled utilities and the synced variables.
@@ -75,10 +73,16 @@ export function buildSetsInOrder(
 ): readonly BuiltComponent[] {
   checkInstanceOrder(sources.map(({ definition }) => definition));
   const holders = instancingSlots(sources.map(({ definition }) => definition));
+  const captures = new Map(sources.map(({ definition, capture }) => [definition.key, capture]));
   const built = new Map<string, InnerSet>();
   return sources.map(({ definition, capture, open }) => {
     const instancedIn = holders.get(definition.key) ?? new Set<string>();
-    const set = buildComponentSet(definition, context, built, { capture, open, instancedIn });
+    const set = buildComponentSet(definition, context, built, {
+      capture,
+      open,
+      instancedIn,
+      captureOf: (key) => captures.get(key),
+    });
     built.set(definition.key, set.componentSet);
     return set;
   });
@@ -91,11 +95,12 @@ export function buildSetsInOrder(
  * @param context - The compiled utilities and the synced variables.
  * @param inner - The sets built before this one, by key, which its instance parts show.
  * @param captured - The set's capture, which its cascade reads, how an open composite places its
- *   cells' roots, and the root slots of the sets that hold it as an instance.
+ *   cells' roots, the root slots of the sets that hold it as an instance, and the captures of the
+ *   sets before it.
  * @returns The component set, its coverage and the font styles its text uses.
  * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
-export function buildComponentSet(
+function buildComponentSet(
   definition: ComponentDefinition,
   context: BuildContext,
   inner: ReadonlyMap<string, InnerSet>,
@@ -240,6 +245,8 @@ type CapturedSource = {
   readonly capture: SetCapture;
   readonly open: OpenPlacement | undefined;
   readonly instancedIn: ReadonlySet<string>;
+  /** The capture of a set before this one, by its key, which tells the classes an instance of it is passed. */
+  readonly captureOf: (key: string) => SetCapture | undefined;
 };
 
 /** The cascade of a set's cells from the set's capture. */
@@ -250,16 +257,13 @@ function setCascade(
   source: CapturedSource,
   inner: ReadonlyMap<string, InnerSet>
 ): CaptureSetCascade {
-  const { capture, open, instancedIn } = source;
+  const { capture, open, instancedIn, captureOf } = source;
   return new CaptureSetCascade({
     capture,
     definition,
     context,
     record,
-    captureOf: (key) => {
-      const kept = keptCapture(key);
-      return kept === undefined || Result.isFailure(kept) ? undefined : kept.success;
-    },
+    captureOf,
     open,
     anchorWidth: (cell) =>
       open?._tag === "anchored"

@@ -1,7 +1,7 @@
 /**
  * How the build places an absolute part by its distances to its parent's edges, draws a painting
  * `::before` as a layer of its own, and keeps a block's margin beside a margin of zero. The unit under
- * test is `buildComponentSet` on hand-built captures of one-cell `chip` sets (`test/capture-fixtures.ts`).
+ * test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets (`test/capture-fixtures.ts`).
  * Oracles: CSS 2.1 §10.3.7 and §10.6.4, under which an absolute box's offsets measure from its
  * containing block's padding edge, the box spans the room between two offsets at an `auto` length,
  * and a `100%` length is the containing block's padding box; Figma's constraints, where MIN keeps a

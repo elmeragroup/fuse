@@ -42,7 +42,7 @@ import {
   unstretched,
   viewportRoom,
 } from "./box-sizing";
-import type { Holder, Room, RowShare } from "./box-sizing";
+import type { Holder, Room } from "./box-sizing";
 import { dropIdleOrigin, readRotation } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
 import { centresBesideSpan, foldGap, holdsOnlyLabel, padCentred } from "./centred-row";
@@ -100,8 +100,14 @@ import {
 } from "./label-layout";
 import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
 import type { Feed, LayerStyle, SpecField } from "./layer-style";
-import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
-import type { FoldingBox } from "./margin-box";
+import {
+  adjoinsMargin,
+  foldNegativeMargin,
+  wrapFrameMargins,
+  wrapIconMargins,
+  wrapInstanceMargins,
+} from "./margin-box";
+import type { FoldingBox, IconMarginBox } from "./margin-box";
 import { liftParts } from "./no-box";
 import { arrangePaint, inPaintOrder, readRaisedLevels } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
@@ -516,10 +522,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     }
   );
 
-  const start: ChildLayerSpec[] = [];
-  const end: ChildLayerSpec[] = [];
-  // The style of the last icon on each side, where a row's last layer can set an auto margin.
-  const lastIcon = new Map<IconSlot["side"], LayerStyle>();
+  const icons: MappedIcon[] = [];
   const iconStyles = slots.map((slot) => cascade.icon(slot));
   const stack = readStackedCell(
     reader,
@@ -541,10 +544,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     }
     const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
-      (slot.side === "start" ? start : end).push(icon);
-      lastIcon.set(slot.side, style);
+      icons.push({ side: slot.side, style, icon });
     }
   }
+  const onSide = (side: IconSlot["side"]) => icons.filter((each) => each.side === side);
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
@@ -568,7 +571,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
   // The parts the markup holds after the label draw after it and the end icons, and so does an
   // absolute part first in the DOM that may end a row beside its label in flow.
-  const leading = label !== undefined && end.length === 0 ? leadingAbsolute(inDom) : undefined;
+  const leading = label !== undefined && onSide("end").length === 0 ? leadingAbsolute(inDom) : undefined;
   const afterLabel = (part: ShownPart): boolean =>
     part === leading || (part.kind === "frame" ? part.child.after : part.visit.part.after) === "label";
   const before = inDom.filter((part) => !afterLabel(part));
@@ -578,7 +581,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const flowing = shown.filter((part) => !outOfFlow(part.cascade.style));
   const flowingBefore = before.filter((part) => !outOfFlow(part.cascade.style));
   const flowingAfter = trailing.filter((part) => !outOfFlow(part.cascade.style));
-  const others = [...start, ...(label === undefined ? [] : [label]), ...end];
+  const others = [
+    ...onSide("start").map(({ icon }) => icon),
+    ...(label === undefined ? [] : [label]),
+    ...onSide("end").map(({ icon }) => icon),
+  ];
   // A part's place in `holder.layers`: the parts before the label, its icons and itself, then the rest.
   const layerIndex = (index: number): number =>
     index < flowingBefore.length ? index : index + others.length;
@@ -606,8 +613,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       // the last start icon or part.
       last:
         flowingAfter.at(-1)?.cascade.style ??
-        lastIcon.get("end") ??
-        (label === undefined ? (lastIcon.get("start") ?? flowingBefore.at(-1)?.cascade.style) : undefined),
+        onSide("end").at(-1)?.style ??
+        (label === undefined
+          ? (onSide("start").at(-1)?.style ?? flowingBefore.at(-1)?.cascade.style)
+          : undefined),
       labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
     },
     {
@@ -632,6 +641,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     }
   );
   const { layout } = flow;
+  // An icon's margins draw once the layout says whether the box is a flex box.
+  const drawIcons = (side: IconSlot["side"]): readonly DrawnIcon[] =>
+    onSide(side).map(({ style, icon }) => ({
+      style,
+      ...wrapIconMargins(style, icon, layout, context.variables),
+    }));
+  const start = drawIcons("start");
+  const end = drawIcons("end");
   // A class that spaces every child but the last draws as the item spacing only where each element
   // child is a part in the row's flow with no margin of its own, which would beat the class's
   // `:where()`, beside no icon or text, and no gap adds to it.
@@ -658,9 +675,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     widthKnown: known.horizontal,
     shares: [
       ...flowingBefore.map((part) => partShare(part.cascade.style)),
-      ...start.map(iconShare),
+      ...start.map(({ share }) => share),
       ...(label === undefined ? [] : [UNREAD_SHARE]),
-      ...end.map(iconShare),
+      ...end.map(({ share }) => share),
       ...flowingAfter.map((part) => partShare(part.cascade.style)),
     ],
   };
@@ -895,9 +912,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       : undefined;
   const endInFlow = inFlowEnd ?? leadingEnd;
   const after: readonly ChildLayerSpec[] = [
-    ...start,
+    ...start.map(({ layer }) => layer),
     ...(placed === undefined ? [] : [placed.layer]),
-    ...end,
+    ...end.map(({ layer }) => layer),
   ];
   // The display reads once the layers are known, since a grid maps only around one item.
   const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp, {
@@ -1614,12 +1631,18 @@ function labelBox(
   return own === undefined ? box : { holder: own, ellipsisFits };
 }
 
-/** The share of a row an icon takes: its literal size, or `unread` for a bound one. */
-function iconShare(icon: ChildLayerSpec): RowShare {
-  return icon.kind === "icon" && icon.size.kind === "literal"
-    ? { kind: "pixels", value: icon.size.value }
-    : UNREAD_SHARE;
-}
+/** An icon the box shows, as it maps before the box's layout: its side, its style and its layer. */
+type MappedIcon = {
+  readonly side: IconSlot["side"];
+  readonly style: LayerStyle;
+  readonly icon: IconLayerSpec;
+};
+
+/**
+ * An icon as the box draws it once its layout is known: its style, the layer the box holds, which
+ * draws its margins where they map, and the width it takes along a row, as `margin-box.ts` gives them.
+ */
+type DrawnIcon = IconMarginBox & { readonly style: LayerStyle };
 
 /**
  * What an icon's `display` makes of it, by the value Tailwind compiles. An icon in a flex box is a

@@ -1,6 +1,6 @@
 /**
  * How the build sizes the height of a root that sets none, where flex rows around it stretch it. The
- * unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`), whose sample host is a 320px row, as the manifest's preview height
  * names it.
  *

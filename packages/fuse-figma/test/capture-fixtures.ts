@@ -1,5 +1,5 @@
 /**
- * Hand-built captures, and the component sets `buildComponentSet` builds from them, for the suites
+ * Hand-built captures, and the component sets `buildSetsInOrder` builds from them, for the suites
  * that check one rule of the mapping at a time. A fixture names, per cell, the elements around the
  * root and the root's tree, and for each element the classes whose declarations it wins, as the
  * browser's cascade leaves them: Tailwind's compiled declarations of each class, in the order given,
@@ -21,9 +21,14 @@ import type {
 import { manifestDefinition } from "../src/capture/manifest.ts";
 import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../src/capture/manifest.ts";
 import { splitClassName } from "../src/components/class-name.ts";
-import { buildComponentSet } from "../src/components/component-builder.ts";
+import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
-import type { BuildContext, BuiltComponent, Cell } from "../src/components/component-spec.ts";
+import type {
+  BuildContext,
+  BuiltComponent,
+  Cell,
+  ComponentDefinition,
+} from "../src/components/component-spec.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
 import { makeVariableIndex } from "../src/components/css-values.ts";
 import type { VariableIndex } from "../src/components/css-values.ts";
@@ -88,6 +93,14 @@ export type FixtureOptions = {
   readonly registered?: readonly string[];
   /** The synced variables a value can bind. */
   readonly variables?: VariableIndex;
+  /** The sets the fixture's instance parts show, each after the sets it shows, built before it. */
+  readonly inner?: readonly FixtureSet[];
+};
+
+/** A hand-built set: its manifest and each cell of the manifest's matrix. */
+export type FixtureSet = {
+  readonly manifest: SetManifest;
+  readonly cells: readonly FixtureCell[];
 };
 
 /** A fixture's built set, with its first variant. */
@@ -121,11 +134,12 @@ function compiledOf(compiled: CompiledUtilities, className: string): readonly Wr
 }
 
 /**
- * Build a set from a manifest and its hand-built cells, as the kit builds one from its kept capture.
+ * Build a set from a manifest and its hand-built cells, as the kit builds one from its kept capture,
+ * through the kit's own build of a list of sets, after the sets its instance parts show.
  *
  * @param manifest - The set's manifest.
  * @param cells - Each cell of the manifest's matrix.
- * @param options - Extra classes to compile and the synced variables.
+ * @param options - Extra classes to compile, the synced variables and the sets its instances show.
  * @returns The built set and its first variant.
  */
 export async function buildCaptured(
@@ -133,13 +147,33 @@ export async function buildCaptured(
   cells: readonly FixtureCell[],
   options: FixtureOptions = {}
 ): Promise<BuiltFixture> {
-  const definition = manifestDefinition(manifest);
+  const sets = [...(options.inner ?? []), { manifest, cells }];
   const compiled = await Effect.runPromise(
     compileUtilities([
-      ...cells.flatMap(({ around = [], root }) => classesIn([...around, root])),
+      ...sets.flatMap((set) => set.cells.flatMap(({ around = [], root }) => classesIn([...around, root]))),
       ...(options.registered ?? []),
     ])
   );
+  const context: BuildContext = { compiled, variables: options.variables ?? makeVariableIndex([]) };
+  const built = buildSetsInOrder(
+    sets.map((set) => {
+      const definition = manifestDefinition(set.manifest);
+      return { definition, capture: captureOf(set, definition, compiled) };
+    }),
+    context
+  ).at(-1);
+  if (built === undefined) {
+    throw new Error("the build returned no set");
+  }
+  return { ...built, variant: built.componentSet.variants[0] };
+}
+
+/** The capture of a hand-built set, with the declarations each element wins from its classes. */
+function captureOf(
+  { manifest, cells }: FixtureSet,
+  definition: ComponentDefinition,
+  compiled: CompiledUtilities
+): SetCapture {
   const declarations: CapturedDeclaration[] = [];
   const winners = (
     won: readonly (Written & { readonly source: DeclarationSource; readonly owner: number })[]
@@ -209,7 +243,7 @@ export async function buildCaptured(
     const ordered = fixture.texts === undefined ? indexed : { ...indexed, texts: fixture.texts };
     return fixture.measured === undefined ? ordered : { ...ordered, measured: fixture.measured };
   };
-  const capture: SetCapture = {
+  return {
     format: CAPTURE_FORMAT,
     version: CAPTURE_VERSION,
     set: manifest.key,
@@ -222,13 +256,6 @@ export async function buildCaptured(
       roots: [{ around: around.map(element), root: element(root) }],
     })),
   };
-  const context: BuildContext = { compiled, variables: options.variables ?? makeVariableIndex([]) };
-  const built = buildComponentSet(definition, context, new Map(), {
-    capture,
-    open: undefined,
-    instancedIn: new Set(),
-  });
-  return { ...built, variant: built.componentSet.variants[0] };
 }
 
 /**

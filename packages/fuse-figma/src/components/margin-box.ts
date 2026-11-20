@@ -3,13 +3,16 @@
  * transparent frame around the part whose padding is the margins, the part's margin box.
  * `box-mapping.ts` asks once a part maps, with whether a block parent collapses its vertical margins,
  * and gets back the layer its parent holds and, for an instance part, the instance that layer holds,
- * which the stacking of the boxes above reads. `placement.ts` reads the margins of a root.
+ * which the stacking of the boxes above reads. It asks again for each icon once the box's layout is
+ * known, and gets back the icon's layer and the width it takes along a row. `placement.ts` reads the
+ * margins of a root.
  */
-import { outOfFlow } from "./box-sizing";
+import { outOfFlow, UNREAD_SHARE } from "./box-sizing";
+import type { RowShare } from "./box-sizing";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
-import type { FrameLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
+import type { FrameLayerSpec, IconLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
 import type { LayerStyle, SpecField } from "./layer-style";
 import type { Layout } from "./placement";
 
@@ -124,6 +127,66 @@ export function wrapInstanceMargins(
 }
 
 /**
+ * An icon as its box draws it: the icon itself, or a frame that draws its margins around it, and the
+ * width it takes along a row, its margin box's (CSS Flexbox 1 §9.2).
+ */
+export type IconMarginBox = {
+  readonly layer: FrameLayerSpec | IconLayerSpec;
+  /** The icon's literal size and literal margins across, or unread where one of them binds a variable. */
+  readonly share: RowShare;
+};
+
+/**
+ * Draw an icon's margins, as {@link drawMargins} says for a part, in a flex parent. An icon in a block
+ * parent sits in a line of text, whose margins the frame does not draw. The frame keeps the icon's
+ * key, name and BOOLEAN property, and the icon sits in it as a layer named `box` with the fields its
+ * reads filled, as Toast's status icon sits 2px lower for its `mt-0.5` in an `items-start` row.
+ *
+ * @param style - The icon's style.
+ * @param icon - The icon layer as the mapping drew it.
+ * @param parent - The icon's box's layout.
+ * @param variables - The synced variables a margin can bind.
+ * @returns The layer the box holds, and the width it takes along a row.
+ */
+export function wrapIconMargins(
+  style: LayerStyle,
+  icon: IconLayerSpec,
+  parent: Pick<Layout, "flex" | "blocks" | "direction">,
+  variables: VariableIndex
+): IconMarginBox {
+  const fixed = { kind: "fixed", length: icon.size } as const;
+  const frame = drawMargins(
+    style,
+    { ...icon, sizing: { horizontal: fixed, vertical: fixed } },
+    { ...parent, blocks: false },
+    variables,
+    false,
+    false
+  );
+  const across = frame === undefined ? [] : [frame.paddingLeft, frame.paddingRight];
+  const share = [icon.size, ...across].reduce<RowShare>(
+    (sum, length) =>
+      sum.kind === "pixels" && length.kind === "literal"
+        ? { kind: "pixels", value: sum.value + length.value }
+        : UNREAD_SHARE,
+    { kind: "pixels", value: 0 }
+  );
+  if (frame === undefined) {
+    return { layer: icon, share };
+  }
+  const { visibleProperty: _shown, ...box } = icon;
+  return { layer: { ...frame, children: [{ ...box, key: "box", name: "box" }] }, share };
+}
+
+/**
+ * The layer whose margins a frame draws: a frame or instance part, or an icon with its fixed size.
+ */
+type MarginedLayer =
+  | FrameLayerSpec
+  | InstanceLayerSpec
+  | (IconLayerSpec & { readonly sizing: FrameLayerSpec["sizing"] });
+
+/**
  * The frame that draws a part's margins, with no layers yet, or undefined where no margin maps. A
  * margin of zero adds no space, so it drops, as Item's title and description reset a `<p>`'s margins
  * with `m-0`. A flex item's other margins add to the space between it and its siblings and its
@@ -161,7 +224,7 @@ export function wrapInstanceMargins(
  */
 function drawMargins(
   style: LayerStyle,
-  layer: FrameLayerSpec | InstanceLayerSpec,
+  layer: MarginedLayer,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
   collapses: boolean,
@@ -225,9 +288,9 @@ function drawMargins(
   if (overshoots && style.has("margin-right") && !zero("margin-right")) {
     style.mark("margin-right", "dropped", CLIPPED_END, []);
   }
-  // A frame part's own box moves into the frame, and so do the fields its reads filled. An instance
-  // keeps its fields, which the build diffs against the inner variant.
-  if (layer.kind === "frame") {
+  // A frame part's or an icon's own box moves into the frame, and so do the fields its reads filled.
+  // An instance keeps its fields, which the build diffs against the inner variant.
+  if (layer.kind !== "instance") {
     style.relocateFeeds("box", new Set());
   }
   const margin = (property: (typeof MARGINS)[number]): NumberSpec =>
@@ -247,7 +310,7 @@ function drawMargins(
                     outcome: "literal",
                     detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
                   },
-          layer.kind === "frame" ? style.feed(PADDING_OF[property]) : style.feed("around")
+          layer.kind === "instance" ? style.feed("around") : style.feed(PADDING_OF[property])
         )
       : undefined) ?? ZERO;
   const frame: FrameLayerSpec = {

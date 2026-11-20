@@ -1,6 +1,6 @@
 /**
  * How the build lays out a table: the table and its row groups as columns of rows, each row as a
- * row of cells, each cell around what it holds. The unit under test is `buildComponentSet` on
+ * row of cells, each cell around what it holds. The unit under test is `buildSetsInOrder` on
  * hand-built captures of one-cell `chip` sets (`test/capture-fixtures.ts`). Oracle: CSS 2.1 §17.5,
  * where a column is as wide as its widest cell and a row as tall as its tallest, so a cell keeps the
  * size of what it holds only where nothing in its column or row is larger, which the capture's

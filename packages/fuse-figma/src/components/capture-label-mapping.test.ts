@@ -2,7 +2,7 @@
  * How the build maps a box's own text, its label, as a capture records the browser's winners: the
  * label's sizing and wrapping, its ellipsis, the cap a `max-width` puts on it, its letter spacing and
  * alignment, a native control's own placement of its text, and the text style and color the root
- * inherits from the elements around it. The unit under test is `buildComponentSet` on hand-built
+ * inherits from the elements around it. The unit under test is `buildSetsInOrder` on hand-built
  * captures (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says
  * how the browser sets the text, HTML's rendering of a form control, or a Figma probe that says how
  * Figma draws it.

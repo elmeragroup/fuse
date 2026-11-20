@@ -1,7 +1,7 @@
 /**
  * How the build draws a row whose `100%` width spans a parent that fits its content beside another
  * block, as Calendar's header spans its card above the month grid, and a middle layer that grows
- * in that row between two that keep their width. The unit under test is `buildComponentSet` on
+ * in that row between two that keep their width. The unit under test is `buildSetsInOrder` on
  * hand-built captures (`test/capture-fixtures.ts`). The oracles are CSS Sizing 3 §5.2.1, where the
  * parent shrinks to fit its widest child, the percentage counting as `auto` meanwhile, and the row
  * then spans it; CSS Flexbox 1 §9.7, where the one growing layer takes all the free space; and the

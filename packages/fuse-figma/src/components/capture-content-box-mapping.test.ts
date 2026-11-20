@@ -1,7 +1,7 @@
 /**
  * How the build draws a part whose `box-sizing` is `content-box`, as Selection item's control slot
  * sets `box-content` on a height of one first line with 14px of padding above and below. The unit
- * under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Oracles: CSS Box Sizing 3 §4.1, under which `content-box` makes a
  * box's `height` its content box's, so a 20px height with 14px of padding each way draws a box 48px
  * tall, where a Figma frame's height holds its padding; so the part draws as a frame that hugs its

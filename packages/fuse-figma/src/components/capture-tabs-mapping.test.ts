@@ -1,7 +1,7 @@
 /**
  * How the build sizes a Tabs list's triggers: a literal minimum beside a length a synced variable
  * sets, a `calc()` of a parent's whole height, and a row's growing layers that each keep their own
- * width. The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * width. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle, the CSS specification that says what the
  * browser draws, under the coverage contract, where a declaration that does not reach Figma is
  * `unmapped`.

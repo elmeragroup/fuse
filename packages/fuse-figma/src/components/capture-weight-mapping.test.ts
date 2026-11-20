@@ -1,6 +1,6 @@
 /**
  * How the build maps a label whose `font-weight` reads a synced variable, as Selection item's title
- * reads `--selection-title-weight`. The unit under test is `buildComponentSet` on a hand-built
+ * reads `--selection-title-weight`. The unit under test is `buildSetsInOrder` on a hand-built
  * capture of a one-cell `chip` set (`test/capture-fixtures.ts`). Oracles: Figma binds a text's
  * `fontWeight` to a FLOAT variable and shows, in each mode, the face its family names for the
  * weight there (the typings' `VariableBindableTextField`, Figma's guide to typography variables), so

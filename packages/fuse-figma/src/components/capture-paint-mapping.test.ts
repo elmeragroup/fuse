@@ -1,5 +1,5 @@
 /**
- * How the build paints a box: a background clipped to the padding box, `currentcolor` a custom property passes down, and a part under `visibility: hidden`. The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * How the build paints a box: a background clipped to the padding box, `currentcolor` a custom property passes down, and a part under `visibility: hidden`. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
