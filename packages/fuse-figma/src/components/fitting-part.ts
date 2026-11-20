@@ -11,8 +11,8 @@
  * ({@link drawsAtRoom}). A part wider than the room by one word, its min-content width, overflows
  * in CSS where a fill wraps the word: a known limit, as for `flex: 1`.
  */
-import { fitsRoom } from "./box-sizing";
-import type { Holder } from "./box-sizing";
+import { fitsRoom, partShare } from "./box-sizing";
+import type { Holder, RowShare } from "./box-sizing";
 import { evaluateLength, evaluateNumber, normalizeCss } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { outOfLayout } from "./kit-spec";
@@ -82,13 +82,53 @@ function keepsWidth(style: LayerStyle): boolean {
 }
 
 /**
+ * A layer of a row that is no part, beside the part that fits: an icon, with its style and the width
+ * it takes along the row, or the box's label.
+ */
+export type BesideLayer =
+  | { readonly kind: "icon"; readonly style: LayerStyle; readonly share: RowShare }
+  | { readonly kind: "label" };
+
+/**
+ * Whether an icon beside the fitting part takes a known width of the row: it keeps its own width, as
+ * {@link keepsWidth} says for a part, and the width it draws, its size and the margins its frame pads,
+ * is its margin box's width in CSS, its literal width and margins across, as `partShare` reads a
+ * part's. A negative margin, which no padding draws, or a margin that binds a variable leaves them apart.
+ * A margin across that resolves to no length leaves the icon's width unknown, though `partShare`
+ * reads it as none. A label's width is its text's, which the fit does not read.
+ *
+ * @param layer - The layer beside the part.
+ */
+function keepsShare(layer: BesideLayer): boolean {
+  if (layer.kind === "label") {
+    return false;
+  }
+  const { style } = layer;
+  const outer = partShare(style);
+  return (
+    keepsWidth(style) &&
+    ["margin-left", "margin-right"].every(
+      (property) => !style.has(property) || evaluateLength(style.resolved(property) ?? "") !== undefined
+    ) &&
+    layer.share.kind === "pixels" &&
+    outer.kind === "pixels" &&
+    outer.value === layer.share.value
+  );
+}
+
+/**
  * Whether a part fits its content to the room its row leaves it, as the module says: the row is a
  * horizontal flex line of definite width that does not wrap or reverse and packs its layers from its
  * start, the part is the row's last layer and the one that shrinks, by 1 or more so it gives back
  * all the overflow (CSS Flexbox 1 §9.7), with no grow, basis, length, limit or margin across, and
  * every other layer of the row is a part that keeps its own width, with no limit or basis and no
- * `width` but a literal one, so the room is the row's less those widths. The part's `display` holds
- * the unmapped row where its layers do not draw alike.
+ * `width` but a literal one, or an icon that keeps its width the same way, with literal margins across,
+ * as Toast's status icon sits before its text column, so the room is the row's less those widths. The part's `display`
+ * holds the unmapped row where its layers do not draw alike.
+ *
+ * A `min-width` of zero, as `min-w-0` sets, is no limit of the part's own: it lets the part shrink
+ * past its min-content width, all the way to the room (§4.5), as a fill does, so a word longer than
+ * the room overflows the part in both.
  *
  * The part draws as a frame, whatever it holds: parts, as Checkbox card's text column beside its
  * control, its own text, as File upload's description beside its trigger, or both. It may sit alone
@@ -111,7 +151,17 @@ export function fitsRowEnd(
     growing,
     frame,
     tag,
-  }: { readonly growing: number | undefined; readonly frame: boolean; readonly tag: string | undefined }
+    layer,
+    beside,
+  }: {
+    readonly growing: number | undefined;
+    readonly frame: boolean;
+    readonly tag: string | undefined;
+    /** The part's place among the row's layers. */
+    readonly layer: number;
+    /** The row's layers that are no part, its icons and its label, in no order. */
+    readonly beside: readonly BesideLayer[];
+  }
 ): boolean {
   const { layout, sizing, style, layers } = holder;
   const part = parts[index];
@@ -127,12 +177,18 @@ export function fitsRowEnd(
     ["", "row"].includes(row("flex-direction")) &&
     ["", "nowrap"].includes(row("flex-wrap")) &&
     FROM_START.has(row("justify-content")) &&
-    layers.length === parts.length &&
+    layers.length === parts.length + beside.length &&
     index === parts.length - 1 &&
+    layer === layers.length - 1 &&
+    beside.every(keepsShare) &&
     parts.every((each, place) => place === index || keepsWidth(each)) &&
     // A failed draw files its row under the part's `display`, so the part must set one.
     part.has("display") &&
-    OWN_WIDTH.every((property) => !part.has(property)) &&
+    OWN_WIDTH.every(
+      (property) =>
+        !part.has(property) ||
+        (property === "min-width" && evaluateLength(part.resolved(property) ?? "") === 0)
+    ) &&
     (evaluateNumber(part.resolved("flex-grow") ?? "0") ?? Number.NaN) === 0 &&
     (evaluateNumber(part.resolved("flex-shrink") ?? "1") ?? 0) >= 1
   );
