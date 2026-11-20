@@ -1,21 +1,40 @@
 /**
  * Unit under test: `measuredFacts`, the capture's page function as it reads the DOM in Chromium, for
  * whether the elements around a root lie exactly behind it (`coincidingAround`). Oracle: Chromium's
- * own pixels. A 100px root with no paint of its own sits in a 100px red wrapper beside one other
- * child the same size, absolute over it. Where that child draws nothing, the root's center shows the
- * wrapper's red, and the wrapper lies behind the root. Where it draws an SVG, a generated `::after`
- * box or an image, the center shows the child's blue, and so does a generated `::after` box of the
- * wrapper's own, so nothing lies exactly behind the root. The center also shows blue under a box that
- * overflows a zero-size child and black under a child whose `backdrop-filter` darkens the red. In a
- * blue wrapper, it shows a child's opaque black or red fill.
+ * own pixels, from a screenshot of the page as it renders, and the CSS box model for which elements
+ * share the root's box. A 100px root with no paint of its own sits in a 100px red wrapper beside one
+ * other child the same size, absolute over it. Where that child draws nothing, the root's center
+ * shows the wrapper's red, and the wrapper lies behind the root. A root that fills its own box in
+ * blue shows blue there, and the wrapper still lies behind it, since the root's own paint is not
+ * over it. So does an open popover inside the root, which paints in the top layer. Where the child
+ * draws an SVG, a generated `::after` box or an image, the center shows the child's blue, and so
+ * does a generated `::after` box of the wrapper's own, so nothing lies exactly behind the root. The
+ * center also shows blue under a box that overflows a zero-size child, and black under a child whose
+ * `backdrop-filter` darkens the red. In a blue wrapper, it shows a child's opaque black or red fill.
  *
  * Some paint lies outside the boxes the page reads, or in no box it reads at all. The center shows
  * blue under the wrapper's own full blocks, indented 250px past the root, whose `text-shadow` moves
  * them back over it; under an SVG set 250px to the right whose 600px stroke reaches back; under the
  * wrapper's own list marker, a 100px blue image; under a child whose `content` replaces it with a
- * blue image; and under a child whose open shadow root holds a blue box. Text ink lands where its
- * font puts it, so for text the oracle is any pixel of the root's box that is not red, under an
- * italic `l` scaled 100 times from 10px beside the root, whose slant leans its top back over it.
+ * blue image; and under a child whose open or closed shadow root holds a blue box. Text ink lands
+ * where its font puts it, so for text the oracle is any pixel of the root's box that is not red,
+ * under an italic `l` scaled 100 times from 10px beside the root, whose slant leans its top back
+ * over it.
+ *
+ * Some effects leave pure colors as they are and change the rest: a `backdrop-filter` of
+ * `brightness(2)`, `contrast(200%)` or `saturate(200%)`, and a gray child blended with `overlay`. A
+ * wrapper in `rgb(64, 128, 192)` shows them, as a center that is not the wrapper's color. An SVG
+ * table on the red channel keeps all three sentinels' bytes, and maps a `#d06834` wrapper's red to
+ * 161, a value derived by hand from the table. A clear wrapper shows a child's opaque magenta fill.
+ *
+ * A rounded corner shows what lies behind it: a pill wrapper's corner shows the page's white, and a
+ * blue root's corner that a logical `border-start-start-radius` rounds shows its wrapper's red. A
+ * color under two image layers paints within the last layer's `background-clip`, so with `text` the
+ * root shows white. A 40% white wrapper over a box with a blue stripe behind its left half shows
+ * two colors across the root, derived by hand from the alpha. A page's selector can read the root's
+ * style attribute, and its own adopted sheet paints through the measurement and stays the only one
+ * after it. A popover's color transition in the root's shadow tree is still running after the
+ * measurement.
  */
 import { readFileSync } from "node:fs";
 import type { Browser, Page } from "playwright";
@@ -30,7 +49,7 @@ const BLUE_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==";
 
 const STYLE = `
-  body { margin: 0 }
+  body { margin: 0; background: white }
   .wrapper { position: relative; width: 100px; height: 100px; background: red }
   #root { width: 100px; height: 100px }
   .over { position: absolute; inset: 0; width: 100px; height: 100px }
@@ -40,6 +59,17 @@ const STYLE = `
   .marked { display: list-item; list-style: inside url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='blue'/%3E%3C/svg%3E") }
   .marked #root { position: absolute; inset: 0 }
   .blue { background: blue }
+  .mid { background: rgb(64, 128, 192) }
+  .inked #root { background: blue }
+  .clipped { background-clip: text }
+  .pill { border-radius: 9999px }
+  .padded { padding: 4px }
+  .ring { position: relative; width: 200px; height: 200px; border-radius: 50% }
+  .ring::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 30px blue }
+  .logical #root { border-start-start-radius: 35px; background: blue }
+  .clear { background: transparent }
+  .tone { background: #d06834 }
+  #root:not([style]) + #styled { background: blue }
 `;
 
 let browser: Browser;
@@ -54,16 +84,14 @@ afterAll(async () => {
   await browser.close();
 });
 
-/** The root's 100px box as Chromium paints it, and how many elements the page function finds behind the root. */
-async function render(wrapperClass: string, sibling: string) {
-  await page.setContent(
-    `<style>${STYLE}</style><main data-compare-cell><div class="wrapper ${wrapperClass}"><div id="root"></div>${sibling}</div></main>`
-  );
+/** The page's top left 101px as Chromium paints the cell's HTML, and how many elements the page function finds behind `#root`. */
+async function measure(html: string) {
+  await page.setContent(`<style>${STYLE}</style><main data-compare-cell>${html}</main>`);
   // SAFETY: the locator matches `<img>` elements only.
   await page
     .locator("img")
     .evaluateAll((images) => Promise.all(images.map((image) => (image as HTMLImageElement).decode())));
-  const shot = PNG.sync.read(await page.screenshot({ clip: { x: 0, y: 0, width: 100, height: 100 } }));
+  const shot = PNG.sync.read(await page.screenshot({ clip: { x: 0, y: 0, width: 101, height: 101 } }));
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
   const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
@@ -72,32 +100,102 @@ async function render(wrapperClass: string, sibling: string) {
   return { shot, coinciding: facts.get("")?.coincidingAround ?? 0 };
 }
 
+/** The cell's HTML for a root in a wrapper of the classes given, beside a sibling. */
+function wrapped(wrapperClass: string, sibling: string, inRoot = ""): string {
+  return `<div class="wrapper ${wrapperClass}"><div id="root">${inRoot}</div>${sibling}</div>`;
+}
+
+/** The RGB of a pixel of the shot. */
+function pixelAt(shot: PNG, x: number, y: number): readonly number[] {
+  const at = (y * shot.width + x) * 4;
+  return [...shot.data.subarray(at, at + 3)];
+}
+
 /** The root's center pixel as Chromium paints it, and how many elements the page function finds behind the root. */
-async function behind(wrapperClass: string, sibling: string) {
-  const { shot, coinciding } = await render(wrapperClass, sibling);
-  const center = (50 * 100 + 50) * 4;
-  return { pixel: [...shot.data.subarray(center, center + 3)], coinciding };
+async function behind(wrapperClass: string, sibling: string, inRoot = "") {
+  const { shot, coinciding } = await measure(wrapped(wrapperClass, sibling, inRoot));
+  return { pixel: pixelAt(shot, 50, 50), coinciding };
 }
 
 /**
- * Whether Chromium paints the root's whole box in the wrapper's red, and how many elements the page
- * function finds behind the root. Text whose ink lands somewhere in the box, wherever its font puts
- * it, shows there as a pixel that is not red.
+ * Whether Chromium paints every pixel of the columns from `from` and the rows given in red, and how many elements
+ * the page function finds behind the root. Text whose ink lands somewhere in the box, wherever its
+ * font puts it, shows there as a pixel that is not red.
  */
-async function allRed(wrapperClass: string, sibling: string) {
-  const { shot, coinciding } = await render(wrapperClass, sibling);
-  const red = Array.from({ length: 100 * 100 }, (_, index) => index * 4).every(
-    (at) => shot.data[at] === 255 && shot.data[at + 1] === 0 && shot.data[at + 2] === 0
-  );
+async function allRed(html: string, from: number, columns: number, rows: number) {
+  const { shot, coinciding } = await measure(html);
+  const red = Array.from({ length: columns * rows }, (_, index) =>
+    pixelAt(shot, from + (index % columns), Math.floor(index / columns))
+  ).every(([r, g, b]) => r === 255 && g === 0 && b === 0);
   return { red, coinciding };
 }
 
 const RED = [255, 0, 0];
 const BLUE = [0, 0, 255];
+const WHITE = [255, 255, 255];
+const MID = [64, 128, 192];
+
+/** A child that hosts a shadow root of the mode given, holding a blue box over the root. */
+function shadowHost(mode: string): string {
+  return `<div class="over" id="host"></div><script>document.querySelector("#host").attachShadow({ mode: "${mode}" }).innerHTML = '<div style="width:100px;height:100px;background:blue"></div>'; document.currentScript.remove()</script>`;
+}
 
 describe("the elements the capture finds lying exactly behind a root", () => {
   it("include a wrapper whose other child draws nothing, so the root shows its red", async () => {
     expect(await behind("", '<div class="over"></div>')).toEqual({ pixel: RED, coinciding: 1 });
+  });
+
+  it("include a wrapper under a root that paints blue across its own box, which is the root's own paint", async () => {
+    expect(await behind("inked", '<div class="over"></div>')).toEqual({ pixel: BLUE, coinciding: 1 });
+  });
+
+  it("include a wrapper under a root whose open popover paints blue over it from the top layer", async () => {
+    expect(
+      await behind(
+        "",
+        "",
+        '<div popover id="pop" style="inset:0;margin:0;padding:0;border:0;width:100px;height:100px;background:blue"></div><script>document.querySelector("#pop").showPopover(); document.currentScript.remove()</script>'
+      )
+    ).toEqual({ pixel: BLUE, coinciding: 1 });
+  });
+
+  // A positioned box paints over the positioned boxes before it in tree order (CSS 2.1 Appendix E),
+  // so the inner wrapper paints over a sibling before it, and the sibling over the outer wrapper.
+  it.each([
+    ["no sibling", "", RED, 2],
+    ["a blue sibling before the inner wrapper", '<div class="over blue"></div>', BLUE, 1],
+  ])(
+    "count both wrappers of a root in two, up to the outer, with %s",
+    async (_, sibling, pixel, coinciding) => {
+      const html = `<div class="wrapper">${sibling}<div style="position:relative"><div id="root"></div></div></div>`;
+      const { shot, coinciding: found } = await measure(html);
+      expect({ pixel: pixelAt(shot, 50, 50), coinciding: found }).toEqual({ pixel, coinciding });
+    }
+  );
+
+  // The wrapper's 4px padding makes its padding box 108px, around the 100px root.
+  it("exclude a padded wrapper, whose padding box is not the root's box", async () => {
+    expect(await behind("padded", "")).toEqual({ pixel: RED, coinciding: 0 });
+  });
+
+  it("exclude a pill wrapper, whose 9999px radius Chromium draws as a 50px circle that leaves the root's corners white", async () => {
+    const { shot, coinciding } = await measure(wrapped("pill", ""));
+    expect({ center: pixelAt(shot, 50, 50), corner: pixelAt(shot, 2, 2), coinciding }).toEqual({
+      center: RED,
+      corner: WHITE,
+      coinciding: 0,
+    });
+  });
+
+  // `border-start-start-radius` is the top left corner in a left-to-right block, so the blue root
+  // leaves its wrapper's red there.
+  it("exclude a square wrapper under a root rounded by a logical radius, whose corner shows the wrapper", async () => {
+    const { shot, coinciding } = await measure(wrapped("logical", ""));
+    expect({ center: pixelAt(shot, 50, 50), corner: pixelAt(shot, 1, 1), coinciding }).toEqual({
+      center: BLUE,
+      corner: RED,
+      coinciding: 0,
+    });
   });
 
   it("exclude one whose other child is an SVG that paints blue over the root", async () => {
@@ -125,14 +223,19 @@ describe("the elements the capture finds lying exactly behind a root", () => {
   });
 
   it("exclude one whose own text, off the root, casts a blue shadow back over it", async () => {
-    expect(await behind("shadowed", "\u2588\u2588\u2588\u2588")).toEqual({ pixel: BLUE, coinciding: 0 });
+    expect(await behind("shadowed", "████")).toEqual({ pixel: BLUE, coinciding: 0 });
   });
 
   it("exclude one whose other child's italic letter, scaled from beside the root, leans blue back over it", async () => {
     expect(
       await allRed(
-        "",
-        '<span style="position:absolute;right:110px;top:-100px;font:italic 10px/10px sans-serif;color:blue;transform:scale(100);transform-origin:top right">l</span>'
+        wrapped(
+          "",
+          '<span style="position:absolute;right:110px;top:-100px;font:italic 10px/10px sans-serif;color:blue;transform:scale(100);transform-origin:top right">l</span>'
+        ),
+        0,
+        100,
+        100
       )
     ).toEqual({ red: false, coinciding: 0 });
   });
@@ -157,13 +260,61 @@ describe("the elements the capture finds lying exactly behind a root", () => {
     });
   });
 
-  it("exclude one whose other child hosts an open shadow root that paints blue over the root", async () => {
+  it.each(["open", "closed"])(
+    "exclude one whose other child hosts an %s shadow root that paints blue over the root",
+    async (mode) => {
+      expect(await behind("", shadowHost(mode))).toEqual({ pixel: BLUE, coinciding: 0 });
+    }
+  );
+
+  it("exclude one whose background is clipped to text it does not hold, so the root shows the page's white", async () => {
+    expect(await behind("clipped", "")).toEqual({ pixel: WHITE, coinciding: 0 });
+  });
+
+  // The color paints within the last image layer's clip (CSS Backgrounds 3 §3.10), here `text`.
+  it("exclude one whose second of two image layers clips its color to text it does not hold, so the root shows white", async () => {
+    const { shot, coinciding } = await measure(
+      '<div class="wrapper" style="background-image:none,none;background-clip:border-box,text"><div id="root"></div></div>'
+    );
+    expect({ pixel: pixelAt(shot, 50, 50), coinciding }).toEqual({ pixel: WHITE, coinciding: 0 });
+  });
+
+  // The table maps the red channel's 208 / 255 into its fourth segment, from 0.5 to 1:
+  // 0.5 + (208 / 255 * 4 - 3) * 0.5 = 0.631, which is 161. Green and blue keep 104 and 52.
+  it("exclude one whose other child's backdrop filter maps the wrapper's red channel through a table", async () => {
+    const filter =
+      '<svg width="0" height="0" style="position:absolute"><filter id="tone" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0 .25 .5 .5 1"/></feComponentTransfer></filter></svg>';
     expect(
-      await behind(
-        "",
-        '<div class="over" id="host"></div><script>document.querySelector("#host").attachShadow({ mode: "open" }).innerHTML = \'<div style="width:100px;height:100px;background:blue"></div>\'; document.currentScript.remove()</script>'
-      )
-    ).toEqual({ pixel: BLUE, coinciding: 0 });
+      await behind("tone", `<div class="over" style="backdrop-filter:url(#tone)"></div>${filter}`)
+    ).toEqual({ pixel: [161, 104, 52], coinciding: 0 });
+  });
+
+  it("exclude one whose other child paints blue over the root while the root has no style attribute", async () => {
+    expect(await behind("", '<div class="over" id="styled"></div>')).toEqual({ pixel: BLUE, coinciding: 0 });
+  });
+
+  // The ring's inset shadow follows its round edge, 30px deep, and so paints the root's box at 32px
+  // to 42px from its corner. A square ring's shadow would stay within 30px of its edges.
+  it("exclude one under a round ancestor whose ::after, rounded by inheritance, shades the root blue", async () => {
+    const html =
+      '<div class="ring"><div class="wrapper" style="position:absolute;left:32px;top:32px;width:10px;height:10px"><div id="root" style="width:10px;height:10px"></div></div></div>';
+    const { shot, coinciding } = await measure(html);
+    expect({ pixel: pixelAt(shot, 37, 37), coinciding }).toEqual({ pixel: BLUE, coinciding: 0 });
+  });
+
+  // Chromium snaps each edge of the wrapper's paint to the nearest pixel: at x = 0.25 to columns 0
+  // to 99, and at x = 0.5 to columns 1 to 100, the pixels it paints for a box at the root's rect. A
+  // 1px sibling at the wrapper's left edge snaps to its first column, and one at its right edge to
+  // its last.
+  const SIBLING = "position:absolute;top:0;width:1px;height:100px;background:blue";
+  it.each([
+    [0.25, "nothing beside it", "", true, 1],
+    [0.25, "a 1px blue sibling at its left edge", `<div style="${SIBLING};left:0"></div>`, false, 0],
+    [0.5, "nothing beside it", "", true, 1],
+    [0.5, "a 1px blue sibling at its right edge", `<div style="${SIBLING};left:99px"></div>`, false, 0],
+  ])("count one at x = %s with %s", async (offset, _, sibling, red, coinciding) => {
+    const html = `<div class="wrapper" style="position:absolute;left:${String(offset)}px;top:0"><div id="root"></div>${sibling}</div>`;
+    expect(await allRed(html, Math.round(offset), 100, 100)).toEqual({ red, coinciding });
   });
 
   // Chromium serializes both fills as \`rgb()\` with a last component of 0, the blue channel, which a
@@ -179,11 +330,97 @@ describe("the elements the capture finds lying exactly behind a root", () => {
     });
   });
 
+  // The clear wrapper has no fill of its own to shoot, and the magenta fill matches the magenta
+  // shot, so the green shot tells the fill from the wrapper.
+  it("exclude a clear wrapper whose other child fills the root's box in opaque magenta", async () => {
+    expect(await behind("clear", '<div class="over" style="background:#ff00ff"></div>')).toEqual({
+      pixel: [255, 0, 255],
+      coinciding: 0,
+    });
+  });
+
+  // Over black, 40% white is 0.4 * 255 = 102 in each channel, and over blue its blue channel is
+  // 102 + 0.6 * 255 = 255. The stripe behind the left half makes the root's left edge a different
+  // color from its right edge. Every shot paints the wrapper opaque, which hides the stripe, so the
+  // blur over the root's middle changes nothing in them.
+  it("exclude a wrapper with a 40% white fill over a black box with a blue stripe behind half of it", async () => {
+    const { shot, coinciding } = await measure(
+      '<div style="position:relative;width:100px;height:100px;background:black"><div style="position:absolute;left:0;top:0;width:50px;height:100px;background:blue"></div><div class="wrapper" style="background:rgb(255 255 255 / 0.4)"><div id="root"></div><div class="over" style="inset:20px;width:auto;height:auto;backdrop-filter:blur(3px)"></div></div></div>'
+    );
+    expect({ left: pixelAt(shot, 5, 50), right: pixelAt(shot, 95, 50), coinciding }).toEqual({
+      left: [102, 102, 255],
+      right: [102, 102, 102],
+      coinciding: 0,
+    });
+  });
+
+  // The popover's color runs a 100s transition from red to blue. A staged rule's \`transition: none\`
+  // would cancel it and leave the popover blue.
+  it("leave a running transition in the root's shadow tree running through the measurement", async () => {
+    const popover =
+      '<script>const pop = document.createElement("div"); pop.popover = "manual"; pop.style.cssText = "color:red;transition:color 100s linear"; pop.textContent = "Pop"; document.querySelector("#root").attachShadow({ mode: "open" }).append(pop); pop.showPopover(); void getComputedStyle(pop).color; pop.style.color = "blue"; document.currentScript.remove()</script>';
+    const { coinciding } = await measure(wrapped("", popover));
+    expect({
+      coinciding,
+      transitions: await page.evaluate(() =>
+        document
+          .querySelector("#root")
+          ?.shadowRoot?.firstElementChild?.getAnimations()
+          .map((animation) => animation.playState)
+      ),
+    }).toEqual({ coinciding: 0, transitions: ["running"] });
+  });
+
   it("exclude one whose other child filters the red behind it to black", async () => {
     expect(await behind("", '<div class="over" style="backdrop-filter:brightness(0)"></div>')).toEqual({
       pixel: [0, 0, 0],
       coinciding: 0,
     });
+  });
+
+  it.each([
+    ["nothing", "", true, 1],
+    ["a backdrop-filter of brightness(2)", "backdrop-filter:brightness(2)", false, 0],
+    ["a backdrop-filter of contrast(200%)", "backdrop-filter:contrast(200%)", false, 0],
+    ["a backdrop-filter of saturate(200%)", "backdrop-filter:saturate(200%)", false, 0],
+    ["a gray fill blended with overlay", "mix-blend-mode:overlay;background:rgb(200,200,200)", false, 0],
+  ])("count a mid-blue wrapper whose other child has %s", async (_, style, shows, coinciding) => {
+    const { pixel, coinciding: found } = await behind("mid", `<div class="over" style="${style}"></div>`);
+    expect({ shows: pixel.every((channel, index) => channel === MID[index]), coinciding: found }).toEqual({
+      shows,
+      coinciding,
+    });
+  });
+
+  // The inner wrapper paints nothing, so the root shows the outer wrapper's mid blue through it,
+  // brightened by the sibling. No candidate's own fill lies across the inner wrapper's shots.
+  it("count no wrapper of a root in a clear wrapper inside a mid-blue one, whose other child brightens the blue", async () => {
+    const { shot, coinciding } = await measure(
+      '<div class="wrapper mid"><div style="position:relative"><div id="root"></div><div class="over" style="backdrop-filter:brightness(2)"></div></div></div>'
+    );
+    const pixel = pixelAt(shot, 50, 50);
+    expect({ shows: pixel.every((channel, index) => channel === MID[index]), coinciding }).toEqual({
+      shows: false,
+      coinciding: 0,
+    });
+  });
+
+  // The page adopts a sheet that paints the sibling blue. The measurement adopts its own sheets
+  // beside the page's, which keeps painting through the shots, and removes them after.
+  it("keep the page's own adopted sheet through the measurement and leave it the only one", async () => {
+    const adopt =
+      '<script>const sheet = new CSSStyleSheet(); sheet.replaceSync(".over { background: blue }"); document.adoptedStyleSheets = [sheet]; document.currentScript.remove()</script>';
+    try {
+      const { shot, coinciding } = await measure(wrapped("", `<div class="over"></div>${adopt}`));
+      expect({
+        pixel: pixelAt(shot, 50, 50),
+        coinciding,
+        sheets: await page.evaluate("document.adoptedStyleSheets.map((sheet) => sheet.cssRules[0]?.cssText)"),
+      }).toEqual({ pixel: BLUE, coinciding: 0, sheets: [".over { background: blue; }"] });
+    } finally {
+      // Playwright's next \`setContent\` keeps the document's adopted sheets.
+      await page.evaluate("document.adoptedStyleSheets = []");
+    }
   });
 });
 

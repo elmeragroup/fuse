@@ -160,7 +160,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-px":{"_tag":"element","up":4},"--sidebar-foreground":{"_tag":"theme"},"--text-xs":{"_tag":"theme"},"--text-xs--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[:where(&)]:rounded-inner","group-data-[collapsible=icon]:-mt-8","group-data-[collapsible=icon]:opacity-0","[&>svg]:size-4","[&>svg]:shrink-0","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden"],
-          "measured": {"containerWidth":240,"coincidingAround":1},
+          "measured": {"containerWidth":240},
           "children": []
         }
       }

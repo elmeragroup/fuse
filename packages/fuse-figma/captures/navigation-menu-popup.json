@@ -235,7 +235,7 @@
           "pseudo": {},
           "variables": {"--available-height":{"_tag":"element","up":1},"--available-width":{"_tag":"element","up":1},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--popover":{"_tag":"theme"},"--popover-foreground":{"_tag":"theme"},"--popup-height":{"_tag":"element","up":0},"--popup-width":{"_tag":"element","up":0},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
           "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0"],
-          "measured": {"coincidingAround":1,"underMaxHeight":true,"underMaxWidth":true},
+          "measured": {"underMaxHeight":true,"underMaxWidth":true},
           "children": [
             {
               "tag": "span",
@@ -427,7 +427,7 @@
           "pseudo": {},
           "variables": {"--available-height":{"_tag":"element","up":1},"--available-width":{"_tag":"element","up":1},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--popover":{"_tag":"theme"},"--popover-foreground":{"_tag":"theme"},"--popup-height":{"_tag":"element","up":0},"--popup-width":{"_tag":"element","up":0},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
           "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0"],
-          "measured": {"coincidingAround":1,"underMaxHeight":true,"underMaxWidth":true},
+          "measured": {"underMaxHeight":true,"underMaxWidth":true},
           "children": [
             {
               "tag": "span",

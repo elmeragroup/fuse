@@ -720,7 +720,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -834,7 +834,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -948,7 +948,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -1062,7 +1062,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -1176,7 +1176,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -1290,7 +1290,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -1404,7 +1404,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",
@@ -1518,7 +1518,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
           "unmatched": ["framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
-          "measured": {"tableTiles":true,"bordersCollapse":true},
+          "measured": {"coincidingAround":4,"tableTiles":true,"bordersCollapse":true},
           "children": [
             {
               "tag": "td",

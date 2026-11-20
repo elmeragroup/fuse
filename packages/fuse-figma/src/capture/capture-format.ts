@@ -101,9 +101,13 @@ const MeasuredFactsSchema = Schema.Struct({
   /** The element's text, or a wrapping row's items, sits on one line under its `max-width`. */
   oneLine: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * On the root: how many of the elements around it, innermost first, lie exactly behind it, their
-   * padding box its border box with none of the paint the capture checks between (issue #766),
-   * whose background the root then shows.
+   * On the root: how many of the elements around it, innermost first, have its border box as their
+   * padding box and show their background in every pixel its box paints, with its tree hidden, as
+   * `coinciding-around.ts` measures from Chromium's pixels. Each pixel reads the element's own fill
+   * where that is an opaque color, and each color the probe paints in its place. A rounded root
+   * counts zero. A rounded ancestor ends the count. So does an ancestor whose background color is
+   * partly transparent, and one whose measurement would stage an element that runs an animation or
+   * transition. The root then shows the innermost background among them.
    */
   coincidingAround: Schema.optionalKey(Schema.Finite),
   /**

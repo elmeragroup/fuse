@@ -1,7 +1,7 @@
 /**
  * Whether a background color the page read paints nothing. The capture's page functions return the
  * computed color as Chromium serializes it, and Node judges it here, where `@elmeragroup/color`
- * parses it, so `pseudo-boxes.ts` and `page-facts.ts` read a fill the same way.
+ * parses it, for `pseudo-boxes.ts`.
  */
 import * as CssColor from "@elmeragroup/color/css-color";
 

@@ -313,6 +313,10 @@ describe("a fill-less root's fill from the elements behind it", () => {
   it.each([
     ["an opacity of 0.5, which Chromium paints (255, 127, 127) over white", { opacity: "0.5" }],
     ["a 20px corner radius, which leaves Chromium's corner pixel white", { "border-radius": "20px" }],
+    [
+      "a 20px logical corner radius, which rounds the top left corner in a left-to-right block",
+      { "border-start-start-radius": "20px" },
+    ],
     ["a filter", { filter: "blur(2px)" }],
     ["a clip path", { "clip-path": "inset(10px)" }],
     ["a mask", { "mask-image": "linear-gradient(#000, transparent)" }],

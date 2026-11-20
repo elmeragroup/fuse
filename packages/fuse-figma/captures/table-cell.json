@@ -253,7 +253,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--row-h":{"_tag":"element","up":8},"--row-px":{"_tag":"element","up":8},"--row-py":{"_tag":"element","up":8},"--table-cell-edge-pe":{"_tag":"element","up":0},"--table-cell-edge-ps":{"_tag":"element","up":0},"--table-cell-pe":{"_tag":"element","up":0},"--table-cell-ps":{"_tag":"element","up":0},"--table-edge-px":{"_tag":"element","up":4}},
           "unmatched": ["has-[[role=checkbox]]:[--table-cell-pe:0px]"],
-          "measured": {"coincidingAround":1,"tableTiles":true},
+          "measured": {"coincidingAround":5,"tableTiles":true},
           "children": []
         }
       }
