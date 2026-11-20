@@ -130,6 +130,7 @@ import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA_MANIFEST } from "./textarea-kit";
 import { TIMELINE_LIST_MANIFEST } from "./timeline-list-kit";
+import { TOAST_MANIFEST } from "./toast-kit";
 import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR_MANIFEST } from "./toolbar-kit";
@@ -286,6 +287,9 @@ const DATA_TABLE_FILTER_PAGE: KitPage = {
 
 /** The page Tour's step card sits on alone. */
 const TOUR_PAGE: KitPage = { slug: "tour", name: "Tour", example: "tour-popup" };
+
+/** The page Toast sits on alone. */
+const TOAST_PAGE: KitPage = { slug: "toast", name: "Toast", example: "toast" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -1008,4 +1012,5 @@ export const KIT: readonly KitEntry[] = [
     previewCells: possibleCells(TOUR_POPUP_MANIFEST),
     manifest: TOUR_POPUP_MANIFEST,
   },
+  { page: TOAST_PAGE, previewCells: possibleCells(TOAST_MANIFEST), manifest: TOAST_MANIFEST },
 ];

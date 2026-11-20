@@ -138,6 +138,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
     },
   ],
   [
+    "status",
+    {
+      values: ["neutral", "info", "success", "warning", "error", "loading"],
+      draws:
+        "The status a Toast shows, which the `type` given to `toastManager.add` sets, since no Toast part takes it as a prop: neutral, info, success, warning, error or loading, each with its fill and icon.",
+    },
+  ],
+  [
     "direction",
     {
       values: ["previous", "next"],
