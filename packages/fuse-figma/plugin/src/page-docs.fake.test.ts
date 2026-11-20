@@ -182,11 +182,11 @@ describe("a Badge page a designer edited", () => {
     const changes = (await reconcileKit(file.figma, kit, false)).changes;
     expect(changes).toContain("Text styles / Span/xs/regular: fontSize → 12");
     expect(badgeLines(changes)).toEqual([
-      "Badge: place Badge, with their labels and the page's title and example, in a row and stack 4 previews below them",
+      "Badge: place Badge, with their labels and the page's title and example, in sections, and 4 previews side by side",
     ]);
   });
 
-  it("adopts an unkeyed Header once, for the title, and makes the Examples header anew", async () => {
+  it("adopts an unkeyed Header once, for the title, and makes the section headers anew", async () => {
     const { kit } = await kitFixture();
     const file = await appliedFile();
     const page = await kitPage(file, "page/badge");
@@ -207,6 +207,7 @@ describe("a Badge page a designer edited", () => {
     const texts = applied.children.filter(isText).map((text) => [keyOf(text), text.characters]);
     expect(texts).toEqual([
       ["docs/badge/title", "Badge"],
+      ["docs/badge/themes-header", "Themes"],
       ["docs/badge/examples-header", "Examples"],
     ]);
     expect(badgeLines((await reconcileKit(file.figma, kit, false)).changes)).toEqual([]);

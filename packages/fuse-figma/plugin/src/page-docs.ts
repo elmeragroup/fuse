@@ -1,8 +1,10 @@
 /**
  * The nodes that document a component page, and the page's layout. A page reads as the Obra kit's
- * pages do: a title, each component set with its name above it, a header above each column naming its
- * value on the column axis and a header beside each row naming its values on the other axes, then the
- * section header `Examples` over a usage example, and the theme previews below.
+ * pages do: a title, then sections down the page, each with its label in a column at the left and
+ * its content growing to the right. A section per component set holds the set's name, a header above
+ * each column naming its value on the column axis and a header beside each row naming its values on
+ * the other axes. The `Themes` section holds the theme previews side by side, and the `Examples`
+ * section the usage example.
  *
  * The docs sit beside the sets, never inside them, so no variant, property or layer of a set
  * changes. Each is a keyed top-level node of its page, which the page plan keeps, and none carries
@@ -36,16 +38,21 @@ import { currentRun } from "./services.ts";
 import { settleInstances } from "./settle.ts";
 import type { PlannedTextStyle } from "./text-styles.ts";
 
-/** The space between component sets, between the sets and the example, and above the previews. */
-const SET_SPACING = 64;
+/** The space between sections, and between previews side by side. */
 const SECTION_SPACING = 64;
 const PREVIEW_SPACING = 32;
 
-/** The space below a page's title and below a section header. */
+/** The space below a page's title. */
 const TITLE_GAP = 32;
-const HEADER_GAP = 16;
 
-/** The space between a set's name and its column headers, and between the headers and the grid. */
+/**
+ * The label column's least width, and the space between its widest label and the content. A set
+ * name longer than the column allows widens it.
+ */
+const LABEL_COLUMN = 240;
+const LABEL_COLUMN_GAP = 32;
+
+/** The space between the column headers and the grid, and on each side of the row headers. */
 const LABEL_GAP = 8;
 
 /** The font `createText` gives a new text, which linking a style needs loaded. */
@@ -284,6 +291,7 @@ export type PlannedDocs = {
   readonly title: Target<TextNode> | undefined;
   /** Each set's labels frame, by the set's key. */
   readonly labels: ReadonlyMap<string, Target<FrameNode>>;
+  readonly themesHeader: Target<TextNode> | undefined;
   readonly examplesHeader: Target<TextNode> | undefined;
   readonly example: Target<FrameNode> | undefined;
 };
@@ -297,10 +305,11 @@ function setOf(sets: ReadonlyMap<string, PlannedSet>, key: string, reader: strin
   return set;
 }
 
-/** A page with no docs: no title, labels, header or example. */
+/** A page with no docs: no title, labels, headers or example. */
 const UNDOCUMENTED: PlannedDocs = {
   title: undefined,
   labels: new Map(),
+  themesHeader: undefined,
   examplesHeader: undefined,
   example: undefined,
 };
@@ -331,13 +340,14 @@ export const planPageDocs = Effect.fnUntraced(function* (
       yield* planLabels(page, spec, setOf(sets, spec.componentSet, spec.name), styles)
     );
   }
+  const themesHeader = yield* planTopText(page, docs.themesHeader, styles);
   const examplesHeader = yield* planTopText(page, docs.examplesHeader, styles);
   const example = yield* planExample(
     page,
     docs.example,
     setOf(sets, docs.example.componentSet, docs.example.name)
   );
-  const planned: PlannedDocs = { title, labels, examplesHeader, example };
+  const planned: PlannedDocs = { title, labels, themesHeader, examplesHeader, example };
   return planned;
 });
 
@@ -358,6 +368,7 @@ export function retypesDocs(
   }
   const linked = [
     docs.title.style,
+    docs.themesHeader.style,
     docs.examplesHeader.style,
     ...docs.labels.flatMap((labels) => [labels.nameStyle, labels.axisStyle]),
   ];
@@ -413,20 +424,30 @@ function textsOf(frame: FrameNode): ReadonlyMap<string, TextNode> {
   return new Map(frame.children.flatMap((child) => (isText(child) ? [[keyOf(child), child] as const] : [])));
 }
 
+/** A section's place on the page, and how tall it is. */
+type Section = PageLayout & {
+  readonly height: number;
+};
+
 /**
- * Lay out a set and its labels at a place. The set's grid gives each column the width of its widest
- * variant or of its header, whichever is wider, as the header measures when the operation runs, so a
- * header never runs into the next column's. The name sits above the grid, each column header at its
- * column's left edge between them, each row header in a column left of the grid, centred on its row,
- * and the set right of that column. A set without labels lays out its grid alone.
+ * Lay out a set's section at a place: its labels frame at the page's left edge, and the set inside
+ * the frame's bounds. The set's name sits at the frame's top left, in the page's label column. Right
+ * of the column, each row header sits centred on its row, the set right of the row headers, and each
+ * column header above the set at its column's left edge. The set's grid gives each column the width
+ * of its widest variant or of its header, whichever is wider, as the header measures when the
+ * operation runs, so a header never runs into the next column's. A set without labels lays out its
+ * grid alone, at the label column's right edge.
+ *
+ * @param column - The label column's width.
  */
 function placeSet(
   set: PlannedSet,
   node: ComponentSetNode,
   frame: FrameNode | undefined,
   x: number,
-  y: number
-): PageLayout {
+  y: number,
+  column: number
+): Section {
   const texts = frame === undefined ? new Map<string, TextNode>() : textsOf(frame);
   const nodeOf = (variant: VariantSpec): ComponentNode => {
     const target = set.variants.get(variant.key);
@@ -438,9 +459,9 @@ function placeSet(
     return component;
   };
   const columnAxis = columnAxisOf(set.spec);
-  const columns = axisValues(set.spec, columnAxis.name).flatMap((value, column) => {
+  const columns = axisValues(set.spec, columnAxis.name).flatMap((value, index) => {
     const text = texts.get(columnKey(value));
-    return text === undefined ? [] : [{ text, column }];
+    return text === undefined ? [] : [{ text, column: index }];
   });
   const headerWidths = axisValues(set.spec, columnAxis.name).map(
     (value) => texts.get(columnKey(value))?.width ?? 0
@@ -449,7 +470,12 @@ function placeSet(
   const cells: Placed[] = grid.cells.map((cell) => ({ node: cell.node, x: cell.x, y: cell.y }));
   const setSize: Sized = { node, width: grid.width, height: grid.height };
   if (frame === undefined) {
-    return { placed: [...cells, { node, x, y }], sized: [setSize], below: [] };
+    return {
+      placed: [...cells, { node, x: x + column, y }],
+      sized: [setSize],
+      below: [],
+      height: Math.ceil(grid.height),
+    };
   }
   const name = texts.get(NAME_KEY);
   const rows = [...texts].flatMap(([key, text]) => {
@@ -457,39 +483,58 @@ function placeSet(
     return Number.isNaN(row) ? [] : [{ text, row }];
   });
   const rowWidth = Math.max(0, ...rows.map(({ text }) => Math.ceil(text.width)));
-  const setLeft = rows.length === 0 ? 0 : rowWidth + LABEL_GAP * 2;
-  const columnTop = name === undefined ? 0 : Math.ceil(name.height) + LABEL_GAP;
+  const setLeft = column + (rows.length === 0 ? 0 : rowWidth + LABEL_GAP * 2);
   const columnHeight = Math.max(0, ...columns.map(({ text }) => Math.ceil(text.height)));
-  const setTop = columnTop + columnHeight + LABEL_GAP;
+  const setTop = columns.length === 0 ? 0 : columnHeight + LABEL_GAP;
+  const height = Math.max(setTop + Math.ceil(grid.height), Math.ceil(name?.height ?? 0));
   const placed: Placed[] = [
     ...cells,
     { node: frame, x, y },
     { node, x: x + setLeft, y: y + setTop },
-    ...(name === undefined ? [] : [{ node: name, x: setLeft, y: 0 }]),
-    ...columns.map(({ text, column }) => ({
+    ...(name === undefined ? [] : [{ node: name, x: 0, y: 0 }]),
+    ...columns.map(({ text, column: index }) => ({
       node: text,
-      x: setLeft + (grid.columnX[column] ?? 0),
-      y: columnTop,
+      x: setLeft + (grid.columnX[index] ?? 0),
+      y: 0,
     })),
     ...rows.map(({ text, row }) => ({
       node: text,
-      x: 0,
+      x: column,
       y: setTop + grid.rowY(row) + Math.round((grid.rowHeight - text.height) / 2),
     })),
   ];
   return {
     placed,
-    sized: [setSize, { node: frame, width: setLeft + grid.width, height: setTop + grid.height }],
+    sized: [setSize, { node: frame, width: setLeft + grid.width, height }],
     below: [{ node: frame, over: node }],
+    height,
   };
 }
 
 /**
- * The page layout: the title, then the sets in a row, each with its labels, then the `Examples`
- * header and the example, then the previews stacked below, all left-aligned with the title. The
- * layout starts where the title sits, or, on a page the run first documents, where the first set
- * sits. Each preview's and the example's instances settle before their heights are read
- * (`settle.ts`).
+ * The label column's width: the least width, or the widest section label and a gap, whichever is
+ * wider, as the labels measure when the operation runs. Every section's label sits in it, so every
+ * section's content starts at one left edge.
+ */
+function labelColumn(sets: readonly PageSet[], docs: PlannedDocs): number {
+  const names = sets.flatMap((entry) => {
+    const frame = entry.set === undefined ? undefined : docs.labels.get(entry.set.spec.key)?.get();
+    const name = frame === undefined ? undefined : textsOf(frame).get(NAME_KEY);
+    return name === undefined ? [] : [name];
+  });
+  const headers = [docs.themesHeader?.get(), docs.examplesHeader?.get()].filter(
+    (header) => header !== undefined
+  );
+  const widest = Math.max(0, ...[...names, ...headers].map((label) => Math.ceil(label.width)));
+  return Math.max(LABEL_COLUMN, widest + LABEL_COLUMN_GAP);
+}
+
+/**
+ * The page layout: the title, then a section per set, then the `Themes` section, the previews side
+ * by side, then the `Examples` section, each section below the last, with its label in the label
+ * column and its content growing to the right. The layout starts where the title sits, or, on a page
+ * the run first documents, where the first set sits. Each preview's and the example's instances
+ * settle before their sizes are read (`settle.ts`).
  */
 function pageLayout(
   sets: readonly PageSet[],
@@ -500,48 +545,59 @@ function pageLayout(
   const placed: Placed[] = [];
   const sized: Sized[] = [];
   const below: Below[] = [];
+  const column = labelColumn(sets, docs);
+  const content = anchor.x + column;
   let y = anchor.y;
   const title = docs.title?.get();
   if (title !== undefined) {
     placed.push({ node: title, x: anchor.x, y });
     y += Math.ceil(title.height) + TITLE_GAP;
   }
-  let x = anchor.x;
-  let bottom = y;
   for (const entry of sets) {
     const node = entry.node.get();
     if (entry.set === undefined || node.type !== "COMPONENT_SET") {
-      placed.push({ node, x, y });
-      x += node.width + SET_SPACING;
-      bottom = Math.max(bottom, y + node.height);
+      placed.push({ node, x: content, y });
+      y += Math.ceil(node.height) + SECTION_SPACING;
       continue;
     }
-    const block = placeSet(entry.set, node, docs.labels.get(entry.set.spec.key)?.get(), x, y);
-    placed.push(...block.placed);
-    sized.push(...block.sized);
-    below.push(...block.below);
-    // The block is the labels frame where the set has one, and the set alone where it has none.
-    const [size] = block.sized.slice(-1);
-    x += (size?.width ?? node.width) + SET_SPACING;
-    bottom = Math.max(bottom, y + (size?.height ?? node.height));
+    const section = placeSet(
+      entry.set,
+      node,
+      docs.labels.get(entry.set.spec.key)?.get(),
+      anchor.x,
+      y,
+      column
+    );
+    placed.push(...section.placed);
+    sized.push(...section.sized);
+    below.push(...section.below);
+    y += section.height + SECTION_SPACING;
   }
-  y = bottom + SECTION_SPACING;
+  const themes = docs.themesHeader?.get();
+  if (themes !== undefined || frames.length > 0) {
+    let height = 0;
+    if (themes !== undefined) {
+      placed.push({ node: themes, x: anchor.x, y });
+      height = Math.ceil(themes.height);
+    }
+    let x = content;
+    for (const target of frames) {
+      const frame = target.get();
+      settleInstances(frame);
+      placed.push({ node: frame, x, y });
+      x += Math.ceil(frame.width) + PREVIEW_SPACING;
+      height = Math.max(height, Math.ceil(frame.height));
+    }
+    y += height + SECTION_SPACING;
+  }
   const header = docs.examplesHeader?.get();
   if (header !== undefined) {
     placed.push({ node: header, x: anchor.x, y });
-    y += Math.ceil(header.height) + HEADER_GAP;
   }
   const example = docs.example?.get();
   if (example !== undefined) {
     settleInstances(example);
-    placed.push({ node: example, x: anchor.x, y });
-    y += example.height + SECTION_SPACING;
-  }
-  for (const target of frames) {
-    const frame = target.get();
-    settleInstances(frame);
-    placed.push({ node: frame, x: anchor.x, y });
-    y += frame.height + PREVIEW_SPACING;
+    placed.push({ node: example, x: content, y });
   }
   return { placed, sized, below };
 }
@@ -609,18 +665,23 @@ export function placePageContents(
   const settled =
     !changed &&
     sets.every((entry) => entry.node.existing !== undefined) &&
-    [docs.title, ...docs.labels.values(), docs.examplesHeader, docs.example, ...frames].every(
-      (target) => target === undefined || target.existing !== undefined
-    );
+    [
+      docs.title,
+      ...docs.labels.values(),
+      docs.themesHeader,
+      docs.examplesHeader,
+      docs.example,
+      ...frames,
+    ].every((target) => target === undefined || target.existing !== undefined);
   if (settled && holds(pageLayout(sets, docs, frames, anchorOf()))) {
     return;
   }
-  const stack = frames.length === 0 ? "" : ` and stack ${String(frames.length)} previews below them`;
+  const side = frames.length === 0 ? "" : `, and ${String(frames.length)} previews side by side`;
   const named = documented ? ", with their labels and the page's title and example," : "";
   change(
     run.plan,
     page.spec.name,
-    `place ${listed(sets.map((entry) => entry.name))}${named} in a row${stack}`,
+    `place ${listed(sets.map((entry) => entry.name))}${named} in sections${side}`,
     () => {
       const layout = pageLayout(sets, docs, frames, anchorOf());
       for (const sized of layout.sized) {

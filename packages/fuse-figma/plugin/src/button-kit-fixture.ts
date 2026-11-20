@@ -145,6 +145,14 @@ export const KIT: KitSpec = {
           axisStyle: FIXTURE_STYLE.key,
         },
       ],
+      themesHeader: {
+        kind: "text",
+        key: "docs/page/themes-header",
+        name: "Header",
+        page: "page",
+        text: "Themes",
+        style: FIXTURE_STYLE.key,
+      },
       examplesHeader: {
         kind: "text",
         key: "docs/page/examples-header",
@@ -332,7 +340,7 @@ export async function buttonVariant(file: FakeFigma): Promise<ComponentNode> {
  * the set's grid with it.
  */
 export const RELAYOUT = [
-  "Fuse components: place Button and Icons, with their labels and the page's title and example, in a row",
+  "Fuse components: place Button and Icons, with their labels and the page's title and example, in sections",
 ];
 
 /**
