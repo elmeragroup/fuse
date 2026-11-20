@@ -37,6 +37,26 @@ const OWN_WIDTH = [
 ] as const;
 
 /**
+ * The elements whose auto width is not their text's max-content width, so the fit does not take
+ * them: a field's, a select's, a meter's or a progress bar's width comes from the control, as a
+ * `<textarea>`'s `cols` holds it at 176px at 16px whatever it holds (HTML §4.10.11), and a replaced
+ * element's from its content. A `<button>` sizes to its content as a block does, so the fit takes it.
+ */
+const SIZED_BY_ELEMENT: ReadonlySet<string> = new Set([
+  "input",
+  "textarea",
+  "select",
+  "img",
+  "video",
+  "canvas",
+  "iframe",
+  "object",
+  "embed",
+  "meter",
+  "progress",
+]);
+
+/**
  * The declarations that can set a flex item's width past its `width`, which the room the row leaves
  * reads alone: a limit, which clamps it (CSS Flexbox 1 §9.7), and a basis.
  */
@@ -70,31 +90,36 @@ function keepsWidth(style: LayerStyle): boolean {
  * `width` but a literal one, so the room is the row's less those widths. The part's `display` holds
  * the unmapped row where its layers do not draw alike.
  *
- * The rule takes only a part that holds parts and no text of its own, beside at least one other
- * part, as Checkbox card's text column sits beside its control. A part that holds its own text, as
- * Card's footer paragraph and File upload's description, or that sits alone in its row, as Radio
- * row's label, keeps its hug, where a fill would wrap its text as CSS does (#806).
+ * The part draws as a frame, whatever it holds: parts, as Checkbox card's text column beside its
+ * control, its own text, as File upload's description beside its trigger, or both. It may sit alone
+ * in its row, where the room is the row's content width, as Card's footer paragraph and Radio row's
+ * label do. A form control or a replaced element sizes itself, so it keeps its own sizing.
  *
  * @param holder - The row.
  * @param parts - The style of each part in the row's flow, in layer order.
  * @param index - The part's place among `parts`.
- * @param part - The place of the part that grows in the row, as `readGrowth` reads it, and whether
- *   the part holds parts and no text of its own.
+ * @param part - The place of the part that grows in the row, as `readGrowth` reads it, whether the
+ *   part draws as a frame of its own, not as an instance, an icon or a pseudo-element, and its
+ *   element's tag, where the capture holds one.
  * @returns True where the part fits the room.
  */
 export function fitsRowEnd(
   holder: Holder,
   parts: readonly LayerStyle[],
   index: number,
-  { growing, holdsOnlyParts }: { readonly growing: number | undefined; readonly holdsOnlyParts: boolean }
+  {
+    growing,
+    frame,
+    tag,
+  }: { readonly growing: number | undefined; readonly frame: boolean; readonly tag: string | undefined }
 ): boolean {
   const { layout, sizing, style, layers } = holder;
   const part = parts[index];
   const row = (property: string) => normalizeCss(style.resolved(property) ?? "");
   return (
     part !== undefined &&
-    holdsOnlyParts &&
-    parts.length > 1 &&
+    frame &&
+    (tag === undefined || !SIZED_BY_ELEMENT.has(tag)) &&
     layout.flex &&
     layout.direction === "HORIZONTAL" &&
     sizing.horizontal.kind !== "hug" &&
@@ -116,11 +141,13 @@ export function fitsRowEnd(
 /**
  * Whether a layer that fills draws at any width as it does at its content's width: it paints
  * nothing, does not turn, and lays its layers out from its start, each that fills doing the same. A
- * layer that fills it with no width cap spans it, so it starts at its start however the layer aligns
- * it. A text that fills sets its lines from the left. A frame that hugs or is fixed keeps its width whatever
- * its parent's, and so does an icon. An instance that fills, a grid, a placed layer and a layer that
- * paints can draw wider, so they do not, and a frame that turns about its centre moves what it holds
- * as its width changes.
+ * layer that fills it with no width cap takes all the room its row leaves, so a row that centres or
+ * ends its layers packs them from its start with its gaps, as Radio row's label centres its radio
+ * and its filling content. A column's layers start at its start where each fills it with no width
+ * cap. A text that fills sets its lines from the left. A frame that hugs or is fixed keeps its width
+ * whatever its parent's, and so does an icon. An instance that fills, a grid, a placed layer and a
+ * layer that paints can draw wider, so they do not, and a frame that turns about its centre moves
+ * what it holds as its width changes.
  *
  * @param layer - The layer, as its part mapped.
  * @returns True where the width draws alike.
@@ -147,7 +174,7 @@ export function drawsFromStart(layer: ChildLayerSpec): boolean {
     (child.kind === "text" ? child.maxWidth : child.limits.maxWidth) === undefined;
   const fromStart =
     layer.direction === "HORIZONTAL"
-      ? layer.primaryAlign === "MIN" || (flowing.length === 1 && flowing.every(fillsAcross))
+      ? layer.primaryAlign === "MIN" || flowing.some(fillsAcross)
       : layer.direction === "VERTICAL" && (layer.counterAlign === "MIN" || flowing.every(fillsAcross));
   return (
     fromStart &&

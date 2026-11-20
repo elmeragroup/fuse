@@ -1,6 +1,7 @@
 /**
  * How the build sizes a flex row's part from its content and the room the row leaves it, as
- * Checkbox card's label grows across its content row and its text column sits beside its control.
+ * Checkbox card's label grows across its content row and its text column sits beside its control, and
+ * as File upload's description, Card's footer paragraph and Radio row's label fit their own text.
  * The unit under test is `buildComponentSet` on hand-built captures (`test/capture-fixtures.ts`), whose
  * `div`s set `block` as the browser's style sheet does.
  * Oracles, measured in Chromium on 2026-11-19 with 16px Arial on 24px lines:
@@ -31,6 +32,14 @@
  *   of padding to a side, 320px as a row of two 10px blocks 300px apart, and 280px around an empty
  *   `w-fit` box with a 140px border. Laid out as a column that centers its layers, a title that
  *   fills the column up to a 100px maximum starts at 36px fitted and at 118px in the room.
+ * - CSS Flexbox 1 §9.7 and CSS Sizing 3 §5.1, for a part that holds its own text: beside the 24px
+ *   control and the 12px gap, a 300px row's last paragraph is 90.7px wide around `Covers theft.`
+ *   and 264px, two lines, around a 70-character sentence. Alone in the row it is 90.7px and 300px,
+ *   two lines. Around the sentence, a row that hugs it sets it 469.6px wide, on one line, and a
+ *   400px minimum at 400px. A `<textarea>` with no padding or border is 176px wide, its 20 default
+ *   columns, around `Short` and around the sentence alike (HTML §4.10.11). A `<button>` in the
+ *   paragraph's place is 90.7px and 264px wide, as the paragraph is. A label that centres a
+ *   16px control and a 50px box that keeps its width, 8px apart, is 74px wide.
  * - CSS Flexbox 1 §7: `flex` applies only to a flex item, so a block's part sizes nothing by it.
  * - The coverage contract: a part whose fitted width the build does not draw keeps a row unmapped.
  */
@@ -310,6 +319,143 @@ describe("a flex row's last part that fits its content to the room beside a cont
     ],
   ])("keeps the column's width unmapped where %s", async (_case, classes) => {
     const { coverage } = await buildRow(classes);
+    expect(unmapped(coverage).map(([, property, detail]) => [property, detail])).toContainEqual([
+      "width",
+      "the part fits its content to the room the row leaves it, and a fill draws that room, where it or a layer inside it paints, turns, does not start at its start, holds a text that does not wrap or may be wider than the room, so it would draw wider or elsewhere",
+    ]);
+  });
+});
+
+describe("a flex row's last part that holds its own text, or sits alone in its row", () => {
+  /** The sentence that wraps in each room these rows leave. */
+  const SENTENCE = "Settled on 3 April, and the invoice was paid in full by bank transfer.";
+
+  /** The 24px box beside the text, which keeps its width. */
+  const CONTROL: PartManifest = part({ key: "control", slot: "control" });
+
+  /** A part that holds its own text. */
+  const NOTE: PartManifest = part({ key: "note", slot: "note", label: text(SENTENCE, "Note") });
+
+  /**
+   * Build a 300px row around a part that holds its own text, after the control where `control` is
+   * given.
+   *
+   * @param classes - The classes of the row, the control and the part, `block` by default, and the
+   *   part's tag, `p` by default.
+   */
+  function buildText(classes: {
+    readonly row?: string;
+    readonly control?: string;
+    readonly note?: string;
+    readonly tag?: string;
+  }) {
+    const control: readonly FixtureElement[] =
+      classes.control === undefined ? [] : [{ slot: "control", classes: classes.control }];
+    return buildCaptured(
+      chip({ parts: [...(classes.control === undefined ? [] : [CONTROL]), NOTE] }),
+      [
+        {
+          cell: { state: "rest" },
+          root: {
+            slot: "chip",
+            classes: `${classes.row ?? "flex w-[300px] items-center gap-[12px]"} ${TYPE}`,
+            children: [
+              ...control,
+              {
+                tag: classes.tag ?? "p",
+                slot: "note",
+                classes: `block ${classes.note ?? ""}`,
+                text: SENTENCE,
+              },
+            ],
+          },
+        },
+      ],
+      WITH_DENSITY
+    );
+  }
+
+  /** The note's layer and its text's, and the rows that stay unmapped. */
+  async function noteOf(classes: Parameters<typeof buildText>[0]) {
+    const { variant, coverage } = await buildText(classes);
+    const note = variant?.root.children.at(-1);
+    return {
+      note: across(note),
+      text: note?.kind === "frame" ? across(note.children[0]) : undefined,
+      unmapped: unmapped(coverage),
+    };
+  }
+
+  it.each([
+    ["beside a control", { control: "size-[24px] shrink-0" }],
+    ["alone in its row", {}],
+    ["as a button beside a control", { control: "size-[24px] shrink-0", tag: "button" }],
+  ])("draws the text part %s as a fill whose text fills it", async (_case, classes) => {
+    expect(await noteOf(classes)).toEqual({ note: FILL, text: FILL, unmapped: [] });
+  });
+
+  // The part takes no fill where CSS sizes it otherwise than fitting it to the room it is drawn at.
+  it.each([
+    ["the row hugs it", { row: "flex w-fit" }],
+    ["it sets a minimum width of its own", { note: "min-w-[400px]" }],
+  ])("keeps the text part hugging where %s", async (_case, classes) => {
+    expect((await noteOf(classes)).note).toEqual(HUG);
+  });
+
+  // A textarea is 176px wide around any text, so the fit leaves it to the control's own sizing, which
+  // refuses a hugging control whose text wraps.
+  it("leaves a textarea's width to the control, which a fill would draw at the room", async () => {
+    await expect(buildText({ tag: "textarea" })).rejects.toThrow(
+      "the control wraps its text at its width, so its box needs a fixed or filling width"
+    );
+  });
+
+  /**
+   * Build a 300px row around one label that centres a 16px control and its content, as Radio row's
+   * label does.
+   *
+   * @param content - The content's classes.
+   */
+  function buildLabel(content: string) {
+    return buildCaptured(
+      chip({
+        parts: [
+          part({
+            key: "label",
+            slot: "label",
+            parts: [
+              part({ key: "control", slot: "control" }),
+              part({ key: "content", slot: "content", label: text(SENTENCE, "Label") }),
+            ],
+          }),
+        ],
+      }),
+      [
+        {
+          cell: { state: "rest" },
+          root: {
+            slot: "chip",
+            classes: `flex w-[300px] ${TYPE}`,
+            children: [
+              {
+                tag: "label",
+                slot: "label",
+                classes: "flex items-center gap-[8px]",
+                children: [
+                  { slot: "control", classes: "size-[16px] shrink-0" },
+                  { slot: "content", classes: `block ${content}`, text: SENTENCE },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+      WITH_DENSITY
+    );
+  }
+
+  it("keeps the label's width unmapped where it centres layers that keep their width", async () => {
+    const { coverage } = await buildLabel("w-[50px] shrink-0");
     expect(unmapped(coverage).map(([, property, detail]) => [property, detail])).toContainEqual([
       "width",
       "the part fits its content to the room the row leaves it, and a fill draws that room, where it or a layer inside it paints, turns, does not start at its start, holds a text that does not wrap or may be wider than the room, so it would draw wider or elsewhere",

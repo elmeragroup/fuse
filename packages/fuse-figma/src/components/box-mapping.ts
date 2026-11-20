@@ -765,11 +765,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       index !== -1 &&
       fitsRowEnd(holder, flowingStyles, index, {
         growing,
-        holdsOnlyParts:
-          part.kind === "frame" &&
-          part.pseudo !== true &&
-          part.child.label === undefined &&
-          (part.child.parts ?? []).length > 0,
+        frame: part.kind === "frame" && part.pseudo !== true,
+        tag: part.cascade.elementTag,
       });
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
