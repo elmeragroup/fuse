@@ -67,8 +67,8 @@ import {
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { drawRestAtEnd } from "./end-frame";
-import { drawsAtRoom, fitsRowEnd } from "./fitting-part";
-import type { BesideLayer } from "./fitting-part";
+import { drawsAtRoom, fitsRowRoom } from "./fitting-part";
+import type { BesideLayer, FitPlace } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
@@ -784,27 +784,35 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const drawnBefore = before.filter((part) => !unplaced.includes(part));
   const flowingStyles = flowing.map((each) => each.cascade.style);
   const besideIcon = ({ style, share }: DrawnIcon): BesideLayer => ({ kind: "icon", style, share });
-  const mapped = drawn.map((part): MappedPart => {
+  const fitted = drawn.map((part): FittedPart => {
     const index = flowing.indexOf(part);
-    const fits =
-      index !== -1 &&
-      fitsRowEnd(
-        holder,
-        flowingStyles,
-        index,
-        {
-          growing,
-          frame: part.kind === "frame" && part.pseudo !== true,
-          tag: part.cascade.elementTag,
-          layer: layerIndex(index),
-          beside: [
-            ...start.map(besideIcon),
-            ...(label === undefined ? [] : [{ kind: "label" } as const]),
-            ...end.map(besideIcon),
-          ],
-        },
-        context.variables
-      );
+    const place =
+      index === -1
+        ? undefined
+        : fitsRowRoom(
+            holder,
+            flowingStyles,
+            index,
+            {
+              growing,
+              frame: part.kind === "frame" && part.pseudo !== true,
+              tag: part.cascade.elementTag,
+              ownText:
+                part.kind === "frame" &&
+                part.child.label !== undefined &&
+                (part.child.parts ?? []).length === 0 &&
+                part.child.iconsFor(cell).length === 0 &&
+                part.child.image === undefined,
+              layer: layerIndex(index),
+              beside: [
+                ...start.map(besideIcon),
+                ...(label === undefined ? [] : [{ kind: "label" } as const]),
+                ...end.map(besideIcon),
+              ],
+            },
+            context.variables
+          );
+    const fits = place !== undefined;
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
       const room = rowRoom(inside, across?.[index], minimum);
@@ -849,7 +857,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       keepsRoom
     );
     // The fill draws the part's fitted width only where nothing in it paints, moves or keeps it wider at the room's.
-    if (fits && !drawsAtRoom(result.layer, room.horizontal.length, context.variables)) {
+    const fit =
+      place === undefined
+        ? undefined
+        : { place, drawn: drawsAtRoom(result.layer, room.horizontal.length, context.variables) };
+    if (fit?.drawn === false) {
       part.cascade.style.missing("width", "display", UNFITTED);
     }
     // The row's one growing layer is as wide as its least width where that is wider than the row.
@@ -861,10 +873,17 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ) {
       part.cascade.style.missing("width", "flex-grow", OVERGROWN);
     }
-    return index === centred?.place
-      ? { ...result, layer: padCentred(result.layer, result.framed === true, centred.padding, variant) }
-      : result;
+    return {
+      mapped:
+        index === centred?.place
+          ? { ...result, layer: padCentred(result.layer, result.framed === true, centred.padding, variant) }
+          : result,
+      fit,
+    };
   });
+  const mapped = fitted.map((each) => each.mapped);
+  // A first part that fits takes the room its row spaces out, as `fitsRowRoom` says.
+  const spacedFit = fitted.find((each) => each.fit?.place === "spaced-first")?.fit;
   const parts = settledParts(reader, flow, mapped, scope);
   const missing = unstretched(
     holder,
@@ -1059,8 +1078,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     layout.restAtEnd === true
       ? drawRestAtEnd(reader, joined, { itemSpacing, counterAlign }, sizing.vertical)
       : joined;
-  const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
-  if (layout.spaceBetweenUnread === true) {
+  // A row spaced around a first part that fits packs at its start, and where a fill does not draw
+  // that part, the row's spacing stays unmapped with it.
+  const unspaced =
+    spacedFit === undefined ? spacesNothingOut(layout, placement.primaryAlign, children) : "fits";
+  if (spacedFit?.drawn === false) {
+    reader.mark("justify-content", "unmapped", UNFITTED, []);
+  } else if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);
   }
   let laidOut: BoxSpec = {
@@ -1580,6 +1604,15 @@ type MappedPart = {
   readonly wrapped?: InstanceLayerSpec;
   /** Whether a frame part's layer is the frame that draws its margins. */
   readonly framed?: boolean;
+};
+
+/**
+ * A part as its box mapped it, with its fit where it fits the room its row leaves it: its place in
+ * the row, as `fitsRowRoom` reads it, and whether a fill of that room draws it.
+ */
+type FittedPart = {
+  readonly mapped: MappedPart;
+  readonly fit: { readonly place: FitPlace; readonly drawn: boolean } | undefined;
 };
 
 /**
