@@ -854,7 +854,9 @@ export function growingRoom(holder: Holder, index: number, room: Room): Room {
 /**
  * The room of a row's last part that fits its content to what the row leaves it, as
  * `fitting-part.ts` decides: it fills, and its length is the row's content length less the other
- * layers and the gaps, or unknown where one of them does not read in pixels.
+ * layers, their margins across and the gaps, or unknown where one of them does not read in pixels.
+ * A width that binds a synced variable reads in none, so beside it the length is unknown, and only a
+ * part whose least width is 0 draws there, as `fitsRoom` says.
  *
  * @param holder - The row.
  * @param index - The part's place in the row's flow.
