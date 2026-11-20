@@ -4,7 +4,8 @@
  * read the fills a character paints with the same way in each. Unit under test: the fake in
  * `fake-figma.ts`. Oracles: the typings, under which a text's `fills` is `figma.mixed` only where its
  * characters' fills differ, and the 2026-11-19 live probe, where `getStyledTextSegments(['fills'])`
- * returned one run for each stretch of characters with one fill.
+ * returned one run for each stretch of characters with one fill, and the 2026-11-20 live probe on
+ * `ab;\ncd` (NL1–NL4), where a line break painted in the fill of the character before it.
  */
 import { describe, expect, it } from "vitest";
 
@@ -13,16 +14,19 @@ import { fixtureFile } from "./fake-fixtures.ts";
 const RED: Paint[] = [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }];
 const BLUE: Paint[] = [{ type: "SOLID", color: { r: 0, g: 0, b: 1 } }];
 
-/** A two-character text in red, its font loaded. */
-async function redText() {
+/** A text of the given characters in the given fills, its font loaded. */
+async function textOf(characters: string, fills: Paint[]) {
   const { figma } = fixtureFile([]);
   await figma.loadFontAsync({ family: "Roboto", style: "Regular" });
   const text = figma.createText();
   text.fontName = { family: "Roboto", style: "Regular" };
-  text.characters = "ab";
-  text.fills = RED;
+  text.characters = characters;
+  text.fills = fills;
   return { figma, text };
 }
+
+/** A two-character text in red, its font loaded. */
+const redText = () => textOf("ab", RED);
 
 /** Each run's characters and the red and blue of its first fill. */
 function runs(text: TextNode): readonly (readonly [string, number, number])[] {
@@ -63,6 +67,28 @@ describe("the fake's per-character fills", () => {
       [1, 0],
       [1, 0],
       [["ab", 1, 0]],
+    ]);
+  });
+
+  it("paint a line break in the fill of the character before it, whatever fill it was given", async () => {
+    const colored = await textOf("ab;\ncd", BLUE);
+    colored.text.setRangeFills(2, 3, RED);
+    const coloredRuns = runs(colored.text);
+    colored.text.setRangeFills(3, 4, BLUE);
+    const breakOnly = await textOf("ab;\ncd", BLUE);
+    breakOnly.text.setRangeFills(3, 4, RED);
+    expect([coloredRuns, runs(colored.text), hue(breakOnly.figma, breakOnly.text.fills)]).toEqual([
+      [
+        ["ab", 0, 1],
+        [";\n", 1, 0],
+        ["cd", 0, 1],
+      ],
+      [
+        ["ab", 0, 1],
+        [";\n", 1, 0],
+        ["cd", 0, 1],
+      ],
+      [0, 1],
     ]);
   });
 });

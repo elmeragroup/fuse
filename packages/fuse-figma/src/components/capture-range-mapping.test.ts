@@ -81,11 +81,26 @@ describe("a label whose text sits in spans that color it", () => {
       },
     ];
     const { variant } = await build("let a\nbc;", { classes: PRE, texts: ["", "\n", ""], children: lines });
+    // The break after `a` takes `a`'s color, so it joins `a` and `bc` into one range.
     expect(textOf(variant?.root)?.ranges).toEqual([
       { start: 0, end: 3, color: bound("sh-keyword") },
-      { start: 4, end: 5, color: bound("sh-identifier") },
-      { start: 6, end: 8, color: bound("sh-identifier") },
+      { start: 4, end: 8, color: bound("sh-identifier") },
     ]);
+  });
+
+  // Oracle: the live probe of 2026-11-20 (NL1–NL4), where Figma painted a line break in the fill of
+  // the character before it and dropped a fill written on the break alone.
+  it("gives a line break the color of the character before it, and one that starts the text the label's", async () => {
+    const { variant } = await build("\na\nb\n", {
+      classes: PRE,
+      children: [
+        span("\na", inline("var(--sh-keyword)")),
+        span("\n"),
+        span("b"),
+        span("\n", inline("var(--sh-string)")),
+      ],
+    });
+    expect(textOf(variant?.root)?.ranges).toEqual([{ start: 1, end: 3, color: bound("sh-keyword") }]);
   });
 
   it("gives a span whose color reads a property set nowhere its parent's color", async () => {

@@ -129,7 +129,13 @@
  *    text, gave every character the first character's fill. The fake keeps them through every write
  *    but those two and the writes that give every character one style: a text style link (rule 60)
  *    and a TEXT link or write (rules 51 and 52). Its characters write gives every character the first
- *    one's style, as rule 10 says.
+ *    one's style, as rule 10 says. A line break paints in the fill of the character before it. In a
+ *    scratch file on 2026-11-20, with `ab;\ncd` (live probe NL1–NL4): coloring `;` red read `[2,4]`
+ *    red, the break included (NL1); `setRangeFills(3, 4, black)` on the break left it red and read it
+ *    back red (NL2); coloring only the break red was dropped and the whole text read black (NL3); and
+ *    the character after a break kept its own fill (NL4). The fake keeps each break's own fill and
+ *    shows the one before it in every read. No probe wrote a fill on a break that starts the text,
+ *    so the fake shows that break's own fill.
  * 66. A text's `hyperlink` is a `HyperlinkTarget`, a URL or a node, or null, as the typings say. A real
  *    file showed (live probe 2026-11-19, HL1–HL4): a URL written on a whole text reads back
  *    exactly as written and draws no underline and no color, `textDecoration` staying NONE and the
