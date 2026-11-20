@@ -562,6 +562,7 @@ export function setProperties(
   const options = owner === main ? new Map<string, string[]>() : variantOptions(owner);
   const variant = new Map(variantValues(main.name) ?? []);
   const values: (readonly [string, string | boolean])[] = [];
+  let variantWritten = false;
   for (const [name, given] of Object.entries(properties)) {
     const value = propertyInput(name, given);
     const flag = value === true || value === false;
@@ -571,6 +572,7 @@ export function setProperties(
         throw new Error(`${owner.id} has no ${name} ${String(value)} to show.`);
       }
       variant.set(name, value);
+      variantWritten = true;
       continue;
     }
     const property = owner.properties.get(name);
@@ -590,7 +592,8 @@ export function setProperties(
     }
     values.push([name, value]);
   }
-  const target = owner === main ? main : variantWith(owner, variant);
+  // A write that names no variant keeps the variant the instance shows.
+  const target = owner === main || !variantWritten ? main : variantWith(owner, variant);
   // The log names each property set, as `Label#12:3`, so a test can tell which values a run wrote.
   write(state, `set properties ${values.map(([id]) => id).join(", ")}`);
   for (const [id, value] of values) {

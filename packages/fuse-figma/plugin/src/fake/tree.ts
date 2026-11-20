@@ -1,6 +1,39 @@
 /**
  * The node tree: the layers a parent holds, an instance's sublayers mirrored from its main
  * component, and how the file creates, copies, inserts and removes a node.
+ *
+ * It models this rule. The numbers run across the whole fake, and `fake-figma.ts` lists the module
+ * that holds each:
+ * 67. `remove()` on a component or a component set detaches it and leaves it readable. `remove()` on
+ *    another layer deletes it, the components it holds and the instances that show them. Probes
+ *    FD1, FD2 and FD3 ran through the Plugin API on a scratch file in the Elmera organization on
+ *    2026-11-20 and showed:
+ *    - A removed component reads `removed` false and `parent` null. It keeps its id, its key, its
+ *      children and the shared plugin data on it and on its layers. It is gone from the page's
+ *      children. An instance's `getMainComponentAsync()` still returns it (FD1).
+ *    - This does not depend on an instance. A lone component reads the same after its `remove()`,
+ *      and so does a removed main once its last instance swaps away (FD2).
+ *    - A removed variant leaves its set, and an instance of it reads `componentProperties` `{}`. A
+ *      removed set keeps its variants as children, and its instances keep their properties (FD2).
+ *      Figma renamed the removed variant `size=sm` to `FD2 set/sm`. The fake keeps the name, since
+ *      FD2 removed a variant of one axis and the name of a variant of several is unprobed.
+ *    - After `remove()` on a frame that holds a component, the component reads `removed` true. An
+ *      instance of it outside the frame on the same page reads `removed` true too and is gone from
+ *      the page. Its `children` throws, and its `getMainComponentAsync()` returns null (FD3).
+ *    - FD3 also removed a frame that held a component A and a component B with an instance of A
+ *      inside. A, B, the instance inside B and an instance of B outside the frame all read
+ *      `removed` true.
+ *
+ *    The probes left these open, and the fake assumes them:
+ *    - An instance on another page is removed as one on the same page is, and so is an instance a
+ *      component outside the removed layer holds.
+ *    - A page removal is a layer removal, so it removes the instances on other pages that show the
+ *      components it held.
+ *    - A component set inside a removed layer is removed with its variants, as a component is.
+ *    - An instance removed directly, and an instance whose main was removed, read null from
+ *      `getMainComponentAsync()`. FD3 read null only on an instance removed with its main.
+ *    - A sublayer that mirrors a removed layer stays until its instance mirrors its main again, and
+ *      a sublayer swapped to a removed component stays in place.
  */
 
 import { BLACK, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
@@ -57,10 +90,49 @@ export function mirror(state: NodeState, source: NodeState, swapped: boolean): v
   }
 }
 
+/** Mark a layer and the layers it holds removed. */
 export function markRemoved(state: NodeState): void {
   state.removed = true;
   for (const child of state.children) {
     markRemoved(child);
+  }
+}
+
+/** The components among a layer and the layers it holds. */
+function componentsIn(state: NodeState): Set<NodeState> {
+  const found = new Set<NodeState>();
+  const visit = (node: NodeState): void => {
+    if (node.type === "COMPONENT") {
+      found.add(node);
+    }
+    node.children.forEach(visit);
+  };
+  visit(state);
+  return found;
+}
+
+/**
+ * Take a layer out of its parent as `remove()` does (rule 67). A component or a set stays readable.
+ * Any other layer is removed with the layers it holds, and so is each instance that shows a
+ * component among them. An instance holds no component, so removing the instances removes no
+ * further component. Only the components this call removes take their instances with them.
+ */
+export function removeNode(state: NodeState): void {
+  detach(state);
+  if (state.type === "COMPONENT" || state.type === "COMPONENT_SET") {
+    return;
+  }
+  const components = componentsIn(state);
+  markRemoved(state);
+  if (components.size === 0) {
+    return;
+  }
+  for (const node of state.file.nodes.values()) {
+    const shown = node.type === "INSTANCE" ? sourceOf(node) : undefined;
+    if (!node.removed && node.mirrorOf === undefined && shown !== undefined && components.has(shown)) {
+      detach(node);
+      markRemoved(node);
+    }
   }
 }
 
