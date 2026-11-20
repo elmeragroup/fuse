@@ -6,7 +6,7 @@
 
 import { Effect } from "effect";
 
-import { walkLayers } from "../../src/components/kit-spec.ts";
+import { shownLabels, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -20,7 +20,7 @@ import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
 import { near, planNumber, planPaints, planScalar, planVisibleLink, solidPaint } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { fontLayers, heldFonts, requireNewTextFonts, shownLabels } from "./fonts.ts";
+import { fontLayers, heldFonts, requireNewTextFonts } from "./fonts.ts";
 import { planGridItems } from "./grid.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -269,7 +269,12 @@ function childKind(
   if (spec.kind === "instance") {
     const inner = innerVariant(links.sets, spec, layerLabel);
     // A TEXT property writes the inner labels' characters, which needs their fonts (rule 34).
-    requireNewTextFonts(run, parent, label, shownLabels(spec, inner.spec));
+    requireNewTextFonts(
+      run,
+      parent,
+      label,
+      shownLabels(spec, { variant: inner.spec, textProperties: inner.set.spec.textProperties })
+    );
     return {
       name: spec.name,
       accept: isInstance,

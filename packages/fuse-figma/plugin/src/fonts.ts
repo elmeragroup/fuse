@@ -7,21 +7,21 @@
 
 import { Effect } from "effect";
 
-import { FONT_WEIGHT_STYLES, glyphRanges, walkLayers } from "../../src/components/kit-spec.ts";
+import { FONT_WEIGHT_STYLES, glyphRanges, shownLabels, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentSetSpec,
+  InnerVariantSpec,
   InstanceLayerSpec,
   TextLayerSpec,
-  VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { FileNotSynced, FontUnavailable } from "./errors.ts";
 import type { Run } from "./fields.ts";
 import { requirement } from "./plan.ts";
 import { currentRun } from "./services.ts";
 
-/** The inner variant an instance layer shows. */
-export type InnerSpecs = (layer: InstanceLayerSpec) => VariantSpec;
+/** The inner variant an instance layer shows, and the TEXT properties of its set. */
+export type InnerSpecs = (layer: InstanceLayerSpec) => InnerVariantSpec;
 
 /**
  * Require a font before the run's first write. Figma refuses a text write unless the fonts it
@@ -258,33 +258,5 @@ export function fontLayers(
 ): readonly ChildLayerSpec[] {
   return layers.flatMap((layer): readonly ChildLayerSpec[] =>
     layer.kind === "instance" ? shownLabels(layer, innerOf(layer)) : [layer]
-  );
-}
-
-/**
- * The labels of an inner variant that a TEXT property sets, each with the characters the instance
- * layer gives it, or its own where the layer sets none. Characters an instance gives can hold the
- * glyph font's glyphs where the inner label's own do not, and then need its faces too.
- *
- * @param layer - The instance layer.
- * @param variant - The inner variant it shows.
- * @returns The text layers that link a TEXT property, at the characters the instance shows.
- */
-export function shownLabels(layer: InstanceLayerSpec, variant: VariantSpec): readonly TextLayerSpec[] {
-  return linkedLabels(variant).map((label) => {
-    const shown = label.textProperty === undefined ? undefined : layer.properties?.text?.[label.textProperty];
-    return shown === undefined ? label : { ...label, characters: shown };
-  });
-}
-
-/**
- * The labels of a variant that a TEXT property sets, whose fonts a TEXT write on an instance needs.
- *
- * @param variant - The inner variant.
- * @returns The text layers that link a TEXT property.
- */
-export function linkedLabels(variant: VariantSpec): readonly TextLayerSpec[] {
-  return walkLayers(variant.root).filter(
-    (layer): layer is TextLayerSpec => layer.kind === "text" && layer.textProperty !== undefined
   );
 }
