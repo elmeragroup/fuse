@@ -20,7 +20,7 @@ import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { measuredFacts } from "./page-facts.ts";
+import { measureMarkup } from "../../test/measured-markup.ts";
 
 let browser: Browser;
 let page: Page;
@@ -66,18 +66,13 @@ async function measure(options: {
     options.rootIsColumn === true
       ? `<div style="${options.block ?? BLOCK}"><div id="root" style="${options.column ?? COLUMN}">${inner}</div></div>`
       : `<div id="root" style="${options.block ?? BLOCK}">${held}${options.after ?? ""}</div>`;
-  await page.setContent(
-    `<!doctype html><style>body { margin: 0 } ${options.head ?? ""}</style><main data-compare-cell>${body}</main>`
-  );
-  const style = await page.evaluate(() => document.getElementById("root")?.getAttribute("style"));
-  const cdp = await page.context().newCDPSession(page);
-  const { root: tree } = await cdp.send("DOM.getDocument", { depth: -1 });
-  const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: tree.nodeId, selector: "#root" });
-  const facts = await measuredFacts(cdp, nodeId);
-  await cdp.detach();
+  const { facts, restored } = await measureMarkup(page, {
+    head: options.head ?? "",
+    body,
+    root: "#root",
+    watched: "root",
+  });
   const spans = [...facts].flatMap(([path, fact]) => (fact.parentSpansBlock === true ? [path] : []));
-  const restored =
-    (await page.evaluate(() => document.getElementById("root")?.getAttribute("style"))) === style;
   await page.evaluate((resized) => {
     const root = document.getElementById("root");
     if (root !== null) {

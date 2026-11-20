@@ -49,6 +49,7 @@ import type {
   VariantSpec,
 } from "./kit-spec";
 import type { Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./layer-style";
+import { prepareParts } from "./part-preparation";
 import { PaintedInstances } from "./stacking";
 
 /** A component set the build made before the set that holds an instance of it. */
@@ -287,7 +288,7 @@ export class InstanceParts {
     };
     const root: ComponentRootSpec = {
       name: part.of.slot,
-      ...mapBox(part.of, cascade, scope, room),
+      ...mapBox(part.of, cascade, scope, room, prepareParts(part.of, cascade, scope)),
       // The inner root clips in place as its own set draws it.
       clips: variant.root.clips,
     };

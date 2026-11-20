@@ -1360,6 +1360,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly #rooted: ReadonlyMap<string, readonly CapturedElement[]>;
   /** How many element children the box's element holds in the capture. */
   readonly elementChildren: number | undefined;
+  /** How many elements lie above the box's element in the capture, from `<html>` down. */
+  readonly depth: number | undefined;
   /** The tag of the box's element in the capture. */
   readonly elementTag: string | undefined;
   /** The text the box's element holds as its own in the capture. */
@@ -1418,6 +1420,7 @@ class CaptureBoxCascade implements BoxCascade {
       ({ pseudo, style }) => ({ pseudo, cascade: new PseudoBoxCascade(style, ledger.scope.inPlace) })
     );
     this.elementChildren = own?.element.children.length;
+    this.depth = own === undefined ? undefined : placed.length - 1;
     this.elementTag = own?.element.tag;
     this.elementText = own?.element.text;
     // The capture records a `::marker` only where it sets such a `content`.
@@ -2014,6 +2017,18 @@ function measuredBox(
     .findLast((declaration) => declaration?.longhands.includes("max-height") === true);
   const holds = (each: CapturedElement): boolean =>
     each.measured?.widest === true || each.children.some(holds);
+  // For each element below with `blockSteps`, how far above this element its block sits, and whether
+  // it is a child of this element whose parent spans the block.
+  const blocks = (each: CapturedElement, down: number): readonly (readonly [number, boolean])[] =>
+    each.children.flatMap((child) => {
+      const steps = child.measured?.blockSteps;
+      const own =
+        steps === undefined || steps < down + 1
+          ? []
+          : [[steps - down - 1, down === 0 && child.measured?.parentSpansBlock === true] as const];
+      return [...own, ...blocks(child, down + 1)];
+    });
+  const below = blocks(element, 0);
   return {
     fitsOneLine: facts?.oneLine === true ? MEASURED_ONE_LINE : undefined,
     underMaxHeight:
@@ -2041,6 +2056,9 @@ function measuredBox(
     gridItem: facts?.gridItem,
     noBox: facts?.noBox === true,
     parentSpansBlock: drawnParent && facts?.parentSpansBlock === true,
+    blockSteps: facts?.blockSteps,
+    blocksBelow: new Set(below.flatMap(([above, spanned]) => (spanned ? [] : [above]))),
+    spannedBelow: new Set(below.flatMap(([above, spanned]) => (spanned ? [above] : []))),
     oneLength: new Set(facts?.oneLength ?? []),
     spansBeside: facts?.spansBeside,
     paintsLast: facts?.paintsLast === true,

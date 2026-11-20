@@ -10,14 +10,26 @@
  * the build cannot place, and a pseudo-element the capture did not measure, keep their rows unmapped.
  * A static parent the capture measured as spanning the part's containing block (`parentSpansBlock`)
  * has its outer edge on that block's padding edge, so each distance is the offset alone; a border on
- * the parent, or a wrapper the kit does not draw between the two, breaks that.
+ * the parent, or a wrapper the kit does not draw between the two, breaks that. An absolute instance
+ * whose containing block lies above the part that holds it draws as the block's layer, at its offsets
+ * past the block's border, where the capture measured the block that many steps up (`blockSteps`).
+ * The block draws that place, or the placement wrapper whose paddings keep it, so the instance's
+ * `position`, `right` and `top` rows land as literals naming it, not as rows the inner variant
+ * repeats. Where the capture measured both facts, the span places the instance in a parent that draws
+ * no border, and the block takes it where the parent draws a border or is an element the kit does not
+ * draw. The instance stays in its parent with no place where the capture measured no block or another
+ * step count, where a BOOLEAN property shows the column that holds it, where a part of the block
+ * already has the key of its placement wrapper, or where a later layer of the block's frame paints
+ * over it. A part beside the column that holds no such instance maps in its own turn, so a part the
+ * build leaves out keeps no rows unmapped.
  */
 import { describe, expect, it } from "vitest";
 
 import { buildCaptured, chip, fixed, frameOf, literal, part, rest } from "../../test/capture-fixtures";
 import type { FixtureElement } from "../../test/capture-fixtures";
+import type { InstanceManifest, PartManifest } from "../capture/manifest";
 import type { CoverageRow } from "./coverage";
-import type { AxisPlacementSpec, EdgePlacementSpec } from "./kit-spec";
+import type { AxisPlacementSpec, BooleanPropertySpec, ChildLayerSpec, EdgePlacementSpec } from "./kit-spec";
 
 /** A place by the parent's edges on each axis. */
 const edges = (horizontal: AxisPlacementSpec, vertical: AxisPlacementSpec): EdgePlacementSpec => ({
@@ -123,6 +135,290 @@ describe("an absolute part whose containing block lies above its static parent",
     const { variant, coverage } = await spanning(root, measured, wrapped);
     expect(frameOf(variant?.root)?.placement).toBeUndefined();
     expect(unmapped(coverage)).toContain("position");
+  });
+});
+
+const tag = chip({ key: "review-tag", name: "Review tag", slot: "tag" });
+
+/** The tag, an instance in the column, whose element holds it. */
+const TAG: InstanceManifest = {
+  kind: "instance",
+  key: "tag",
+  of: tag,
+  slot: "tag",
+  cell: () => ({ state: "rest" }),
+  shownIn: () => true,
+};
+
+/** What a case sets around the tag beside what the capture measured of it. */
+type Framing = {
+  /** Classes the column takes after its own. */
+  readonly column?: string;
+  /** Whether an element the kit draws no layer for holds the tag inside the column. */
+  readonly wrapper?: boolean;
+  /** The column's BOOLEAN visibility property. */
+  readonly optional?: BooleanPropertySpec;
+  /** Whether an absolute overlay follows the column. */
+  readonly overlay?: boolean;
+  /** A part of the root before the column, with its element. */
+  readonly beside?: { readonly part: PartManifest; readonly element: FixtureElement };
+};
+
+/**
+ * A padded, bordered `relative` root around a static column that holds a title and the tag at
+ * `absolute top-2 right-2`, with what the capture measured of the tag and what the case sets around it.
+ */
+function framed(measured: FixtureElement["measured"], framing: Framing = {}) {
+  const own: FixtureElement = { slot: "tag", classes: "absolute top-2 right-2" };
+  const tagged = measured === undefined ? own : { ...own, measured };
+  const after: readonly FixtureElement[] =
+    framing.overlay === true ? [{ slot: "overlay", classes: "absolute inset-0" }] : [];
+  const column = part({ key: "column", slot: "column", parts: [TAG] });
+  return buildCaptured(
+    chip({
+      parts: [
+        ...(framing.beside === undefined ? [] : [framing.beside.part]),
+        framing.optional === undefined ? column : { ...column, optional: framing.optional },
+        ...(framing.overlay === true ? [part({ key: "overlay", slot: "overlay" })] : []),
+      ],
+    }),
+    rest({
+      slot: "chip",
+      classes: "relative w-[200px] p-[12px] border-2 border-black",
+      children: [
+        ...(framing.beside === undefined ? [] : [framing.beside.element]),
+        {
+          slot: "column",
+          classes: `flex flex-col ${framing.column ?? ""}`,
+          children: [
+            { slot: "title", classes: "h-[20px]" },
+            framing.wrapper === true ? { children: [tagged] } : tagged,
+          ],
+        },
+        ...after,
+      ],
+    }),
+    { inner: [{ manifest: tag, cells: rest({ slot: "tag", classes: "size-[20px]" }) }] }
+  );
+}
+
+/** The items of a two-column grid column, each a 20px square. */
+const GRID_ITEMS = ["a", "b", "c", "d"] as const;
+
+/**
+ * A padded, bordered `relative` root around a static column that lays four 20px squares out in two
+ * 20px columns, and, where `withTag`, holds the tag at `absolute top-2 right-2` after them, which the
+ * capture measured two steps below the root.
+ */
+function gridColumn(withTag: boolean) {
+  const items: readonly FixtureElement[] = GRID_ITEMS.map((slot, index) => ({
+    slot,
+    classes: "size-[20px]",
+    measured: { gridItem: index },
+  }));
+  const tagged: readonly FixtureElement[] = withTag
+    ? [{ slot: "tag", classes: "absolute top-2 right-2", measured: { blockSteps: 2, ...ONE_LENGTH } }]
+    : [];
+  return buildCaptured(
+    chip({
+      parts: [
+        part({
+          key: "column",
+          slot: "column",
+          parts: [...GRID_ITEMS.map((slot) => part({ key: slot, slot })), ...(withTag ? [TAG] : [])],
+        }),
+      ],
+    }),
+    rest({
+      slot: "chip",
+      classes: "relative w-[200px] p-[12px] border-2 border-black",
+      children: [
+        {
+          slot: "column",
+          classes: "grid grid-cols-[20px_20px] gap-[4px]",
+          measured: { gridHolds: [0, 1], gridItems: 4 },
+          children: [...items, ...tagged],
+        },
+      ],
+    }),
+    { inner: [{ manifest: tag, cells: rest({ slot: "tag", classes: "size-[20px]" }) }] }
+  );
+}
+
+/** Each layer's key, with the keys of a frame's layers after it. */
+const keysOf = (layers: readonly ChildLayerSpec[]): readonly unknown[] =>
+  layers.map((layer) => (layer.kind === "frame" ? [layer.key, keysOf(layer.children)] : layer.key));
+
+/** The place of the layer with a key among some layers, where it is a frame or an instance. */
+const placeOf = (layers: readonly ChildLayerSpec[], key: string) => {
+  const layer = layers.find((each) => each.key === key);
+  return layer === undefined || layer.kind === "icon" || layer.kind === "text" ? undefined : layer.placement;
+};
+
+/** The tag's `position`, `right` and `top` rows: each property, outcome and detail, sorted. */
+const placeRows = (coverage: readonly CoverageRow[]) =>
+  coverage
+    .filter((row) => row.part === "tag" && ["position", "right", "top"].includes(row.property))
+    .map((row) => [row.property, row.outcome, row.detail])
+    .toSorted(([left = ""], [right = ""]) => left.localeCompare(right));
+
+/** The tag measured one length on both axes, so its place needs no wrapper. */
+const ONE_LENGTH = { oneLength: ["horizontal", "vertical"] } as const;
+
+describe("an absolute instance whose containing block lies above the part that holds it", () => {
+  it("draws as the block's last layer at its offsets past the block's border, MAX across and MIN down", async () => {
+    const { variant, coverage } = await framed({ blockSteps: 2, ...ONE_LENGTH });
+    const children = variant?.root.children ?? [];
+    expect([keysOf(children), placeOf(children, "tag")]).toEqual([
+      [["column", []], "tag"],
+      edges({ kind: "end", end: 10 }, { kind: "start", start: 10 }),
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+    // The composite places the tag, so its offsets land as the place it draws, not as the tag's own.
+    expect(placeRows(coverage)).toEqual([
+      ["position", "literal", "an absolute layer placed by its distances to its parent's edges"],
+      ["right", "literal", "10px from its parent's right edge, with the parent's border, which MAX keeps"],
+      ["top", "literal", "10px from its parent's top edge, with the parent's border, which MIN keeps"],
+    ]);
+  });
+
+  it("draws in a wrapper padded by its offsets past the block's border where a mode can resize it", async () => {
+    const { variant, coverage } = await framed({ blockSteps: 2 });
+    const children = variant?.root.children ?? [];
+    const wrapper = children.find((each) => each.key === "tag placement");
+    expect([
+      keysOf(children),
+      wrapper?.kind === "frame" ? [wrapper.paddingRight, wrapper.paddingTop] : undefined,
+      placeRows(coverage),
+    ]).toEqual([
+      [
+        ["column", []],
+        ["tag placement", ["tag"]],
+      ],
+      [literal(10), literal(10)],
+      [
+        [
+          "position",
+          "literal",
+          "an absolute placement wrapper that stretches across its parent from its top edge",
+        ],
+        ["right", "literal", "10px of the placement wrapper's right padding, from its parent's right edge"],
+        ["top", "literal", "10px of the placement wrapper's top padding, from its parent's top edge"],
+      ],
+    ]);
+  });
+
+  it.each([
+    [
+      "a border on a column the capture measured as spanning the block",
+      { blockSteps: 2, parentSpansBlock: true, ...ONE_LENGTH },
+      { column: "border-2 border-black" },
+    ],
+    [
+      "a span measured below an element the kit draws no layer for",
+      { blockSteps: 3, parentSpansBlock: true, ...ONE_LENGTH },
+      { wrapper: true },
+    ],
+  ] as const)("draws as the block's layer beside %s", async (_case, measured, framing) => {
+    const { variant, coverage } = await framed(measured, framing);
+    const children = variant?.root.children ?? [];
+    expect([keysOf(children), placeOf(children, "tag"), unmapped(coverage)]).toEqual([
+      [["column", []], "tag"],
+      edges({ kind: "end", end: 10 }, { kind: "start", start: 10 }),
+      [],
+    ]);
+  });
+
+  it("keeps its place in a column that spans the block and draws no border", async () => {
+    const { variant, coverage } = await framed({ blockSteps: 2, parentSpansBlock: true, ...ONE_LENGTH });
+    const [column] = variant?.root.children ?? [];
+    const held = column?.kind === "frame" ? column.children : [];
+    expect([keysOf(variant?.root.children ?? []), placeOf(held, "tag"), unmapped(coverage)]).toEqual([
+      [["column", ["tag"]]],
+      edges({ kind: "end", end: 8 }, { kind: "start", start: 8 }),
+      [],
+    ]);
+  });
+
+  it.each([
+    ["no measured block", { ...ONE_LENGTH }, {}],
+    ["a block measured three steps up", { blockSteps: 3, ...ONE_LENGTH }, {}],
+    [
+      "a column a BOOLEAN property shows, which would hide the tag with it",
+      { blockSteps: 2, ...ONE_LENGTH },
+      { optional: { name: "Column", defaultValue: true } },
+    ],
+  ] as const)("stays in its parent with no place with %s", async (_case, measured, framing) => {
+    const { variant, coverage } = await framed(measured, framing);
+    const [column] = variant?.root.children ?? [];
+    const held = column?.kind === "frame" ? column.children : [];
+    expect([keysOf(variant?.root.children ?? []), placeOf(held, "tag")]).toEqual([
+      [["column", ["tag"]]],
+      undefined,
+    ]);
+    expect(unmapped(coverage)).toEqual(["position", "right", "top"]);
+  });
+
+  it("stays in its parent where a part of the block takes its wrapper's key", async () => {
+    const { variant, coverage } = await framed(
+      { blockSteps: 2 },
+      {
+        beside: {
+          part: part({ key: "tag placement", slot: "aside" }),
+          element: { slot: "aside", classes: "h-[4px]" },
+        },
+      }
+    );
+    expect([keysOf(variant?.root.children ?? []), unmapped(coverage)]).toEqual([
+      [
+        ["tag placement", []],
+        ["column", ["tag"]],
+      ],
+      ["position", "right", "top"],
+    ]);
+  });
+
+  it("leaves a part beside the column that holds no lifted part to map in its own turn", async () => {
+    const { variant, coverage } = await framed(
+      { blockSteps: 2, ...ONE_LENGTH },
+      {
+        beside: {
+          part: part({ key: "ghost", slot: "ghost", parts: [part({ key: "mark", slot: "mark" })] }),
+          element: {
+            slot: "ghost",
+            classes: "opacity-0 h-[40px] -mt-[40px]",
+            children: [{ slot: "mark", classes: "absolute top-0 left-0 size-[4px]" }],
+          },
+        },
+      }
+    );
+    expect([keysOf(variant?.root.children ?? []), unmapped(coverage)]).toEqual([[["column", []], "tag"], []]);
+  });
+
+  it("leaves a grid column that held it the grid it draws without it", async () => {
+    // Without the tag, the column draws as a Figma grid; CSS lays an absolute box out of the grid's
+    // flow (CSS Grid 1 §9.4), so the column holding the lifted tag draws the same grid.
+    const [lifted, alone] = await Promise.all([gridColumn(true), gridColumn(false)]);
+    const gridOf = (built: typeof lifted) => {
+      const [column] = built.variant?.root.children ?? [];
+      return column?.kind === "frame" ? [column.direction, column.grid] : undefined;
+    };
+    expect(gridOf(alone)?.[0]).toBe("GRID");
+    expect([keysOf(lifted.variant?.root.children ?? []), gridOf(lifted), unmapped(lifted.coverage)]).toEqual([
+      [["column", GRID_ITEMS.map((key) => [key, []])], "tag"],
+      gridOf(alone),
+      unmapped(alone.coverage),
+    ]);
+  });
+
+  it("has no place where a later layer of the block's frame paints over it", async () => {
+    const { variant, coverage } = await framed({ blockSteps: 2, ...ONE_LENGTH }, { overlay: true });
+    const children = variant?.root.children ?? [];
+    expect([keysOf(children), placeOf(children, "tag"), unmapped(coverage)]).toEqual([
+      [["column", []], "tag", ["overlay", []]],
+      undefined,
+      ["position", "right", "top"],
+    ]);
   });
 });
 

@@ -9,8 +9,11 @@
  * `readRaisedLevels` in `components/paint-order.ts` checks, its `z-index` draws nothing more.
  *
  * The capture's page function calls `paintsLast` on each child of a root, in every mode it stamps. It
- * is passed to the page as its source, so it reads nothing outside its own body.
+ * is passed to the page as its source, so it reads nothing outside its own body and the helpers it
+ * is handed (`containing-block.ts`).
  */
+
+import type { BlockHelpers } from "./containing-block.ts";
 
 /**
  * Whether an element paints over every other box of the captured root by its `z-index`, and is the
@@ -37,9 +40,7 @@
  *   them, in order-modified document order (CSS Flexbox 1 §5.4.1, CSS Grid 1 §9.5), so an `order`
  *   anywhere between that box and the root, or on the element, can paint it last. A tie therefore
  *   holds only where the element, the tied box, a generated box's element and every element between
- *   them and the root compute `order: 0`. A computed `order` is its declared value on a box that is
- *   no flex or grid item too, so the rule can refuse a tie that CSS paints in tree order, never the
- *   reverse.
+ *   them and the root compute `order: 0` (`keepsOrder`).
  *
  * The page does not read the host: where the root forms no stacking context, CSS also paints the
  * element over a box the host lays after the root, at level zero or `auto`, that overlaps it. A Figma
@@ -47,9 +48,15 @@
  *
  * @param element - The element.
  * @param root - The captured root.
+ * @param helpers - What the page hands in: whether a box's level applies, and whether elements keep
+ *   tree order.
  * @returns True where the element paints last in the root by its `z-index`.
  */
-export function paintsLast(element: Element, root: Element): boolean {
+export function paintsLast(
+  element: Element,
+  root: Element,
+  helpers: Pick<BlockHelpers, "levelApplies" | "keepsOrder">
+): boolean {
   const own = getComputedStyle(element);
   const level = (style: CSSStyleDeclaration): number | undefined =>
     /^-?\d+$/.test(style.zIndex) ? Number(style.zIndex) : undefined;
@@ -57,19 +64,8 @@ export function paintsLast(element: Element, root: Element): boolean {
   if (element.parentElement !== root || raised === undefined || raised <= 0) {
     return false;
   }
-  // A box's `z-index` applies where it is positioned, or where it is a flex or grid item, which its
-  // container's display decides. That holds for an element and for a `::before` or `::after` box
-  // alike, whose container is the element that generates it. A container with `display: contents`
-  // generates no box, so the box's container is the nearest ancestor that does.
-  const applies = (style: CSSStyleDeclaration, container: Element | null): boolean => {
-    let parent = container;
-    while (parent !== null && getComputedStyle(parent).display === "contents") {
-      parent = parent.parentElement;
-    }
-    return (
-      style.position !== "static" || (parent !== null && /flex|grid/.test(getComputedStyle(parent).display))
-    );
-  };
+  // A box's `z-index` applies where it is positioned, or where it is a flex or grid item.
+  const applies = helpers.levelApplies;
   if (!applies(own, root)) {
     return false;
   }
@@ -84,15 +80,7 @@ export function paintsLast(element: Element, root: Element): boolean {
   if (!["none", "normal"].includes(rootAfter.content) && rootAfter.display !== "none") {
     return false;
   }
-  // Whether every element from this one up to the root, the root left out, keeps tree order.
-  const inTreeOrder = (from: Element): boolean => {
-    for (let each: Element | null = from; each !== null && each !== root; each = each.parentElement) {
-      if (getComputedStyle(each).order !== "0") {
-        return false;
-      }
-    }
-    return true;
-  };
+  const inTreeOrder = (from: Element): boolean => helpers.keepsOrder(from, root);
   // Whether a box whose level applies paints over the element: a higher level, or the same level
   // where an `order` can move it after the element.
   const over = (style: CSSStyleDeclaration, applied: boolean, keepsOrder: () => boolean): boolean => {
