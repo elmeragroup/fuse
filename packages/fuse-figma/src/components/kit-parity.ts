@@ -157,7 +157,13 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   "data-table": { kind: "excluded", reason: "It is an example composition, not a set." },
-  "data-table-filter": { kind: "issue", issue: MISSING_SETS },
+  "data-table-filter": {
+    kind: "partial",
+    sets: ["data-table-filter-bar"],
+    missing:
+      "The bar with chips and Clear (#821), the bar narrower than 36rem, the add menu and the value popover.",
+    issue: MISSING_SETS,
+  },
   "date-field": {
     kind: "partial",
     sets: ["date-field"],

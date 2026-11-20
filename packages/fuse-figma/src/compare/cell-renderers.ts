@@ -478,6 +478,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./list-detail-cell.ts")).listDetail,
   },
   {
+    set: "data-table-filter-bar",
+    entry: "dist/data-table-filter.js",
+    load: async () => (await import("./data-table-filter-cell.ts")).dataTableFilterBar,
+  },
+  {
     set: "card",
     entry: "dist/card.js",
     load: async () => (await import("./card-cell.ts")).card,

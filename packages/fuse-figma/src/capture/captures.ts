@@ -36,6 +36,7 @@ import commandItem from "../../captures/command-item.json" with { type: "json" }
 import commandList from "../../captures/command-list.json" with { type: "json" };
 import commandPalette from "../../captures/command-palette.json" with { type: "json" };
 import confirmButton from "../../captures/confirm-button.json" with { type: "json" };
+import dataTableFilterBar from "../../captures/data-table-filter-bar.json" with { type: "json" };
 import dateField from "../../captures/date-field.json" with { type: "json" };
 import datePicker from "../../captures/date-picker.json" with { type: "json" };
 import descriptionListItem from "../../captures/description-list-item.json" with { type: "json" };
@@ -198,6 +199,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["description-list", descriptionList],
   ["list-detail-pane", listDetailPane],
   ["list-detail", listDetail],
+  ["data-table-filter-bar", dataTableFilterBar],
   ["calendar-day", calendarDay],
   ["calendar", calendar],
   ["range-calendar", rangeCalendar],

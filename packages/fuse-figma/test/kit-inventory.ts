@@ -516,6 +516,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "list-detail", name: "List detail", variants: 2, previewed: 2 },
     ],
   },
+  // The default demo's filter bar at rest, its Trigger beside the empty chip strip.
+  {
+    slug: "data-table-filter",
+    name: "Data table filter",
+    sets: [{ key: "data-table-filter-bar", name: "Data table filter bar", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

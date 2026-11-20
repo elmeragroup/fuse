@@ -42,6 +42,7 @@ import { COMMAND_ITEM_MANIFEST, COMMAND_LIST_MANIFEST } from "./command-kit";
 import { isPossible, possibleCells } from "./component-spec";
 import type { Cell, ImpossibleCells } from "./component-spec";
 import { CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
+import { DATA_TABLE_FILTER_BAR_MANIFEST } from "./data-table-filter-kit";
 import { DATE_FIELD_MANIFEST } from "./date-field-kit";
 import { DATE_PICKER_MANIFEST } from "./date-picker-kit";
 import { DESCRIPTION_LIST_ITEM_MANIFEST, DESCRIPTION_LIST_MANIFEST } from "./description-list-kit";
@@ -274,6 +275,13 @@ const DESCRIPTION_LIST_PAGE: KitPage = {
 
 /** The page of List detail's pane and the root that holds the list beside it. */
 const LIST_DETAIL_PAGE: KitPage = { slug: "list-detail", name: "List detail", example: "list-detail" };
+
+/** The page Data table filter's bar sits on alone. */
+const DATA_TABLE_FILTER_PAGE: KitPage = {
+  slug: "data-table-filter",
+  name: "Data table filter",
+  example: "data-table-filter-bar",
+};
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -985,5 +993,10 @@ export const KIT: readonly KitEntry[] = [
     page: LIST_DETAIL_PAGE,
     previewCells: possibleCells(LIST_DETAIL_MANIFEST),
     manifest: LIST_DETAIL_MANIFEST,
+  },
+  {
+    page: DATA_TABLE_FILTER_PAGE,
+    previewCells: possibleCells(DATA_TABLE_FILTER_BAR_MANIFEST),
+    manifest: DATA_TABLE_FILTER_BAR_MANIFEST,
   },
 ];
