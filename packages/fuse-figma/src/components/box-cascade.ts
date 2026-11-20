@@ -258,6 +258,8 @@ export type MeasuredBox = {
    * root, as the root's last child, in every mode, as the capture measured.
    */
   readonly paintsLast: boolean;
+  /** The box's `transform` computes to the identity matrix in every mode, as the capture measured. */
+  readonly identityTransform: boolean;
 };
 
 /**

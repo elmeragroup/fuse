@@ -223,6 +223,11 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   oneLength: Schema.optionalKey(Schema.Array(Schema.Literals(["horizontal", "vertical"]))),
   /**
+   * The element sets a `transform` that computes to the identity matrix in every mode, so it moves
+   * nothing at rest, whatever the expression that writes it.
+   */
+  identityTransform: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * On a child of the root: in every mode, its positive `z-index` paints it over every other box of
    * the root in CSS, and it is the root's last child. Whether Figma's order of the root's layers
    * draws it last as well is the mapping's to check.

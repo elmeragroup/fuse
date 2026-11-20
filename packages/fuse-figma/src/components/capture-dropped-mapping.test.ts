@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { buildChip, notesOf, part } from "../../test/capture-fixtures";
+import { buildCaptured, buildChip, chip, notesOf, part, rest } from "../../test/capture-fixtures";
 
 // Oracle: the Figma component model, where a component is one static frame per variant with no
 // keyframes, no scroll position and no text caret. A transition shorthand, a scroll-driven
@@ -72,6 +72,32 @@ describe("a transform at rest", () => {
     const { coverage } = await buildChip("[transform:translateX(4px)]");
     expect(notesOf(coverage, "[transform:translateX(4px)]").map(([, outcome]) => outcome)).toEqual([
       "unmapped",
+    ]);
+  });
+
+  // Toast's root nests its stack index in `calc()` and `max()`, which the value's own reading does
+  // not evaluate; Chromium computes the index of 0 to the identity matrix, which the capture records.
+  const NESTED = "[transform:translateY(calc(0px-(1*(0*0.75rem))))_scale(calc(max(0,1-(0*0.1))))]";
+
+  it.each([
+    [
+      "drops a transform the capture measured as the identity in every mode",
+      { identityTransform: true },
+      "dropped",
+    ],
+    ["leaves the same transform unmapped where the capture measured no identity", {}, "unmapped"],
+  ] as const)("%s", async (_case, measured, outcome) => {
+    const { coverage } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: `${NESTED} origin-bottom`, measured })
+    );
+    expect(
+      [NESTED, "origin-bottom"].flatMap((className) =>
+        notesOf(coverage, className).map(([property, note]) => [property, note])
+      )
+    ).toEqual([
+      ["transform", outcome],
+      ["transform-origin", outcome],
     ]);
   });
 });
