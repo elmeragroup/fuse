@@ -1,4 +1,3 @@
-import { Result } from "effect";
 /**
  * Instance parts: a part that renders another kit component, as Alert renders a Button for its
  * action, drawn as an instance of the inner set's variant. The build proves the instance draws what
@@ -20,7 +19,7 @@ import { Result } from "effect";
 import { isDeepStrictEqual } from "node:util";
 
 import { partsThatScaleIn } from "../capture/capture-cascade";
-import { keptCapture } from "../capture/captures";
+import type { SetCapture } from "../capture/capture-format";
 import type { BoxCascade } from "./box-cascade";
 import { mapBox } from "./box-mapping";
 import type { MapScope, PropertyValues } from "./box-mapping";
@@ -134,6 +133,7 @@ export type CascadedInstance = {
 export class InstanceParts {
   readonly #context: BuildContext;
   readonly #sets: ReadonlyMap<string, InnerSet>;
+  readonly #captureOf: (key: string) => SetCapture | undefined;
   readonly #emit: Recorder;
   readonly #owner: FeedSink | undefined;
   readonly #given: readonly NestedProperties[];
@@ -143,6 +143,8 @@ export class InstanceParts {
   /**
    * @param context - The compiled utilities and the synced variables.
    * @param sets - The sets built so far, by key, which the parts show.
+   * @param captureOf - The capture each of those sets was built from, by key, which says which of
+   *   its parts win a `scale`.
    * @param emit - Adds a row to the coverage table of the set or the inner component that holds the
    *   parts.
    * @param owner - The feeds of the inner root built in place that holds the parts, undefined for a
@@ -153,12 +155,14 @@ export class InstanceParts {
   constructor(
     context: BuildContext,
     sets: ReadonlyMap<string, InnerSet>,
+    captureOf: (key: string) => SetCapture | undefined,
     emit: Recorder,
     owner?: FeedSink,
     given: readonly NestedProperties[] = []
   ) {
     this.#context = context;
     this.#sets = sets;
+    this.#captureOf = captureOf;
     this.#emit = emit;
     this.#owner = owner;
     this.#given = given;
@@ -218,7 +222,14 @@ export class InstanceParts {
       compositeRows,
       sink,
       diffs: [],
-      nested: new InstanceParts(this.#context, this.#sets, inner.record, sink, values.nested),
+      nested: new InstanceParts(
+        this.#context,
+        this.#sets,
+        this.#captureOf,
+        inner.record,
+        sink,
+        values.nested
+      ),
     };
     const inPlace: InPlace = {
       inner,
@@ -331,13 +342,10 @@ export class InstanceParts {
       return known;
     }
     // The inner set's own capture says which of its parts win a `scale`, as its own build reads it.
-    const inner = keptCapture(part.of.key);
+    const inner = this.#captureOf(part.of.key);
     const made: PartRecord = {
       passed: { origin: { record: this.#emit } },
-      scaling:
-        inner === undefined || Result.isFailure(inner)
-          ? new Set()
-          : partsThatScaleIn(inner.success, part.of.parts ?? []),
+      scaling: inner === undefined ? new Set() : partsThatScaleIn(inner, part.of.parts ?? []),
     };
     this.#parts.set(part, made);
     return made;

@@ -1052,6 +1052,40 @@ describe("a part drawn at a scale", () => {
     const scaledStroke = { color: BLACK, weight: literal(0.75), dashPattern: [2.25, 1.5] };
     expect(frames.map((each) => frameOf(each)?.stroke)).toEqual([scaledStroke, scaledStroke]);
   });
+
+  // The inner set has no kept capture on disk, so only the sources the build is given say that its
+  // thumb wins a `scale`.
+  it("draws the slot in an instance of the set that holds it, as the inner variant does", async () => {
+    const thumbs = chip({
+      key: "review-thumb",
+      name: "Review thumb",
+      slot: "thumbs",
+      parts: [part({ key: "thumb", slot: "chip-thumb" })],
+    });
+    const root = {
+      slot: "thumbs",
+      classes: "inline-flex",
+      children: [{ slot: "chip-thumb", classes: "size-[16px] rounded-full bg-[#000000] scale-75" }],
+    };
+    const { variant, coverage } = await buildCaptured(
+      chip({
+        parts: [
+          {
+            kind: "instance",
+            key: "thumbs",
+            of: thumbs,
+            cell: () => ({ state: "rest" }),
+            shownIn: () => true,
+          },
+        ],
+      }),
+      rest({ slot: "chip", classes: "flex", children: [root] }),
+      { inner: [{ manifest: thumbs, cells: rest(root) }] }
+    );
+    const [instance] = variant?.root.children ?? [];
+    expect(instance?.kind === "instance" ? instance.overrides : instance).toBeUndefined();
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
 });
 
 // Oracle: the property model of the Figma plugin typings, where a set lists a BOOLEAN property once,

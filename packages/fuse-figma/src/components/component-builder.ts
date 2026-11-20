@@ -126,7 +126,7 @@ function buildComponentSet(
   const cascade = setCascade(definition, context, record, captured, inner);
   // Whether some cell's root casts a shadow or clips in CSS, which `rootClips` reads.
   const setClips = castsShadowOrClips(captured.capture);
-  const instances = new InstanceParts(context, inner, record);
+  const instances = new InstanceParts(context, inner, captured.captureOf, record);
   // The capture says which parts win a `scale`.
   const scaling = partsThatScaleIn(captured.capture, definition.parts ?? []);
   const variants = cells.map((cell): VariantSpec => {
