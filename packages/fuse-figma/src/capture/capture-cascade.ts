@@ -1922,6 +1922,7 @@ function measuredBox(
     lineFits: facts?.lineFits === true,
     ellipsisFits: facts?.ellipsisFits === true,
     trackFits: facts?.trackFits === true,
+    ratioHeight: facts?.ratioHeight,
     gridHugs: facts?.gridHugs ?? [],
     gridHolds: facts?.gridHolds ?? [],
     gridWidest: facts?.gridWidest ?? [],

@@ -1,3 +1,4 @@
+import type { MeasuredBox } from "./box-cascade";
 import type { PreviewLength } from "./component-spec";
 import { readContentShares } from "./content-shares";
 import {
@@ -12,7 +13,7 @@ import {
 } from "./css-values";
 import type { VariableIndex, Viewport } from "./css-values";
 import { cellRoom } from "./grid-layout";
-import { outOfLayout, strokeRoom } from "./kit-spec";
+import { fixedLength, outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -1172,6 +1173,8 @@ const HEIGHT: AxisProperties = {
  * pixels where the build can tell it, and whether each axis's sizing is what CSS gives it.
  */
 type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & {
+  /** The aspect lock of a box whose ratio sets its height, undefined for any other box. */
+  readonly aspectLock: BoxSpec["aspectLock"];
   readonly extent: Extent;
   /**
    * Whether each axis's sizing is what CSS gives the box: its length read, or unset and sized as its
@@ -1211,9 +1214,12 @@ const CLIPPING: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll
  * @param fit - What a `fit-content` width draws as.
  * @param inside - The sizing of the layers inside the box, which its lengths and limits decide too:
  *   whether a layer fills or hugs, the length a share takes, and where a text wraps.
- * @param underMaxWidth - Whether the capture measured the box as wide with its `max-width` 24px
- *   lower, so a maximum the build cannot read as a length never narrows it and drops.
- * @returns The box's sizing, limits, clipping and extent.
+ * @param measured - What the capture measured of the box: `underMaxWidth`, the box as wide with
+ *   its `max-width` 24px lower, so a maximum the build cannot read as a length never narrows it and
+ *   drops; and `ratioHeight`, its border box where its aspect ratio set its `auto` height in every
+ *   mode.
+ * @returns The box's sizing, limits, clipping, extent, and the aspect lock where a ratio sets the
+ *   height.
  */
 export function readSizing(
   reader: LayerStyle,
@@ -1221,7 +1227,7 @@ export function readSizing(
   variables: VariableIndex,
   fit: FitContent,
   inside: Feed,
-  underMaxWidth: boolean
+  measured: Pick<MeasuredBox, "underMaxWidth" | "ratioHeight">
 ): BoxSizing {
   // A parent that hugs its width with nothing bounding it is as wide as each layer it holds.
   const roomy = room.horizontal.percent.kind === "hugging" && room.unbounded;
@@ -1229,14 +1235,19 @@ export function readSizing(
     fit,
     inside,
     roomy,
-    under: underMaxWidth,
+    under: measured.underMaxWidth,
   });
-  const vertical = readAxis(reader, HEIGHT, room.vertical, variables, {
-    fit: "content",
-    inside,
-    roomy: false,
-    under: false,
-  });
+  const vertical = readAspectRatio(
+    reader,
+    horizontal.size,
+    readAxis(reader, HEIGHT, room.vertical, variables, {
+      fit: "content",
+      inside,
+      roomy: false,
+      under: false,
+    }),
+    measured
+  );
   reader.read(
     "field-sizing",
     (value) => (normalizeCss(value) === "content" && vertical.size.kind === "hug" ? value : undefined),
@@ -1263,11 +1274,103 @@ export function readSizing(
     },
     clips,
     known: { horizontal: horizontal.known, vertical: vertical.known },
+    aspectLock: vertical.aspectLock,
     extent: {
       horizontal: usedPixels(horizontal, room.horizontal.length),
       vertical: usedPixels(vertical, room.vertical.length),
     },
   };
+}
+
+/**
+ * The height a preferred aspect ratio gives a box, as a fraction of its width: `16 / 9` gives
+ * 9/16, and a lone `1` gives 1, as CSS Sizing 4 §4.1 writes a ratio's height after its width.
+ *
+ * @param value - The computed `aspect-ratio`.
+ * @returns The height per pixel of width, or undefined for a value that holds `auto` or no
+ *   positive ratio.
+ */
+function heightPerWidth(value: string): number | undefined {
+  const match = /^(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?$/u.exec(normalizeCss(value));
+  if (match === null) {
+    return undefined;
+  }
+  const across = Number(match[1]);
+  const down = match[2] === undefined ? 1 : Number(match[2]);
+  return across > 0 && down > 0 ? down / across : undefined;
+}
+
+/**
+ * Chromium's layout unit, 1/64 of a CSS pixel, within which a length the build works out matches
+ * one the capture measured, as the capture's own facts compare two readings of a layout.
+ */
+const LAYOUT_UNIT_PX = 1 / 64;
+
+/**
+ * Read `aspect-ratio`, which this function alone maps, drops or leaves unmapped. A box with a
+ * preferred aspect ratio and an automatic height takes its height from its width through the ratio
+ * (CSS Sizing 4 §4.2), so beside a fixed width in pixels the height is a fixed length too, and Figma's
+ * aspect lock keeps the ratio as a designer resizes an instance (PG18, PG19). The build takes it only
+ * on a box with no `height`, `min-height` or `max-height` of its own, where the capture measured that
+ * height in every mode, `ratioHeight`, and measured the box as wide as the width the build reads and
+ * as tall as that width times the ratio: content taller than the ratio's height grows an
+ * `overflow: visible` box past it (§4.3), and a flex row shrinks a box below its `width` (CSS
+ * Flexbox 1 §9.7). A ratio beside a fixed width and a fixed height sizes neither and drops, as
+ * Radio's `aspect-square` beside its `size-4`. Any other ratio stays unmapped: Figma's auto layout
+ * has no field that sizes one side from the other.
+ *
+ * @param reader - The box's style.
+ * @param width - The box's width as {@link readAxis} read it.
+ * @param height - The box's height as {@link readAxis} read it.
+ * @param measured - What the capture measured: `ratioHeight`, the box's border box where the ratio
+ *   set its height in every mode.
+ * @returns The height read, with the length the ratio gives it and the lock that keeps the ratio
+ *   where the ratio sets one.
+ */
+function readAspectRatio(
+  reader: LayerStyle,
+  width: SizeSpec,
+  height: AxisRead & { readonly known: boolean },
+  measured: Pick<MeasuredBox, "ratioHeight">
+): AxisRead & { readonly known: boolean; readonly aspectLock: BoxSpec["aspectLock"] } {
+  const across = fixedLength(width);
+  const pixels = across?.kind === "literal" ? across.value : undefined;
+  const box = measured.ratioHeight;
+  const ownHeight = ["height", "min-height", "max-height"].some((property) => reader.has(property));
+  const near = (left: number, right: number): boolean => Math.abs(left - right) < LAYOUT_UNIT_PX;
+  const sized =
+    box !== undefined && !ownHeight && pixels !== undefined && height.size.kind === "hug"
+      ? reader.read(
+          "aspect-ratio",
+          (value) => {
+            const ratio = heightPerWidth(value);
+            const length = ratio === undefined ? undefined : pixels * ratio;
+            return length !== undefined && near(pixels, box.width) && near(length, box.height)
+              ? length
+              : undefined;
+          },
+          (length) => ({
+            outcome: "literal",
+            detail: `${String(Math.round(length * 100) / 100)}px, the width times the ratio, which Figma's aspect lock keeps`,
+          }),
+          reader.feed("sizing")
+        )
+      : undefined;
+  if (sized !== undefined && pixels !== undefined) {
+    return {
+      ...height,
+      size: { kind: "fixed", length: { kind: "literal", value: sized } },
+      known: true,
+      aspectLock: { width: pixels, height: sized },
+    };
+  }
+  reader.read(
+    "aspect-ratio",
+    (value) => (across !== undefined && fixedLength(height.size) !== undefined ? value : undefined),
+    () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
+    []
+  );
+  return { ...height, aspectLock: undefined };
 }
 
 /** Why inline-size containment drops on a box its parent stretches across. */

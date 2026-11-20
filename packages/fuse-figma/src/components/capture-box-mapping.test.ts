@@ -692,6 +692,54 @@ describe("an aspect ratio", () => {
   });
 });
 
+// Oracle: CSS Sizing 4 §4.2 and §4.3, CSS Flexbox 1 §9.7 and probe PG18. A box with a preferred
+// aspect ratio and an automatic height takes its height from its width, so a 200px `aspect-16/9` box
+// is 112.5px tall and a 40px `aspect-square` box 40px, and content taller than that grows an
+// `overflow: visible` box past it. A flex row can shrink the box below its `width`, and the height
+// follows the shrunk width, so a 200px box the capture measured at 100 by 56.25 is no 112.5px box.
+// The capture's `ratioHeight` holds the border box the browser drew in every mode, so without it, with
+// a box of another width, or with a height, minimum or maximum of the box's own, the ratio stays
+// unmapped. Figma's `lockAspectRatio()` on a 448 by 252 main reads back as that width and height, so
+// the lock is the box's own lengths.
+describe("an aspect ratio beside a fixed width", () => {
+  /** Build a chip that wins `classes`, with the capture's facts on its root. */
+  async function build(classes: string, measured: MeasuredFacts) {
+    const { variant, coverage } = await buildCaptured(chip(), rest({ slot: "chip", classes, measured }));
+    const rows = coverage.filter((row) => row.property === "aspect-ratio").map((row) => row.outcome);
+    return { sizing: variant?.root.sizing, lock: variant?.root.aspectLock, rows };
+  }
+
+  /** The capture's fact for a box of `width` by `height`. */
+  const drawn = (width: number, height: number): MeasuredFacts => ({ ratioHeight: { width, height } });
+
+  it.each([
+    ["w-[200px] aspect-16/9", 200, 112.5],
+    ["w-[40px] aspect-square", 40, 40],
+    ["w-[90px] aspect-[2/3]", 90, 135],
+  ])("draws %s as %spx wide and %spx tall, locked at that ratio", async (classes, width, height) => {
+    expect(await build(classes, drawn(width, height))).toEqual({
+      sizing: fixedSize(literal(width), literal(height)),
+      lock: { width, height },
+      rows: ["literal"],
+    });
+  });
+
+  it.each([
+    ["the capture measured no ratio height", "w-[200px] aspect-16/9", {}],
+    ["a flex row shrank the box to 100px", "w-[200px] aspect-16/9", drawn(100, 56.25)],
+    ["the box hugs its width", "aspect-16/9", drawn(200, 112.5)],
+    ["the box sets a minimum height", "w-[200px] min-h-[10px] aspect-16/9", drawn(200, 112.5)],
+    ["the box sets a maximum height", "w-[200px] max-h-[200px] aspect-16/9", drawn(200, 112.5)],
+  ])("stays unmapped, with the height hugging, where %s", async (_case, classes, measured) => {
+    const { sizing, lock, rows } = await build(classes, measured);
+    expect({ vertical: sizing?.vertical, lock, rows }).toEqual({
+      vertical: HUG,
+      lock: undefined,
+      rows: ["unmapped"],
+    });
+  });
+});
+
 // Oracle: CSS. `top-1/2 left-1/2` put an absolute part's corner at its containing block's center, and
 // the -50% translate moves it back by half its own size, so its center lands on the block's center,
 // which a parent that centers its one layer on both axes draws. A parent that packs it at the start

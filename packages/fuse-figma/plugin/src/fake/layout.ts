@@ -209,6 +209,17 @@
  *    the centre 0.5px off (229 to 42 wide, 20.5 where the exact half is 21). That one reading cannot
  *    tell which way Figma rounds, so the fake refuses a read whose CENTER shift since the place was
  *    written is half a pixel, rather than approve a place the real file does not keep.
+ * 62. `lockAspectRatio()` locks a layer's `targetAspectRatio` to its width and height as they stand,
+ *    and `unlockAspectRatio()` sets it null. A `resize` or `resizeWithoutConstraints` of a locked
+ *    layer moves the lock to the new width and height, as the typings say. On a scratch file on
+ *    2026-11-19 a component locked at 448 by 252 read `{ x: 448, y: 252 }`, kept it once
+ *    `combineAsVariants` made it a variant, and its instances read the same, and an instance switched
+ *    to an unlocked variant read null (PG18). A 9:16 variant 176px wide read its height as the 32-bit
+ *    float 312.8888854980469. An instance or a sublayer reads its source's lock, and the fake refuses a
+ *    lock or an unlock on one, which no probe wrote, and leaves its source's lock as it is when the
+ *    instance resizes. A clone keeps its source's lock, the fake's own choice, since no probe cloned
+ *    a locked layer. The fake does not keep the ratio when an auto layout parent resizes a locked
+ *    layer, as PG19 showed Figma does for an instance that fills its host's width.
  */
 
 import { newGrid, placedCell } from "./grid.ts";
@@ -229,8 +240,8 @@ import { childrenOf } from "./tree.ts";
 import { fileVariable, requireType, resolveNumber, variableState } from "./variables.ts";
 
 /**
- * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), and stop it filling
- * its auto layout parent (rule 14). A text whose height follows its lines keeps it (rule 19), and a
+ * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), move its aspect lock to
+ * the new size (rule 62), and stop it filling its auto layout parent (rule 14). A text whose height follows its lines keeps it (rule 19), and a
  * 0-wide one that fills across keeps the fill, which the width lets take over (rule 31).
  */
 export function resize(state: NodeState, width: number, height: number): void {
@@ -243,6 +254,9 @@ export function resize(state: NodeState, width: number, height: number): void {
   state.width = f32(width);
   if (!followsLines) {
     state.height = f32(height);
+  }
+  if (state.targetAspectRatio !== null && sourceOf(state) === undefined) {
+    state.targetAspectRatio = { x: state.width, y: state.height };
   }
   if (isAutoLayout(state)) {
     state.primaryAxisSizingMode = "FIXED";

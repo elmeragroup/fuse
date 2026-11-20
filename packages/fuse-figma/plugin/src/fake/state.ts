@@ -177,6 +177,11 @@ export type NodeState = {
   effects: readonly Effect[];
   radii: Corners;
   clipsContent: boolean;
+  /**
+   * The width and height whose ratio the layer's aspect lock keeps, or null for a layer with no lock
+   * (rule 62). An instance or a sublayer reads its source's instead.
+   */
+  targetAspectRatio: Vector | null;
   /** Whether the auto layout paints its first child on top (rule 33). */
   itemReverseZIndex: boolean;
   layoutMode: FrameNode["layoutMode"];

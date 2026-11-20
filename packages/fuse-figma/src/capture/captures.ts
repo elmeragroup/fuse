@@ -10,6 +10,7 @@ import actionBar from "../../captures/action-bar.json" with { type: "json" };
 import alertDialogContent from "../../captures/alert-dialog-content.json" with { type: "json" };
 import alertDialogOpen from "../../captures/alert-dialog-open.json" with { type: "json" };
 import alert from "../../captures/alert.json" with { type: "json" };
+import aspectRatio from "../../captures/aspect-ratio.json" with { type: "json" };
 import avatarGroup from "../../captures/avatar-group.json" with { type: "json" };
 import avatar from "../../captures/avatar.json" with { type: "json" };
 import badge from "../../captures/badge.json" with { type: "json" };
@@ -168,6 +169,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["meter", meter],
   ["empty", empty],
   ["card", card],
+  ["aspect-ratio", aspectRatio],
   ["timeline-list", timelineList],
   ["selection-item", selectionItem],
   ["action-bar", actionBar],

@@ -449,6 +449,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Selection item",
     sets: [{ key: "selection-item", name: "Selection item", variants: 1, previewed: 1 }],
   },
+  // Each docs demo's frame, one per ratio, at the demo's width, holding the portrait.
+  {
+    slug: "aspect-ratio",
+    name: "Aspect ratio",
+    sets: [{ key: "aspect-ratio", name: "Aspect ratio", variants: 7, previewed: 7 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

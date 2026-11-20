@@ -3935,6 +3935,12 @@
         "part": "selection-item-description",
         "className": "[&>a:hover]:text-primary"
       }
+    ],
+    "aspect-ratio": [
+      {
+        "part": "aspect-ratio",
+        "className": "[&>video]:block"
+      }
     ]
   },
   "unreached": [

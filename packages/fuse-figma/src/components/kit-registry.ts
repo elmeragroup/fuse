@@ -13,6 +13,7 @@ import { ACCORDION_ITEM_MANIFEST } from "./accordion-kit";
 import { ACTION_BAR_MANIFEST } from "./action-bar-kit";
 import { ALERT_DIALOG_CONTENT_MANIFEST, ALERT_DIALOG_OPEN_MANIFEST } from "./alert-dialog-kit";
 import { ALERT_MANIFEST } from "./alert-kit";
+import { ASPECT_RATIO_MANIFEST } from "./aspect-ratio-kit";
 import { AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
 import { BADGE_MANIFEST } from "./badge-kit";
 import {
@@ -240,6 +241,9 @@ const DROPDOWN_MENU_PAGE: KitPage = {
 
 /** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty", example: "empty" };
+
+/** The page Aspect ratio sits on alone. */
+const ASPECT_RATIO_PAGE: KitPage = { slug: "aspect-ratio", name: "Aspect ratio", example: "aspect-ratio" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -888,5 +892,10 @@ export const KIT: readonly KitEntry[] = [
     page: SELECTION_ITEM_PAGE,
     previewCells: possibleCells(SELECTION_ITEM_MANIFEST),
     manifest: SELECTION_ITEM_MANIFEST,
+  },
+  {
+    page: ASPECT_RATIO_PAGE,
+    previewCells: possibleCells(ASPECT_RATIO_MANIFEST),
+    manifest: ASPECT_RATIO_MANIFEST,
   },
 ];

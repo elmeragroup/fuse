@@ -475,13 +475,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     label !== undefined && slots.length === 0 && !(box.parts ?? []).some((child) => child.shownIn(cell));
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
-  const { sizing, limits, clips, extent, known } = readSizing(
+  const { sizing, limits, clips, extent, known, aspectLock } = readSizing(
     reader,
     room,
     context.variables,
     fit,
     inside,
-    cascade.measured?.underMaxWidth === true
+    {
+      underMaxWidth: cascade.measured?.underMaxWidth === true,
+      ratioHeight: cascade.measured?.ratioHeight,
+    }
   );
 
   const start: ChildLayerSpec[] = [];
@@ -819,7 +822,6 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     inlineRow: cascade.measured?.inlineRow === true,
   });
   const width = fixedLength(sizing.horizontal);
-  const height = fixedLength(sizing.vertical);
   // Separators that cancel a column's padding move the padding onto sections around the runs between them.
   const bleed = readBleed(
     {
@@ -928,12 +930,6 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     laid,
     counterAlign
   );
-  reader.read(
-    "aspect-ratio",
-    (value) => (width !== undefined && height !== undefined ? value : undefined),
-    () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
-    []
-  );
   const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
   if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);
@@ -966,6 +962,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     opacity: opacity ?? 1,
     children,
   };
+  if (aspectLock !== undefined) {
+    laidOut = { ...laidOut, aspectLock };
+  }
   // The corners read last, since a radius per corner can take its side's least length from the box
   // as laid out.
   laidOut = {

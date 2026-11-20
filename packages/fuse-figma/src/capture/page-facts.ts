@@ -90,6 +90,14 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   OM gives it, where the first element above it whose computed `height` is a length is as tall as
  *   that length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}, so no flex column
  *   around it grew or shrank it and the root's percentage resolves against it.
+ * - `ratioHeight`: an element with a preferred aspect ratio, none of it `auto`, and a computed
+ *   `height` of `auto`, as tall as its width times the ratio within {@link LAYOUT_UNIT_PX}, and with
+ *   the width, height and computed `aspect-ratio` of the page's own mode in every mode of
+ *   {@link EVERY_MODE}. The ratio then sets the height (CSS Sizing 4 §4.2), and content taller than
+ *   that height, which an `overflow: visible` box grows to hold (§4.3), did not grow it. It records
+ *   the border box's width and height, which the build compares with the width it reads, since a
+ *   flex row shrinks a box below its `width` (CSS Flexbox 1 §9.7) and the ratio follows the shrunk
+ *   width.
  * - `itemsAtContent`: a flex row that neither wraps nor reverses, with two or more in-flow items that
  *   grow, each as wide as its own max-content width and that as wide as its min-content width, within
  *   {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have loaded. It holds
@@ -769,6 +777,30 @@ const MEASURE_IN_PAGE = `async function () {
   if (percentHeight(root) && (await holdsInEveryMode([{ element: root, path: "" }], basisAsDeclared)).length > 0) {
     put("", "basisAsDeclared", true);
   }
+  // An element with a preferred aspect ratio and an \`auto\` height, as tall as its width times the
+  // ratio in the page's own mode, and with the same width, height and ratio in every mode, so no mode
+  // changed the box and no content stretched it past the ratio's height. The fact records the box,
+  // since a flex row can shrink it below the width the build reads (CSS Flexbox 1 §9.7).
+  const ratioOf = (element) => {
+    const value = getComputedStyle(element).aspectRatio;
+    if (value.includes("auto")) { return undefined; }
+    const [across, down = 1, ...rest] = value.split("/").map(Number);
+    return rest.length === 0 && across > 0 && down > 0 ? { value, perWidth: down / across } : undefined;
+  };
+  const ratioBoxes = elements.flatMap(({ element, path }) => {
+    const ratio = ratioOf(element);
+    const box = element.getBoundingClientRect();
+    return ratio !== undefined && String(element.computedStyleMap().get("height")) === "auto" && near(box.height, box.width * ratio.perWidth)
+      ? [{ element, path, ratio: ratio.value, width: box.width, height: box.height }]
+      : [];
+  });
+  const ratioKept = new Map(ratioBoxes.map((candidate) => [candidate.element, candidate]));
+  const ratioHeight = (element) => {
+    const own = ratioKept.get(element);
+    const box = element.getBoundingClientRect();
+    return own !== undefined && ratioOf(element)?.value === own.ratio && near(box.width, own.width) && near(box.height, own.height);
+  };
+  for (const { path, width, height } of await holdsInEveryMode(ratioBoxes, ratioHeight)) { put(path, "ratioHeight", { width, height }); }
   const growingRows = elements.filter(({ element }) => getComputedStyle(element).display.endsWith("flex") && growing(element).length > 1);
   for (const { path } of await holdsInEveryMode(growingRows, atContent)) { put(path, "itemsAtContent", true); }
   for (const { inline } of await holdsInEveryMode(inlineRows, oneRow)) {
