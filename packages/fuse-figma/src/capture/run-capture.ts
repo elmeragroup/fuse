@@ -322,7 +322,7 @@ type Matching = {
  * places the popup. They are pixels of one page, so the capture keeps none of them; the build draws
  * the placement from the composite's own rule. `--anchor-width` stays as {@link ANCHOR_WIDTH}.
  */
-const MEASURED: ReadonlySet<string> = new Set([
+const OMITTED_POSITIONER_PROPERTIES: ReadonlySet<string> = new Set([
   "--anchor-height",
   "--available-height",
   "--available-width",
@@ -331,11 +331,27 @@ const MEASURED: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * The heights Base UI measures as a box's natural height and writes back as pixels. Toast's root sets
+ * its own `height` to `auto`, reads `offsetHeight` and writes `--toast-height`, and the viewport writes
+ * the frontmost toast's as `--toast-frontmost-height`. Base UI measures again when the text or the
+ * density resizes the toast, so each pixel value is the root's `auto` height for one page's text and
+ * mode (`natural-height.chromium.test.ts`). The capture records each as `auto`, which the build draws
+ * as a box that hugs its content in every mode. Drawer's `--drawer-height` is no such height: Drawer
+ * reads the popup's `offsetHeight` as its layout sets it, without `auto`, so Sheet's 448px is the
+ * viewport's height.
+ */
+const NATURAL_HEIGHT_PROPERTIES: ReadonlySet<string> = new Set([
+  "--toast-height",
+  "--toast-frontmost-height",
+]);
+
+/**
  * The declarations the capture keeps of an element's `style` attribute. Around a root it keeps only
  * custom properties, which pass down, since a harness host or Base UI writes the rest from what it
  * measured, such as a host as wide as its popup. Base UI's measured positioner values drop, and the
  * anchor's width stays as a symbol the build resolves, as does the offset Base UI gives an element
- * it places by its `data-side`, such as a popup's arrow, along that side.
+ * it places by its `data-side`, such as a popup's arrow, along that side. A height Base UI measured
+ * as a box's natural height stays as `auto`, as {@link NATURAL_HEIGHT_PROPERTIES} says.
  */
 function keptInline(
   declaration: CapturedDeclaration,
@@ -353,7 +369,13 @@ function keptInline(
   if (declaration.property === "--anchor-width") {
     return [{ ...declaration, value: ANCHOR_WIDTH }];
   }
-  if (MEASURED.has(declaration.property) || (around && !declaration.property.startsWith("--"))) {
+  if (NATURAL_HEIGHT_PROPERTIES.has(declaration.property)) {
+    return [{ ...declaration, value: "auto" }];
+  }
+  if (
+    OMITTED_POSITIONER_PROPERTIES.has(declaration.property) ||
+    (around && !declaration.property.startsWith("--"))
+  ) {
     return [];
   }
   return [declaration];
