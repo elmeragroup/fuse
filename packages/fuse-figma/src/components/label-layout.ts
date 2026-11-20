@@ -567,7 +567,8 @@ function blockPlace(holder: Holder, label: PlacedLabel, layer: TextLayerSpec): C
  * can set a line narrower than a word, so it stays unmapped. Every label reads it, so a box with no
  * text of its own that passes it down settles with what its texts make of it. A text of fixed or
  * filling width under `break-word` or `anywhere`, as a `<textarea>`'s default style sets, breaks a
- * word wider than its line, as a Figma text box of that width wraps one, so it maps.
+ * word wider than its line, as a Figma text box of that width wraps one (FW1 on #522, a real file on
+ * 2026-11-20), so it maps.
  *
  * @param holder - The box the label sits in.
  * @param layout - The label's sizing and the width it wraps at.
