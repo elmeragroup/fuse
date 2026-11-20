@@ -22,6 +22,7 @@
 import { childSpacingNote } from "../components/box-cascade.ts";
 import type {
   BoxCascade,
+  CapturedText,
   ChildSpacing,
   InstanceScope,
   PartElement,
@@ -1478,6 +1479,21 @@ type ComposedRoot = {
 /** A box that holds no other root. */
 const PLAIN: ComposedRoot = { rooted: new Map(), applied: [] };
 
+/**
+ * Whether an element's own winning `visibility` shows it, or undefined where it wins none, or one,
+ * such as `inherit`, that leaves the inherited value.
+ */
+function declaredVisibility(
+  element: CapturedElement,
+  declarations: readonly CapturedDeclaration[]
+): boolean | undefined {
+  const value = element.declarations
+    .map((index) => declarations[index])
+    .findLast((declaration) => declaration?.property === "visibility")?.value;
+  const keyword = value === undefined ? undefined : normalizeCss(value);
+  return keyword === "visible" ? true : keyword === "hidden" || keyword === "collapse" ? false : undefined;
+}
+
 /** The cascade of one box, read from its element in the capture. */
 class CaptureBoxCascade implements BoxCascade {
   readonly style: LayerStyle;
@@ -1741,6 +1757,48 @@ class CaptureBoxCascade implements BoxCascade {
       style: new LayerStyle(this.#ledger, layer, [...this.path, element.key]),
       measured: measuredBox(held, this.#read.declarations),
     };
+  }
+
+  capturedText(attribute: string | undefined): CapturedText {
+    const element = this.#placed.at(-1)?.element;
+    if (element === undefined) {
+      return { _tag: "Unresolved", reason: "the capture holds no element for the label's box" };
+    }
+    const visible = normalizeCss(this.style.resolved("visibility") ?? "visible") === "visible";
+    if (attribute !== undefined) {
+      const value = element.attributes[attribute];
+      return value === undefined
+        ? { _tag: "Unresolved", reason: `the element holds no \`${attribute}\` attribute` }
+        : visible
+          ? { _tag: "Painted", source: "attribute", text: value }
+          : { _tag: "Hidden" };
+    }
+    const pieces: string[] = [];
+    let painted = visible;
+    // An element's own text sits after the element children its `textIndex` counts, and an element
+    // a layer draws holds a part's text, not the label's.
+    const walk = (at: CapturedElement, shown: boolean): void => {
+      const own = (): void => {
+        if (shown && at.text !== "") {
+          pieces.push(at.text);
+          painted = true;
+        }
+      };
+      const index = at.textIndex ?? at.children.length;
+      at.children.forEach((child, place) => {
+        if (place === index) {
+          own();
+        }
+        if (!this.#read.drawn.has(child)) {
+          walk(child, declaredVisibility(child, this.#read.declarations) ?? shown);
+        }
+      });
+      if (index >= at.children.length) {
+        own();
+      }
+    };
+    walk(element, visible);
+    return painted ? { _tag: "Painted", source: "nodes", text: pieces.join("") } : { _tag: "Hidden" };
   }
 
   icon(slot: IconSlot): LayerStyle {

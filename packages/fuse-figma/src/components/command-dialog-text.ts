@@ -13,6 +13,9 @@ export const COMMAND_DIALOG_COMMANDS = [
   "Open settings",
 ] as const;
 
+/** `Command.Input`'s en-US placeholder, `placeholder` in the Command dictionary. */
+export const COMMAND_DIALOG_PLACEHOLDER = "Type a command or search…";
+
 /** `Command.Empty`'s en-US message, `empty` in the Command dictionary, which shows only while no row matches. */
 export const COMMAND_DIALOG_EMPTY_TEXT = "No results.";
 
