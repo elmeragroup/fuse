@@ -153,6 +153,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
   ["avatars", { values: ["3"], draws: "How many Avatars an Avatar group holds." }],
   ["pages", { values: ["3"], draws: "How many page links a Pagination row holds." }],
   ["rows", { values: ["3"], draws: "How many rows a Sidebar sub menu holds." }],
+  [
+    "selection",
+    {
+      values: ["none", "selected", "start", "middle", "end"],
+      draws:
+        "Where a calendar day sits in the selection: not in it, the one selected day, or the first, a middle or the last day of a selected range.",
+    },
+  ],
   ...(
     [
       ["checked", "Whether a radio or a menu's radio row is the selected one."],
@@ -161,6 +169,10 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
       ["armed", "Whether a Confirm button's first press armed it, so the next press confirms."],
       ["described", "Whether the Item or Alert shows a description under its title."],
       ["collapsed", "Whether the Sidebar is collapsed to its icon rail."],
+      [
+        "outside",
+        "Whether a calendar day belongs to a neighboring month, which the grid shows without its number.",
+      ],
     ] as const
   ).map(([name, draws]): readonly [string, FigmaAxis] => [name, { values: BOOLEAN_VALUES, draws }]),
 ]);

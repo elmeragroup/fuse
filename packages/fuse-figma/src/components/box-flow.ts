@@ -20,6 +20,7 @@ import type {
 } from "./kit-spec";
 import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+import { readTableFlow } from "./table-layout";
 
 /** Where `align-items` places a box's children across its direction, by the value Tailwind compiles. */
 const ALIGNMENTS = new Map<string, { readonly align: CounterAlignSpec; readonly where: string }>([
@@ -143,8 +144,13 @@ export function readFlow(
     readonly lineFits: boolean;
     readonly trackFits: boolean;
     readonly freeAlongMain: boolean;
+    readonly tableTiles: boolean;
   }
 ): Flow {
+  const table = readTableFlow(reader, box.tableTiles);
+  if (table !== undefined) {
+    return { layout: table, self: undefined };
+  }
   const display = normalizeCss(reader.raw("display") ?? "");
   const rowsHug = box.sizing.vertical.kind === "hug" && box.limits.minHeight === undefined;
   if (display === "grid" && box.trackFits && placesInOneColumn(reader, flow, rowsHug)) {

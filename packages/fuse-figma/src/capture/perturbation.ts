@@ -51,6 +51,8 @@ export type ProbedBox = {
   readonly base: number;
   readonly wider: number;
   readonly longer: number;
+  /** The box's width with its text far longer, the run that reaches past any kit sample's width. */
+  readonly longest: number;
   /** Whether the box is as wide as its parent's content box in every run, as a box that fills it is. */
   readonly tracksParent: boolean;
   /** Whether the longer text pushed the box past its parent's content box, as text that cannot wrap does. */
@@ -150,6 +152,12 @@ export type MappedWidth = {
    * popup hugs its `w-64` list to the 264px the browser lays it out at.
    */
   readonly hugsMeasuredWidth: boolean;
+  /**
+   * Whether the layer is fixed at a literal width the probe measured, and the box kept that width
+   * as its text lengthened and grew far longer, as a calendar day's `size-9` button in the cell
+   * that hugs it.
+   */
+  readonly fixedAtMeasuredWidth: boolean;
 };
 
 /**
@@ -181,6 +189,7 @@ export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, 
     case "not-fill":
       return mapped.kind !== "fill";
     case "tracks":
+      return mapped.kind !== "fixed" || width.fixedAtMeasuredWidth;
     case "overflows":
     case "fits":
       return mapped.kind === "fill" || mapped.kind === "hug";
@@ -447,7 +456,11 @@ export async function probeCells(
             for (const { node, text } of lengthened) {
               node.textContent = text;
             }
-            return { ...measured, capped: Math.abs(longest.width - longest.parent) <= 1 };
+            return {
+              ...measured,
+              longest: longest.width,
+              capped: Math.abs(longest.width - longest.parent) <= 1,
+            };
           });
         })
       );
@@ -463,6 +476,7 @@ export async function probeCells(
           base: box.width,
           wider: wider[at]?.[index]?.width ?? box.width,
           longer: longer[at]?.[index]?.width ?? box.width,
+          longest: longer[at]?.[index]?.longest ?? box.width,
           tracksParent: [box, wider[at]?.[index], longer[at]?.[index]].every(
             (run) => run !== undefined && Math.abs(run.width - run.parent) <= 1
           ),
@@ -562,6 +576,12 @@ export function contradictions(
           const extent = fixedExtent(layer, lengthOf);
           return extent !== undefined && Math.abs(extent - box.base) <= CHANGED;
         })(),
+        fixedAtMeasuredWidth:
+          layer.sizing.horizontal.kind === "fixed" &&
+          layer.sizing.horizontal.length.kind === "literal" &&
+          Math.abs(layer.sizing.horizontal.length.value - box.base) <= CHANGED &&
+          Math.abs(box.longer - box.base) <= CHANGED &&
+          Math.abs(box.longest - box.base) <= CHANGED,
       };
       if (!agrees(inferred, layer.sizing.horizontal, isRoot, width)) {
         found.push({ cell: variant.key, slot: box.slot, inferred, mapped: layer.sizing.horizontal.kind });

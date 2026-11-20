@@ -8,6 +8,7 @@
  * paint names, first, so Plan stores nothing.
  */
 
+import type { CornerRadiusSpec } from "../../src/components/corner-spec.ts";
 import type {
   ColorSpec,
   DirectionSpec,
@@ -747,12 +748,44 @@ export function planLayoutSizing(
 }
 
 /**
- * The corner radius of a box or an instance, which a spec sets on all four corners at once.
+ * Plan a box's or an instance's corners: one length on all four at once, or each of four that
+ * differ on its own, bound to its own variable where the spec binds one.
  *
+ * @param run - The run.
  * @param node - The box, or an instance layer that overrides its corners.
- * @returns The field.
+ * @param label - The node's label, for change lines.
+ * @param spec - The corner radius.
  */
-export function cornerField(node: ComponentNode | FrameNode | InstanceNode): NumberField {
+export function planCorners(
+  run: Run,
+  node: ComponentNode | FrameNode | InstanceNode,
+  label: string,
+  spec: CornerRadiusSpec
+): void {
+  if (spec.kind !== "corners") {
+    planNumber(run, node, label, cornerField(node), spec);
+    return;
+  }
+  for (const [name, length] of [
+    ["topLeftRadius", spec.topLeft],
+    ["topRightRadius", spec.topRight],
+    ["bottomRightRadius", spec.bottomRight],
+    ["bottomLeftRadius", spec.bottomLeft],
+  ] as const) {
+    const field: NumberField = {
+      name,
+      bindings: [name],
+      matches: (value) => near(node[name], value),
+      write: (value) => {
+        node[name] = value;
+      },
+    };
+    planNumber(run, node, label, field, length);
+  }
+}
+
+/** The corner radius of a box or an instance on all four corners at once. */
+function cornerField(node: ComponentNode | FrameNode | InstanceNode): NumberField {
   const corners = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
   return {
     name: "cornerRadius",

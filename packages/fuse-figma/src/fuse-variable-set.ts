@@ -191,6 +191,8 @@ const ROLE_TINTS = [
   ["muted", 72],
   // A RangeCalendar day between the range's ends, `data-in-range:bg-primary/20`.
   ["primary", 20],
+  // A hovered RangeCalendar day between the range's ends, `enabled-hover:bg-primary/30`.
+  ["primary", 30],
   ["error", 5],
   ["error", 10],
   ["error", 20],

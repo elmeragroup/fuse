@@ -672,3 +672,35 @@ describe("a variant whose frame the spec hides", () => {
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
   });
 });
+
+// Unit under test: `reconcileKit` on a variant whose frame rounds its corners differently, as a
+// range's first day rounds its start corners. Oracle: the plugin typings, where each of
+// `topLeftRadius`, `topRightRadius`, `bottomRightRadius` and `bottomLeftRadius` is writable and reads
+// back what was written, and an empty second Plan.
+describe("a variant whose frame rounds each corner on its own", () => {
+  const rounded: FrameLayerSpec = {
+    ...frame("button/rounded", "Rounded", []),
+    cornerRadius: {
+      kind: "corners",
+      topLeft: literal(18),
+      topRight: literal(0),
+      bottomRight: literal(0),
+      bottomLeft: literal(18),
+    },
+  };
+
+  it("draws the four corners in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    const kit = nestedKit([rounded]);
+    await reconcileKit(file.figma, kit, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
+    const drawn = childNamed(await buttonVariant(file), "FRAME", "Rounded");
+    expect([
+      drawn.topLeftRadius,
+      drawn.topRightRadius,
+      drawn.bottomRightRadius,
+      drawn.bottomLeftRadius,
+    ]).toEqual([18, 0, 0, 18]);
+  });
+});

@@ -671,16 +671,48 @@ class FakeFrameLikeNode extends FakeSceneNode {
     return shown(live(this), "radii").topLeft;
   }
 
+  /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
+  set topLeftRadius(value: number) {
+    const state = live(this);
+    write(state, "topLeftRadius");
+    state.radii = { ...shown(state, "radii"), topLeft: f32(value) };
+    noteOverride(state, "radii");
+  }
+
   get topRightRadius(): number {
     return shown(live(this), "radii").topRight;
+  }
+
+  /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
+  set topRightRadius(value: number) {
+    const state = live(this);
+    write(state, "topRightRadius");
+    state.radii = { ...shown(state, "radii"), topRight: f32(value) };
+    noteOverride(state, "radii");
   }
 
   get bottomRightRadius(): number {
     return shown(live(this), "radii").bottomRight;
   }
 
+  /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
+  set bottomRightRadius(value: number) {
+    const state = live(this);
+    write(state, "bottomRightRadius");
+    state.radii = { ...shown(state, "radii"), bottomRight: f32(value) };
+    noteOverride(state, "radii");
+  }
+
   get bottomLeftRadius(): number {
     return shown(live(this), "radii").bottomLeft;
+  }
+
+  /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
+  set bottomLeftRadius(value: number) {
+    const state = live(this);
+    write(state, "bottomLeftRadius");
+    state.radii = { ...shown(state, "radii"), bottomLeft: f32(value) };
+    noteOverride(state, "radii");
   }
 
   get clipsContent(): boolean {

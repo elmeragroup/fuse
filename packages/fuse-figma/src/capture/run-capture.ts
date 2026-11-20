@@ -63,6 +63,7 @@ import {
   capturedDeclaration,
   isRecorded,
   owningClass,
+  classNamesIn,
   resolveWinners,
   selectorsIn,
   UnknownLayer,
@@ -846,8 +847,17 @@ function capturedCells(
   }
   // A forced state is reached where a rule written for it matched an element of the cell, won or
   // lost, and matched none of its resting twin's. Nothing else in the read counts: a winner or an
-  // attribute can differ for reasons of its own, as a renderer that stamps the cell's state does.
+  // attribute can differ for reasons of its own, as a renderer that stamps the cell's state does. A
+  // cell no such rule reaches draws as its resting twin only where its own read shows the component
+  // leaves the state unstyled there, as `restsUnstyled` decides, as a selected calendar day's hover is.
   const readAt = new Map(cells.map(({ key }, at) => [key, read[at]] as const));
+  const unreached: {
+    readonly key: string;
+    readonly rest: string;
+    readonly state: string;
+    readonly forced: RawElement | undefined;
+  }[] = [];
+  const stateClasses = new Map<string, Set<string>>();
   for (const { key, rest, request } of cells) {
     const resting = rest === undefined ? undefined : readAt.get(rest);
     const forced = readAt.get(key);
@@ -855,17 +865,40 @@ function capturedCells(
       continue;
     }
     const patterns = statePatterns(request);
+    const state = patterns.map((pattern) => pattern.source).join(" ");
     const atRest = matchedSelectors(resting);
-    const reached = [...matchedSelectors(forced)].some(
-      (selector) => !atRest.has(selector) && patterns.some((pattern) => pattern.test(selector))
-    );
-    if (!reached) {
-      return new StateNotReached(
-        `${key}: no rule written for its forced state matched an element of the cell that ${rest} does not match`
-      );
+    const fresh = (selector: string) =>
+      !atRest.has(selector) && patterns.some((pattern) => pattern.test(selector));
+    const target = forcedElement(forced, request.forcedOn);
+    if ([...matchedSelectors(forced)].some(fresh)) {
+      // The classes whose rules for the state took effect on the element the page forces.
+      const classes = stateClasses.get(state) ?? new Set<string>();
+      for (const rule of (target?.rules ?? []).filter(({ selector }) => fresh(selector))) {
+        for (const name of classNamesIn(rule.selector).filter(
+          (each) => target?.classes.includes(each) === true
+        )) {
+          classes.add(name);
+        }
+      }
+      stateClasses.set(state, classes);
+    } else {
+      unreached.push({ key, rest, state, forced: target });
     }
   }
-  return { page, declarations: table.declarations, cells: captured };
+  const [stray] = unreached.filter(
+    ({ state, forced }) => !restsUnstyled(forced, stateClasses.get(state) ?? new Set())
+  );
+  if (stray !== undefined) {
+    return new StateNotReached(
+      `${stray.key}: no rule written for its forced state matched an element of the cell that ${stray.rest} does not match, and the element the page forces carries no class whose rule for the state took effect in another cell`
+    );
+  }
+  const restLike = new Set(unreached.map(({ key }) => key));
+  return {
+    page,
+    declarations: table.declarations,
+    cells: captured.map((cell) => (restLike.has(cell.key) ? { ...cell, drawsAsRest: true as const } : cell)),
+  };
 }
 
 /**
@@ -877,6 +910,38 @@ function statePatterns(request: CellRequest): readonly RegExp[] {
   return [...request.forced.map((name) => `:${name}`), ...highlight].map(
     (pattern) => new RegExp(`${pattern}(?![\\w-])`)
   );
+}
+
+/**
+ * The element a cell's forced state lands on, where its selector names it by `data-slot`: the root
+ * the selector names, or the part below it, as `forcedSelector` writes them. Undefined for any other
+ * selector, as a peer's or a place's, which this read cannot follow.
+ */
+function forcedElement(cell: readonly RawCell[], selector: string): RawElement | undefined {
+  const slots = /^\[data-slot="([^"]+)"\](?: \[data-slot="([^"]+)"\])?$/.exec(selector);
+  const [, rootSlot, partSlot] = slots ?? [];
+  if (rootSlot === undefined) {
+    return undefined;
+  }
+  const slotOf = (element: RawElement) => element.attributes.find(([name]) => name === "data-slot")?.[1];
+  const find = (element: RawElement, slot: string): RawElement | undefined =>
+    slotOf(element) === slot
+      ? element
+      : element.children.map((child) => find(child, slot)).find((each) => each !== undefined);
+  const root = cell.map(({ root: each }) => find(each, rootSlot)).find((each) => each !== undefined);
+  return root === undefined || partSlot === undefined ? root : find(root, partSlot);
+}
+
+/**
+ * Whether a cell whose forced state reached no rule leaves that state unstyled: the element the page
+ * forces it on carries a class whose rule for the state took effect on the forced element of another
+ * cell of the set. The page forced the state there, and the rule written for it is the element's own,
+ * so only a condition this cell carries, as `not-data-selected`, keeps it from matching, and the cell
+ * draws as its resting twin. A force that lands where no such class sits, as on a sibling of the part
+ * the set's rules style, shows nothing of the state.
+ */
+function restsUnstyled(forced: RawElement | undefined, classes: ReadonlySet<string>): boolean {
+  return forced?.classes.some((name) => classes.has(name)) ?? false;
 }
 
 /** The selector of every rule matched on a cell's elements and their pseudo-elements, around its roots too. */

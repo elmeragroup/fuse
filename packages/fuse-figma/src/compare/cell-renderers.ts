@@ -446,6 +446,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./card-cell.ts")).card,
   },
   {
+    set: "calendar-day",
+    entry: "dist/calendar.js",
+    load: async () => (await import("./calendar-day-cell.ts")).calendarDay,
+  },
+  {
     set: "action-bar",
     entry: "dist/action-bar.js",
     load: async () => (await import("./action-bar-cell.ts")).actionBar,

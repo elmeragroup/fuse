@@ -236,14 +236,15 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
 
     it("draws every state its matrix names, unlike the cell at rest", () => {
       // A state the capture could not reach would hold the same winners as its resting twin, as a
-      // `state-missing` cell of figma:compare does.
+      // `state-missing` cell of figma:compare does. A cell the capture marks as drawing as at rest
+      // reached no rule while another cell reached the same state, which the capture checked.
       const capture = keptCapture(key);
       if (capture === undefined || Result.isFailure(capture)) {
         throw new Error(`captures/${key}.json does not read`);
       }
       const cells = new Map(capture.success.cells.map((cell) => [cell.key, cell] as const));
       const missing = capture.success.cells.flatMap((cell) => {
-        if (cell.cell.state === undefined || cell.cell.state === "rest") {
+        if (cell.cell.state === undefined || cell.cell.state === "rest" || cell.drawsAsRest === true) {
           return [];
         }
         const rest = cells.get(variantKey(manifest, { ...cell.cell, state: "rest" }));

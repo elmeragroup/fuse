@@ -799,14 +799,23 @@ type MissingDeclaration = {
  * Find the stretch a box cannot draw. A column that hugs its width is as wide as its widest layer
  * and stretches the others to it, while Figma stretches a layer that fills a hugging frame only to
  * the width the frame's other layers set (PF). The build cannot tell which layer is widest, so the
- * stretch has no Figma form where a part sets no width of its own.
+ * stretch has no Figma form where a part sets no width of its own. A column that holds one layer in
+ * its flow and sets no `min-width` or `max-width` is as wide as that layer (CSS Flexbox 1 §9.2), so
+ * its stretch draws as the hug it is.
  *
  * @param holder - The box.
  * @param parts - The style of each part the box holds.
  * @returns The `align-items` the column is missing, or undefined where every stretch draws.
  */
 export function unstretched(holder: Holder, parts: readonly LayerStyle[]): MissingDeclaration | undefined {
+  // A column that hugs its one layer with no limit of its own is as wide as that layer, so stretching
+  // it there changes nothing.
+  const alone =
+    holder.layers.length === 1 &&
+    holder.limits.minWidth === undefined &&
+    holder.limits.maxWidth === undefined;
   return stretches(holder) &&
+    !alone &&
     !definite(holder, holder.sizing.horizontal) &&
     parts.some((style) => !style.has("width"))
     ? {

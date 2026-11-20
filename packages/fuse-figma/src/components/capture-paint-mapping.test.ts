@@ -7,7 +7,17 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { buildCaptured, buildChip, chip, frameOf, notesOf, part, rest } from "../../test/capture-fixtures";
+import {
+  buildCaptured,
+  buildChip,
+  chip,
+  fixedSize,
+  frameOf,
+  literal,
+  notesOf,
+  part,
+  rest,
+} from "../../test/capture-fixtures";
 import { makeVariableIndex } from "./css-values";
 
 // Oracle: CSS Backgrounds 3 §3.7 and the Figma plugin typings. `padding-box` paints the background
@@ -150,7 +160,10 @@ describe("currentcolor through a custom property", () => {
 // Oracle: CSS Display 3 §4.1 and the Figma plugin typings. `visibility: hidden` paints nothing of
 // the box while it keeps its room, and a Figma layer with `visible` false paints nothing while its
 // auto layout lays out as if it were gone. The two draw alike where the hidden part is the one layer
-// of a box fixed on both axes, which keeps its size either way, and not in a box that hugs it.
+// of a box fixed on both axes, which keeps its size either way, or of a box that hugs it, drawn at the
+// part's literal size and its own padding and border, as CSS keeps the hidden part's room in it; a
+// part whose margins a hugging frame draws has no literal size there, so a box that hugs it cannot
+// keep the room CSS keeps for it (8px and 2px margins hold 12px), and it stays unmapped.
 describe("a hidden part", () => {
   it("draws hidden as the one layer of a fixed box", async () => {
     const { variant, coverage } = await buildChip(
@@ -166,15 +179,173 @@ describe("a hidden part", () => {
     ]);
   });
 
-  it("stays unmapped in a box that hugs it", async () => {
+  it("draws hidden in a box that hugs it, which keeps the part's literal size and its padding", async () => {
+    const { variant } = await buildChip(
+      "flex p-[2px]",
+      [{ slot: "chip-dot", classes: "size-[8px] invisible" }],
+      {
+        parts: [part()],
+      }
+    );
+    expect(frameOf(variant?.root)?.hidden).toBe(true);
+    expect(variant?.root.sizing).toEqual(fixedSize(literal(12), literal(12)));
+  });
+
+  it("keeps a shorthand border beside the padding around the part it holds", async () => {
+    const { variant } = await buildChip(
+      "flex p-[2px] border-[3px] border-[#000000]",
+      [{ slot: "chip-dot", classes: "size-[8px] invisible" }],
+      { parts: [part()] }
+    );
+    expect(variant?.root.sizing).toEqual(fixedSize(literal(18), literal(18)));
+  });
+
+  it("hides a part with margins in a fixed box, and leaves it unmapped in a box that hugs it", async () => {
+    const hidden = async (classes: string) => {
+      const { variant, coverage } = await buildChip(
+        classes,
+        [{ slot: "chip-dot", classes: "size-[8px] m-[2px] invisible" }],
+        {
+          parts: [part()],
+        }
+      );
+      return {
+        hidden: frameOf(variant?.root)?.hidden,
+        notes: notesOf(coverage, "invisible").map(([, outcome]) => outcome),
+      };
+    };
+    expect(await hidden("flex size-[24px]")).toEqual({ hidden: true, notes: ["literal"] });
+    expect(await hidden("flex")).toEqual({ hidden: undefined, notes: ["unmapped"] });
+  });
+
+  it("stays unmapped in a box that hugs a part of no literal size", async () => {
     const { variant, coverage } = await buildChip(
       "flex",
-      [{ slot: "chip-dot", classes: "size-[8px] invisible" }],
+      [{ slot: "chip-dot", classes: "h-[8px] invisible" }],
       {
         parts: [part()],
       }
     );
     expect(frameOf(variant?.root)?.hidden).toBeUndefined();
     expect(notesOf(coverage, "invisible").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: CSS Logical Properties 1 §6.2 and CSS Backgrounds 3 §5.5, against Figma's four corner
+// radii, each capped at half the shorter side (probe P10). On the kit's left-to-right page
+// `rounded-s-*` rounds the top left and bottom left. CSS scales every radius by one factor where the
+// radii along a side add past it, so `rounded-s-full` on a 36px square is 18px on both left corners,
+// within the cap, and two 20px corners along a 36px side are 18px each; `rounded-tl-full` alone
+// scales to the whole 36px side, a 30px corner alone keeps 30px, and a 30px and a 10px corner along
+// a 36px side are 27px and 9px, each past the 18px Figma would draw, so they stay unmapped. A variable maps only where its greatest value in any mode leaves
+// CSS nothing to scale and stays within the cap. A box that also sets `border-radius` leaves the
+// order of the two to the cascade, which the build does not read, so it stays unmapped too.
+describe("a radius per corner", () => {
+  const corners = (topLeft: number, topRight: number, bottomRight: number, bottomLeft: number) => ({
+    kind: "corners",
+    topLeft: literal(topLeft),
+    topRight: literal(topRight),
+    bottomRight: literal(bottomRight),
+    bottomLeft: literal(bottomLeft),
+  });
+
+  it.each([
+    ["size-[36px] rounded-s-full", corners(18, 0, 0, 18)],
+    ["size-[36px] rounded-e-full", corners(0, 18, 18, 0)],
+    ["size-[36px] rounded-t-[8px]", corners(8, 8, 0, 0)],
+    ["size-[36px] rounded-ss-[4px] rounded-ee-[6px]", corners(4, 0, 6, 0)],
+    ["size-[36px] rounded-tl-[20px] rounded-tr-[20px]", corners(18, 18, 0, 0)],
+  ])("draws %s on the corners it names", async (classes, expected) => {
+    const { variant, coverage } = await buildChip(classes);
+    expect(variant?.root.cornerRadius).toEqual(expected);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("reads the sides of a box that hugs one part of a literal size", async () => {
+    const { variant } = await buildChip(
+      "flex rounded-s-full",
+      [{ slot: "chip-dot", classes: "size-[36px]" }],
+      {
+        parts: [part()],
+      }
+    );
+    expect(variant?.root.cornerRadius).toEqual(corners(18, 0, 0, 18));
+  });
+
+  it("reads the sides a box's minimum holds it at around a smaller part, as CSS raises it", async () => {
+    const { variant } = await buildChip(
+      "flex min-w-[64px] min-h-[64px] rounded-s-full",
+      [{ slot: "chip-dot", classes: "size-[36px]" }],
+      { parts: [part()] }
+    );
+    expect(variant?.root.cornerRadius).toEqual(corners(32, 0, 0, 32));
+  });
+
+  it("leaves the corners unmapped where a limit it cannot read could set the box's side", async () => {
+    const { variant } = await buildChip(
+      "flex min-w-[50%] rounded-s-full",
+      [{ slot: "chip-dot", classes: "size-[36px]" }],
+      {
+        parts: [part()],
+      }
+    );
+    expect(variant?.root.cornerRadius).toEqual(literal(0));
+  });
+
+  it("binds each corner a variable sets to that variable", async () => {
+    const variables = makeVariableIndex([
+      {
+        ref: { collection: "Fuse tokens", name: "radius" },
+        webSyntax: "var(--radius)",
+        minimum: 4,
+        maximum: 16,
+      },
+    ]);
+    const { variant } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: "size-[36px] rounded-t-(--radius)" }),
+      {
+        variables,
+      }
+    );
+    const radius = { kind: "variable", variable: { collection: "Fuse tokens", name: "radius" } };
+    expect(variant?.root.cornerRadius).toEqual({
+      kind: "corners",
+      topLeft: radius,
+      topRight: radius,
+      bottomRight: literal(0),
+      bottomLeft: literal(0),
+    });
+  });
+
+  it("leaves a variable that CSS scales in some mode unmapped", async () => {
+    const variables = makeVariableIndex([
+      {
+        ref: { collection: "Fuse tokens", name: "radius" },
+        webSyntax: "var(--radius)",
+        minimum: 4,
+        maximum: 24,
+      },
+    ]);
+    const { variant } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: "size-[36px] rounded-t-(--radius)" }),
+      {
+        variables,
+      }
+    );
+    expect(variant?.root.cornerRadius).toEqual(literal(0));
+  });
+
+  it.each([
+    "size-[36px] rounded-tl-full",
+    "size-[36px] rounded-tl-[30px]",
+    "size-[36px] rounded-tl-[30px] rounded-tr-[10px]",
+    "rounded-s-full",
+    "size-[36px] rounded-[4px] rounded-s-[8px]",
+  ])("leaves %s unmapped", async (classes) => {
+    const { variant, coverage } = await buildChip(classes);
+    expect(variant?.root.cornerRadius).toEqual(literal(0));
+    expect(coverage.some((row) => row.outcome === "unmapped" && row.property.endsWith("radius"))).toBe(true);
   });
 });

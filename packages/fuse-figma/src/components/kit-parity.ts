@@ -94,7 +94,13 @@ export const KIT_PARITY = {
   },
   // The Button sets leave out the corners a Button takes inside a group.
   "button-group": { kind: "issue", issue: MISSING_SETS },
-  calendar: { kind: "issue", issue: CALENDAR_DAY },
+  calendar: {
+    kind: "partial",
+    sets: ["calendar-day"],
+    missing:
+      "The calendar around its days: the header, whose `w-full` beside the month grid stays unmapped, and the month grid; a day marked as today, an unavailable day, and a range day at a week's start or end.",
+    issue: CALENDAR_DAY,
+  },
   card: {
     kind: "partial",
     sets: ["card"],
@@ -242,7 +248,13 @@ export const KIT_PARITY = {
     missing: "`RadioItemGroup`, and the invalid focus ring.",
     issue: MISSING_SETS,
   },
-  "range-calendar": { kind: "issue", issue: CALENDAR_DAY },
+  "range-calendar": {
+    kind: "partial",
+    sets: ["calendar-day"],
+    missing:
+      "The range calendar around its days: the header and the month grid, and a range day at a week's start or end.",
+    issue: CALENDAR_DAY,
+  },
   "scroll-area": { kind: "issue", issue: MISSING_SETS },
   // No Input group form holds the leading search icon and the trailing clear button together.
   "search-field": { kind: "issue", issue: MISSING_SETS },

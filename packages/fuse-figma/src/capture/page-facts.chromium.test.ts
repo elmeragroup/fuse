@@ -239,12 +239,18 @@ async function factsOfRoot(): Promise<{
   readonly facts: MeasuredFacts | undefined;
   readonly style: string | null;
 }> {
+  const facts = await factsByPath();
+  return { facts: facts.get(""), style: await page.locator("#root").getAttribute("style") };
+}
+
+/** Measure the root `#root` of the page's markup: each element's facts, by its path from the root. */
+async function factsByPath(): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
   const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
   const facts = await measuredFacts(cdp, nodeId);
   await cdp.detach();
-  return { facts: facts.get(""), style: await page.locator("#root").getAttribute("style") };
+  return facts;
 }
 
 /**
@@ -426,5 +432,51 @@ describe("a measurement that throws", () => {
       brand: null,
       style: "display:flex;width:100px;max-width:100%",
     });
+  });
+});
+
+/**
+ * Unit under test: the page function's `tableTiles`. Oracle: Chromium's own table layout (CSS 2.1
+ * §17.5). A collapsed table whose two cells each hold a 36px square tiles at every level, and a
+ * 200px table's one cell, whose block-level child fills the 200px column, tiles nowhere a child
+ * keeps its own size. Where the
+ * second cell's square is 60px wide, its column is too, and the first row's cell above it, holding a
+ * 36px square, is stretched past it, so that cell records nothing, nor do the row, the body and the
+ * table around it. With
+ * `border-collapse: separate` and 2px of spacing, the row's cells no longer abut.
+ */
+describe("a table the capture measures as tiling its parts", () => {
+  async function measure(table: string, second: string) {
+    await page.setContent(
+      `<main data-compare-cell><table id="root" style="${table}"><tbody><tr><td style="padding:0"><div style="width:36px;height:36px"></div></td><td style="padding:0"><div style="width:36px;height:36px"></div></td></tr><tr><td style="padding:0"><div style="width:36px;height:36px"></div></td><td style="padding:0"><div style="width:${second};height:36px"></div></td></tr></tbody></table></main>`
+    );
+    const facts = await factsByPath();
+    const tiles = (path: string) => facts.get(path)?.tableTiles === true;
+    return { table: tiles(""), body: tiles("0"), row: tiles("0/0"), cell: tiles("0/0/1") };
+  }
+
+  it.each([
+    ["border-collapse:collapse", "36px", { table: true, body: true, row: true, cell: true }],
+    ["border-collapse:collapse", "60px", { table: false, body: false, row: false, cell: false }],
+    [
+      "border-collapse:separate;border-spacing:2px",
+      "36px",
+      { table: false, body: false, row: false, cell: true },
+    ],
+  ])("in a table %s with a %s square last: %o", async (table, second, expected) => {
+    expect(await measure(table, second)).toEqual(expected);
+  });
+
+  it("records nothing on a cell whose child fills the column the table stretches, nor on the boxes around it", async () => {
+    await page.setContent(
+      `<main data-compare-cell><table id="root" style="width:200px;border-collapse:collapse"><tbody><tr><td style="padding:0;vertical-align:top"><div style="display:flex"><div style="width:36px;height:36px"></div></div></td></tr></tbody></table></main>`
+    );
+    const facts = await factsByPath();
+    expect(["", "0", "0/0", "0/0/0"].map((path) => facts.get(path)?.tableTiles === true)).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
   });
 });
