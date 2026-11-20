@@ -1,13 +1,10 @@
 /**
- * The perturbation probe: the sizing oracle of a set switched to its capture. Each cell renders on a
- * compare page as the capture renders it, and the probe measures every box of each root it measures
- * three times: as rendered, with the element around the root 120px wider, and with the box's own
- * text longer. From the deltas it infers each box's horizontal sizing: `fill` where the
- * wider container widens it, `hug` where the longer text widens it, and `fixed` where neither does
- * and the box holds text. A box that holds no text and does not fill is `not-fill`, since the probe
- * cannot tell fixed from hug there. The mapped `SizeSpec` kind of the layer the box draws must not
- * contradict the inference. For an anchored composite it also measures the gap between the anchor
- * and the popup, which must equal the popup's `sideOffset`.
+ * The perturbation probe's measurement: the sizing oracle of a set switched to its capture. Each
+ * cell renders on a compare page as the capture renders it, and the probe measures every box of each
+ * root it measures as rendered, with the element around the root 120px wider, and with the box's own
+ * text longer and far longer. For an anchored composite it also measures the gap between the anchor
+ * and the popup. `capture/probe-sizing.ts`
+ * reads the sizing these widths imply and compares it with the built set.
  *
  * The measured boxes are oracle data only: the probe compares them and keeps none.
  */
@@ -15,14 +12,6 @@
 import type { Page } from "playwright";
 
 import { cellSelector } from "../compare/preview-page.ts";
-import { AXIS_CONSTRAINT, outOfLayout } from "../components/kit-spec.ts";
-import type {
-  ChildLayerSpec,
-  ComponentRootSpec,
-  ComponentSetSpec,
-  NumberSpec,
-  SizeSpec,
-} from "../components/kit-spec.ts";
 
 /** How much wider the probe makes the element around each root, in CSS pixels. */
 export const WIDER_BY = 120;
@@ -75,6 +64,8 @@ export type ProbedBox = {
    * an auto width, as Base UI's positioner, as it is, since it shrinks to its content.
    */
   readonly widened: boolean;
+  /** Whether the box is `display: table-cell`, whose set width is only a minimum (CSS 2.1 §17.5.2.2). */
+  readonly tableCell: boolean;
 };
 
 /** One cell as the probe measured it: each root's boxes, and the gap between two roots. */
@@ -86,185 +77,7 @@ export type ProbedCell = {
 };
 
 /**
- * What the probe infers a box's horizontal sizing is. `tracks` is a box as wide as its parent's
- * content box in every run: it fills its parent, or it is the only child its hugging parent hugs.
- * `overflows` is a box its longer text pushed past its parent's content box, as text that cannot wrap
- * does, which tells hug from fill no more. `fill-viewport` is a `position: fixed` box that fills its
- * container, the viewport the sample declares, which draws fixed at that viewport's size. `fits` is a
- * box that widens with its text and stops at the room its parent leaves it, as `w-fit` does: it hugs
- * short text and fills past it, so the probe cannot tell the two apart, and either kind agrees. `unknown`
- * is a box without text whose root's container the probe could not widen, or whose container
- * follows the root's own text, so widening it shows nothing the page would do.
- */
-export type InferredKind =
-  | "fill"
-  | "fill-viewport"
-  | "hug"
-  | "fixed"
-  | "not-fill"
-  | "tracks"
-  | "overflows"
-  | "fits"
-  | "unknown";
-
-/** How much a width must change, in CSS pixels, for the probe to read a change. */
-const CHANGED = 1;
-
-/**
- * Infer a box's horizontal sizing from its widths.
- *
- * @param box - The box as measured.
- * @returns What the deltas say.
- */
-export function inferKind(box: ProbedBox): InferredKind {
-  if (box.wider - box.base > CHANGED) {
-    return box.fixedInViewport ? "fill-viewport" : "fill";
-  }
-  // Without text, a box narrower than its parent does not fill it, and otherwise only a parent that
-  // widened tells a box that fills it from one that does not.
-  const withoutText: InferredKind =
-    box.widened && (box.parentWidened || !box.tracksParent) ? "not-fill" : "unknown";
-  // Text that cannot widen the box, as a visually hidden label, tells nothing a text run would.
-  if (!box.text || !box.textReaches) {
-    return withoutText;
-  }
-  if (box.tracksParent && !box.root) {
-    return "tracks";
-  }
-  if (box.overflows && !box.root) {
-    return "overflows";
-  }
-  if (box.longer - box.base > CHANGED && box.capsAtParent && !box.root) {
-    return "fits";
-  }
-  if (box.longer - box.base > CHANGED) {
-    return "hug";
-  }
-  return "fixed";
-}
-
-/**
- * What else decides how a mapped layer's width behaves: whether it is an absolute layer whose
- * horizontal constraint resizes it with its parent (`SCALE` or `STRETCH`), as Meter's fill keeps its
- * share of the bar, and whether a literal maximum width holds it at the width the probe measured, as
- * Empty's content sits at its `max-w-sm`.
- */
-export type MappedWidth = {
-  readonly resizesWithParent: boolean;
-  readonly heldAtMaximum: boolean;
-  /**
-   * Whether the layer hugs only layers whose widths are fixed, at any depth, so no text it holds
-   * widens it, and the width that hug draws is the width the probe measured, as the Navigation menu
-   * popup hugs its `w-64` list to the 264px the browser lays it out at.
-   */
-  readonly hugsMeasuredWidth: boolean;
-  /**
-   * Whether the layer is fixed at a literal width the probe measured, and the box kept that width
-   * as its text lengthened and grew far longer, as a calendar day's `size-9` button in the cell
-   * that hugs it.
-   */
-  readonly fixedAtMeasuredWidth: boolean;
-};
-
-/**
- * Whether a mapped horizontal sizing agrees with what the probe inferred. A root that fills its host
- * draws fixed at the host's width, since a component's root has no parent in Figma. A fixed layer
- * that resizes with its parent agrees with a box that fills, and a filling layer held at its maximum
- * agrees with a box that kept its width, as does a hugging layer that holds only fixed widths.
- *
- * @param inferred - The inferred kind.
- * @param mapped - The layer's horizontal sizing.
- * @param root - Whether the box is a set's root.
- * @param width - What else decides the layer's width.
- * @returns True where they agree.
- */
-export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, width: MappedWidth): boolean {
-  switch (inferred) {
-    case "fill":
-      return mapped.kind === "fill" || (mapped.kind === "fixed" && (root || width.resizesWithParent));
-    case "fill-viewport":
-      return mapped.kind === "fixed" || mapped.kind === "fill";
-    case "hug":
-      return mapped.kind === "hug";
-    case "fixed":
-      return (
-        mapped.kind === "fixed" ||
-        (mapped.kind === "fill" && width.heldAtMaximum) ||
-        (mapped.kind === "hug" && width.hugsMeasuredWidth)
-      );
-    case "not-fill":
-      return mapped.kind !== "fill";
-    case "tracks":
-      return mapped.kind !== "fixed" || width.fixedAtMeasuredWidth;
-    case "overflows":
-    case "fits":
-      return mapped.kind === "fill" || mapped.kind === "hug";
-    case "unknown":
-      return true;
-  }
-}
-
-/**
- * The width a layer draws whatever text it holds, where nothing it holds can widen it: a fixed
- * width, or a hug around in-flow layers that each draw such a width, its padding and, along a row,
- * its gaps, held to its limits, each length in pixels as the probe's page draws it. A column's filling layer takes the width
- * the others give it, so it adds nothing, and a row's filling layer or any text, instance or other
- * width it cannot read leaves the width unknown. The hug draws the most of a column's widths, and
- * the sum of a row's.
- *
- * @param layer - A layer of the spec.
- * @param lengthOf - A length's pixels at the probe page's density, undefined where that does not decide them.
- * @returns The width in pixels, or undefined where the layer's width is not fixed so.
- */
-function fixedExtent(
-  layer: ChildLayerSpec | ComponentRootSpec,
-  lengthOf: (length: NumberSpec) => number | undefined
-): number | undefined {
-  const pixels = (length: NumberSpec | undefined): number | undefined =>
-    length === undefined ? undefined : lengthOf(length);
-  if (!("sizing" in layer) || ("kind" in layer && layer.kind === "instance")) {
-    return undefined;
-  }
-  const size = layer.sizing.horizontal;
-  if (size.kind === "fixed") {
-    return pixels(size.length);
-  }
-  if (size.kind !== "hug" || !("children" in layer) || !("direction" in layer)) {
-    return undefined;
-  }
-  const flowing = layer.children.filter((child) => !outOfLayout(child));
-  const column = layer.direction === "VERTICAL";
-  const widths = flowing.flatMap((child) =>
-    column && "sizing" in child && child.sizing.horizontal.kind === "fill"
-      ? []
-      : [fixedExtent(child, lengthOf)]
-  );
-  const known = widths.filter((width) => width !== undefined);
-  const [left, right] = [pixels(layer.paddingLeft), pixels(layer.paddingRight)];
-  const gap = column ? 0 : pixels(layer.itemSpacing);
-  const { minWidth, maxWidth } = layer.limits;
-  const min = minWidth === undefined ? 0 : pixels(minWidth);
-  const max = maxWidth === undefined ? Infinity : pixels(maxWidth);
-  if (
-    known.length === 0 ||
-    known.length < widths.length ||
-    left === undefined ||
-    right === undefined ||
-    gap === undefined ||
-    min === undefined ||
-    max === undefined
-  ) {
-    return undefined;
-  }
-  const content = column
-    ? Math.max(...known)
-    : known.reduce((sum, width) => sum + width, 0) + gap * (known.length - 1);
-  // The minimum wins over the maximum (CSS 2.1 §10.4), as Figma's limits do.
-  return Math.max(min, Math.min(max, content + left + right));
-}
-
-/**
- * Measure the cells of an opened page three times, restoring the page between runs.
+ * Measure the cells of an opened page in each run, restoring the page between runs.
  *
  * @param page - The page.
  * @param cells - Each cell's id and the selectors of the roots it measures.
@@ -287,6 +100,7 @@ export async function probeCells(
         width: number;
         parent: number;
         fixed: boolean;
+        tableCell: boolean;
       };
       const contentWidth = (element: Element | null): number => {
         if (element === null) {
@@ -357,6 +171,7 @@ export async function probeCells(
           width: element.getBoundingClientRect().width,
           parent: roomOf(element),
           fixed: getComputedStyle(element).position === "fixed",
+          tableCell: getComputedStyle(element).display === "table-cell",
         }));
       const measure = () =>
         roots.map(({ selectors }) =>
@@ -528,6 +343,7 @@ export async function probeCells(
           wider: wider[at]?.[index]?.width ?? box.width,
           longer: longer[at]?.[index]?.width ?? box.width,
           longest: longer[at]?.[index]?.longest ?? box.width,
+          tableCell: box.tableCell,
           tracksParent: [box, wider[at]?.[index], longer[at]?.[index]].every(
             (run) => run !== undefined && Math.abs(run.width - run.parent) <= 1
           ),
@@ -541,104 +357,4 @@ export async function probeCells(
     },
     { roots, widerBy: WIDER_BY, longerBy: LONGER_BY, longestBy: LONGEST_BY }
   );
-}
-
-/** One contradiction the probe found: the box, what it inferred and what the spec maps. */
-export type Contradiction = {
-  readonly cell: string;
-  readonly slot: string;
-  readonly inferred: InferredKind;
-  readonly mapped: SizeSpec["kind"];
-};
-
-/** What the probe found of a set: each contradiction, and how many boxes it compared. */
-export type Contradictions = {
-  readonly found: readonly Contradiction[];
-  readonly compared: number;
-  /** How many compared boxes the probe inferred each kind for. */
-  readonly inferred: ReadonlyMap<InferredKind, number>;
-};
-
-/** The frame and instance layers of a variant by key, each key that names one layer only. */
-function layersByKey(root: ComponentRootSpec): ReadonlyMap<string, ChildLayerSpec> {
-  const found = new Map<string, ChildLayerSpec[]>();
-  const visit = (layer: ChildLayerSpec): void => {
-    if (layer.kind === "frame" || layer.kind === "instance") {
-      found.set(layer.key, [...(found.get(layer.key) ?? []), layer]);
-    }
-    if (layer.kind === "frame") {
-      layer.children.forEach(visit);
-    }
-  };
-  root.children.forEach(visit);
-  return new Map(
-    [...found].flatMap(([key, layers]) =>
-      layers.length === 1 && layers[0] !== undefined ? [[key, layers[0]] as const] : []
-    )
-  );
-}
-
-/**
- * The contradictions between a set's mapped horizontal sizings and what the probe inferred of its
- * boxes. A box matches the layer whose key its manifest gives its `data-slot`, where one layer has
- * that key; a set's one root matches the variant's root.
- *
- * @param set - The built set.
- * @param probed - Each cell's boxes, by the variant key of its cell.
- * @param keyOfSlot - The key of the part each `data-slot` names in the manifest, where one part has it.
- * @param lengthOf - A spec length's pixels at the density the probe's page renders, as `densityLengths` reads them.
- * @returns Each contradiction, and how many boxes the probe compared.
- */
-export function contradictions(
-  set: Omit<ComponentSetSpec, "page">,
-  probed: ReadonlyMap<string, ProbedCell>,
-  keyOfSlot: ReadonlyMap<string, string>,
-  lengthOf: (length: NumberSpec) => number | undefined
-): Contradictions {
-  const found: Contradiction[] = [];
-  let compared = 0;
-  const counts = new Map<InferredKind, number>();
-  for (const variant of set.variants) {
-    const cell = probed.get(variant.key);
-    if (cell === undefined) {
-      continue;
-    }
-    const keyed = layersByKey(variant.root);
-    const roots = cell.boxes.filter((box) => box.root);
-    for (const box of cell.boxes) {
-      // A set's one root is the variant's root; an open composite's roots are its instances.
-      const key = keyOfSlot.get(box.slot);
-      const layer =
-        box.root && roots.length === 1 ? variant.root : key === undefined ? undefined : keyed.get(key);
-      if (layer === undefined || !("sizing" in layer)) {
-        continue;
-      }
-      compared += 1;
-      const inferred = inferKind(box);
-      counts.set(inferred, (counts.get(inferred) ?? 0) + 1);
-      const isRoot = layer === variant.root;
-      const maximum = "limits" in layer ? layer.limits.maxWidth : undefined;
-      const placement = "placement" in layer ? layer.placement : undefined;
-      const constraint: string | undefined =
-        placement?.kind === "edges" ? AXIS_CONSTRAINT[placement.horizontal.kind] : undefined;
-      const width: MappedWidth = {
-        resizesWithParent: constraint === "SCALE" || constraint === "STRETCH",
-        heldAtMaximum: maximum?.kind === "literal" && Math.abs(maximum.value - box.base) <= CHANGED,
-        hugsMeasuredWidth: (() => {
-          const extent = fixedExtent(layer, lengthOf);
-          return extent !== undefined && Math.abs(extent - box.base) <= CHANGED;
-        })(),
-        fixedAtMeasuredWidth:
-          layer.sizing.horizontal.kind === "fixed" &&
-          layer.sizing.horizontal.length.kind === "literal" &&
-          Math.abs(layer.sizing.horizontal.length.value - box.base) <= CHANGED &&
-          Math.abs(box.longer - box.base) <= CHANGED &&
-          Math.abs(box.longest - box.base) <= CHANGED,
-      };
-      if (!agrees(inferred, layer.sizing.horizontal, isRoot, width)) {
-        found.push({ cell: variant.key, slot: box.slot, inferred, mapped: layer.sizing.horizontal.kind });
-      }
-    }
-  }
-  return { found, compared, inferred: counts };
 }
