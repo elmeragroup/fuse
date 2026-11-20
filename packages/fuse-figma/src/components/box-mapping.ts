@@ -22,7 +22,7 @@ import {
   stretchedLayer,
 } from "./box-flow";
 import type { Flow, UnspacedReason } from "./box-flow";
-import { describeColor, readPaint } from "./box-paint";
+import { describeColor, paintsAnything, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
@@ -328,6 +328,33 @@ function blockLineAlign(layout: Layout, sizing: SizingSpec, limits: LimitsSpec):
 }
 
 /**
+ * The properties that can hold a box's height apart from its content's: its height and its limits,
+ * by their physical and their logical names, which a horizontal page resolves alike (CSS Logical
+ * Properties 1 §4).
+ */
+const HEIGHT_PROPERTIES = [
+  "height",
+  "block-size",
+  "min-height",
+  "min-block-size",
+  "max-height",
+  "max-block-size",
+];
+
+/**
+ * Whether a box declares a height or a height limit that can hold it taller or shorter than its
+ * content: any of {@link HEIGHT_PROPERTIES} other than `auto`, `none` or 0. The declaration counts
+ * whether or not Figma's sizing maps it, since an `h-[10vh]` with no viewport to read still holds the
+ * box in the page. A box can take a Figma limit from elsewhere too, which the caller checks.
+ */
+function declaresHeight(reader: LayerStyle): boolean {
+  return HEIGHT_PROPERTIES.some((property) => {
+    const value = normalizeCss(reader.resolved(property) ?? "");
+    return !["", "auto", "none"].includes(value) && evaluateLength(value) !== 0;
+  });
+}
+
+/**
  * Whether a box that holds only its text draws the same at the width its parent gives it as at its
  * text's own width, so a `fit-content` width that wraps the text there can fill it: the box paints
  * nothing, its text wraps, and it sets its text from its start, along a row by `justify-content`
@@ -336,9 +363,7 @@ function blockLineAlign(layout: Layout, sizing: SizingSpec, limits: LimitsSpec):
 function drawsAlikeWide(reader: LayerStyle, paint: BoxPaint): boolean {
   const value = (property: string) => normalizeCss(reader.resolved(property) ?? "");
   return (
-    paint.fill === undefined &&
-    paint.stroke === undefined &&
-    paint.shadows.length === 0 &&
+    !paintsAnything(paint) &&
     ["", "collapse"].includes(value("white-space-collapse")) &&
     value("text-wrap-mode") !== "nowrap" &&
     ["", "row"].includes(value("flex-direction")) &&
@@ -1014,9 +1039,20 @@ export function mapBox(
   );
   const sections = bleed.kind === "sections" ? bleed : undefined;
   const folding: FoldingBox = {
-    paints: paint.fill !== undefined || paint.stroke !== undefined || paint.shadows.length > 0,
-    hugs: sizing.horizontal.kind === "hug",
+    paints: paintsAnything(paint),
+    hugs: {
+      horizontal: sizing.horizontal.kind === "hug",
+      vertical:
+        sizing.vertical.kind === "hug" &&
+        known.vertical &&
+        limits.minHeight === undefined &&
+        limits.maxHeight === undefined &&
+        !declaresHeight(reader),
+    },
     inFlexRow: scope.inFlexRow === true,
+    placesAbsolute: shown.some(
+      (part) => normalizeCss(part.cascade.style.raw("position") ?? "") === "absolute"
+    ),
   };
   // Rows that share a translate across move a column's content box, or a wrapper carries it up.
   const shared =
@@ -1140,9 +1176,15 @@ export function mapBox(
       : sizing,
     limits,
     clips,
-    paddingTop: number("padding-top", "paddingTop") ?? ZERO,
+    paddingTop:
+      foldNegativeMargin(reader, "top", folding, context.variables) ??
+      number("padding-top", "paddingTop") ??
+      ZERO,
     paddingRight: sections === undefined ? paddingRight : ZERO,
-    paddingBottom: number("padding-bottom", "paddingBottom") ?? ZERO,
+    paddingBottom:
+      foldNegativeMargin(reader, "bottom", folding, context.variables) ??
+      number("padding-bottom", "paddingBottom") ??
+      ZERO,
     paddingLeft: sections === undefined ? paddingLeft : ZERO,
     itemSpacing,
     // A native control's placement of its label wins over the box's own alignment.
