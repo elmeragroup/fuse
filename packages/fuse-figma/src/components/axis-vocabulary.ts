@@ -67,6 +67,7 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "business",
         "footer-close",
         "tip",
+        "step",
       ],
       draws:
         "The sample the cell shows: an input's placeholder or value, a Kbd's text or icon, an Avatar's fallback or image, or which of the docs demo's contents a popup, palette or dialog holds.",

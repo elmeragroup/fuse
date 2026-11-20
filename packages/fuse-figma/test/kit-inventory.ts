@@ -522,11 +522,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Data table filter",
     sets: [{ key: "data-table-filter-bar", name: "Data table filter bar", variants: 1, previewed: 1 }],
   },
-  // The Beacon demo's tip: its title beside Close, its description and Done.
+  // The Beacon demo's tip: its title beside Close, its description and Done. The default demo's step
+  // card at its first step: progress beside Close, title, description, Skip, Back and Next.
   {
     slug: "tour",
     name: "Tour",
-    sets: [{ key: "tour-popup", name: "Tour popup", variants: 1, previewed: 1 }],
+    sets: [
+      { key: "tour-popup", name: "Tour popup", variants: 1, previewed: 1 },
+      { key: "tour-step", name: "Tour step", variants: 1, previewed: 1 },
+    ],
   },
   // The default demo's toast in each of its six statuses.
   {

@@ -135,7 +135,7 @@ import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR_MANIFEST } from "./toolbar-kit";
 import { TOOLTIP_CONTENT_MANIFEST, TOOLTIP_OPEN_MANIFEST } from "./tooltip-kit";
-import { TOUR_POPUP_MANIFEST } from "./tour-kit";
+import { TOUR_POPUP_MANIFEST, TOUR_STEP_MANIFEST } from "./tour-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -285,7 +285,7 @@ const DATA_TABLE_FILTER_PAGE: KitPage = {
   example: "data-table-filter-bar",
 };
 
-/** The page Tour's step card sits on alone. */
+/** The page Tour's tip and step card sit on. */
 const TOUR_PAGE: KitPage = { slug: "tour", name: "Tour", example: "tour-popup" };
 
 /** The page Toast sits on alone. */
@@ -1011,6 +1011,11 @@ export const KIT: readonly KitEntry[] = [
     page: TOUR_PAGE,
     previewCells: possibleCells(TOUR_POPUP_MANIFEST),
     manifest: TOUR_POPUP_MANIFEST,
+  },
+  {
+    page: TOUR_PAGE,
+    previewCells: possibleCells(TOUR_STEP_MANIFEST),
+    manifest: TOUR_STEP_MANIFEST,
   },
   { page: TOAST_PAGE, previewCells: possibleCells(TOAST_MANIFEST), manifest: TOAST_MANIFEST },
 ];
