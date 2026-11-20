@@ -27,7 +27,7 @@ import type { KitVariables } from "./variables.ts";
 export const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["⇧", "⌘"] };
 
 /** A variable a fixture file holds, with its value in the collection's one mode. */
-type FixtureVariable = {
+export type FixtureVariable = {
   readonly collection: string;
   readonly name: string;
   readonly type: VariableType;

@@ -35,6 +35,28 @@ function heldCharacters(text: TextNode): readonly HeldCharacter[] {
 }
 
 /**
+ * The runs of a text's characters outside its glyph ranges, which take the label's own font.
+ *
+ * @param run - The run, which names the glyph font.
+ * @param characters - The characters the text shows.
+ * @returns Each run, in order.
+ */
+export function labelRuns(run: Run, characters: string): readonly TextRange[] {
+  const runs: TextRange[] = [];
+  let start = 0;
+  for (const range of [
+    ...glyphRanges(characters, run.glyphFont),
+    { start: characters.length, end: characters.length },
+  ]) {
+    if (range.start > start) {
+      runs.push({ start, end: range.start });
+    }
+    start = range.end;
+  }
+  return runs;
+}
+
+/**
  * The characters of a text that take the label's own font: all but its glyph ranges, or every one
  * where the run gives the text new characters, which take the style of a character a glyph range
  * may hold.
@@ -63,8 +85,9 @@ export function baseCharacters(run: Run, text: TextNode, rewrites: boolean): rea
  * @param style - The label's font style, which the glyph font takes.
  * @param rewritten - Whether an earlier operation of the run writes the font of every character of
  *   the text, which gives the ranges that font and drops their family binding, since the family
- *   changes (G8). The ranges are then written whatever they read now. New characters show no ranges
- *   to compare, so they are written then too.
+ *   changes (G8), or binds its family, which can give a range the label's family (FT2). The ranges
+ *   are then written whatever they read now. New characters show no ranges to compare, so they are
+ *   written then too.
  */
 export function planGlyphRanges(
   run: Run,
@@ -85,6 +108,11 @@ export function planGlyphRanges(
     change(run.plan, label, `font at ${shown(ranges)} → ${font.family} ${font.style}`, () => {
       for (const range of glyphRanges(text.characters, run.glyphFont)) {
         text.setRangeFontName(range.start, range.end, font);
+        // A range bound to a variable that holds the glyph font keeps its binding (G11), so it is
+        // unbound as the text reads when the operation runs.
+        if (text.getRangeBoundVariable(range.start, range.end, "fontFamily") !== null) {
+          text.setRangeBoundVariable(range.start, range.end, "fontFamily", null);
+        }
       }
     });
     requireFont(run, label, font);

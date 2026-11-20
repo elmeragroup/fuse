@@ -19,6 +19,7 @@ import type {
 } from "../../src/components/kit-spec.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { aliasOf, color, fixtureFile, GLYPH_FONT, string } from "./fake-fixtures.ts";
+import type { FixtureVariable } from "./fake-fixtures.ts";
 import { keyOf, setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -309,9 +310,10 @@ export function kitWithRoot(edit: (root: ComponentRootSpec) => ComponentRootSpec
  *
  * @param family - The family the brand variable holds.
  * @param withPage - Whether the file holds the kit page, with its stale preview.
+ * @param variables - Further variables the file holds.
  * @returns The file, opened for a new run, and the number of writes its setup made.
  */
-export function fixture(family: string, withPage = true) {
+export function fixture(family: string, withPage = true, variables: readonly FixtureVariable[] = []) {
   const file = fixtureFile([
     color("Fuse tokens", "background", { r: 1, g: 1, b: 1, a: 1 }),
     aliasOf("Fuse tokens", "font-sans", "STRING", {
@@ -319,6 +321,7 @@ export function fixture(family: string, withPage = true) {
       variable: "light/branded/private/font-sans",
     }),
     string("Fuse brand", "light/branded/private/font-sans", family),
+    ...variables,
   ]);
   if (withPage) {
     const page = file.figma.createPage();
