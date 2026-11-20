@@ -6,8 +6,9 @@
  * assembles a set from the root of each cell.
  */
 
-import { placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
-import type { BoxCascade, PartElement } from "./box-cascade";
+import { PAINTED_OVER, placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
+import { readLiftedLast } from "./block-frame";
+import type { BoxCascade } from "./box-cascade";
 import { readCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
 import {
@@ -76,7 +77,7 @@ import { holdsEditableText, keyedCells, readGrid } from "./grid-layout";
 import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import { readInlineItem } from "./inline-item";
-import type { CascadedInstance, InstanceParts } from "./instance-parts";
+import type { InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, weightedIconName, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
@@ -110,9 +111,9 @@ import {
   wrapInstanceMargins,
 } from "./margin-box";
 import type { FoldingBox, IconMarginBox } from "./margin-box";
-import { liftParts } from "./no-box";
 import { arrangePaint, inPaintOrder, readRaisedLevels } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
+import type { PreparedParts, ShownPart } from "./part-preparation";
 import {
   endsBesideLabel,
   endsInFlow,
@@ -122,23 +123,12 @@ import {
   slotAroundDot,
 } from "./placement";
 import type { Layout } from "./placement";
-import { pseudoParts } from "./pseudo-layers";
 import { dropShownStackRest, readStackDisplay, readStackedCell, STACK_HIDDEN } from "./stacked-cell";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
 import { tableDisplayDetail } from "./table-layout";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
 import type { CarriedTranslates } from "./translate-fold";
-
-/**
- * A part's layer name: its `data-slot`, or its key for an element without one.
- *
- * @param part - The part.
- * @returns The name.
- */
-export function partName(part: PartDefinition): string {
-  return part.slot ?? part.key;
-}
 
 function literalLayout(expected: readonly string[], detail: string) {
   return {
@@ -436,20 +426,6 @@ function showsOnlyText(box: BoxDefinition, cell: Cell): boolean {
   );
 }
 
-/** A part a cell shows in a box, cascaded: a frame, or an instance of another set. */
-type ShownPart =
-  | {
-      readonly kind: "frame";
-      readonly child: PartDefinition;
-      /** The frame's key, the part's. */
-      readonly key: string;
-      readonly name: string;
-      readonly cascade: BoxCascade;
-      /** Set on a pseudo-element the box draws as a layer, which no DOM order or flow reads place. */
-      readonly pseudo?: true;
-    }
-  | CascadedInstance;
-
 /**
  * Map a box, the root or a part, and the parts and icons below it, from the cascade of each.
  *
@@ -457,9 +433,17 @@ type ShownPart =
  * @param cascade - The box's cascade.
  * @param scope - The cell, its variant's key, the build context and the parts that scale.
  * @param room - What the box's parent gives it on each axis.
+ * @param prepared - The box's parts, as `prepareParts` prepares them, which the box asks for once its
+ *   own lengths and icons are read.
  * @returns The box, without the root's name or a frame's key.
  */
-export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope, room: Room): BoxSpec {
+export function mapBox(
+  box: BoxDefinition,
+  cascade: BoxCascade,
+  scope: MapScope,
+  room: Room,
+  prepared: () => PreparedParts
+): BoxSpec {
   const { variant, cell, context } = scope;
   const reader = cascade.style;
   const number = (property: string, field: SpecField): NumberSpec | undefined =>
@@ -552,8 +536,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const onSide = (side: IconSlot["side"]) => icons.filter((each) => each.side === side);
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
-  // stretch, the label, the display and the placement.
-  const cascaded = cascadeParts(box, cascade, scope);
+  // stretch, the label, the display and the placement. The parts below whose containing block is
+  // this box join its own, after the frame that holds each.
+  const { parts: cascaded, liftedIn } = prepared();
   // An empty part that CSS draws 0 tall and that paints nothing draws in no layer (PE4), and so does a
   // part that leaves no trace, a frame or an instance.
   const leftOut = cascaded.flatMap((part) => {
@@ -760,6 +745,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       const plan = planned.get(part.cascade.style);
       if (arrangement.unplaceable.has(part.key)) {
         return [[part.cascade.style, UNPAINTABLE] as const];
+      }
+      // A lifted part draws last in the block's frame, which the order of its layers must keep.
+      if (liftedIn.has(part) && arrangement.order.at(-1) !== part.key) {
+        return [[part.cascade.style, PAINTED_OVER] as const];
+      }
+      if (liftedIn.has(part) && plan?.kind === "planned") {
+        return [[part.cascade.style, { ...plan, lifted: true as const }] as const];
       }
       return plan === undefined ? [] : [[part.cascade.style, plan] as const];
     })
@@ -1171,6 +1163,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     })),
     { order: ordered.map(({ key }) => key), firstOnTop }
   );
+  readLiftedLast(
+    drawn
+      .filter((part) => liftedIn.has(part) && plans.get(part.cascade.style)?.kind === "planned")
+      .map((part) => ({ key: part.key, style: part.cascade.style })),
+    { order: ordered, firstOnTop }
+  );
   const painted: BoxSpec = { ...mappedBox, children: ordered };
   return firstOnTop ? { ...painted, firstOnTop: true } : painted;
 }
@@ -1337,63 +1335,12 @@ function leadingAbsolute(parts: readonly ShownPart[]): ShownPart | undefined {
 }
 
 /**
- * Cascade the parts a box shows in the cell, each below the box: a frame part, and an instance part's
- * inner root, as {@link InstanceParts.cascade} builds it in place.
- *
- * @param box - The box's definition.
- * @param cascade - The box's cascade.
- * @param scope - The cell and the instance parts that build in place.
- * @returns The parts, in DOM order.
- */
-function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): readonly ShownPart[] {
-  const { cell } = scope;
-  const elements = (box.parts ?? [])
-    .filter((child) => child.shownIn(cell))
-    .flatMap((child): readonly ShownPart[] => {
-      if ("kind" in child) {
-        return [scope.instances.cascade(child, cascade, cell)];
-      }
-      const name = partName(child);
-      const own = cascade.part(name, elementOf(child));
-      // A part that generates no box hands its parts to this box (`no-box.ts`).
-      if (own.measured?.noBox === true) {
-        return cascadeParts({ ...child, parts: liftParts(child, own, cell) }, own, scope);
-      }
-      return [{ kind: "frame", child, key: child.key, name, cascade: own }];
-    });
-  const pseudo = pseudoParts(cascade).map(
-    ({ pseudo, child, cascade: own }): ShownPart & { readonly at: "before" | "after" } => ({
-      kind: "frame",
-      child,
-      key: child.key,
-      name: child.key,
-      cascade: own,
-      pseudo: true,
-      at: pseudo,
-    })
-  );
-  return [
-    ...pseudo.filter(({ at }) => at === "before"),
-    ...elements,
-    ...pseudo.filter(({ at }) => at === "after"),
-  ];
-}
-
-/** What finds a frame part's element: its key, its `data-slot`, or its place for a part without one. */
-function elementOf(child: PartDefinition): PartElement {
-  const element: PartElement = { key: child.key, slot: child.slot };
-  const placed = child.place === undefined ? element : { ...element, place: child.place };
-  const optional = child.optional === undefined ? placed : { ...placed, optional: true as const };
-  return child.after === undefined ? optional : { ...optional, after: child.after };
-}
-
-/**
  * Map one part in the room its box gives it. An instance part draws as its instance layer, and its
  * box's stacking reads its inner root as built in place. A frame part maps as a box, with the ring
  * fill a spread ring needs, as a slot around a dot where it scales, linked to its BOOLEAN property,
  * turned, and inside a frame that draws its margins.
  *
- * @param part - The part, as {@link cascadeParts} cascaded it.
+ * @param part - The part, as `prepareParts` cascaded it.
  * @param room - What the box gives the part on each axis.
  * @param layout - The box's layout, which a part's margins read.
  * @param scope - The cell, the build context, the parts that scale and the instance parts.
@@ -1450,7 +1397,7 @@ function mapPart(
     };
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
-  const frame = mapBox(part.child, part.cascade, scope, room);
+  const frame = mapBox(part.child, part.cascade, scope, room, part.parts);
   const floored =
     minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
   // A subgrid row's first cell fills the row up to its column's cap, which no class of its own sets.

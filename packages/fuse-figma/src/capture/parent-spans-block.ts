@@ -6,8 +6,11 @@
  * popup is above the column that holds its corner close.
  *
  * The capture's page function calls `parentSpansBlock` on each element of a root's tree, in every
- * mode it stamps. It is passed to the page as its source, so it reads nothing outside its own body.
+ * mode it stamps. It is passed to the page as its source, so it reads nothing outside its own body
+ * and the helpers it is handed (`containing-block.ts`).
  */
+
+import type { BlockHelpers } from "./containing-block.ts";
 
 /**
  * Whether an absolute element's static parent has, as its border box, the padding box of the
@@ -35,11 +38,11 @@
  *   own absolute `::before` or `::after` has the block above it as its containing block, so the
  *   kit draws no layer for it, and the page refuses the parent's too rather than reason about it.
  * - No element after the element in tree order inside that ancestor, outside the element's own
- *   subtree, is positioned or forms a stacking context: a `z-index` on a flex or grid item, an
- *   opacity below 1, a transform, translate, rotate, scale, filter, backdrop filter, perspective,
- *   clip path or mask, `isolation: isolate`, a blend mode, a `will-change`, or layout or paint
- *   containment. CSS paints such a box after the element, so over it (CSS 2.1 Appendix E, step 8;
- *   CSS Positioned Layout 3), while the kit orders the element last in its parent's frame.
+ *   subtree, is positioned or forms a stacking context, as `stackingOf` in `containing-block.ts`
+ *   reads it: a `z-index` on a flex or grid item, an opacity below 1, a transform or a filter,
+ *   `isolation: isolate` and the rest. CSS paints such a box after the element, so over it (CSS 2.1
+ *   Appendix E, step 8; CSS Positioned Layout 3), while the kit orders the element last in its
+ *   parent's frame.
  * - From the parent up to, but not including, that ancestor, each element declares a `width` and a
  *   `height` of `100%`, a `min-width` and a `min-height` of `0px`, no `max-width` or `max-height`,
  *   an `auto` flex basis, so a flex item's basis is that width or height, and an `auto` aspect
@@ -71,38 +74,17 @@
  *
  * @param element - The element.
  * @param root - The captured root the element sits below.
+ * @param helpers - What the page hands in.
  * @returns True where the parent spans the element's containing block.
  */
-export function parentSpansBlock(element: Element, root: Element): boolean {
+export function parentSpansBlock(element: Element, root: Element, helpers: BlockHelpers): boolean {
   // Chromium lays boxes out in 1/64 of a CSS pixel, so edges closer than that are one edge.
   const unit = 1 / 64;
-  const grown = 10;
-  const px = (value: string): number | undefined =>
-    /^-?\d+(?:\.\d+)?(?:e-?\d+)?px$/.test(value) ? Number.parseFloat(value) : undefined;
-  const style = getComputedStyle(element);
-  const parent = element.parentElement;
-  if (
-    parent === null ||
-    style.position !== "absolute" ||
-    style.display === "none" ||
-    ["transform", "translate", "rotate", "scale"].some((name) => style.getPropertyValue(name) !== "none") ||
-    getComputedStyle(parent).position !== "static"
-  ) {
+  const found = helpers.containingBlockAbove(element, root);
+  if (found === undefined) {
     return false;
   }
-  const between: Element[] = [];
-  let block: Element | null = parent;
-  while (block !== null && getComputedStyle(block).position === "static") {
-    between.push(block);
-    block = block.parentElement;
-  }
-  const positioned = block;
-  if (
-    !(positioned instanceof HTMLElement || positioned instanceof SVGElement) ||
-    !root.contains(positioned)
-  ) {
-    return false;
-  }
+  const { parent, between, block: positioned } = found;
   const clear = between.every((each) => {
     const own = getComputedStyle(each);
     return (
@@ -120,27 +102,7 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
   const unpainted = [...between, positioned].every((each) => !generates(each));
   const stacks = (each: Element): boolean => {
     const own = getComputedStyle(each);
-    const container = each.parentElement === null ? "" : getComputedStyle(each.parentElement).display;
-    return (
-      own.position !== "static" ||
-      (own.zIndex !== "auto" && /flex|grid/.test(container)) ||
-      Number.parseFloat(own.opacity) < 1 ||
-      [
-        "transform",
-        "translate",
-        "rotate",
-        "scale",
-        "filter",
-        "backdrop-filter",
-        "perspective",
-        "clip-path",
-        "mask-image",
-      ].some((name) => own.getPropertyValue(name) !== "none") ||
-      own.isolation === "isolate" ||
-      own.mixBlendMode !== "normal" ||
-      own.willChange !== "auto" ||
-      /layout|paint|strict|content/.test(own.contain)
-    );
+    return helpers.stackingOf(own, helpers.levelApplies(own, each.parentElement)) !== "none";
   };
   const later = [...positioned.querySelectorAll("*")].filter(
     (each) =>
@@ -183,66 +145,18 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
   if (!clear || !unpainted || !under || !follows || !definite(positioned)) {
     return false;
   }
-  const sides = ["top", "right", "bottom", "left"] as const;
   const spans = (): boolean => {
-    const own = getComputedStyle(element);
-    const offsets = sides.map((side) => px(own.getPropertyValue(side)));
-    const margins = sides.map((side) => px(own.getPropertyValue(`margin-${side}`)));
-    const [top, right, bottom, left] = offsets;
-    const [marginTop, marginRight, marginBottom, marginLeft] = margins;
-    if (
-      top === undefined ||
-      right === undefined ||
-      bottom === undefined ||
-      left === undefined ||
-      marginTop === undefined ||
-      marginRight === undefined ||
-      marginBottom === undefined ||
-      marginLeft === undefined
-    ) {
-      return false;
-    }
-    const box = element.getBoundingClientRect();
-    const derived = [
-      box.top - marginTop - top,
-      box.right + marginRight + right,
-      box.bottom + marginBottom + bottom,
-      box.left - marginLeft - left,
-    ];
+    const derived = helpers.offsetEdges(element);
     const outer = parent.getBoundingClientRect();
-    const edges = positioned.getBoundingClientRect();
-    const blockStyle = getComputedStyle(positioned);
-    const border = sides.map((side) => px(blockStyle.getPropertyValue(`border-${side}-width`)) ?? 0);
-    const padding = [
-      edges.top + (border[0] ?? 0),
-      edges.right - (border[1] ?? 0),
-      edges.bottom - (border[2] ?? 0),
-      edges.left + (border[3] ?? 0),
-    ];
     const parentEdges = [outer.top, outer.right, outer.bottom, outer.left];
-    return derived.every(
-      (edge, index) =>
-        Math.abs(edge - (parentEdges[index] ?? Number.NaN)) < unit &&
-        Math.abs(edge - (padding[index] ?? Number.NaN)) < unit
+    const padding = helpers.paddingEdges(positioned);
+    return (
+      derived?.every(
+        (edge, index) =>
+          Math.abs(edge - (parentEdges[index] ?? Number.NaN)) < unit &&
+          Math.abs(edge - (padding[index] ?? Number.NaN)) < unit
+      ) === true
     );
   };
-  if (!spans()) {
-    return false;
-  }
-  const target = positioned;
-  const saved = target.getAttribute("style");
-  const grows = (axis: "width" | "height"): boolean => {
-    const before = target.getBoundingClientRect()[axis];
-    try {
-      target.style.setProperty(`min-${axis}`, `${String(before + grown)}px`, "important");
-      return target.getBoundingClientRect()[axis] - before > grown - unit && spans();
-    } finally {
-      if (saved === null) {
-        target.removeAttribute("style");
-      } else {
-        target.setAttribute("style", saved);
-      }
-    }
-  };
-  return grows("width") && grows("height");
+  return spans() && helpers.grownAlike(positioned, spans, helpers.withStyles);
 }

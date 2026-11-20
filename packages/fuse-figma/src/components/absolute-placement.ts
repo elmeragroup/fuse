@@ -158,6 +158,12 @@ export type PlacementPlan =
       readonly vertical: PlannedAxis;
       /** The wrapper an instance's place needs, absent for a part placed by its own constraints. */
       readonly wrapped?: Wrapped;
+      /**
+       * Set on an instance part a box lifted into its frame from a frame below
+       * (`part-preparation.ts`). The box draws the place, or the wrapper around the instance, so the
+       * reads feed what the composite draws around the instance, which the instance's diff keeps.
+       */
+      readonly lifted?: true;
     }
   | Refused;
 
@@ -184,6 +190,13 @@ const NO_ROOM = refused(
  */
 export const UNPAINTABLE = refused(
   "CSS paints the absolute part over an in-flow layer that a positioned one precedes, which Figma, keeping the flow's order, cannot paint so"
+);
+/**
+ * Why a part a box lifted into its frame from below has no place where another layer of the frame
+ * paints after it, as `block-frame.ts` requires.
+ */
+export const PAINTED_OVER = refused(
+  "the capture measured CSS painting the part over everything else in its containing block, and another layer of the block's frame paints after it"
 );
 const UNWRAPPED = refused(
   "a mode can change the absolute instance's length at its parent's bottom, at a centre, or across beside a place other than the top, and only a wrapper for an instance at its parent's right and top is known to keep such a place (PG16)"
@@ -220,6 +233,20 @@ function border(parent: LayerStyle, side: string): number | undefined {
     return constant(parent, side);
   }
   return parent.has("border-width") ? constant(parent, "border-width") : 0;
+}
+
+/**
+ * Whether a box draws no border on any side, so a static parent the capture measured as spanning its
+ * child's containing block (`parentSpansBlock`) has its outer edge on the block's padding edge, and
+ * places the child by its offsets alone.
+ *
+ * @param parent - The parent's style.
+ * @returns True where every border width is zero.
+ */
+export function bordersNothing(parent: LayerStyle): boolean {
+  return [HORIZONTAL, VERTICAL].every((axis) =>
+    [axis.startBorder, axis.endBorder].every((side) => border(parent, side) === 0)
+  );
 }
 
 /** A length on one side as an affine length, 0 where the box sets none. */
@@ -414,10 +441,7 @@ export function planPlacement(
   // `planAxis` adds the parent's border to each offset, which holds only where the parent is the
   // block. A parent that spans the block has its outer edge on the block's padding edge, so it must
   // draw no border.
-  const bordered = [HORIZONTAL, VERTICAL].some((axis) =>
-    [axis.startBorder, axis.endBorder].some((side) => border(context.parent, side) !== 0)
-  );
-  if (!positioned && bordered) {
+  if (!positioned && !bordersNothing(context.parent)) {
     return refused(BORDERED_SPAN);
   }
   if (MOVES.some((property) => !["", "none"].includes(normalizeCss(style.resolved(property) ?? "")))) {
@@ -500,6 +524,14 @@ export function placedRoom(room: Room, style: LayerStyle, plan: PlacementPlan | 
   return { ...room, horizontal: along("horizontal"), vertical: along("vertical") };
 }
 
+/**
+ * How the coverage table names the padding of a placement wrapper (`placement-wrapper.ts`) that keeps
+ * an instance this many pixels from its parent's right or top edge.
+ */
+function wrapperPadding(length: number, edge: "right" | "top"): string {
+  return `${String(length)}px of the placement wrapper's ${edge} padding, from its parent's ${edge} edge`;
+}
+
 /** How the coverage table names the distance one offset keeps. */
 function distance(at: AxisPlacementSpec, side: "start" | "end", edge: string): string {
   switch (at.kind) {
@@ -534,20 +566,34 @@ export function readPlacement(style: LayerStyle, plan: PlacementPlan): Placement
   if (plan.kind === "refused") {
     return plan;
   }
-  const notes = new Map([
-    ["position", "an absolute layer placed by its distances to its parent's edges"],
-    ["left", distance(plan.horizontal.at, "start", "left")],
-    ["right", distance(plan.horizontal.at, "end", "right")],
-    ["top", distance(plan.vertical.at, "start", "top")],
-    ["bottom", distance(plan.vertical.at, "end", "bottom")],
-  ]);
+  const { horizontal, vertical } = plan;
+  const notes = new Map<string, string>(
+    plan.wrapped === undefined
+      ? [
+          ["position", "an absolute layer placed by its distances to its parent's edges"],
+          ["left", distance(horizontal.at, "start", "left")],
+          ["right", distance(horizontal.at, "end", "right")],
+          ["top", distance(vertical.at, "start", "top")],
+          ["bottom", distance(vertical.at, "end", "bottom")],
+        ]
+      : [
+          ["position", "an absolute placement wrapper that stretches across its parent from its top edge"],
+          ...(horizontal.at.kind === "end"
+            ? [["right", wrapperPadding(horizontal.at.end, "right")] as const]
+            : []),
+          ...(vertical.at.kind === "start"
+            ? [["top", wrapperPadding(vertical.at.start, "top")] as const]
+            : []),
+        ]
+  );
+  const feed = style.feed(plan.lifted === true ? "around" : "placement");
   for (const property of ["position", ...OFFSETS.filter((offset) => sets(style, offset))]) {
     const detail = notes.get(property) ?? "";
     style.read(
       property,
       (value) => value,
       () => ({ outcome: "literal", detail }),
-      style.feed("placement")
+      feed
     );
   }
   const placement: EdgePlacementSpec = {

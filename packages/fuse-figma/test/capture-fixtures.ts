@@ -19,7 +19,13 @@ import type {
   SetCapture,
 } from "../src/capture/capture-format.ts";
 import { manifestDefinition } from "../src/capture/manifest.ts";
-import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../src/capture/manifest.ts";
+import type {
+  IconManifest,
+  InstanceManifest,
+  LabelManifest,
+  PartManifest,
+  SetManifest,
+} from "../src/capture/manifest.ts";
 import { splitClassName } from "../src/components/class-name.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
@@ -287,7 +293,7 @@ export type PartFields = {
   readonly label?: LabelManifest;
   readonly iconsFor?: (cell: Cell) => readonly IconManifest[];
   readonly optional?: BooleanPropertySpec;
-  readonly parts?: readonly PartManifest[];
+  readonly parts?: readonly (PartManifest | InstanceManifest)[];
 };
 
 /**
