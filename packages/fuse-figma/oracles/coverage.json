@@ -3741,7 +3741,201 @@
         "className": "group-data-vertical/tabs:h-fit"
       }
     ],
-    "tabs-content": []
+    "tabs-content": [],
+    "selection-item": [
+      {
+        "part": "checkbox-item",
+        "className": "[a]:enabled-hover:bg-muted"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "focus-visible:ring-2"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "focus-visible:ring-ring"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "focus-visible:outline-hidden"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "disabled:cursor-not-allowed"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "disabled:opacity-50"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-disabled:cursor-not-allowed"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-disabled:opacity-50"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:border-error"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:ring-3"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:ring-error/20"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:focus-visible:ring-3"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:focus-visible:ring-error/20"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:focus-visible:ring-offset-1"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "aria-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "[a]:enabled-hover:[--item-foreground:--theme(--color-foreground)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "[a]:enabled-hover:[--surface-muted-foreground:--theme(--color-muted-foreground)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "[a]:enabled-hover:[--surface:--theme(--color-muted)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:bg-muted"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--item-foreground:--theme(--color-foreground)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface-muted-foreground:--theme(--color-muted-foreground)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface:--theme(--color-muted)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "not-first:border-t-0"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "[&:has(+[data-selection-item])]:border-b-selection-divider"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "has-[>label>[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:cursor-not-allowed"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:bg-selection-disabled-background"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:[--surface-muted-foreground:--theme(--color-muted-foreground)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:[--surface:--theme(--color-selection-disabled-background)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
+      },
+      {
+        "part": "checkbox-item",
+        "className": "selection-row-disabled:[--item-foreground:--theme(--color-selection-disabled-foreground)]"
+      },
+      {
+        "part": "label",
+        "className": "selection-row-disabled-part:cursor-not-allowed"
+      },
+      {
+        "part": "label",
+        "className": "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
+      },
+      {
+        "part": "selection-item-control",
+        "className": "item-described:self-start"
+      },
+      {
+        "part": "selection-item-control",
+        "className": "item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]"
+      },
+      {
+        "part": "selection-item-control",
+        "className": "[&_svg]:pointer-events-none"
+      },
+      {
+        "part": "selection-item-control",
+        "className": "[&_svg:not([class*='size-'])]:size-4"
+      },
+      {
+        "part": "item-content",
+        "className": "group-data-[size=xs]/item:gap-0"
+      },
+      {
+        "part": "item-content",
+        "className": "item-described:self-start"
+      },
+      {
+        "part": "item-content",
+        "className": "[&+[data-slot=item-content]]:flex-none"
+      },
+      {
+        "part": "selection-item-description",
+        "className": "group-data-[size=xs]/item:text-xs"
+      },
+      {
+        "part": "selection-item-description",
+        "className": "[&>a]:underline"
+      },
+      {
+        "part": "selection-item-description",
+        "className": "[&>a]:underline-offset-4"
+      },
+      {
+        "part": "selection-item-description",
+        "className": "[&>a:hover]:text-primary"
+      }
+    ]
   },
   "unreached": [
     {

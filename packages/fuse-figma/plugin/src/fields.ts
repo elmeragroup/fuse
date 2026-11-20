@@ -728,7 +728,10 @@ export function planLayoutSizing(
   const { sizing } = spec;
   // No probe has shown what a box stores in its modes, or how it sizes, when it first gets an auto
   // layout, as every new box does, so a box without one writes its sizing whatever it predicts.
-  const reads = held === "read" && node.layoutMode !== "NONE" ? sizingAlong(node, spec.direction) : undefined;
+  // Nor has one shown how a box's sizing modes map once it turns into a grid or out of one.
+  const grid = node.layoutMode === "GRID" || spec.direction === "GRID";
+  const predicts = node.layoutMode !== "NONE" && (node.layoutMode === spec.direction || !grid);
+  const reads = held === "read" && predicts ? sizingAlong(node, spec.direction) : undefined;
   const lengths: Held = held === "read" && node.layoutMode === spec.direction ? "read" : "unknown";
   const writeSizing = (): void => {
     node.layoutSizingHorizontal = sizing.horizontal;

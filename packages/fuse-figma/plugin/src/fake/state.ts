@@ -199,6 +199,10 @@ export type NodeState = {
   layoutAlign: "INHERIT" | "STRETCH";
   /** Whether the node sits in its auto layout parent's flow, or outside it at its own place (rule 24). */
   layoutPositioning: FrameNode["layoutPositioning"];
+  /** The tracks and gaps the node lays out as a grid by, read only while its `layoutMode` is GRID (rule 61). */
+  grid: GridState;
+  /** How the node sits in its grid cell on each axis (rule 61). */
+  gridAlign: { horizontal: GridChildAlign; vertical: GridChildAlign };
   /** The variable each bound field that is not a text field follows, by id. */
   readonly bindings: Map<VariableBindableNodeField, string>;
   /** The mode the node pins for each collection, by collection id. */
@@ -365,6 +369,20 @@ export function storeRgba(color: RGBA): RGBA {
 
 /** A layer's length on an axis and its parent's. */
 export type Lengths = { readonly own: number; readonly outer: number };
+
+/** How a grid's layer sits in its cell on one axis. */
+export type GridChildAlign = GridChildrenMixin["gridChildHorizontalAlign"];
+
+/** A grid's tracks, the gaps between them and how it places its layers (rule 61). */
+export type GridState = {
+  columnSizes: readonly GridTrackSize[];
+  rowSizes: readonly GridTrackSize[];
+  columnGap: number;
+  rowGap: number;
+  positioning: GridLayoutMixin["gridItemsPositioning"];
+  /** Each HUG track's last length on each axis, which a track holding only filling layers keeps (PG2). */
+  held: Record<Axis, number[]>;
+};
 
 /** An axis of a layer, named as `layoutMode` names the direction along it. */
 export type Axis = "HORIZONTAL" | "VERTICAL";

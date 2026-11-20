@@ -10,7 +10,7 @@
  * instead of passing on an `undefined`. Every write lands in a log, so a test can tell that a
  * run stopped before its first write.
  *
- * The fake models the Figma rules its modules list, numbered 1 to 60. Each rule a real file showed
+ * The fake models the Figma rules its modules list, numbered 1 to 61. Each rule a real file showed
  * in 2026-10 names that run.
  * Rules 12 to 47 name the probe behind each, from net-zero probes on the test file `Elmera Fuse -
  * Import test` from 2026-10-22 to 2026-10-25: P0 and P0b read the kit's nodes, P1 to P9, PB, PR,
@@ -18,7 +18,9 @@
  * P9b stored images and built no node. Rule 48 names PK, a reading of the owner's file on 2026-10-25,
  * and PK2, built on a scratch frame the same day. Rule 49 names PS2, a reading of the owner's file
  * and frames built on a scratch page on 2026-10-25. Rules 57 and 58 name PS3, and rule 57 also PS4,
- * probes on scratch frames in the owner's file `Untitled` on 2026-10-26.
+ * probes on scratch frames in the owner's file `Untitled` on 2026-10-26. Rule 61 names PG1 to PG12,
+ * which the owner ran through the Plugin API on a scratch file on 2026-11-18, rule 50 names PG8, and
+ * rules 50 and 55 name PG13, from the same file.
  *
  * Each rule's probe notes sit beside the code that models it. `fake/paints.ts` models rules 1, 2,
  * 3, 22, 23, 27, 33, 46, 49. `fake/overrides.ts` models rules 36, 37, 38, 48. `fake/instances.ts`
@@ -26,10 +28,11 @@
  * models rules 7, 10, 19, 20, 21, 28, 30, 50, 51, 52, 53, 54, 55. `fake/variables.ts` models rules
  * 8, 11. `fake/layout.ts` models rules 5, 9, 12, 13, 14, 15, 16, 17, 18, 24, 26, 29, 31, 32, 40,
  * 42, 47, 56, 57, 58. `fake/styles.ts` models rule 59, from probe PT1 on 2026-11-16, and rule 60, from the typings alone.
+ * `fake/grid.ts` and `fake/layout.ts` model rule 61, from the typings and PG1 to PG12.
  * `fake/guard.ts` holds the guard, `fake/state.ts` the file's records, `fake/tree.ts`
  * the node tree and `fake/nodes.ts` the node classes. Each module imports only the ones listed
- * before it here: guard, state, overrides, tree, variables, paints, text, styles, layout,
- * instances, svg and nodes.
+ * before it here: guard, state, overrides, tree, variables, paints, text, styles, grid,
+ * layout, instances, svg and nodes.
  *
  * It also models what the plugin typings document for a plugin with
  * `"documentAccess": "dynamic-page"`, as the components plugin declares: a page other than the

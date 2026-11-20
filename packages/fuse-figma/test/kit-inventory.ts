@@ -443,6 +443,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Timeline list",
     sets: [{ key: "timeline-list", name: "Timeline list", variants: 1, previewed: 1 }],
   },
+  // The docs default demo's row, its Checkbox beside its title and description in a two-column grid.
+  {
+    slug: "selection-item",
+    name: "Selection item",
+    sets: [{ key: "selection-item", name: "Selection item", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

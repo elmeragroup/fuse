@@ -127,6 +127,8 @@ export type BoxCascade = {
   readonly elementChildren: number | undefined;
   /** The tag of the box's element: a form control's tag says where the browser places its text. */
   readonly elementTag: string | undefined;
+  /** The text the box's element holds as its own, as the capture records it, or undefined for none. */
+  readonly elementText: string | undefined;
   /** Whether the box's element sets its `::marker` a `content` beyond `normal` or `none`. */
   readonly markerContent: boolean | undefined;
   /**
@@ -188,6 +190,20 @@ export type MeasuredBox = {
   readonly ellipsisFits: boolean;
   /** The box is a grid whose one column is its content width, with its items' least widths inside. */
   readonly trackFits: boolean;
+  /** On a grid of two or more columns, the columns that hug their widest item in every mode. */
+  readonly gridHugs: readonly number[];
+  /** On a grid of two or more columns, the columns wider than their items' least widths in every mode. */
+  readonly gridHolds: readonly number[];
+  /** On such a grid, each column's item at least as wide as the others in every mode, or -1. */
+  readonly gridWidest: readonly number[];
+  /** On such a grid, each row's item at least as tall as the others in every mode, or -1. */
+  readonly gridTallest: readonly number[];
+  /** On such a grid, how many items it lays out in every mode, or undefined. */
+  readonly gridItems: number | undefined;
+  /** On an item of such a grid, its place among the grid's items, or undefined. */
+  readonly gridItem: number | undefined;
+  /** The element generates no box and adds nothing to its parent's flow but its children's boxes. */
+  readonly noBox: boolean;
 };
 
 /**

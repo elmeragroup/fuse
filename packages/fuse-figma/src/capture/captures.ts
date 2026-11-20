@@ -84,6 +84,7 @@ import selectItem from "../../captures/select-item.json" with { type: "json" };
 import selectOpen from "../../captures/select-open.json" with { type: "json" };
 import selectPopup from "../../captures/select-popup.json" with { type: "json" };
 import selectTrigger from "../../captures/select-trigger.json" with { type: "json" };
+import selectionItem from "../../captures/selection-item.json" with { type: "json" };
 import separator from "../../captures/separator.json" with { type: "json" };
 import sheetContent from "../../captures/sheet-content.json" with { type: "json" };
 import sidebarFooter from "../../captures/sidebar-footer.json" with { type: "json" };
@@ -168,6 +169,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["empty", empty],
   ["card", card],
   ["timeline-list", timelineList],
+  ["selection-item", selectionItem],
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
   ["calendar-day", calendarDay],

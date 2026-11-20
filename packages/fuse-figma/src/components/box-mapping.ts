@@ -25,6 +25,7 @@ import { describeColor, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
+  boxHeightBounds,
   growingRoom,
   hugsUncapped,
   lessMargins,
@@ -50,6 +51,7 @@ import type {
   LabelDefinition,
   PartDefinition,
 } from "./component-spec";
+import { readContentBox } from "./content-box";
 import {
   describeNumber,
   evaluateLength,
@@ -63,6 +65,7 @@ import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
+import { holdsEditableText, keyedCells, readGrid } from "./grid-layout";
 import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import { readInlineItem } from "./inline-item";
@@ -94,6 +97,7 @@ import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
 import type { Feed, LayerStyle, SpecField } from "./layer-style";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
+import { liftParts } from "./no-box";
 import { arrangePaint, inPaintOrder } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
 import {
@@ -195,6 +199,10 @@ function readDisplay(
         lays
       );
     }
+    return false;
+  }
+  if (layout.grid !== undefined) {
+    // `readGrid` reads a Figma grid's display with its tracks.
     return false;
   }
   const inert = inertClamp(reader);
@@ -437,12 +445,15 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       : undefined;
   const inside = sizingInside(box, cell, cascade.path, label);
   const boxSizing = literalLayout(["border-box"], "strokes count in the auto layout");
-  // Strokes inside the box's lengths leave its layers the room inside them.
-  reader.read("box-sizing", boxSizing.map, boxSizing.describe, [
-    ...reader.feed("stroke"),
-    ...reader.feed("sizing"),
-    ...inside,
-  ]);
+  // Strokes inside the box's lengths leave its layers the room inside them. A content box reads once
+  // the part maps (`content-box.ts`).
+  if (normalizeCss(reader.resolved("box-sizing") ?? "") !== "content-box") {
+    reader.read("box-sizing", boxSizing.map, boxSizing.describe, [
+      ...reader.feed("stroke"),
+      ...reader.feed("sizing"),
+      ...inside,
+    ]);
+  }
 
   const paint = readPaint(reader, box.image, context.variables, variant);
   dropIdleOrigin(reader);
@@ -538,6 +549,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         name: part.name,
         style: part.cascade.style,
         sizing: sizingOf(part.kind === "instance" ? part.visit.part : part.child, cascade.path),
+        editable: holdsEditableText(part.kind === "instance" ? part.visit.part : part.child),
       })),
       others,
       // The flow ends with the last part after the label, else the last end icon, else the label, else
@@ -558,6 +570,15 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       freeAlongMain: cascade.measured?.freeAlongMain === true,
       fitsAlongMain: cascade.measured?.fitsAlongMain === true,
       tableTiles: cascade.measured?.tableTiles === true,
+      grid: {
+        hugs: cascade.measured?.gridHugs ?? [],
+        holds: cascade.measured?.gridHolds ?? [],
+        widest: cascade.measured?.gridWidest ?? [],
+        tallest: cascade.measured?.gridTallest ?? [],
+        items: cascade.measured?.gridItems,
+        places: flowing.map((part) => part.cascade.measured?.gridItem),
+      },
+      outOfFlow: shown.length - flowing.length,
     }
   );
   const { layout } = flow;
@@ -861,8 +882,19 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       scope.painted.note(layer, drawn);
     }
   });
+  // A Figma grid spaces its tracks by its own gaps, which `readGrid` reads.
+  const grid =
+    layout.grid === undefined
+      ? undefined
+      : readGrid(
+          reader,
+          layout.grid,
+          flowing.map((part) => part.cascade.style),
+          context.variables
+        );
   // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
   const itemSpacing =
+    (grid === undefined ? undefined : ZERO) ??
     space ??
     spaced ??
     (layout.oneColumnGrid === true ? number("row-gap", "itemSpacing") : undefined) ??
@@ -905,8 +937,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);
   }
-  const mappedBox: BoxSpec = {
-    direction: layout.direction,
+  let laidOut: BoxSpec = {
+    direction: grid === undefined ? layout.direction : "GRID",
     // A box whose one layer hides keeps the length that layer holds, which Figma's auto layout would
     // give back where the box hugs it.
     sizing: children.some((child) => child.kind === "frame" && child.hidden === true)
@@ -928,16 +960,34 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         ? "MIN"
         : placement.primaryAlign),
     counterAlign,
-    cornerRadius:
-      readCorner(
-        reader,
-        { sizing, held: heldSizing(reader, { sizing, limits }, children) },
-        context.variables
-      ) ?? ZERO,
+    cornerRadius: ZERO,
     ...paint,
     opacity: opacity ?? 1,
     children,
   };
+  // The corners read last, since a radius per corner can take its side's least length from the box
+  // as laid out.
+  laidOut = {
+    ...laidOut,
+    cornerRadius:
+      readCorner(
+        reader,
+        {
+          sizing,
+          held: heldSizing(reader, { sizing, limits }, children),
+          leastHeight: boxHeightBounds(
+            grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
+            context.variables
+          ).min,
+        },
+        context.variables
+      ) ?? ZERO,
+  };
+  // A grid frame aligns MIN, the one value Figma takes on a grid, and places its items by their cells.
+  const mappedBox: BoxSpec =
+    grid === undefined
+      ? laidOut
+      : { ...laidOut, primaryAlign: "MIN", counterAlign: "MIN", grid: keyedCells(grid, children) };
   const stacks = mapped.map(({ stacked, style, paints }) => ({
     layer: scope.painted.resolveBox(stacked),
     style,
@@ -1132,12 +1182,17 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
   const { cell } = scope;
   const elements = (box.parts ?? [])
     .filter((child) => child.shownIn(cell))
-    .map((child): ShownPart => {
+    .flatMap((child): readonly ShownPart[] => {
       if ("kind" in child) {
-        return scope.instances.cascade(child, cascade, cell);
+        return [scope.instances.cascade(child, cascade, cell)];
       }
       const name = partName(child);
-      return { kind: "frame", child, key: child.key, name, cascade: cascade.part(name, elementOf(child)) };
+      const own = cascade.part(name, elementOf(child));
+      // A part that generates no box hands its parts to this box (`no-box.ts`).
+      if (own.measured?.noBox === true) {
+        return cascadeParts({ ...child, parts: liftParts(child, own, cell) }, own, scope);
+      }
+      return [{ kind: "frame", child, key: child.key, name, cascade: own }];
     });
   const pseudo = pseudoParts(cascade).map(
     ({ pseudo, child, cascade: own }): ShownPart & { readonly at: "before" | "after" } => ({
@@ -1231,7 +1286,8 @@ function mapPart(
   const frame = mapBox(part.child, part.cascade, scope, room);
   const own = minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
-  const box = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
+  const ringed = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
+  const box = readContentBox(part.cascade.style, ringed, part.cascade.inPlace() !== undefined);
   const drawn: FrameLayerSpec = {
     kind: "frame",
     key: part.child.key,

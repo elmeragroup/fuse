@@ -190,7 +190,9 @@ export function buildComponentSet(
     instances.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
-        fontStyles.add(layer.fontStyle);
+        for (const face of layer.weight?.faces ?? [layer.fontStyle]) {
+          fontStyles.add(face);
+        }
       }
     }
     return { key: variantKey(definition, cell), properties: cell, root };

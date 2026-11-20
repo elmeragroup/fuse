@@ -11,11 +11,13 @@ import {
   readNumber,
 } from "./css-values";
 import type { VariableIndex, Viewport } from "./css-values";
+import { cellRoom } from "./grid-layout";
 import { outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
   DirectionSpec,
+  GridSpec,
   LimitsSpec,
   NumberSpec,
   SizeSpec,
@@ -619,6 +621,9 @@ function setsMinimumWidth(style: LayerStyle): boolean {
  */
 export function roomInside(holder: Holder, index: number): Room {
   const { layout, sizing, layers } = holder;
+  if (layout.grid !== undefined) {
+    return cellRoom(layout.grid, index);
+  }
   const percent = (size: SizeSpec, axis: keyof Extent): PercentBasis => {
     if (definite(holder, size)) {
       // Along a flex box's direction a part's length is its basis, which it grows or shrinks from
@@ -1040,7 +1045,15 @@ export function heightBounds(layer: ChildLayerSpec | undefined, variables: Varia
   return layer.visibleProperty === undefined ? own : { min: 0, max: own.max };
 }
 
-function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
+/**
+ * The height bounds of a mapped box, as {@link heightBounds} says for a box layer. A grid stacks its
+ * rows, each as tall as its tallest layer, with its row gap between them.
+ *
+ * @param box - The box.
+ * @param variables - The synced variables, whose values across their modes bound a bound length.
+ * @returns The box's height bounds.
+ */
+export function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
   const { vertical } = box.sizing;
   if (vertical.kind !== "hug") {
     return vertical.kind === "fixed" ? lengthBounds(vertical.length, variables) : UNBOUNDED;
@@ -1055,7 +1068,12 @@ function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
     Math.max(0, shown.length - 1),
     Math.max(0, flowing.length - 1)
   );
-  const layers = box.direction === "VERTICAL" ? sum([...heights, gaps]) : tallest(heights);
+  const layers =
+    box.grid !== undefined
+      ? gridHeight(box.grid, flowing, heights, variables)
+      : box.direction === "VERTICAL"
+        ? sum([...heights, gaps])
+        : tallest(heights);
   const hugged = sum([
     lengthBounds(box.paddingTop, variables),
     layers,
@@ -1064,6 +1082,23 @@ function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightBounds {
     lengthBounds(strokeRoom(box.stroke, "bottom"), variables),
   ]);
   return withinLimits(hugged, box.limits, variables);
+}
+
+/** The bounds of a grid's rows, each its tallest layer, stacked with the row gap between them. */
+function gridHeight(
+  grid: GridSpec,
+  flowing: readonly ChildLayerSpec[],
+  heights: readonly HeightBounds[],
+  variables: VariableIndex
+): HeightBounds {
+  const rows = grid.rows.map((_row, row) =>
+    tallest(
+      flowing.flatMap((child, index) =>
+        grid.cells.find((cell) => cell.key === child.key)?.row === row ? [heights[index] ?? UNBOUNDED] : []
+      )
+    )
+  );
+  return sum([...rows, times(lengthBounds(grid.rowGap, variables), rows.length - 1, rows.length - 1)]);
 }
 
 /** The bounds of the tallest of a row's layers. */

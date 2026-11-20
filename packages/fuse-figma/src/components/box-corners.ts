@@ -27,19 +27,26 @@ type Corner = (typeof CORNERS)[number];
  * Read a box's corner radius: `border-radius` on every corner, or a radius per corner.
  *
  * @param reader - The box's style.
- * @param sides - The box's sizing, whose fixed sides an infinite `border-radius` reads, and the
- *   sizing with the literal length it holds on each axis it hugs, as `held-size.ts` reads it, whose
- *   sides an infinite radius per corner reads.
+ * @param sides - The box's sizing, whose fixed sides an infinite `border-radius` reads, the sizing
+ *   with the literal length it holds on each axis it hugs, as `held-size.ts` reads it, whose sides a
+ *   radius per corner reads, and the least height the box takes in any mode, as the box's layers
+ *   bound it, which a radius per corner reads where the height is no literal.
  * @param variables - The synced variables a radius can bind.
  * @returns The corner radius, or undefined where the box sets none or it does not map.
  */
 export function readCorner(
   reader: LayerStyle,
-  { sizing, held }: { readonly sizing: SizingSpec; readonly held: SizingSpec },
+  {
+    sizing,
+    held,
+    leastHeight,
+  }: { readonly sizing: SizingSpec; readonly held: SizingSpec; readonly leastHeight: number },
   variables: VariableIndex
 ): CornerRadiusSpec | undefined {
   const own = CORNERS.filter((corner) => cornerProperty(reader, corner) !== undefined);
-  return own.length === 0 ? readUniform(reader, sizing, variables) : readCorners(reader, held, variables);
+  return own.length === 0
+    ? readUniform(reader, sizing, variables)
+    : readCorners(reader, held, leastHeight, variables);
 }
 
 /** The longhand a box sets a corner by, physical or logical, or undefined for neither. */
@@ -125,13 +132,22 @@ type RawRadius =
  * the shorter side (probe P10). So the radii map only on a box whose sides are literal, where the
  * radii CSS draws are each within half the shorter side, which Figma then draws as written: scaled
  * literals where CSS scales them, and a variable only where the greatest value it holds in any mode
- * leaves CSS nothing to scale and stays within that half, so every mode draws alike. Any other
- * corner set stays unmapped. A box that sets a corner longhand beside `border-radius` stays unmapped
+ * leaves CSS nothing to scale and stays within that half, so every mode draws alike. A box of a
+ * literal width whose height follows its layers maps where its least height in any mode, as its
+ * layers bound it, proves the same: every radius, a variable at its greatest value, sums within each
+ * side's least length and sits within half the shorter side's, so CSS scales nothing at any height
+ * it takes and Figma caps nothing, and each radius draws as written. The bound gives a text one line
+ * at least, as realistic text does, and a layer a BOOLEAN property can hide no height, so a label a
+ * designer would realistically leave out counts as gone. A label emptied through its TEXT property is
+ * a known limit: it sets no line in CSS, where the corners could scale, and keeps its line's height in
+ * the bound. Any other corner set stays
+ * unmapped. A box that sets a corner longhand beside `border-radius` stays unmapped
  * too, since which one wins depends on their order, which the build does not read.
  */
 function readCorners(
   reader: LayerStyle,
   sizing: SizingSpec,
+  leastHeight: number,
   variables: VariableIndex
 ): CornersSpec | undefined {
   if (reader.has("border-radius")) {
@@ -143,7 +159,9 @@ function readCorners(
   const drawn =
     width?.kind === "literal" && height?.kind === "literal"
       ? drawnCorners(raw, width.value, height.value)
-      : undefined;
+      : width?.kind === "literal" && sizing.vertical.kind === "hug"
+        ? unscaledCorners(raw, width.value, leastHeight)
+        : undefined;
   const [topLeft, topRight, bottomRight, bottomLeft] = drawn ?? [];
   const corners =
     topLeft === undefined || topRight === undefined || bottomRight === undefined || bottomLeft === undefined
@@ -184,6 +202,36 @@ function rawRadius(reader: LayerStyle, corner: Corner, variables: VariableIndex)
   }
   const most = spec === undefined ? undefined : variables.maximum(spec.variable);
   return spec === undefined || most === undefined ? undefined : { kind: "variable", spec, most };
+}
+
+/**
+ * The radii as written, on a box whose sides are at least the given lengths, where they prove CSS
+ * scales none of them and Figma caps none, each a variable at its greatest value: the radii along
+ * each side sum within its least length, and each sits within half the shorter one. Undefined
+ * otherwise, or for a radius that reads as no length.
+ */
+function unscaledCorners(
+  raw: readonly (RawRadius | undefined)[],
+  width: number,
+  height: number
+): readonly NumberSpec[] | undefined {
+  const known = raw.flatMap((each) => (each === undefined || each.kind === "infinite" ? [] : [each]));
+  if (known.length !== raw.length) {
+    return undefined;
+  }
+  const px = known.map((each) => (each.kind === "literal" ? each.px : each.most));
+  const [topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0] = px;
+  const fits =
+    topLeft + topRight <= width &&
+    bottomRight + bottomLeft <= width &&
+    topRight + bottomRight <= height &&
+    bottomLeft + topLeft <= height &&
+    px.every((radius) => radius <= Math.min(width, height) / 2);
+  return fits
+    ? known.map((each): NumberSpec =>
+        each.kind === "variable" ? each.spec : { kind: "literal", value: each.px }
+      )
+    : undefined;
 }
 
 /**

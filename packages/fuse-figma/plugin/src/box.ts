@@ -19,6 +19,7 @@ import {
   planEffects,
 } from "./fields.ts";
 import type { Held, NumberField, Run } from "./fields.ts";
+import { planGridTracks } from "./grid.ts";
 import { change, recordsAny } from "./plan.ts";
 
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
@@ -142,6 +143,9 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     planScalar(run, label, "layoutMode", node.layoutMode, direction, () => {
       node.layoutMode = direction;
     });
+    // A frame that turns into a grid takes FLEX tracks, places its layers in no cell and fixes its
+    // sizing (PG7), so its placement and tracks come next, and its sizing after them.
+    planGridTracks(run, node, label, spec.grid);
     planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, spec.primaryAlign, () => {
       node.primaryAxisAlignItems = spec.primaryAlign;
     });

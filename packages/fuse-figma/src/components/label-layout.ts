@@ -28,6 +28,7 @@ import { checkLabelText } from "./label-text";
 import type { CoverageNote, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
 import { readType } from "./typography";
+import { weightBinding } from "./weight-binding";
 
 /**
  * Where a native control sets its text within the text's box, which no class says, as an `<input>`
@@ -397,9 +398,12 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
   const { style } = holder;
   const { color, variables, path } = scope;
   const { fontFamily, fontSize, lineHeight, fontWeight, letterSpacing } = readType(style, variables, path);
-  if (fontWeight?.kind === "variable") {
+  // A variable weight binds the layer's `fontWeight`, which picks its upright face in each mode.
+  const weight = fontWeight?.kind === "variable" ? weightBinding(fontWeight.variable, variables) : undefined;
+  const italic = normalizeCss(style.resolved("font-style") ?? "normal") === "italic";
+  if (fontWeight?.kind === "variable" && (weight === undefined || italic)) {
     throw new KitUnmappable({
-      message: `${scope.variant}: the label's weight binds ${fontWeight.variable.name}, and a text layer holds a literal style`,
+      message: `${scope.variant}: the label's weight binds ${fontWeight.variable.name}, whose weights name no upright face the kit knows`,
     });
   }
   const underline = readUnderline(style, fontSize, variables, path);
@@ -433,7 +437,13 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     characters,
     textProperty: label.textProperty,
     fontFamily,
-    fontStyle: readFaceStyle(style, { family: fontFamily, upright: fontWeight?.style ?? "Regular" }, path),
+    fontStyle:
+      weight?.faces[0] ??
+      readFaceStyle(
+        style,
+        { family: fontFamily, upright: fontWeight?.kind === "literal" ? fontWeight.style : "Regular" },
+        path
+      ),
     fontSize,
     lineHeight,
     color,
@@ -442,7 +452,8 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     align: readTextAlign(style, fills ? label.placement : undefined, path),
     truncation: layout.truncation,
   };
-  const wraps = layout.maxWidth === undefined ? layer : { ...layer, maxWidth: layout.maxWidth };
+  const weighted = weight === undefined ? layer : { ...layer, weight };
+  const wraps = layout.maxWidth === undefined ? weighted : { ...weighted, maxWidth: layout.maxWidth };
   const placed = placeInBox(holder, label.placement);
   return {
     layer: letterSpacing === undefined ? wraps : { ...wraps, letterSpacing },

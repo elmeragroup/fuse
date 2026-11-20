@@ -79,6 +79,14 @@ const AROUND_UNDRAWN =
 const BETWEEN_UNDRAWN = "an element between a box and its part, which the kit draws no layer for";
 
 /**
+ * Why a declaration of an element that generates no box, read by no layer and not inherited, sets
+ * nothing: its parts lay out in its parent's box, and it has no box of its own to take the property
+ * (CSS Display 3 §2.5).
+ */
+const NO_BOX_UNDRAWN =
+  "the element generates no box (display: contents), so it has no box this property sets";
+
+/**
  * The font size `<html>` takes where no rule sets one: the initial `medium` (CSS Fonts 4 §2.5), which
  * Chromium draws at 16px. No rule declares it, so the capture holds no winner for it, and a root
  * whose own classes set no size, as Link's, inherits it.
@@ -1321,6 +1329,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly elementChildren: number | undefined;
   /** The tag of the box's element in the capture. */
   readonly elementTag: string | undefined;
+  /** The text the box's element holds as its own in the capture. */
+  readonly elementText: string | undefined;
   /** Whether the box's element sets its `::marker` a `content` beyond `normal` or `none`. */
   readonly markerContent: boolean | undefined;
   /** What the capture measured of the box's element. */
@@ -1337,6 +1347,8 @@ class CaptureBoxCascade implements BoxCascade {
    * @param parent - The layer of the element above the box.
    * @param path - The keys of the layers from the root down to the box's.
    * @param composed - What a composite's root holds beyond its element's.
+   * @param undrawn - Why the box's own declarations that no layer reads set nothing, for an element
+   *   that generates no box, or undefined.
    */
   constructor(
     read: CellRead,
@@ -1344,7 +1356,8 @@ class CaptureBoxCascade implements BoxCascade {
     placed: readonly Placed[],
     parent: Layer | undefined,
     path: readonly string[],
-    composed: ComposedRoot = PLAIN
+    composed: ComposedRoot = PLAIN,
+    undrawn?: string
   ) {
     this.#read = read;
     this.#ledger = ledger;
@@ -1361,7 +1374,8 @@ class CaptureBoxCascade implements BoxCascade {
         ...placeholderOf(read, ledger, placed),
         ...composed.applied,
       ],
-      parent
+      parent,
+      undrawn === undefined ? undefined : { undrawn }
     );
     this.style = new LayerStyle(ledger, this.#layer, path);
     this.path = path;
@@ -1370,6 +1384,7 @@ class CaptureBoxCascade implements BoxCascade {
     );
     this.elementChildren = own?.element.children.length;
     this.elementTag = own?.element.tag;
+    this.elementText = own?.element.text;
     // The capture records a `::marker` only where it sets such a `content`.
     this.markerContent = own === undefined ? undefined : own.element.pseudo.marker !== undefined;
     this.measured = own === undefined ? undefined : measuredBox(own.element, read.declarations);
@@ -1450,7 +1465,16 @@ class CaptureBoxCascade implements BoxCascade {
         message: `the capture holds no element for the part ${part} below ${this.#placed.at(-1)?.name ?? "the root"}, ${element.slot === undefined ? `at the place ${element.place ?? "the manifest leaves unnamed"}` : `with data-slot ${element.slot}`}`,
       });
     }
-    return this.#below(elements, part, this.#ledger, [...this.path, element.key], undefined);
+    // An element that generates no box hands its parts to this box, so its own path is this box's.
+    const noBox = elements.at(-1)?.measured?.noBox === true;
+    return this.#below(
+      elements,
+      part,
+      this.#ledger,
+      noBox ? this.path : [...this.path, element.key],
+      undefined,
+      noBox ? NO_BOX_UNDRAWN : undefined
+    );
   }
 
   instance(
@@ -1505,7 +1529,8 @@ class CaptureBoxCascade implements BoxCascade {
     part: string,
     ledger: CellLedger,
     path: readonly string[],
-    passed: Placed["passed"]
+    passed: Placed["passed"],
+    undrawn?: string
   ): BoxCascade {
     const { context } = this.#read;
     const { origin } = this.#ledger.scope;
@@ -1529,7 +1554,7 @@ class CaptureBoxCascade implements BoxCascade {
       const passedHere = passed ?? this.#read.passedBelow.get(target);
       placed.push(passedHere === undefined ? own : { ...own, passed: passedHere });
     }
-    return new CaptureBoxCascade(this.#read, ledger, placed, parent, path);
+    return new CaptureBoxCascade(this.#read, ledger, placed, parent, path, PLAIN, undrawn);
   }
 
   /**
@@ -1887,5 +1912,12 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     lineFits: facts?.lineFits === true,
     ellipsisFits: facts?.ellipsisFits === true,
     trackFits: facts?.trackFits === true,
+    gridHugs: facts?.gridHugs ?? [],
+    gridHolds: facts?.gridHolds ?? [],
+    gridWidest: facts?.gridWidest ?? [],
+    gridTallest: facts?.gridTallest ?? [],
+    gridItems: facts?.gridItems,
+    gridItem: facts?.gridItem,
+    noBox: facts?.noBox === true,
   };
 }

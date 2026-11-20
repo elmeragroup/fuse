@@ -100,10 +100,12 @@ const NO_FIGMA_FORM = new Map([
  * and a part's label wraps as Empty's `text-balance` on the root says. `text-align` inherits too, and
  * `overflow-wrap` (CSS Text 3 §5.5), so each label below the box that sets it decides whether it
  * breaks a word there. A list's `list-style-type`, `list-style-image` and `list-style-position` inherit
- * (CSS Lists 3 §3), so an item reads the marker its list sets.
+ * (CSS Lists 3 §3), so an item reads the marker its list sets. `cursor` inherits (CSS UI 4 §5.1), so
+ * a box that generates no box, as a `display: contents` label, still sets the pointer over its parts.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
+  "cursor",
   "font-family",
   "font-size",
   "font-weight",

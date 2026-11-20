@@ -92,6 +92,7 @@ import { RADIO_ROW_MANIFEST } from "./radio-row-kit";
 import { SELECT_FIELD_MANIFEST } from "./select-field-kit";
 import { SELECT_ITEM_MANIFEST, SELECT_OPEN_MANIFEST, SELECT_POPUP_MANIFEST } from "./select-kit";
 import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
+import { SELECTION_ITEM_MANIFEST } from "./selection-item-kit";
 import { SEPARATOR_MANIFEST } from "./separator-kit";
 import { SHEET_CONTENT_MANIFEST } from "./sheet-kit";
 import {
@@ -266,6 +267,13 @@ const TIMELINE_LIST_PAGE: KitPage = {
   slug: "timeline-list",
   name: "Timeline list",
   example: "timeline-list",
+};
+
+/** The page Selection item sits on alone. */
+const SELECTION_ITEM_PAGE: KitPage = {
+  slug: "selection-item",
+  name: "Selection item",
+  example: "selection-item",
 };
 
 /** The page Link sits on alone. */
@@ -875,5 +883,10 @@ export const KIT: readonly KitEntry[] = [
     page: TIMELINE_LIST_PAGE,
     previewCells: possibleCells(TIMELINE_LIST_MANIFEST),
     manifest: TIMELINE_LIST_MANIFEST,
+  },
+  {
+    page: SELECTION_ITEM_PAGE,
+    previewCells: possibleCells(SELECTION_ITEM_MANIFEST),
+    manifest: SELECTION_ITEM_MANIFEST,
   },
 ];
