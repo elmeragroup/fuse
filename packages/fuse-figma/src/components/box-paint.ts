@@ -48,6 +48,19 @@ export function describeColor(spec: ColorSpec): CoverageNote {
 export type BoxPaint = Pick<BoxSpec, "fill" | "stroke" | "shadows" | "backgroundBlur">;
 
 /**
+ * Whether a box paints anything of its own: a fill, a stroke, a shadow, or a background blur, which
+ * blurs what lies behind the whole border box, its padding included.
+ */
+export function paintsAnything(paint: BoxPaint): boolean {
+  return (
+    paint.fill !== undefined ||
+    paint.stroke !== undefined ||
+    paint.shadows.length > 0 ||
+    paint.backgroundBlur !== undefined
+  );
+}
+
+/**
  * Read a `backdrop-filter` that blurs what lies behind the box, `blur(Npx)` and nothing else, as the
  * overlay scrim's `backdrop-blur-xs` writes `blur(4px)` among Tailwind's empty filter slots, as a
  * Figma background blur. CSS's `blur()` takes the Gaussian's standard deviation (Filter Effects 1
