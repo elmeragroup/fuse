@@ -522,6 +522,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Data table filter",
     sets: [{ key: "data-table-filter-bar", name: "Data table filter bar", variants: 1, previewed: 1 }],
   },
+  // The Beacon demo's tip: its title beside Close, its description and Done.
+  {
+    slug: "tour",
+    name: "Tour",
+    sets: [{ key: "tour-popup", name: "Tour popup", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

@@ -373,6 +373,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("popover-cell.ts", import.meta.url), name: "popoverOpen" },
   },
   {
+    set: "tour-popup",
+    entry: "dist/tour.js",
+    module: { url: new URL("tour-cell.ts", import.meta.url), name: "tourPopup" },
+  },
+  {
     set: "dropdown-menu-item",
     entry: "dist/dropdown-menu.js",
     module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuItem" },
