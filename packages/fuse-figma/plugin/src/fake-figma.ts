@@ -26,19 +26,19 @@
  * the same day. Rule 65 takes its writes and reads from the typings and names what probes on a
  * scratch file showed of range fills on 2026-11-19. Rule 66 takes a text's link from the typings
  * alone. Rule 67 names FD1, FD2 and FD3, run through the Plugin API on a scratch file on
- * 2026-11-20.
+ * 2026-11-20. Rule 8 names FM1 and FM2, and rule 56 FM2, from the same file and day.
  *
  * Each rule's probe notes sit beside the code that models it. `fake/paints.ts` models rules 1, 2,
  * 3, 22, 23, 27, 33, 46, 49. `fake/overrides.ts` models rules 36, 37, 38, 48. `fake/instances.ts`
  * models rules 4, 25, 34, 35, 39, 41, 43, 44, 45. `fake/svg.ts` models rule 6. `fake/text.ts`
- * models rules 7, 10, 19, 20, 21, 28, 30, 50, 51, 52, 53, 54, 55, 65, 66. `fake/variables.ts` models rules
- * 8, 11. `fake/layout.ts` models rules 5, 9, 12, 13, 14, 15, 16, 17, 18, 24, 26, 29, 31, 32, 40,
+ * models rules 7, 10, 19, 20, 21, 28, 30, 50, 51, 52, 53, 54, 55, 65, 66. `fake/modes.ts` models rule 8.
+ * `fake/variables.ts` models rule 11. `fake/layout.ts` models rules 5, 9, 12, 13, 14, 15, 16, 17, 18, 24, 26, 29, 31, 32, 40,
  * 42, 47, 56, 57, 58, 62, 63, 64. `fake/styles.ts` models rule 59, from probe PT1 on 2026-11-16, and rule 60, from the typings alone.
  * `fake/grid.ts` and `fake/layout.ts` model rule 61, from the typings and PG1 to PG12.
  * `fake/tree.ts` models rule 67.
  * `fake/guard.ts` holds the guard, `fake/state.ts` the file's records, `fake/tree.ts`
  * the node tree and `fake/nodes.ts` the node classes. Each module imports only the ones listed
- * before it here: guard, state, overrides, tree, variables, paints, text, styles, grid,
+ * before it here: guard, state, modes, overrides, tree, variables, paints, text, styles, grid,
  * layout, instances, svg and nodes.
  *
  * It also models what the plugin typings document for a plugin with

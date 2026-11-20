@@ -39,6 +39,7 @@
  */
 
 import { guard } from "./guard.ts";
+import { resolveNumber, resolveString } from "./modes.ts";
 import { f32, SHARED_DATA_SEPARATOR } from "./state.ts";
 import { write } from "./state.ts";
 import type { FileState, NodeState, TextStyleState } from "./state.ts";
@@ -50,7 +51,7 @@ import {
   restyleWhole,
   weightedStyle,
 } from "./text.ts";
-import { alias, fileVariable, requireType, resolveNumber, resolveString } from "./variables.ts";
+import { alias, fileVariable, requireType } from "./variables.ts";
 
 /** What a real file stored each of these characters in a description as (PT1). */
 const ESCAPES: readonly (readonly [string, string])[] = [

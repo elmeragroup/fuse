@@ -42,6 +42,7 @@ import {
   absoluteBox,
   bindNodeField,
   bindTextField,
+  keptNumbers,
   constraintsOf,
   fills,
   lengthOn,
@@ -64,6 +65,7 @@ import {
   sizingOn,
   turnedOrigin,
 } from "./layout.ts";
+import { modeFor, ownNumber, shownNumber, storeNumber } from "./modes.ts";
 import { isHidden, markOverride, noteOverride, shown } from "./overrides.ts";
 import {
   heldColorBindings,
@@ -74,6 +76,7 @@ import {
   writeStrokeSide,
 } from "./paints.ts";
 import {
+  bindingTargets,
   componentKey,
   componentOf,
   f32,
@@ -97,6 +100,7 @@ import type {
   NodeState,
   NodeType,
   Sizing,
+  StoredNumberField,
 } from "./state.ts";
 import { linkTextStyle } from "./styles.ts";
 import {
@@ -126,7 +130,7 @@ import {
   removeNode,
   sharedDataOf,
 } from "./tree.ts";
-import { alias, boundCollections, modeFor, nodeBindings } from "./variables.ts";
+import { alias, boundCollections, nodeBindings } from "./variables.ts";
 
 /** A layer's aspect lock: its own, or its source's for an instance or a sublayer (rule 62). */
 function heldLock(state: NodeState): Vector | null {
@@ -256,6 +260,63 @@ function pinMode(state: NodeState, collection: VariableCollection, modeId: strin
   }
   write(state, `pin ${found.name} to ${modeId}`);
   state.explicitModes.set(found.id, modeId);
+}
+
+/**
+ * Make the numbers a literal write sets the layer's own: drop the bindings it replaces, as
+ * `paddingLeft = 7` unbound a bound padding (rule 8, FM2), and stop showing its source's.
+ */
+function unbindWritten(state: NodeState, ...fields: readonly StoredNumberField[]): void {
+  for (const field of fields) {
+    state.bindings.delete(field);
+    ownNumber(state, field);
+  }
+}
+
+/** The four corner fields, in the order `radii` holds them. */
+const CORNER_FIELDS = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+
+/** Where each corner field sits in `radii`. */
+const CORNER_KEYS = {
+  topLeftRadius: "topLeft",
+  topRightRadius: "topRight",
+  bottomRightRadius: "bottomRight",
+  bottomLeftRadius: "bottomLeft",
+} as const;
+
+/** The number a layer shows on every one of these fields, or `figma.mixed` where they differ. */
+function sharedNumber(
+  state: NodeState,
+  fields: readonly VariableBindableNodeField[]
+): number | PluginAPI["mixed"] {
+  const values = new Set(keptNumbers(state, fields).map(([, value]) => value));
+  const [value, ...others] = values;
+  return value === undefined || others.length > 0 ? MIXED : value;
+}
+
+/** Store the numbers a layer shows on these fields, so a write that makes them its own keeps them. */
+function holdShown(state: NodeState, fields: readonly VariableBindableNodeField[]): void {
+  for (const [field, value] of keptNumbers(state, fields)) {
+    storeNumber(state, field, value);
+  }
+}
+
+/**
+ * Write corners as literals (rules 8, 37): keep the corners the layer shows, drop the bindings the
+ * write replaces, then note the override, so a literal equal to a bound corner its source shows
+ * still lists `cornerRadius` and stops following the source.
+ */
+function writeCorners(
+  state: NodeState,
+  corners: readonly (typeof CORNER_FIELDS)[number][],
+  radius: number
+): void {
+  holdShown(state, corners);
+  for (const corner of corners) {
+    state.bindings.delete(corner);
+    state.radii[CORNER_KEYS[corner]] = radius;
+  }
+  noteOverride(state, "radii");
 }
 
 /** The members every layer has. */
@@ -446,13 +507,14 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get opacity(): number {
-    return live(this).opacity;
+    return shownNumber(live(this), "opacity");
   }
 
   set opacity(value: number) {
     const state = live(this);
     write(state, "opacity");
     state.opacity = f32(value);
+    unbindWritten(state, "opacity");
   }
 
   get constraints(): Constraints {
@@ -499,35 +561,43 @@ class FakeSceneNode extends FakeBaseNode {
   }
 
   get minWidth(): number | null {
-    return live(this).limits.minWidth;
+    return shownNumber(live(this), "minWidth");
   }
 
   set minWidth(value: number | null) {
-    setLimit(live(this), "minWidth", value);
+    const state = live(this);
+    setLimit(state, "minWidth", value);
+    unbindWritten(state, "minWidth");
   }
 
   get maxWidth(): number | null {
-    return live(this).limits.maxWidth;
+    return shownNumber(live(this), "maxWidth");
   }
 
   set maxWidth(value: number | null) {
-    setLimit(live(this), "maxWidth", value);
+    const state = live(this);
+    setLimit(state, "maxWidth", value);
+    unbindWritten(state, "maxWidth");
   }
 
   get minHeight(): number | null {
-    return live(this).limits.minHeight;
+    return shownNumber(live(this), "minHeight");
   }
 
   set minHeight(value: number | null) {
-    setLimit(live(this), "minHeight", value);
+    const state = live(this);
+    setLimit(state, "minHeight", value);
+    unbindWritten(state, "minHeight");
   }
 
   get maxHeight(): number | null {
-    return live(this).limits.maxHeight;
+    return shownNumber(live(this), "maxHeight");
   }
 
   set maxHeight(value: number | null) {
-    setLimit(live(this), "maxHeight", value);
+    const state = live(this);
+    setLimit(state, "maxHeight", value);
+    unbindWritten(state, "maxHeight");
   }
 
   get boundVariables(): FrameNode["boundVariables"] {
@@ -620,8 +690,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   get strokeWeight(): number | PluginAPI["mixed"] {
-    const { top, right, bottom, left } = live(this).strokeWeights;
-    return top === right && right === bottom && bottom === left ? top : MIXED;
+    return sharedNumber(live(this), bindingTargets("strokeWeight"));
   }
 
   set strokeWeight(value: number | PluginAPI["mixed"]) {
@@ -633,46 +702,55 @@ class FakeFrameLikeNode extends FakeSceneNode {
     const weight = f32(value);
     state.strokeWeights = { top: weight, right: weight, bottom: weight, left: weight };
     state.strokeWeightWritten = true;
+    unbindWritten(state, "strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight");
   }
 
   get strokeTopWeight(): number {
-    return live(this).strokeWeights.top;
+    return shownNumber(live(this), "strokeTopWeight");
   }
 
   set strokeTopWeight(value: number) {
     const state = live(this);
+    holdShown(state, bindingTargets("strokeWeight"));
     writeStrokeSide(state, "top", value);
     write(state, "strokeTopWeight");
+    unbindWritten(state, "strokeTopWeight");
   }
 
   get strokeRightWeight(): number {
-    return live(this).strokeWeights.right;
+    return shownNumber(live(this), "strokeRightWeight");
   }
 
   set strokeRightWeight(value: number) {
     const state = live(this);
+    holdShown(state, bindingTargets("strokeWeight"));
     writeStrokeSide(state, "right", value);
     write(state, "strokeRightWeight");
+    unbindWritten(state, "strokeRightWeight");
   }
 
   get strokeBottomWeight(): number {
-    return live(this).strokeWeights.bottom;
+    return shownNumber(live(this), "strokeBottomWeight");
   }
 
   set strokeBottomWeight(value: number) {
     const state = live(this);
+    holdShown(state, bindingTargets("strokeWeight"));
     writeStrokeSide(state, "bottom", value);
     write(state, "strokeBottomWeight");
+    unbindWritten(state, "strokeBottomWeight");
   }
 
   get strokeLeftWeight(): number {
-    return live(this).strokeWeights.left;
+    return shownNumber(live(this), "strokeLeftWeight");
   }
 
   set strokeLeftWeight(value: number) {
     const state = live(this);
+    holdShown(state, bindingTargets("strokeWeight"));
     writeStrokeSide(state, "left", value);
     write(state, "strokeLeftWeight");
+    unbindWritten(state, "strokeLeftWeight");
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {
@@ -717,8 +795,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   get cornerRadius(): number | PluginAPI["mixed"] {
-    const { topLeft, topRight, bottomRight, bottomLeft } = shown(live(this), "radii");
-    return topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft ? topLeft : MIXED;
+    return sharedNumber(live(this), CORNER_FIELDS);
   }
 
   set cornerRadius(value: number | PluginAPI["mixed"]) {
@@ -727,57 +804,51 @@ class FakeFrameLikeNode extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as a corner radius.");
     }
     write(state, "cornerRadius");
-    const radius = f32(value);
-    state.radii = { topLeft: radius, topRight: radius, bottomRight: radius, bottomLeft: radius };
-    noteOverride(state, "radii");
+    writeCorners(state, CORNER_FIELDS, f32(value));
   }
 
   get topLeftRadius(): number {
-    return shown(live(this), "radii").topLeft;
+    return shownNumber(live(this), "topLeftRadius");
   }
 
   /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
   set topLeftRadius(value: number) {
     const state = live(this);
     write(state, "topLeftRadius");
-    state.radii = { ...shown(state, "radii"), topLeft: f32(value) };
-    noteOverride(state, "radii");
+    writeCorners(state, ["topLeftRadius"], f32(value));
   }
 
   get topRightRadius(): number {
-    return shown(live(this), "radii").topRight;
+    return shownNumber(live(this), "topRightRadius");
   }
 
   /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
   set topRightRadius(value: number) {
     const state = live(this);
     write(state, "topRightRadius");
-    state.radii = { ...shown(state, "radii"), topRight: f32(value) };
-    noteOverride(state, "radii");
+    writeCorners(state, ["topRightRadius"], f32(value));
   }
 
   get bottomRightRadius(): number {
-    return shown(live(this), "radii").bottomRight;
+    return shownNumber(live(this), "bottomRightRadius");
   }
 
   /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
   set bottomRightRadius(value: number) {
     const state = live(this);
     write(state, "bottomRightRadius");
-    state.radii = { ...shown(state, "radii"), bottomRight: f32(value) };
-    noteOverride(state, "radii");
+    writeCorners(state, ["bottomRightRadius"], f32(value));
   }
 
   get bottomLeftRadius(): number {
-    return shown(live(this), "radii").bottomLeft;
+    return shownNumber(live(this), "bottomLeftRadius");
   }
 
   /** Write one corner, which overrides the corners an instance or a sublayer shows (rule 37). */
   set bottomLeftRadius(value: number) {
     const state = live(this);
     write(state, "bottomLeftRadius");
-    state.radii = { ...shown(state, "radii"), bottomLeft: f32(value) };
-    noteOverride(state, "radii");
+    writeCorners(state, ["bottomLeftRadius"], f32(value));
   }
 
   get clipsContent(): boolean {
@@ -911,6 +982,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "paddingTop");
     markOverride(state, "paddingTop");
     state.padding.top = f32(value);
+    unbindWritten(state, "paddingTop");
   }
 
   get paddingRight(): number {
@@ -922,6 +994,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "paddingRight");
     markOverride(state, "paddingRight");
     state.padding.right = f32(value);
+    unbindWritten(state, "paddingRight");
   }
 
   get paddingBottom(): number {
@@ -933,6 +1006,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "paddingBottom");
     markOverride(state, "paddingBottom");
     state.padding.bottom = f32(value);
+    unbindWritten(state, "paddingBottom");
   }
 
   get paddingLeft(): number {
@@ -944,6 +1018,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     write(state, "paddingLeft");
     markOverride(state, "paddingLeft");
     state.padding.left = f32(value);
+    unbindWritten(state, "paddingLeft");
   }
 
   get gridItemsPositioning(): GridLayoutMixin["gridItemsPositioning"] {
@@ -999,7 +1074,9 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   set gridColumnGap(value: number) {
-    setGap(live(this), "columnGap", value);
+    const state = live(this);
+    setGap(state, "columnGap", value);
+    unbindWritten(state, "gridColumnGap");
   }
 
   get gridRowGap(): number {
@@ -1007,27 +1084,31 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   set gridRowGap(value: number) {
-    setGap(live(this), "rowGap", value);
+    const state = live(this);
+    setGap(state, "rowGap", value);
+    unbindWritten(state, "gridRowGap");
   }
 
   get itemSpacing(): number {
-    return live(this).itemSpacing;
+    return shownNumber(live(this), "itemSpacing");
   }
 
   set itemSpacing(value: number) {
     const state = live(this);
     write(state, "itemSpacing");
     state.itemSpacing = f32(value);
+    unbindWritten(state, "itemSpacing");
   }
 
   get counterAxisSpacing(): number | null {
-    return live(this).counterAxisSpacing;
+    return shownNumber(live(this), "counterAxisSpacing");
   }
 
   set counterAxisSpacing(value: number | null) {
     const state = live(this);
     write(state, "counterAxisSpacing");
     state.counterAxisSpacing = value === null ? null : f32(value);
+    unbindWritten(state, "counterAxisSpacing");
   }
 }
 

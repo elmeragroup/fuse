@@ -70,11 +70,12 @@
 
 import { sha1Hex } from "../../../src/components/sha1.ts";
 import { guard } from "./guard.ts";
+import { resolveColor, variableState } from "./modes.ts";
 import { noteOverride, shown } from "./overrides.ts";
 import { EFFECT_FIELD_TYPES, f32, live, MIXED, storeRgba, write } from "./state.ts";
 import type { FileState, NodeState, Sides } from "./state.ts";
 import { childrenOf } from "./tree.ts";
-import { alias, fileVariable, requireType, resolveColor, variableState } from "./variables.ts";
+import { alias, fileVariable, requireType } from "./variables.ts";
 
 /** The filters of an image paint, each at the 0 a real file read back where none was written (rule 23). */
 const NO_IMAGE_FILTERS: Required<ImageFilters> = {

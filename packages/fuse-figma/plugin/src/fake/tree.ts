@@ -36,7 +36,7 @@
  *      a sublayer swapped to a removed component stays in place.
  */
 
-import { BLACK, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
+import { BLACK, isStoredNumber, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
 import type { FileState, NodeState, NodeType, UncopiedField } from "./state.ts";
 
 /** The children a node shows, an instance's sublayers included. */
@@ -77,6 +77,10 @@ export function mirror(state: NodeState, source: NodeState, swapped: boolean): v
     const sublayer = copyNode(state.file, child, child.type, `I${state.id};${child.id}`);
     sublayer.mirrorOf = child;
     sublayer.parent = state;
+    // A sublayer shows its main layer's number bindings rather than copies of them (rule 8).
+    for (const field of [...sublayer.bindings.keys()].filter(isStoredNumber)) {
+      sublayer.bindings.delete(field);
+    }
     const named = swapped ? previous.find((old) => old.name === child.name) : undefined;
     if (named?.overridden.has("fills") === true) {
       sublayer.fills = named.fills;

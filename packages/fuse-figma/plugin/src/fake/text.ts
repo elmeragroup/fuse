@@ -155,10 +155,11 @@
  *    did not read after one.
  */
 
+import { resolveNumber, resolveString } from "./modes.ts";
 import { nearestInstance, propertyValue, rootMain } from "./overrides.ts";
 import { f32, SHARED_DATA_SEPARATOR, write } from "./state.ts";
 import type { CharacterStyle, FileState, NodeState } from "./state.ts";
-import { alias, fileVariable, requireType, resolveNumber, resolveString } from "./variables.ts";
+import { alias, fileVariable, requireType } from "./variables.ts";
 
 export function fontKey(font: FontNameInput): string {
   return `${font.family}${SHARED_DATA_SEPARATOR}${font.style ?? ""}`;

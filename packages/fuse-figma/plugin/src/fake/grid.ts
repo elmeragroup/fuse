@@ -34,6 +34,7 @@
  *    height by `layoutAlign`, a mapping the fake picks, since neither names one.
  */
 
+import { shownNumber } from "./modes.ts";
 import { f32, write } from "./state.ts";
 import type { GridChildAlign, GridState, NodeState } from "./state.ts";
 import { childrenOf } from "./tree.ts";
@@ -106,9 +107,11 @@ export function newGrid(previous: GridState): GridState {
   return { ...previous, columnSizes: [flex(), flex()], rowSizes: [flex(), flex()], positioning: "MANUAL" };
 }
 
-/** A grid's gap between its tracks. */
+/** A grid's gap between its tracks, a bound one in the grid's own modes (rule 8). */
 export function gapOf(state: NodeState, gap: "columnGap" | "rowGap"): number {
-  return gridOf(state, gap === "columnGap" ? "gridColumnGap" : "gridRowGap")[gap];
+  const member = gap === "columnGap" ? "gridColumnGap" : "gridRowGap";
+  gridOf(state, member);
+  return shownNumber(state, member);
 }
 
 /** Write a grid's gap between its tracks. */

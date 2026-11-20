@@ -50,7 +50,7 @@
  */
 
 import { deepFrozen } from "../../../test/frozen.ts";
-import { CORNERS, EFFECT_FIELD_TYPES, sourceOf } from "./state.ts";
+import { CORNERS, EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf } from "./state.ts";
 import type { NodeState } from "./state.ts";
 
 /** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
@@ -208,9 +208,10 @@ export function propertyValue(state: NodeState, id: string): string | boolean | 
 }
 
 /**
- * The variable each bound field follows, by id, the corners as the layer shows them: an instance or a
- * sublayer that does not override its corners shows its source's (rule 38). An instance that binds no
- * width or height of its own shows its source's binding there (rule 56).
+ * The variable each bound field follows, by id: its own, and on an instance or a sublayer the one
+ * its source shows on each number it does not hold as its own, as it shows its source's corners
+ * (rules 8, 38). An instance that binds no width or height of its own shows its source's binding
+ * there (rule 56).
  */
 export function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNodeField, string> {
   const source = sourceOf(state);
@@ -227,12 +228,11 @@ export function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNod
             : [[field, id]];
         })
       : [];
-  if (state.overridden.has("radii")) {
-    return new Map([...state.bindings, ...lengths]);
-  }
-  const own = [...state.bindings].filter(([field]) => !CORNERS.has(field));
-  const corners = [...inherited].filter(([field]) => CORNERS.has(field));
-  return new Map([...own, ...lengths, ...corners]);
+  const numbers = [...inherited].filter(
+    ([field]) =>
+      isStoredNumber(field) && !state.bindings.has(field) && !state.overridden.has(numberOwner(field))
+  );
+  return new Map([...state.bindings, ...lengths, ...numbers]);
 }
 
 /** The node a layer's property link reads from: its component set, or its component. */
