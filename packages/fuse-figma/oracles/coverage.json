@@ -4149,6 +4149,20 @@
         "part": "data-table-filter-chips",
         "className": "pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"
       }
+    ],
+    "tour-popup": [
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:ring-2"
+      },
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:ring-ring"
+      },
+      {
+        "part": "tour-popup",
+        "className": "focus-visible:outline-hidden"
+      }
     ]
   },
   "unreached": [
@@ -7519,6 +7533,62 @@
       "property": "scroll-padding-inline",
       "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "border-width",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "margin",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
+    },
+    {
+      "set": "tour-popup",
+      "part": "tour-close",
+      "className": "fuse.css base layer",
+      "property": "padding",
+      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
+      "at": ["tour-popup/content=tip 0/root/0/1::before"]
     }
   ]
 }

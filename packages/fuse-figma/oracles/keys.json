@@ -52,7 +52,8 @@
     "page/timeline-list",
     "page/toggle",
     "page/toolbar",
-    "page/tooltip"
+    "page/tooltip",
+    "page/tour"
   ],
   "sets": [
     "accordion-item",
@@ -175,7 +176,8 @@
     "toggle-group",
     "toolbar",
     "tooltip-content",
-    "tooltip-open"
+    "tooltip-open",
+    "tour-popup"
   ],
   "variants": [
     "accordion-item/variant=card,radius=lg,open=false,state=disabled",
@@ -2008,7 +2010,8 @@
     "toolbar/orientation=horizontal",
     "toolbar/orientation=vertical",
     "tooltip-content/content=basic",
-    "tooltip-open/side=top"
+    "tooltip-open/side=top",
+    "tour-popup/content=tip"
   ],
   "iconLibraries": ["icons"],
   "icons": [
@@ -2343,6 +2346,8 @@
     "toggle INSTANCE_SWAP End icon",
     "toggle INSTANCE_SWAP Start icon",
     "toggle TEXT Label",
-    "tooltip-content TEXT Text"
+    "tooltip-content TEXT Text",
+    "tour-popup TEXT Description",
+    "tour-popup TEXT Title"
   ]
 }
