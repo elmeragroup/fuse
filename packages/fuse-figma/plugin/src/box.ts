@@ -51,9 +51,10 @@ function strokeWeightField(node: LayerParent): NumberField {
 
 /**
  * Plan a stroke on some sides: its four weights, compared and written as one change. On a node whose
- * weight was never written, a 0 on one side sets every side to 0, and after a `strokeWeight` write
- * each side writes alone (PS2). So the change writes `strokeWeight` first, at the largest side's
- * weight, then every side, and a side that already matched is written again after the spill.
+ * weight was never written, the first side write sets the other sides to 0 (PS2, FS1), and after a
+ * `strokeWeight` write each side writes alone. So the change writes `strokeWeight` first, at the
+ * largest side's weight, which sets all four sides and leaves no first side write to spill. Then it
+ * writes each side, so every side ends at its planned weight, the sides that already matched included.
  *
  * @param run - The run.
  * @param node - The box.
