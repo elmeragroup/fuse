@@ -25,16 +25,54 @@ import type { PreviewTheme } from "./preview-theme.ts";
  */
 export type TokenColorOf = (name: string) => ColorSpec | undefined;
 
+/** What the comparison reads from one theme's colors. */
+export type ThemeColors = {
+  /** The theme's color of each token, from {@link tokenColorsIn}. */
+  readonly colorOf: TokenColorOf;
+  /**
+   * The keys of the hover and focus variants whose root specs match their resting variants' once
+   * each `Fuse tokens` color both bind resolves to the theme's color.
+   */
+  readonly unchangedVariants: ReadonlySet<string>;
+};
+
+/**
+ * Resolve a theme's colors and the cells they leave unchanged by design, once per theme, and keep
+ * them for each later preview in that theme. Density changes no token's color, so two previews that
+ * differ only in density share one entry.
+ *
+ * @param componentSets - The built component sets.
+ * @returns A function that takes a preview's theme and returns that theme's {@link ThemeColors},
+ *   working them out on the first call for the theme and returning the same object after.
+ */
+export function unchangedByDesignPerTheme(
+  componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[]
+): (theme: PreviewTheme) => ThemeColors {
+  const byTheme = new Map<string, ThemeColors>();
+  return (theme) => {
+    // The fields `tokenColorsIn` reads, which decide every color the comparison resolves.
+    const key = [theme.scheme, ...THEME_AXES.map((axis) => theme[axis.name])].join("/");
+    const known = byTheme.get(key);
+    if (known !== undefined) {
+      return known;
+    }
+    const colorOf = tokenColorsIn(theme);
+    const colors: ThemeColors = { colorOf, unchangedVariants: unchangedByDesign(componentSets, colorOf) };
+    byTheme.set(key, colors);
+    return colors;
+  };
+}
+
 /**
  * The variant keys of the forced-state cells whose built variant draws as its resting twin's in one
- * theme: equal once each `Fuse tokens` color both bind resolves to the theme's color.
+ * theme.
  *
  * @param componentSets - The built component sets.
  * @param colorOf - The theme's color of a token, from {@link tokenColorsIn}.
  * @returns The key of each hover or focus variant whose root spec equals the root spec of the
  *   same cell at rest, with the theme's colors in place of the tokens it resolves.
  */
-export function unchangedByDesign(
+function unchangedByDesign(
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   colorOf: TokenColorOf
 ): ReadonlySet<string> {
@@ -67,7 +105,7 @@ export function unchangedByDesign(
  * @returns The color of a color token, or undefined for any other name, or for every name where the
  *   catalog holds no such theme.
  */
-export function tokenColorsIn(theme: PreviewTheme): TokenColorOf {
+function tokenColorsIn(theme: PreviewTheme): TokenColorOf {
   const resolved = resolveThemeCatalog().themes.find(({ input }) =>
     THEME_AXES.every((axis) => input[axis.name] === theme[axis.name])
   );

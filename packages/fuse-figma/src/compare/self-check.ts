@@ -22,27 +22,24 @@
 import { Effect, Result } from "effect";
 import { join } from "node:path";
 
-import { buildComponentSets, previewInstances } from "../components/build-kit.ts";
+import { previewInstances } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { previewInstanceKey } from "../components/kit-spec.ts";
 import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
-import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
+import { DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
-import { loadRenderers } from "./cell-renderers.ts";
 import { makeDirectory, writeText } from "./compare-files.ts";
-import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import { crop, encodePng } from "./raster.ts";
 import type { Raster } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
-import { compareSnapshot, planCells, renderables } from "./run-compare.ts";
+import { compareSnapshot, openCompareSession, planCells } from "./run-compare.ts";
 import type { CompareOptions, CompareReport } from "./run-compare.ts";
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
-import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
 import type { TokenColorOf } from "./unchanged-by-design.ts";
 
 /** The fake previews: a light neutral theme at dense, and a dark company theme at comfortable. */
@@ -191,33 +188,30 @@ function isPerturbed(perturbed: Perturbed, preview: string, instance: InstanceSn
 }
 
 /**
- * Run the self-check.
+ * Run the self-check. The comparison renders in the self-check's own session, so a run
+ * builds the kit, reads the page's assets and starts Chromium once.
  *
  * @param options - Where to write the fake snapshot and the report, and the diff settings.
  * @returns Whether the harness found exactly the changed cells. The Effect fails with why it could
  *   not run, and dies when the kit's preview frames place a cell the comparison cannot render.
  */
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
-  const build = yield* locateFuseBuild();
   const fillMismatches: string[] = [];
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
-  const renderers = yield* loadRenderers();
-  const renderable = renderables(renderers);
-  const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
-  const setsByKey = new Map(componentSets.map((set) => [set.key, set]));
-  // Every instance a preview frame places, those that set a BOOLEAN property off its default too.
-  const placed = KIT.flatMap(({ manifest, previewCells }) =>
-    previewInstances(
-      setsByKey.get(manifest.key),
-      previewCells.map((cell) => variantKey(manifest, cell))
-    )
-  );
-  const assets = yield* readPageAssets(build, renderers);
   const previews: PreviewSnapshot[] = [];
-  yield* Effect.scoped(
+  const report = yield* Effect.scoped(
     Effect.gen(function* () {
-      const browser = yield* CompareBrowser.launch(assets);
+      const session = yield* openCompareSession();
+      const { browser, renderable, componentSets, themeColors } = session;
+      const setsByKey = new Map(componentSets.map((set) => [set.key, set]));
+      // Every instance a preview frame places, those that set a BOOLEAN property off its default too.
+      const placed = KIT.flatMap(({ manifest, previewCells }) =>
+        previewInstances(
+          setsByKey.get(manifest.key),
+          previewCells.map((cell) => variantKey(manifest, cell))
+        )
+      );
       for (const preview of PREVIEWS) {
         const modes = Object.entries(preview.modes).map(([collection, mode]) => ({ collection, mode }));
         const theme = parsePreviewTheme(modes);
@@ -235,8 +229,13 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
             ? placeholder
             : { ...placeholder, booleans: instance.booleans };
         });
-        const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-        const { planned, unsupported } = planCells(placeholders, renderable, unchanged, options.layout);
+        const { colorOf, unchangedVariants } = themeColors(theme.success);
+        const { planned, unsupported } = planCells(
+          placeholders,
+          renderable,
+          unchangedVariants,
+          options.layout
+        );
         if (unsupported.length > 0) {
           throw new Error(
             `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
@@ -247,7 +246,6 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
           planned.map((cell) => cell.request),
           options.layout
         );
-        const colorOf = tokenColorsIn(theme.success);
         for (const { instance, cell, definition, request } of planned) {
           const fill = definition.key === SELECT_ITEM_MANIFEST.key ? selectItemFill(cell) : undefined;
           const raster = rendered.cells.get(request.id)?.raster;
@@ -303,24 +301,24 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
         });
         previews.push({ key: preview.key, name: preview.key, modes, instances });
       }
+      const snapshot: KitSnapshot = {
+        format: SNAPSHOT_FORMAT,
+        version: SNAPSHOT_VERSION,
+        exportedAt: new Date().toISOString(),
+        file: "figma:compare self-check",
+        scale: DEVICE_SCALE,
+        previews,
+      };
+      yield* makeDirectory(options.outDir);
+      const text = JSON.stringify(snapshot);
+      yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
+      const reread = parseSnapshot(text);
+      if (Result.isFailure(reread)) {
+        throw reread.failure;
+      }
+      return yield* compareSnapshot(reread.success, options, session);
     })
   );
-  const snapshot: KitSnapshot = {
-    format: SNAPSHOT_FORMAT,
-    version: SNAPSHOT_VERSION,
-    exportedAt: new Date().toISOString(),
-    file: "figma:compare self-check",
-    scale: DEVICE_SCALE,
-    previews,
-  };
-  yield* makeDirectory(options.outDir);
-  const text = JSON.stringify(snapshot);
-  yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
-  const reread = parseSnapshot(text);
-  if (Result.isFailure(reread)) {
-    throw reread.failure;
-  }
-  const report = yield* compareSnapshot(reread.success, options);
   return judgeSelfCheck(report, [grown, painted], fillMismatches);
 });
 
