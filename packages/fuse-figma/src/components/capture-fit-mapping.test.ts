@@ -40,6 +40,12 @@
  *   columns, around `Short` and around the sentence alike (HTML §4.10.11). A `<button>` in the
  *   paragraph's place is 90.7px and 264px wide, as the paragraph is. A label that centres a
  *   16px control and a 50px box that keeps its width, 8px apart, is 74px wide.
+ * - The same rule beside a `shrink-0` 16px icon in the control's place, as Toast's status icon sits
+ *   before its text column: the icon keeps its width, so the room is the row's less it. An icon that
+ *   can shrink gives back part of the overflow, as the control does, so the room is unknown. A 100px
+ *   basis or minimum on the icon widens it to 100px in Chromium, which leaves the column 192px and
+ *   three lines of the sentence where a fill would take 276px, and a -4px margin, which no padding
+ *   draws, leaves it 280px. A margin that resolves to no length leaves the icon's width unknown.
  * - CSS Flexbox 1 §7: `flex` applies only to a flex item, so a block's part sizes nothing by it.
  * - The coverage contract: a part whose fitted width the build does not draw keeps a row unmapped.
  */
@@ -258,6 +264,10 @@ describe("a flex row's last part that fits its content to the room beside a cont
   it.each([
     ["", {}],
     [", and a minimum width inside it within the room changes nothing", { title: "min-w-[200px]" }],
+    [
+      ", and its zero minimum width only lets it shrink to the room, as a fill does",
+      { column: "block min-w-0" },
+    ],
   ])(
     "draws the column as a fill whose texts fill it, so a longer text wraps at the room%s",
     async (_case, classes) => {
@@ -284,6 +294,7 @@ describe("a flex row's last part that fits its content to the room beside a cont
       "the column shrinks by less than 1, so it gives back only part of the overflow",
       { column: "block shrink-[0.5]" },
     ],
+    ["its own minimum width is more than zero", { column: "block min-w-[10px]" }],
     [
       "the control's minimum widens it past its width, so the room is narrower than the row leaves the width",
       { control: "size-[24px] shrink-0 min-w-[100px]", title: "min-w-[200px]" },
@@ -323,6 +334,79 @@ describe("a flex row's last part that fits its content to the room beside a cont
       "width",
       "the part fits its content to the room the row leaves it, and a fill draws that room, where it or a layer inside it paints, turns, does not start at its start, holds a text that does not wrap or may be wider than the room, so it would draw wider or elsewhere",
     ]);
+  });
+});
+
+describe("a flex row's last part that fits its content to the room beside an icon", () => {
+  /**
+   * Build a 300px row around a 16px icon and the column after it, as Toast's status icon sits before
+   * its text column.
+   *
+   * @param icon - The icon's classes.
+   */
+  function buildBesideIcon(icon: string) {
+    return buildCaptured(
+      chip({
+        iconsFor: () => [ICON],
+        parts: [
+          {
+            ...part({
+              key: "column",
+              slot: "column",
+              parts: [part({ key: "title", slot: "title", label: text("Insurance", "Title") })],
+            }),
+            after: "label",
+          },
+        ],
+      }),
+      [
+        {
+          cell: { state: "rest" },
+          root: {
+            slot: "chip",
+            classes: `flex w-[300px] items-start gap-[8px] ${TYPE}`,
+            children: [
+              { tag: "svg", classes: icon },
+              {
+                tag: "div",
+                slot: "column",
+                classes: "flex min-w-0 flex-col",
+                children: [{ tag: "div", slot: "title", classes: "block", text: "Insurance" }],
+              },
+            ],
+          },
+        },
+      ],
+      WITH_DENSITY
+    );
+  }
+
+  it("draws the column as a fill after an icon of a literal size that does not shrink", async () => {
+    const { variant, coverage } = await buildBesideIcon("size-[16px] shrink-0");
+    const [icon, column] = variant?.root.children ?? [];
+    expect({ icon: icon?.kind, column: across(column), unmapped: unmapped(coverage) }).toEqual({
+      icon: "icon",
+      column: FILL,
+      unmapped: [],
+    });
+  });
+
+  it.each([
+    ["whose size reads a variable, so the room is unknown", "size-[var(--column-min)] shrink-0"],
+    ["that can shrink too", "size-[16px]"],
+    ["whose basis widens it past its size", "size-[16px] shrink-0 basis-[100px]"],
+    ["whose minimum widens it past its size", "size-[16px] shrink-0 min-w-[100px]"],
+    [
+      "whose negative margin, which no frame draws, pulls the column closer",
+      "size-[16px] shrink-0 -mr-[4px]",
+    ],
+    [
+      "whose margin no length resolves, so its outer width is unknown",
+      "size-[16px] shrink-0 mr-[var(--unknown)]",
+    ],
+  ])("keeps the column hugging after an icon %s", async (_case, icon) => {
+    const { variant } = await buildBesideIcon(icon);
+    expect(across(variant?.root.children[1])).toEqual(HUG);
   });
 });
 

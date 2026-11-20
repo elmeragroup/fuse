@@ -67,6 +67,7 @@ import {
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { drawsAtRoom, fitsRowEnd } from "./fitting-part";
+import type { BesideLayer } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
@@ -780,6 +781,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const drawn = shown.filter((part) => !unplaced.includes(part));
   const drawnBefore = before.filter((part) => !unplaced.includes(part));
   const flowingStyles = flowing.map((each) => each.cascade.style);
+  const besideIcon = ({ style, share }: DrawnIcon): BesideLayer => ({ kind: "icon", style, share });
   const mapped = drawn.map((part): MappedPart => {
     const index = flowing.indexOf(part);
     const fits =
@@ -788,6 +790,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         growing,
         frame: part.kind === "frame" && part.pseudo !== true,
         tag: part.cascade.elementTag,
+        layer: layerIndex(index),
+        beside: [
+          ...start.map(besideIcon),
+          ...(label === undefined ? [] : [{ kind: "label" } as const]),
+          ...end.map(besideIcon),
+        ],
       });
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
