@@ -6,8 +6,11 @@
  * popup is above the column that holds its corner close.
  *
  * The capture's page function calls `parentSpansBlock` on each element of a root's tree, in every
- * mode it stamps. It is passed to the page as its source, so it reads nothing outside its own body.
+ * mode it stamps. It is passed to the page as its source, so it reads nothing outside its own body
+ * and its arguments.
  */
+
+import type { Stacking } from "./stacking.ts";
 
 /**
  * Whether an absolute element's static parent has, as its border box, the padding box of the
@@ -50,11 +53,9 @@
  *   nothing paints over it.
  * - No element of the captured root preserves 3D. A 3D rendering context orders its boxes by depth,
  *   not by level or tree order (CSS Transforms 2 §2).
- * - `z-index` applies to a positioned box and to an item of a flex, grid or `-webkit-box` container,
- *   the display Tailwind's `line-clamp` sets. The item's container is the nearest element above it
- *   that generates a box, past each `display: contents` (CSS 2.1 §9.9.1, CSS Flexbox 1 §4.3). A flex or grid container paints its items in order-modified document order
- *   (CSS Flexbox 1 §5.4.1), so the element wins a tie only where each element between the two boxes
- *   and their common ancestor computes `order: 0`. A box inside a `display: none` element paints
+ * - `stacking.ts` decides the level that applies to each box and the `display` of the element that
+ *   lays it out. The element wins a tie only where `keepsTreeOrder` in `stacking.ts` holds from each
+ *   of the two boxes up to their common ancestor. A box inside a `display: none` element paints
  *   nothing.
  * - The element's level, and that of each ancestor that may establish a stacking context, is 0 or
  *   more. CSS paints a negative layer under the in-flow boxes of its context (CSS 2.1 Appendix E,
@@ -101,9 +102,11 @@
  *
  * @param element - The element.
  * @param root - The captured root the element sits below.
+ * @param stacking - The reads of `stacking.ts`, handed to the page with this function.
  * @returns True where the parent spans the element's containing block.
  */
-export function parentSpansBlock(element: Element, root: Element): boolean {
+export function parentSpansBlock(element: Element, root: Element, stacking: Stacking): boolean {
+  const { containerDisplay, appliedLevel, keepsTreeOrder } = stacking;
   // Chromium lays boxes out in 1/64 of a CSS pixel, so edges closer than that are one edge.
   const unit = 1 / 64;
   const grown = 10;
@@ -142,15 +145,6 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
       own.clipPath === "none"
     );
   });
-  // The element whose box lays out the boxes `from` holds: `from`, or the nearest element above it
-  // that generates a box, past each `display: contents`, which generates none.
-  const boxParent = (from: Element | null): Element | null => {
-    let parent = from;
-    while (parent !== null && getComputedStyle(parent).display === "contents") {
-      parent = parent.parentElement;
-    }
-    return parent;
-  };
   // A box's computed style, the `display` of the box it is a flex or grid item of, if any, and
   // whether an animation runs on it, which can make it a stacking context at any computed value.
   type Styled = {
@@ -162,10 +156,9 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
   // `::before` and `::after` do, and `first` where it paints before its element's content, as
   // `::before` does.
   type Generated = Styled & { readonly first: boolean; readonly anchored: boolean };
-  const displayOf = (each: Element | null): string => (each === null ? "" : getComputedStyle(each).display);
   const styled = (each: Element): Styled => ({
     own: getComputedStyle(each),
-    container: displayOf(boxParent(each.parentElement)),
+    container: containerDisplay(each.parentElement),
     animated: () => each.getAnimations().length > 0,
   });
   // The pseudo-elements that generate a box an author can position: `::before` and `::after`
@@ -193,7 +186,7 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
         ? each.localName === "details"
         : !["none", "normal", ""].includes(own.content));
   const pseudos = (each: Element): readonly Generated[] => {
-    const container = displayOf(boxParent(each));
+    const container = containerDisplay(each);
     return generatedPseudos.flatMap((pseudo) => {
       const own = getComputedStyle(each, pseudo);
       return generates(each, pseudo, own)
@@ -220,11 +213,7 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
     });
   };
   const unpainted = [...between, positioned].every((each) => pseudos(each).length === 0);
-  // `z-index` applies to a positioned box and to a flex or grid item (CSS 2.1 §9.9.1, CSS Flexbox 1
-  // §4.3).
-  const indexed = ({ own, container }: Styled): boolean =>
-    own.zIndex !== "auto" &&
-    (own.position !== "static" || /flex|grid|-webkit-(?:inline-)?box/.test(container));
+  const indexed = ({ own, container }: Styled): boolean => appliedLevel(own, container) !== undefined;
   // Properties whose value other than `none` makes a stacking context of a box they apply to (CSS
   // Transforms 1 §3, CSS Transforms 2, Filter Effects 1 §5, CSS Masking 1, Motion Path 1 §2).
   const contextProperties = [
@@ -270,7 +259,7 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
   const paintsAsLayer = (each: Styled): boolean =>
     each.own.display !== "contents" && (each.own.position !== "static" || mayEstablishStackingContext(each));
   // The level a layer paints at: its `z-index`, or 0 for `auto`.
-  const level = (each: Styled): number => (indexed(each) ? Number.parseInt(each.own.zIndex, 10) : 0);
+  const level = ({ own, container }: Styled): number => appliedLevel(own, container) ?? 0;
   const partLevel = level(styled(element));
   // The level the part paints at among the boxes inside `around`: the lowest of its own and that of
   // each element between that may hold it in a stacking context of its own.
@@ -283,19 +272,6 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
       }
     }
     return lowest;
-  };
-  // Whether every element from `from` up to `around`, `around` left out, computes `order: 0`. A flex
-  // or grid container paints its items in order-modified document order (CSS Flexbox 1 §5.4.1, CSS
-  // Grid 1 §9.5), so an `order` there can move a box after the part. `order` computes as declared on
-  // a box that is no flex or grid item too, so the check can refuse a tie that CSS paints in tree
-  // order, never the reverse.
-  const inOrder = (from: Element, around: Element): boolean => {
-    for (let each: Element | null = from; each !== null && each !== around; each = each.parentElement) {
-      if (getComputedStyle(each).order !== "0") {
-        return false;
-      }
-    }
-    return true;
   };
   const rendered = (each: Element): boolean => {
     for (let around: Element | null = each; around !== null; around = around.parentElement) {
@@ -323,15 +299,15 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
       paintsAsLayer(box) &&
       (!earlier ||
         level(box) > lowest ||
-        (level(box) === lowest && !(inOrder(element, around) && ordered())));
+        (level(box) === lowest && !(keepsTreeOrder(element, around) && ordered())));
     const earlier = (element.compareDocumentPosition(each) & Node.DOCUMENT_POSITION_PRECEDING) !== 0;
     return (
-      (!holds && covers(styled(each), earlier, () => inOrder(each, around))) ||
+      (!holds && covers(styled(each), earlier, () => keepsTreeOrder(each, around))) ||
       pseudos(each).some((pseudo) =>
         covers(
           pseudo,
           pseudo.anchored && (holds ? pseudo.first : earlier),
-          () => pseudo.own.order === "0" && inOrder(each, around)
+          () => pseudo.own.order === "0" && keepsTreeOrder(each, around)
         )
       )
     );
