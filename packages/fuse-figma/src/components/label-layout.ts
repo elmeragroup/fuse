@@ -12,6 +12,7 @@ import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-siz
 import type { Holder, RowLayer, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { BuildContext, Cell, LabelDefinition } from "./component-spec";
+import { labelCharacters } from "./component-spec";
 import {
   evaluateLength,
   evaluateLengthOf,
@@ -239,17 +240,6 @@ const COLLAPSED = "the characters hold no run of white space or line break to co
  * line break as written (CSS Text 4 §3.1), as a Figma text draws its characters.
  */
 const PRESERVED = "a Figma text keeps every space and line break as written, as `preserve` does";
-
-/**
- * The characters a label shows in a cell.
- *
- * @param label - The label.
- * @param cell - The cell.
- * @returns The label's one text, or the text it gives the cell.
- */
-export function labelCharacters(label: LabelDefinition, cell: Cell): string {
-  return label.charactersFor === undefined ? label.characters : label.charactersFor(cell);
-}
 
 /**
  * Settle the text declarations of a box that shows no label in the cell. `nowrap` passes down to

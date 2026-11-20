@@ -17,7 +17,11 @@
  * measures and forces its state the same way twice. A Select item at rest must also show no fill and
  * a highlighted one the theme's `accent`, which fails where a stray focus or highlight from the mount
  * draws. The body-row crop must show the bottom rule across the row's full width. The head crop must
- * contain paint inside the head's box and stay transparent outside it.
+ * contain paint inside the head's box and stay transparent outside it. Each instance that sets a
+ * BOOLEAN property off its default, such as the Dropdown menu item with its `Icon` on, must also pass
+ * the checks in `boolean-overrides.ts`, which fail where the property never reaches the page, its part
+ * takes room but draws nothing, or the part it shows or hides is not the one that comes and goes
+ * between the instance and the variant at its defaults.
  */
 
 import { Effect, Result } from "effect";
@@ -32,6 +36,7 @@ import { KIT } from "../components/kit-registry.ts";
 import { previewInstanceKey } from "../components/kit-spec.ts";
 import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
 import { TABLE_HEAD_MANIFEST, TABLE_ROW_MANIFEST } from "../components/table-kit.ts";
+import { booleanOverrideFailures, prepareBooleanOverrides } from "./boolean-overrides.ts";
 import { DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest, RenderedCell } from "./browser-render.ts";
 import { makeDirectory, writeText } from "./compare-files.ts";
@@ -316,6 +321,7 @@ function isPerturbed(perturbed: Perturbed, preview: string, instance: InstanceSn
  */
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
   const pixelMismatches: string[] = [];
+  const toggleMismatches: string[] = [];
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const previews: PreviewSnapshot[] = [];
@@ -360,11 +366,8 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
             `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
           );
         }
-        const rendered = yield* browser.renderPreview(
-          theme.success,
-          planned.map((cell) => cell.request),
-          options.layout
-        );
+        const overrides = prepareBooleanOverrides(placeholders, planned, preview.key);
+        const rendered = yield* browser.renderPreview(theme.success, overrides.requests, options.layout);
         for (const { instance, cell, definition, request } of planned) {
           const fill = definition.key === SELECT_ITEM_MANIFEST.key ? selectItemFill(cell) : undefined;
           const shown = rendered.cells.get(request.id);
@@ -388,6 +391,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
           ];
           pixelMismatches.push(...mismatches.filter((line) => line !== undefined));
         }
+        toggleMismatches.push(...booleanOverrideFailures(overrides, rendered, options));
         const instances = planned.map(({ instance, request }, index): InstanceSnapshot => {
           const cell = rendered.cells.get(request.id);
           if (cell === undefined) {
@@ -444,15 +448,16 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
       return yield* compareSnapshot(reread.success, options, session);
     })
   );
-  return judgeSelfCheck(report, [grown, painted], pixelMismatches);
+  return judgeSelfCheck(report, [grown, painted], pixelMismatches, toggleMismatches);
 });
 
 function judgeSelfCheck(
   report: CompareReport,
   expectedTop: readonly Perturbed[],
-  pixelMismatches: readonly string[]
+  pixelMismatches: readonly string[],
+  toggleMismatches: readonly string[]
 ): SelfCheckResult {
-  const lines: string[] = [...pixelMismatches];
+  const lines: string[] = [...pixelMismatches, ...toggleMismatches.map((line) => `toggle: ${line}`)];
   const top = report.rows.slice(0, expectedTop.length);
   const topMatches = expectedTop.every(
     (expected, index) =>
@@ -490,7 +495,11 @@ function judgeSelfCheck(
     lines.push(`  skipped: ${entry.preview} ${entry.variant}: ${entry.reason}`);
   }
   const passed =
-    topMatches && failing.length === 0 && report.skipped.length === 0 && pixelMismatches.length === 0;
+    topMatches &&
+    failing.length === 0 &&
+    report.skipped.length === 0 &&
+    pixelMismatches.length === 0 &&
+    toggleMismatches.length === 0;
   lines.push(
     passed
       ? "Self-check passed: the two changed cells lead the report and every other cell matches exactly."

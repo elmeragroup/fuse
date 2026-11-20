@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_PAGE_HEIGHT, PAGE_LAYOUT, pageBatches } from "./preview-page.ts";
+import type { BoxDefinition, ComponentDefinition } from "../components/component-spec.ts";
+import { MAX_PAGE_HEIGHT, PAGE_LAYOUT, pageBatches, shownParts } from "./preview-page.ts";
 
 /** A cell of one slot with its resting twin, as a forced cell puts on its page. */
 const twinned = () => [{}, {}];
@@ -23,5 +24,72 @@ describe("pageBatches", () => {
 
   it("returns no page for no cells", () => {
     expect(pageBatches(PAGE_LAYOUT, [], twinned, MAX_PAGE_HEIGHT)).toEqual([]);
+  });
+});
+
+describe("shownParts", () => {
+  const extra = { name: "Extra", defaultValue: false };
+  const never = () => false;
+  const always = () => true;
+  const noIcons = () => [];
+  // Three parts behind one BOOLEAN: one the cell never shows, one inside a group the cell never
+  // shows, and one whose label's text follows the cell's state.
+  const row: BoxDefinition & Pick<ComponentDefinition, "name" | "slot"> = {
+    name: "Row",
+    slot: "row",
+    label: undefined,
+    iconsFor: noIcons,
+    parts: [
+      {
+        key: "badge",
+        slot: "row-badge",
+        shownIn: never,
+        optional: extra,
+        label: {
+          key: "badge-text",
+          name: "Badge",
+          shownIn: always,
+          characters: "New",
+          textProperty: undefined,
+        },
+        iconsFor: noIcons,
+      },
+      {
+        key: "group",
+        slot: "row-group",
+        shownIn: never,
+        label: undefined,
+        iconsFor: noIcons,
+        parts: [
+          {
+            key: "tip",
+            slot: "row-tip",
+            shownIn: always,
+            optional: extra,
+            label: undefined,
+            iconsFor: noIcons,
+          },
+        ],
+      },
+      {
+        key: "hint",
+        slot: "row-hint",
+        shownIn: always,
+        optional: extra,
+        label: { key: "hint-text", name: "Hint", shownIn: always, charactersFor: (cell) => cell.state ?? "" },
+        iconsFor: noIcons,
+      },
+    ],
+  };
+
+  it("picks only the parts the cell shows, ancestors included, with the text the cell gives them", () => {
+    expect(shownParts(row, { state: "hover" }, "Extra", new Set(["Extra"]))).toEqual([
+      {
+        key: "hint",
+        selector: '[data-slot="row"] [data-slot="row-hint"]',
+        foundBy: "element",
+        text: "hover",
+      },
+    ]);
   });
 });

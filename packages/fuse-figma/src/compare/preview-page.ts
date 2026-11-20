@@ -21,8 +21,16 @@
  * spinner stays at 0°.
  */
 
-import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
+import type {
+  BoxDefinition,
+  Cell,
+  ComponentDefinition,
+  InstanceDefinition,
+  PartDefinition,
+} from "../components/component-spec.ts";
+import { labelCharacters } from "../components/component-spec.ts";
 import type { Viewport } from "../components/css-values.ts";
+import { instanceRootSlotOf, partsOf } from "../components/definition-parts.ts";
 import { kitFontCss } from "../kit-fonts.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
@@ -327,6 +335,158 @@ export function forcedSelector(
     return placeSelector(definition, definition.statePlace);
   }
   return definition.statePart === undefined ? measured : `${measured} [data-slot="${definition.statePart}"]`;
+}
+
+/**
+ * A part a BOOLEAN property shows: the key of its layer, a selector for its element, how that
+ * selector finds it, and the text that element holds, from the part's label, or undefined for a part
+ * that holds no text of its own.
+ */
+export type ShownPart = {
+  readonly key: string;
+  readonly selector: string;
+  /**
+   * `"element"` where the selector ends on the part's own `data-slot` or icon, so it matches nothing
+   * where the part is absent. `"position"` where it ends on the part's `place`, which a sibling takes
+   * where the part is absent.
+   */
+  readonly foundBy: "element" | "position";
+  readonly text: string | undefined;
+};
+
+/** A part below a definition's root, with the frame part that holds it and the parts beside it. */
+type PlacedPart = {
+  readonly part: PartDefinition | InstanceDefinition;
+  readonly parent: PartDefinition | undefined;
+  readonly siblings: readonly (PartDefinition | InstanceDefinition)[];
+};
+
+/** Every part below a box, depth first, each with its parent and siblings. */
+function placedParts(box: BoxDefinition, parent: PartDefinition | undefined): readonly PlacedPart[] {
+  const siblings = box.parts ?? [];
+  return siblings.flatMap((part) => [
+    { part, parent, siblings },
+    ...("kind" in part ? [] : placedParts(part, part)),
+  ]);
+}
+
+/**
+ * The parts a BOOLEAN property shows in a cell, each with a selector for its element. A part counts
+ * only where the cell shows it and every part above it, as `shownIn` and the properties on say. A
+ * part goes by the first of these that picks out one element:
+ *
+ * - its `data-slot`, a frame part's own or an instance part's inner root's, where no other part
+ *   carries it;
+ * - for a frame part, that slot with an instance it holds whose inner root's `data-slot` no other
+ *   part carries, as Breadcrumb's ellipsis item holds the ellipsis;
+ * - the slot as a direct child of its parent's element, where no sibling carries it, as Sheet's
+ *   corner close sits in `sheet-content-inner` and the footer's Close in the footer;
+ * - the slot right after the element of the sibling before it that the cell shows on the same side
+ *   of the label, as Breadcrumb's separator after the ellipsis follows the ellipsis item.
+ *
+ * A frame part without a `data-slot` goes by its `place`. Its expected text is the characters its
+ * label shows in the cell where the label is its own text, so the caller can tell a positional selector that
+ * lands on the wrong element. An icon of the root is the `<svg>` the root holds, marked by its
+ * `data-icon` as the capture finds it.
+ *
+ * @param definition - The set's root, with its name and the `data-slot` it carries in the cell.
+ * @param cell - The cell, which picks the icons the root lists and an instance part's inner cell.
+ * @param property - The BOOLEAN property's name.
+ * @param on - The BOOLEAN properties on in the instance, which pick the siblings the cell shows.
+ * @returns One entry per part, each selector as {@link cellSelector} takes it.
+ * @throws When an optional icon sits below the root or inside a wrapper, or a part that the property
+ *   shows, or one its selector goes through, has none of the above, which leaves the page no
+ *   selector for the part.
+ */
+export function shownParts(
+  definition: BoxDefinition & Pick<ComponentDefinition, "name" | "slot">,
+  cell: Cell,
+  property: string,
+  on: ReadonlySet<string>
+): readonly ShownPart[] {
+  const measured = measuredSelector(definition);
+  const placed = placedParts(definition, undefined);
+  const placeOf = new Map(placed.map((entry) => [entry.part, entry]));
+  const slotOf = (part: PartDefinition | InstanceDefinition): string | undefined =>
+    "kind" in part ? instanceRootSlotOf(part, part.cell(cell)) : part.slot;
+  const carriers = (slot: string): number => placed.filter(({ part }) => slotOf(part) === slot).length;
+  const shown = (part: PartDefinition | InstanceDefinition): boolean =>
+    part.shownIn(cell) && (part.optional === undefined || on.has(part.optional.name));
+  const unplaceable = (part: PartDefinition | InstanceDefinition, why: string): Error =>
+    new Error(`${definition.name}: the page cannot pick out the ${part.key} part behind ${property}: ${why}`);
+  const entryOf = (part: PartDefinition | InstanceDefinition): PlacedPart => {
+    const entry = placeOf.get(part);
+    if (entry === undefined) {
+      throw new Error(`${definition.name}: the ${part.key} part is not below the root`);
+    }
+    return entry;
+  };
+  const selectorOf = ({ part, parent, siblings }: PlacedPart): string => {
+    const slot = slotOf(part);
+    if (slot === undefined) {
+      if ("kind" in part || part.place === undefined) {
+        throw unplaceable(part, "it carries no data-slot and has no place");
+      }
+      return placeSelector(definition, part.place);
+    }
+    const own = `[data-slot=${cssString(slot)}]`;
+    if (carriers(slot) === 1) {
+      return `${measured} ${own}`;
+    }
+    const marker =
+      "kind" in part
+        ? undefined
+        : (part.parts ?? [])
+            .map((inner) => ("kind" in inner ? slotOf(inner) : undefined))
+            .find((inner) => inner !== undefined && carriers(inner) === 1);
+    if (marker !== undefined) {
+      return `${measured} ${own}:has([data-slot=${cssString(marker)}])`;
+    }
+    if (siblings.filter((sibling) => slotOf(sibling) === slot).length === 1) {
+      return `${parent === undefined ? measured : selectorOf(entryOf(parent))} > ${own}`;
+    }
+    const before = siblings
+      .slice(0, siblings.indexOf(part))
+      .filter((sibling) => shown(sibling) && sibling.after === part.after)
+      .at(-1);
+    if (before === undefined) {
+      throw unplaceable(part, `its data-slot ${slot} is shared and no shown sibling precedes it`);
+    }
+    return `${selectorOf(entryOf(before))} + ${own}`;
+  };
+  const visible = ({ part, parent }: PlacedPart): boolean =>
+    shown(part) && (parent === undefined || visible(entryOf(parent)));
+  const parts = placed.flatMap((entry): ShownPart[] => {
+    const { part } = entry;
+    if (part.optional?.name !== property || !visible(entry)) {
+      return [];
+    }
+    const label = "kind" in part ? undefined : part.label;
+    const text =
+      label !== undefined && label.shownIn(cell) && label.textAttribute?.(cell) === undefined
+        ? labelCharacters(label, cell)
+        : undefined;
+    const foundBy = "kind" in part || part.slot !== undefined ? "element" : "position";
+    return [{ key: part.key, selector: selectorOf(entry), foundBy, text }];
+  });
+  const icons = definition.iconsFor(cell).flatMap((slot): ShownPart[] => {
+    if (slot.optional?.name !== property) {
+      return [];
+    }
+    if (!slot.direct) {
+      throw new Error(`${definition.name}: the ${slot.key} icon behind ${property} sits inside a wrapper`);
+    }
+    const mark =
+      slot.dataIcon === undefined ? ":not([data-icon])" : `[data-icon=${cssString(slot.dataIcon)}]`;
+    return [{ key: slot.key, selector: `${measured} > svg${mark}`, foundBy: "element", text: undefined }];
+  });
+  const below = partsOf(definition).some((part) =>
+    part.iconsFor(cell).some((slot) => slot.optional?.name === property)
+  );
+  if (below) {
+    throw new Error(`${definition.name}: an icon behind ${property} sits below the root`);
+  }
+  return [...parts, ...icons];
 }
 
 /**
