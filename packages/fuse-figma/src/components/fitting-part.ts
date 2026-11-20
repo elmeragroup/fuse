@@ -1,12 +1,13 @@
 /**
- * A flex row's last part that fits its content to the room the row leaves it, drawn as a fill.
+ * A flex row's part that fits its content to the room the row's other layers leave it, drawn as a
+ * fill: its last part, or the first of two that the row spaces between its ends.
  *
  * A flex item with an `auto` basis that does not grow is as wide as its max-content width, and,
  * where that is wider than the room the row's other layers leave, shrinks to that room (CSS Flexbox
  * 1 §9.7), down to its min-content width (§4.5). Where every other layer of the row keeps its own
  * width, the part alone gives back what overflows, so it is as wide as its content up to the room,
  * which is `fit-content` against that room (CSS Sizing 3 §5.1), and its text wraps at the room as a
- * fill's does. The row decides whether a part is placed so ({@link fitsRowEnd}); the part's own layers,
+ * fill's does. The row decides whether a part is placed so ({@link fitsRowRoom}); the part's own layers,
  * once mapped, decide whether the room's width draws as its content's width does
  * ({@link drawsAtRoom}). A part wider than the room by one word, its min-content width, overflows
  * in CSS where a fill wraps the word: a known limit, as for `flex: 1`.
@@ -138,15 +139,33 @@ function keepsShare(layer: BesideLayer, variables: VariableIndex): boolean {
 const ZERO_IS_NONE: ReadonlySet<string> = new Set(["min-width", "margin-left", "margin-right"]);
 
 /**
- * Whether a part fits its content to the room its row leaves it, as the module says: the row is a
- * horizontal flex line of definite width that does not wrap or reverse and packs its layers from its
- * start, the part is the row's last layer and the one that shrinks, by 1 or more so it gives back
- * all the overflow (CSS Flexbox 1 §9.7), with no grow, basis, length, limit or margin across, and
- * every other layer of the row is a part that keeps its own width or an icon that keeps its width
- * the same way, so the room is the row's less those widths. A part keeps its width with no limit or
- * basis, a `width`, where it sets one, that is a length in every mode, and margins across of 0 or
- * more. An icon keeps it with literal margins across, as Toast's status icon sits before its text
- * column. The part's `display` holds the unmapped row where its layers do not draw alike.
+ * Where a part that fits the room its row leaves it sits in the row, as {@link fitsRowRoom} reads it:
+ * last, in a row that packs from its start, or first of two, in a row that spaces them between its ends.
+ */
+export type FitPlace = "last" | "spaced-first";
+
+/**
+ * Where a part fits its content to the room its row leaves it, as the module says: the row is a
+ * horizontal flex line of definite width that does not wrap or reverse, the part is the one that
+ * shrinks, by 1 or more so it gives back all the overflow (CSS Flexbox 1 §9.7), with no grow,
+ * basis, length, limit or margin across, and every other layer of the row is a part that keeps its
+ * own width or an icon that keeps its width the same way, so the room is the row's less those
+ * widths. A part keeps its width with no limit or basis, a `width`, where it sets one, that is a
+ * length in every mode, and margins across of 0 or more. An icon keeps it with literal margins
+ * across, as Toast's status icon sits before its text column. The part's `display` holds the unmapped row where its layers do not draw alike.
+ *
+ * The part sits in one of two places, where the fill draws the other layers where CSS places them:
+ *
+ * - Last, in a row that packs its layers from its start, so the layers before it sit at their own
+ *   widths with the gap between them, as a fill's row draws them.
+ * - First of the row's two layers, in a row that spaces them between its ends, as Tour's header holds
+ *   its title before Close and Alert dialog's header holds its title before the icon. A part that
+ *   fits takes its content's width and the other layer ends the row, and a longer part shrinks to the
+ *   room and wraps there, so the fill draws both, and the row packs its layers at its start with its
+ *   gap, which Figma's SPACE_BETWEEN would drop beside a fill (PV). The part holds its own text and
+ *   nothing else, so the fill draws one text that wraps. A part with layers of its own can hold a
+ *   text that hugs, as Tour's progress holds its count beside its dots, and the build does not
+ *   measure a hugging text's width, so such a part keeps its own width there.
  *
  * A `min-width` of zero, as `min-w-0` sets, is no limit of the part's own: it lets the part shrink
  * past its min-content width, all the way to the room (§4.5), as a fill does, so a word longer than
@@ -162,12 +181,12 @@ const ZERO_IS_NONE: ReadonlySet<string> = new Set(["min-width", "margin-left", "
  * @param parts - The style of each part in the row's flow, in layer order.
  * @param index - The part's place among `parts`.
  * @param part - The place of the part that grows in the row, as `readGrowth` reads it, whether the
- *   part draws as a frame of its own, not as an instance, an icon or a pseudo-element, and its
- *   element's tag, where the capture holds one.
+ *   part draws as a frame of its own, not as an instance, an icon or a pseudo-element, its element's
+ *   tag, where the capture holds one, and whether it holds its own text and no layer.
  * @param variables - The synced variables, which a width beside the part may bind.
- * @returns True where the part fits the room.
+ * @returns The part's place, or undefined where it does not fit the room.
  */
-export function fitsRowEnd(
+export function fitsRowRoom(
   holder: Holder,
   parts: readonly LayerStyle[],
   index: number,
@@ -175,23 +194,33 @@ export function fitsRowEnd(
     growing,
     frame,
     tag,
+    ownText,
     layer,
     beside,
   }: {
     readonly growing: number | undefined;
     readonly frame: boolean;
     readonly tag: string | undefined;
+    readonly ownText: boolean;
     /** The part's place among the row's layers. */
     readonly layer: number;
     /** The row's layers that are no part, its icons and its label, in no order. */
     readonly beside: readonly BesideLayer[];
   },
   variables: VariableIndex
-): boolean {
+): FitPlace | undefined {
   const { layout, sizing, style, layers } = holder;
   const part = parts[index];
   const row = (property: string) => normalizeCss(style.resolved(property) ?? "");
-  return (
+  const place: FitPlace | undefined =
+    FROM_START.has(row("justify-content")) && index === parts.length - 1 && layer === layers.length - 1
+      ? "last"
+      : // The box mapping reads a row's `space-between` once its layers map, so the row can pack at its start.
+        ownText && layout.spaceBetweenUnread === true && layers.length === 2 && index === 0 && layer === 0
+        ? "spaced-first"
+        : undefined;
+  const fits =
+    place !== undefined &&
     part !== undefined &&
     frame &&
     (tag === undefined || !SIZED_BY_ELEMENT.has(tag)) &&
@@ -201,10 +230,7 @@ export function fitsRowEnd(
     growing === undefined &&
     ["", "row"].includes(row("flex-direction")) &&
     ["", "nowrap"].includes(row("flex-wrap")) &&
-    FROM_START.has(row("justify-content")) &&
     layers.length === parts.length + beside.length &&
-    index === parts.length - 1 &&
-    layer === layers.length - 1 &&
     beside.every((each) => keepsShare(each, variables)) &&
     parts.every((each, place) => place === index || (keepsWidth(each, variables) && padsMargins(each))) &&
     // A failed draw files its row under the part's `display`, so the part must set one.
@@ -215,8 +241,8 @@ export function fitsRowEnd(
         (ZERO_IS_NONE.has(property) && evaluateLength(part.resolved(property) ?? "") === 0)
     ) &&
     (evaluateNumber(part.resolved("flex-grow") ?? "0") ?? Number.NaN) === 0 &&
-    (evaluateNumber(part.resolved("flex-shrink") ?? "1") ?? 0) >= 1
-  );
+    (evaluateNumber(part.resolved("flex-shrink") ?? "1") ?? 0) >= 1;
+  return fits ? place : undefined;
 }
 
 /**

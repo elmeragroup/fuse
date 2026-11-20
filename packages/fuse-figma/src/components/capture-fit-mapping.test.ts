@@ -49,6 +49,22 @@
  *   basis or minimum on the icon widens it to 100px in Chromium, which leaves the column 192px and
  *   three lines of the sentence where a fill would take 276px, and a -4px margin, which no padding
  *   draws, leaves it 280px. A margin that resolves to no length leaves the icon's width unknown.
+ * - CSS Flexbox 1 §9.7 and CSS Sizing 3 §5.1, for the first of two layers a row spaces between its
+ *   ends, as Tour's header holds its title before Close: in a 300px `justify-between` row with an
+ *   8px gap, a title before a `shrink-0` 24px control is 268px wide, two lines, around the sentence,
+ *   with the control at 276px, and beside a 32px control whose width reads a variable, 260px. With
+ *   a zero margin it is the same 268px. Around `Covers theft.` it is 90.7px wide at the row's start
+ *   with the control still at 276px, where a fill of the 268px room draws it too. A control 10%
+ *   wide is 30px, a share of the row that no Figma width holds. A 12px left margin on the control
+ *   leaves the title 256px, and a 32px gap 244px, both the room a fill takes. A -4px right margin
+ *   on the control gives the title 272px, which no padding draws. Where the row
+ *   packs from its start, the control sits right after that title, at 98.7px. A control that can
+ *   shrink gives back part of the overflow: it shrinks to 14.2px and the title is 277.8px. A 40px
+ *   left margin sets the title at 40px, 228px wide on three lines. A third layer sits at 171.4px,
+ *   between the title and the last. A reversed row puts the title at 209.3px, a wrapping row puts
+ *   the control on a line of its own, and a row that hugs sets the title on one line, 469.6px wide.
+ *   A `text-center` title around `Covers theft.` centers its text in its 90.7px box, at the row's
+ *   start, where a fill centers it in the room.
  * - CSS Flexbox 1 §7: `flex` applies only to a flex item, so a block's part sizes nothing by it.
  * - The coverage contract: a part whose fitted width the build does not draw keeps a row unmapped.
  */
@@ -567,6 +583,131 @@ describe("a flex row's last part that holds its own text, or sits alone in its r
       "width",
       "the part fits its content to the room the row leaves it, and a fill draws that room, where it or a layer inside it paints, turns, does not start at its start, holds a text that does not wrap or may be wider than the room, so it would draw wider or elsewhere",
     ]);
+  });
+});
+
+describe("a flex row's first part that holds its own text before a layer that ends the row", () => {
+  /** The sentence that wraps in the room beside the control. */
+  const SENTENCE = "Settled on 3 April, and the invoice was paid in full by bank transfer.";
+
+  /** The title, a part that holds its own text, as Tour's title does. */
+  const TITLE: PartManifest = part({ key: "title", slot: "title", label: text(SENTENCE, "Title") });
+
+  /** The controls after the title, the 24px box that keeps its width, and a second one. */
+  const CONTROLS: readonly PartManifest[] = [
+    part({ key: "control", slot: "control" }),
+    part({ key: "more", slot: "more" }),
+  ];
+
+  /**
+   * Build a 300px row that spaces a title and a control between its ends, 8px apart, as Tour's
+   * header holds its title and Close.
+   *
+   * @param classes - The classes of the row, the title and the control, the title's text, and
+   *   whether a second control follows the first.
+   */
+  function buildHeader(classes: {
+    readonly row?: string;
+    readonly title?: string;
+    readonly control?: string;
+    readonly characters?: string;
+    readonly third?: boolean;
+  }) {
+    const characters = classes.characters ?? SENTENCE;
+    const third = classes.third === true;
+    return buildCaptured(
+      chip({ parts: [{ ...TITLE, label: text(characters, "Title") }, ...CONTROLS.slice(0, third ? 2 : 1)] }),
+      [
+        {
+          cell: { state: "rest" },
+          root: {
+            slot: "chip",
+            classes: `${classes.row ?? "flex w-[300px] items-center justify-between gap-[8px]"} ${TYPE}`,
+            children: [
+              { tag: "h2", slot: "title", classes: `block ${classes.title ?? ""}`, text: characters },
+              { slot: "control", classes: classes.control ?? "size-[24px] shrink-0" },
+              ...(third ? [{ slot: "more", classes: "size-[24px] shrink-0" }] : []),
+            ],
+          },
+        },
+      ],
+      WITH_DENSITY
+    );
+  }
+
+  /** The title's layer and its text's, the row's alignment along it, and the rows that stay unmapped. */
+  async function headerOf(classes: Parameters<typeof buildHeader>[0]) {
+    const { variant, coverage } = await buildHeader(classes);
+    const title = variant?.root.children[0];
+    return {
+      title: across(title),
+      text: title?.kind === "frame" ? across(title.children[0]) : undefined,
+      primaryAlign: variant?.root.primaryAlign,
+      unmapped: unmapped(coverage),
+    };
+  }
+
+  it.each([
+    ["beside a control of a literal width", {}],
+    [
+      "beside a control whose width binds a synced variable",
+      { control: "w-[var(--control-h)] h-[24px] shrink-0" },
+    ],
+    ["with a zero margin across", { title: "m-0" }],
+    ["around a title that fits beside the control", { characters: "Covers theft." }],
+    ["beside a control with a margin across", { control: "size-[24px] shrink-0 ml-[12px]" }],
+    [
+      "in a row whose gap binds a synced variable",
+      { row: "flex w-[300px] items-center justify-between gap-[var(--control-h)]" },
+    ],
+  ])("draws the title %s as a fill, and packs the row at its start", async (_case, classes) => {
+    expect(await headerOf(classes)).toEqual({ title: FILL, text: FILL, primaryAlign: "MIN", unmapped: [] });
+  });
+
+  it("reads the row's space-between as the fill's room, with its gap", async () => {
+    const { coverage } = await buildHeader({});
+    expect(notesOf(coverage, "justify-between")).toEqual([
+      [
+        "justify-content",
+        "literal",
+        "the first layer fits its content to the room the other leaves, so the other ends the row either way, and a fill of that room leaves nothing to space out, so packed at the start of the primary axis with the gap, which Figma's SPACE_BETWEEN would drop (PV)",
+      ],
+    ]);
+  });
+
+  // CSS sets the title or the control elsewhere than a fill of the room would, as the oracles say.
+  it.each([
+    [
+      "the row packs from its start",
+      { row: "flex w-[300px] items-center gap-[8px]", characters: "Covers theft." },
+    ],
+    ["the control can shrink", { control: "size-[24px] min-w-0" }],
+    [
+      "the control's width is a share of the row, which no Figma width holds",
+      { control: "w-[10%] h-[24px] shrink-0" },
+    ],
+    ["the title sets a margin across", { title: "ml-[40px]" }],
+    [
+      "the control's negative margin gives the title room no padding draws",
+      { control: "size-[24px] shrink-0 -mr-[4px]" },
+    ],
+    ["a third layer follows", { third: true, characters: "Covers theft." }],
+    [
+      "the row reverses",
+      {
+        row: "flex w-[300px] flex-row-reverse items-center justify-between gap-[8px]",
+        characters: "Covers theft.",
+      },
+    ],
+    ["the row wraps", { row: "flex w-[300px] flex-wrap items-center justify-between gap-[8px]" }],
+    ["the row hugs it", { row: "flex w-fit items-center justify-between gap-[8px]" }],
+  ])("keeps the title hugging where %s", async (_case, classes) => {
+    expect((await headerOf(classes)).title).toEqual(HUG);
+  });
+
+  it("keeps the title's width and the row's spacing unmapped where a fill draws the title elsewhere", async () => {
+    const { coverage } = await buildHeader({ title: "text-center", characters: "Covers theft." });
+    expect(unmapped(coverage).map(([, property]) => property)).toEqual(["width", "justify-content"]);
   });
 });
 

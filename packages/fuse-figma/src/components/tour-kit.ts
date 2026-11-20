@@ -21,9 +21,9 @@
  *   which Button's `state=disabled` draws.
  *
  * The titles and descriptions are the steps' words, which the `Title` and `Description` properties
- * set, and the step card's `Count` property sets its count. The tip's title hugs its text in the
- * header row, so a title longer than the room beside Close runs past it, where CSS wraps it there
- * (#825). The step card is its own set: a TEXT property holds one default, so in one set the two
+ * set, and the step card's `Count` property sets its count. The tip's title fills the room Close
+ * leaves in the header row, so a longer title wraps there, as `fitsRowRoom` in `fitting-part.ts`
+ * says. The step card is its own set: a TEXT property holds one default, so in one set the two
  * cells' words could not share `Title` and `Description`. The sets draw no spotlight, ring or
  * beacon, and no placement against the step's element.
  */

@@ -59,7 +59,7 @@ const HUGGED_ALIGNMENTS = new Map<string, { readonly align: PrimaryAlignSpec; re
  * mapping finds once its layers map: it holds one layer in its flow, or one that fills it along its
  * direction. Undefined where it spaces its layers out.
  */
-export type UnspacedReason = "lone" | "grows";
+export type UnspacedReason = "lone" | "grows" | "fits";
 
 /** What a box's `space-between` became, by why it spaces nothing out, or where it spaces its layers out. */
 const SPACE_BETWEEN_DETAILS = {
@@ -67,6 +67,7 @@ const SPACE_BETWEEN_DETAILS = {
   lone: "with one layer, which `space-between` places as `flex-start` does, so packed at the start of the primary axis",
   grows:
     "beside a layer that grows into the free space, so packed at the start of the primary axis with the gap, which Figma's SPACE_BETWEEN would drop (PV, W5-P3)",
+  fits: "the first layer fits its content to the room the other leaves, so the other ends the row either way, and a fill of that room leaves nothing to space out, so packed at the start of the primary axis with the gap, which Figma's SPACE_BETWEEN would drop (PV)",
 } as const satisfies Record<UnspacedReason | "spaced", string>;
 
 /**
