@@ -169,7 +169,8 @@ export type SetManifest = BoxManifest & {
  * - 576: a Command list's host, the docs Groups demo's `max-w-xl` palette box.
  * - 512: an Alert's host, the docs Variants demo's `max-w-lg` column, and Empty's and the Table
  *   caption's.
- * - 448: a Card's host, the docs default demo's `max-w-md`, and Aspect ratio's and Code's.
+ * - 448: a Card's host, the docs default demo's `max-w-md`, and Aspect ratio's, Code's and
+ *   Attachment's.
  * - 384: a Field's width, the field boxes' and the Input group's host.
  * - 320: a Command row's host.
  * - 256: a Meter's host, the `w-64` a container gives it.

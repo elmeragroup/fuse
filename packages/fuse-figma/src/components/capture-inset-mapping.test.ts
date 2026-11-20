@@ -311,6 +311,47 @@ describe("the order a box's layers paint in", () => {
   });
 });
 
+/** A flex row holding a black block, the given parts, and a part at `z-20` with the given facts. */
+function raised(
+  classes: string,
+  measured: FixtureElement["measured"],
+  before: readonly FixtureElement[] = []
+) {
+  const own: FixtureElement = { slot: "actions", classes };
+  const children: readonly FixtureElement[] = [
+    ...before,
+    { slot: "body", classes: "w-[40px] h-[40px] bg-black" },
+    measured === undefined ? own : { ...own, measured },
+  ];
+  return buildCaptured(
+    chip({ parts: children.map((child) => part({ key: child.slot ?? "", slot: child.slot ?? "" })) }),
+    rest({ slot: "chip", classes: "relative flex w-[100px] h-[40px]", children })
+  );
+}
+
+describe("a part's stacking level", () => {
+  it("drops where the capture measured the part over the whole root and the order draws it last", async () => {
+    const { variant, coverage } = await raised("relative z-20 size-[8px] bg-white", { paintsLast: true });
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["body", "actions"]);
+    expect(coverage.find((row) => row.property === "z-index")?.outcome).toBe("dropped");
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("stays unmapped with no measured fact, since another box of the root may paint over the part", async () => {
+    const { coverage } = await raised("relative z-20 size-[8px] bg-white", undefined);
+    expect(unmapped(coverage)).toEqual(["z-index"]);
+  });
+
+  it("stays unmapped where the order draws an earlier overlay after a flex item at a level", async () => {
+    // CSS paints the item's level over the overlay at `auto`, and Figma paints the later overlay over it.
+    const { variant, coverage } = await raised("z-20 size-[8px] bg-white", { paintsLast: true }, [
+      { slot: "overlay", classes: "absolute inset-0 bg-white" },
+    ]);
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["body", "actions", "overlay"]);
+    expect(unmapped(coverage)).toEqual(["z-index"]);
+  });
+});
+
 describe("a painting ::before", () => {
   it("draws as a layer of its own, placed by its offsets, where the capture measured its box", async () => {
     const { variant, coverage } = await connector({ pseudoBoxes: ["before"] });

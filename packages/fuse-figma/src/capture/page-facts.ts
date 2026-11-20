@@ -13,6 +13,7 @@ import { coincidingAround } from "./coinciding-around.ts";
 import type { Rect } from "./coinciding-around.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
+import { paintsLast } from "./paints-last.ts";
 import { parentSpansBlock } from "./parent-spans-block.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
@@ -163,6 +164,9 @@ const EVERY_MODE: readonly PageMode[] = SCHEMES.flatMap((scheme) =>
  *   box, the padding box of the element's containing block, the root or an element below it, in
  *   every mode of {@link EVERY_MODE} once
  *   its faces have loaded, as `parent-spans-block.ts` decides.
+ * - `paintsLast`: a child of the root whose positive `z-index` paints it over every other box of the
+ *   root, as the root's last child, in every mode of {@link EVERY_MODE} once its faces have loaded,
+ *   as `paints-last.ts` decides.
  * - `oneLength`: on an absolute element below the root, the axes along which its border box is one
  *   length, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have
  *   loaded.
@@ -945,6 +949,10 @@ const MEASURE_IN_PAGE = `async function () {
   const parentSpansBlock = (${parentSpansBlock.toString()});
   const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root));
   for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root))) { put(path, "parentSpansBlock", true); }
+  // A child of the root that paints over every other box of the root by its z-index, in every mode.
+  const paintsLast = (${paintsLast.toString()});
+  const raised = elements.filter(({ element }) => paintsLast(element, root));
+  for (const { path } of await holdsInEveryMode(raised, (each) => paintsLast(each, root))) { put(path, "paintsLast", true); }
   // The lengths of each absolute element below the root in every mode, kept on the axes where they agree.
   const absolutes = elements
     .filter(({ element }) => element !== root && getComputedStyle(element).position === "absolute")

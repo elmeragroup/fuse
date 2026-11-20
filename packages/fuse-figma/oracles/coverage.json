@@ -3973,6 +3973,88 @@
         "part": "table-caption",
         "className": "framed-table:my-4"
       }
+    ],
+    "attachment": [
+      {
+        "part": "attachment",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment",
+        "className": "data-[state=error]:border-error/30"
+      },
+      {
+        "part": "attachment",
+        "className": "has-enabled-trigger:enabled-hover:bg-muted"
+      },
+      {
+        "part": "attachment-actions",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment-actions",
+        "className": "group-data-[orientation=vertical]/attachment:absolute"
+      },
+      {
+        "part": "attachment-actions",
+        "className": "group-data-[orientation=vertical]/attachment:end-[calc(var(--attachment-inset-x)+--spacing(1))]"
+      },
+      {
+        "part": "attachment-actions",
+        "className": "group-data-[orientation=vertical]/attachment:top-[calc(var(--attachment-inset-y)+--spacing(1))]"
+      },
+      {
+        "part": "attachment-content",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment-description",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment-description",
+        "className": "group-data-[state=error]/attachment:text-error"
+      },
+      {
+        "part": "attachment-media",
+        "className": "*:data-[slot=loader]:p-0"
+      },
+      {
+        "part": "attachment-media",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment-media",
+        "className": "group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6"
+      },
+      {
+        "part": "attachment-media",
+        "className": "group-data-[orientation=vertical]/attachment:w-full"
+      },
+      {
+        "part": "attachment-media",
+        "className": "group-data-[state=error]/attachment:bg-error/10"
+      },
+      {
+        "part": "attachment-media",
+        "className": "group-data-[state=error]/attachment:text-error"
+      },
+      {
+        "part": "attachment-media",
+        "className": "has-data-[slot=attachment-aspect-ratio]:aspect-auto"
+      },
+      {
+        "part": "attachment-title",
+        "className": "[&[hidden]:not([hidden=until-found])]:hidden"
+      },
+      {
+        "part": "attachment-title",
+        "className": "group-data-[state=processing]/attachment:shimmer"
+      },
+      {
+        "part": "attachment-title",
+        "className": "group-data-[state=uploading]/attachment:shimmer"
+      }
     ]
   },
   "unreached": [

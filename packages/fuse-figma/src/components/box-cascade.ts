@@ -242,6 +242,11 @@ export type MeasuredBox = {
    * The axes along which the box, absolute, is one length in every mode, as the capture measured.
    */
   readonly oneLength: ReadonlySet<"horizontal" | "vertical">;
+  /**
+   * The box is a child of the root whose positive `z-index` paints it over every other box of the
+   * root, as the root's last child, in every mode, as the capture measured.
+   */
+  readonly paintsLast: boolean;
 };
 
 /**

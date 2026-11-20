@@ -14,6 +14,7 @@ import { ACTION_BAR_MANIFEST } from "./action-bar-kit";
 import { ALERT_DIALOG_CONTENT_MANIFEST, ALERT_DIALOG_OPEN_MANIFEST } from "./alert-dialog-kit";
 import { ALERT_MANIFEST } from "./alert-kit";
 import { ASPECT_RATIO_MANIFEST } from "./aspect-ratio-kit";
+import { ATTACHMENT_MANIFEST } from "./attachment-kit";
 import { AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
 import { BADGE_MANIFEST } from "./badge-kit";
 import {
@@ -251,6 +252,9 @@ const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty", example: "empty" };
 
 /** The page Aspect ratio sits on alone. */
 const ASPECT_RATIO_PAGE: KitPage = { slug: "aspect-ratio", name: "Aspect ratio", example: "aspect-ratio" };
+
+/** The page Attachment sits on alone. */
+const ATTACHMENT_PAGE: KitPage = { slug: "attachment", name: "Attachment", example: "attachment" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -916,4 +920,9 @@ export const KIT: readonly KitEntry[] = [
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CELL_MANIFEST), manifest: TABLE_CELL_MANIFEST },
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_ROW_MANIFEST), manifest: TABLE_ROW_MANIFEST },
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CAPTION_MANIFEST), manifest: TABLE_CAPTION_MANIFEST },
+  {
+    page: ATTACHMENT_PAGE,
+    previewCells: possibleCells(ATTACHMENT_MANIFEST),
+    manifest: ATTACHMENT_MANIFEST,
+  },
 ];

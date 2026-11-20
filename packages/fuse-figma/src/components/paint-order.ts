@@ -15,7 +15,14 @@
  * three as CSS does without changing the flow, so the placed layer has no slot. Two in-flow layers
  * paint in flow order in Figma, where CSS paints a `relative` one over a later static one, which shows
  * only where flow lets them overlap, as a negative margin does, which no reader here measures.
+ *
+ * A positive `z-index` paints a box after every box of the root at a lower level, whatever their tree
+ * order (CSS 2.1 Appendix E, step 9). Figma has no level, so the root's last layer stands in for it
+ * where the capture measured the box as painting over every other box of the root
+ * (`capture/paints-last.ts`) and the root's order draws it last, which `readRaisedLevels` checks.
  */
+
+import type { LayerStyle } from "./layer-style";
 
 /** A layer of a box, in tree order, as far as its paint order needs to know. */
 export type PaintedLayer = {
@@ -80,4 +87,55 @@ export function inPaintOrder<Layer extends { readonly key: string }>(
     return child === undefined ? [] : [child];
   });
   return ordered.length === children.length ? ordered : children;
+}
+
+/** A drawn layer of a box, as far as its `z-index` needs to know. */
+export type LeveledLayer = {
+  readonly key: string;
+  /**
+   * Whether the capture measured the layer as painting over every other box of the root by its
+   * `z-index` (`paintsLast`).
+   */
+  readonly paintsLast: boolean;
+  /** The layer's style, which notes what became of its `z-index`. */
+  readonly style: Pick<LayerStyle, "read" | "mark">;
+};
+
+/**
+ * Read the `z-index` of each layer of a box that the capture measured as painting last in the root.
+ * Figma paints the box's last layer over every other layer, so the level drops where the box's order
+ * draws the layer last. A placed layer the order puts after it, as a part with no position of its own
+ * leaves room for, would paint over it in Figma, so there the level stays unmapped. A box that paints
+ * its first layer on top paints its last layer at the bottom, so no layer of it is topmost.
+ *
+ * @param layers - The box's drawn layers.
+ * @param painted - The box's layer keys in the order it draws them, and whether it paints its first
+ *   layer on top.
+ */
+export function readRaisedLevels(
+  layers: readonly LeveledLayer[],
+  painted: { readonly order: readonly string[]; readonly firstOnTop: boolean }
+): void {
+  const topmost = painted.firstOnTop ? undefined : painted.order.at(-1);
+  for (const layer of layers.filter(({ paintsLast }) => paintsLast)) {
+    if (layer.key === topmost) {
+      layer.style.read(
+        "z-index",
+        (value) => value,
+        () => ({
+          outcome: "dropped",
+          detail:
+            "the capture measured the part over every other box of the root by its stacking level, and the root's order draws it last, so over every other layer too",
+        }),
+        []
+      );
+    } else {
+      layer.style.mark(
+        "z-index",
+        "unmapped",
+        "the capture measured the part over every other box of the root by its stacking level, and the root's order draws another layer after it",
+        []
+      );
+    }
+  }
 }

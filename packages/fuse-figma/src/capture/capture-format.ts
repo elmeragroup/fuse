@@ -222,6 +222,12 @@ const MeasuredFactsSchema = Schema.Struct({
    * a mode changes its length.
    */
   oneLength: Schema.optionalKey(Schema.Array(Schema.Literals(["horizontal", "vertical"]))),
+  /**
+   * On a child of the root: in every mode, its positive `z-index` paints it over every other box of
+   * the root in CSS, and it is the root's last child. Whether Figma's order of the root's layers
+   * draws it last as well is the mapping's to check.
+   */
+  paintsLast: Schema.optionalKey(Schema.Literal(true)),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */
