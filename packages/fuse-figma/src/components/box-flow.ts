@@ -114,7 +114,8 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * height. A fixed or filling row with room beside a hugging layer packs at its start once its layers
  * map, as `leavesRoomAtEnd` in `box-mapping.ts` decides. A column takes CSS's start on both axes, and
  * its unset `align-items` stretches its layers across it, which {@link roomInside} gives them. A grid
- * that puts every item in one column, as {@link placesInOneColumn} says, is such a column. Any other
+ * that puts every item in one column, as {@link placesInOneColumn} says, and whose capture measured
+ * its column as wide as its content box (`trackFits`), is such a column. Any other
  * grid places its layers by `place-content`, which {@link readDisplay} reads, so its alignments stay
  * unread. `line-clamp-*` makes a `-webkit-box` column, which sets its text from the top left. A row
  * whose parts set their own `align-self` aligns as {@link readSelfAlignment} says. A block box that
@@ -125,7 +126,8 @@ const DIRECTIONS = new Map<string, { readonly direction: DirectionSpec; readonly
  * @param box - The box's sizing and limits, which say whether it hugs its layers along its
  *   direction with no minimum, so `justify-content` has no free space to distribute, and the sizing
  *   of the layers inside it, which a column's `align-items` decides as it stretches them or not, and
- *   how its cascade knows whether a list item draws a marker.
+ *   how its cascade knows whether a list item draws a marker, and whether the capture measured a
+ *   one-column grid's column as wide as its content box.
  * @returns The box's layout, and the alignment its parts set, which {@link settleFlow}
  *   settles once the parts map.
  */
@@ -138,10 +140,12 @@ export function readFlow(
     readonly inside: Feed;
     readonly markers: MarkerReading;
     readonly lineFits: boolean;
+    readonly trackFits: boolean;
   }
 ): Flow {
   const display = normalizeCss(reader.raw("display") ?? "");
-  if (display === "grid" && placesInOneColumn(reader, flow)) {
+  const rowsHug = box.sizing.vertical.kind === "hug" && box.limits.minHeight === undefined;
+  if (display === "grid" && box.trackFits && placesInOneColumn(reader, flow, rowsHug)) {
     return { layout: ONE_COLUMN_GRID, self: undefined };
   }
   const blocks = stacksBlocks(reader, flow, box);
@@ -270,20 +274,47 @@ const ITEM_PLACEMENT = [
 ] as const;
 
 /**
+ * The row properties a grid in one column may set where its height hugs its rows, each with the
+ * values that leave every row its item's height, as {@link placesInOneColumn} reads them.
+ *
+ * - `grid-auto-rows` at `auto`, `min-content` or `max-content`: a grid of indefinite height has no
+ *   free space to stretch an `auto` row into (CSS Grid 1 §11.8), and a block-level item's min-content
+ *   and max-content heights are both its height at the column's width (CSS Sizing 3 §5.1), so each
+ *   row takes its item's height.
+ * - `align-items` at any value but `baseline`: it places each item within its row on the block axis
+ *   (CSS Box Alignment 3 §6.1), and a row as tall as its one item leaves no room to place it in.
+ */
+const HUGGING_ROWS = new Map<string, (value: string) => boolean>([
+  ["grid-auto-rows", (value) => ["auto", "min-content", "max-content"].includes(value)],
+  ["align-items", (value) => !value.includes("baseline")],
+]);
+
+/** Why a grid in one column whose height hugs its rows drops a property of {@link HUGGING_ROWS}. */
+export const HUGGING_ROWS_DETAIL =
+  "the grid's height hugs its rows, so each row is its one item's height and leaves the item nowhere to move";
+
+/**
  * Whether a grid puts every item in one column, one row each: it sets no track, template or alignment
  * of its own, flows its items in rows, which is the default, and holds only parts that set no
  * placement. Its one `auto` column then stretches to a definite grid width (CSS Grid 1 §7.1, §8.5,
- * §11.8), each item stretches across it (CSS Box Alignment 3 §6.1), and each row takes its item's
- * height. A box, icon or label that is no part may sit in the grid as an anonymous item, which the
- * rule does not model.
+ * §11.8), but no narrower than its widest item's least width (§11.5), so {@link readFlow} takes the
+ * grid as a column only where the capture measured that width inside the grid (`trackFits`). Each
+ * item stretches across the column (CSS Box Alignment 3 §6.1), and each row takes its item's
+ * height. Where the grid's height hugs its rows, a property of {@link HUGGING_ROWS} at a value it
+ * lists keeps that so. A box, icon or label that is no part may sit in the grid as an anonymous
+ * item, which the rule does not model.
  */
-function placesInOneColumn(reader: LayerStyle, flow: FlowLayers): boolean {
+function placesInOneColumn(reader: LayerStyle, flow: FlowLayers, rowsHug: boolean): boolean {
   const autoFlow = normalizeCss(reader.raw("grid-auto-flow") ?? "row");
+  const leavesRows = (property: string): boolean => {
+    const keeps = HUGGING_ROWS.get(property);
+    return rowsHug && keeps?.(normalizeCss(reader.raw(property) ?? "")) === true;
+  };
   return (
     flow.parts.length > 0 &&
     flow.others.length === 0 &&
     autoFlow === "row" &&
-    GRID_TRACKS.every((property) => !reader.has(property)) &&
+    GRID_TRACKS.every((property) => !reader.has(property) || leavesRows(property)) &&
     flow.parts.every(({ style }) => ITEM_PLACEMENT.every((property) => !style.has(property)))
   );
 }

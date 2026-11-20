@@ -142,6 +142,8 @@ export type MeasuredBox = {
   readonly lineFits: boolean;
   /** The box ends its one line in an ellipsis with room for its first character and the ellipsis. */
   readonly ellipsisFits: boolean;
+  /** The box is a grid whose one column is its content width, with its items' least widths inside. */
+  readonly trackFits: boolean;
 };
 
 /**

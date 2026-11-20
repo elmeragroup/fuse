@@ -89,7 +89,13 @@ export const KIT_PARITY = {
   // The Button sets leave out the corners a Button takes inside a group.
   "button-group": { kind: "issue", issue: MISSING_SETS },
   calendar: { kind: "issue", issue: CALENDAR_DAY },
-  card: { kind: "issue", issue: MISSING_SETS },
+  card: {
+    kind: "partial",
+    sets: ["card"],
+    missing:
+      '`direction="horizontal"`, `Card.Action`, `Card.Tag`, `Card.Section`, `Card.SectionButton`, a title `icon`, the title and description `size`s, and a card without its header, description or footer.',
+    issue: MISSING_SETS,
+  },
   carousel: { kind: "issue", issue: MISSING_SETS },
   chart: { kind: "excluded", reason: CHARTS },
   checkbox: { kind: "partial", sets: ["checkbox"], missing: "The invalid focus ring.", issue: MISSING_SETS },

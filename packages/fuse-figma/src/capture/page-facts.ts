@@ -45,6 +45,11 @@ import { coincidingAround } from "./coinciding-around.ts";
  *   by 1px above and below (CSS 2.1 §10.8.1), so the line box adds nothing to the child by at least
  *   that margin. The second reading holds only where the page's computed line height took the 2px
  *   and the child kept its own.
+ * - `trackFits`: a grid with one column, as wide as its content box, whose column at the grid's
+ *   min-content width, with no `min-width` or `max-width` of its own, is at least
+ *   {@link TRACK_CLEARANCE_PX} narrower than its column at the captured width. The items' least
+ *   widths then fit inside the content box, so the `auto` column is the content box's width (CSS
+ *   Grid 1 §11.5, §11.8), on both platforms the capture runs on.
  *
  * The page restores every element it changes before it returns.
  *
@@ -68,6 +73,18 @@ export async function measuredFacts(
   // SAFETY: the page function returns facts by path, as plain JSON.
   return new Map(Object.entries((result.value ?? {}) as Record<string, MeasuredFacts>));
 }
+
+/**
+ * The least room, in CSS pixels, a one-column grid's column must keep past its items' least width
+ * for the page to record `trackFits`. Chromium sets the same text a fraction of a pixel wider on one
+ * platform than the other: on 2026-11-17 the same Roboto 600 24px words gave a grid a min-content
+ * column of 140.859px on macOS and 141px in Playwright's Linux image. The page records the fact
+ * only with a whole pixel to spare, the room `ellipsisFits` keeps for the same reason, so a grid
+ * whose least width comes close to its column records nothing and the build leaves it unmapped. A
+ * least width within the platforms' fraction of a pixel of that bound could still land on either
+ * side, so `figma:capture --check` in the Linux image is what shows each kept capture agrees.
+ */
+const TRACK_CLEARANCE_PX = 1;
 
 /** The page side of {@link measuredFacts}, called on the root. */
 const MEASURE_IN_PAGE = `function () {
@@ -198,6 +215,17 @@ const MEASURE_IN_PAGE = `function () {
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
     const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
+    const tracks = style.display.endsWith("grid") ? style.gridTemplateColumns.trim().split(/\\s+/) : [];
+    if (tracks.length === 1) {
+      const column = Number.parseFloat(tracks[0] ?? "");
+      const saved = element.getAttribute("style");
+      element.style.setProperty("width", "min-content", "important");
+      element.style.setProperty("min-width", "0px", "important");
+      element.style.setProperty("max-width", "none", "important");
+      const least = Number.parseFloat(getComputedStyle(element).gridTemplateColumns);
+      if (saved === null) { element.removeAttribute("style"); } else { element.setAttribute("style", saved); }
+      if (Math.abs(column - contentWidth(element)) <= 0.5 && least + ${String(TRACK_CLEARANCE_PX)} <= column) { put(path, "trackFits", true); }
+    }
     if (style.flexWrap.startsWith("wrap") && element.children.length > 1) {
       let bottom = -Infinity;
       let lines = 0;

@@ -282,6 +282,7 @@
                       "pseudo": {},
                       "variables": {"--border":{"_tag":"theme"}},
                       "unmatched": [],
+                      "measured": {"trackFits":true},
                       "children": [
                         {
                           "tag": "li",
@@ -473,6 +474,7 @@
                       "pseudo": {},
                       "variables": {"--border":{"_tag":"theme"}},
                       "unmatched": [],
+                      "measured": {"trackFits":true},
                       "children": [
                         {
                           "tag": "li",

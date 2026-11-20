@@ -441,6 +441,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("command-dialog-cell.ts", import.meta.url), name: "commandDialogOpen" },
   },
   {
+    set: "card",
+    entry: "dist/card.js",
+    load: async () => (await import("./card-cell.ts")).card,
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,

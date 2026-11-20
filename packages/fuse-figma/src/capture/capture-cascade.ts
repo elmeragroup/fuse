@@ -2004,5 +2004,6 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     holdsWidest: holds(element),
     lineFits: facts?.lineFits === true,
     ellipsisFits: facts?.ellipsisFits === true,
+    trackFits: facts?.trackFits === true,
   };
 }

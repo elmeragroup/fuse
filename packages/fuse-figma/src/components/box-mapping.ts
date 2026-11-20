@@ -9,6 +9,7 @@
 import type { BoxCascade, PartElement } from "./box-cascade";
 import type { MarkerReading } from "./box-flow";
 import {
+  HUGGING_ROWS_DETAIL,
   isPlainBlock,
   negativeRowSpacing,
   orderModified,
@@ -186,6 +187,9 @@ function readDisplay(
       lays
     );
     reader.mark("column-gap", "dropped", ONE_COLUMN_GAP, []);
+    // `readFlow` took the grid as one column only where these leave each row its item's height.
+    reader.mark("grid-auto-rows", "dropped", HUGGING_ROWS_DETAIL, []);
+    reader.mark("align-items", "dropped", HUGGING_ROWS_DETAIL, []);
     return false;
   }
   if (display === "grid") {
@@ -491,7 +495,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         (label === undefined ? (lastIcon.get("start") ?? flowingBefore.at(-1)?.cascade.style) : undefined),
       labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
     },
-    { sizing, limits, inside, markers, lineFits: cascade.measured?.lineFits === true }
+    {
+      sizing,
+      limits,
+      inside,
+      markers,
+      lineFits: cascade.measured?.lineFits === true,
+      trackFits: cascade.measured?.trackFits === true,
+    }
   );
   const { layout } = flow;
   // A class that spaces every child but the last draws as the item spacing only where each element

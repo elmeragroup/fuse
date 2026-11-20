@@ -25,6 +25,7 @@ import {
   UNLIMITED,
 } from "../../test/capture-fixtures";
 import type { FixtureElement, FixtureOptions } from "../../test/capture-fixtures";
+import type { MeasuredFacts } from "../capture/capture-format";
 import type { PartManifest } from "../capture/manifest";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
@@ -298,6 +299,128 @@ describe("a grid that centers its content", () => {
   it("is unmapped when it holds more than one layer", async () => {
     const { rows } = await build(2);
     expect(rows).toEqual(["grid: unmapped", "place-content-center: unmapped"]);
+  });
+});
+
+// Oracle: CSS Grid 1 §11.5 and §11.8, CSS Box Alignment 3 §6.1, and Chromium. A grid's one `auto`
+// column stretches to the grid's content width, but never below its widest item's least width:
+// Chromium lays a 256px grid whose flex-column item holds a 400px box out with a 400px column and a
+// 400px item. So the column draws only where the capture measured it as wide as the grid
+// (`trackFits`). An `auto` row takes the free space of a grid of fixed height: in a 40px grid one
+// 4px item's `auto` row is 40px in Chromium, and `items-center` centres the item in it, where a
+// packed column would draw it at the top. Where the grid's height hugs its rows, each row is its
+// item's height, so the row size and the alignment place nothing.
+describe("a grid in one column", () => {
+  async function build(classes: string, item: FixtureElement, measured: MeasuredFacts) {
+    const { variant, coverage } = await buildCaptured(
+      chip({ parts: [part({ parts: [part({ key: "inner", slot: "inner" })] })], previewWidth: 256 }),
+      rest({ slot: "chip", classes, children: [item], measured })
+    );
+    const rows = coverage
+      .filter(
+        (row) => row.part === "chip" && ["display", "grid-auto-rows", "align-items"].includes(row.property)
+      )
+      .map((row) => `${row.property}: ${row.outcome}`)
+      .toSorted();
+    return { root: variant?.root, rows };
+  }
+
+  const ITEM: FixtureElement = { slot: "chip-dot", classes: "h-[4px]", children: [{ slot: "inner" }] };
+  const FITS: MeasuredFacts = { trackFits: true };
+
+  it("draws a column whose items fill across where its rows hug, and drops the row size and alignment", async () => {
+    const { root, rows } = await build("grid auto-rows-min items-start", ITEM, FITS);
+    expect(root?.direction).toEqual("VERTICAL");
+    expect(
+      root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
+    ).toEqual([FILL]);
+    expect(rows).toEqual(["align-items: dropped", "display: literal", "grid-auto-rows: dropped"]);
+  });
+
+  it.each([
+    [
+      "hugs its rows",
+      "grid auto-rows-auto items-center",
+      ["align-items: dropped", "display: literal", "grid-auto-rows: dropped"],
+    ],
+    [
+      "is 40px tall, where the row takes the free space",
+      "grid auto-rows-auto items-center h-[40px]",
+      ["align-items: unmapped", "display: unmapped", "grid-auto-rows: unmapped"],
+    ],
+  ])("with auto rows centring its item, maps only where it %s", async (_case, classes, expected) => {
+    const { rows } = await build(classes, ITEM, FITS);
+    expect(rows).toEqual(expected);
+  });
+
+  it("stays unmapped where its column is wider than the grid, as an item's least width makes it", async () => {
+    const wide: FixtureElement = {
+      slot: "chip-dot",
+      classes: "flex flex-col",
+      children: [{ slot: "inner", classes: "w-[400px] h-[10px]" }],
+    };
+    // The capture records no `trackFits` here, since the column is wider than the grid.
+    const { root, rows } = await build("grid auto-rows-min items-start w-[256px]", wide, {});
+    expect(rows).toContain("display: unmapped");
+    expect(
+      root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
+    ).not.toEqual([FILL]);
+  });
+});
+
+// Oracle: CSS Containment 2 §3.2, CSS Flexbox 1 §4.5 and Chromium. Inline-size containment sizes a
+// box's width as if it held nothing, and so drops a flex item's content-based minimum: in a 100px
+// row, two `w-[100px]` items each holding a 200px box stay 100px wide, and with `@container` Chromium
+// shrinks them to 50px. A width a column stretches across, or a block-level root's width in its
+// block host, reads no content, so the containment changes nothing there. A box that hugs, a growing
+// flex item and a declared width read content or a share of the row, so it stays unmapped.
+describe("an inline-size container", () => {
+  it("drops the containment on a block-level root its preview's host sets the width of", async () => {
+    const { coverage } = await buildChip("@container flex flex-col", [], { previewWidth: 256 });
+    expect(notesOf(coverage, "@container")).toEqual([
+      [
+        "container-type",
+        "dropped",
+        "the root is block-level in the preview's block host, which sets its width",
+      ],
+    ]);
+  });
+
+  it("drops the containment on a part a column stretches across", async () => {
+    const { coverage } = await buildWithDot("flex flex-col w-[256px]", "@container h-[4px]");
+    expect(notesOf(coverage, "@container")).toEqual([
+      [
+        "container-type",
+        "dropped",
+        "a column, a grid in one column or a block stretches the box across, which no content sizes",
+      ],
+    ]);
+  });
+
+  it.each([
+    ["a root that hugs its width", () => buildChip("@container inline-flex")],
+    ["a growing flex item", () => buildWithDot("flex w-[256px]", "@container flex-1 h-[4px]")],
+    [
+      "a shrinkable flex item of declared width",
+      () =>
+        buildCaptured(
+          chip({ parts: [part({ parts: [part({ key: "inner", slot: "inner" })] })] }),
+          rest({
+            slot: "chip",
+            classes: "flex w-[100px]",
+            children: [
+              {
+                slot: "chip-dot",
+                classes: "@container w-[100px] flex flex-col",
+                children: [{ slot: "inner", classes: "w-[200px] h-[10px]" }],
+              },
+            ],
+          })
+        ),
+    ],
+  ])("leaves the containment unmapped on %s", async (_case, build) => {
+    const { coverage } = await build();
+    expect(notesOf(coverage, "@container").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 

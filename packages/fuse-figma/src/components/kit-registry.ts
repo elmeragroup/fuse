@@ -22,6 +22,7 @@ import {
   BREADCRUMB_TRAIL_MANIFEST,
 } from "./breadcrumb-kit";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
+import { CARD_MANIFEST } from "./card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
 import {
   COMBOBOX_EMPTY_MANIFEST,
@@ -231,6 +232,9 @@ const DROPDOWN_MENU_PAGE: KitPage = {
 
 /** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty", example: "empty" };
+
+/** The page Card sits on alone. */
+const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
 
 /** The page Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link", example: "link" };
@@ -802,4 +806,5 @@ export const KIT: readonly KitEntry[] = [
     previewCells: possibleCells(DIALOG_OPEN_MANIFEST),
     manifest: DIALOG_OPEN_MANIFEST,
   },
+  { page: CARD_PAGE, previewCells: possibleCells(CARD_MANIFEST), manifest: CARD_MANIFEST },
 ];
