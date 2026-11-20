@@ -349,3 +349,90 @@ describe("a radius per corner", () => {
     expect(coverage.some((row) => row.outcome === "unmapped" && row.property.endsWith("radius"))).toBe(true);
   });
 });
+
+// Oracle: CSS Logical Properties 1 §4, CSS Cascade 5 §6 and CSS Backgrounds 3 §3.3. In a
+// left-to-right horizontal page `border-inline-start-color` and `border-inline-color` set the left
+// side's color, and the declaration applied last wins it, so `border-s-*` or `border-x-*` after a
+// `border-*` color paints the left side, as a chip segment's `border-transparent border-0 border-s
+// border-s-border` draws a hairline. A side at a zero width draws nothing whatever its style.
+describe("a stroke on some sides", () => {
+  const RED = { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } as const;
+
+  it("takes the color its drawing side sets of its own", async () => {
+    const { variant, coverage } = await buildChip(
+      "border border-transparent border-0 border-s border-s-[#ff0000]"
+    );
+    expect(variant?.root.stroke).toEqual({ color: RED, sides: { top: 0, right: 0, bottom: 0, left: 1 } });
+    expect(notesOf(coverage, "border-transparent")).toEqual([
+      ["border-color", "dropped", "it colors only sides the border gives no width, which draw nothing"],
+    ]);
+  });
+
+  it("takes the color of the axis shorthand that wins its drawing side", async () => {
+    const { variant, coverage } = await buildChip("border-s border-transparent border-x-[#ff0000]");
+    expect(variant?.root.stroke).toEqual({ color: RED, sides: { top: 0, right: 0, bottom: 0, left: 1 } });
+    expect(notesOf(coverage, "border-transparent")).toEqual([
+      ["border-color", "dropped", "it colors only sides the border gives no width, which draw nothing"],
+    ]);
+  });
+
+  it.each([
+    "border-s-0 border-transparent",
+    "border-s-0 [border-inline-start-style:dashed] border-s-[#ff0000]",
+    "border-t-0 border-r-0 border-b-0 border-l-0 border-transparent",
+  ])("draws no stroke from %s, whose sides have no width", async (classes) => {
+    const { variant, coverage } = await buildChip(classes);
+    expect(variant?.root.stroke).toBeUndefined();
+    const color = classes.split(" ").at(-1) ?? "";
+    expect(notesOf(coverage, color).map(([, outcome, detail]) => [outcome, detail])).toEqual([
+      ["dropped", "it colors only sides the border gives no width, which draw nothing"],
+    ]);
+  });
+
+  it("leaves the stroke unmapped where a border shorthand wins its drawing side's color", async () => {
+    // `border-left` comes after `border-inline-color`, so its blue wins the left side's color, and
+    // the left side's own width and style, after both, draw it.
+    const { variant, coverage } = await buildChip(
+      "[border-inline-color:#ff0000] [border-left:0_solid_#0000ff] border-l [border-left-style:solid]"
+    );
+    expect(variant?.root.stroke).toBeUndefined();
+    expect(notesOf(coverage, "[border-left:0_solid_#0000ff]")).toEqual([
+      [
+        "border-left",
+        "unmapped",
+        "a border shorthand colors a side that draws, and the build does not read it",
+      ],
+    ]);
+    expect(notesOf(coverage, "[border-inline-color:#ff0000]")).toEqual([
+      [
+        "border-inline-color",
+        "dropped",
+        "it colors only sides the border gives no width, which draw nothing",
+      ],
+    ]);
+  });
+
+  it("leaves a side's color unmapped where its style does not map", async () => {
+    const { variant, coverage } = await buildChip(
+      "border-s [border-inline-start-style:dashed] border-transparent border-s-[#ff0000]"
+    );
+    expect(variant?.root.stroke).toBeUndefined();
+    expect(notesOf(coverage, "border-s-[#ff0000]").map(([property, outcome]) => [property, outcome])).toEqual(
+      [["border-inline-start-color", "unmapped"]]
+    );
+  });
+
+  it("leaves the stroke out where the sides that draw take two colors", async () => {
+    const { variant, coverage } = await buildChip(
+      "border-0 border-s border-e border-s-[#ff0000] border-e-[#0000ff]"
+    );
+    expect(variant?.root.stroke).toBeUndefined();
+    expect(notesOf(coverage, "border-s-[#ff0000]")).toEqual([
+      [
+        "border-inline-start-color",
+        "unmapped",
+        "Figma strokes every side in one color, and the sides that draw take two",
+      ],
+    ]);
+  });
+});

@@ -190,6 +190,46 @@ export async function buildCaptured(
   return { ...built, variant: built.componentSet.variants[0] };
 }
 
+/** The physical sides of a border on a horizontal, left-to-right page. */
+const BORDER_SIDES = ["top", "right", "bottom", "left"] as const;
+
+/** The physical sides each logical border side or axis names on that page (CSS Logical Properties 1 §4). */
+const LOGICAL_BORDER_SIDES = new Map<string, readonly string[]>([
+  ["block", ["top", "bottom"]],
+  ["inline", ["left", "right"]],
+  ["block-start", ["top"]],
+  ["block-end", ["bottom"]],
+  ["inline-start", ["left"]],
+  ["inline-end", ["right"]],
+]);
+
+/** The longhands of a side's border, besides `border-image`'s. */
+const BORDER_PARTS = ["width", "style", "color"] as const;
+
+/** The longhands `border` resets to their initial values besides its sides' (CSS Backgrounds 3 §3.5). */
+const BORDER_IMAGE = ["source", "slice", "width", "outset", "repeat"].map((part) => `border-image-${part}`);
+
+/**
+ * The physical longhands a border property sets, as Chromium lists them and the capture records them
+ * (CSS Backgrounds 3 §3, CSS Logical Properties 1 §4): `border-color` sets each side's color, and
+ * `border-inline-start-color` the left side's. Undefined for a property no border shorthand or side
+ * names, a radius included.
+ */
+function borderLonghands(property: string): readonly string[] | undefined {
+  const match =
+    /^border(?:-(top|right|bottom|left|(?:block|inline)(?:-(?:start|end))?))?(?:-(width|style|color))?$/.exec(
+      property
+    );
+  if (match === null) {
+    return undefined;
+  }
+  const [, named, part] = match;
+  const sides = named === undefined ? BORDER_SIDES : (LOGICAL_BORDER_SIDES.get(named) ?? [named]);
+  const parts = part === undefined ? BORDER_PARTS : [part];
+  const longhands = sides.flatMap((side) => parts.map((each) => `border-${side}-${each}`));
+  return property === "border" ? [...longhands, ...BORDER_IMAGE] : longhands;
+}
+
 /** The capture of a hand-built set, with the declarations each element wins from its classes. */
 function captureOf(
   { manifest, cells }: FixtureSet,
@@ -216,7 +256,8 @@ function captureOf(
             important: false,
             longhands: declaration.property.startsWith("--")
               ? [declaration.property]
-              : expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand),
+              : (borderLonghands(declaration.property) ??
+                expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
           },
         ],
       }))
