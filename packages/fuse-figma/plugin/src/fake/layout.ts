@@ -211,7 +211,7 @@
  *    written is half a pixel, rather than approve a place the real file does not keep.
  */
 
-import { hiddenByProperty, markOverride, noteOverride } from "./overrides.ts";
+import { isHidden, markOverride, noteOverride } from "./overrides.ts";
 import { bindingTargets, CORNERS, f32, isAutoLayout, isTextField, sourceOf, write } from "./state.ts";
 import type {
   Axis,
@@ -582,14 +582,14 @@ function hugsInstances(state: NodeState, axis: Axis): boolean {
 /**
  * The length of an axis a frame hugs around its children as they stand (rule 32): along its
  * direction their lengths, `itemSpacing` between them and its padding, and across it the longest
- * child that does not fill that axis and its padding. A layer a BOOLEAN property hides leaves the
+ * child that does not fill that axis and its padding. A hidden layer, by a property or a write, leaves the
  * layout, as it did on a real file (PB), and so does an absolute one (rule 24). An instance lays out
  * its own children by its main's layout as that stands, so `layout` names the node whose direction,
  * padding, spacing and stroke apply (rule 47).
  */
 function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): number {
   const flow = childrenOf(state).filter(
-    (child) => child.layoutPositioning !== "ABSOLUTE" && !hiddenByProperty(child)
+    (child) => child.layoutPositioning !== "ABSOLUTE" && !isHidden(child)
   );
   const padding =
     axis === "HORIZONTAL"
@@ -697,7 +697,7 @@ export function lengthOn(state: NodeState, axis: Axis): number {
 export function sizingOn(state: NodeState, axis: Axis): Sizing {
   if (fills(state, axis)) {
     // A hidden layer keeps the fill in its grow or stretch and reads FIXED (rule 42).
-    return hiddenByProperty(state) ? "FIXED" : "FILL";
+    return isHidden(state) ? "FIXED" : "FILL";
   }
   if (state.type === "TEXT") {
     return textHugs(state, axis) ? "HUG" : "FIXED";

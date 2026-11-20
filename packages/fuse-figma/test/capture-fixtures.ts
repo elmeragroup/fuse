@@ -254,6 +254,24 @@ export function part(fields: PartFields = {}): PartManifest {
   return fields.parts === undefined ? withOptional : { ...withOptional, parts: fields.parts };
 }
 
+/**
+ * Build a chip whose root wins the given classes and holds the given elements.
+ *
+ * @param classes - The classes the root wins, space-separated.
+ * @param children - The elements the root holds.
+ * @param manifest - Manifest fields to set, such as `parts`.
+ * @param options - The registered classes and synced variables the build reads.
+ * @returns The built set, with its first variant.
+ */
+export function buildChip(
+  classes: string,
+  children: readonly FixtureElement[] = [],
+  manifest: Partial<SetManifest> = {},
+  options: FixtureOptions = {}
+): Promise<BuiltFixture> {
+  return buildCaptured(chip(manifest), rest({ slot: "chip", classes, children }), options);
+}
+
 /** The one cell of a `chip` with the default axis, whose root is the given element. */
 export function rest(root: FixtureElement): readonly FixtureCell[] {
   return [{ cell: { state: "rest" }, root }];

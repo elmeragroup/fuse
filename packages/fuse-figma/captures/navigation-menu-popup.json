@@ -235,7 +235,7 @@
           "pseudo": {},
           "variables": {"--available-height":{"_tag":"element","up":1},"--available-width":{"_tag":"element","up":1},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--popover":{"_tag":"theme"},"--popover-foreground":{"_tag":"theme"},"--popup-height":{"_tag":"element","up":0},"--popup-width":{"_tag":"element","up":0},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
           "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0"],
-          "measured": {"coincidingAround":1,"underMaxHeight":true},
+          "measured": {"coincidingAround":1,"underMaxHeight":true,"underMaxWidth":true},
           "children": [
             {
               "tag": "span",
@@ -270,7 +270,7 @@
                   "pseudo": {},
                   "variables": {"--available-height":{"_tag":"element","up":3},"--available-width":{"_tag":"element","up":3},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--shell-corner":{"_tag":"element","up":2},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-sm":{"_tag":"element","up":7}},
                   "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0","motion-safe:data-starting-style:data-[activation-direction=left]:-translate-x-1/2","motion-safe:data-starting-style:data-[activation-direction=right]:translate-x-1/2","motion-safe:data-ending-style:data-[activation-direction=left]:translate-x-1/2","motion-safe:data-ending-style:data-[activation-direction=right]:-translate-x-1/2"],
-                  "measured": {"underMaxHeight":true},
+                  "measured": {"underMaxHeight":true,"underMaxWidth":true},
                   "children": [
                     {
                       "tag": "ul",
@@ -427,7 +427,7 @@
           "pseudo": {},
           "variables": {"--available-height":{"_tag":"element","up":1},"--available-width":{"_tag":"element","up":1},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--popover":{"_tag":"theme"},"--popover-foreground":{"_tag":"theme"},"--popup-height":{"_tag":"element","up":0},"--popup-width":{"_tag":"element","up":0},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"element","up":0},"--tw-shadow-color":{"_tag":"unset"}},
           "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0"],
-          "measured": {"coincidingAround":1,"underMaxHeight":true},
+          "measured": {"coincidingAround":1,"underMaxHeight":true,"underMaxWidth":true},
           "children": [
             {
               "tag": "span",
@@ -462,7 +462,7 @@
                   "pseudo": {},
                   "variables": {"--available-height":{"_tag":"element","up":3},"--available-width":{"_tag":"element","up":3},"--border":{"_tag":"theme"},"--ease-out":{"_tag":"theme"},"--shell-corner":{"_tag":"element","up":2},"--shell-inner":{"_tag":"element","up":0},"--surface-pad-sm":{"_tag":"element","up":7}},
                   "unmatched": ["data-ending-style:opacity-0","data-starting-style:opacity-0","motion-safe:data-starting-style:data-[activation-direction=left]:-translate-x-1/2","motion-safe:data-starting-style:data-[activation-direction=right]:translate-x-1/2","motion-safe:data-ending-style:data-[activation-direction=left]:translate-x-1/2","motion-safe:data-ending-style:data-[activation-direction=right]:-translate-x-1/2"],
-                  "measured": {"underMaxHeight":true},
+                  "measured": {"underMaxHeight":true,"underMaxWidth":true},
                   "children": [
                     {
                       "tag": "ul",

@@ -395,6 +395,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // The default demo's vertical card at the default and the lg size.
   { slug: "card", name: "Card", sets: [{ key: "card", name: "Card", variants: 2, previewed: 2 }] },
+  // The default demo's bar over two selected rows.
+  {
+    slug: "action-bar",
+    name: "Action bar",
+    sets: [{ key: "action-bar", name: "Action bar", variants: 1, previewed: 1 }],
+  },
+  // The "No close button" demo's panel on the right side.
+  {
+    slug: "sheet",
+    name: "Sheet",
+    sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

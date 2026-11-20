@@ -10,6 +10,7 @@
  */
 import type { SetManifest } from "../capture/manifest";
 import { ACCORDION_ITEM_MANIFEST } from "./accordion-kit";
+import { ACTION_BAR_MANIFEST } from "./action-bar-kit";
 import { ALERT_DIALOG_CONTENT_MANIFEST, ALERT_DIALOG_OPEN_MANIFEST } from "./alert-dialog-kit";
 import { ALERT_MANIFEST } from "./alert-kit";
 import { AVATAR_GROUP_MANIFEST, AVATAR_MANIFEST } from "./avatar-kit";
@@ -89,6 +90,7 @@ import { SELECT_FIELD_MANIFEST } from "./select-field-kit";
 import { SELECT_ITEM_MANIFEST, SELECT_OPEN_MANIFEST, SELECT_POPUP_MANIFEST } from "./select-kit";
 import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 import { SEPARATOR_MANIFEST } from "./separator-kit";
+import { SHEET_CONTENT_MANIFEST } from "./sheet-kit";
 import {
   SIDEBAR_GROUP_LABEL_MANIFEST,
   SIDEBAR_MENU_BADGE_MANIFEST,
@@ -235,6 +237,12 @@ const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty", example: "empty" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
+
+/** The page Action bar sits on alone. */
+const ACTION_BAR_PAGE: KitPage = { slug: "action-bar", name: "Action bar", example: "action-bar" };
+
+/** The page Sheet content sits on alone. */
+const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
 
 /** The page Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link", example: "link" };
@@ -807,4 +815,14 @@ export const KIT: readonly KitEntry[] = [
     manifest: DIALOG_OPEN_MANIFEST,
   },
   { page: CARD_PAGE, previewCells: possibleCells(CARD_MANIFEST), manifest: CARD_MANIFEST },
+  {
+    page: ACTION_BAR_PAGE,
+    previewCells: possibleCells(ACTION_BAR_MANIFEST),
+    manifest: ACTION_BAR_MANIFEST,
+  },
+  {
+    page: SHEET_PAGE,
+    previewCells: possibleCells(SHEET_CONTENT_MANIFEST),
+    manifest: SHEET_CONTENT_MANIFEST,
+  },
 ];

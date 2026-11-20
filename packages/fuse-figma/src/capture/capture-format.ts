@@ -105,6 +105,16 @@ const MeasuredFactsSchema = Schema.Struct({
   /** The element stays more than half a pixel under its `max-height`. */
   underMaxHeight: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * In every density and theme, the element is as wide with its `max-width` 24px lower, so the
+   * maximum never narrows it.
+   */
+  underMaxWidth: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * A flex line whose items hold auto margins along it, which in every density and theme leaves at
+   * least 24px of free space for them, so they take room and push the items after them to its end.
+   */
+  freeAlongMain: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * The element's line box holds its one inline-level child with no height or baseline offset of
    * its own, by a margin of 1px above and below: its content box's top and bottom edges are the
    * child's margin box's at its line height and at 2px more.

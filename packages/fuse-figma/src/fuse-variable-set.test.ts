@@ -257,6 +257,44 @@ describe("fuseVariableSet", () => {
     }
   });
 
+  it("syncs the tints a Frame and a RangeCalendar paint with, as their roles at the tint's alpha", async () => {
+    const compiled = await Effect.runPromise(compileUtilities(["bg-muted/72", "bg-primary/20"]));
+    const mixOf = (utility: string) =>
+      compiled.rules
+        .get(utility)
+        ?.declarations.findLast((declaration) => declaration.property === "background-color")?.value;
+    // TOKEN_PAINTS: muted is a surface and a line, and primary a surface, an ink and a line.
+    expect(spec("Fuse tokens", "muted/72")).toMatchObject({
+      type: "COLOR",
+      scopes: ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+      webSyntax: mixOf("bg-muted/72"),
+    });
+    expect(spec("Fuse tokens", "primary/20")).toMatchObject({
+      type: "COLOR",
+      scopes: ["ALL_FILLS", "STROKE_COLOR"],
+      webSyntax: mixOf("bg-primary/20"),
+    });
+    // Fjordkraft's neutral light theme takes `:root`'s `--muted: oklch(0.97 0.0013 106.42)` and
+    // `--primary: oklch(0.16 0 0)` in themes.css, which are sRGB 0.9609 0.9609 0.9571 and 0.0518 on
+    // every channel through the OKLab reference matrices, worked by hand.
+    const channels = (name: string) => {
+      const mixed = value("Fuse brand", `light/neutral/private/${name}`, "Fjordkraft");
+      if (mixed?._tag !== "Color") throw new Error(`${name} is no literal color`);
+      return mixed.color;
+    };
+    const muted = channels("muted/72");
+    const primary = channels("primary/20");
+    for (const [color, [r, g, b], a] of [
+      [muted, [0.9609, 0.9609, 0.9571], 0.72],
+      [primary, [0.0518, 0.0518, 0.0518], 0.2],
+    ] as const) {
+      expect(color.r).toBeCloseTo(r, 3);
+      expect(color.g).toBeCloseTo(g, 3);
+      expect(color.b).toBeCloseTo(b, 3);
+      expect(color.a).toBeCloseTo(a, 12);
+    }
+  });
+
   it("syncs input/50, which a disabled field box fills with, in input's pickers", () => {
     // TOKEN_PAINTS gives input the surface and line paints, so the frame and shape fill pickers
     // and the stroke picker offer it.
@@ -368,6 +406,50 @@ describe("fuseVariableSet", () => {
     expect(value("Fuse brand", "light/branded/company/radius-inner/lg-pad-8px", "Elmera")).toEqual(px(0));
   });
 
+  it("syncs the Calendar corner, and the corners inside a radius-lg shell padded 4px and a field box border, as their formulas give them for each theme", () => {
+    const corners = [
+      // Calendar's `rounded-[clamp(...)]`: radius where a theme steps 0px, and 4px where it steps 2px.
+      [
+        "radius-calendar",
+        "clamp(var(--radius) - 1000 * var(--radius-step, 0px), 4px, var(--radius) + 1000 * var(--radius-step, 0px))",
+      ],
+      // A Tabs trigger: radius-lg less `max(var(--spacing), 4px)`, which Tailwind's 0.25rem makes 4px.
+      ["radius-inner/lg-pad-4px", "max(0px, var(--radius) - max(0.25rem, 4px))"],
+      // A DatePicker's calendar trigger: the field box corner less its 1px border.
+      [
+        "radius-inner/field-border",
+        "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px)",
+      ],
+    ] as const;
+    for (const [name, webSyntax] of corners) {
+      expect(spec("Fuse tokens", name)).toMatchObject({
+        type: "FLOAT",
+        scopes: ["CORNER_RADIUS"],
+        webSyntax,
+      });
+      expect(spec("Fuse tokens", name)?.description).toMatch(
+        /Figma variables cannot compute, so the sync writes the result for each theme\.$/
+      );
+    }
+    // themes.css: Fjordkraft's neutral theme sets --radius 0.5rem, 8px, and steps 0px, its branded
+    // theme 0.75rem, 12px, stepping 2px, and TrøndelagKraft's branded theme 1rem, 16px, stepping 2px,
+    // with radius-field aliasing radius, as Elmera's 0.375rem, 6px.
+    expect(value("Fuse brand", "light/neutral/private/radius-calendar", "Fjordkraft")).toEqual(px(8));
+    expect(value("Fuse brand", "light/branded/private/radius-calendar", "Fjordkraft")).toEqual(px(4));
+    expect(value("Fuse brand", "light/neutral/private/radius-inner/lg-pad-4px", "Fjordkraft")).toEqual(px(4));
+    expect(value("Fuse brand", "dark/branded/company/radius-inner/lg-pad-4px", "TrøndelagKraft")).toEqual(
+      px(12)
+    );
+    expect(value("Fuse brand", "light/branded/company/radius-inner/lg-pad-4px", "Elmera")).toEqual(px(2));
+    expect(value("Fuse brand", "light/neutral/private/radius-inner/field-border", "Fjordkraft")).toEqual(
+      px(7)
+    );
+    expect(value("Fuse brand", "dark/branded/company/radius-inner/field-border", "Elmera")).toEqual(px(5));
+    expect(value("Fuse brand", "light/branded/private/radius-inner/field-border", "TrøndelagKraft")).toEqual(
+      px(15)
+    );
+  });
+
   it("syncs each formula over density metrics as a density metric of its own", () => {
     // fuse.css: --surface-pad-lg is 1rem dense and 1.5rem comfortable, --surface-gap-lg 1rem and
     // 1.5rem, and --label-text 0.875rem and 1rem. Tailwind's --spacing is 0.25rem and
@@ -416,6 +498,30 @@ describe("fuseVariableSet", () => {
         scopes: ["GAP"],
         dense: 4,
         comfortable: 8,
+      },
+      // A gutter Frame's panel header and footer pad across by its text inset, 1px plus the large
+      // surface tier, less an overhang of 0px; a flush Frame's by the same less its 1px overhang.
+      {
+        name: "frame-bar-inset",
+        webSyntax: "calc(calc(1px + var(--surface-pad-lg)) - 0px)",
+        scopes: ["GAP"],
+        dense: 17,
+        comfortable: 25,
+      },
+      {
+        name: "frame-bar-inset-flush",
+        webSyntax: "calc(calc(1px + var(--surface-pad-lg)) - 1px)",
+        scopes: ["GAP"],
+        dense: 16,
+        comfortable: 24,
+      },
+      // And above and below by half the large surface tier.
+      {
+        name: "frame-bar-py",
+        webSyntax: "calc(var(--surface-pad-lg) / 2)",
+        scopes: ["GAP"],
+        dense: 8,
+        comfortable: 12,
       },
     ] as const;
     for (const { name, webSyntax, scopes, dense, comfortable } of formulas) {
@@ -466,6 +572,20 @@ describe("fuseVariableSet", () => {
       ],
       // The button in an Input group addon: the field corner less its 1px border and the addon's
       // padding beside a button.
+      // The media of a default or sm Attachment, and of an xs one, padded row-px.
+      [
+        "radius-inner/md-border-pad-md",
+        "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - 1px - var(--surface-pad-md))",
+      ],
+      [
+        "radius-inner/md-border-pad-row",
+        "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - 1px - var(--row-px))",
+      ],
+      // A DateField segment: the field corner less its 1px border and the md control's inline padding.
+      [
+        "radius-inner/field-border-pad-md",
+        "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px - var(--control-px-md))",
+      ],
       [
         "radius-inner/field-border-pad-addon-button",
         "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px)) - 1px - var(--control-px-icon-md) + 0.25rem)",
@@ -490,6 +610,26 @@ describe("fuseVariableSet", () => {
         });
       }
       expect(spec("Fuse tokens", `${name}/auto`)).toBeUndefined();
+    }
+    // fuse.css: --surface-pad-md is 0.75rem dense and 1rem comfortable, --row-px 0.5rem and 0.75rem,
+    // and --control-px-md 0.625rem and 0.875rem. themes.css: TrøndelagKraft's branded theme sets
+    // --radius 1rem and steps 2px, so radius-md is 14px and the field corner, radius-field aliasing
+    // radius, 16px; Elmera's sets 0.375rem, so its field corner is 6px. Each corner is the rung less
+    // the 1px border and the padding, at least 0.
+    const perDensity = [
+      ["radius-inner/md-border-pad-md", "TrøndelagKraft", 1, 0],
+      ["radius-inner/md-border-pad-row", "TrøndelagKraft", 5, 1],
+      ["radius-inner/field-border-pad-md", "TrøndelagKraft", 5, 1],
+      ["radius-inner/field-border-pad-md", "Elmera", 0, 0],
+    ] as const;
+    for (const [name, brand, dense, comfortable] of perDensity) {
+      expect(value("Fuse brand", `light/branded/company/${name}/dense`, brand), `${name} dense`).toEqual(
+        px(dense)
+      );
+      expect(
+        value("Fuse brand", `light/branded/company/${name}/comfortable`, brand),
+        `${name} comfortable`
+      ).toEqual(px(comfortable));
     }
   });
 

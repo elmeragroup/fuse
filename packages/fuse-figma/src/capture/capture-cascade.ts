@@ -2000,6 +2000,8 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
       facts?.underMaxHeight === true && maxHeight?.value.includes("--available-") !== true
         ? MEASURED_UNDER_MAX_HEIGHT
         : undefined,
+    underMaxWidth: facts?.underMaxWidth === true,
+    freeAlongMain: facts?.freeAlongMain === true,
     widest: facts?.widest === true,
     holdsWidest: holds(element),
     lineFits: facts?.lineFits === true,

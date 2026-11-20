@@ -423,6 +423,11 @@ export type FrameLayerSpec = BoxSpec & {
    * for a layer that shows wherever its variant holds it.
    */
   readonly visibleProperty?: string;
+  /**
+   * True for a layer drawn hidden, Figma's `visible` false, as CSS's `visibility: hidden` paints
+   * nothing of the box; absent for a layer that shows. A hidden layer follows no BOOLEAN property.
+   */
+  readonly hidden?: true;
   /** How far the layer turns, in degrees as {@link RotationSpec} counts them, absent for none. */
   readonly rotation?: RotationSpec;
 };

@@ -142,24 +142,38 @@ function wraps(mode: string): boolean {
 /**
  * What `white-space-collapse` does to a label's characters: `collapse`, its initial value, folds runs
  * of white space and line breaks into one space, which changes nothing in characters that hold none, so
- * it drops. Characters that hold one, or another value, keep white space a Figma text draws as written,
- * which the build does not compare, so they stay unmapped.
+ * it drops. `preserve` keeps them as written, as a Figma text does, so it drops too, except for a
+ * label whose markup starts with a space its characters leave out (`leadingSpace`). Characters that
+ * hold a run of white space under `collapse`, or another value, stay unmapped.
  *
  * @param style - The label's box.
  * @param characters - The characters the label shows.
+ * @param leadingSpace - Whether the label's markup starts with a space its characters leave out.
  */
-function readWhiteSpaceCollapse(style: LayerStyle, characters: string): void {
+function readWhiteSpaceCollapse(style: LayerStyle, characters: string, leadingSpace: boolean): void {
   style.read(
     "white-space-collapse",
-    (written) =>
-      normalizeCss(written) === "collapse" && !/\s\s|[\t\n\r]|^\s|\s$/.test(characters) ? written : undefined,
-    () => ({
-      outcome: "dropped",
-      detail: "the characters hold no run of white space or line break to collapse",
-    }),
+    (written) => {
+      const collapse = normalizeCss(written);
+      // A sample whose markup starts with a space its characters leave out would keep it under `preserve`.
+      if (collapse === "preserve") {
+        return leadingSpace ? undefined : PRESERVED;
+      }
+      return collapse === "collapse" && !/\s\s|[\t\n\r]|^\s|\s$/.test(characters) ? COLLAPSED : undefined;
+    },
+    (detail) => ({ outcome: "dropped", detail }),
     []
   );
 }
+
+/** Why `white-space-collapse: collapse` drops on characters with no white space to fold. */
+const COLLAPSED = "the characters hold no run of white space or line break to collapse";
+
+/**
+ * Why `white-space-collapse: preserve`, which `whitespace-pre` sets, drops: it keeps every space and
+ * line break as written (CSS Text 4 §3.1), as a Figma text draws its characters.
+ */
+const PRESERVED = "a Figma text keeps every space and line break as written, as `preserve` does";
 
 /**
  * The characters a label shows in a cell.
@@ -978,7 +992,7 @@ function readLabelLayout(
   const ending = (count: number): string =>
     `the label ends in an ellipsis after ${count} ${count === 1 ? "line" : "lines"}`;
 
-  readWhiteSpaceCollapse(style, characters.shown);
+  readWhiteSpaceCollapse(style, characters.shown, label.leadingSpace === true);
   style.read(
     "text-wrap-mode",
     (written) => (["wrap", "nowrap"].includes(normalizeCss(written)) ? written : undefined),

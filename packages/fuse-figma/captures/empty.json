@@ -242,6 +242,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--container-sm":{"_tag":"theme"}},
               "unmatched": [],
+              "measured": {"underMaxWidth":true},
               "children": [
                 {
                   "tag": "div",
@@ -381,6 +382,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--container-sm":{"_tag":"theme"}},
               "unmatched": [],
+              "measured": {"underMaxWidth":true},
               "children": [
                 {
                   "tag": "div",
@@ -520,6 +522,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--container-sm":{"_tag":"theme"}},
               "unmatched": [],
+              "measured": {"underMaxWidth":true},
               "children": [
                 {
                   "tag": "div",

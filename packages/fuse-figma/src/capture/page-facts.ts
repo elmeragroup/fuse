@@ -4,8 +4,39 @@
  */
 import type { CDPSession } from "playwright";
 
+import { BRAND_CODES, BRANDS, THEME_IDENTITIES, themeAxisAttributes } from "@elmeragroup/fuse/theme-catalog";
+import type { Density } from "@elmeragroup/fuse/theme-catalog";
+
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
+
+/**
+ * A mode a designer can pick for a kit frame, as the page stamps it: the density on `<html>`, and
+ * the theme's `data-theme-*` attributes on `<body>`. The color scheme moves nothing a fact measures,
+ * so the page keeps its own.
+ */
+type PageMode = {
+  readonly root: Readonly<Record<"data-density", Density>>;
+  readonly body: ReturnType<typeof themeAxisAttributes>;
+};
+
+/** The densities the role metrics follow, which change the type and the lengths of a box. */
+const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
+
+/**
+ * Every density with every legal theme: each identity and brand, with each segment the brand
+ * allows. A fact that must hold wherever a designer puts the kit is measured in each.
+ */
+const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
+  THEME_IDENTITIES.flatMap((identity) =>
+    BRAND_CODES.flatMap((brand) =>
+      BRANDS[brand].segments.map((segment): PageMode => ({
+        root: { "data-density": density },
+        body: themeAxisAttributes({ identity, brand, segment }),
+      }))
+    )
+  )
+);
 
 /**
  * Measure a root's tree in the page and keep what holds on any platform, by each element's
@@ -22,6 +53,14 @@ import { coincidingAround } from "./coinciding-around.ts";
  * - `oneLine`: an element under a `max-width` whose own text sits on one line, or a wrapping flex
  *   row whose items do.
  * - `underMaxHeight`: an element more than half a pixel under its `max-height`.
+ * - `underMaxWidth`: an element as wide with its `max-width` {@link MAX_WIDTH_CLEARANCE_PX} lower,
+ *   in every mode of {@link EVERY_MODE} once the faces its text needs there have loaded, so the
+ *   maximum never narrows it. The page reads the lowered maximum back, so a maximum Chromium cannot
+ *   lower, such as `min-content`, which makes the `calc()` invalid, records nothing.
+ * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which with
+ *   those margins at zero leaves at least {@link FREE_SPACE_CLEARANCE_PX} between its last item and
+ *   its content box's end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the
+ *   margins take that room (CSS Flexbox 1 §8.1).
  * - `ellipsisFits`: an element that ends its one line of text in an ellipsis, `text-overflow:
  *   ellipsis` on a box that hides its overflow and keeps to one line, whose content box is at least
  *   a pixel wider than its first character and the ellipsis together. Chromium keeps the first
@@ -51,11 +90,15 @@ import { coincidingAround } from "./coinciding-around.ts";
  *   widths then fit inside the content box, so the `auto` column is the content box's width (CSS
  *   Grid 1 §11.5, §11.8), on both platforms the capture runs on.
  *
- * The page restores every element it changes before it returns.
+ * The page restores every element it changes before it returns, and the mode it stamps for the
+ * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
+ * caller measures them one after another.
  *
  * @param cdp - A DevTools session on the page.
  * @param nodeId - The root's node.
  * @returns Each element's facts, by its path from the root.
+ * @throws `FactsUnmeasured` where the page function throws, a defect in it or in the page, which
+ *   stops the capture rather than keep facts it did not finish measuring.
  */
 export async function measuredFacts(
   cdp: CDPSession,
@@ -65,11 +108,15 @@ export async function measuredFacts(
   if (object.objectId === undefined) {
     return new Map();
   }
-  const { result } = await cdp.send("Runtime.callFunctionOn", {
+  const { result, exceptionDetails } = await cdp.send("Runtime.callFunctionOn", {
     objectId: object.objectId,
     returnByValue: true,
+    awaitPromise: true,
     functionDeclaration: MEASURE_IN_PAGE,
   });
+  if (exceptionDetails !== undefined) {
+    throw new FactsUnmeasured(exceptionDetails.exception?.description ?? exceptionDetails.text);
+  }
   // SAFETY: the page function returns facts by path, as plain JSON.
   return new Map(Object.entries((result.value ?? {}) as Record<string, MeasuredFacts>));
 }
@@ -86,8 +133,37 @@ export async function measuredFacts(
  */
 const TRACK_CLEARANCE_PX = 1;
 
+/** The page threw while it measured a root's facts, so the capture has none to keep. */
+export class FactsUnmeasured extends Error {
+  readonly _tag = "FactsUnmeasured" as const;
+}
+
+/**
+ * How far below its `max-width` a box's width must stay, in CSS pixels, for the page to record
+ * `underMaxWidth`: the page lowers the maximum by this much and checks the width did not move. It
+ * absorbs the fraction of a pixel by which the same text sets wider on one platform than the other,
+ * which {@link TRACK_CLEARANCE_PX} records at under a pixel, many times over. No measurement of type
+ * across fonts backs the 24px; `figma:capture --check` in the Linux image shows each kept capture
+ * agrees.
+ */
+const MAX_WIDTH_CLEARANCE_PX = 24;
+
+/**
+ * The least free space, in CSS pixels, a flex line must leave its items' auto margins along its
+ * direction for the page to record `freeAlongMain`. It keeps the same margin as
+ * {@link MAX_WIDTH_CLEARANCE_PX}, for the same reason and with the same evidence.
+ */
+const FREE_SPACE_CLEARANCE_PX = 24;
+
+/**
+ * Chromium's layout unit, 1/64 of a CSS pixel: a box's width moves by at least this much when its
+ * maximum narrows it, so a smaller difference between two readings of one layout is no change.
+ */
+const LAYOUT_UNIT_PX = 1 / 64;
+
 /** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `function () {
+const MEASURE_IN_PAGE = `async function () {
+  const modes = ${JSON.stringify(EVERY_MODE)};
   const root = this;
   const out = {};
   const put = (path, key, value) => { (out[path] ??= {})[key] = value; };
@@ -117,6 +193,14 @@ const MEASURE_IN_PAGE = `function () {
     const width = element.getBoundingClientRect().width;
     if (style === null) { element.removeAttribute("style"); } else { element.setAttribute("style", style); }
     return width;
+  };
+  const inFlow = (element) => !["absolute", "fixed"].includes(getComputedStyle(element).position) && getComputedStyle(element).display !== "none";
+  // The auto margins of a flex container's items along its direction, as their computed values keep
+  // \`auto\` (CSS Typed OM), where \`getComputedStyle\` gives their used lengths.
+  const autoMargins = (element) => {
+    const direction = getComputedStyle(element).flexDirection;
+    const sides = direction.startsWith("row") ? ["left", "right"] : ["top", "bottom"];
+    return [...element.children].filter(inFlow).flatMap((child) => sides.filter((side) => String(child.computedStyleMap().get("margin-" + side)) === "auto").map((side) => ({ child, side })));
   };
   const elements = [];
   const walk = (element, path) => {
@@ -212,6 +296,8 @@ const MEASURE_IN_PAGE = `function () {
       put(first.path, "widest", true);
     }
   }
+  const underMaxWidth = [];
+  const freeAlongMain = [];
   for (const { element, path } of elements) {
     const style = getComputedStyle(element);
     const own = [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
@@ -257,6 +343,8 @@ const MEASURE_IN_PAGE = `function () {
     if (style.maxHeight !== "none" && element.getBoundingClientRect().height + 0.5 < Number.parseFloat(style.maxHeight)) {
       put(path, "underMaxHeight", true);
     }
+    if (style.maxWidth !== "none") { underMaxWidth.push({ element, path }); }
+    if (style.display.endsWith("flex") && !style.flexWrap.startsWith("wrap") && autoMargins(element).length > 0) { freeAlongMain.push({ element, path }); }
     const [child, ...others] = element.children;
     const line = Number.parseFloat(style.lineHeight);
     if (child !== undefined && others.length === 0 && own.length === 0 && getComputedStyle(child).display.startsWith("inline-") && Number.isFinite(line)) {
@@ -284,5 +372,84 @@ const MEASURE_IN_PAGE = `function () {
       }
     }
   }
+  // The facts that must hold in every mode a designer can pick: each candidate is measured with the
+  // page stamped in each mode, once the faces the mode's text needs have loaded, and keeps the fact
+  // only where every mode keeps it. The page's own mode comes back whatever a measurement throws.
+  const settleFonts = async () => {
+    const faces = new Set();
+    for (const { element } of elements) {
+      if (ownText(element).length > 0) {
+        const style = getComputedStyle(element);
+        faces.add([style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily].join(" "));
+      }
+    }
+    await Promise.all([...faces].map((face) => document.fonts.load(face)));
+    await document.fonts.ready;
+  };
+  const holdsInEveryMode = async (candidates, holds) => {
+    if (candidates.length === 0) { return candidates; }
+    const html = document.documentElement;
+    const body = document.body;
+    const saved = [html, body].map((element) => [element, [...element.attributes].filter((attribute) => attribute.name.startsWith("data-")).map((attribute) => [attribute.name, attribute.value])]);
+    let kept = candidates;
+    try {
+      for (const mode of modes) {
+        for (const [name, value] of Object.entries(mode.root)) { html.setAttribute(name, value); }
+        for (const [name, value] of Object.entries(mode.body)) { body.setAttribute(name, value); }
+        await settleFonts();
+        kept = kept.filter((candidate) => holds(candidate.element));
+      }
+    } finally {
+      for (const [element, attributes] of saved) {
+        for (const name of [...element.attributes].map((attribute) => attribute.name).filter((name) => name.startsWith("data-"))) { element.removeAttribute(name); }
+        for (const [name, value] of attributes) { element.setAttribute(name, value); }
+      }
+    }
+    await settleFonts();
+    return kept;
+  };
+  // Write temporary styles on elements, measure, and put each \`style\` attribute back as it was.
+  const withStyles = (writes, measure) => {
+    const saved = [...new Set(writes.map(([element]) => element))].map((element) => [element, element.getAttribute("style")]);
+    try {
+      for (const [element, property, value] of writes) { element.style.setProperty(property, value, "important"); }
+      return measure();
+    } finally {
+      for (const [element, attribute] of saved) {
+        if (attribute === null) { element.removeAttribute("style"); } else { element.setAttribute("style", attribute); }
+      }
+    }
+  };
+  // A maximum is lowered by the clearance, which Chromium must apply: an intrinsic keyword such as
+  // \`min-content\` makes the \`calc()\` invalid, so it keeps its value.
+  const underMax = (element) => {
+    const maximum = getComputedStyle(element).maxWidth;
+    if (maximum === "none" || /content/.test(maximum)) { return false; }
+    const width = element.getBoundingClientRect().width;
+    return withStyles([[element, "max-width", "calc(" + maximum + " - ${String(MAX_WIDTH_CLEARANCE_PX)}px)"]], () =>
+      getComputedStyle(element).maxWidth !== maximum &&
+      Math.abs(element.getBoundingClientRect().width - width) < ${String(LAYOUT_UNIT_PX)});
+  };
+  for (const { path } of await holdsInEveryMode(underMaxWidth, underMax)) { put(path, "underMaxWidth", true); }
+  // A flex line holds its items and the gaps between them with room to spare along its direction
+  // once the auto margins along it give their room back.
+  const freeAlong = (element) => {
+    const style = getComputedStyle(element);
+    const row = style.flexDirection === "row";
+    if (!row && style.flexDirection !== "column") { return false; }
+    const writes = autoMargins(element).map(({ child, side }) => [child, "margin-" + side, "0px"]);
+    return withStyles(writes, () => {
+      const box = element.getBoundingClientRect();
+      const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
+      const end = row ? box.right - px("border-right-width") - px("padding-right") : box.bottom - px("border-bottom-width") - px("padding-bottom");
+      const used = Math.max(...[...element.children].filter(inFlow).map((child) => {
+        const edges = child.getBoundingClientRect();
+        const after = Number.parseFloat(getComputedStyle(child).getPropertyValue(row ? "margin-right" : "margin-bottom")) || 0;
+        return (row ? edges.right : edges.bottom) + after;
+      }));
+      return end - used >= ${String(FREE_SPACE_CLEARANCE_PX)};
+    });
+  };
+  for (const { path } of await holdsInEveryMode(freeAlongMain, freeAlong)) { put(path, "freeAlongMain", true); }
   return out;
 }`;

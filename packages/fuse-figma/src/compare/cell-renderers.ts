@@ -446,6 +446,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./card-cell.ts")).card,
   },
   {
+    set: "action-bar",
+    entry: "dist/action-bar.js",
+    load: async () => (await import("./action-bar-cell.ts")).actionBar,
+  },
+  {
     set: "empty",
     entry: "dist/empty.js",
     load: async () => (await import("./empty-cell.ts")).empty,
@@ -604,6 +609,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "dialog-open",
     entry: "dist/dialog.js",
     module: { url: new URL("dialog-cell.ts", import.meta.url), name: "dialogOpen" },
+  },
+  {
+    set: "sheet-content",
+    entry: "dist/sheet.js",
+    module: { url: new URL("sheet-cell.ts", import.meta.url), name: "sheetContent" },
   },
 ];
 

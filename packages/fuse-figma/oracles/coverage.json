@@ -48,6 +48,13 @@
       "className": "[&>span:last-child]:truncate",
       "property": "overflow",
       "reason": "Collapsed to the icon rail at the default and sm sizes, the row's 8px end padding lies between where the label span ends and where the row clips, and the label hugs its one line past the span, so the build cannot show that the row's clip cuts the text off at the span's edge. The span starts at the row's clip edge there, with no room left after the icon and the gap, so neither Chromium nor Figma shows any of the text. At the large size the row has no end padding and clips where the span ends."
+    },
+    {
+      "set": "sheet-content",
+      "part": "sheet-content",
+      "className": "bg-clip-padding",
+      "property": "background-clip",
+      "reason": "The panel's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
     }
   ],
   "unbound": [
@@ -455,6 +462,94 @@
       {
         "part": "card-header",
         "className": "has-data-[slot=card-action]:grid-cols-[1fr_auto]"
+      }
+    ],
+    "action-bar": [
+      {
+        "part": "action-bar",
+        "className": "data-vertical:flex-col"
+      },
+      {
+        "part": "separator",
+        "className": "data-horizontal:mx-1"
+      },
+      {
+        "part": "separator",
+        "className": "data-horizontal:self-stretch"
+      },
+      {
+        "part": "separator",
+        "className": "data-horizontal:w-auto"
+      }
+    ],
+    "sheet-content": [
+      {
+        "part": "sheet-content",
+        "className": "data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))]"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=bottom]:border-t"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=bottom]:bottom-0"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=bottom]:h-auto"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=bottom]:inset-x-0"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))]"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:border-r"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:h-full"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:inset-y-0"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:left-0"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:sm:max-w-(--overlay-width)"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=left]:w-full"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))]"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=top]:border-b"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=top]:h-auto"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=top]:inset-x-0"
+      },
+      {
+        "part": "sheet-content",
+        "className": "data-[side=top]:top-0"
       }
     ],
     "checkbox": [
@@ -5705,6 +5800,30 @@
       "property": "border-style",
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
       "at": ["dialog-open/placement=centered 1/around/2"]
+    },
+    {
+      "set": "action-bar",
+      "part": "action-bar-button-label",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
+      "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
+    },
+    {
+      "set": "action-bar",
+      "part": "action-bar-button-label",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
+      "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
+    },
+    {
+      "set": "action-bar",
+      "part": "action-bar-button-label",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
+      "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
     }
   ]
 }

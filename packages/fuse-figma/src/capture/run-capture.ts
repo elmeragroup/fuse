@@ -811,7 +811,11 @@ async function readCells(
   }
   const measured: (readonly RawCell[])[] = [];
   for (const roots of grouped) {
-    const facts = await Promise.all(roots.map((raw) => withMeasuredFacts(opened.cdp, raw)));
+    // The roots of a cell share the page whose mode each measurement stamps, so they measure in turn.
+    const facts: RawCell[] = [];
+    for (const raw of roots) {
+      facts.push(await withMeasuredFacts(opened.cdp, raw));
+    }
     measured.push(await withAnchorFact(opened.cdp, facts));
   }
   return { cells: measured, styled: await styledClasses(opened.cdp) };

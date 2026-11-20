@@ -38,6 +38,9 @@ const ONE_LINE = "a kit cell sets its text on one line, so the box has no line f
  * Properties Figma has no form for, or that describe behaviour a static component does not
  * show. A declaration of one that no layer reads lands in the coverage table as dropped.
  */
+/** Why `unicode-bidi: isolate` drops. */
+const ISOLATED = "Figma lays out each text layer on its own, so no text around it reorders with it";
+
 const NO_FIGMA_FORM = new Map([
   ["cursor", "a static frame has no pointer"],
   ["user-select", "a static frame has no selection"],
@@ -47,16 +50,28 @@ const NO_FIGMA_FORM = new Map([
   ["scroll-margin-block", "a static frame does not scroll, so nothing scrolls the box into view"],
   // `scroll-py-1` keeps a Combobox row 4px from its list's edge when it scrolls into view.
   ["scroll-padding-block", "a static frame does not scroll, so nothing scrolls into its view"],
+  // `scroll-px-8` keeps a scrolled chip clear of a row's faded edge.
+  ["scroll-padding-inline", "a static frame does not scroll, so nothing scrolls into its view"],
   ["overscroll-behavior", "a static frame does not scroll, so no scroll chains past it"],
+  ["overscroll-behavior-x", "a static frame does not scroll, so no scroll chains past it"],
+  ["overscroll-behavior-y", "a static frame does not scroll, so no scroll chains past it"],
   // `no-scrollbar` hides a scrolling list's scrollbar.
   ["scrollbar-width", "a Figma frame that clips draws no scrollbar"],
   ["-ms-overflow-style", "a Figma frame that clips draws no scrollbar"],
+  ["transition", "Figma components do not animate"],
   ["transition-property", "Figma components do not animate"],
   ["transition-timing-function", "Figma components do not animate"],
   ["transition-duration", "Figma components do not animate"],
   ["animation", "Figma components do not animate"],
   // Base UI writes `animation-name: none` on an open Accordion panel.
   ["animation-name", "Figma components do not animate"],
+  // `scroll-fade-inline` drives its fade from the box's scroll position through a scroll timeline.
+  ["animation-timeline", "Figma components do not animate"],
+  ["animation-range", "Figma components do not animate"],
+  ["animation-range-start", "Figma components do not animate"],
+  ["animation-range-end", "Figma components do not animate"],
+  // `caret-transparent` hides a date segment's text caret, which only a focused editable box draws.
+  ["caret-color", "a static frame shows no text caret"],
   // `shrink-0` keeps an element at its size, as Figma keeps every fixed or hugging child.
   ["flex-shrink", "Figma's auto layout does not shrink a fixed or hugging child"],
   ["outline-style", "Figma has no outline, and focus draws the ring"],
@@ -350,6 +365,16 @@ export class CellLedger {
   }
 
   /**
+   * The layer that holds a layer, drawn or around the root, by the holder's list of children.
+   *
+   * @param id - A layer's id.
+   * @returns Its parent, or undefined for the outermost layer.
+   */
+  parentOf(id: number): Layer | undefined {
+    return this.#layers.find((layer) => layer.children.includes(id));
+  }
+
+  /**
    * Any layer of the cell, drawn or around the root, by its id.
    *
    * @param id - A layer's id.
@@ -436,6 +461,11 @@ export class CellLedger {
     const reason = NO_FIGMA_FORM.get(property);
     if (reason !== undefined) {
       return { outcome: "dropped", detail: reason };
+    }
+    // `isolate` lays the box's text out as a paragraph of its own inside the line around it (CSS
+    // Writing Modes 4 §2.2), and Figma lays out each text layer on its own already.
+    if (property === "unicode-bidi" && normalizeCss(entry.value ?? "") === "isolate") {
+      return { outcome: "dropped", detail: ISOLATED };
     }
     if (property.startsWith("--tw-")) {
       return { outcome: "dropped", detail: "Tailwind's bookkeeping, which no mapped property reads" };
@@ -535,6 +565,18 @@ export class LayerStyle {
   }
 
   /**
+   * Whether a base layer sets the property, as Tailwind preflight's `list-style: none` on every list
+   * does, where the coverage table drops a declaration no part reads.
+   *
+   * @param property - The property.
+   * @returns True where the winning declaration comes from the user agent, preflight or Fuse's base layer.
+   */
+  setByBase(property: string): boolean {
+    const entry = this.#layer.style.get(property);
+    return entry !== undefined && BASE_NAMES.has(entry.source.className);
+  }
+
+  /**
    * Move the fields the reads of the cell filled to where the mapping draws them instead, as the
    * layers of a column move into the section frames around them.
    *
@@ -573,9 +615,46 @@ export class LayerStyle {
    */
   resolved(property: string): string | undefined {
     const entry = this.#layer.style.get(property);
-    return entry === undefined
-      ? undefined
-      : substitute(this.#layer, this.#ledger.scope.context, entry, new Set());
+    return entry === undefined ? undefined : this.#substituted(property, entry, new Set(), []);
+  }
+
+  /**
+   * A value with Tailwind's variables substituted, and a `currentcolor` the substitution left
+   * through a `var()` resolved where CSS resolves it, at the element that uses it (CSS Color 4 §6.4): on `color` it is
+   * the color the element inherits, its parent's, and on any other property the element's own
+   * `color`, as Description list's term takes `--description-list-term: currentColor` through its
+   * `color`. The declarations the resolution reads land in `consumed`.
+   */
+  #substituted(
+    property: string,
+    entry: StyleEntry,
+    read: Set<string>,
+    consumed: Provenance[]
+  ): string | undefined {
+    const { context } = this.#ledger.scope;
+    const value = substitute(this.#layer, context, entry, read);
+    // A declaration that writes `currentcolor` itself keeps it for its reader, as an underline's
+    // `decoration-current` draws Figma's AUTO.
+    if (!isCurrentColor(value) || (property !== "color" && !entry.computed && isCurrentColor(entry.value))) {
+      return value;
+    }
+    // A `color` that computes to `currentcolor` passes it down, so the color comes from the nearest
+    // element up the tree whose `color` is a color.
+    let layer = property === "color" ? this.#ledger.parentOf(this.#layer.id) : this.#layer;
+    while (layer !== undefined) {
+      const color = layer.style.get("color");
+      if (color === undefined) {
+        return value;
+      }
+      const own = new Set<string>();
+      const resolved = substitute(layer, context, color, own);
+      consumed.push(...sourcesOf(layer, color, own));
+      if (!isCurrentColor(resolved)) {
+        return resolved;
+      }
+      layer = this.#ledger.parentOf(layer.id);
+    }
+    return value;
   }
 
   /**
@@ -678,7 +757,8 @@ export class LayerStyle {
       return undefined;
     }
     const read = new Set<string>();
-    const resolved = substitute(this.#layer, this.#ledger.scope.context, entry, read);
+    const consumed: Provenance[] = [];
+    const resolved = this.#substituted(property, entry, read, consumed);
     const mapped = resolved === undefined ? undefined : map(resolved);
     const note =
       mapped === undefined
@@ -687,11 +767,16 @@ export class LayerStyle {
             detail: `no Figma field reads ${resolved ?? entry.value ?? "an invalid value"}`,
           }
         : describe(mapped);
-    for (const source of sourcesOf(this.#layer, entry, read)) {
+    for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed]) {
       this.#ledger.noteRead(source, note, feed, this.#layer);
     }
     return mapped;
   }
+}
+
+/** Whether a value is the `currentcolor` keyword, which CSS matches ASCII case-insensitively. */
+function isCurrentColor(value: string | undefined): boolean {
+  return normalizeCss(value ?? "").toLowerCase() === "currentcolor";
 }
 
 /**
@@ -1037,7 +1122,7 @@ function listStyleLonghands(parts: readonly string[]): readonly (readonly [strin
 
 /**
  * Split the padding, margin and inset shorthands into their physical sides, as Figma pads a box and
- * as a part's margin draws, and name a logical inset or margin by its physical side, keeping every other
+ * as a part's margin draws, and name a logical inset, margin or padding by its physical side, keeping every other
  * property. Each side then cascades with the physical one, so a style attribute's `margin: 0` resets
  * a class's `mt-1`. A side may be a `calc()` with spaces, as `px-2.5` compiles to
  * `calc(var(--spacing) * 2.5)`. `white-space` and `text-wrap` split into their longhands, as
@@ -1104,6 +1189,14 @@ export function expandShorthand(property: string, value: string): readonly (read
       return [["left", value]];
     case "inset-inline-end":
       return [["right", value]];
+    case "padding-inline-start":
+      return [["padding-left", value]];
+    case "padding-inline-end":
+      return [["padding-right", value]];
+    case "padding-block-start":
+      return [["padding-top", value]];
+    case "padding-block-end":
+      return [["padding-bottom", value]];
     case "margin-inline-start":
       return [["margin-left", value]];
     case "margin-inline-end":

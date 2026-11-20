@@ -16,11 +16,13 @@
  * font puts it, so for text the oracle is any pixel of the root's box that is not red, under an
  * italic `l` scaled 100 times from 10px beside the root, whose slant leans its top back over it.
  */
+import { readFileSync } from "node:fs";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import type { MeasuredFacts } from "./capture-format.ts";
 import { measuredFacts } from "./page-facts.ts";
 
 const BLUE_PNG =
@@ -229,5 +231,200 @@ describe("a one-column grid's column the capture measures as fitting", () => {
     [400, "400px", false],
   ])("with a %spx box in its item, a %s column holds it: %s", async (inner, column, fits) => {
     expect(await measure(inner)).toEqual({ column, fits });
+  });
+});
+
+/** Measure the root `#root` of the page's markup, and read back its `style` attribute. */
+async function factsOfRoot(): Promise<{
+  readonly facts: MeasuredFacts | undefined;
+  readonly style: string | null;
+}> {
+  const cdp = await page.context().newCDPSession(page);
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
+  const facts = await measuredFacts(cdp, nodeId);
+  await cdp.detach();
+  return { facts: facts.get(""), style: await page.locator("#root").getAttribute("style") };
+}
+
+/**
+ * Unit under test: the page function's `underMaxWidth`. Oracle: Chromium's own layout of a box
+ * beside its `max-width`, read through `getBoundingClientRect`. A 100px box under `max-width: 100%`
+ * of a 300px container keeps 200px of room in every mode, so a maximum 24px lower leaves it 100px
+ * wide; under a 110px maximum it keeps 10px, which 24px less takes away; a 400px box under a 300px
+ * maximum is narrowed by it already; and a 400px box under `min-content`, which Chromium narrows to
+ * its 100px content, takes no `calc()` of it, so nothing proves the maximum idle. A box 200px wide
+ * dense and 230px comfortable under a 240px maximum keeps 40px of room dense but 10px comfortable,
+ * so the fact fails in a mode the capture does not render. The page leaves the box's inline style and
+ * the document's mode as it found them.
+ */
+describe("a maximum the capture measures as never narrowing its box", () => {
+  async function measure(box: string, inner: string) {
+    await page.setContent(
+      `<style>:root[data-density="comfortable"] .wider { width: 230px !important }</style><main data-compare-cell><div style="width:300px"><div id="root" style="${box}"><div class="${inner}" style="width:${inner === "wider" ? "200px" : inner};height:10px;flex-shrink:0"></div></div></div></main>`
+    );
+    const { facts, style } = await factsOfRoot();
+    const density = await page.evaluate(() => document.documentElement.getAttribute("data-density"));
+    return { under: facts?.underMaxWidth === true, style, density };
+  }
+
+  it.each([
+    ["display:flex;width:fit-content;max-width:100%", "100px", true],
+    ["display:flex;width:fit-content;max-width:110px", "100px", false],
+    ["display:flex;width:fit-content;max-width:100%", "400px", false],
+    ["display:flex;width:400px;max-width:min-content", "100px", false],
+    ["display:flex;width:fit-content;max-width:240px", "wider", false],
+  ])("on %s around a %s child: %s", async (box, inner, under) => {
+    expect(await measure(box, inner)).toEqual({ under, style: box, density: null });
+  });
+});
+
+/**
+ * Unit under test: the page function's `freeAlongMain`. Oracle: Chromium's own layout of a flex
+ * column whose second item takes `margin-top: auto`. A 200px column holding two 40px items 30px apart
+ * leaves 90px for the margin. A 100px column leaves none: the items and the gap take 110px, so the
+ * margin is 0 and the second item overflows. A column 140px tall dense and 100px tall comfortable
+ * leaves 30px dense and none comfortable, so the fact fails in a mode the capture does not render.
+ */
+describe("a flex line the capture measures as leaving room for an auto margin", () => {
+  async function measure(height: string) {
+    await page.setContent(
+      `<style>:root[data-density="comfortable"] .shrinks { height: 100px !important }</style><main data-compare-cell><div id="root" class="${height === "shrinks" ? "shrinks" : ""}" style="display:flex;flex-direction:column;gap:30px;height:${height === "shrinks" ? "140px" : height}"><div style="height:40px;flex:none"></div><div style="height:40px;flex:none;margin-top:auto"></div></div></main>`
+    );
+    return (await factsOfRoot()).facts?.freeAlongMain === true;
+  }
+
+  it.each([
+    ["200px", true],
+    ["100px", false],
+    ["shrinks", false],
+  ])("in a column %s tall: %s", async (height, free) => {
+    expect(await measure(height)).toBe(free);
+  });
+});
+
+/** The bytes of a Roboto face the package's `@fontsource/roboto` ships. */
+function roboto(weight: 400 | 500): Buffer {
+  return readFileSync(
+    new URL(
+      `../../node_modules/@fontsource/roboto/files/roboto-latin-${String(weight)}-normal.woff2`,
+      import.meta.url
+    )
+  );
+}
+
+/**
+ * Unit under test: the page function's sweep through every mode, as a branded mode asks for a face
+ * the page has not loaded. Oracle: Chromium's own layout once that face has loaded. A row sets 200
+ * `i`s in `Narrow`, Roboto 400 at half its size, in the neutral identity, and in Roboto 500 in the
+ * branded one, whose face the page fetches only once a mode asks for it. Until it arrives Chromium
+ * sets the row's `Narrow` fallback (`font-display: swap`), so a sweep that measures in the same task
+ * as its stamp sees room that is not there. The page measures the text in Roboto 500's bytes under
+ * another family name, which loads no Roboto face, and sets the row's container 2px short of that
+ * text and the 8px end box. So the maximum binds and the auto margin keeps no room in the branded
+ * identity once the face is in, on any platform's text metrics, while `Narrow` leaves half the row
+ * free in the neutral identity and before the face arrives.
+ */
+describe("a fact a mode's late face decides", () => {
+  async function measure(): Promise<{
+    readonly facts: MeasuredFacts | undefined;
+    readonly loaded: { readonly root: number; readonly host: number; readonly margin: string };
+  }> {
+    await page.route("https://font.invalid/500.woff2", async (route) => {
+      await route.fulfill({
+        body: roboto(500),
+        contentType: "font/woff2",
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
+    });
+    const narrow = `@font-face{font-family:Narrow;font-display:swap;size-adjust:50%;src:url(data:font/woff2;base64,${roboto(400).toString("base64")})}`;
+    const probe = `@font-face{font-family:Probe;font-weight:500;src:url(data:font/woff2;base64,${roboto(500).toString("base64")})}`;
+    const late =
+      "@font-face{font-family:Roboto;font-display:swap;font-weight:500;src:url(https://font.invalid/500.woff2)}";
+    await page.setContent(
+      `<style>${narrow}${probe}${late}body{font:16px Narrow}[data-theme-identity="branded"] #a{font-family:Roboto,Narrow;font-weight:500}#root{display:flex;width:fit-content;max-width:100%}#a{white-space:nowrap;flex:none;margin-right:auto}#b{width:8px;height:8px;flex:none}</style><main data-compare-cell><div id="host"><div id="root"><div id="a">${"i".repeat(200)}</div><div id="b"></div></div></div></main>`
+    );
+    await page.evaluate(async () => {
+      await Promise.all([document.fonts.load("16px Narrow"), document.fonts.load("500 16px Probe")]);
+      const host = document.querySelector<HTMLElement>("#host");
+      const text = document.querySelector("#a");
+      if (host === null || text === null) throw new Error("the page holds the row");
+      const sample = document.createElement("span");
+      sample.style.cssText = "font:500 16px Probe;white-space:nowrap;position:absolute;visibility:hidden";
+      sample.textContent = text.textContent;
+      document.body.append(sample);
+      const loadedWidth = sample.getBoundingClientRect().width;
+      sample.remove();
+      host.style.width = `${String(loadedWidth + 8 - 2)}px`;
+    });
+    const { facts } = await factsOfRoot();
+    await page.unroute("https://font.invalid/500.woff2");
+    const loaded = await page.evaluate(async () => {
+      document.body.setAttribute("data-theme-identity", "branded");
+      await document.fonts.load("500 16px Roboto");
+      const root = document.querySelector("#root");
+      const text = document.querySelector("#a");
+      if (root === null || text === null || root.parentElement === null)
+        throw new Error("the page holds the row");
+      const reading = {
+        root: root.getBoundingClientRect().width,
+        host: root.parentElement.getBoundingClientRect().width,
+        margin: getComputedStyle(text).marginRight,
+      };
+      document.body.removeAttribute("data-theme-identity");
+      return reading;
+    });
+    return { facts, loaded };
+  }
+
+  it("records neither underMaxWidth nor freeAlongMain where the loaded face takes the room", async () => {
+    const { facts, loaded } = await measure();
+    // With the branded face in, the row reaches its maximum, its container's width, and the auto
+    // margin has no room left.
+    expect(loaded.root).toBe(loaded.host);
+    expect(loaded.margin).toBe("0px");
+    expect({ under: facts?.underMaxWidth === true, free: facts?.freeAlongMain === true }).toEqual({
+      under: false,
+      free: false,
+    });
+  });
+});
+
+/**
+ * Unit under test: the page function's restoration where a measurement throws. Oracle: the page as
+ * it was before the call. A root whose `getBoundingClientRect` throws once its maximum is lowered
+ * stops the sweep mid-mode; the page still has its own mode and the root its own `style` attribute,
+ * and `measuredFacts` rejects rather than return the facts it had so far.
+ */
+describe("a measurement that throws", () => {
+  it("leaves the page's mode and the root's style as they were, and rejects", async () => {
+    await page.setContent(
+      `<main data-compare-cell><div style="width:300px"><div id="root" style="display:flex;width:100px;max-width:100%"><div style="width:10px;height:10px"></div></div></div></main>`
+    );
+    await page.evaluate(() => {
+      document.documentElement.setAttribute("data-density", "comfortable");
+      document.body.setAttribute("data-theme-identity", "branded");
+      const root = document.querySelector<HTMLElement>("#root");
+      if (root === null) throw new Error("the page holds the root");
+      const original = root.getBoundingClientRect.bind(root);
+      root.getBoundingClientRect = () => {
+        if (root.style.maxWidth.includes("calc(")) throw new Error("injected layout failure");
+        return original();
+      };
+    });
+    await expect(factsOfRoot()).rejects.toThrow("injected layout failure");
+    expect(
+      await page.evaluate(() => ({
+        density: document.documentElement.getAttribute("data-density"),
+        identity: document.body.getAttribute("data-theme-identity"),
+        brand: document.body.getAttribute("data-theme-brand"),
+        style: document.querySelector("#root")?.getAttribute("style"),
+      }))
+    ).toEqual({
+      density: "comfortable",
+      identity: "branded",
+      brand: null,
+      style: "display:flex;width:100px;max-width:100%",
+    });
   });
 });

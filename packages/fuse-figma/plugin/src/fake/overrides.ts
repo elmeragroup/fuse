@@ -260,3 +260,23 @@ export function hiddenByProperty(state: NodeState): boolean {
   const instance = nearestInstance(state);
   return ((instance === undefined ? undefined : propertyValue(instance, id)) ?? defaultValue) === false;
 }
+
+/**
+ * Whether a layer is hidden by a write of `visible`, which the typings let the plugin make on any
+ * scene node. An instance's sublayer shows its main layer's value until a write on the sublayer
+ * overrides it (rule 37), as it shows every other field.
+ */
+function hiddenByWrite(state: NodeState): boolean {
+  return state.mirrorOf === undefined || state.overridden.has("visible")
+    ? state.hidden
+    : hiddenByWrite(state.mirrorOf);
+}
+
+/**
+ * Whether a layer is hidden, through a BOOLEAN property (rule 25) or a write of `visible`. A hidden
+ * layer reads `visible` false, leaves its parent's auto layout, which no longer counts its length
+ * (PB), and reads FIXED on an axis it fills (rule 42).
+ */
+export function isHidden(state: NodeState): boolean {
+  return hiddenByProperty(state) || hiddenByWrite(state);
+}

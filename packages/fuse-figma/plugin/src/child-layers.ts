@@ -253,6 +253,13 @@ const planFrame = Effect.fnUntraced(function* (
   const moved = outside && holder.size === "unknown" ? "unknown" : holder.held;
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
+  // A layer that follows a BOOLEAN property shows as its default says, so only the others are written.
+  if (spec.visibleProperty === undefined) {
+    const visible = spec.hidden !== true;
+    planScalar(run, label, "visible", frame.visible, visible, () => {
+      frame.visible = visible;
+    });
+  }
   const turns = planRotation(run, frame, label, spec.rotation);
   if (spec.pivot !== undefined) {
     // A size write moves the frame's centre about its origin, so the place is written after it, from

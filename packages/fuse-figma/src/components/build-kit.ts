@@ -12,7 +12,7 @@ import { manifestDefinition } from "../capture/manifest";
 import type { SetManifest } from "../capture/manifest";
 import { fuseVariableSet } from "../fuse-variable-set";
 import { KIT_BODY_FAMILY } from "../kit-fonts";
-import type { CollectionSpec, VariableSpec } from "../variable-set";
+import type { CollectionSpec, LiteralValue, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder, inPlacementOrder } from "./component-builder";
 import type { SetSource } from "./component-builder";
@@ -220,8 +220,9 @@ function kitVariables(): Result.Result<KitVariables, KitSourceInvalid> {
     );
   }
   const collections = variableSet.success.collections;
-  const minimumOf = extremes(collections, Math.min);
-  const maximumOf = extremes(collections, Math.max);
+  const minimumOf = extremes(collections, Math.min, floatOf);
+  const maximumOf = extremes(collections, Math.max, floatOf);
+  const leastAlphaOf = extremes(collections, Math.min, alphaOf);
   const variables = makeVariableIndex(
     collections.flatMap((collection) =>
       collection.variables.flatMap((variable) =>
@@ -233,6 +234,7 @@ function kitVariables(): Result.Result<KitVariables, KitSourceInvalid> {
                 webSyntax: variable.webSyntax,
                 minimum: minimumOf(collection.name, variable.name),
                 maximum: maximumOf(collection.name, variable.name),
+                opaque: leastAlphaOf(collection.name, variable.name) === 1,
               },
             ]
       )
@@ -629,13 +631,25 @@ export function checkIconReferences(
   return Result.succeed(undefined);
 }
 
+/** A FLOAT literal's number, or undefined for a literal of another type. */
+function floatOf(value: LiteralValue): number | undefined {
+  return value._tag === "Float" ? value.value : undefined;
+}
+
+/** A COLOR literal's alpha, or undefined for a literal of another type. */
+function alphaOf(value: LiteralValue): number | undefined {
+  return value._tag === "Color" ? value.color.a : undefined;
+}
+
 /**
- * The smallest or the largest number each FLOAT variable holds in any mode, as `pick` chooses among
- * its values. An alias can land in any mode of its target, so it counts every value the target holds.
+ * The smallest or the largest number `read` takes from each variable's literal in any mode, as `pick`
+ * chooses among its values: a FLOAT variable's number, or a COLOR variable's alpha. An alias can land
+ * in any mode of its target, so it counts every value the target holds.
  */
 function extremes(
   collections: readonly CollectionSpec[],
-  pick: (...values: number[]) => number
+  pick: (...values: number[]) => number,
+  read: (value: LiteralValue) => number | undefined
 ): (collection: string, name: string) => number | undefined {
   const specs = new Map<string, VariableSpec>(
     collections.flatMap((collection) =>
@@ -651,14 +665,7 @@ function extremes(
     // An alias cycle reads as unknown, and the sync refuses one anyway.
     memo.set(key, undefined);
     const values = [...(specs.get(key)?.values.values() ?? [])].map((value) => {
-      switch (value._tag) {
-        case "Float":
-          return value.value;
-        case "Alias":
-          return extremeOf(value.target.collection, value.target.variable);
-        default:
-          return undefined;
-      }
+      return value._tag === "Alias" ? extremeOf(value.target.collection, value.target.variable) : read(value);
     });
     const extreme =
       values.length === 0 || values.includes(undefined)

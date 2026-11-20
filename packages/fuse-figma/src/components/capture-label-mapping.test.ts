@@ -571,3 +571,19 @@ describe("a declaration an element around the root passes down in some cells", (
     ]);
   });
 });
+
+// Oracle: CSS Text 4 §3.1. `white-space-collapse: preserve`, which `whitespace-pre` sets, keeps
+// every space and line break as written, as a Figma text draws its characters, runs of spaces
+// included.
+describe("a label under whitespace-pre", () => {
+  it("drops the preserve, which keeps a run of spaces as Figma does", async () => {
+    const spaced: LabelManifest = { ...LABEL, characters: "1  /  2" };
+    const { variant, coverage } = await buildLabelled("whitespace-pre", {}, spaced);
+    expect(textOf(variant?.root)?.characters).toBe("1  /  2");
+    expect(notesOf(coverage, "whitespace-pre")).toContainEqual([
+      "white-space-collapse",
+      "dropped",
+      "a Figma text keeps every space and line break as written, as `preserve` does",
+    ]);
+  });
+});

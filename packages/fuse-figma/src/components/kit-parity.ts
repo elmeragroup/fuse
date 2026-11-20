@@ -54,7 +54,13 @@ export const KIT_PARITY = {
     missing: "The `infodropdown` variant, and `hasIndicator={false}`.",
     issue: MISSING_SETS,
   },
-  "action-bar": { kind: "issue", issue: MISSING_SETS },
+  "action-bar": {
+    kind: "partial",
+    sets: ["action-bar"],
+    missing:
+      "The bar in a container narrower than 28rem, whose buttons show their icons alone, and `ActionBar.Count` with text of its own.",
+    issue: MISSING_SETS,
+  },
   alert: { kind: "sets", sets: ["alert"] },
   "alert-dialog": {
     kind: "partial",
@@ -261,7 +267,13 @@ export const KIT_PARITY = {
   },
   "selection-item": { kind: "issue", issue: MISSING_SETS },
   separator: { kind: "sets", sets: ["separator"] },
-  sheet: { kind: "issue", issue: MISSING_SETS },
+  sheet: {
+    kind: "partial",
+    sets: ["sheet-content"],
+    missing:
+      "The corner close and `Sheet.Body` of the default demo, the panel open over its scrim, the `left`, `top` and `bottom` sides, and the sizes other than md.",
+    issue: MISSING_SETS,
+  },
   show: { kind: "excluded", reason: "It renders its children only." },
   sidebar: {
     kind: "partial",

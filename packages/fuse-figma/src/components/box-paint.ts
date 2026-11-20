@@ -119,6 +119,9 @@ export function readPaint(
           reader.feed("fill")
         )
       : readImage(reader, image, variant);
+  // `border-0` beside a side's own width, as `border-0 border-s`, leaves that side's stroke.
+  const borderless = !bordered || (!sided && zeroesEverySide(reader, variables));
+  readBackgroundClip(reader, borderless ? NO_BORDER : border, variables);
   const paint = { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
   const backgroundBlur = readBackgroundBlur(reader);
   return backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
@@ -356,6 +359,53 @@ function readStroke(root: LayerStyle, variables: VariableIndex): EverySideStroke
   return style.dashPattern === undefined
     ? { color, weight }
     : { color, weight, dashPattern: style.dashPattern };
+}
+
+/** A box with no border, whose padding box is its border box. */
+const NO_BORDER = "none";
+
+/**
+ * Read `background-clip: padding-box`, which paints the background inside the border only (CSS
+ * Backgrounds 3 §3.7), where Figma paints a fill under the whole frame and its stroke inside it
+ * (`strokeAlign` INSIDE), over the fill. The two draw alike in two cases, and the clip drops there:
+ *
+ * - The box has no border, so its padding box is its border box.
+ * - The border draws as a solid stroke in a color that is opaque in every mode, a literal or a
+ *   synced variable, so the stroke hides the fill beneath it.
+ *
+ * A translucent, dashed or unmapped border shows what the clip leaves out, so the clip stays
+ * unmapped there, and so does any other value.
+ *
+ * @param reader - The box's style.
+ * @param border - The stroke the box's border draws, undefined where it does not map, or
+ *   {@link NO_BORDER} for a box with no border.
+ * @param variables - The synced variables, which say whether a color is opaque in every mode.
+ */
+function readBackgroundClip(
+  reader: LayerStyle,
+  border: StrokeFromBorder | typeof NO_BORDER,
+  variables: VariableIndex
+): void {
+  const detail =
+    border === NO_BORDER
+      ? "the box has no border, so its padding box is its border box"
+      : border !== undefined && !("dashPattern" in border) && opaqueIn(border.color, variables)
+        ? "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it"
+        : undefined;
+  reader.read(
+    "background-clip",
+    (value) => (detail !== undefined && normalizeCss(value) === "padding-box" ? value : undefined),
+    () => ({ outcome: "dropped", detail: detail ?? "" }),
+    []
+  );
+}
+
+/** The stroke a box's border draws, on every side or some, or undefined where it does not map. */
+type StrokeFromBorder = EverySideStroke | SideStroke | undefined;
+
+/** Whether a color is fully opaque in every mode: a literal at alpha 1, or a variable that is. */
+function opaqueIn(color: ColorSpec, variables: VariableIndex): boolean {
+  return color.kind === "literal" ? color.color.a === 1 : variables.opaque(color.variable);
 }
 
 /** The sides a CSS border can set alone, as `border-l` sets `border-left-width`. */
