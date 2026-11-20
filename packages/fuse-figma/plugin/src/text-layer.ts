@@ -335,12 +335,22 @@ function planLetterSpacing(run: Run, text: TextNode, label: string, spec: TextLa
  * Plan the text's decoration as one operation, because Figma holds an underline offset, thickness
  * and color only while the layer is underlined. An unset color writes `AUTO`, the text's own fill. A
  * line through the text takes none of them, and draws in the text's own fill.
+ *
+ * @param held - `unknown` when an earlier operation of the run links the text's style, which may
+ *   reset the decoration, so the operation writes it whatever the text reads now.
  */
-function planDecoration(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
+export function planDecoration(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: Pick<TextLayerSpec, "underline" | "strikethrough">,
+  held: "read" | "unknown"
+): void {
   const underline = spec.underline;
+  const reads = held === "read";
   if (underline === undefined) {
     const decoration = spec.strikethrough === true ? "STRIKETHROUGH" : "NONE";
-    if (text.textDecoration !== decoration) {
+    if (!reads || text.textDecoration !== decoration) {
       change(run.plan, label, `textDecoration → ${decoration}`, () => {
         text.textDecoration = decoration;
       });
@@ -353,6 +363,7 @@ function planDecoration(run: Run, text: TextNode, label: string, spec: TextLayer
   const heldThickness = unmixed(run, text.textDecorationThickness);
   const heldColor = unmixed(run, text.textDecorationColor);
   if (
+    reads &&
     text.textDecoration === "UNDERLINE" &&
     decorationMatches(heldOffset, offset) &&
     decorationMatches(heldThickness, thickness) &&
@@ -540,7 +551,7 @@ function planTypography(
   );
   planLineHeight(run, text, label, spec.lineHeight);
   planLetterSpacing(run, text, label, spec);
-  planDecoration(run, text, label, spec);
+  planDecoration(run, text, label, spec, "read");
   // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
   // the characters go in before the layout.
   planCharacters(run, text, label, spec, propertyIds);

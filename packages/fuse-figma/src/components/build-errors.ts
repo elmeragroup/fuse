@@ -24,7 +24,7 @@ export class KitUnmappable extends Data.TaggedError("KitUnmappable")<{
 
 /**
  * A Fuse source the build reads lacks what the kit needs: the variable set, the theme catalog,
- * `fuse.css` or the icon roster.
+ * `fuse.css`, the icon roster or a component's docs page.
  */
 export class KitSourceInvalid extends Data.TaggedError("KitSourceInvalid")<{
   readonly message: string;

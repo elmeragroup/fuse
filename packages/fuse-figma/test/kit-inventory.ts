@@ -24,6 +24,11 @@ export type InventoryPage = {
   /** The page's slug, which names it in its key, `page/<slug>`, and in its previews' keys. */
   readonly slug: string;
   readonly name: string;
+  /**
+   * The route of the page's docs page under `/components/`, where it differs from the slug, as
+   * Radio's is `radio-group`.
+   */
+  readonly docs?: string;
   readonly sets: readonly InventorySet[];
 };
 
@@ -69,6 +74,7 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   {
     slug: "radio",
     name: "Radio",
+    docs: "radio-group",
     sets: [
       // 5 sizes, off and on, in 5 states.
       { key: "radio-icon-button", name: "Radio icon button", variants: 50, previewed: 50 },

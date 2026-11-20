@@ -383,6 +383,9 @@ export function linkTextStyle(state: NodeState, styleId: string): void {
     lineHeight: style.lineHeight,
     bindings: new Map(),
   }));
+  // The link resets the underline to the style's, which sets none (rule 66).
+  state.textDecoration = "NONE";
+  state.textDecorationOffset = null;
   // A text that hugs its characters takes their width at the style's size (rule 31).
   if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
     state.width = measuredWidth(state.characters, style.fontSize);

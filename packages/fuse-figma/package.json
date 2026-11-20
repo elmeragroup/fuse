@@ -46,6 +46,7 @@
     "rolldown": "catalog:",
     "tsrs": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "catalog:"
   }
 }

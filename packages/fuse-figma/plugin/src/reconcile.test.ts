@@ -51,6 +51,9 @@ describe("reconcileKit on a file without the component set", () => {
       "Fuse components: create the component set Button with 1 variants",
       "Text styles: create Caption",
       "Fuse components: create the text Fuse components",
+      "Fuse components: create the description",
+      "Fuse components: create the text View documentation",
+      "Fuse components: create the rule",
       "Fuse components: create the labels Button labels",
       "Fuse components: create the text Themes",
       "Fuse components: create the text Examples",
@@ -67,6 +70,33 @@ describe("reconcileKit on a file without the component set", () => {
     await expect(reconcileKit(file.figma, KIT, true)).rejects.toThrow(message);
     expect(file.writes.slice(setup)).toEqual([]);
   });
+
+  // The page docs bind variables no set binds, so a file synced before the kit grew docs can lack
+  // them. Plan must refuse before Apply writes the thousands of nodes ahead of the docs.
+  const BORDER = { kind: "variable", variable: { collection: "Fuse tokens", name: "border" } } as const;
+  const [docs] = KIT.docs;
+  if (docs === undefined) {
+    throw new Error("The fixture kit documents no page.");
+  }
+  const { docsLink, rule } = docs;
+  it.each([
+    ["the docs link's fill", { docsLink: { ...docsLink, color: BORDER } }],
+    [
+      "the docs link's underline",
+      { docsLink: { ...docsLink, underline: { ...docsLink.underline, color: BORDER } } },
+    ],
+    ["the rule's fill", { rule: { ...rule, color: BORDER } }],
+  ])(
+    "fails Plan, and stops Apply before any write, when %s binds a variable the file lacks",
+    async (_, edit) => {
+      const { file, setup } = fixture("Roboto");
+      const kit: KitSpec = { ...KIT, docs: [{ ...docs, ...edit }] };
+      const message = "The Fuse tokens collection has no variable named border.";
+      await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
+      await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
+      expect(file.writes.slice(setup)).toEqual([]);
+    }
+  );
 
   it("fails Plan, and stops Apply before any write, for a file without the kit page", async () => {
     const { file, setup } = fixture("Comic Sans", false);

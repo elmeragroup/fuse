@@ -25,6 +25,8 @@ import type {
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
+import { readDocsPage } from "./docs-pages";
+import type { DocsPage } from "./docs-pages";
 import { fuseIcons, ICON_SIZE, weightedIcons } from "./icon-library";
 import { checkKitSpec } from "./kit-check";
 import { KIT } from "./kit-registry";
@@ -32,7 +34,9 @@ import type { KitEntry, KitPage } from "./kit-registry";
 import { walkLayers } from "./kit-spec";
 import type {
   NumberSpec,
+  ColorSpec,
   ComponentSetSpec,
+  DocLinkSpec,
   GlyphFontSpec,
   IconLibrarySpec,
   KitSpec,
@@ -42,6 +46,7 @@ import type {
   PreviewInstanceSpec,
   PreviewSpec,
   SetLabelsSpec,
+  TextStyleSpec,
 } from "./kit-spec";
 import { buildTextStyles } from "./text-styles";
 import { compileUtilities } from "./utility-css";
@@ -83,20 +88,83 @@ const CAPTION_STYLE = "text-style/text/sm/medium";
 /** The text style each row and column header of a set's grid links. */
 const AXIS_STYLE = "text-style/span/xs/regular";
 
+/** The text style a page's description and its docs link link. */
+const LEDE_STYLE = "text-style/text/sm/regular";
+
 /**
- * The docs of a component page, as the Obra kit's pages read: the page's title, the labels around
- * each of its sets' grids, the section header `Themes` beside its previews, and the section header
+ * Link's resting underline, from its recipe's `underline-offset-[0.2em]` and
+ * `decoration-[max(1px,0.0625em)]`, in ems of the text's size.
+ */
+const LINK_UNDERLINE_OFFSET_EM = 0.2;
+const LINK_UNDERLINE_THICKNESS_EM = 0.0625;
+
+/** The colors and underline a page's docs nodes take from the theme and from Link. */
+type DocsLook = {
+  /** The rule's color, the `border` role. */
+  readonly rule: ColorSpec;
+  /** The docs link's text color and underline, as Fuse's `Link` draws its text at rest. */
+  readonly link: Pick<DocLinkSpec, "color" | "underline">;
+};
+
+/**
+ * The look of each page's docs nodes. Link's default color is `text-inherit`, which the kit's Link
+ * set reads as `foreground`, the color a page's text takes. Its resting underline is that color at
+ * 35%, the `foreground/35` tint the Link set binds, offset and thick in ems of the lede style's size.
+ *
+ * @returns The look, or `KitSourceInvalid` where the variable set lacks a color it binds or the lede
+ *   style has no literal size.
+ */
+function docsLook(
+  variables: VariableIndex,
+  textStyles: readonly TextStyleSpec[]
+): Result.Result<DocsLook, KitSourceInvalid> {
+  const rule = readColor("var(--border)", variables);
+  const text = readColor("var(--foreground)", variables);
+  const underline = readColor("color-mix(in oklab, var(--foreground) 35%, transparent)", variables);
+  const size = textStyles.find((style) => style.key === LEDE_STYLE)?.fontSize;
+  if (rule === undefined || text === undefined || underline === undefined) {
+    return Result.fail(
+      new KitSourceInvalid({
+        message: "the variable set lacks border, foreground or foreground/35 for the page heads",
+      })
+    );
+  }
+  if (size?.kind !== "literal") {
+    return Result.fail(new KitSourceInvalid({ message: `the text style ${LEDE_STYLE} has no literal size` }));
+  }
+  return Result.succeed({
+    rule,
+    link: {
+      color: text,
+      underline: {
+        // To the hundredth of a pixel, so the change line reads 2.8, not 0.2 × 14's float error.
+        offset: Math.round(LINK_UNDERLINE_OFFSET_EM * size.value * 100) / 100,
+        thickness: Math.max(1, LINK_UNDERLINE_THICKNESS_EM * size.value),
+        color: underline,
+      },
+    },
+  });
+}
+
+/**
+ * The docs of a component page, as the Obra kit's pages read: the page's title, its docs page's lede
+ * as its description, a `View documentation` link to its docs page and a rule under them, the labels
+ * around each of its sets' grids, the section header `Themes` beside its previews, and the section header
  * `Examples` beside its usage example, its example set's default variant.
  *
  * @param page - The page.
  * @param registry - The kit's sets.
  * @param sets - The built sets, by key.
+ * @param docsPage - The page's docs page.
+ * @param look - The colors and underline of the page's docs nodes.
  * @returns The page's docs, or `KitSourceInvalid` where its example names a set the kit does not build.
  */
 function pageDocs(
   page: KitPage,
   registry: readonly KitEntry[],
-  sets: ReadonlyMap<string, Omit<ComponentSetSpec, "page">>
+  sets: ReadonlyMap<string, Omit<ComponentSetSpec, "page">>,
+  docsPage: DocsPage,
+  look: DocsLook
 ): Result.Result<PageDocsSpec, KitSourceInvalid> {
   const pageKey = pageSpec(page).key;
   const prefix = `docs/${page.slug}`;
@@ -118,6 +186,25 @@ function pageDocs(
       text: page.name,
       style: TITLE_STYLE,
     },
+    description: {
+      kind: "text",
+      key: `${prefix}/description`,
+      name: "Description",
+      page: pageKey,
+      text: docsPage.description,
+      style: LEDE_STYLE,
+    },
+    docsLink: {
+      kind: "link",
+      key: `${prefix}/docs-link`,
+      name: "View documentation",
+      page: pageKey,
+      text: "View documentation",
+      style: LEDE_STYLE,
+      url: docsPage.url,
+      ...look.link,
+    },
+    rule: { kind: "rule", key: `${prefix}/rule`, name: "Rule", page: pageKey, color: look.rule },
     labels: registry
       .filter((entry) => entry.page.slug === page.slug)
       .map(({ manifest }): SetLabelsSpec => ({
@@ -561,9 +648,12 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     })
   );
 
+  const textStyles = yield* buildTextStyles(variables);
+  const look = yield* Effect.fromResult(docsLook(variables, textStyles));
   const docs: PageDocsSpec[] = [];
   for (const page of componentPages) {
-    docs.push(yield* Effect.fromResult(pageDocs(page, registry, setsByKey)));
+    const docsPage = yield* readDocsPage(page);
+    docs.push(yield* Effect.fromResult(pageDocs(page, registry, setsByKey, docsPage, look)));
   }
   const fonts = new Map(
     built.flatMap((set) => set.fonts).map((font) => [`${font.family} ${font.style}`, font])
@@ -575,7 +665,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     icons,
     componentSets: built.map((set) => set.componentSet),
     previews,
-    textStyles: yield* buildTextStyles(variables),
+    textStyles,
     docs,
   };
   yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));

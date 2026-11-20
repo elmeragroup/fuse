@@ -1358,6 +1358,20 @@ class FakeText extends FakeSceneNode {
     }
   }
 
+  /** The whole text's link, or null for none (rule 66). */
+  get hyperlink(): HyperlinkTarget | null {
+    const link = live(this).hyperlink;
+    return link === null ? null : { ...link };
+  }
+
+  /** Link the whole text, which needs the fonts it holds (rule 66). */
+  set hyperlink(value: HyperlinkTarget | null) {
+    const state = live(this);
+    requireHeldFonts(state, "hyperlink");
+    write(state, "hyperlink");
+    state.hyperlink = value === null ? null : { type: value.type, value: value.value };
+  }
+
   /** The linked local text style's id, or the empty string for none (rule 60). */
   get textStyleId(): string {
     return live(this).textStyleId;

@@ -1,6 +1,7 @@
 /**
  * The nodes that document a component page, and the page's layout. A page reads as the Obra kit's
- * pages do: a title, then sections down the page, each with its label in a column at the left and
+ * pages do: a title, the component's description and a link to its docs page, a rule under them,
+ * then sections down the page, each with its label in a column at the left and
  * its content growing to the right. A section per component set holds the set's name, a header above
  * each column naming its value on the column axis and a header beside each row naming its values on
  * the other axes. The `Themes` section holds the theme previews side by side, and the `Examples`
@@ -16,7 +17,10 @@ import { Effect } from "effect";
 import { columnAxisOf, gridCell } from "../../src/components/kit-check.ts";
 import { axisValues } from "../../src/components/kit-spec.ts";
 import type {
+  ColorSpec,
   ComponentSetSpec,
+  DocLinkSpec,
+  DocRuleSpec,
   DocTextSpec,
   PageDocsSpec,
   PageExampleSpec,
@@ -36,14 +40,21 @@ import type { Target } from "./plan.ts";
 import { planGroupFields } from "./previews.ts";
 import { currentRun } from "./services.ts";
 import { settleInstances } from "./settle.ts";
+import { planDecoration } from "./text-layer.ts";
 import type { PlannedTextStyle } from "./text-styles.ts";
 
 /** The space between sections, and between previews side by side. */
 const SECTION_SPACING = 64;
 const PREVIEW_SPACING = 32;
 
-/** The space below a page's title. */
-const TITLE_GAP = 32;
+/** The space between the title, the description and the docs link. */
+const HEAD_GAP = 8;
+
+/** The space above and below the rule under a page's head. */
+const RULE_GAP = 32;
+
+/** The rule's thickness. */
+const RULE_HEIGHT = 1;
 
 /**
  * The label column's least width, and the space between its widest label and the content. A set
@@ -141,6 +152,8 @@ function requireTextFonts(
 /**
  * Plan a doc text: link its style, then write its characters, which take the style's font. A text
  * found linked to its style, and holding its characters, plans nothing.
+ *
+ * @returns Whether the plan writes the text's style link or characters.
  */
 function planDocText(
   run: Run,
@@ -149,9 +162,11 @@ function planDocText(
   label: string,
   spec: DocText,
   style: PlannedTextStyle
-): void {
+): "rewritten" | "kept" {
   const linked =
     origin === "found" && style.style.existing !== undefined && text.textStyleId === style.style.existing.id;
+  // A new text is never linked, so `linked` covers it.
+  const rewrites = !linked || text.characters !== spec.characters;
   if (!linked) {
     changeWith(
       run.plan,
@@ -165,13 +180,20 @@ function planDocText(
       text.characters = spec.characters;
     });
   }
+  return rewrites ? "rewritten" : "kept";
 }
 
 /**
  * A frame that only holds what sits in it, each layer where the page layout puts it: no auto
- * layout, which would place the layers itself, no fill and no clip.
+ * layout, which would place the layers itself, no clip, and the fill given, a labels frame none.
  */
-function planBareFrame(run: Run, frame: FrameNode, label: string, name: string): void {
+function planBareFrame(
+  run: Run,
+  frame: FrameNode,
+  label: string,
+  name: string,
+  fill: ColorSpec | undefined
+): void {
   planScalar(run, label, "name", frame.name, name, () => {
     frame.name = name;
   });
@@ -181,35 +203,98 @@ function planBareFrame(run: Run, frame: FrameNode, label: string, name: string):
   planScalar(run, label, "clipsContent", frame.clipsContent, false, () => {
     frame.clipsContent = false;
   });
-  planPaints(run, label, "fill", frame.fills, undefined, (paints) => {
+  planPaints(run, label, "fill", frame.fills, fill, (paints) => {
     frame.fills = paints;
   });
 }
 
-/** Plan a page-level text, such as the title or the `Examples` header. */
+/**
+ * Plan a page-level text, such as the title, the description or the `Examples` header, and the URL
+ * the docs link opens.
+ *
+ * @param shown - How the change lines name the text: by its characters, or, for the description,
+ *   which is a whole sentence, as `description`.
+ */
 const planTopText = Effect.fnUntraced(function* (
   page: PlannedPage,
-  spec: DocTextSpec,
-  styles: ReadonlyMap<string, PlannedTextStyle>
+  spec: DocTextSpec | DocLinkSpec,
+  styles: ReadonlyMap<string, PlannedTextStyle>,
+  shown: "characters" | "description"
 ) {
   const run = yield* currentRun;
-  const label = `${page.spec.name} / ${spec.text}`;
+  const named = shown === "characters" ? spec.text : "description";
+  const label = `${page.spec.name} / ${named}`;
   const style = styleOf(styles, spec.style);
   const text: DocText = { key: spec.key, name: spec.name, characters: spec.text, style: spec.style };
+  const plan = (now: Run, node: TextNode, origin: "found" | "new"): void => {
+    const rewritten = planDocText(now, node, origin, label, text, style);
+    if (spec.kind === "link") {
+      planLinkLook(now, node, label, spec, rewritten);
+    }
+  };
   const found = yield* page.find(spec.key, spec.name, isText);
   requireTextFonts(run, label, style, found);
   if (found !== undefined) {
-    planDocText(run, found, "found", label, text, style);
+    plan(run, found, "found");
     return existing(found);
   }
   return yield* create(
     page.spec.name,
-    `create the text ${spec.text}`,
+    shown === "characters" ? `create the text ${spec.text}` : "create the description",
     () => placeOwned(page.node.get(), run.figma.createText(), spec.key, spec.name),
     (made) =>
       Effect.gen(function* () {
-        planDocText(yield* currentRun, made, "new", label, text, style);
+        plan(yield* currentRun, made, "new");
       })
+  );
+});
+
+/**
+ * Plan how a docs link reads as a link: its fill and underline as Fuse's `Link` draws its text, and
+ * the URL the whole text opens. Figma draws a text linked through the API in its own fill with no
+ * underline (live probe 2026-11-19, HL1–HL4), so the look is the plugin's to write. The fill and
+ * underline follow the style link and characters. A style link may reset a decoration, as no probe
+ * has settled, so the underline is written again after either. The link survives both writes,
+ * so it is written only where the text holds another.
+ */
+function planLinkLook(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: DocLinkSpec,
+  rewritten: "rewritten" | "kept"
+): void {
+  planPaints(run, label, "fill", text.fills, spec.color, (paints) => {
+    text.fills = paints;
+  });
+  planDecoration(run, text, label, spec, rewritten === "rewritten" ? "unknown" : "read");
+  const held = text.hyperlink;
+  if (held !== null && held !== run.figma.mixed && held.type === "URL" && held.value === spec.url) {
+    return;
+  }
+  change(run.plan, label, `link → ${spec.url}`, () => {
+    text.hyperlink = { type: "URL", value: spec.url };
+  });
+}
+
+/** Plan the rule under a page's head: a frame 1px high, filled with its color. */
+const planRule = Effect.fnUntraced(function* (page: PlannedPage, spec: DocRuleSpec) {
+  const run = yield* currentRun;
+  const label = `${page.spec.name} / ${spec.name}`;
+  const contents = (frame: FrameNode) =>
+    Effect.gen(function* () {
+      planBareFrame(yield* currentRun, frame, label, spec.name, spec.color);
+    });
+  const found = yield* page.find(spec.key, spec.name, isFrame);
+  if (found !== undefined) {
+    yield* contents(found);
+    return existing(found);
+  }
+  return yield* create(
+    page.spec.name,
+    "create the rule",
+    () => placeOwned(page.node.get(), run.figma.createFrame(), spec.key, spec.name),
+    contents
   );
 });
 
@@ -226,7 +311,7 @@ const planLabels = Effect.fnUntraced(function* (
   const contents = (frame: FrameNode) =>
     Effect.gen(function* () {
       const inner = yield* currentRun;
-      planBareFrame(inner, frame, label, spec.name);
+      planBareFrame(inner, frame, label, spec.name, undefined);
       yield* planOwnedChildren(frame, label, "header", texts, (text): OwnedChild<TextNode, void> => ({
         name: text.name,
         accept: isText,
@@ -289,6 +374,9 @@ const planExample = Effect.fnUntraced(function* (page: PlannedPage, spec: PageEx
 /** A page's doc nodes as the plan leaves them. */
 export type PlannedDocs = {
   readonly title: Target<TextNode> | undefined;
+  readonly description: Target<TextNode> | undefined;
+  readonly docsLink: Target<TextNode> | undefined;
+  readonly rule: Target<FrameNode> | undefined;
   /** Each set's labels frame, by the set's key. */
   readonly labels: ReadonlyMap<string, Target<FrameNode>>;
   readonly themesHeader: Target<TextNode> | undefined;
@@ -305,9 +393,12 @@ function setOf(sets: ReadonlyMap<string, PlannedSet>, key: string, reader: strin
   return set;
 }
 
-/** A page with no docs: no title, labels, headers or example. */
+/** A page with no docs: no title, description, docs link, rule, labels, headers or example. */
 const UNDOCUMENTED: PlannedDocs = {
   title: undefined,
+  description: undefined,
+  docsLink: undefined,
+  rule: undefined,
   labels: new Map(),
   themesHeader: undefined,
   examplesHeader: undefined,
@@ -332,7 +423,10 @@ export const planPageDocs = Effect.fnUntraced(function* (
   if (docs === undefined) {
     return UNDOCUMENTED;
   }
-  const title = yield* planTopText(page, docs.title, styles);
+  const title = yield* planTopText(page, docs.title, styles, "characters");
+  const description = yield* planTopText(page, docs.description, styles, "description");
+  const docsLink = yield* planTopText(page, docs.docsLink, styles, "characters");
+  const rule = yield* planRule(page, docs.rule);
   const labels = new Map<string, Target<FrameNode>>();
   for (const spec of docs.labels) {
     labels.set(
@@ -340,14 +434,23 @@ export const planPageDocs = Effect.fnUntraced(function* (
       yield* planLabels(page, spec, setOf(sets, spec.componentSet, spec.name), styles)
     );
   }
-  const themesHeader = yield* planTopText(page, docs.themesHeader, styles);
-  const examplesHeader = yield* planTopText(page, docs.examplesHeader, styles);
+  const themesHeader = yield* planTopText(page, docs.themesHeader, styles, "characters");
+  const examplesHeader = yield* planTopText(page, docs.examplesHeader, styles, "characters");
   const example = yield* planExample(
     page,
     docs.example,
     setOf(sets, docs.example.componentSet, docs.example.name)
   );
-  const planned: PlannedDocs = { title, labels, themesHeader, examplesHeader, example };
+  const planned: PlannedDocs = {
+    title,
+    description,
+    docsLink,
+    rule,
+    labels,
+    themesHeader,
+    examplesHeader,
+    example,
+  };
   return planned;
 });
 
@@ -368,6 +471,8 @@ export function retypesDocs(
   }
   const linked = [
     docs.title.style,
+    docs.description.style,
+    docs.docsLink.style,
     docs.themesHeader.style,
     docs.examplesHeader.style,
     ...docs.labels.flatMap((labels) => [labels.nameStyle, labels.axisStyle]),
@@ -424,9 +529,10 @@ function textsOf(frame: FrameNode): ReadonlyMap<string, TextNode> {
   return new Map(frame.children.flatMap((child) => (isText(child) ? [[keyOf(child), child] as const] : [])));
 }
 
-/** A section's place on the page, and how tall it is. */
+/** A section's place on the page, how tall it is, and where its right edge falls on the page. */
 type Section = PageLayout & {
   readonly height: number;
+  readonly right: number;
 };
 
 /**
@@ -475,6 +581,7 @@ function placeSet(
       sized: [setSize],
       below: [],
       height: Math.ceil(grid.height),
+      right: x + column + grid.width,
     };
   }
   const name = texts.get(NAME_KEY);
@@ -508,6 +615,7 @@ function placeSet(
     sized: [setSize, { node: frame, width: setLeft + grid.width, height }],
     below: [{ node: frame, over: node }],
     height,
+    right: x + setLeft + grid.width,
   };
 }
 
@@ -530,11 +638,13 @@ function labelColumn(sets: readonly PageSet[], docs: PlannedDocs): number {
 }
 
 /**
- * The page layout: the title, then a section per set, then the `Themes` section, the previews side
- * by side, then the `Examples` section, each section below the last, with its label in the label
- * column and its content growing to the right. The layout starts where the title sits, or, on a page
- * the run first documents, where the first set sits. Each preview's and the example's instances
- * settle before their sizes are read (`settle.ts`).
+ * The page layout: the title, the description and the docs link, a rule under them, then a section
+ * per set, then the `Themes` section, the previews side by side, then the `Examples` section, each
+ * section below the last, with its label in the label column and its content growing to the right.
+ * The rule runs from the page's left edge to the right edge of whatever reaches furthest right, a
+ * head text or a section's content, as the layout places them. The layout starts where the title
+ * sits, or, on a page the run first documents, where the first set sits. Each preview's and the
+ * example's instances settle before their sizes are read (`settle.ts`).
  */
 function pageLayout(
   sets: readonly PageSet[],
@@ -548,16 +658,28 @@ function pageLayout(
   const column = labelColumn(sets, docs);
   const content = anchor.x + column;
   let y = anchor.y;
-  const title = docs.title?.get();
-  if (title !== undefined) {
-    placed.push({ node: title, x: anchor.x, y });
-    y += Math.ceil(title.height) + TITLE_GAP;
+  let right = anchor.x;
+  const head = [docs.title?.get(), docs.description?.get(), docs.docsLink?.get()].filter(
+    (text) => text !== undefined
+  );
+  for (const [index, text] of head.entries()) {
+    y += index === 0 ? 0 : HEAD_GAP;
+    placed.push({ node: text, x: anchor.x, y });
+    y += Math.ceil(text.height);
+    right = Math.max(right, anchor.x + text.width);
+  }
+  y += head.length === 0 ? 0 : RULE_GAP;
+  const rule = docs.rule?.get();
+  if (rule !== undefined) {
+    placed.push({ node: rule, x: anchor.x, y });
+    y += RULE_HEIGHT + RULE_GAP;
   }
   for (const entry of sets) {
     const node = entry.node.get();
     if (entry.set === undefined || node.type !== "COMPONENT_SET") {
       placed.push({ node, x: content, y });
       y += Math.ceil(node.height) + SECTION_SPACING;
+      right = Math.max(right, content + node.width);
       continue;
     }
     const section = placeSet(
@@ -572,6 +694,7 @@ function pageLayout(
     sized.push(...section.sized);
     below.push(...section.below);
     y += section.height + SECTION_SPACING;
+    right = Math.max(right, section.right);
   }
   const themes = docs.themesHeader?.get();
   if (themes !== undefined || frames.length > 0) {
@@ -585,6 +708,7 @@ function pageLayout(
       const frame = target.get();
       settleInstances(frame);
       placed.push({ node: frame, x, y });
+      right = Math.max(right, x + frame.width);
       x += Math.ceil(frame.width) + PREVIEW_SPACING;
       height = Math.max(height, Math.ceil(frame.height));
     }
@@ -598,6 +722,10 @@ function pageLayout(
   if (example !== undefined) {
     settleInstances(example);
     placed.push({ node: example, x: content, y });
+    right = Math.max(right, content + example.width);
+  }
+  if (rule !== undefined) {
+    sized.push({ node: rule, width: Math.ceil(right - anchor.x), height: RULE_HEIGHT });
   }
   return { placed, sized, below };
 }
@@ -667,6 +795,9 @@ export function placePageContents(
     sets.every((entry) => entry.node.existing !== undefined) &&
     [
       docs.title,
+      docs.description,
+      docs.docsLink,
+      docs.rule,
       ...docs.labels.values(),
       docs.themesHeader,
       docs.examplesHeader,

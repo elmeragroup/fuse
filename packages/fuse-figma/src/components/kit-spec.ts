@@ -293,19 +293,8 @@ export type TextLayerSpec = {
    * highlighter colors each token through a span of its own. Absent for a text in one color.
    */
   readonly ranges?: readonly TextRangeSpec[];
-  /**
-   * The underline `text-decoration-line: underline` draws, or undefined for none. `offset` is
-   * the `text-underline-offset` and `thickness` the `text-decoration-thickness`, both in pixels,
-   * and an unset one keeps Figma's automatic one. `color` is the `text-decoration-color`, and an
-   * unset one, as CSS's `currentcolor`, keeps Figma's `AUTO`, which draws in the text's own fill.
-   */
-  readonly underline:
-    | {
-        readonly offset: number | undefined;
-        readonly thickness: number | undefined;
-        readonly color: ColorSpec | undefined;
-      }
-    | undefined;
+  /** The underline `text-decoration-line: underline` draws, or undefined for none. */
+  readonly underline: UnderlineSpec | undefined;
   /**
    * A line through the text, which `text-decoration-line: line-through` draws, in the text's own
    * fill at the thickness the renderer chooses, as Figma draws a `STRIKETHROUGH` text. Absent for
@@ -1071,15 +1060,15 @@ export type TextStyleSpec = {
 };
 
 /**
- * A text layer that heads a page or a section of it, named `Header`, as the Obra kit names its
- * component-name captions and its section labels.
+ * A text layer of a page's docs: a heading, named `Header` as the Obra kit names its component-name
+ * captions and its section labels, or the page's description.
  */
 export type DocTextSpec = {
   readonly kind: "text";
   readonly key: string;
   readonly name: string;
   readonly page: string;
-  /** The text, such as the page's name or `Examples`. */
+  /** The text, such as the page's name, its description or `Examples`. */
   readonly text: string;
   /** The key of the local text style the text links. */
   readonly style: string;
@@ -1119,17 +1108,67 @@ export type PageExampleSpec = {
   readonly variant: string;
 };
 
-/** A node that documents a page, outside the page's sets and previews. */
-export type DocSpec = DocTextSpec | SetLabelsSpec | PageExampleSpec;
+/**
+ * An underline under a text. `offset` is the `text-underline-offset` and `thickness` the
+ * `text-decoration-thickness`, both in pixels, and an unset one keeps Figma's automatic one. `color`
+ * is the `text-decoration-color`, and an unset one, as CSS's `currentcolor`, keeps Figma's `AUTO`,
+ * which draws in the text's own fill.
+ */
+export type UnderlineSpec = {
+  readonly offset: number | undefined;
+  readonly thickness: number | undefined;
+  readonly color: ColorSpec | undefined;
+};
 
 /**
- * The docs of one component page, complete: its title, the labels of each set it holds, the
- * `Themes` header beside the previews, the `Examples` header and its example.
+ * A text that opens a web page, such as a page's `View documentation` link, which opens the
+ * component's docs page.
+ */
+export type DocLinkSpec = {
+  readonly kind: "link";
+  readonly key: string;
+  readonly name: string;
+  readonly page: string;
+  readonly text: string;
+  /** The key of the local text style the text links. */
+  readonly style: string;
+  /** The URL the whole text links to. */
+  readonly url: string;
+  /** The text's fill, the color Fuse's `Link` draws its text in. */
+  readonly color: ColorSpec;
+  /** The underline Fuse's `Link` draws at rest. */
+  readonly underline: UnderlineSpec;
+};
+
+/**
+ * A horizontal line 1px high under a page's title, description and docs link, as wide as the page's
+ * content, in a color the theme sets.
+ */
+export type DocRuleSpec = {
+  readonly kind: "rule";
+  readonly key: string;
+  readonly name: string;
+  readonly page: string;
+  readonly color: ColorSpec;
+};
+
+/** A node that documents a page, outside the page's sets and previews. */
+export type DocSpec = DocTextSpec | DocLinkSpec | DocRuleSpec | SetLabelsSpec | PageExampleSpec;
+
+/**
+ * The docs of one component page, complete: its title, its description, its docs link and the rule
+ * under them, the labels of each set it holds, the `Themes` header beside the previews, the
+ * `Examples` header and its example.
  */
 export type PageDocsSpec = {
   /** The page's key. */
   readonly page: string;
   readonly title: DocTextSpec;
+  /** The component's docs page lede, in one line under the title. */
+  readonly description: DocTextSpec;
+  /** `View documentation`, linking to the component's published docs page. */
+  readonly docsLink: DocLinkSpec;
+  readonly rule: DocRuleSpec;
   /** One labels frame per set on the page, in the page's set order. */
   readonly labels: readonly SetLabelsSpec[];
   readonly themesHeader: DocTextSpec;
@@ -1141,11 +1180,15 @@ export type PageDocsSpec = {
  * A kit's doc nodes, one after another, as the plugin finds each by its key.
  *
  * @param docs - The kit's docs, a record per component page.
- * @returns Each page's title, labels, `Themes` header, `Examples` header and example, page by page.
+ * @returns Each page's title, description, docs link, rule, labels, `Themes` header, `Examples`
+ *   header and example, page by page.
  */
 export function docNodes(docs: readonly PageDocsSpec[]): readonly DocSpec[] {
   return docs.flatMap((page) => [
     page.title,
+    page.description,
+    page.docsLink,
+    page.rule,
     ...page.labels,
     page.themesHeader,
     page.examplesHeader,
