@@ -272,6 +272,11 @@ export type Layer = {
    */
   readonly inPlace: InPlace | undefined;
   readonly style: ComputedStyle;
+  /**
+   * What the layer inherits, before its own declarations apply, which a registered custom property
+   * whose own declaration fails to resolve takes back where it inherits.
+   */
+  readonly inherited: ComputedStyle;
   /** The own declarations some layer of the cell read, by property. */
   readonly read: Set<string>;
   /** What became of an own declaration the mapping used without reading through it. */
@@ -347,6 +352,7 @@ export class CellLedger {
       id,
       inPlace: this.scope.inPlace,
       style: computeStyle(id, inherited, applied, (property) => parentValue(parent, context, property)),
+      inherited,
       read: new Set(),
       marks: new Map(),
       children: [],
@@ -620,7 +626,7 @@ export class LayerStyle {
    */
   resolved(property: string): string | undefined {
     const entry = this.#layer.style.get(property);
-    return entry === undefined ? undefined : this.#substituted(property, entry, new Set(), []);
+    return entry === undefined ? undefined : this.#substituted(property, entry, noReads(), []);
   }
 
   /**
@@ -630,12 +636,7 @@ export class LayerStyle {
    * `color`, as Description list's term takes `--description-list-term: currentColor` through its
    * `color`. The declarations the resolution reads land in `consumed`.
    */
-  #substituted(
-    property: string,
-    entry: StyleEntry,
-    read: Set<string>,
-    consumed: Provenance[]
-  ): string | undefined {
+  #substituted(property: string, entry: StyleEntry, read: Reads, consumed: Provenance[]): string | undefined {
     const { context } = this.#ledger.scope;
     const value = substitute(this.#layer, context, entry, read);
     // A declaration that writes `currentcolor` itself keeps it for its reader, as an underline's
@@ -651,7 +652,7 @@ export class LayerStyle {
       if (color === undefined) {
         return value;
       }
-      const own = new Set<string>();
+      const own = noReads();
       const resolved = substitute(layer, context, color, own);
       consumed.push(...sourcesOf(layer, color, own));
       if (!isCurrentColor(resolved)) {
@@ -678,7 +679,7 @@ export class LayerStyle {
     const entry = declaring?.style.get(other);
     return declaring === undefined || entry === undefined
       ? undefined
-      : substitute(declaring, this.#ledger.scope.context, entry, new Set());
+      : substitute(declaring, this.#ledger.scope.context, entry, noReads());
   }
 
   /**
@@ -761,7 +762,7 @@ export class LayerStyle {
     if (entry === undefined) {
       return undefined;
     }
-    const read = new Set<string>();
+    const read = noReads();
     const consumed: Provenance[] = [];
     const resolved = this.#substituted(property, entry, read, consumed);
     const mapped = resolved === undefined ? undefined : map(resolved);
@@ -806,7 +807,7 @@ export function inheritance(layer: Layer, context: BuildContext): ComputedStyle 
       continue;
     }
     // A value that fails to resolve passes down as guaranteed-invalid, with what it read.
-    const read = new Set<string>();
+    const read = noReads();
     const value = substitute(layer, context, entry, read);
     const [, ...consumed] = sourcesOf(layer, entry, read);
     passed.set(property, { value, source: entry.source, consumed, computed: true });
@@ -833,21 +834,34 @@ function parentValue(
   }
   // A value that fails to resolve stays guaranteed-invalid, with what it read, as `inheritance()`
   // passes it down, so an `inherit` of it reads as invalid rather than as nothing set.
-  const read = new Set<string>();
+  const read = noReads();
   const value = substitute(parent, context, entry, read);
   const [, ...consumed] = sourcesOf(parent, entry, read);
   return { value, source: entry.source, consumed, computed: true };
 }
 
-/** The provenance of a declaration, then of every declaration its value read. */
-function sourcesOf(layer: Layer, entry: StyleEntry, read: ReadonlySet<string>): readonly Provenance[] {
+/**
+ * What a substitution read on a layer: the custom properties it read, by name, and the registered
+ * ones whose own declaration failed and which took the value the layer inherits in its place, as
+ * {@link registeredUnset} says.
+ */
+type Reads = { readonly names: Set<string>; readonly inherited: Set<string> };
+
+/** A substitution that has read nothing yet. */
+const noReads = (): Reads => ({ names: new Set(), inherited: new Set() });
+
+/**
+ * The provenance of a declaration, then of every declaration its value read, an inherited value a
+ * registered property took in place of its own declaration included.
+ */
+function sourcesOf(layer: Layer, entry: StyleEntry, read: Reads): readonly Provenance[] {
+  const of = (custom: StyleEntry | undefined) =>
+    custom === undefined ? [] : [custom.source, ...custom.consumed];
   return [
     entry.source,
     ...entry.consumed,
-    ...[...read].flatMap((name) => {
-      const custom = layer.style.get(name);
-      return custom === undefined ? [] : [custom.source, ...custom.consumed];
-    }),
+    ...[...read.names].flatMap((name) => of(layer.style.get(name))),
+    ...[...read.inherited].flatMap((name) => of(layer.inherited.get(name))),
   ];
 }
 
@@ -857,25 +871,25 @@ function sourcesOf(layer: Layer, entry: StyleEntry, read: ReadonlySet<string>): 
  * layer's own reads the custom properties the layer sets or inherits, then the theme's, then the
  * registered initial value. A synced variable the layer neither sets nor inherits stays a `var()`
  * reference, which binds it. One it sets or inherits resolves to that value, which the browser paints
- * in its place, as an Accordion item's `--ring` reaches the focus ring of the trigger inside it.
+ * in its place, as an Accordion item's `--ring` reaches the focus ring of the trigger inside it. A
+ * registered custom property whose own declaration fails to resolve takes {@link registeredUnset}.
  */
-function substitute(
-  layer: Layer,
-  context: BuildContext,
-  entry: StyleEntry,
-  read: Set<string>
-): string | undefined {
+function substitute(layer: Layer, context: BuildContext, entry: StyleEntry, read: Reads): string | undefined {
   if (entry.computed) {
     return entry.value;
   }
-  return substituteVars(
+  const value = substituteVars(
     entry.value,
     (name) => {
       const custom = layer.style.get(name);
       if (custom !== undefined) {
         return custom.computed
           ? { value: custom.value, computed: true }
-          : { value: custom.value, computed: false };
+          : {
+              value: custom.value,
+              computed: false,
+              unset: () => registeredUnset(layer, context, name, read),
+            };
       }
       const outside =
         context.compiled.themeValues.get(name) ??
@@ -883,8 +897,41 @@ function substitute(
       return outside === undefined ? undefined : { value: outside, computed: false };
     },
     (name) => context.variables.owns(name) && !layer.style.has(name),
-    read
+    read.names
   );
+  return value ?? registeredUnset(layer, context, entry.source.property, read);
+}
+
+/**
+ * What a custom property registered with `@property` computes to where its declared value is
+ * invalid at computed-value time: `unset` (CSS Properties and Values API 1, the calculation of
+ * computed values; CSS Custom Properties 1 §3). One that inherits takes its parent's computed value,
+ * which the theme's or the initial value stands for where no ancestor sets it, and one that does not
+ * takes its initial value. A value the layer inherits joins `read`, so the ancestor's declaration
+ * counts as read.
+ *
+ * @returns The value, or undefined for an unregistered property, which holds the guaranteed-invalid
+ *   value instead, and for a registered one with no value to take.
+ */
+function registeredUnset(
+  layer: Layer,
+  context: BuildContext,
+  property: string,
+  read: Reads
+): string | undefined {
+  const registration = context.compiled.registeredProperties.get(property);
+  if (registration === undefined) {
+    return undefined;
+  }
+  if (!registration.inherits) {
+    return registration.initialValue;
+  }
+  const inherited = layer.inherited.get(property)?.value;
+  if (inherited !== undefined) {
+    read.inherited.add(property);
+    return inherited;
+  }
+  return context.compiled.themeValues.get(property) ?? registration.initialValue;
 }
 
 /**

@@ -113,6 +113,12 @@ import {
 } from "./sidebar-section-kit";
 import { SKELETON_MANIFEST } from "./skeleton-kit";
 import { SWITCH_MANIFEST } from "./switch-kit";
+import {
+  TABLE_CAPTION_MANIFEST,
+  TABLE_CELL_MANIFEST,
+  TABLE_HEAD_MANIFEST,
+  TABLE_ROW_MANIFEST,
+} from "./table-kit";
 import { TABS_CONTENT_MANIFEST, TABS_LIST_MANIFEST, TABS_TRIGGER_MANIFEST } from "./tabs-kit";
 import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
@@ -266,6 +272,9 @@ const TABS_PAGE: KitPage = { slug: "tabs", name: "Tabs", example: "tabs-list" };
 
 /** The page Sheet content sits on alone. */
 const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
+
+/** The page Table's head, cell, row and caption share. */
+const TABLE_PAGE: KitPage = { slug: "table", name: "Table", example: "table-row" };
 
 /** The page Timeline list sits on alone. */
 const TIMELINE_LIST_PAGE: KitPage = {
@@ -903,4 +912,8 @@ export const KIT: readonly KitEntry[] = [
     manifest: ASPECT_RATIO_MANIFEST,
   },
   { page: CODE_PAGE, previewCells: possibleCells(CODE_MANIFEST), manifest: CODE_MANIFEST },
+  { page: TABLE_PAGE, previewCells: possibleCells(TABLE_HEAD_MANIFEST), manifest: TABLE_HEAD_MANIFEST },
+  { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CELL_MANIFEST), manifest: TABLE_CELL_MANIFEST },
+  { page: TABLE_PAGE, previewCells: possibleCells(TABLE_ROW_MANIFEST), manifest: TABLE_ROW_MANIFEST },
+  { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CAPTION_MANIFEST), manifest: TABLE_CAPTION_MANIFEST },
 ];

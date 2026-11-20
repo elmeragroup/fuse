@@ -455,7 +455,13 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ]);
   }
 
-  const paint = readPaint(reader, box.image, context.variables, variant);
+  const paint = readPaint(
+    reader,
+    box.image,
+    context.variables,
+    variant,
+    cascade.measured?.bordersCollapse === true
+  );
   dropIdleOrigin(reader);
   const opacity = reader.read(
     "opacity",

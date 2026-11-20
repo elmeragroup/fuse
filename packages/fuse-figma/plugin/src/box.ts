@@ -253,7 +253,9 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
   // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides. A stroke drawn
   // from a CSS outline takes no room, so it stays out of the layout and overlaps the box's layers,
   // as the typings' `strokesIncludedInLayout` false draws. A border on some sides writes each side's
-  // weight and counts in the layout, where each side takes room on its own side (N9, PS). The
+  // weight and counts in the layout, where each side takes room on its own side (N9, PS). A table
+  // row's border in a table that collapses its borders stays out of the layout too: on some sides a
+  // real file kept the row its cells' height (PG28), and on every side it takes the outline's path. The
   // layoutMode write above turns a box without auto layout into one that includes its strokes (PS3),
   // so such a box holds true once that write runs.
   const { stroke } = spec;
@@ -271,7 +273,7 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
       planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
         node.strokeAlign = "INSIDE";
       });
-      const included = "sides" in stroke || stroke.inLayout !== false;
+      const included = stroke.inLayout !== false;
       const held = turnsOn || node.strokesIncludedInLayout;
       planScalar(run, label, "strokesIncludedInLayout", held, included, () => {
         node.strokesIncludedInLayout = included;

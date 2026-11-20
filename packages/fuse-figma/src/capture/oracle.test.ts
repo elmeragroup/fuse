@@ -556,6 +556,47 @@ describe("the element a captured declaration belongs to", () => {
     ]);
   });
 
+  // Oracle: CSS Display 3 §2.5. The inner set's `::before` wins `before:hidden`, so it generates no box
+  // and its own check covers nothing it sets, `before:bg-red` included. The composite's `::before`
+  // shows that fill, so the hidden inner box lends it nothing and it stays the composite's.
+  it("stays the composite's on a shown pseudo-element where the inner set's is `display: none`", () => {
+    const paint = {
+      ...written("before:bg-red", "background-color", "red"),
+      selector: ".before\\:bg-red::before",
+    };
+    const hide = { ...written("before:hidden", "display", "none"), selector: ".before\\:hidden::before" };
+    const inner = oneCell("inner", [paint, hide], { ...span("inner", []), pseudo: { before: [0, 1] } });
+    const composite = oneCell(
+      "composite",
+      [paint],
+      span("composite", [], [{ ...span("inner", []), pseudo: { before: [0] } }])
+    );
+    const accounting = (key: string, instances: readonly InstancePlace[]) =>
+      new Map([[`${key}/state=rest`, { accounted: new Set<string>(), instances }]]);
+    const sets = new Map([
+      ["inner", { capture: inner, accounting: accounting("inner", []) }],
+      [
+        "composite",
+        {
+          capture: composite,
+          accounting: accounting("composite", [
+            { place: "0/root/0", set: "inner", cell: "inner/state=rest" },
+          ]),
+        },
+      ],
+    ]);
+    expect(unaccountedDeclarations("inner", (key) => sets.get(key))).toEqual([]);
+    expect(unaccountedDeclarations("composite", (key) => sets.get(key))).toEqual([
+      {
+        part: "inner",
+        at: "composite/state=rest 0/root/0::before",
+        className: "before:bg-red",
+        property: "background-color",
+        value: "red",
+      },
+    ]);
+  });
+
   // Oracle: the capture's winners. The inner set wins `text-red` on its glyph's `::before` box and the
   // composite on the glyph itself, two boxes, so the inner set's check of its pseudo-element accounts
   // for nothing the composite's glyph draws.

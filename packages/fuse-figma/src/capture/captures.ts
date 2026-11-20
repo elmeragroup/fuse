@@ -101,6 +101,10 @@ import sidebarMenuSub from "../../captures/sidebar-menu-sub.json" with { type: "
 import sidebar from "../../captures/sidebar.json" with { type: "json" };
 import skeleton from "../../captures/skeleton.json" with { type: "json" };
 import switchCapture from "../../captures/switch.json" with { type: "json" };
+import tableCaption from "../../captures/table-caption.json" with { type: "json" };
+import tableCell from "../../captures/table-cell.json" with { type: "json" };
+import tableHead from "../../captures/table-head.json" with { type: "json" };
+import tableRow from "../../captures/table-row.json" with { type: "json" };
 import tabsContent from "../../captures/tabs-content.json" with { type: "json" };
 import tabsList from "../../captures/tabs-list.json" with { type: "json" };
 import tabsTrigger from "../../captures/tabs-trigger.json" with { type: "json" };
@@ -171,6 +175,10 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["empty", empty],
   ["card", card],
   ["aspect-ratio", aspectRatio],
+  ["table-head", tableHead],
+  ["table-cell", tableCell],
+  ["table-row", tableRow],
+  ["table-caption", tableCaption],
   ["timeline-list", timelineList],
   ["selection-item", selectionItem],
   ["action-bar", actionBar],

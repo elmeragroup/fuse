@@ -149,6 +149,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
       draws: "Where a modal popup sits in its viewport: centered, or near the top as the Command palette.",
     },
   ],
+  [
+    "row",
+    {
+      values: ["header", "body", "last"],
+      draws:
+        "Which row of a Table the cell draws: the header row, a body row, or the body's last row, which draws no rule under it.",
+    },
+  ],
   ["keys", { values: ["2"], draws: "How many Kbd caps a Kbd group holds." }],
   ["avatars", { values: ["3"], draws: "How many Avatars an Avatar group holds." }],
   ["pages", { values: ["3"], draws: "How many page links a Pagination row holds." }],
@@ -164,7 +172,10 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
   ...(
     [
       ["checked", "Whether a radio or a menu's radio row is the selected one."],
-      ["selected", "Whether a Select or Combobox row holds the selected value, which shows its check."],
+      [
+        "selected",
+        "Whether a Select or Combobox row holds the selected value, which shows its check, or a Table row is marked selected.",
+      ],
       ["open", "Whether the part the trigger opens is open."],
       ["armed", "Whether a Confirm button's first press armed it, so the next press confirms."],
       ["described", "Whether the Item or Alert shows a description under its title."],

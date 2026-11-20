@@ -536,6 +536,92 @@ describe("a table the capture measures as tiling its parts", () => {
     expect(await measure(table, second)).toEqual(expected);
   });
 
+  /**
+   * Oracle: Chromium's table layout. A cell that sets a 32px height and no width, as Table's cell
+   * does, holds its own one-line text at its max-content width in a table no wider than its content
+   * (CSS 2.1 §17.5.2.2), so its first row's cells and the row tile. A collapsed table sets the row's
+   * 1px bottom border on the grid line (CSS 2.1 §17.6.2), so the cells span the row's border box. The
+   * second row's `x` sits in the column `Order` widens, so its cell is stretched past its text, and
+   * the second row, the body and the table record nothing. A 10px height its text outgrows grows the
+   * cell, which then holds no length of its own either. Text that may wrap records nothing although
+   * it fits on one line here: in a designer's narrower column Chromium wraps it, as `Ready for
+   * pickup` in a 60px column grows a 32px cell to 50px, which a fixed height does not follow.
+   */
+  it.each([
+    [
+      "border-collapse:collapse",
+      "32px",
+      "nowrap",
+      { row: true, cell: true, stretched: false, body: false, collapses: true },
+    ],
+    [
+      "border-collapse:separate;border-spacing:0",
+      "32px",
+      "nowrap",
+      { row: true, cell: true, stretched: false, body: false, collapses: false },
+    ],
+    [
+      "border-collapse:collapse",
+      "10px",
+      "nowrap",
+      { row: false, cell: false, stretched: false, body: false, collapses: true },
+    ],
+    [
+      "border-collapse:collapse",
+      "32px",
+      "normal",
+      { row: false, cell: false, stretched: false, body: false, collapses: true },
+    ],
+  ])(
+    "in a table %s, a cell of a %s height and %s text that sets no width",
+    async (table, height, wrap, expected) => {
+      const cell = (text: string) =>
+        `<td style="box-sizing:border-box;height:${height};padding:6px 8px;white-space:${wrap};font:14px/14px sans-serif">${text}</td>`;
+      // A separated table ignores a row's border (CSS 2.1 §17.6.1), so only the collapsed one sets it.
+      const rule = table.includes("collapse:collapse") ? ' style="border-bottom:1px solid black"' : "";
+      await page.setContent(
+        `<main data-compare-cell><table id="root" style="${table}"><tbody><tr${rule}>${cell("Order")}${cell("Amount")}</tr><tr>${cell("x")}${cell("Amount")}</tr></tbody></table></main>`
+      );
+      const facts = await factsByPath();
+      expect({
+        row: facts.get("0/0")?.tableTiles === true,
+        cell: facts.get("0/0/0")?.tableTiles === true,
+        stretched: facts.get("0/1/0")?.tableTiles === true,
+        body: facts.get("0")?.tableTiles === true,
+        collapses: facts.get("0/0")?.bordersCollapse === true,
+      }).toEqual(expected);
+    }
+  );
+
+  /**
+   * Oracle: CSS 2.1 §17.6.2.1, as Chromium paints it. A collapsed row's 1px border is its own only
+   * where no other box on the same grid line sets one: Chromium paints the row's bottom edge in the
+   * blue of the next row's 3px `border-top`, paints none under a `1px hidden` one, and in the blue of
+   * an equal cell border, which wins over the row's. The row ends its group, and the next row starts
+   * a second one, so the first group's `border-bottom` lies on the same edge. The row next to it
+   * setting `border-bottom`, as each Table row does, leaves the edge to this row.
+   */
+  it.each([
+    ["", "", "", true],
+    ["", "", "border-bottom:1px solid blue", true],
+    ["", "", "border-top:3px solid blue", false],
+    ["", "", "border-top:1px hidden blue", false],
+    ["border-bottom:1px solid blue", "", "", false],
+    ["", "border-bottom:1px solid blue", "", false],
+  ])(
+    "records bordersCollapse on a row's own bottom border with its cell %o, its group %o and the next row %o",
+    async (cell, group, next, owns) => {
+      await page.setContent(
+        `<main data-compare-cell><table id="root" style="border-collapse:collapse"><tbody style="${group}"><tr style="border-bottom:1px solid red"><td style="box-sizing:border-box;padding:0;width:36px;height:36px;${cell}"></td></tr></tbody><tbody><tr style="${next}"><td style="box-sizing:border-box;padding:0;width:36px;height:36px"></td></tr></tbody></table></main>`
+      );
+      const facts = await factsByPath();
+      expect([facts.get("0/0")?.tableTiles, facts.get("0/0")?.bordersCollapse === true]).toEqual([
+        true,
+        owns,
+      ]);
+    }
+  );
+
   it("records nothing on a cell whose child fills the column the table stretches, nor on the boxes around it", async () => {
     await page.setContent(
       `<main data-compare-cell><table id="root" style="width:200px;border-collapse:collapse"><tbody><tr><td style="padding:0;vertical-align:top"><div style="display:flex"><div style="width:36px;height:36px"></div></div></td></tr></tbody></table></main>`

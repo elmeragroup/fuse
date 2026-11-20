@@ -199,6 +199,11 @@ export type MeasuredBox = {
   readonly itemsAtContent: boolean;
   /** The box is a table box whose parts tile it in every mode, as the capture measured. */
   readonly tableTiles: boolean;
+  /**
+   * The box is a table row whose table collapses its borders in every mode, and whose borders no
+   * box sharing their edges contests, as the capture read it.
+   */
+  readonly bordersCollapse: boolean;
   /** The box is a flex row's `inline` item, which sits on the row's one line in every mode. */
   readonly inlineRow: boolean;
   readonly widest: boolean;

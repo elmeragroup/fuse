@@ -557,6 +557,30 @@ describe("a variant whose root strokes some sides", () => {
     }
   );
 
+  // A table row's rule in a table that collapses its borders sits on the grid line between rows
+  // (CSS 2.1 §17.6.2), so the row keeps its height: the stroke stays out of the layout.
+  const RULE = kitWithRoot((root) => ({
+    ...root,
+    stroke: {
+      color: { kind: "variable", variable: { collection: "Fuse tokens", name: "background" } },
+      sides: { top: 0, right: 0, bottom: 1, left: 0 },
+      inLayout: false,
+    },
+  }));
+
+  it("writes a row rule out of the layout in one Apply, and plans it back out where a designer counted it", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, RULE, true);
+    file.reopen();
+    expect(await reconcileKit(file.figma, RULE, false)).toEqual({ changes: [], warnings: [] });
+    expect(weights(await buttonVariant(file))).toEqual([0, 0, 1, 0, "INSIDE", false]);
+    (await buttonVariant(file)).strokesIncludedInLayout = true;
+    expect((await reconcileKit(file.figma, RULE, false)).changes).toEqual([
+      "Button / size=md: strokesIncludedInLayout → false",
+      ...RELAYOUT,
+    ]);
+  });
+
   it("writes the left edge back in one Apply from every side at 0, as the owner's file held it (PS2)", async () => {
     const { file } = fixture("Roboto");
     await reconcileKit(file.figma, LEFT_EDGE, true);

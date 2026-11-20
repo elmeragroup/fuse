@@ -508,7 +508,7 @@ export type MarkerReading = "resolved" | "content";
 
 /**
  * Whether a box lays out as a block container that draws no more than a block box does: a `block`,
- * or a `list-item`, a block box with a marker (CSS Display 3 §2.3), that generates no marker: its
+ * a `table-caption`, or a `list-item`, a block box with a marker (CSS Display 3 §2.3), that generates no marker: its
  * resolved `list-style-type` and `list-style-image` are both `none` (CSS Lists 3 §3), as Tailwind
  * preflight's `list-style: none` leaves every item of every list the kit draws, and its `::marker`
  * sets no `content` of its own. A list item that draws a marker, or whose marker the cascade cannot
@@ -520,7 +520,8 @@ export type MarkerReading = "resolved" | "content";
  */
 export function isPlainBlock(reader: LayerStyle, markers: MarkerReading): boolean {
   const display = normalizeCss(reader.raw("display") ?? "");
-  if (display === "block") {
+  // A caption lays out as a block box in its table's wrapper box (CSS 2.1 §17.4).
+  if (display === "block" || display === "table-caption") {
     return true;
   }
   if (display !== "list-item") {

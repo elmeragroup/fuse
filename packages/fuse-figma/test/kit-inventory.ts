@@ -461,6 +461,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Code",
     sets: [{ key: "code", name: "Code", variants: 1, previewed: 1 }],
   },
+  // The building blocks of the docs default demo's table: its first head and first cell, its header,
+  // body and last body rows, hovered or not and selected or not, and its caption.
+  {
+    slug: "table",
+    name: "Table",
+    sets: [
+      { key: "table-head", name: "Table head", variants: 1, previewed: 1 },
+      { key: "table-cell", name: "Table cell", variants: 1, previewed: 1 },
+      { key: "table-row", name: "Table row", variants: 12, previewed: 12 },
+      { key: "table-caption", name: "Table caption", variants: 1, previewed: 1 },
+    ],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

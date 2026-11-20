@@ -52,7 +52,7 @@ const SAME_BOX = "no padding or border sits outside the frame's length, so both 
 
 /** Whether a stroke sits on a side, taking room inside the frame. */
 function strokes(stroke: StrokeSpec | undefined, side: "top" | "bottom" | "left" | "right"): boolean {
-  // An outline's stroke, `inLayout` false, takes no room.
+  // An outline's stroke, or a collapsed table border's, `inLayout` false, takes no room.
   if (stroke === undefined || "inLayout" in stroke) {
     return false;
   }

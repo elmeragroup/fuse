@@ -3941,6 +3941,38 @@
         "part": "aspect-ratio",
         "className": "[&>video]:block"
       }
+    ],
+    "table-head": [
+      {
+        "part": "table-head",
+        "className": "has-[[role=checkbox]]:[--table-cell-pe:0px]"
+      },
+      {
+        "part": "table-head",
+        "className": "has-[[role=checkbox]]:w-px"
+      }
+    ],
+    "table-cell": [
+      {
+        "part": "table-cell",
+        "className": "has-[[role=checkbox]]:[--table-cell-pe:0px]"
+      }
+    ],
+    "table-row": [
+      {
+        "part": "table-row",
+        "className": "framed-table:hover:bg-transparent"
+      },
+      {
+        "part": "table-row",
+        "className": "framed-table:data-[state=selected]:bg-transparent"
+      }
+    ],
+    "table-caption": [
+      {
+        "part": "table-caption",
+        "className": "framed-table:my-4"
+      }
     ]
   },
   "unreached": [
@@ -7018,6 +7050,90 @@
         "tabs-trigger/variant=line,state=focus 0/root::after",
         "tabs-trigger/variant=line,state=hover 0/root::after",
         "tabs-trigger/variant=line,state=rest 0/root::after"
+      ]
+    },
+    {
+      "set": "table-row",
+      "part": "table-cell",
+      "className": "[--table-cell-edge-pe:initial]",
+      "property": "--table-cell-edge-pe",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "table-row/row=body,selected=false,state=hover 0/root/0",
+        "table-row/row=body,selected=false,state=hover 0/root/1",
+        "table-row/row=body,selected=false,state=rest 0/root/0",
+        "table-row/row=body,selected=false,state=rest 0/root/1",
+        "table-row/row=body,selected=true,state=hover 0/root/0",
+        "table-row/row=body,selected=true,state=hover 0/root/1",
+        "table-row/row=body,selected=true,state=rest 0/root/0",
+        "table-row/row=body,selected=true,state=rest 0/root/1",
+        "table-row/row=last,selected=false,state=hover 0/root/0",
+        "table-row/row=last,selected=false,state=hover 0/root/1",
+        "table-row/row=last,selected=false,state=rest 0/root/0",
+        "table-row/row=last,selected=false,state=rest 0/root/1",
+        "table-row/row=last,selected=true,state=hover 0/root/0",
+        "table-row/row=last,selected=true,state=hover 0/root/1",
+        "table-row/row=last,selected=true,state=rest 0/root/0",
+        "table-row/row=last,selected=true,state=rest 0/root/1"
+      ]
+    },
+    {
+      "set": "table-row",
+      "part": "table-cell",
+      "className": "[--table-cell-edge-ps:initial]",
+      "property": "--table-cell-edge-ps",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "table-row/row=body,selected=false,state=hover 0/root/1",
+        "table-row/row=body,selected=false,state=hover 0/root/2",
+        "table-row/row=body,selected=false,state=rest 0/root/1",
+        "table-row/row=body,selected=false,state=rest 0/root/2",
+        "table-row/row=body,selected=true,state=hover 0/root/1",
+        "table-row/row=body,selected=true,state=hover 0/root/2",
+        "table-row/row=body,selected=true,state=rest 0/root/1",
+        "table-row/row=body,selected=true,state=rest 0/root/2",
+        "table-row/row=last,selected=false,state=hover 0/root/1",
+        "table-row/row=last,selected=false,state=hover 0/root/2",
+        "table-row/row=last,selected=false,state=rest 0/root/1",
+        "table-row/row=last,selected=false,state=rest 0/root/2",
+        "table-row/row=last,selected=true,state=hover 0/root/1",
+        "table-row/row=last,selected=true,state=hover 0/root/2",
+        "table-row/row=last,selected=true,state=rest 0/root/1",
+        "table-row/row=last,selected=true,state=rest 0/root/2"
+      ]
+    },
+    {
+      "set": "table-row",
+      "part": "table-head",
+      "className": "[--table-cell-edge-pe:initial]",
+      "property": "--table-cell-edge-pe",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "table-row/row=header,selected=false,state=hover 0/root/0",
+        "table-row/row=header,selected=false,state=hover 0/root/1",
+        "table-row/row=header,selected=false,state=rest 0/root/0",
+        "table-row/row=header,selected=false,state=rest 0/root/1",
+        "table-row/row=header,selected=true,state=hover 0/root/0",
+        "table-row/row=header,selected=true,state=hover 0/root/1",
+        "table-row/row=header,selected=true,state=rest 0/root/0",
+        "table-row/row=header,selected=true,state=rest 0/root/1"
+      ]
+    },
+    {
+      "set": "table-row",
+      "part": "table-head",
+      "className": "[--table-cell-edge-ps:initial]",
+      "property": "--table-cell-edge-ps",
+      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
+      "at": [
+        "table-row/row=header,selected=false,state=hover 0/root/1",
+        "table-row/row=header,selected=false,state=hover 0/root/2",
+        "table-row/row=header,selected=false,state=rest 0/root/1",
+        "table-row/row=header,selected=false,state=rest 0/root/2",
+        "table-row/row=header,selected=true,state=hover 0/root/1",
+        "table-row/row=header,selected=true,state=hover 0/root/2",
+        "table-row/row=header,selected=true,state=rest 0/root/1",
+        "table-row/row=header,selected=true,state=rest 0/root/2"
       ]
     }
   ]

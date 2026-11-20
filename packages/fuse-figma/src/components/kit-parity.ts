@@ -341,7 +341,13 @@ export const KIT_PARITY = {
   slider: { kind: "issue", issue: MISSING_SETS },
   span: { kind: "excluded", reason: TEXT_STYLE },
   switch: { kind: "partial", sets: ["switch"], missing: "The invalid focus ring.", issue: MISSING_SETS },
-  table: { kind: "issue", issue: MISSING_SETS },
+  table: {
+    kind: "partial",
+    sets: ["table-head", "table-cell", "table-row", "table-caption"],
+    missing:
+      "Column widths: each cell hugs its text, as a table no wider than its content lays it out, and a wider table shares the rest among its columns by their content (CSS 2.1 §17.5.2.2), which no auto layout draws, so the designer sets them. Also the footer, a framed table, and VerticalTable's fixed-layout equal columns and collapsed borders, which the kit has not attempted.",
+    issue: MISSING_SETS,
+  },
   tabs: {
     kind: "partial",
     sets: ["tabs-trigger", "tabs-list", "tabs-content"],
