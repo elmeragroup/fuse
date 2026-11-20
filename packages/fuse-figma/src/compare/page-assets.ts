@@ -30,7 +30,7 @@ const BUILD_OUTPUTS: readonly string[] = [
   ...new Set(["dist/styles.css", "dist/themes.css", "dist/icons.js", ...RENDERER_ENTRIES]),
 ];
 
-/** The font weights the page can load, every upright cut the package ships. */
+/** The font weights the page can load, each in the upright and italic cuts the package ships. */
 const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
 /**
@@ -147,8 +147,9 @@ export const readPageAssets = Effect.fnUntraced(function* (
   renderers: ReadonlyMap<string, AnyCellRenderer>
 ) {
   const fontPackage = dirname(fileURLToPath(import.meta.resolve("@fontsource/roboto/400.css")));
-  const fonts = yield* Effect.forEach(FONT_WEIGHTS, (weight) =>
-    readText(join(fontPackage, `${String(weight)}.css`))
+  const fonts = yield* Effect.forEach(
+    FONT_WEIGHTS.flatMap((weight) => [`${String(weight)}.css`, `${String(weight)}-italic.css`]),
+    (file) => readText(join(fontPackage, file))
   );
   const fontCss = fonts
     .map((css) => css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}`))

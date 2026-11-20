@@ -2003,6 +2003,7 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     underMaxWidth: facts?.underMaxWidth === true,
     freeAlongMain: facts?.freeAlongMain === true,
     tableTiles: facts?.tableTiles === true,
+    inlineRow: facts?.inlineRow === true,
     widest: facts?.widest === true,
     holdsWidest: holds(element),
     lineFits: facts?.lineFits === true,

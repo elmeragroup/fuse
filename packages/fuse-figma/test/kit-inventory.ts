@@ -413,6 +413,18 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Calendar",
     sets: [{ key: "calendar-day", name: "Calendar day", variants: 17, previewed: 17 }],
   },
+  // The labelled field, empty or filled, in the field box's five states.
+  {
+    slug: "date-field",
+    name: "Date field",
+    sets: [{ key: "date-field", name: "Date field", variants: 10, previewed: 10 }],
+  },
+  // The labelled picker, closed, empty or filled, in the field box's five states.
+  {
+    slug: "date-picker",
+    name: "Date picker",
+    sets: [{ key: "date-picker", name: "Date picker", variants: 10, previewed: 10 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

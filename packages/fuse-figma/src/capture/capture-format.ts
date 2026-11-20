@@ -120,6 +120,12 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   tableTiles: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * An item of a flex row whose own display is `inline`, which the row blockifies, where in every
+   * density and theme the row's items sit on its one line in source order, each one box with its
+   * own text on one line.
+   */
+  inlineRow: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * The element's line box holds its one inline-level child with no height or baseline offset of
    * its own, by a margin of 1px above and below: its content box's top and bottom edges are the
    * child's margin box's at its line height and at 2px more.

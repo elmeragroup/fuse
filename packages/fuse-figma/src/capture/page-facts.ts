@@ -65,6 +65,12 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   a group or a row tiles only where each part it holds tiles in turn. Neither the
  *   columns nor the rows (CSS 2.1 §17.5) stretch a cell past what it holds, and no border spacing
  *   lies between them, so each box draws as an auto layout that hugs its parts.
+ * - `inlineRow`: an item of a flex row whose own display is `inline`, which the row blockifies (CSS
+ *   Display 3 §2.7), where in every mode of {@link EVERY_MODE}, once its faces have loaded, the row is
+ *   a flex container that neither wraps nor reverses, the item is one of its in-flow items, and those
+ *   items sit on its one line in source order: each is one box whose own text keeps to one line,
+ *   starts where the one before it ends or after it, within {@link LAYOUT_UNIT_PX}, and shares a band
+ *   of the line with every other.
  * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which with
  *   those margins at zero leaves at least {@link FREE_SPACE_CLEARANCE_PX} between its last item and
  *   its content box's end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the
@@ -536,5 +542,52 @@ const MEASURE_IN_PAGE = `async function () {
     return near(edge, across ? inner.right : inner.bottom) && parts.every((part) => tiles(part));
   };
   for (const { path } of await holdsInEveryMode(tableTiles, tiles)) { put(path, "tableTiles", true); }
+  // A flex row's items whose own display is \`inline\`, which the row blockifies: the page reads
+  // each item's display with the row a block for a moment, where nothing blockifies it.
+  const pathOf = new Map(elements.map(({ element, path }) => [element, path]));
+  const inlineRows = [];
+  for (const { element } of elements) {
+    const style = getComputedStyle(element);
+    if (!style.display.endsWith("flex")) { continue; }
+    const items = [...element.children].filter(inFlow);
+    const inline = withStyles([[element, "display", "block"]], () => items.filter((item) => getComputedStyle(item).display === "inline"));
+    if (inline.length > 0) { inlineRows.push({ element, inline }); }
+  }
+  // The row's items sit on its one line in source order, each one box with its own text on one
+  // line, each starting where the one before it ends or after, all sharing a band of the line.
+  // \`flex-direction\` and \`flex-wrap\` keep their values on a box that is no flex container, so the
+  // row must be one in each mode, with each inline item among its in-flow items.
+  const inlineOf = new Map(inlineRows.map(({ element, inline }) => [element, inline]));
+  const oneRow = (element) => {
+    const style = getComputedStyle(element);
+    if (!["flex", "inline-flex"].includes(style.display) || style.flexDirection !== "row" || style.flexWrap !== "nowrap") { return false; }
+    const items = [...element.children].filter(inFlow);
+    if (!(inlineOf.get(element) ?? []).every((item) => items.includes(item))) { return false; }
+    let end = -Infinity;
+    let top = -Infinity;
+    let bottom = Infinity;
+    for (const item of items) {
+      const boxes = item.getClientRects();
+      const [box] = boxes;
+      if (boxes.length !== 1 || box === undefined || box.left + ${String(LAYOUT_UNIT_PX)} < end) { return false; }
+      const lines = new Set();
+      for (const node of ownText(item)) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        for (const rect of range.getClientRects()) { lines.add(Math.round(rect.top)); }
+      }
+      if (lines.size > 1) { return false; }
+      end = box.right;
+      top = Math.max(top, box.top);
+      bottom = Math.min(bottom, box.bottom);
+    }
+    return top < bottom;
+  };
+  for (const { inline } of await holdsInEveryMode(inlineRows, oneRow)) {
+    for (const item of inline) {
+      const path = pathOf.get(item);
+      if (path !== undefined) { put(path, "inlineRow", true); }
+    }
+  }
   return out;
 }`;

@@ -13,6 +13,7 @@ import { KitUnmappable } from "./build-errors";
 import type { Cell, LabelDefinition } from "./component-spec";
 import { evaluateLength, evaluateNumber, inFont, normalizeCss, readColor, splitTopLevel } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { readFaceStyle } from "./italic-face";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
   ColorSpec,
@@ -427,7 +428,7 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     characters,
     textProperty: label.textProperty,
     fontFamily,
-    fontStyle: fontWeight?.style ?? "Regular",
+    fontStyle: readFaceStyle(style, { family: fontFamily, upright: fontWeight?.style ?? "Regular" }, path),
     fontSize,
     lineHeight,
     color,

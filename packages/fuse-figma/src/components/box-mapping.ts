@@ -64,6 +64,7 @@ import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
+import { readInlineItem } from "./inline-item";
 import type { CascadedInstance, InstanceParts } from "./instance-parts";
 import { castsSpread, fixedLength, iconKey, outOfLayout, ringFill, ZERO } from "./kit-spec";
 import type {
@@ -158,7 +159,12 @@ function readDisplay(
   label: string | undefined,
   layout: Layout,
   clamp: number | undefined,
-  box: { readonly width: SizeSpec; readonly inside: Feed; readonly markers: MarkerReading }
+  box: {
+    readonly width: SizeSpec;
+    readonly inside: Feed;
+    readonly markers: MarkerReading;
+    readonly inlineRow: boolean;
+  }
 ): boolean {
   const { width, inside, markers } = box;
   // The display picks the layout: its direction, the alignments an unset property leaves, whether the
@@ -170,6 +176,11 @@ function readDisplay(
     ...inside,
     ...(layout.blocks ? reader.feed("firstOnTop") : []),
   ];
+  const ownText = label !== undefined && layers.length === 1 && layers[0] === label;
+  const inline = readInlineItem(reader, { inlineRow: box.inlineRow, ownText }, lays);
+  if (inline !== undefined) {
+    return inline;
+  }
   const display = normalizeCss(reader.raw("display") ?? "");
   if (display === "-webkit-box") {
     for (const property of ["display", "-webkit-box-orient"]) {
@@ -225,7 +236,6 @@ function readDisplay(
     );
     return false;
   }
-  const ownText = label !== undefined && layers.length === 1 && layers[0] === label;
   // Blocks fill a box only across a width it has before they lay out, but one block fills a box
   // that hugs its width exactly, since the box shrinks to fit that block.
   const stacked = layout.blocks && (width.kind !== "hug" || layers.length === 1);
@@ -719,6 +729,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     width: across === undefined ? sizing.horizontal : FILL_ACROSS,
     inside,
     markers,
+    inlineRow: cascade.measured?.inlineRow === true,
   });
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
