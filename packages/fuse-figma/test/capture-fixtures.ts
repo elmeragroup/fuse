@@ -69,6 +69,8 @@ export type Written = {
 export type FixtureElement = {
   readonly tag?: string;
   readonly slot?: string;
+  /** The element's `data-icon`, the side a wrapper around an icon marks, as a pending Button's spinner span. */
+  readonly dataIcon?: string;
   readonly text?: string;
   /** How many element children precede the element's own text, as the capture records it. */
   readonly textIndex?: number;
@@ -266,9 +268,16 @@ function captureOf(
         ]),
       ])
     );
+    const attributes: Record<string, string> = {};
+    if (fixture.slot !== undefined) {
+      attributes["data-slot"] = fixture.slot;
+    }
+    if (fixture.dataIcon !== undefined) {
+      attributes["data-icon"] = fixture.dataIcon;
+    }
     const captured: CapturedElement = {
       tag: fixture.tag ?? "div",
-      attributes: fixture.slot === undefined ? {} : { "data-slot": fixture.slot },
+      attributes,
       classes: [...words(fixture.classes), ...words(fixture.carried)],
       text: fixture.text ?? "",
       declarations: indexes,

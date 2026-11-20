@@ -6,7 +6,8 @@
  */
 
 import { widthAround } from "../components/box-sizing.ts";
-import { AXIS_CONSTRAINT, outOfLayout } from "../components/kit-spec.ts";
+import type { DrawnPart } from "../components/drawn-parts.ts";
+import { AXIS_CONSTRAINT, layerAt, outOfLayout } from "../components/kit-spec.ts";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -348,84 +349,143 @@ function keptAt(box: ProbedBox, width: number): boolean {
   );
 }
 
+/** The runs the probe measures each box in, by the name of the width it records for each. */
+const RUNS = ["base", "wider", "longer", "longest"] as const;
+
+/** One of the runs the probe measures a box in. */
+export type ProbeRun = (typeof RUNS)[number];
+
+/**
+ * The first run in which an icon's box was not within 1px of the size the icon draws, with the width
+ * the probe measured there, or undefined where every run measured that size. An icon draws one size
+ * whatever its container's width or its cell's text, so every run is held to that size. A size the
+ * probe cannot read fails at the first run.
+ */
+function iconOff(
+  box: ProbedBox,
+  size: number | undefined
+): { readonly run: ProbeRun; readonly measured: number } | undefined {
+  return RUNS.map((run) => ({ run, measured: box[run] })).find(
+    ({ measured }) => size === undefined || Math.abs(measured - size) > CHANGED
+  );
+}
+
 /** One contradiction the probe found: the box, what it inferred and what the spec maps. */
 export type Contradiction = {
   readonly cell: string;
   readonly slot: string;
+  /** The part's key and its element's place, which tell apart parts that share a slot. */
+  readonly part: string;
+  readonly place: string;
   readonly inferred: InferredKind;
   readonly mapped: SizeSpec["kind"];
+  /**
+   * For an icon, which draws at its fixed size whatever the probe infers, the size it draws, the
+   * first run whose width was not that size and the width the probe measured in it; absent otherwise.
+   */
+  readonly widths?: { readonly drawn: number | undefined; readonly run: ProbeRun; readonly measured: number };
 };
 
-/** What the probe found of a set: each contradiction, and how many boxes it compared. */
+/** A part the build drew that the probe could not pair with its box and its layer, and why. */
+export type Unpaired = {
+  readonly cell: string;
+  readonly slot: string | undefined;
+  readonly part: string;
+  readonly place: string;
+  readonly why: string;
+};
+
+/** What the probe found of a set: each contradiction, how many boxes it compared, and the parts it could not pair. */
 export type Contradictions = {
   readonly found: readonly Contradiction[];
   readonly compared: number;
   /** How many compared boxes the probe inferred each kind for. */
   readonly inferred: ReadonlyMap<InferredKind, number>;
+  readonly unpaired: readonly Unpaired[];
+  /** The cells the probe measured that the build recorded no parts for. */
+  readonly unrecorded: readonly string[];
+  /** The cells the probe measured that the set builds no variant for. */
+  readonly unbuilt: readonly string[];
 };
-
-/** The frame and instance layers of a variant by key, each key that names one layer only. */
-function layersByKey(root: ComponentRootSpec): ReadonlyMap<string, ChildLayerSpec> {
-  const found = new Map<string, ChildLayerSpec[]>();
-  const visit = (layer: ChildLayerSpec): void => {
-    if (layer.kind === "frame" || layer.kind === "instance") {
-      found.set(layer.key, [...(found.get(layer.key) ?? []), layer]);
-    }
-    if (layer.kind === "frame") {
-      layer.children.forEach(visit);
-    }
-  };
-  root.children.forEach(visit);
-  return new Map(
-    [...found].flatMap(([key, layers]) =>
-      layers.length === 1 && layers[0] !== undefined ? [[key, layers[0]] as const] : []
-    )
-  );
-}
 
 /**
  * The contradictions between a set's mapped horizontal sizings and what the probe inferred of its
- * boxes. A box matches the layer whose key its manifest gives its `data-slot`, where one layer has
- * that key; a set's one root matches the variant's root.
+ * boxes. Each part a cell draws pairs with the box at its element's place and with the layer at the
+ * path the build recorded for it. A part whose element carries a `data-slot` and has no box at its
+ * place, whose box carries another slot, or whose path reaches no layer is unpaired. A part the build
+ * leaves out draws no layer to compare, and a part without a `data-slot` below a root has no box.
  *
  * @param set - The built set.
  * @param probed - Each cell's boxes, by the variant key of its cell.
- * @param keyOfSlot - The key of the part each `data-slot` names in the manifest, where one part has it.
+ * @param drawn - Each cell's drawn parts, by the variant key of its cell, as `drawn-parts.ts` records them.
  * @param reads - The lengths at the probe page's density and the kit's variants, as {@link sizingReadsOf} reads them.
- * @returns Each contradiction, and how many boxes the probe compared.
+ * @returns Each contradiction, how many boxes the probe compared, the parts it could not pair, and
+ *   the measured cells the build recorded nothing for or built no variant for.
  */
 export function contradictions(
   set: Omit<ComponentSetSpec, "page">,
   probed: ReadonlyMap<string, ProbedCell>,
-  keyOfSlot: ReadonlyMap<string, string>,
+  drawn: ReadonlyMap<string, readonly DrawnPart[]>,
   reads: SizingReads
 ): Contradictions {
   const found: Contradiction[] = [];
+  const unpaired: Unpaired[] = [];
+  const unrecorded: string[] = [];
+  const unbuilt: string[] = [];
   let compared = 0;
   const counts = new Map<InferredKind, number>();
   // The probed cell renders the set's optional parts whatever their BOOLEAN defaults, as Sheet's
   // cell renders its corner close, so each layer of the set's own variant takes room.
   const shows = (): boolean => true;
-  for (const variant of set.variants) {
-    const cell = probed.get(variant.key);
-    if (cell === undefined) {
+  const variants = new Map(set.variants.map((variant) => [variant.key, variant]));
+  for (const [key, cell] of probed) {
+    const variant = variants.get(key);
+    if (variant === undefined) {
+      unbuilt.push(key);
       continue;
     }
-    const keyed = layersByKey(variant.root);
-    const roots = cell.boxes.filter((box) => box.root);
-    for (const box of cell.boxes) {
-      // A set's one root is the variant's root; an open composite's roots are its instances.
-      const key = keyOfSlot.get(box.slot);
+    const boxes = new Map(cell.boxes.map((box) => [box.place, box]));
+    const parts = drawn.get(variant.key);
+    if (parts === undefined) {
+      unrecorded.push(variant.key);
+      continue;
+    }
+    for (const { place, slot, part, path } of parts) {
+      const box = boxes.get(place);
+      if (path === undefined || (box === undefined && slot === undefined)) {
+        continue;
+      }
+      const miss = (why: string): void => {
+        unpaired.push({ cell: variant.key, slot, part, place, why });
+      };
+      if (box === undefined) {
+        miss("the probe measured no box at its place");
+        continue;
+      }
+      if (box.slot !== (slot ?? "")) {
+        miss(`the box at its place carries the data-slot ${box.slot}`);
+        continue;
+      }
+      const below = path.length === 0 ? undefined : layerAt(variant.root, path);
       const layer =
-        box.root && roots.length === 1 ? variant.root : key === undefined ? undefined : keyed.get(key);
-      if (layer === undefined || !("sizing" in layer)) {
+        path.length === 0
+          ? variant.root
+          : below !== undefined && "kind" in below && below.kind !== "text"
+            ? below
+            : undefined;
+      if (layer === undefined) {
+        miss(`its path ${path.join("/")} reaches no frame, instance or icon of the variant`);
         continue;
       }
       compared += 1;
       const inferred = inferKind(box);
       counts.set(inferred, (counts.get(inferred) ?? 0) + 1);
       const isRoot = layer === variant.root;
-      const size = layer.sizing.horizontal;
+      // An icon draws at its fixed size.
+      const size: SizeSpec =
+        "kind" in layer && layer.kind === "icon"
+          ? { kind: "fixed", length: layer.size }
+          : layer.sizing.horizontal;
       const maximum = "limits" in layer ? layer.limits.maxWidth : undefined;
       const placement = "placement" in layer ? layer.placement : undefined;
       const constraint: string | undefined =
@@ -448,10 +508,24 @@ export function contradictions(
           rigid !== undefined &&
           Math.abs(rigid - box.base) <= CHANGED,
       };
-      if (!agrees(inferred, size, isRoot, width)) {
-        found.push({ cell: variant.key, slot: box.slot, inferred, mapped: size.kind });
+      const contradiction: Contradiction = {
+        cell: variant.key,
+        slot: box.slot,
+        part,
+        place,
+        inferred,
+        mapped: size.kind,
+      };
+      // An icon holds no text the runs could lengthen, so its box shows its size only by keeping it.
+      const icon = "kind" in layer && layer.kind === "icon" ? layer : undefined;
+      const iconSize = icon === undefined ? undefined : rigidWidth(icon, shows, reads);
+      const off = icon === undefined ? undefined : iconOff(box, iconSize);
+      if (off !== undefined) {
+        found.push({ ...contradiction, widths: { drawn: iconSize, ...off } });
+      } else if (!agrees(inferred, size, isRoot, width)) {
+        found.push(contradiction);
       }
     }
   }
-  return { found, compared, inferred: counts };
+  return { found, compared, inferred: counts, unpaired, unrecorded, unbuilt };
 }

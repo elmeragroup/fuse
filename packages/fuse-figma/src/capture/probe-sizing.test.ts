@@ -14,7 +14,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
-import { buildChip, part } from "../../test/capture-fixtures";
+import { buildCaptured, buildChip, chip, ICON, part, rest } from "../../test/capture-fixtures";
+import type { BuiltFixture } from "../../test/capture-fixtures";
+import { KEPT } from "../../test/probed-box";
 import { densityLengths } from "../components/build-kit.ts";
 import { NO_LIMITS } from "../components/kit-spec.ts";
 import type {
@@ -31,25 +33,6 @@ import type {
 import type { ProbedBox } from "./perturbation.ts";
 import { agrees, contradictions, inferKind, sizingReadsOf } from "./probe-sizing.ts";
 import type { InferredKind, MappedWidth } from "./probe-sizing.ts";
-
-/** A 100px box below a widened root that widened neither with its container nor with its text. */
-const KEPT: ProbedBox = {
-  slot: "box",
-  root: false,
-  text: true,
-  textReaches: true,
-  parentWidened: true,
-  base: 100,
-  wider: 100,
-  longer: 100,
-  longest: 100,
-  tracksParent: false,
-  overflows: false,
-  fixedInViewport: false,
-  capsAtParent: false,
-  widened: true,
-  tableCell: false,
-};
 
 describe("inferKind", () => {
   it.each<readonly [string, ProbedBox, InferredKind]>([
@@ -190,6 +173,7 @@ describe("a hug the probe measured at a kept width", () => {
     const root: ProbedBox = {
       ...KEPT,
       slot: variant.root.name,
+      place: "0/root",
       root: true,
       base: width,
       wider: width,
@@ -199,7 +183,7 @@ describe("a hug the probe measured at a kept width", () => {
     return contradictions(
       set,
       new Map([[variant.key, { id: "cell", boxes: [root], gap: undefined }]]),
-      new Map(),
+      built.drawn,
       sizingReadsOf(built.spec.componentSets, Result.getOrThrow(densityLengths("dense")))
     ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
   };
@@ -234,9 +218,14 @@ describe("a fixed layer as wide as the parent that hugs it", () => {
     if (set === undefined || variant === undefined) {
       throw new Error("the kit builds no calendar-day set");
     }
+    const place = built.drawn.get(variant.key)?.find(({ slot }) => slot === "calendar-day-button")?.place;
+    if (place === undefined) {
+      throw new Error("the build records no calendar-day-button");
+    }
     const button: ProbedBox = {
       ...KEPT,
       slot: "calendar-day-button",
+      place,
       base: 36,
       wider: 36,
       longer: 36,
@@ -246,7 +235,7 @@ describe("a fixed layer as wide as the parent that hugs it", () => {
     return contradictions(
       set,
       new Map([[variant.key, { id: "cell", boxes: [button], gap: undefined }]]),
-      new Map([["calendar-day-button", "button"]]),
+      built.drawn,
       sizingReadsOf(built.spec.componentSets, Result.getOrThrow(densityLengths("dense")))
     ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
   };
@@ -391,7 +380,7 @@ describe("the width a hug draws around fixed layers", () => {
     return contradictions(
       outer,
       new Map([["outer/rest", { id: "cell", boxes: [box], gap: undefined }]]),
-      new Map([["box", layer.key]]),
+      new Map([["outer/rest", [{ place: box.place, slot: box.slot, part: layer.key, path: [layer.key] }]]]),
       sizingReadsOf([INNER, outer], Result.getOrThrow(densityLengths("dense")))
     ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
   };
@@ -693,28 +682,29 @@ describe("the width a hug draws around fixed layers", () => {
 // flow (CSS Flexbox 1 §4.1), so a hug leaves out a layer placed outside its auto layout.
 describe("a hug holding a layer placed outside its auto layout", () => {
   /** A hugging row of a 40px item and a 100px item placed at its top left. */
-  let row: Omit<ComponentSetSpec, "page">;
+  let row: BuiltFixture;
 
   beforeAll(async () => {
-    ({ componentSet: row } = await buildChip(
+    row = await buildChip(
       "relative inline-flex gap-[8px]",
       [
         { slot: "chip-item", classes: "w-[40px] h-[20px]" },
         { slot: "chip-placed", classes: "absolute top-0 left-0 w-[100px] h-[20px]" },
       ],
       { parts: [part({ key: "item", slot: "chip-item" }), part({ key: "placed", slot: "chip-placed" })] }
-    ));
+    );
   });
 
   /** What the probe finds against the row's variant, whose root it measured at a kept width. */
   const foundAtRoot = (width: number) => {
-    const variant = row.variants[0];
+    const variant = row.componentSet.variants[0];
     if (variant === undefined) {
-      throw new Error(`the set ${row.key} has no variant`);
+      throw new Error(`the set ${row.componentSet.key} has no variant`);
     }
     const root: ProbedBox = {
       ...KEPT,
       slot: variant.root.name,
+      place: "0/root",
       root: true,
       base: width,
       wider: width,
@@ -722,10 +712,10 @@ describe("a hug holding a layer placed outside its auto layout", () => {
       longest: width,
     };
     return contradictions(
-      row,
+      row.componentSet,
       new Map([[variant.key, { id: "cell", boxes: [root], gap: undefined }]]),
-      new Map(),
-      sizingReadsOf([row], Result.getOrThrow(densityLengths("dense")))
+      new Map([[variant.key, row.accounting.get(variant.key)?.parts ?? []]]),
+      sizingReadsOf([row.componentSet], Result.getOrThrow(densityLengths("dense")))
     ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
   };
 
@@ -735,5 +725,75 @@ describe("a hug holding a layer placed outside its auto layout", () => {
 
   it("contradicts the row at the 148px it would draw with the placed item in the flow", () => {
     expect(foundAtRoot(148)).toEqual(["fixed → hug"]);
+  });
+});
+
+// Oracle: a hand-built chip whose `<svg>` icon, `size-[16px]`, carries the `chip-icon` slot: the icon
+// draws 16px whatever the cell holds, so its box agrees only where the probe measured 16px in every run.
+describe("an icon's box", () => {
+  let built: BuiltFixture;
+
+  beforeAll(async () => {
+    built = await buildCaptured(
+      chip({ iconsFor: () => [ICON] }),
+      rest({
+        slot: "chip",
+        classes: "flex text-[#000000]",
+        children: [{ tag: "svg", slot: "chip-icon", classes: "size-[16px]" }],
+      })
+    );
+  }, 120_000);
+
+  type Runs = Pick<ProbedBox, "base" | "wider" | "longer" | "longest">;
+  const every = (width: number): Runs => ({ base: width, wider: width, longer: width, longest: width });
+
+  const probe = (runs: Runs, lengthOf = Result.getOrThrow(densityLengths("dense"))) => {
+    const key = built.variant?.key ?? "";
+    const box: ProbedBox = { ...KEPT, slot: "chip-icon", place: "0/root/0", text: false, ...runs };
+    const parts = (built.accounting.get(key)?.parts ?? []).filter(({ slot }) => slot === "chip-icon");
+    return contradictions(
+      built.componentSet,
+      new Map([[key, { id: "cell", boxes: [box], gap: undefined }]]),
+      new Map([[key, parts]]),
+      sizingReadsOf([built.componentSet], lengthOf)
+    );
+  };
+
+  it("agrees where the probe measured the icon's size in every run", () => {
+    const { found, compared } = probe(every(16));
+    expect({ found, compared }).toEqual({ found: [], compared: 1 });
+  });
+
+  it("contradicts the icon where the probe measured it at another width", () => {
+    expect(probe(every(20)).found).toEqual([
+      {
+        cell: "chip/state=rest",
+        slot: "chip-icon",
+        part: "icon",
+        place: "0/root/0",
+        inferred: "not-fill",
+        mapped: "fixed",
+        widths: { drawn: 16, run: "base", measured: 20 },
+      },
+    ]);
+  });
+
+  it.each<readonly [string, Runs, { readonly run: string; readonly measured: number }]>([
+    ["its wider run alone", { ...every(16), wider: 12 }, { run: "wider", measured: 12 }],
+    ["its longer run alone", { ...every(16), longer: 20 }, { run: "longer", measured: 20 }],
+    ["its longest run alone", { ...every(16), longest: 18 }, { run: "longest", measured: 18 }],
+  ])(
+    "contradicts the icon and names the run where the probe measured another width in %s",
+    (_, runs, off) => {
+      expect(probe(runs).found.map(({ part, widths }) => ({ part, widths }))).toEqual([
+        { part: "icon", widths: { drawn: 16, ...off } },
+      ]);
+    }
+  );
+
+  it("contradicts the icon where the probe's page draws no size it can read", () => {
+    expect(probe(every(16), () => undefined).found.map(({ part, widths }) => ({ part, widths }))).toEqual([
+      { part: "icon", widths: { drawn: undefined, run: "base", measured: 16 } },
+    ]);
   });
 });

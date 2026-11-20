@@ -22,9 +22,14 @@ const LONGER_BY = " and a much longer sample text";
 /** How many times the probe appends that text for its far longer run, past any kit sample's width. */
 const LONGEST_BY = 20;
 
-/** One box of a root as the probe measured it: its `data-slot` and its width in each run. */
+/** One box of a root as the probe measured it: its `data-slot`, its place and its width in each run. */
 export type ProbedBox = {
   readonly slot: string;
+  /**
+   * The box's place, as the capture names places: its root's index among the cell's measured roots,
+   * `root`, and the element child index at each step down, as `0/root/1/0`.
+   */
+  readonly place: string;
   /** Whether the root is the box itself, rather than an element below it. */
   readonly root: boolean;
   /** Whether a text node sits at or below the box. */
@@ -95,6 +100,7 @@ export async function probeCells(
     ({ roots, widerBy, longerBy, longestBy }) => {
       type Box = {
         slot: string;
+        place: string;
         root: boolean;
         text: boolean;
         width: number;
@@ -161,9 +167,17 @@ export async function probeCells(
         const gap = Number.parseFloat(row.columnGap);
         return others + (Number.isNaN(gap) ? 0 : gap) * Math.max(0, flowing.length - 1);
       };
-      const boxesOf = (root: Element): Box[] =>
+      const placeOf = (element: Element, root: Element, index: number): string => {
+        const steps: number[] = [];
+        for (let at = element; at !== root && at.parentElement !== null; at = at.parentElement) {
+          steps.unshift([...at.parentElement.children].indexOf(at));
+        }
+        return [String(index), "root", ...steps.map(String)].join("/");
+      };
+      const boxesOf = (root: Element, index: number): Box[] =>
         [root, ...root.querySelectorAll("[data-slot]")].map((element) => ({
           slot: element.getAttribute("data-slot") ?? "",
+          place: placeOf(element, root, index),
           root: element === root,
           text: [...element.querySelectorAll("*"), element].some((each) =>
             [...each.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "")
@@ -173,11 +187,12 @@ export async function probeCells(
           fixed: getComputedStyle(element).position === "fixed",
           tableCell: getComputedStyle(element).display === "table-cell",
         }));
+      // A root's index is its selector's: the renderer names the roots in the order the capture holds them.
       const measure = () =>
         roots.map(({ selectors }) =>
-          selectors.flatMap((selector) => {
+          selectors.flatMap((selector, index) => {
             const root = document.querySelector(selector);
-            return root === null ? [] : boxesOf(root);
+            return root === null ? [] : boxesOf(root, index);
           })
         );
       const elementsOf = (selectors: readonly string[]) =>
@@ -335,6 +350,7 @@ export async function probeCells(
         gap: gaps[at],
         boxes: (base[at] ?? []).map((box, index) => ({
           slot: box.slot,
+          place: box.place,
           root: box.root,
           text: box.text,
           textReaches: longer[at]?.[index]?.reaches === true,

@@ -49,7 +49,6 @@ import type {
   VariableSource,
 } from "./capture-format.ts";
 import { factsOfWinners } from "./declared-facts.ts";
-import type { InstanceManifest, PartManifest } from "./manifest.ts";
 import { measuredFacts } from "./page-facts.ts";
 import {
   CellNotFound,
@@ -100,8 +99,6 @@ export type CaptureTarget = {
   readonly union?: readonly string[];
   /** An anchored popup's distance from its anchor, which the perturbation probe measures. */
   readonly sideOffset?: number;
-  /** The set's parts, whose keys the perturbation probe finds the layers of its boxes by. */
-  readonly parts?: readonly (PartManifest | InstanceManifest)[];
 };
 
 /** The theme every capture renders in: the kit's first preview theme. */

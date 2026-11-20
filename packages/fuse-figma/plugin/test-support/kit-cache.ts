@@ -10,16 +10,18 @@ import { deserialize } from "node:v8";
 import { inject } from "vitest";
 
 import { buildKit } from "../../src/components/build-kit.ts";
+import type { BuiltKit } from "../../src/components/build-kit.ts";
 import type { CoverageRow } from "../../src/components/coverage.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { fuseVariableSet } from "../../src/fuse-variable-set.ts";
 import type { CollectionSpec } from "../../src/variable-set.ts";
 import { deepFrozen } from "./frozen.ts";
 
-/** What the setup builds: the whole kit, its coverage and the synced collections it binds. */
+/** What the setup builds: the whole kit, its coverage, its drawn parts and the synced collections it binds. */
 export type CachedKit = {
   readonly kit: KitSpec;
   readonly coverage: readonly CoverageRow[];
+  readonly drawn: BuiltKit["drawn"];
   readonly collections: readonly CollectionSpec[];
 };
 
@@ -72,8 +74,10 @@ export async function buildCachedKit(): Promise<CachedKit> {
   if (Result.isFailure(variableSet)) {
     throw new Error("the Fuse variable set does not build", { cause: variableSet.failure });
   }
-  const { spec, coverage } = await Effect.runPromise(buildKit().pipe(Effect.provide(NodeFileSystem.layer)));
-  return { kit: spec, coverage, collections: variableSet.success.collections };
+  const { spec, coverage, drawn } = await Effect.runPromise(
+    buildKit().pipe(Effect.provide(NodeFileSystem.layer))
+  );
+  return { kit: spec, coverage, drawn, collections: variableSet.success.collections };
 }
 
 async function loadFullKit(): Promise<FullKit> {

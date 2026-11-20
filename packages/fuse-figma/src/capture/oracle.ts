@@ -18,9 +18,9 @@ import type {
   FrameLayerSpec,
   InstanceLayerSpec,
 } from "../components/kit-spec.ts";
-import { placesOf } from "./capture-cascade.ts";
 import type { CellAccounting, InstancePlace } from "./capture-cascade.ts";
 import type { CapturedCell, CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
+import { placesOf } from "./capture-places.ts";
 import { boxIdentity, keptDeclarations, rendersNothing, twinClaims } from "./instance-twin.ts";
 import type { KeptDeclaration } from "./instance-twin.ts";
 
@@ -133,7 +133,7 @@ export type Unreached = {
 /** A set's kept capture and what its build accounted for in each cell. */
 export type AccountedSet = {
   readonly capture: SetCapture;
-  readonly accounting: ReadonlyMap<string, CellAccounting>;
+  readonly accounting: ReadonlyMap<string, Pick<CellAccounting, "accounted" | "instances">>;
 };
 
 /**

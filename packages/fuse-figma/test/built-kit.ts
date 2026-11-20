@@ -8,6 +8,7 @@ import { deepFrozen } from "../plugin/test-support/frozen.ts";
 import { injectedKit } from "../plugin/test-support/kit-cache.ts";
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
+import type { DrawnPart } from "../src/components/drawn-parts.ts";
 import type { ChildLayerSpec, ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
 
 export { FILL, fixed, HUG, literal } from "./capture-fixtures.ts";
@@ -16,6 +17,8 @@ export { FILL, fixed, HUG, literal } from "./capture-fixtures.ts";
 export type BuiltSets = {
   readonly spec: Pick<KitSpec, "componentSets">;
   readonly coverage: readonly CoverageRow[];
+  /** Each cell's drawn parts, by its variant's key, as `drawn-parts.ts` records them. */
+  readonly drawn: ReadonlyMap<string, readonly DrawnPart[]>;
 };
 
 let built: Promise<BuiltSets> | undefined;
@@ -26,12 +29,16 @@ async function buildSets(): Promise<BuiltSets> {
     return Object.freeze({
       spec: Object.freeze({ componentSets: cached.kit.componentSets }),
       coverage: cached.coverage,
+      drawn: cached.drawn,
     });
   }
   const sets = await Effect.runPromise(buildComponentSets());
   return deepFrozen({
     spec: { componentSets: sets.map((set) => set.componentSet) },
     coverage: sets.flatMap((set) => set.coverage),
+    drawn: new Map(
+      sets.flatMap((set) => [...set.accounting].map(([cell, { parts }]) => [cell, parts] as const))
+    ),
   });
 }
 
