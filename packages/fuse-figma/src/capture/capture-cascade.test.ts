@@ -32,6 +32,7 @@
 import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { instanceOf } from "../../test/capture-fixtures.ts";
 import { readBackdrop } from "../components/box-paint.ts";
 import { buildSetsInOrder } from "../components/component-builder.ts";
 import type { BuildContext } from "../components/component-spec.ts";
@@ -397,7 +398,7 @@ describe("a fill-less root's fill inside a set that holds it as an instance", ()
     key: "popup",
     name: "Popup",
     slot: "wrapper-0",
-    parts: [{ kind: "instance", key: "row", of: row, cell: () => ({ state: "rest" }), shownIn: () => true }],
+    parts: [instanceOf("row", row)],
   };
 
   it("takes none from the holder's root, which paints around the instance itself", () => {
@@ -424,9 +425,7 @@ describe("a fill-less root's fill inside a set that holds it as an instance", ()
       key: "middle",
       name: "Middle",
       slot: "middle",
-      parts: [
-        { kind: "instance", key: "leaf", of: leaf, cell: () => ({ state: "rest" }), shownIn: () => true },
-      ],
+      parts: [instanceOf("leaf", leaf)],
     };
     const outer: SetManifest = {
       ...MANIFEST,

@@ -91,7 +91,6 @@ function stacksInlineChild(sample: {
           editable: false,
           onlyText: false,
           optional: false,
-          instance: false,
         },
       ],
       others: [],

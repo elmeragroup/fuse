@@ -19,6 +19,7 @@ import {
   frameOf,
   HUG,
   ICON,
+  instanceOf,
   literal,
   notesOf,
   part,
@@ -567,15 +568,7 @@ describe("a box's margin", () => {
     const inOuter = (classes: string) =>
       buildCaptured(
         chip({
-          parts: [
-            {
-              kind: "instance",
-              key: "badge",
-              of: badge,
-              cell: () => ({ state: "rest" }),
-              shownIn: () => true,
-            },
-          ],
+          parts: [instanceOf("badge", badge)],
         }),
         rest({ slot: "chip", classes: "flex", children: [icon(classes)] }),
         { inner: [{ manifest: badge, cells: rest(icon("mt-0.5 text-[#000000]")) }] }
@@ -1069,15 +1062,7 @@ describe("a part drawn at a scale", () => {
     };
     const { variant, coverage } = await buildCaptured(
       chip({
-        parts: [
-          {
-            kind: "instance",
-            key: "thumbs",
-            of: thumbs,
-            cell: () => ({ state: "rest" }),
-            shownIn: () => true,
-          },
-        ],
+        parts: [instanceOf("thumbs", thumbs)],
       }),
       rest({ slot: "chip", classes: "flex", children: [root] }),
       { inner: [{ manifest: thumbs, cells: rest(root) }] }

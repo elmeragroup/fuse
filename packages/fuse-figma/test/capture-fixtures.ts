@@ -19,7 +19,13 @@ import type {
   SetCapture,
 } from "../src/capture/capture-format.ts";
 import { manifestDefinition } from "../src/capture/manifest.ts";
-import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../src/capture/manifest.ts";
+import type {
+  IconManifest,
+  InstanceManifest,
+  LabelManifest,
+  PartManifest,
+  SetManifest,
+} from "../src/capture/manifest.ts";
 import { splitClassName } from "../src/components/class-name.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
@@ -306,6 +312,17 @@ export function part(fields: PartFields = {}): PartManifest {
   };
   const withOptional = fields.optional === undefined ? base : { ...base, optional: fields.optional };
   return fields.parts === undefined ? withOptional : { ...withOptional, parts: fields.parts };
+}
+
+/**
+ * An instance part of a one-axis set, shown in every cell at the inner set's `rest` cell.
+ *
+ * @param key - The part's key.
+ * @param of - The set it shows.
+ * @returns The part.
+ */
+export function instanceOf(key: string, of: SetManifest): InstanceManifest {
+  return { kind: "instance", key, of, cell: () => ({ state: "rest" }), shownIn: () => true };
 }
 
 /**

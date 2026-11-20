@@ -157,10 +157,10 @@ export type SpecField =
   | "layers"
   | "instance"
   /**
-   * What a composite draws around an instance part for its margins, which the composite owns: the
-   * frame around it for a margin of a length, or its place in the holding row for an auto margin.
-   * Where an inner root built in place draws that row, the row's own fields carry the auto margin in
-   * that root, as `readAround` feeds them.
+   * What a composite draws around an instance part, which the composite owns: the frame around it
+   * for a margin of a length, or its place in the holding row for an auto margin or an `align-self`.
+   * Where an inner root built in place draws that row, the row's own fields carry
+   * the declaration in that root, as `readPlacing` feeds them.
    */
   | "around";
 
@@ -779,26 +779,33 @@ export class LayerStyle {
   }
 
   /**
-   * Read a property of an instance part's root that this box holds and draws itself, as an auto
-   * margin on the instance places it in the box. The read fills `around` on the instance's root, which
-   * the box owns, and `feed` on this box, which the inner root built in place that draws the box, if
-   * any, must carry in turn.
+   * Read a property of a layer this box places, whose value fills fields of this box, as an auto
+   * margin or an `align-self` on the layer sets the box's alignment. On a frame or an icon the read
+   * fills `feed`, which names fields in this box's coordinates.
    *
-   * @param held - The style of the instance part's root.
+   * An instance part's root has an `inPlace` of its own, which differs from this box's. There the
+   * read fills `around` on the instance's root, since the instance's fields name paths from its inner
+   * root and the box holds the instance. It also fills `feed`, which the inner root built in place
+   * that draws this box, if any, must carry in turn.
+   *
+   * @param placed - The layer's style.
    * @param property - The property.
    * @param map - Maps the value onto a Figma field, or returns undefined where none reads it.
    * @param describe - What the mapped value became, for the coverage table.
    * @param feed - The spec fields the mapped value fills on this box.
    * @returns The mapped value, or undefined when the property is unset or does not map.
    */
-  readAround<T>(
-    held: LayerStyle,
+  readPlacing<T>(
+    placed: LayerStyle,
     property: string,
     map: (value: string) => T | undefined,
     describe: (mapped: T) => CoverageNote,
     feed: Feed
   ): T | undefined {
-    return held.#read(property, map, describe, held.feed("around"), { layer: this.#layer, feed });
+    const { inPlace } = placed.#layer;
+    return inPlace !== undefined && inPlace !== this.#layer.inPlace
+      ? placed.#read(property, map, describe, placed.feed("around"), { layer: this.#layer, feed })
+      : placed.read(property, map, describe, feed);
   }
 
   #read<T>(

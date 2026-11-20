@@ -608,8 +608,7 @@ export type FlowLayers = {
   /**
    * The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read, and
    * whether it shows its own text and no icon or part, which `readCentredLone` in `auto-margins.ts`
-   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads, and
-   * whether it is an instance part, whose auto margin the composite draws around the instance.
+   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads.
    */
   readonly parts: readonly (FlowLayer & {
     readonly style: LayerStyle;
@@ -617,7 +616,6 @@ export type FlowLayers = {
     readonly editable: boolean;
     readonly onlyText: boolean;
     readonly optional: boolean;
-    readonly instance: boolean;
   })[];
   readonly others: readonly FlowLayer[];
   /**
@@ -710,7 +708,9 @@ function readSelfAlignment(reader: LayerStyle, { parts, others }: FlowLayers): S
     return undefined;
   }
   for (const part of setters) {
-    part.style.read(
+    // On an instance part the row draws the alignment around the instance, as `readPlacing` says.
+    reader.readPlacing(
+      part.style,
       "align-self",
       (read) => read,
       () => ({

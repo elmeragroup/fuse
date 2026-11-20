@@ -419,8 +419,8 @@ function fills(feed: FeedTarget, path: readonly string[], field: string): boolea
  * the variant, where no instance field carries it, is unmapped with that difference. One that fills a
  * field an override or the instance's own sizing carries keeps its outcome, bound or literal, and so
  * does one the composite draws around the instance, as a frame for its margins or the holding row's
- * alignment for an auto margin, though the inner root that draws that row, if any, classifies the
- * latter in turn, as `drawnByHolder` says. One that turns a glyph the instance
+ * alignment for an auto margin or an `align-self`, though the inner root that draws that row, if
+ * any, classifies the latter in turn, as `drawnByHolder` says. One that turns a glyph the instance
  * swaps to its half-turn mirror keeps its outcome, its detail naming the mirror. One whose fields the variant draws the
  * same repeats it and drops. A row that is no read keeps its outcome.
  */
@@ -462,9 +462,9 @@ function classified(row: Row, visit: Visit): Row {
 
 /**
  * Whether the inner root built in place that holds the instance draws a row the instance keeps as
- * drawn around it, in fields of its own, as an auto margin on the instance fills the holding row's
- * alignment there, which `readAround` in `layer-style.ts` feeds. The holder's diff then decides the
- * row. The holder's other feed of the declaration, the instance as a whole at its path, says nothing
+ * drawn around it, in fields of its own, as an auto margin or an `align-self` on the instance fills
+ * the holding row's alignment there, which `readPlacing` in `layer-style.ts` feeds. The holder's
+ * diff then decides the row. The holder's other feed of the declaration, the instance as a whole at its path, says nothing
  * of the row, since the instance itself draws the same.
  */
 function drawnByHolder(row: Row, visit: Visit): boolean {
