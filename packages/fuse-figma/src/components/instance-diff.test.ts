@@ -1,5 +1,6 @@
 /**
- * Unit under test: `diffInstance`, here on a root's alignment, a stroke's sides and a label's face.
+ * Unit under test: `diffInstance`, here on a root's alignment, a stroke's sides, a label's face and a
+ * root's widest width.
  * Each block names its oracle. The alignment's is probe LD1, run
  * in a real Figma file on 2026-11-19. An instance of a Button-like component that fills a vertical
  * auto layout, its `primaryAxisAlignItems` overridden from CENTER to MIN, listed the field in its
@@ -190,5 +191,24 @@ describe("a label's face, built in place", () => {
   it("stays unmapped where the variant's weight binds a variable", () => {
     const diff = diffInstance(built({ ...LABEL, fontStyle: "Regular" }), held({ ...LABEL, weight: WEIGHT }));
     expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["fontStyle", "weight"]]);
+  });
+});
+
+// Oracle: the Figma plugin typings, where an instance has a `maxWidth` of its own beside the
+// `minWidth` a real file kept on one (PH3), and CSS Sizing 3 §5.2, where a chip value's `max-w-56`
+// caps the Button it renders at 224px. A root whose other limits differ too stays unmapped.
+describe("a root's widest width, built in place", () => {
+  const CAP = { kind: "literal", value: 224 } as const;
+  const built = (limits: ComponentRootSpec["limits"]): ComponentRootSpec =>
+    inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, limits });
+
+  it("becomes the instance's own maximum", () => {
+    const diff = diffInstance(built({ ...NO_LIMITS, maxWidth: CAP }), VARIANT);
+    expect([diff.maxWidth, diff.unmapped]).toEqual([CAP, []]);
+  });
+
+  it("stays unmapped beside a minimum that differs too", () => {
+    const diff = diffInstance(built({ ...NO_LIMITS, maxWidth: CAP, minHeight: CAP }), VARIANT);
+    expect([diff.maxWidth, diff.unmapped.map(({ field }) => field)]).toEqual([undefined, ["limits"]]);
   });
 });

@@ -580,6 +580,11 @@ export type InstanceLayerSpec = {
    */
   readonly minWidth?: NumberSpec;
   /**
+   * The widest width the instance takes, as a chip value's `max-w-56` caps its Button, absent for the
+   * inner variant's own.
+   */
+  readonly maxWidth?: NumberSpec;
+  /**
    * True for an instance whose properties a designer sets from the outer instance's properties panel,
    * as Figma's `isExposedInstance` marks it, absent for one they do not.
    */

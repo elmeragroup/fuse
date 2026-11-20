@@ -20,7 +20,9 @@ import type {
   InstanceLayerSpec,
   InstanceOverride,
   InstancePropertiesSpec,
+  LimitsSpec,
   NestedPropertiesSpec,
+  NumberSpec,
   SizingSpec,
   TextLayerSpec,
 } from "./kit-spec";
@@ -54,6 +56,8 @@ export type InstanceDiff = {
   readonly overrides: readonly InstanceOverride[];
   /** The sizing of the root built in place, which the instance takes in its parent's auto layout. */
   readonly sizing: SizingSpec;
+  /** The root's widest width built in place, which the instance takes, absent for the variant's own. */
+  readonly maxWidth?: NumberSpec;
   /** Each glyph turned half a turn in place that the instance swaps to its mirror, at its key path. */
   readonly mirrored: readonly Mirrored[];
   /** The differences no instance field carries. */
@@ -93,6 +97,8 @@ type Found = {
    * until the walk ends, and the place among the overrides it takes if nothing else stays unmapped.
    */
   aligned: { readonly override: InstanceOverride; readonly at: number } | undefined;
+  /** The root's widest width built in place, where only it among the root's limits differs. */
+  maxWidth: NumberSpec | undefined;
   /** The sizing of the inner root built in place, which the instance takes. */
   readonly root: SizingSpec;
   readonly text: Map<string, string>;
@@ -127,6 +133,9 @@ type Found = {
  *   whose shortcut margin stays unmapped (#773). An instance that hugs or takes a fixed length along
  *   its direction, and a frame below the root, keep the alignment unmapped, since the probe covered
  *   neither.
+ * - The root's widest width becomes the instance's own `maxWidth` where only it among the root's
+ *   limits differs, as a chip value's `max-w-56` caps its Button, as the instance carries a popup
+ *   row's `minWidth` (PH3).
  * - The root's sizing is the instance's, whatever the outer layout makes of each axis: a fill, a
  *   length or a hug (N4). The layers inside guard it, since a layer that sizes against the root's
  *   length draws another way where that length changes.
@@ -151,6 +160,7 @@ type Found = {
 export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootSpec): InstanceDiff {
   const found: Found = {
     aligned: undefined,
+    maxWidth: undefined,
     root: inPlace.sizing,
     text: new Map(),
     swap: new Map(),
@@ -163,7 +173,9 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
   // The alignment the walk noted unmapped becomes an override where it is the one difference left.
   const { aligned } = found;
   const carried = aligned !== undefined && found.unmapped.length === 1 ? aligned : undefined;
+  const capped = found.maxWidth === undefined ? {} : { maxWidth: found.maxWidth };
   return {
+    ...capped,
     text: Object.fromEntries(found.text),
     swap: Object.fromEntries(found.swap),
     nested: found.nested,
@@ -258,6 +270,13 @@ function diffBox(
       case "children":
         diffLayers(found, path, inPlace.children, variant.children);
         break;
+      case "limits":
+        if (kind === "root" && widestOnly(inPlace.limits, variant.limits)) {
+          found.maxWidth = inPlace.limits.maxWidth;
+        } else {
+          diffField(found, path, field, built.get(field), held.get(field));
+        }
+        break;
       case "itemSpacing":
         if (flowCount(inPlace) > 1 || flowCount(variant) > 1) {
           diffField(found, path, field, built.get(field), held.get(field));
@@ -267,6 +286,18 @@ function diffBox(
         diffField(found, path, field, built.get(field), held.get(field));
     }
   }
+}
+
+/**
+ * Whether two roots' limits differ in the widest width alone, which the root built in place sets, as
+ * a chip value's `max-w-56` caps the Button it renders.
+ */
+function widestOnly(inPlace: LimitsSpec, variant: LimitsSpec): boolean {
+  return (
+    inPlace.maxWidth !== undefined &&
+    !isDeepStrictEqual(inPlace.maxWidth, variant.maxWidth) &&
+    isDeepStrictEqual({ ...inPlace, maxWidth: undefined }, { ...variant, maxWidth: undefined })
+  );
 }
 
 /** Whether a root fills its parent along its own direction, as the instance LD1 probed did. */

@@ -1128,10 +1128,15 @@ function storeLimit(state: NodeState, field: LimitField, value: number | null): 
 export function setLimit(state: NodeState, field: LimitField, value: number | null): void {
   storeLimit(state, field, value);
   write(state, field);
-  // Rule 44: a minimum width written on an instance lists both minimums among its overrides.
+  // Rule 44: a minimum width written on an instance lists both minimums among its overrides, and a
+  // maximum width both maximums.
   if (field === "minWidth" && state.type === "INSTANCE") {
     markOverride(state, "minWidth");
     markOverride(state, "minHeight");
+  }
+  if (field === "maxWidth" && state.type === "INSTANCE") {
+    markOverride(state, "maxWidth");
+    markOverride(state, "maxHeight");
   }
 }
 

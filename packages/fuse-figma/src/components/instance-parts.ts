@@ -303,7 +303,8 @@ export class InstanceParts {
       variant: variant.key,
       sizing: diff.sizing,
     };
-    const set = properties === undefined ? plain : { ...plain, properties };
+    const sized = diff.maxWidth === undefined ? plain : { ...plain, maxWidth: diff.maxWidth };
+    const set = properties === undefined ? sized : { ...sized, properties };
     const overridden = diff.overrides.length === 0 ? set : { ...set, overrides: diff.overrides };
     const exposed = part.exposed === undefined ? overridden : { ...overridden, exposed: part.exposed };
     const layer = part.optional === undefined ? exposed : { ...exposed, visibleProperty: part.optional.name };
@@ -452,6 +453,7 @@ function classified(row: Row, visit: Visit): Row {
   const carried = [
     ...diff.overrides.map((override) => ({ path: override.path, field: OVERRIDDEN_FIELD[override.field] })),
     ...(isDeepStrictEqual(diff.sizing, visit.variant.root.sizing) ? [] : [{ path: [], field: "sizing" }]),
+    ...(diff.maxWidth === undefined ? [] : [{ path: [], field: "limits" }]),
   ];
   if (fed.some((feed) => carried.some(({ path, field }) => fills(feed, path, field)))) {
     return row;
@@ -492,7 +494,7 @@ function differenceDetail(visit: Visit, difference: InstanceDifference): string 
   const carries =
     root && difference.field === "primaryAlign"
       ? "an instance carries its root's alignment only where it fills its parent along the root's direction and no other difference stays unmapped"
-      : "an instance carries only property values, paints, solid stroke weights, corners, shadows, text alignments, literal font styles and its own sizing";
+      : "an instance carries only property values, paints, solid stroke weights, corners, shadows, text alignments, literal font styles, its widest width and its own sizing";
   return `${layer} draws ${difference.field} ${difference.inPlace} where the composite holds it and ${difference.variant} in ${visit.variant.key}, and ${carries}, so give ${visit.part.of.name} an axis that draws it, or draw the part as a frame`;
 }
 

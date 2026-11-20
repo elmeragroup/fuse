@@ -1,13 +1,15 @@
 /**
  * The overrides a chip segment needs on its Button instance, on the in-memory file in
- * `fake-figma.ts`: the stroke's side weights on the root and the label's face. Unit under test:
- * `instance-overrides.ts`, through `reconcileKit` on a synced file. Oracle: the kit spec, here List
- * detail's first row Button with an override added, as a chip segment's `border-0 border-s` keeps
- * only its start edge of Button's 1px border and an operator's `font-normal` shows Regular where
- * Button's label is Medium, and what a real file's `overrides` listed on 2026-11-20: each side a write
- * changed, and a text's `fontName`, each kept listed after the main's value was written back (SW).
- * The fonts each write needs and leaves follow the fake's text rules 7, 10, 50 and 51 (PG8, PG13). No
- * real file has run the plugin's writes yet: the owner's Apply is their check.
+ * `fake-figma.ts`: the stroke's side weights on the root, the label's face and the root's widest
+ * width. Unit under test: `instance-overrides.ts` and the sizing stage of `instance-layers.ts`, through
+ * `reconcileKit` on a synced file. Oracle: the kit spec, here List detail's first row Button with an
+ * override added, as a chip segment's `border-0 border-s` keeps only its start edge of Button's 1px
+ * border, an operator's `font-normal` shows Regular where Button's label is Medium and a value's
+ * `max-w-56` caps it at 224px, and what a real file's `overrides` listed on 2026-11-20: each side a
+ * write changed, a text's `fontName` and an instance's `maxWidth`, each kept listed after the main's
+ * value was written back (SW). The fonts each write needs and leaves follow the fake's text rules 7, 10,
+ * 50 and 51 (PG8, PG13). No real file has run the plugin's writes yet: the owner's Apply is their
+ * check.
  */
 import { describe, expect, it } from "vitest";
 
@@ -17,6 +19,7 @@ import type {
   InstanceOverride,
   KitSpec,
   TextLayerSpec,
+  VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import { createFakeFigma } from "./fake-figma.ts";
@@ -185,24 +188,25 @@ async function boundWeightRow(characters?: string) {
   return { file, button, weighted, variable };
 }
 
-/** `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. */
-function withDashedButton(kit: KitSpec, dashPattern: readonly number[]): KitSpec {
+/** `kit` with every Button variant's root as `edit` makes it. */
+function withButtonRoots(kit: KitSpec, edit: (root: VariantSpec["root"]) => VariantSpec["root"]): KitSpec {
   return {
     ...kit,
     componentSets: kit.componentSets.map((set) =>
       set.name !== "Button"
         ? set
-        : {
-            ...set,
-            variants: set.variants.map((variant) => {
-              const { stroke } = variant.root;
-              return stroke === undefined || "sides" in stroke
-                ? variant
-                : { ...variant, root: { ...variant.root, stroke: { ...stroke, dashPattern } } };
-            }),
-          }
+        : { ...set, variants: set.variants.map((variant) => ({ ...variant, root: edit(variant.root) })) }
     ),
   };
+}
+
+/** `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. */
+function withDashedButton(kit: KitSpec, dashPattern: readonly number[]): KitSpec {
+  return withButtonRoots(kit, (root) =>
+    root.stroke === undefined || "sides" in root.stroke
+      ? root
+      : { ...root, stroke: { ...root.stroke, dashPattern } }
+  );
 }
 
 const START = { top: 0, right: 0, bottom: 0, left: 1 };
@@ -512,5 +516,41 @@ describe("an instance label's face on an applied file", () => {
       label.boundVariables?.fontWeight?.[0]?.id,
       await reconcile(file, weighted),
     ]).toEqual([{ family: "Roboto", style: "Regular" }, variable?.id, []]);
+  });
+});
+
+describe("an instance's widest width on an applied file", () => {
+  // A `maxWidth` write also lists `maxHeight` among the instance's overrides (SW), and the fake keeps
+  // an instance's own limits through a change of the main's, as an override keeps its value (N3), so
+  // the instance shows the main's height cap only once the plan writes it.
+  it("caps the instance, follows the main's height cap, goes back to the main's width cap where the kit drops it, and each next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    // A main with a cap of its own tells going back to it from clearing the instance's.
+    const mainCap = withButtonRoots(kit, (root) => ({
+      ...root,
+      limits: { ...root.limits, maxWidth: { kind: "literal", value: 300 } },
+    }));
+    const capped = onFirstRowButton(mainCap, (layer) => ({
+      ...layer,
+      maxWidth: { kind: "literal", value: 224 },
+    }));
+    // A height cap holds on a main that hugs its height, which the kit check asks of it.
+    const tall = withButtonRoots(capped, (root) => ({
+      ...root,
+      sizing: { ...root.sizing, vertical: { kind: "hug" } },
+      limits: { ...root.limits, maxHeight: { kind: "literal", value: 60 } },
+    }));
+    const { file, button } = await firstRow();
+    const steps: (readonly [number | null, number | null, readonly string[]])[] = [];
+    for (const each of [mainCap, capped, tall, mainCap]) {
+      await reconcile(file, each, true);
+      steps.push([button.maxWidth, button.maxHeight, await reconcile(file, each)]);
+    }
+    expect(steps).toEqual([
+      [300, null, []],
+      [224, null, []],
+      [224, 60, []],
+      [300, null, []],
+    ]);
   });
 });
