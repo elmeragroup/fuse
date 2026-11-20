@@ -15,7 +15,7 @@
 import type { Page } from "playwright";
 
 import { cellSelector } from "../compare/preview-page.ts";
-import { AXIS_CONSTRAINT } from "../components/kit-spec.ts";
+import { AXIS_CONSTRAINT, outOfLayout } from "../components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentRootSpec,
@@ -232,7 +232,7 @@ function fixedExtent(
   if (size.kind !== "hug" || !("children" in layer) || !("direction" in layer)) {
     return undefined;
   }
-  const flowing = layer.children.filter((child) => !("absolute" in child));
+  const flowing = layer.children.filter((child) => !outOfLayout(child));
   const column = layer.direction === "VERTICAL";
   const widths = flowing.flatMap((child) =>
     column && "sizing" in child && child.sizing.horizontal.kind === "fill"
