@@ -55,8 +55,9 @@ export function childrenOf(state: NodeState): NodeState[] {
 
 /**
  * Give an instance, or a sublayer of one, a sublayer for each child of the layer it shows. A
- * sublayer stays while its main layer does. A swap also carries the overrides of a sublayer to
- * the new sublayer of the same name, as Figma keeps a glyph's color when an icon swaps.
+ * sublayer stays while its main layer does. A swap also carries a sublayer's fill override to the
+ * new sublayer of the same name, as Figma keeps a glyph's color when an icon swaps, and a text's
+ * alignment override to a new text of that name (rule 41, FA1).
  */
 export function mirror(state: NodeState, source: NodeState, swapped: boolean): void {
   const shown = childrenOf(source);
@@ -80,6 +81,10 @@ export function mirror(state: NodeState, source: NodeState, swapped: boolean): v
     if (named?.overridden.has("fills") === true) {
       sublayer.fills = named.fills;
       sublayer.overridden.add("fills");
+    }
+    if (named?.overridden.has("textAlignHorizontal") === true && sublayer.type === "TEXT") {
+      sublayer.textAlignHorizontal = named.textAlignHorizontal;
+      sublayer.overridden.add("textAlignHorizontal");
     }
     return sublayer;
   });

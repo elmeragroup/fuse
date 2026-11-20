@@ -47,7 +47,8 @@
  * 35. `swapComponent` and a VARIANT write keep the instance's node id and its TEXT and BOOLEAN values
  *    (N1), and its `componentPropertyReferences.visible`, its `isExposedInstance` and its swap
  *    property's value (NS). An override the instance itself holds stays, and a sublayer's fill
- *    override moves to the new sublayer of the same name, as below.
+ *    override moves to the new sublayer of the same name, as below, and so does a label's alignment
+ *    (rule 41).
  * 39. `isExposedInstance` reads back true once written on an instance inside a component in a set,
  *    an instance of that component lists the nested instance in `exposedInstances`, and
  *    `setProperties` on the listed instance sets its TEXT (`Undo`) (N5). The typings make the field
@@ -59,7 +60,20 @@
  *    when the main's label turned RIGHT and took new characters. Writing the main's RIGHT on it
  *    afterwards kept the field listed, unlike a fill (NS), so an equal write leaves the override
  *    (NA). A label that overrides none shows its main layer's alignment, as rule 38 has the rest
- *    follow the main. No probe swapped an instance with the override, so a swap drops it.
+ *    follow the main. A swap keeps the override. On 2026-11-20 an instance of `size=sm` whose
+ *    `Label` took CENTER read CENTER with the new characters after `swapComponent(size=lg)`, after
+ *    `setProperties({ size: 'lg' })` and after `swapComponent` to plain components whose label was
+ *    RIGHT or LEFT, and `overrides` listed the new label with `textAlignHorizontal` each time (FA1).
+ *    So the fake moves the override to the new text of the same name among the instance's children,
+ *    as it moves a fill. FA1 left these open, and the fake assumes them:
+ *    - A swap to a component whose label has another name drops the override, and so does one
+ *      whose layer of that name is no text.
+ *    - A label below the instance's children loses its override in a swap.
+ *    - Where two labels share a name, each new label of that name takes the first old one's.
+ *    - A swap to a component whose label already reads the override's alignment keeps the field
+ *      listed, as NA's equal write did. FA1's destinations read LEFT or RIGHT.
+ *    - A swap through an INSTANCE_SWAP property carries the override the same way. FA1 swapped
+ *      through `swapComponent` and a variant write.
  * 43. One icon instance links a BOOLEAN's `visible` and an INSTANCE_SWAP's `mainComponent` together.
  *    On 2026-10-25 an `Icon/A` instance in a hugging row, gap 8, took both links and read both back;
  *    with the BOOLEAN's default false it was hidden in the main and in an instance, and the row was
