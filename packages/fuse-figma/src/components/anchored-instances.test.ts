@@ -1,21 +1,23 @@
 /**
- * Unit under test: the built kit's absolute MAX × MIN instances and the mains they show. Oracle: probe
- * W5-P14b, where a real file kept a MAX instance's end inset through a density switch that resized it
- * only where its main is auto layout (the Icon button moved from x 400 to 396 in a 448px popup), while
- * a plain frame whose bound size changed by mode kept its x and drifted to a 12px end inset. The build
- * has no rule that refuses such an instance, since every box it builds is auto layout
- * (`DirectionSpec` has no `NONE`). This test pins that every MAX × MIN instance shows an auto layout
- * main, and lists them, so a new one, or a main without auto layout, forces that rule to be written.
+ * Unit under test: the built kit's absolute instances at their parent's end, and the frames that
+ * hold them there. Oracles: CSS 2.1 §10.3.7, under which Dialog's and Sheet's `absolute top-4
+ * right-4` closes keep 16px from the right and top whatever their size; probes PG14 and PG14b, under
+ * which an instance at MAX in an instance of the outer component keeps its `x` when a density switch
+ * resizes it, so its right inset drifts by the change, where in the outer component's own main it
+ * keeps the inset (as W5-P14b found); and probe PG16, under which an absolute auto layout frame
+ * STRETCH across the parent, aligned to its end, padded 16 on the right and top and hugging its height
+ * keeps the close in its flow 16px from both edges.
  *
- * That holds in the outer component's own main. Probe PG14b (2026-11-19) found that in an instance of
- * the outer component, as a designer places a Dialog or a Sheet and as the kit's previews show them,
- * a density switch keeps the placed instance's x, so its end inset drifts by its size change (#790).
- * This test does not cover that case.
+ * The closes bind their size to `control-h-sm`, which density changes, so each sits in such a frame.
+ * The Sidebar menu badge stays at MAX itself: the capture measured it one width in every mode, and
+ * W5-P14b holds for a main with auto layout, which every box the kit builds is (`DirectionSpec` has
+ * no `NONE`). A new instance at an end, or one that leaves its wrapper, changes the lists.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit, instancesIn, variantRoot } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
+import { walkLayers } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 
@@ -23,26 +25,69 @@ beforeAll(async () => {
   ({ spec } = await builtKit());
 });
 
-describe("absolute MAX × MIN instances", () => {
-  it("show only mains with auto layout, which keep the end inset in the outer main as density resizes them (W5-P14b; #790 for instances)", () => {
-    const anchored = spec.componentSets.flatMap(({ variants }) =>
+describe("absolute instances at their parent's end", () => {
+  it("sit in a wrapper that pads their CSS offsets where density resizes them (PG14b, PG16)", () => {
+    const wrapped = spec.componentSets.flatMap(({ variants }) =>
       variants.flatMap((variant) =>
-        instancesIn(variant.root.children)
-          .filter((layer) => layer.placement?.vertical.kind === "start")
-          .map((layer) => {
-            const main = variantRoot(spec, layer.variant);
-            return [variant.key, layer.variant, main.direction] as const;
-          })
+        walkLayers(variant.root).flatMap((layer) =>
+          layer.kind === "frame" &&
+          layer.children.some((child) => child.kind === "instance" && child.placement === undefined) &&
+          layer.placement?.kind === "edges"
+            ? [
+                [
+                  variant.key,
+                  layer.key,
+                  layer.placement.horizontal,
+                  layer.placement.vertical,
+                  layer.primaryAlign,
+                  [layer.paddingTop, layer.paddingRight, layer.paddingBottom, layer.paddingLeft].map(
+                    (padding) => (padding.kind === "literal" ? padding.value : padding)
+                  ),
+                  layer.sizing.vertical.kind,
+                  layer.children.map((child) => child.key),
+                ] as const,
+              ]
+            : []
+        )
       )
     );
-    expect(anchored).toEqual([
-      ["dialog-content/content=basic", "icon-button/variant=ghost,size=icon-sm,state=rest", "HORIZONTAL"],
+    const close = (variant: string, key: string) =>
       [
-        "dialog-content/content=footer-close",
-        "icon-button/variant=ghost,size=icon-sm,state=rest",
-        "HORIZONTAL",
-      ],
-      ["sheet-content/side=right", "icon-button/variant=ghost,size=icon-sm,state=rest", "HORIZONTAL"],
+        variant,
+        `${key} placement`,
+        { kind: "stretch", start: 0, end: 0 },
+        { kind: "start", start: 0 },
+        "MAX",
+        [16, 16, 0, 0],
+        "hug",
+        [key],
+      ] as const;
+    expect(wrapped).toEqual([
+      close("dialog-content/content=basic", "close"),
+      close("dialog-content/content=footer-close", "close"),
+      close("sheet-content/side=right", "corner-close"),
+    ]);
+  });
+
+  it("keep their own MAX place only where one width in every mode, in a main with auto layout (W5-P14b)", () => {
+    const placed = spec.componentSets.flatMap(({ variants }) =>
+      variants.flatMap((variant) =>
+        instancesIn(variant.root.children)
+          .filter((layer) => layer.placement?.horizontal.kind === "end")
+          .map(
+            (layer) =>
+              [
+                variant.key,
+                layer.key,
+                layer.sizing.horizontal.kind,
+                variantRoot(spec, layer.variant).direction,
+              ] as const
+          )
+      )
+    );
+    expect(placed).toEqual([
+      ["sidebar-menu-item-with-badge/isActive=false", "badge", "hug", "HORIZONTAL"],
+      ["sidebar-menu-item-with-badge/isActive=true", "badge", "hug", "HORIZONTAL"],
     ]);
   });
 });

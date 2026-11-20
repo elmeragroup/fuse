@@ -42,6 +42,7 @@ import type {
 import type { LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
 import { readPivot } from "./pivot-part";
+import { wrapPlaced } from "./placement-wrapper";
 
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
@@ -178,7 +179,9 @@ export function placeParts(
         leaveUnplaced(style, read.kind === "refused" ? read.why : UNSIZED_INSTANCE);
         return layer;
       }
-      return { ...layer, placement };
+      return read.kind === "placed" && read.wrapped !== undefined
+        ? wrapPlaced(layer, placement, read.wrapped)
+        : { ...layer, placement };
     }
     if (plans.get(style) === UNPAINTABLE) {
       leaveUnplaced(style, UNPAINTABLE.why);

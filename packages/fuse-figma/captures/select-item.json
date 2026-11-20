@@ -529,6 +529,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":8}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "svg",
@@ -639,6 +640,7 @@
               "pseudo": {},
               "variables": {"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":8}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "svg",
@@ -749,6 +751,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--row-px":{"_tag":"element","up":8}},
               "unmatched": [],
+              "measured": {"oneLength":["horizontal","vertical"]},
               "children": [
                 {
                   "tag": "svg",

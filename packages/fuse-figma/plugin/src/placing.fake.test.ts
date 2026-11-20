@@ -7,9 +7,13 @@
  * before:h-full`), so it is as tall as the item; MIN keeps a start distance, STRETCH both; and both
  * paint over the item's text, after it, as CSS paints positioned boxes (CSS 2.1 Appendix E). The fake
  * lays out no hugging frame, so an item stays 100px tall, its height before the kit's first write.
+ * Dialog's and Sheet's corner closes keep 16px from their popup's right and top in every preview, and
+ * a placement wrapper still hugs its height after Apply; their oracles sit beside them.
  */
 import { describe, expect, it } from "vitest";
 
+import type { ChildLayerSpec, KitSpec } from "../../src/components/kit-spec.ts";
+import { createFakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
 import { appliedFile, kitFixture, kitPage, setOn } from "./kit-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
@@ -86,5 +90,111 @@ describe("a timeline item's dot and connector", () => {
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     expect((await reconcileKit(file.figma, kit, false)).changes).toEqual([]);
+  });
+});
+
+/** Every layer at or below a node, depth first. */
+function layersOf(node: BaseNode): readonly BaseNode[] {
+  return [node, ...("children" in node ? node.children.flatMap(layersOf) : [])];
+}
+
+/**
+ * Each shown instance below a page's preview frames whose key is `key`, with the box it is placed in: the
+ * nearest layer above it that sits in its own parent's flow, so a placement wrapper is passed over.
+ */
+function placedInPreviews(page: PageNode, key: string): readonly { part: SceneNode; holder: SceneNode }[] {
+  const previews = page.children.filter((node) => keyOf(node).startsWith("preview/"));
+  return previews.flatMap(layersOf).flatMap((part) => {
+    if (keyOf(part) !== key || part.type !== "INSTANCE" || !part.visible) {
+      return [];
+    }
+    let holder = part.parent;
+    while (holder !== null && "layoutPositioning" in holder && holder.layoutPositioning === "ABSOLUTE") {
+      holder = holder.parent;
+    }
+    return holder !== null && holder.type !== "PAGE" && holder.type !== "DOCUMENT" ? [{ part, holder }] : [];
+  });
+}
+
+/** A layer's distances to the right and top edges of a box above it, read through each layer's place. */
+function insets(part: SceneNode, holder: SceneNode) {
+  let x = 0;
+  let y = 0;
+  for (let node: BaseNode | null = part; node !== null && node !== holder; node = node.parent) {
+    if (!("x" in node)) {
+      throw new Error(`${part.name} sits in no box below ${holder.name}`);
+    }
+    x += node.x;
+    y += node.y;
+  }
+  return { right: holder.width - x - part.width, top: y };
+}
+
+describe("an overlay's corner close", () => {
+  // Oracle: CSS 2.1 §10.3.7 keeps a box's declared `right` whatever its width, so Dialog's and
+  // Sheet's `absolute top-4 right-4` closes sit 16px inside the popup's right and top edges in every
+  // density. The fake reads a placed layer in an instance as PG14b found it and a placement wrapper's
+  // layer as PG16 found it (rules 63 and 64). The branded previews pin Comfortable, where the close's
+  // `control-h-sm` is longer than in the mains' Dense.
+  it.each([
+    ["page/dialog", "close"],
+    ["page/sheet", "corner-close"],
+  ])("on %s sits 16px from the popup's right and top in every preview", async (page, key) => {
+    const file = await appliedFile();
+    const placed = placedInPreviews(await kitPage(file, page), key);
+    expect(placed.length).toBeGreaterThan(0);
+    const widths = new Set(placed.map(({ part }) => part.width));
+    expect(widths.size).toBeGreaterThan(1);
+    expect(placed.map(({ part, holder }) => insets(part, holder))).toEqual(
+      placed.map(() => ({ right: 16, top: 16 }))
+    );
+  });
+});
+
+/** The layers with each `close placement` wrapper's width left to its place. */
+function unsized(layers: readonly ChildLayerSpec[]): readonly ChildLayerSpec[] {
+  return layers.map((layer) => {
+    if (layer.kind !== "frame") {
+      return layer;
+    }
+    return layer.key === "close placement"
+      ? { ...layer, sizing: { ...layer.sizing, horizontal: { kind: "placed" } } }
+      : { ...layer, children: unsized(layer.children) };
+  });
+}
+
+/** The kit with Dialog's close wrappers leaving their width to their place. */
+function placedWidth(kit: KitSpec): KitSpec {
+  return {
+    ...kit,
+    componentSets: kit.componentSets.map((set) => ({
+      ...set,
+      variants: set.variants.map((variant) => ({
+        ...variant,
+        root: { ...variant.root, children: unsized(variant.root.children) },
+      })),
+    })),
+  };
+}
+
+describe("a placement wrapper whose length its place sets", () => {
+  // Oracle: PG16's wrapper hugs its height around the close, and a Plan right after an Apply lists
+  // nothing. Dialog's popup is 448px wide, so the kit gives its wrapper that width; this case leaves
+  // the width to the place, as the build does where it reads no literal width for the parent, so
+  // Apply resizes the wrapper, which turns its height FIXED (fake rule 5).
+  it("still hugs its height after Apply, and the next Plan lists nothing", async () => {
+    const { kit, collections } = await kitFixture();
+    const placed = placedWidth(kit);
+    const file = createFakeFigma({ collections });
+    await reconcileKit(file.figma, placed, true);
+    file.reopen();
+    const set = setOn(await kitPage(file, "page/dialog"), "Dialog content");
+    const wrapper = below(set, "dialog-content/content=basic", "close placement");
+    expect([wrapper.width, wrapper.layoutSizingHorizontal, wrapper.layoutSizingVertical]).toEqual([
+      448,
+      "FIXED",
+      "HUG",
+    ]);
+    expect((await reconcileKit(file.figma, placed, false)).changes).toEqual([]);
   });
 });

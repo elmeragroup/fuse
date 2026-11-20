@@ -35,6 +35,10 @@
  * other shape, both offsets beside a length of the part's own, and a containing block the parent is
  * not leave the part's place unmapped, an instance's with the reason.
  *
+ * An instance at its parent's end across, at a width the capture did not measure one length in every
+ * mode (`oneLength`), keeps its place only in a placement wrapper (`placement-wrapper.ts`), as
+ * `wrapIfVarying` says, so the plan names the wrapper it needs.
+ *
  * `box-mapping.ts` plans the place, and every length it sets, before the part maps, so the sizing
  * gives a `stretch` axis the length the parent leaves it and a refused place leaves it none, and
  * `placement.ts` reads it once the part maps.
@@ -112,6 +116,11 @@ export type PlacementContext = {
    * containing block, an element above the parent, in every mode (`parentSpansBlock`).
    */
   readonly parentSpansBlock: boolean;
+  /**
+   * The axes along which the capture measured the part one length in every density and theme
+   * (`oneLength`), empty where it measured none.
+   */
+  readonly oneLength: ReadonlySet<"horizontal" | "vertical">;
   /** The styles of the parts in the parent's flow, which a centre offset's parent height reads. */
   readonly flow: readonly LayerStyle[];
   /** How many layers sit in the parent's flow: its parts, icons and label. */
@@ -134,9 +143,22 @@ type PlannedAxis = {
 /** Why a part has no place. */
 type Refused = { readonly kind: "refused"; readonly why: string };
 
+/**
+ * An instance placed at its parent's end across, at a width a mode can change, which the build draws
+ * in a placement wrapper (`placement-wrapper.ts`): `outer` is the parent's outer width where the room
+ * knows it, the width the wrapper stretches to.
+ */
+export type Wrapped = { readonly outer: number | undefined };
+
 /** A part's place as planned before it maps, or why it has none. */
 export type PlacementPlan =
-  | { readonly kind: "planned"; readonly horizontal: PlannedAxis; readonly vertical: PlannedAxis }
+  | {
+      readonly kind: "planned";
+      readonly horizontal: PlannedAxis;
+      readonly vertical: PlannedAxis;
+      /** The wrapper an instance's place needs, absent for a part placed by its own constraints. */
+      readonly wrapped?: Wrapped;
+    }
   | Refused;
 
 /** The kind of layer a part draws as, which decides the places it can take. */
@@ -162,6 +184,9 @@ const NO_ROOM = refused(
  */
 export const UNPAINTABLE = refused(
   "CSS paints the absolute part over an in-flow layer that a positioned one precedes, which Figma, keeping the flow's order, cannot paint so"
+);
+const UNWRAPPED = refused(
+  "a mode can change the absolute instance's length at its parent's bottom, at a centre, or across beside a place other than the top, and only a wrapper for an instance at its parent's right and top is known to keep such a place (PG16)"
 );
 const BOUNDED = (property: string): Refused =>
   refused(
@@ -403,7 +428,42 @@ export function planPlacement(
   if (horizontal.kind === "refused") {
     return horizontal;
   }
-  return vertical.kind === "refused" ? vertical : { kind: "planned", horizontal, vertical };
+  if (vertical.kind === "refused") {
+    return vertical;
+  }
+  const planned = { kind: "planned", horizontal, vertical } as const;
+  return layer === "instance" ? wrapIfVarying(planned, context) : planned;
+}
+
+/**
+ * The place of an instance whose length a mode can change on an axis where it sits at its parent's
+ * end or centre. Figma's MAX and CENTER keep the place as the parent resizes, but in an instance of
+ * the outer component a mode that changes the part's own length keeps its `x`, so its end inset
+ * drifts by the change (PG14, PG14b), where CSS keeps the declared offset (CSS 2.1 §10.3.7). A wrapper
+ * that stretches across the parent and pads the offset keeps it (PG16). An axis the capture measured
+ * one length in every mode (`oneLength`) needs none. The wrapper draws only the shape PG16 measured,
+ * the part at its parent's end across and its start down, so any other shape a mode can resize leaves
+ * the place unmapped.
+ */
+function wrapIfVarying(
+  plan: { readonly kind: "planned"; readonly horizontal: PlannedAxis; readonly vertical: PlannedAxis },
+  context: PlacementContext
+): PlacementPlan {
+  const varies = (axis: Axis) => plan[axis.name].at.kind !== "start" && !context.oneLength.has(axis.name);
+  if (!varies(HORIZONTAL) && !varies(VERTICAL)) {
+    return plan;
+  }
+  if (varies(VERTICAL) || plan.horizontal.at.kind !== "end" || plan.vertical.at.kind !== "start") {
+    return UNWRAPPED;
+  }
+  const paddingBox = context.paddingBox.horizontal;
+  const startBorder = border(context.parent, HORIZONTAL.startBorder);
+  const endBorder = border(context.parent, HORIZONTAL.endBorder);
+  const outer =
+    paddingBox === undefined || startBorder === undefined || endBorder === undefined
+      ? undefined
+      : paddingBox + startBorder + endBorder;
+  return { ...plan, wrapped: { outer } };
 }
 
 /** How the coverage table names the length a stretch sets. */
@@ -458,7 +518,7 @@ function distance(at: AxisPlacementSpec, side: "start" | "end", edge: string): s
 
 /** What {@link readPlacement} made of a part: its place, or the reason it has none. */
 export type PlacementRead =
-  | { readonly kind: "placed"; readonly placement: EdgePlacementSpec }
+  | { readonly kind: "placed"; readonly placement: EdgePlacementSpec; readonly wrapped?: Wrapped }
   | { readonly kind: "refused"; readonly why: string };
 
 /**
@@ -490,15 +550,15 @@ export function readPlacement(style: LayerStyle, plan: PlacementPlan): Placement
       style.feed("placement")
     );
   }
-  return {
-    kind: "placed",
-    placement: {
-      kind: "edges",
-      within: "parent",
-      horizontal: plan.horizontal.at,
-      vertical: plan.vertical.at,
-    },
+  const placement: EdgePlacementSpec = {
+    kind: "edges",
+    within: "parent",
+    horizontal: plan.horizontal.at,
+    vertical: plan.vertical.at,
   };
+  return plan.wrapped === undefined
+    ? { kind: "placed", placement }
+    : { kind: "placed", placement, wrapped: plan.wrapped };
 }
 
 /**

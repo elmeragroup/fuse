@@ -15,11 +15,16 @@
  * popup's text and density grew it, and in an instance of the popup resized to 300 (W5-P12), and the
  * Dialog's corner close in the main, in an instance pinned Comfortable and in the open composite's
  * centred popup instance (W5-P14). MAX keeps an instance's end inset only for an instance whose main
- * is auto layout, which every box the kit builds is (W5-P14b). A meter's fill kept SCALE across and
- * STRETCH down in its bar (P8). No real file has yet held a `stretch` beside a parent that hugs its
- * text, or one whose end lies past the parent's edge, as a timeline connector's does.
+ * is auto layout, which every box the kit builds is (W5-P14b). On 2026-11-19 an instance of the outer
+ * component kept a placed close's `x` as a density switch grew it from 24 to 32, so its right inset
+ * fell from 16 to 8, while the main kept 16 (PG14, PG14b). W5-P14's record does not say whether the
+ * close changed size in its instance pinned Comfortable, so the two readings may not conflict. The
+ * build follows PG14b: a placed instance a mode resizes sits in a placement wrapper, a row STRETCH
+ * across the parent that pads the inset, which held it (PG16, `placement-wrapper.ts`). A meter's fill kept SCALE across and STRETCH down in its bar (P8). No real
+ * file has yet held a `stretch` beside a parent that hugs its text, or one whose end lies past the
+ * parent's edge, as a timeline connector's does.
  */
-import type { AxisPlacementSpec, EdgePlacementSpec } from "../../src/components/kit-spec.ts";
+import type { AxisPlacementSpec, EdgePlacementSpec, SizingSpec } from "../../src/components/kit-spec.ts";
 import { AXIS_CONSTRAINT } from "../../src/components/kit-spec.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
@@ -164,20 +169,23 @@ function describe(axis: AxisPlacementSpec, start: string, end: string): string {
  * Plan where a placed layer sits, once its parent's other layers are planned: the place is written
  * where the layer does not hold it, and wherever the run writes something that can resize the parent,
  * from the sizes the parent and its instances settle at when the write runs. A `stretch` sets the
- * frame's length on its axis too.
+ * frame's length on its axis too. That resize turns both of the frame's sizing modes FIXED (fake rule
+ * 5), so an axis the frame hugs, as a placement wrapper hugs across, takes HUG again after it.
  *
  * @param run - The run.
  * @param target - The layer, which an earlier operation may create.
  * @param label - The layer's label, for change lines.
  * @param placement - Where the layer sits.
  * @param held - `unknown` where the run writes a field that can resize the parent.
+ * @param sizing - A frame's sizing, or undefined for an instance, which keeps its main's.
  */
 export function planPlace(
   run: Run,
   target: Target<SceneNode>,
   label: string,
   placement: EdgePlacementSpec,
-  held: Held
+  held: Held,
+  sizing: SizingSpec | undefined
 ): void {
   const found = target.existing;
   const placed = found?.type === "FRAME" || found?.type === "INSTANCE" ? found : undefined;
@@ -195,6 +203,12 @@ export function planPlace(
     const { across, down } = placedIn(node, holder, placement);
     if (node.type === "FRAME" && (!near(node.width, across.length) || !near(node.height, down.length))) {
       node.resize(across.length, down.length);
+      if (sizing?.horizontal.kind === "hug") {
+        node.layoutSizingHorizontal = "HUG";
+      }
+      if (sizing?.vertical.kind === "hug") {
+        node.layoutSizingVertical = "HUG";
+      }
     }
     node.x = across.at;
     node.y = down.at;

@@ -214,6 +214,10 @@ export type MeasuredBox = {
    * every mode, as the capture measured.
    */
   readonly parentSpansBlock: boolean;
+  /**
+   * The axes along which the box, absolute, is one length in every mode, as the capture measured.
+   */
+  readonly oneLength: ReadonlySet<"horizontal" | "vertical">;
 };
 
 /**

@@ -334,7 +334,14 @@ export const planChildren = Effect.fnUntraced(function* (
   for (const { spec, node } of planned) {
     const placement = spec.kind === "frame" || spec.kind === "instance" ? spec.placement : undefined;
     if (placement?.kind === "edges") {
-      planPlace(run, node, `${label} / ${spec.name}`, placement, resized);
+      planPlace(
+        run,
+        node,
+        `${label} / ${spec.name}`,
+        placement,
+        resized,
+        spec.kind === "frame" ? spec.sizing : undefined
+      );
     }
   }
 });
