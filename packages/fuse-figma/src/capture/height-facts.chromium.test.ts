@@ -5,7 +5,9 @@
  * its content's, the list keeps its 36px, so the root's percentage takes it. A 100px column whose list
  * grows stretches the list past 36px, and a list 36px dense that grows only in the comfortable
  * density does so there, so neither keeps the length it declares. A root whose height is a length
- * records nothing.
+ * records nothing. A root of `auto` height in the list, a flex row on one line, records the fact the
+ * same way, since the row stretches it to its content height (CSS Flexbox 1 §9.4); in a row that wraps,
+ * or a block list, it records nothing.
  */
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
@@ -56,5 +58,16 @@ describe("a root's percentage height the capture measures against a length", () 
     ["of a length of its own", { height: "20px" }, false],
   ])("%s: %s", async (_, spec, expected) => {
     expect(await asDeclared(spec)).toBe(expected);
+  });
+});
+
+describe("a root of auto height the capture measures against the row that stretches it", () => {
+  it.each([
+    ["in a flex row on one line", {}, true],
+    ["in a flex row on one line that a column grows", { column: "height:100px", list: "flex-grow:1" }, false],
+    ["in a flex row that wraps", { list: "flex-wrap:wrap" }, false],
+    ["in a block list", { list: "display:block" }, false],
+  ])("%s", async (_, spec, expected) => {
+    expect(await asDeclared({ ...spec, height: "auto" })).toBe(expected);
   });
 });

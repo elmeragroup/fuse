@@ -58,7 +58,7 @@ import type {
   Layer,
   Recorder,
 } from "../components/layer-style.ts";
-import { percentHeightBasis } from "../components/percent-height.ts";
+import { percentHeightBasis, stretchedToHost } from "../components/percent-height.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH } from "./capture-format.ts";
 import type {
   CapturedCell,
@@ -896,14 +896,15 @@ export class CaptureCellCascade {
         this.#read.context.variables,
         this.#read.instancedIn
       );
-      // The elements around the root and the root itself, from which box sizing reads the basis.
-      box.heightBasis = normalizeCss(box.style.resolved("height") ?? "").includes("%")
-        ? percentHeightBasis(
-            [...path.own.map(({ layer }) => new LayerStyle(this.#ledger, layer, [])), box.style],
-            this.#read.context.variables,
-            { lengthAsDeclared: first.root.measured?.basisAsDeclared === true }
-          )
+      // The elements around the root and the root itself, from which box sizing reads the basis, or
+      // whether the flex rows around a root of `auto` height stretch it to its host's height.
+      const chain = [...path.own.map(({ layer }) => new LayerStyle(this.#ledger, layer, [])), box.style];
+      const lengthAsDeclared = { lengthAsDeclared: first.root.measured?.basisAsDeclared === true };
+      const height = normalizeCss(box.style.resolved("height") ?? "auto");
+      box.heightBasis = height.includes("%")
+        ? percentHeightBasis(chain, this.#read.context.variables, lengthAsDeclared)
         : undefined;
+      box.stretchedToHost = height === "auto" && stretchedToHost(chain, lengthAsDeclared);
       return box;
     }
     if (open._tag === "anchored") {
@@ -1369,6 +1370,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly measured: MeasuredBox | undefined;
   /** The content height around a root whose height is a percentage, as {@link percentHeightBasis} reads it. */
   heightBasis: PreviewLength | undefined = undefined;
+  /** Whether the flex rows around a root of `auto` height stretch it to its host's height, as {@link stretchedToHost} reads it. */
+  stretchedToHost = false;
   /** The box's pseudo-elements the mapping draws as layers, as `readPseudoElements` keeps them. */
   readonly pseudoElements: readonly PseudoCascade[];
 

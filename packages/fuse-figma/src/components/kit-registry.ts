@@ -72,6 +72,7 @@ import { axisValues } from "./kit-spec";
 import type { AxisSpec } from "./kit-spec";
 import { LABEL_MANIFEST } from "./label-kit";
 import { LINK_MANIFEST } from "./link-kit";
+import { LIST_DETAIL_MANIFEST, LIST_DETAIL_PANE_MANIFEST } from "./list-detail-kit";
 import { LOADER_MANIFEST } from "./loader-kit";
 import { MENU_GROUP_LABEL_MANIFEST, MENU_SEPARATOR_MANIFEST } from "./menu-kit";
 import { METER_MANIFEST } from "./meter-kit";
@@ -264,6 +265,9 @@ const DESCRIPTION_LIST_PAGE: KitPage = {
   name: "Description list",
   example: "description-list",
 };
+
+/** The page of List detail's pane and the root that holds the list beside it. */
+const LIST_DETAIL_PAGE: KitPage = { slug: "list-detail", name: "List detail", example: "list-detail" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
@@ -955,5 +959,15 @@ export const KIT: readonly KitEntry[] = [
     page: CHECKBOX_CARD_PAGE,
     previewCells: possibleCells(CHECKBOX_CARD_MANIFEST),
     manifest: CHECKBOX_CARD_MANIFEST,
+  },
+  {
+    page: LIST_DETAIL_PAGE,
+    previewCells: possibleCells(LIST_DETAIL_PANE_MANIFEST),
+    manifest: LIST_DETAIL_PANE_MANIFEST,
+  },
+  {
+    page: LIST_DETAIL_PAGE,
+    previewCells: possibleCells(LIST_DETAIL_MANIFEST),
+    manifest: LIST_DETAIL_MANIFEST,
   },
 ];

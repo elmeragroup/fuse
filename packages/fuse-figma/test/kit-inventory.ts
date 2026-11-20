@@ -495,6 +495,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Checkbox card",
     sets: [{ key: "checkbox-card", name: "Checkbox card", variants: 12, previewed: 12 }],
   },
+  // The docs default demo's detail pane, then the whole demo around it, each with nothing selected
+  // and with the first customer.
+  {
+    slug: "list-detail",
+    name: "List detail",
+    sets: [
+      { key: "list-detail-pane", name: "List detail pane", variants: 2, previewed: 2 },
+      { key: "list-detail", name: "List detail", variants: 2, previewed: 2 },
+    ],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

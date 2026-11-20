@@ -418,6 +418,15 @@ function slotWith(slot: IconSlot, swap: PropertyValues["swap"]): IconSlot {
   return icon === undefined ? slot : { ...slot, icon };
 }
 
+/** Whether a box shows its own text in a cell and no icon or part beside it. */
+function showsOnlyText(box: BoxDefinition, cell: Cell): boolean {
+  return (
+    box.label?.shownIn(cell) === true &&
+    box.iconsFor(cell).length === 0 &&
+    !(box.parts ?? []).some((child) => child.shownIn(cell))
+  );
+}
+
 /** A part a cell shows in a box, cascaded: a frame, or an instance of another set. */
 type ShownPart =
   | {
@@ -490,8 +499,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     label === undefined ? [] : reader.feed("color", [...cascade.path, label.key])
   );
   const slots = box.iconsFor(cell).map((slot) => slotWith(slot, scope.values.swap));
-  const onlyText =
-    label !== undefined && slots.length === 0 && !(box.parts ?? []).some((child) => child.shownIn(cell));
+  const onlyText = showsOnlyText(box, cell);
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
   const { sizing, limits, clips, extent, known, aspectLock } = readSizing(
@@ -589,6 +597,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         style: part.cascade.style,
         sizing: sizingOf(part.kind === "instance" ? part.visit.part : part.child, cascade.path),
         editable: holdsEditableText(part.kind === "instance" ? part.visit.part : part.child),
+        onlyText: part.kind === "frame" && part.pseudo !== true && showsOnlyText(part.child, cell),
       })),
       others,
       // The flow ends with the last part after the label, else the last end icon, else the label, else
@@ -770,10 +779,14 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       }
       return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
+    // A layer its auto margins centre takes them as zero in the width it may hug up to (CSS Sizing 3
+    // §2.3), which `centredRoom` in `box-sizing.ts` gives it.
     const room =
       index === -1
         ? placedRoom(absoluteRoom(holder), part.cascade.style, plans.get(part.cascade.style))
-        : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
+        : holder.layout.centresLone === true
+          ? inFlow()
+          : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
     // The one layer of a box leaves the box its size when it hides: a box fixed or filling on both
     // axes keeps it, and one that hugs is drawn at the layer's literal size with its literal insets.

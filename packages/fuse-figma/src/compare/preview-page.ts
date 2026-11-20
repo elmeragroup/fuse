@@ -122,11 +122,12 @@ export function slotRect(layout: PageLayout, index: number): PageRect {
 }
 
 /**
- * How many slots a cell spans across: one, or as many as its root's width and the padding on both
+ * How many slots a cell spans across: one, or as many as its host's width and the padding on both
  * sides need where that is wider than a slot, as the Command list's 576px is.
  *
  * @param layout - The page layout.
- * @param width - The width the cell's definition gives its root, undefined for none.
+ * @param width - The width of the cell's host: its renderer's `hostWidth`, else the width the cell's
+ *   definition gives its root, undefined for none.
  * @returns The span, at least 1.
  */
 export function slotSpan(layout: PageLayout, width: number | undefined): number {

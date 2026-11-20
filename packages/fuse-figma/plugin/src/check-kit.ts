@@ -85,6 +85,7 @@ function overrideRefs(override: InstanceOverride): BoundRef[] {
         ...boundColor(shadow.color),
       ]);
     case "textAlign":
+    case "primaryAlign":
       return [];
     default:
       return boundColor(override.color);

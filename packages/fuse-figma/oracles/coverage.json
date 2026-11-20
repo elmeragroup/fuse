@@ -4155,6 +4155,20 @@
         "part": "card-content",
         "className": "not-first:pt-0"
       }
+    ],
+    "list-detail-pane": [
+      {
+        "part": "list-detail-detail",
+        "className": "focus-visible:ring-2"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "focus-visible:ring-ring"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "focus-visible:outline-hidden"
+      }
     ]
   },
   "unreached": [
@@ -7317,6 +7331,78 @@
         "table-row/row=header,selected=true,state=rest 0/root/1",
         "table-row/row=header,selected=true,state=rest 0/root/2"
       ]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "@min-[48rem]/list-detail:flex",
+      "property": "display",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "absolute",
+      "property": "position",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "invisible",
+      "property": "visibility",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "pointer-events-none",
+      "property": "pointer-events",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "size-px",
+      "property": "height",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "size-px",
+      "property": "width",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
+    },
+    {
+      "set": "list-detail",
+      "part": "span",
+      "className": "tailwind preflight",
+      "property": "box-sizing",
+      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
+      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
     }
   ]
 }

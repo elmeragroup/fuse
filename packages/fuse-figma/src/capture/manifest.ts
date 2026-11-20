@@ -168,6 +168,7 @@ export type SetManifest = BoxManifest & {
  * a sample sits in, chosen for the kit's previews, never computed from a component's own CSS. A size
  * a component's CSS sets, as a popup's `min-w-36` or its anchor's width, comes from the capture.
  *
+ * - 768: List detail's host, the docs default demo's `w-3xl` row, which its split layout needs.
  * - 576: a Command list's host, the docs Groups demo's `max-w-xl` palette box.
  * - 512: an Alert's host, the docs Variants demo's `max-w-lg` column, and Empty's and the Table
  *   caption's.
@@ -178,7 +179,7 @@ export type SetManifest = BoxManifest & {
  * - 256: a Meter's host, the `w-64` a container gives it.
  * - 160: a Dropdown menu row's host.
  */
-export const SAMPLE_HOST_WIDTHS: ReadonlySet<number> = new Set([576, 512, 448, 384, 320, 256, 160]);
+export const SAMPLE_HOST_WIDTHS: ReadonlySet<number> = new Set([768, 576, 512, 448, 384, 320, 256, 160]);
 
 /**
  * The fields each kind of manifest object may hold, as its type lists them. The oracle test walks

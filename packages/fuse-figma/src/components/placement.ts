@@ -66,10 +66,16 @@ export type Layout = {
   readonly justify: PrimaryAlignSpec | "unset";
   /**
    * True where an auto start margin on the row's last layer takes the room after the row's own label,
-   * which the label then fills, as `readAutoStart` in `box-flow.ts` reads it. Absent elsewhere,
+   * which the label then fills, as `readAutoStart` in `auto-margins.ts` reads it. Absent elsewhere,
    * a real `justify-content: space-between` included.
    */
   readonly labelFills?: true;
+  /**
+   * True for a flex column whose one layer sets `auto` margins on all four sides, which centre it on
+   * both axes at its own width up to the column's, as `readCentredLone` in `auto-margins.ts` reads it.
+   * Absent elsewhere.
+   */
+  readonly centresLone?: true;
   /**
    * True for a grid that stacks its items in rows of their own, which the box draws as a flex column:
    * one that puts every item in one column, as `placesInOneColumn` in `box-flow.ts` reads it, or a

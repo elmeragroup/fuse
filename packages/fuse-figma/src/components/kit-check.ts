@@ -359,6 +359,7 @@ const OVERRIDE_TARGETS = {
   textColor: "text",
   textAlign: "text",
   glyph: "icon",
+  primaryAlign: "box",
 } as const satisfies Record<InstanceOverride["field"], LayerKind>;
 
 /** What a layer is, for an override: a box, the root or a frame, or another layer's kind. */

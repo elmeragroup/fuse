@@ -1,5 +1,5 @@
 /**
- * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits and auto margins between two layers. The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
+ * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers and a row's stretch. The unit under test is `buildComponentSet` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
@@ -15,6 +15,7 @@ import {
   fixed,
   fixedSize,
   frameOf,
+  HUG,
   ICON,
   literal,
   notesOf,
@@ -298,5 +299,197 @@ describe("a two-layer row's one-word text before an ml-auto icon", () => {
       FONT_SANS
     );
     expect([textOf(variant?.root)?.sizing.horizontal, variant?.root.primaryAlign]).toEqual([FILL, "MIN"]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §8.1, §9.4 step 11 and §9.6 step 13, and the capture's `freeAlongMain` fact.
+// Auto margins on all four sides of a column's one item take the free space down the column and the
+// room across it, so the item sits in the middle at its fit-content width, and no stretch widens it.
+// Chromium sets List detail's 352px pane's `m-auto p-6` text, `Select a customer.`, 40px wide, in the
+// middle of the pane's 351px content box, which its 1px `border-s` leaves. A longer text wraps at that
+// width less the 48px padding: 303px. So the column centres on both axes, the item hugs, and its text
+// wraps at 303. Where the item overflows the column, the margins take nothing and the item sits at
+// the start, so without the capture's measurement of the room in every mode they stay unmapped. The
+// same holds across: Chromium sets a 400px item in the 352px column at x=0, not centred, so an item
+// that sets its width or minimum width, holds a layer, or keeps its text on one line leaves them
+// unmapped too.
+describe("auto margins on all four sides of a column's one layer", () => {
+  /** Build a fixed column around one text part, both winning the given classes. */
+  function buildCentred(column: string, item: string, measured: MeasuredFacts) {
+    return buildCaptured(
+      chip({
+        parts: [
+          part({
+            key: "empty",
+            slot: "chip-empty",
+            label: {
+              key: "text",
+              name: "text",
+              characters: "Select a customer.",
+              textProperty: "Empty",
+              shownIn: () => true,
+            },
+          }),
+        ],
+      }),
+      rest({
+        slot: "chip",
+        classes: column,
+        measured,
+        children: [
+          {
+            slot: "chip-empty",
+            classes: `${item} font-sans text-[14px] leading-[20px] text-[#000000]`,
+            text: "Select a customer.",
+          },
+        ],
+      }),
+      FONT_SANS
+    );
+  }
+
+  const COLUMN = "flex flex-col w-[352px] h-[320px] border-s-[1px] border-[#000000]";
+  const ROOM: MeasuredFacts = { freeAlongMain: true };
+
+  it("centres the layer on both axes at its own width, wrapping its text at the column's content width", async () => {
+    const { variant, coverage } = await buildCentred(COLUMN, "m-auto p-[24px]", ROOM);
+    const item = frameOf(variant?.root);
+    expect([variant?.root.primaryAlign, variant?.root.counterAlign]).toEqual(["CENTER", "CENTER"]);
+    expect(item?.sizing).toEqual({ horizontal: { kind: "hug" }, vertical: { kind: "hug" } });
+    expect(textOf(item)?.maxWidth).toEqual(literal(303));
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("takes a physical left border off the cap as it takes the logical one", async () => {
+    const { variant } = await buildCentred(
+      "flex flex-col w-[352px] h-[320px] border-l-[1px] border-[#000000]",
+      "m-auto p-[24px]",
+      ROOM
+    );
+    expect(textOf(frameOf(variant?.root))?.maxWidth).toEqual(literal(303));
+  });
+
+  // A logical inline border beside a physical side, whose order in the cascade decides which wins, or
+  // in a vertical writing mode, where it sits above and below (CSS Logical Properties 1 §4.1), leaves
+  // the column's content width unread, so the wrapping text's cap stops the build.
+  it.each([
+    [
+      "beside a physical right border",
+      "flex flex-col w-[352px] h-[320px] border-s-[1px] border-r-[2px] border-[#000000]",
+    ],
+    [
+      "in a vertical writing mode",
+      "flex flex-col w-[352px] h-[320px] border-s-[1px] border-[#000000] [writing-mode:vertical-rl]",
+    ],
+  ])("leaves the content width unread for a logical border %s", async (_, column) => {
+    await expect(buildCentred(column, "m-auto p-[24px]", ROOM)).rejects.toThrow(
+      "cannot read in pixels the room the label has under it"
+    );
+  });
+
+  it.each([
+    ["without the measurement of the room", COLUMN, "m-auto p-[24px]", {}],
+    ["on a column that sets justify-content", `${COLUMN} justify-start`, "m-auto p-[24px]", ROOM],
+    ["on a column that sets align-items", `${COLUMN} items-start`, "m-auto p-[24px]", ROOM],
+    ["with auto margins across only", COLUMN, "mx-auto p-[24px]", ROOM],
+    ["on a layer that sets its width", COLUMN, "m-auto w-[400px]", ROOM],
+    ["on a layer that sets a minimum width", COLUMN, "m-auto p-[24px] min-w-[400px]", ROOM],
+    ["on a text that does not wrap", COLUMN, "m-auto p-[24px] whitespace-nowrap", ROOM],
+  ])("leaves the margins unmapped %s", async (_, column, item, measured) => {
+    const { coverage } = await buildCentred(column, item, measured);
+    expect(
+      coverage
+        .filter((row) => row.property.startsWith("margin-") && row.value === "auto")
+        .map((row) => row.outcome)
+    ).toContain("unmapped");
+  });
+
+  it("leaves them unmapped on a layer that holds a layer of its own", async () => {
+    const { coverage } = await buildCaptured(
+      chip({ parts: [part({ key: "a", slot: "a", parts: [part({ key: "b", slot: "b" })] })] }),
+      rest({
+        slot: "chip",
+        classes: COLUMN,
+        measured: ROOM,
+        children: [{ slot: "a", classes: "m-auto", children: [{ slot: "b", classes: "size-[400px]" }] }],
+      })
+    );
+    expect(notesOf(coverage, "m-auto").map(([, outcome]) => outcome)).toEqual([
+      "unmapped",
+      "unmapped",
+      "unmapped",
+      "unmapped",
+    ]);
+  });
+
+  it("leaves them unmapped beside a second layer", async () => {
+    // The first layer is the centred case's own text layer, so only the second layer can refuse it.
+    const { coverage } = await buildCaptured(
+      chip({
+        parts: [
+          part({
+            key: "empty",
+            slot: "chip-empty",
+            label: {
+              key: "text",
+              name: "text",
+              characters: "Select a customer.",
+              textProperty: "Empty",
+              shownIn: () => true,
+            },
+          }),
+          part({ key: "b", slot: "b" }),
+        ],
+      }),
+      rest({
+        slot: "chip",
+        classes: COLUMN,
+        measured: ROOM,
+        children: [
+          {
+            slot: "chip-empty",
+            classes: "m-auto font-sans text-[14px] leading-[20px] text-[#000000]",
+            text: "Select a customer.",
+          },
+          { slot: "b", classes: "size-[8px]" },
+        ],
+      }),
+      FONT_SANS
+    );
+    expect(notesOf(coverage, "m-auto").map(([, outcome]) => outcome)).toEqual([
+      "unmapped",
+      "unmapped",
+      "unmapped",
+      "unmapped",
+    ]);
+  });
+});
+
+// Oracle: CSS Box Alignment 3 §6.1 and CSS Flexbox 1 §9.4 steps 11 and 15. An item whose
+// `align-self` is `auto` takes its row's `align-items`, whose `normal` stretches a flex item: on one
+// line, an item of `auto` height with no auto margin down is as tall as the row's content box, as
+// Chromium stretches List detail's list and pane down its 320px root. A row that hugs its height
+// keeps its items' own heights, since the kit check refuses a layer that fills a hugging parent
+// beside none that sets its height.
+describe("a row's unset align-items", () => {
+  const build = (row: string, item: string) =>
+    buildChip(row, [{ slot: "chip-dot", classes: item }], { parts: [part()] });
+
+  it("stretches an item of auto height down a row of a fixed height", async () => {
+    const { variant, coverage } = await build("flex h-[80px]", "w-[16px]");
+    expect(frameOf(variant?.root)?.sizing).toEqual({ horizontal: fixed(literal(16)), vertical: FILL });
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it.each([
+    ["in a row that hugs its height", "flex", "w-[16px]", HUG],
+    ["in a row that aligns its items", "flex h-[80px] items-start", "w-[16px]", HUG],
+    ["in a row that wraps", "flex h-[80px] flex-wrap", "w-[16px]", HUG],
+    ["that aligns itself", "flex h-[80px]", "w-[16px] self-start", HUG],
+    ["that sets its height", "flex h-[80px]", "w-[16px] h-[10px]", fixed(literal(10))],
+    ["with auto margins down", "flex h-[80px]", "w-[16px] my-auto", HUG],
+  ])("keeps an item's own height %s", async (_, row, item, height) => {
+    const { variant } = await build(row, item);
+    expect(frameOf(variant?.root)?.sizing.vertical).toEqual(height);
   });
 });

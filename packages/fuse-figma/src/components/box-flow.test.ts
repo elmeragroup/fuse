@@ -3,7 +3,10 @@
  * `isPlainBlock` takes a list item as a block box, through the cascade's computed style. Oracle:
  * Chromium's layout and computed style for the same declarations, read on 2026-11-17: a 10px
  * `inline-flex` box in a `line-height: 40px` block that shrinks to fit it leaves the block 40px tall
- * (CSS 2.1 §10.8), while a Pagination item in a 24px line is exactly as tall as its 36px link, and `list-style: inherit` takes the list's `list-style-image` and
+ * (CSS 2.1 §10.8), while a Pagination item in a 24px line is exactly as tall as its 36px link, and a
+ * List detail row, a list item that fills the list, is exactly as wide and tall as its `w-full`
+ * `inline-flex` Button in a 24px line, in every mode the capture sweeps (CSS 2.1 §10.3.9), where an
+ * `inline-flex` box narrower than the row leaves the line's other room beside it, and `list-style: inherit` takes the list's `list-style-image` and
  * `list-style-position` as well as its `list-style-type` (CSS Cascade 4 §7.3), so the item draws the
  * list's image marker.
  */
@@ -61,28 +64,33 @@ function box(cell: CellLedger, declarations: Readonly<Record<string, string>>, p
 }
 
 /**
- * Whether a hugging block stacks its one `inline-flex` child as a block, at the block's line height
- * and the child's height, where the capture measured the line box adding nothing to it or not.
+ * Whether a block stacks its one `inline-flex` child as a block, at the block's line height and
+ * width, hugging unless it fills, and the child's height and width, where the capture measured the
+ * line box adding nothing to it or not.
  */
 function stacksInlineChild(sample: {
   readonly line: string;
   readonly height: string;
   readonly lineFits: boolean;
+  readonly fills?: true;
+  readonly width?: string;
 }): boolean {
-  const { line, height, lineFits } = sample;
+  const { line, height, lineFits, fills, width = "20px" } = sample;
   const cell = ledger();
   const parent = box(cell, { display: "block", "line-height": line, "font-size": "16px" });
-  const child = box(cell, { display: "inline-flex", width: "20px", height }, parent.layer);
+  const child = box(cell, { display: "inline-flex", width, height }, parent.layer);
   const { layout } = readFlow(
     parent.style,
     {
-      parts: [{ key: "child", name: "child", style: child.style, sizing: [], editable: false }],
+      parts: [
+        { key: "child", name: "child", style: child.style, sizing: [], editable: false, onlyText: false },
+      ],
       others: [],
       last: child.style,
       labelBeforeLast: false,
     },
     {
-      sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+      sizing: { horizontal: { kind: fills === undefined ? "hug" : "fill" }, vertical: { kind: "hug" } },
       limits: NO_LIMITS,
       inside: [],
       markers: "resolved",
@@ -105,6 +113,21 @@ describe("an inline-level child alone in a hugging block", () => {
 
   it("stacks a 36px Pagination link in a 24px line, where the capture measured the item as tall", () => {
     expect(stacksInlineChild({ line: "24px", height: "36px", lineFits: true })).toBe(true);
+  });
+});
+
+describe("an inline-level child alone in a block that fills its parent", () => {
+  it("stacks a 100% wide 36px Button in a 24px line, where the capture measured the row as tall", () => {
+    expect(
+      stacksInlineChild({ line: "24px", height: "36px", lineFits: true, fills: true, width: "100%" })
+    ).toBe(true);
+  });
+
+  it.each([
+    ["a 100% wide child the capture did not measure", { lineFits: false, width: "100%" }],
+    ["a 20px child, which leaves the line's other room beside it", { lineFits: true, width: "20px" }],
+  ])("does not stack %s", (_, spec) => {
+    expect(stacksInlineChild({ line: "24px", height: "36px", fills: true, ...spec })).toBe(false);
   });
 });
 

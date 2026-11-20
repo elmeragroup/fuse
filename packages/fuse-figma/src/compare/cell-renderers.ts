@@ -59,16 +59,23 @@ export type CellRenderer = {
    * forces `:focus` on the row, or writes `data-highlighted` on it. Undefined for a set with none.
    */
   readonly highlight?: Highlight;
+  /**
+   * The width of the host the element mounts, for a renderer whose host is wider than the measured
+   * root. The page spans the cell over enough slots to hold it, so the host does not paint over the
+   * next cell. List detail's pane cell mounts the whole 768px demo and measures the 352px pane at its
+   * end. Undefined where the host is no wider than the root's preview width.
+   */
+  readonly hostWidth?: number;
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "highlight">;
+export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "highlight" | "hostWidth">;
 
 /**
  * The part of a client renderer its own module defines, which the page's bundle imports. The page
  * mounts the element in the cell's slot with React's `createRoot` and waits for the popup to settle.
  */
-export type ClientCellRendering = Pick<CellRenderer, "hostClasses" | "highlight"> & {
+export type ClientCellRendering = Pick<CellRenderer, "hostClasses" | "highlight" | "hostWidth"> & {
   /**
    * The real Fuse element for a parsed cell, open through `defaultOpen`, with its popup portalled
    * into `container`, the cell's slot, through the overlay's `container` prop, so the popup lays out
@@ -459,6 +466,16 @@ const SOURCES: readonly RendererSource[] = [
     set: "description-list",
     entry: "dist/description-list.js",
     load: async () => (await import("./description-list-cell.ts")).descriptionList,
+  },
+  {
+    set: "list-detail-pane",
+    entry: "dist/list-detail.js",
+    load: async () => (await import("./list-detail-cell.ts")).listDetail,
+  },
+  {
+    set: "list-detail",
+    entry: "dist/list-detail.js",
+    load: async () => (await import("./list-detail-cell.ts")).listDetail,
   },
   {
     set: "card",
