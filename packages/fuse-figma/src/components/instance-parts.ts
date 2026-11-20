@@ -78,6 +78,15 @@ type FeedSink = {
   readonly within: { readonly sink: FeedSink; readonly path: readonly string[] } | undefined;
 };
 
+/**
+ * The inner root built in place that holds a set of instance parts: its feeds, and where a row of a
+ * composite's declaration it must classify in turn goes, beside its own.
+ */
+type Holder = {
+  readonly sink: FeedSink;
+  readonly hold: (row: Row, origin: Origin) => void;
+};
+
 /** One instance part in one outer cell, from its cascade to its coverage. */
 type Visit = {
   readonly part: InstanceDefinition;
@@ -135,7 +144,7 @@ export class InstanceParts {
   readonly #sets: ReadonlyMap<string, InnerSet>;
   readonly #captureOf: (key: string) => SetCapture | undefined;
   readonly #emit: Recorder;
-  readonly #owner: FeedSink | undefined;
+  readonly #owner: Holder | undefined;
   readonly #given: readonly NestedProperties[];
   readonly #parts = new Map<InstanceDefinition, PartRecord>();
   readonly #visits: Visit[] = [];
@@ -147,8 +156,7 @@ export class InstanceParts {
    *   its parts win a `scale`.
    * @param emit - Adds a row to the coverage table of the set or the inner component that holds the
    *   parts.
-   * @param owner - The feeds of the inner root built in place that holds the parts, undefined for a
-   *   set's own.
+   * @param owner - The inner root built in place that holds the parts, undefined for a set's own.
    * @param given - The TEXT values an outer composite gives instances at or below these parts, at the
    *   keys from here down, none for a set's own.
    */
@@ -157,7 +165,7 @@ export class InstanceParts {
     sets: ReadonlyMap<string, InnerSet>,
     captureOf: (key: string) => SetCapture | undefined,
     emit: Recorder,
-    owner?: FeedSink,
+    owner?: Holder,
     given: readonly NestedProperties[] = []
   ) {
     this.#context = context;
@@ -202,6 +210,9 @@ export class InstanceParts {
     checkNested(values.nested ?? [], part.of, part.key);
     const innerRows: Row[] = [];
     const compositeRows: Visit["compositeRows"] = [];
+    const composite = (row: Row, origin: Origin): void => {
+      compositeRows.push({ row, origin });
+    };
     const inner: Origin = {
       record: (row) => {
         innerRows.push(row);
@@ -209,7 +220,8 @@ export class InstanceParts {
     };
     const sink: FeedSink = {
       feeds: new Map(),
-      within: this.#owner === undefined ? undefined : { sink: this.#owner, path: [...parent.path, part.key] },
+      within:
+        this.#owner === undefined ? undefined : { sink: this.#owner.sink, path: [...parent.path, part.key] },
     };
     const visit: Visit = {
       part,
@@ -227,15 +239,13 @@ export class InstanceParts {
         this.#sets,
         this.#captureOf,
         inner.record,
-        sink,
+        { sink, hold: composite },
         values.nested
       ),
     };
     const inPlace: InPlace = {
       inner,
-      composite: (row, origin) => {
-        compositeRows.push({ row, origin });
-      },
+      composite,
       fed: (declaration, feed) => {
         fedInto(sink, declaration, feed);
       },
@@ -307,7 +317,9 @@ export class InstanceParts {
 
   /**
    * Give the coverage rows of the parts the cell built in place, once the cell has settled. Each row
-   * of a composite's declaration goes to its origin as {@link classified} says. The inner component's
+   * of a composite's declaration goes to its origin as {@link classified} says, unless the inner root
+   * that holds the part draws it in fields of its own, as {@link drawnByHolder} says, which hands the
+   * row to that root's own classification, after the parts below it settle. The inner component's
    * own rows that map belong to the inner set's coverage, and each that does not map, and each
    * difference no instance field carries, goes to the set or inner component that holds the part.
    * Call it after each cell settles.
@@ -316,7 +328,11 @@ export class InstanceParts {
     for (const visit of this.#visits.splice(0)) {
       visit.nested.settle();
       for (const { row, origin } of visit.compositeRows) {
-        origin.record(classified(row, visit));
+        if (this.#owner !== undefined && drawnByHolder(row, visit)) {
+          this.#owner.hold(row, origin);
+        } else {
+          origin.record(classified(row, visit));
+        }
       }
       for (const row of visit.innerRows) {
         if (row.outcome === "unmapped") {
@@ -402,7 +418,9 @@ function fills(feed: FeedTarget, path: readonly string[], field: string): boolea
  * fields the declaration's reads fill. A read that fills a field the instance draws another way than
  * the variant, where no instance field carries it, is unmapped with that difference. One that fills a
  * field an override or the instance's own sizing carries keeps its outcome, bound or literal, and so
- * does one the frame around the instance draws, as its margins. One that turns a glyph the instance
+ * does one the composite draws around the instance, as a frame for its margins or the holding row's
+ * alignment for an auto margin, though the inner root that draws that row, if any, classifies the
+ * latter in turn, as `drawnByHolder` says. One that turns a glyph the instance
  * swaps to its half-turn mirror keeps its outcome, its detail naming the mirror. One whose fields the variant draws the
  * same repeats it and drops. A row that is no read keeps its outcome.
  */
@@ -440,6 +458,23 @@ function classified(row: Row, visit: Visit): Row {
     outcome: "dropped",
     detail: `the instance's variant ${visit.variant.key} draws the same, so the class repeats it`,
   };
+}
+
+/**
+ * Whether the inner root built in place that holds the instance draws a row the instance keeps as
+ * drawn around it, in fields of its own, as an auto margin on the instance fills the holding row's
+ * alignment there, which `readAround` in `layer-style.ts` feeds. The holder's diff then decides the
+ * row. The holder's other feed of the declaration, the instance as a whole at its path, says nothing
+ * of the row, since the instance itself draws the same.
+ */
+function drawnByHolder(row: Row, visit: Visit): boolean {
+  const { within } = visit.sink;
+  const key = declarationKey(row);
+  return (
+    within !== undefined &&
+    (visit.sink.feeds.get(key) ?? []).some((feed) => feed.field === "around") &&
+    (within.sink.feeds.get(key) ?? []).some((feed) => !fills(feed, within.path, "instance"))
+  );
 }
 
 /**
