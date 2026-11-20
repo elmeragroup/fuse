@@ -63,26 +63,38 @@ function labelled(fields: PartFields = {}): PartManifest {
 const NARROW_SPAN =
   "the label's element clips its text at its own edge, where a label with no room for its ellipsis hugs its text, and the row does not clip it at that edge";
 
-/** Build a chip whose root wins the text style and `classes` and holds the label itself. */
-function buildLabelled(classes: string, root: Partial<FixtureElement> = {}, label: LabelManifest = LABEL) {
-  return buildCaptured(
-    chip({ label }),
-    rest({ slot: "chip", classes: `${TEXT_STYLE} ${classes}`, text: textOfLabel(label), ...root }),
-    FONT_SANS
-  );
+/** The one cell of a chip whose root wins the text style and `classes` and holds the label itself. */
+function labelledCells(classes: string, root: Partial<FixtureElement> = {}, label: LabelManifest = LABEL) {
+  return rest({ slot: "chip", classes: `${TEXT_STYLE} ${classes}`, text: textOfLabel(label), ...root });
 }
 
-/** Build a chip whose root wins the text style and `classes` and holds one part that holds the label. */
-function buildWithPart(classes: string, part: FixtureElement, manifest: PartManifest = labelled()) {
-  return buildCaptured(
-    chip({ parts: [manifest] }),
-    rest({
-      slot: "chip",
-      classes: `${TEXT_STYLE} ${classes}`,
-      children: [{ slot: "chip-dot", text: "Label", ...part }],
-    }),
-    FONT_SANS
-  );
+/** Build a chip whose root wins the text style and `classes` and holds the label itself. */
+function buildLabelled(classes: string, root: Partial<FixtureElement> = {}, label: LabelManifest = LABEL) {
+  return buildCaptured(chip({ label }), labelledCells(classes, root, label), FONT_SANS);
+}
+
+/**
+ * Build a chip whose root wins the text style and `classes` and holds one part that holds the label,
+ * inside the elements `around`, outermost first.
+ */
+function buildWithPart(
+  classes: string,
+  part: FixtureElement,
+  manifest: PartManifest = labelled(),
+  around: readonly FixtureElement[] = []
+) {
+  const cells = rest({
+    slot: "chip",
+    classes: `${TEXT_STYLE} ${classes}`,
+    children: [{ slot: "chip-dot", text: "Label", ...part }],
+  }).map((cell) => ({ ...cell, around }));
+  return buildCaptured(chip({ parts: [manifest] }), cells, FONT_SANS);
+}
+
+/** Build a chip whose root wins the text style and `classes` and holds the label, inside `around`. */
+function buildInside(around: FixtureElement, classes: string, label: LabelManifest = LABEL) {
+  const cells = labelledCells(classes, {}, label).map((cell) => ({ ...cell, around: [around] }));
+  return buildCaptured(chip({ label }), cells, FONT_SANS);
 }
 
 /** The characters a label shows. */
@@ -129,14 +141,9 @@ describe("a block box that holds only its label", () => {
     ["text-end", "MIN", "LEFT"],
     ["text-left", "MIN", "LEFT"],
   ])("places a right-to-left line where %s sets it", async (align, place, lines) => {
-    const { variant, coverage } = await buildCaptured(
-      chip({ label: LABEL }),
-      rest({
-        slot: "chip",
-        classes: `${TEXT_STYLE} block w-[100px] whitespace-pre ${align}`,
-        text: textOfLabel(LABEL),
-      }).map((cell) => ({ ...cell, around: [{ written: [RIGHT_TO_LEFT] }] })),
-      FONT_SANS
+    const { variant, coverage } = await buildInside(
+      { written: [RIGHT_TO_LEFT] },
+      `block w-[100px] whitespace-pre ${align}`
     );
     expect([variant?.root.primaryAlign, textOf(variant?.root)?.align.horizontal]).toEqual([place, lines]);
     expect(coverage.filter((row) => row.property === "direction").map((row) => row.outcome)).toEqual([
@@ -261,6 +268,20 @@ describe("a label's letter spacing", () => {
     ]);
   });
 
+  // An `unset` on an inherited property takes the parent's computed value (CSS Cascade 4 §7.3), so
+  // the root's `0.1em` reaches the part as 1.4px, a share of the root's 14px, not the part's 20px.
+  it("leaves an em spacing a part takes through unset at another font size unmapped", async () => {
+    const { variant, coverage } = await buildWithPart("tracking-[0.1em]", {
+      classes: "text-[20px] leading-[28px] [letter-spacing:unset]",
+    });
+    expect(textOf(variant?.root)?.letterSpacing).toBeUndefined();
+    expect(notesOf(coverage, "tracking-[0.1em]")).toContainEqual([
+      "letter-spacing",
+      "unmapped",
+      "the label inherits this em spacing from an element of another font size, where CSS computes it",
+    ]);
+  });
+
   it("leaves a spacing in pixels unmapped and draws none", async () => {
     const { variant, coverage } = await buildLabelled("tracking-[1px]");
     expect(textOf(variant?.root)?.letterSpacing).toBeUndefined();
@@ -302,6 +323,73 @@ describe("a wrapping label in a flex box", () => {
   it("stays unmapped for a word where word-break lets the browser break it", async () => {
     const { coverage } = await buildLabelled("flex w-[200px] justify-center break-all");
     expect(notesOf(coverage, "justify-center")).toContainEqual(["justify-content", "unmapped", CENTERED]);
+  });
+
+  // `word-break`, `line-break` and `hyphens` inherit (CSS Text 3 §5.1 to §5.3), so the root's text
+  // breaks where an element around it lets it. `break-all`, `anywhere` and `auto` add a break inside
+  // a word; `normal`, `auto` strictness, `none` and `manual` add none to a word that holds no soft
+  // hyphen, so the word keeps its own width. `initial` is the initial value, which adds none, and
+  // `unset` on an inherited property is `inherit` (CSS Cascade 4 §7.3). One character holds no
+  // break between characters at all.
+  it.each(["break-all", "[line-break:anywhere]", "hyphens-auto"])(
+    "stays unmapped for a word where an element around the box sets %s",
+    async (breaking) => {
+      const { coverage } = await buildInside({ classes: breaking }, "flex w-[200px] justify-center");
+      expect(notesOf(coverage, "justify-center")).toContainEqual(["justify-content", "unmapped", CENTERED]);
+    }
+  );
+
+  it.each(["break-normal", "[line-break:auto]", "hyphens-none", "hyphens-manual", "[word-break:initial]"])(
+    "hugs a word where an element around the box sets %s, which adds no break",
+    async (keeping) => {
+      const { variant, coverage } = await buildInside({ classes: keeping }, "flex w-[200px] justify-center");
+      expect([textOf(variant?.root)?.sizing, variant?.root.primaryAlign]).toEqual([HUGGING, "CENTER"]);
+      expect(notesOf(coverage, "justify-center")).toEqual([
+        ["justify-content", "literal", "centered on the primary axis"],
+      ]);
+    }
+  );
+
+  describe("where the box unsets word-break", () => {
+    const UNSET = "flex w-[200px] justify-center [word-break:unset]";
+
+    it("hugs a word under an element around it that sets break-normal", async () => {
+      const { coverage } = await buildInside({ classes: "break-normal" }, UNSET);
+      expect(notesOf(coverage, "justify-center")).toEqual([
+        ["justify-content", "literal", "centered on the primary axis"],
+      ]);
+    });
+
+    it("stays unmapped for a word under an element around it that sets break-all", async () => {
+      const { coverage } = await buildInside({ classes: "break-all" }, UNSET);
+      expect(notesOf(coverage, "justify-center")).toContainEqual(["justify-content", "unmapped", CENTERED]);
+      expect(notesOf(coverage, "break-all")).toEqual([
+        ["word-break", "unmapped", "the builder maps no Figma field from it"],
+      ]);
+    });
+
+    // A `var()` whose fallback is a CSS-wide keyword computes as that keyword (CSS Variables 1 §3),
+    // which the build does not resolve against the parent, so the word counts as breakable.
+    it("stays unmapped for a word whose box takes word-break from a var() fallback of inherit", async () => {
+      const { coverage } = await buildInside(
+        { classes: "break-all" },
+        "flex w-[200px] justify-center [word-break:var(--unset-break,inherit)]"
+      );
+      expect(notesOf(coverage, "justify-center")).toContainEqual(["justify-content", "unmapped", CENTERED]);
+    });
+  });
+
+  it("hugs one character where an element around the box sets break-all", async () => {
+    const digit: LabelManifest = { ...LABEL, characters: "7" };
+    const { variant, coverage } = await buildInside(
+      { classes: "break-all" },
+      "flex w-[200px] justify-center",
+      digit
+    );
+    expect([textOf(variant?.root)?.sizing, variant?.root.primaryAlign]).toEqual([HUGGING, "CENTER"]);
+    expect(notesOf(coverage, "justify-center")).toEqual([
+      ["justify-content", "literal", "centered on the primary axis"],
+    ]);
   });
 
   it("fills a row that centers it when its lines are centered too", async () => {
@@ -466,6 +554,66 @@ describe("a label below a root that sets its text layout", () => {
     expect(textOf(variant?.root)?.align).toEqual({ horizontal: "CENTER", vertical: "TOP" });
     expect(notesOf(coverage, "text-center")).toEqual([
       ["text-align", "literal", "the label sets its lines in the center"],
+    ]);
+  });
+});
+
+// Oracle: CSS Text Decoration 4 §2.8, where `text-underline-offset` inherits and a length computes
+// to an absolute length on the element that declares it, while a percentage passes down as one. So
+// an `em` offset is a share of the root's 14px font size, and a percentage, a share of 1em, is one of
+// the part's own 20px. An explicit `inherit` takes the computed length from the parent (CSS Cascade 4
+// §7.3), so a box's `inherit` keeps the `em` of the element above it.
+describe("an underline below a root that sets its offset", () => {
+  const UNDERLINED_LARGER = { classes: "underline text-[20px] leading-[28px]" };
+
+  it.each([
+    ["underline-offset-4", 4],
+    ["underline-offset-[0.5em]", 7],
+    ["underline-offset-[50%]", 10],
+  ])("draws at the offset the root's %s sets", async (offset, pixels) => {
+    const { variant, coverage } = await buildWithPart(offset, UNDERLINED_LARGER);
+    expect(textOf(variant?.root)?.underline?.offset).toBe(pixels);
+    expect(notesOf(coverage, offset)).toEqual([
+      ["text-underline-offset", "literal", `an underline offset of ${pixels}px`],
+    ]);
+  });
+
+  it("reads the root's font size for an em offset", async () => {
+    const { coverage } = await buildWithPart("underline-offset-[0.5em]", UNDERLINED_LARGER);
+    expect(notesOf(coverage, "text-[14px]")).toEqual([
+      ["font-size", "literal", "an underline offset of 7px"],
+    ]);
+  });
+
+  it("keeps the em of the element above a root that inherits the offset at another size", async () => {
+    const { variant } = await buildWithPart(
+      "[text-underline-offset:inherit]",
+      UNDERLINED_LARGER,
+      labelled(),
+      [{ classes: "text-[10px] underline-offset-[0.5em]" }]
+    );
+    expect(textOf(variant?.root)?.underline?.offset).toBe(5);
+  });
+
+  it("keeps the root's em and reads its font size where the underlined part inherits the offset", async () => {
+    const { variant, coverage } = await buildWithPart("underline-offset-[0.5em]", {
+      classes: "underline text-[20px] leading-[28px] [text-underline-offset:inherit]",
+    });
+    expect(textOf(variant?.root)?.underline?.offset).toBe(7);
+    expect(notesOf(coverage, "text-[14px]")).toEqual([
+      ["font-size", "literal", "an underline offset of 7px"],
+    ]);
+  });
+});
+
+// Oracle: CSS Text 3 §2.1, where `text-transform` inherits, so the root's text shows in capitals under
+// an element that sets `uppercase`. A kit label has no text case, so the declaration that changes the
+// text stays unmapped.
+describe("a label below an element that transforms its case", () => {
+  it("leaves the element's uppercase unmapped", async () => {
+    const { coverage } = await buildInside({ classes: "uppercase" }, "block w-[100px]");
+    expect(notesOf(coverage, "uppercase")).toEqual([
+      ["text-transform", "unmapped", "the builder maps no Figma field from it"],
     ]);
   });
 });

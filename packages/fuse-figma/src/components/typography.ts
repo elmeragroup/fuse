@@ -122,7 +122,7 @@ function readLetterSpacing(style: LayerStyle, path: readonly string[]): LetterSp
     );
     return undefined;
   }
-  const declared = style.resolvedWhereDeclared("letter-spacing", "font-size");
+  const declared = style.whereValueDeclared("letter-spacing", "font-size")?.value;
   const own = style.resolved("font-size");
   const sameSize = declared !== undefined && own !== undefined && sameLength(declared, own);
   const spacing = style.read(

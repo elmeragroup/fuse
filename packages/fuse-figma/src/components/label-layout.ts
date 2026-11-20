@@ -12,7 +12,15 @@ import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-siz
 import type { Holder, RowLayer, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { BuildContext, Cell, LabelDefinition } from "./component-spec";
-import { evaluateLength, evaluateNumber, inFont, normalizeCss, readColor, splitTopLevel } from "./css-values";
+import {
+  evaluateLength,
+  evaluateLengthOf,
+  evaluateNumber,
+  inFont,
+  normalizeCss,
+  readColor,
+  splitTopLevel,
+} from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { DECLARED_WIDTH, keepsOwnSize, widthHeldBy } from "./flex-item-width";
 import type { DrawnWidth, HoldingDeclaration } from "./flex-item-width";
@@ -795,6 +803,23 @@ function readDecoration(
   // An `em` length takes the label's font size, which only a literal size gives in pixels.
   const inPixels = (value: string) =>
     fontSize?.kind === "literal" ? evaluateLength(inFont(value, fontSize.value)) : evaluateNumber(value);
+  // An `em` offset computes to an absolute length where it is declared (CSS Text Decoration 4 §2.8),
+  // so it takes the font size of the element whose declaration the label inherits, past any
+  // `inherit`, while a percentage, a share of 1em, passes down as one and takes the label's own.
+  // Where either size is no length in pixels, an offset that needs it stays unmapped.
+  const declared = style.whereValueDeclared("text-underline-offset", "font-size");
+  const declaringFont = evaluateLength(declared?.value ?? "");
+  const labelFont = fontSize?.kind === "literal" ? fontSize.value : undefined;
+  const offsetPixels = (value: string) => {
+    const lengths = declaringFont === undefined ? value : inFont(value, declaringFont);
+    return labelFont === undefined ? evaluateLength(lengths) : evaluateLengthOf(lengths, labelFont);
+  };
+  // An `em` the label takes from another element reads that element's font size, which the
+  // offset's row then accounts for. The label's own `em` takes its own size, which its type reads.
+  const offsetReads =
+    declared?.here === false && /[\d.]em\b/.test(style.resolved("text-underline-offset") ?? "")
+      ? declared.sources
+      : [];
   const textColor = style.resolved("color");
   const underlineColor = style.read(
     "text-decoration-color",
@@ -806,9 +831,10 @@ function readDecoration(
     underline: {
       offset: style.read(
         "text-underline-offset",
-        inPixels,
+        offsetPixels,
         (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
-        style.feed("underline", path)
+        style.feed("underline", path),
+        offsetReads
       ),
       thickness: style.read(
         "text-decoration-thickness",
@@ -1468,18 +1494,49 @@ function textItem(holder: Holder): "flex" | "grid" | undefined {
 const UNBREAKABLE = /^[A-Za-z0-9]+$/;
 
 /**
- * The properties that can break a text inside a word (CSS Text 3 §5.2 to §5.5). The build reads none
- * of them, so a class that sets one lands unmapped wherever it sits.
+ * The properties that can break a text inside a word (CSS Text 3 §5.1 to §5.4), each with the values
+ * that add no break inside a word of letters and digits: `word-break: keep-all` forbids one, a
+ * strictness other than `anywhere` changes only where punctuation and CJK text break, and
+ * `hyphens: manual` breaks only at a soft hyphen, which such a word lacks. The build reads none of
+ * them, so a class that sets one lands unmapped wherever it sits.
  */
-const WORD_BREAKING = ["word-break", "line-break", "hyphens", "overflow-wrap"] as const;
+const WORD_BREAKING: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ["word-break", new Set(["normal", "keep-all"])],
+  ["line-break", new Set(["auto", "loose", "normal", "strict"])],
+  ["hyphens", new Set(["none", "manual"])],
+  ["overflow-wrap", new Set(["normal"])],
+]);
 
 /**
- * Whether a browser never wraps a text: it holds no soft wrap opportunity, and the box sets nothing
- * that breaks inside a word. Such a text sets one line at its own width whatever room the box gives
- * it.
+ * The CSS-wide keywords the cascade leaves as they are on a property of {@link WORD_BREAKING}: an
+ * `initial`, and an `inherit` or `unset` with nothing outside to take a value from, which takes the
+ * initial value. Each property's initial value adds no break. A keyword a `var()` fallback leaves
+ * counts as breaking instead, since the build does not resolve it against the parent.
+ */
+const INITIAL_KEYWORDS: ReadonlySet<string> = new Set(["initial", "inherit", "unset"]);
+
+/**
+ * Whether a browser never wraps a text: it holds no soft wrap opportunity, and the box sets or
+ * inherits nothing that breaks inside a word. Such a text sets one line at its own width whatever
+ * room the box gives it. One character has no other to break from, so it never wraps. A value that
+ * does not resolve counts as breaking, the safe answer.
  */
 function neverWraps(style: LayerStyle, characters: string): boolean {
-  return UNBREAKABLE.test(characters) && WORD_BREAKING.every((property) => !style.has(property));
+  if (!UNBREAKABLE.test(characters)) {
+    return false;
+  }
+  return (
+    characters.length === 1 ||
+    [...WORD_BREAKING].every(([property, keeps]) => {
+      const value = style.resolved(property);
+      if (value === undefined) {
+        return !style.has(property);
+      }
+      const keyword = normalizeCss(value).toLowerCase();
+      const bare = normalizeCss(style.written(property) ?? "").toLowerCase() === keyword;
+      return INITIAL_KEYWORDS.has(keyword) ? bare : keeps.has(keyword);
+    })
+  );
 }
 
 /** The lines `-webkit-line-clamp` keeps: a whole number of at least 1, or undefined for any other value. */
