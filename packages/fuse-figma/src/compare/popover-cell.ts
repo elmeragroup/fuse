@@ -52,7 +52,7 @@ function basicPopover(container: HTMLElement, align: "start" | "center") {
           { key: label },
           createElement(Field.Label, null, label),
           // The demo's input holds no value. An empty `defaultValue` draws the same and writes the
-          // empty `value` the markup check reads the Input's empty text from.
+          // empty `value` the build reads the Input's empty text from.
           createElement(Input, { defaultValue: "" })
         )
       )

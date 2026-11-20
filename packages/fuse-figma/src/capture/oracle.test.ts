@@ -16,7 +16,12 @@
  *   element renders visibly, lands in the coverage table under some outcome, by its class and the
  *   property it writes or each longhand it wins, as the capture split it. The ledger names, with a
  *   reason, each one that does not.
- * - A captured state the browser could not reach holds the same winners as its resting twin.
+ * - A cell whose state the page forces, or the renderer sets through a prop, differs from its
+ *   resting twin's capture somewhere, a matched rule or an attribute included, where the capture
+ *   does not mark the cell as drawing as at rest.
+ * - Two values of an axis are two Figma variants, so each pair builds a different root on at least
+ *   one slice of the other axes that holds both, or the ledger keeps the pair with a reason: in
+ *   `alike` where every such slice builds the same root, in `apart` where no slice holds both.
  * - A manifest names only the allowlist's fields, and an anchored one its component's `sideOffset`.
  */
 import { describe, expect, it } from "@effect/vitest";
@@ -28,6 +33,7 @@ import { buildComponentSets } from "../components/build-kit.ts";
 import type { KitComponentSet } from "../components/build-kit.ts";
 import { possibleCells, variantKey } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
+import type { ChildLayerSpec } from "../components/kit-spec.ts";
 import { fuseVariableSet } from "../fuse-variable-set.ts";
 import type { InstancePlace } from "./capture-cascade.ts";
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
@@ -35,7 +41,7 @@ import type { CapturedDeclaration, CapturedElement, SetCapture } from "./capture
 import { keptCapture } from "./captures.ts";
 import { MANIFEST_FIELDS, SAMPLE_HOST_WIDTHS } from "./manifest.ts";
 import type { IconManifest, InstanceManifest, LabelManifest, PartManifest, SetManifest } from "./manifest.ts";
-import { keptLedger, syncedReads, unaccountedDeclarations } from "./oracle.ts";
+import { alikeValues, drawnRoot, keptLedger, syncedReads, unaccountedDeclarations } from "./oracle.ts";
 import type { KeptRow } from "./oracle.ts";
 
 const MANIFESTS = KIT.map(({ manifest }) => manifest);
@@ -47,6 +53,16 @@ const built = Effect.runPromise(
       (sets) => new Map(sets.map((set): readonly [string, KitComponentSet] => [set.componentSet.key, set]))
     )
   )
+);
+
+/** The root of each variant the build makes, by key, which an instance's variant names. */
+const variantRoots = built.then(
+  (sets) =>
+    new Map(
+      [...sets.values()].flatMap((set) =>
+        set.componentSet.variants.map((variant) => [variant.key, variant.root] as const)
+      )
+    )
 );
 
 /** One set as the build makes it. */
@@ -234,10 +250,12 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
       expect([...new Set(unshown)].toSorted()).toEqual([...listed].toSorted());
     });
 
-    it("draws every state its matrix names, unlike the cell at rest", () => {
-      // A state the capture could not reach would hold the same winners as its resting twin, as a
-      // `state-missing` cell of figma:compare does. A cell the capture marks as drawing as at rest
-      // reached no rule while another cell reached the same state, which the capture checked.
+    it("reaches every state its matrix names, unlike the cell at rest", () => {
+      // This compares the whole captured tree, attributes and unmatched classes included, since a
+      // state the page reached can still draw as at rest: a forced hover whose rule another state's
+      // rule outranks, as on a pressed toggle. Whether a value builds differently is the next test's. A cell the capture marks as drawing as at rest reached
+      // no rule while another cell reached the same state, which the capture checked, and the capture
+      // refuses a forced cell whose resting twin the matrix leaves out.
       const capture = keptCapture(key);
       if (capture === undefined || Result.isFailure(capture)) {
         throw new Error(`captures/${key}.json does not read`);
@@ -253,6 +271,29 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
           : [];
       });
       expect(missing).toEqual([]);
+    });
+
+    it("builds each value of an axis unlike each other value, but the pairs the ledger keeps", async () => {
+      // Oracle: two values of a Figma variant property that build the same root name a difference
+      // the file does not draw, and two that no slice holds together show no difference at all.
+      const { componentSet } = await setOf(key);
+      const rootOf = await variantRoots;
+      const found = alikeValues({
+        axes: componentSet.axes,
+        variants: componentSet.variants.map(({ properties, root }) => ({
+          properties,
+          root: drawnRoot(root, rootOf),
+        })),
+      }).map(({ _tag, axis, values }) => JSON.stringify([_tag, axis, ...values]));
+      const listed = [
+        ...LEDGER.alike
+          .filter((pair) => pair.set === key)
+          .map(({ axis, values }) => ["Alike", axis, ...values]),
+        ...LEDGER.apart
+          .filter((pair) => pair.set === key)
+          .map(({ axis, values }) => ["Apart", axis, ...values]),
+      ].map((pair) => JSON.stringify(pair));
+      expect(found.toSorted()).toEqual(listed.toSorted());
     });
 
     it("names only the allowlist's fields in its manifest", () => {
@@ -275,6 +316,8 @@ describe("the coverage ledger", () => {
       ...LEDGER.unbound.map(({ set }) => set),
       ...Object.keys(LEDGER.unshown),
       ...LEDGER.unreached.map(({ set }) => set),
+      ...LEDGER.alike.map(({ set }) => set),
+      ...LEDGER.apart.map(({ set }) => set),
     ];
     expect(named.filter((key) => !keys.has(key))).toEqual([]);
   });
@@ -672,5 +715,74 @@ describe("the element a captured declaration belongs to", () => {
         value: "red",
       },
     ]);
+  });
+});
+
+/**
+ * Unit under test: `alikeValues` on a matrix whose `impossible` cells leave no slice holding both of
+ * two values. Oracle: the matrix itself. It holds `sm` only unpressed and `lg` only pressed, so no
+ * value of either axis shares a slice with the other value of its axis, though the two roots differ.
+ */
+describe("the values of an axis no slice holds together", () => {
+  it("names the pair as apart", () => {
+    const axes = [
+      { name: "size", values: ["sm", "lg"] },
+      { name: "pressed", values: ["false", "true"] },
+    ];
+    const variants = [
+      { properties: { size: "sm", pressed: "false" }, root: { height: 24 } },
+      { properties: { size: "lg", pressed: "true" }, root: { height: 32 } },
+    ];
+    expect(alikeValues({ axes, variants })).toEqual([
+      { _tag: "Apart", axis: "size", values: ["sm", "lg"] },
+      { _tag: "Apart", axis: "pressed", values: ["false", "true"] },
+    ]);
+  });
+});
+
+/**
+ * Unit under test: `alikeValues` over roots `drawnRoot` resolves, where two values differ only in
+ * which variant an instance shows. Oracle: the kit's own Number field steppers. The stepper's `rest`
+ * and `readonly` variants build the same root, as the ledger keeps them, and its `disabled` variant
+ * builds another, so a field that swaps `rest` for `readonly` draws nothing new and one that swaps it
+ * for `disabled` does.
+ */
+describe("values that differ only in which variant an instance shows", () => {
+  it("are alike where the two variants draw the same, and apart from it where they do not", async () => {
+    const rootOf = await variantRoots;
+    const { componentSet } = await setOf("number-field");
+    const field = componentSet.variants[0];
+    if (field === undefined) {
+      throw new Error("the kit builds no Number field variant");
+    }
+    // Each stepper instance, at any depth, shows `variant`.
+    const swapped = (variant: string) => {
+      const swap = (layer: ChildLayerSpec): ChildLayerSpec => {
+        if (layer.kind === "instance") {
+          return layer.componentSet === "number-field-stepper" ? { ...layer, variant } : layer;
+        }
+        return layer.kind === "frame" ? { ...layer, children: layer.children.map(swap) } : layer;
+      };
+      return swap;
+    };
+    const showing = (variant: string) => ({
+      ...field.root,
+      children: field.root.children.map(swapped(variant)),
+    });
+    const pair = (other: string) =>
+      alikeValues({
+        axes: [{ name: "state", values: ["one", "other"] }],
+        variants: [
+          {
+            properties: { state: "one" },
+            root: drawnRoot(showing("number-field-stepper/state=rest"), rootOf),
+          },
+          { properties: { state: "other" }, root: drawnRoot(showing(other), rootOf) },
+        ],
+      });
+    expect(pair("number-field-stepper/state=readonly")).toEqual([
+      { _tag: "Alike", axis: "state", values: ["one", "other"] },
+    ]);
+    expect(pair("number-field-stepper/state=disabled")).toEqual([]);
   });
 });

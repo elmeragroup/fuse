@@ -6,8 +6,8 @@
  * - `commandItem`: a list that holds one row, `New customer`, with no trailing part, a
  *   `Command.Shortcut` of the `Kbd group` set's caps, or as a `Command.PageTrigger` in a Root with a
  *   stack, disabled through its `disabled` prop, measured as the row. The row sits in a `<div>` as wide
- *   as the set draws it, with no `data-slot`, which the markup check passes over. Base UI marks a
- *   highlighted row `data-highlighted`, which the page writes on the highlighted cell.
+ *   as the set draws it. Base UI marks a highlighted row `data-highlighted`, which the page writes
+ *   on the highlighted cell.
  * - `commandList`: the docs Groups demo's palette in a host as wide as the list, its rows' shortcuts
  *   Alt and their letters, measured as the list.
  *

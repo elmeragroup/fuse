@@ -33,11 +33,10 @@
         "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"
       ]
     },
-    // `figma:compare --self-check` in Chromium: every kit cell rendered twice and compared, and each
-    // client cell's mounted markup checked against its definition. It takes minutes, so it runs in
-    // CI's `figma-compare` job and stays out of the local `check` gate. The cells import Fuse's
-    // build, whose task hash covers Fuse's sources, which the kit reads through the catalog entries
-    // too. The color package has no build, so its sources are listed. The inputs leave out what the
+    // `figma:compare --self-check` in Chromium: every kit cell rendered twice and compared. It takes
+    // minutes, so it runs in CI's `figma-compare` job and stays out of the local `check` gate. The
+    // cells import Fuse's build, whose task hash covers Fuse's sources, which the kit reads through
+    // the catalog entries too. The color package has no build, so its sources are listed. The inputs leave out what the
     // run never reads, so a docs or test edit replays the cached result.
     "test:compare": {
       "dependsOn": ["@elmeragroup/fuse#build"],

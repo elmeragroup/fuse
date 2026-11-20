@@ -59,9 +59,7 @@ const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOpti
 });
 
 /**
- * Compare a snapshot export and print the summary, the five worst cells and the report path. A client
- * cell whose mounted markup differs from its definition stops the run, after the report is written,
- * with each difference on stderr.
+ * Compare a snapshot export and print the summary, the five worst cells and the report path.
  */
 const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, options: CompareOptions) {
   const path = resolve(snapshotPath);

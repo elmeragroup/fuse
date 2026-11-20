@@ -7876,5 +7876,44 @@
         "toast/status=warning 0/root::after"
       ]
     }
-  ]
+  ],
+  "alike": [
+    {
+      "set": "number-field-stepper",
+      "axis": "state",
+      "values": ["rest", "readonly"],
+      "reason": "Base UI marks a read-only stepper `aria-disabled`, not `:disabled`, and no rule reads its `data-readonly`, so it draws as one at rest, its transparent fill showing the read-only field box's muted one. The Number field set's read-only cells show their steppers through this value."
+    },
+    {
+      "set": "sidebar-menu-badge",
+      "axis": "state",
+      "values": ["hover", "active"],
+      "reason": "The badge takes `text-sidebar-accent-foreground` both while its menu button is hovered and while the button is active, so the two draw the same."
+    },
+    {
+      "set": "calendar-day",
+      "axis": "selection",
+      "values": ["start-week-end", "end-week-start"],
+      "reason": "Each is a range end alone in its week's row, so `rounded-s-full` and `rounded-e-full` round all four corners of both and both fill with `bg-primary`; only which rule rounds which side differs."
+    },
+    {
+      "set": "dropdown-menu-sub-trigger",
+      "axis": "state",
+      "values": ["highlighted", "open"],
+      "reason": "An open sub-trigger takes `bg-accent` and `text-accent-foreground` as a highlighted one does, and its chevron inherits the color the highlighted chevron's `**:text-accent-foreground` sets."
+    },
+    {
+      "set": "link",
+      "axis": "variant",
+      "values": ["default", "foreground"],
+      "reason": "`default` is `text-inherit`, which takes the host's color, and the capture's host page sets `--foreground`, the color `foreground` sets. Figma has no parent color for a component to inherit."
+    },
+    {
+      "set": "navigation-menu-bar-link",
+      "axis": "active",
+      "values": ["false", "true"],
+      "reason": "An active link sets `font-medium`, as an inactive one does, and `text-foreground`, where an inactive one is `text-inherit` and takes the capture's host color, `--foreground`; neither the Root nor the List sets a color. `aria-current` draws nothing."
+    }
+  ],
+  "apart": []
 }

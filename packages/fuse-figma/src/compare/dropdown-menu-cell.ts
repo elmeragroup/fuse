@@ -20,10 +20,10 @@
  *   which sits 24px from the parent popup, as the open sub trigger's cell places it.
  * - `dropdownMenuOpen`: the Basic demo's trigger and popup, measured together.
  *
- * Each row cell's row sits in a `<div>` 160px wide with no `data-slot`, which the markup check passes over, so
- * the popup hugs it and the row is as wide as the set draws it. The popup aligns to its trigger's
- * start, so it starts on the slot's pixel grid and stays inside the slot, and the menu is not modal,
- * so its open popup marks no other cell hidden.
+ * Each row cell's row sits in a `<div>` 160px wide, so the popup hugs it and the row is as wide as
+ * the set draws it. The popup aligns to its trigger's start, so it starts on the slot's pixel grid
+ * and stays inside the slot, and the menu is not modal, so its open popup marks no other cell
+ * hidden.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
