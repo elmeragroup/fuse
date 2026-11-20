@@ -253,9 +253,6 @@ function cascadeOf(
     definition: manifestDefinition(MANIFEST),
     context,
     record,
-    captureOf: () => undefined,
-    open: undefined,
-    anchorWidth: () => undefined,
     instancedIn,
   });
 }

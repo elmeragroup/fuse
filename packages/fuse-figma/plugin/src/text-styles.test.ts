@@ -5,8 +5,8 @@
  * the whole kit, type the Fuse recipes document: Text's `sm`, `default` and `lg` sizes read the
  * theme's paragraph line heights and `bold` caps at `medium` (`text-variants.ts`), Span sets a snug
  * 1.375 line (`span-variants.ts`), Heading levels 1 to 3 read the theme's `--heading-<level>-*` roles
- * (`heading-class.ts`), and Tailwind's scale sets `text-xs` at 12px, `text-2xl` at 24px and
- * `leading-relaxed` at 1.625.
+ * (`heading-class.ts`), and Tailwind's scale sets `text-xs` at 12px, `text-2xl` at 24px, `text-6xl`
+ * at 60px, `leading-relaxed` at 1.625 and `leading-tight` at 1.25.
  */
 import { describe, expect, it } from "vitest";
 
@@ -106,6 +106,13 @@ describe("the kit's text styles on a synced file", () => {
       size: 24,
       lineHeight: { unit: "PIXELS", value: 33 },
       style: "Regular",
+    });
+    expect(await type("Heading/6xl/semibold")).toEqual({
+      family: "Fuse tokens/font-heading",
+      weight: undefined,
+      size: 60,
+      lineHeight: { unit: "PIXELS", value: 75 },
+      style: "SemiBold",
     });
     const textSm = (await file.figma.getLocalTextStylesAsync())
       .map((style) => style.name)

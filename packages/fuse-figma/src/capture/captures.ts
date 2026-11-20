@@ -1,6 +1,6 @@
 /**
- * The captures the repository keeps under `captures/`, one per set switched to the capture, parsed
- * once when the build first reads them.
+ * The captures the repository keeps under `captures/`, one per set switched to the capture and one
+ * for the text style samples, parsed once when the build first reads them.
  */
 
 import type { Result } from "effect";
@@ -118,6 +118,7 @@ import tabsContent from "../../captures/tabs-content.json" with { type: "json" }
 import tabsList from "../../captures/tabs-list.json" with { type: "json" };
 import tabsTrigger from "../../captures/tabs-trigger.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
+import textStyles from "../../captures/text-styles.json" with { type: "json" };
 import textareaField from "../../captures/textarea-field.json" with { type: "json" };
 import textarea from "../../captures/textarea.json" with { type: "json" };
 import timelineList from "../../captures/timeline-list.json" with { type: "json" };
@@ -258,6 +259,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["navigation-menu-bar-link", navigationMenuBarLink],
   ["navigation-menu-row-link", navigationMenuRowLink],
   ["navigation-menu-popup", navigationMenuPopup],
+  ["text-styles", textStyles],
 ]);
 
 /**

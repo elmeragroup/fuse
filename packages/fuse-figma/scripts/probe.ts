@@ -13,7 +13,7 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { Console, Data, Effect, Runtime } from "effect";
 import { parseArgs } from "node:util";
 
-import { captureTargets } from "../src/capture/capture-targets.ts";
+import { setTargets } from "../src/capture/capture-targets.ts";
 import type { InstanceManifest, PartManifest } from "../src/capture/manifest.ts";
 import { contradictions, probeCells } from "../src/capture/perturbation.ts";
 import type { ProbedCell } from "../src/capture/perturbation.ts";
@@ -59,7 +59,7 @@ const GAP_TOLERANCE = 0.5;
 
 const main = Effect.fn("probe.main")(function* () {
   const { positionals } = parseArgs({ allowPositionals: true });
-  const targets = captureTargets(positionals.length === 0 ? undefined : new Set(positionals));
+  const targets = setTargets(positionals.length === 0 ? undefined : new Set(positionals));
   const build = yield* locateFuseBuild();
   const renderers = yield* loadRenderers(new Set(targets.map((target) => target.key)));
   const browser = yield* CompareBrowser.launch(yield* readPageAssets(build, renderers));

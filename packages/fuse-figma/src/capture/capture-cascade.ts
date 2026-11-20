@@ -276,27 +276,46 @@ export type OpenPlacement =
   | { readonly _tag: "anchored"; readonly sideOffset: number }
   | { readonly _tag: "modal"; readonly viewport: Viewport };
 
-/** What a set's capture-backed cascade reads beside its capture. */
+/**
+ * What a set's capture-backed cascade reads beside its capture. A component set names the hooks its
+ * cells need. A capture whose cells measure one plain root each, as the text style samples', leaves
+ * them out: it records no coverage, holds no instance or anchor, and places nothing.
+ */
 export type CaptureSetSource = {
   readonly capture: SetCapture;
-  /** The definition the manifest gives, whose variant keys name the cells. */
-  readonly definition: ComponentDefinition;
+  /** The key and axes whose variant keys name the cells. */
+  readonly definition: Pick<ComponentDefinition, "key" | "axes" | "addedAxes">;
   /** The synced variables and the compiled theme values the reads substitute. */
   readonly context: BuildContext;
-  /** Adds a row to the set's coverage table. */
-  readonly record: Recorder;
-  /** The kept capture of another set, which an instance part's inner set reads. */
-  readonly captureOf: (key: string) => SetCapture | undefined;
+  /** Adds a row to the set's coverage table. By default the cascade records no rows. */
+  readonly record?: Recorder;
+  /** The kept capture of another set, which an instance part's inner set reads. By default none. */
+  readonly captureOf?: (key: string) => SetCapture | undefined;
   /** How the set places its cells' elements, undefined for a set whose cells measure one root. */
-  readonly open: OpenPlacement | undefined;
-  /** The width that stands for `--anchor-width` in a cell, as {@link CellRead} says. */
-  readonly anchorWidth: (cell: Cell) => string | undefined;
+  readonly open?: OpenPlacement | undefined;
+  /** The width that stands for `--anchor-width` in a cell, as {@link CellRead} says. By default none. */
+  readonly anchorWidth?: (cell: Cell) => string | undefined;
   /**
    * The root `data-slot` of each set whose manifest holds this set as an instance part, as
    * {@link instancingSlots} reads them, such as Select popup's `select-content` around Select item.
+   * By default none.
    */
-  readonly instancedIn: ReadonlySet<string>;
+  readonly instancedIn?: ReadonlySet<string>;
 };
+
+/** A source with every hook its cascade reads, the defaults filled in. */
+type FullSource = Required<Omit<CaptureSetSource, "open">> & Pick<CaptureSetSource, "open">;
+
+/** A source with the hooks it leaves out set to their defaults. */
+function withDefaults(source: CaptureSetSource): FullSource {
+  return {
+    record: () => undefined,
+    captureOf: () => undefined,
+    anchorWidth: () => undefined,
+    instancedIn: new Set(),
+    ...source,
+  };
+}
 
 /** An element's own winning declarations, then its pseudo-elements'. */
 function declarationsOf(element: CapturedElement): readonly number[] {
@@ -547,7 +566,7 @@ const UNDRAWN_CHROME: readonly (readonly [RegExp, string])[] = [
 
 /** The cascade of every cell of a set, read from its capture. */
 export class CaptureSetCascade {
-  readonly #source: CaptureSetSource;
+  readonly #source: FullSource;
   readonly #context: BuildContext;
   readonly #origin: Origin;
   /** The cells the build mapped, with the elements their mapping drew and the inner roots. */
@@ -555,9 +574,9 @@ export class CaptureSetCascade {
 
   /** @param source - The set's capture and what its cascade reads beside it. */
   constructor(source: CaptureSetSource) {
-    this.#source = source;
+    this.#source = withDefaults(source);
     this.#context = source.context;
-    this.#origin = { record: drawnShown(source.capture, source.record) };
+    this.#origin = { record: drawnShown(source.capture, this.#source.record) };
   }
 
   /**
