@@ -1149,6 +1149,10 @@ class FakeInstance extends FakeFrameLikeNode {
       throw new Error(`An instance swaps only to a component, and ${main.id} is a ${main.type}.`);
     }
     write(state, `swap to ${main.id}`);
+    // Rule 48: a sublayer swapped to the component it shows stays as it is (FD4).
+    if (state.mirrorOf !== undefined && shownComponent(state) === main) {
+      return;
+    }
     swapTo(state, main);
   }
 
