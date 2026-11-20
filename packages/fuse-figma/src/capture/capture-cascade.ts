@@ -13,10 +13,12 @@
  *   element at the part's place: the element-ordinal path from the nearest element with a `data-slot`,
  *   such as `field/1/0`. The elements between a box and its part pass down what they inherit.
  * - An instance part's inner root is the element below its box with the inner root's `data-slot`.
- *   The classes the composite passes it are the ones it carries beyond those the inner set's own
- *   capture shows on its root in the same inner cell, and the composite owns their rows.
+ *   The build looks for each element's twin there in the inner set's own capture of the same inner
+ *   cell, as `instance-twin.ts` pairs them.
  * - A declaration's row names the layer of the element whose class set it: the box itself, or the
- *   box above whose child selector reached it, and that element's origin owns the row.
+ *   box above whose child selector reached it. The innermost set that claims the declaration on the
+ *   same box of the twin owns the row, as `instance-twin.ts` decides, and the composite owns one no
+ *   inner set claims.
  */
 
 import { childSpacingNote } from "../components/box-cascade.ts";
@@ -67,6 +69,7 @@ import type {
   CapturedRoot,
   SetCapture,
 } from "./capture-format.ts";
+import { declarationOrigin, isBase, isReset, rendersNothing, twinClaims } from "./instance-twin.ts";
 import { PseudoBoxCascade, pseudoVerdict, withBorderLonghands } from "./pseudo-elements.ts";
 
 /** Why the kit draws none of a page element's own declarations. */
@@ -105,14 +108,15 @@ function initialFontSize(origin: Origin): Applied {
 }
 
 /**
- * An element on the path from `<html>` to a box: its layer's name, the origin that owns the rows of
- * the classes it carries, and the classes on it a composite passes, whose rows the composite owns.
+ * An element on the path from `<html>` to a box: its layer's name, the origin of the set whose markup
+ * it belongs to, and the origin of the set that holds each instance part around it in this visit,
+ * innermost first.
  */
 type Placed = {
   readonly element: CapturedElement;
   readonly name: string;
   readonly origin: Origin;
-  readonly passed?: { readonly classes: ReadonlySet<string>; readonly origin: Origin };
+  readonly holders: readonly Origin[];
 };
 
 /** What every box of a cell reads. */
@@ -137,10 +141,11 @@ type CellRead = {
    */
   readonly innerOwn: Map<CapturedElement, { readonly root: CapturedElement; readonly capture: SetCapture }>;
   /**
-   * The elements below an instance part's inner root that carry classes the composite passes, such
-   * as a caret glyph's, with those classes and the composite's origin, which owns their rows.
+   * What the inner set of each instance part around an element claims at it, innermost first, as
+   * {@link twinClaims} finds it. The claims name no holder, so they hold for every visit of the
+   * instance part, and each visit's {@link Placed} path names its holders.
    */
-  readonly passedBelow: Map<CapturedElement, NonNullable<Placed["passed"]>>;
+  readonly claims: Map<CapturedElement, readonly ReadonlySet<string>[]>;
   /**
    * The copy a placement rule made of a captured root, by the root: an anchor that stretches, or
    * the Backdrop that holds the modal popup. The cascade drew the copy, which the set's unused
@@ -176,8 +181,8 @@ export type InstancePlace = { readonly place: string; readonly set: string; read
  * measured root's index, then `around/` and the element's index among the elements around it,
  * outermost first, or `root` and the child index at each step down, as `0/root/1/0`. A declaration
  * is its place, `#`, and its index into the capture's declarations. The set's recorder collects each
- * declaration a row it records names, so one that reaches no row of the set's coverage, as a class a
- * composite passes an instance whose row the composite drops (#754), is not accounted for. The
+ * declaration a row it records names, so one that reaches no row of the set's coverage, as a
+ * declaration no layer reads, is not accounted for. The
  * cell's instance parts say where an inner set's declarations sit, which that set accounts for in its
  * own capture.
  */
@@ -205,6 +210,53 @@ export function placesOf(cell: CapturedCell): Map<CapturedElement, string> {
     below(root, `${String(index)}/root`);
   });
   return places;
+}
+
+/** The properties whose winning value can keep an element from rendering, as `rendersNothing` reads them. */
+const HIDING = new Set(["display", "clip-path"]);
+
+/**
+ * A recorder that leaves out a `bound` or `literal` row whose declarations all sit at or below an
+ * element of the set's capture that renders nothing. Check 8 skips such an element and everything
+ * below it, so a set that instances this one lists those declarations where its own cell shows the
+ * element, and this set's row would list them a second time. A row of `display` or `clip-path`, which
+ * hide the element, stays, and so does a `dropped` or `unmapped` row: a pending Button's rows say
+ * why it leaves out its hidden icon.
+ */
+function drawnShown(capture: SetCapture, record: Recorder): Recorder {
+  const hidden = new Map(
+    capture.cells.map((cell) => {
+      const places = placesOf(cell);
+      const found = new Set<string>();
+      const below = (element: CapturedElement, inside: boolean): void => {
+        const unseen = inside || rendersNothing(element, capture.declarations);
+        if (unseen) {
+          found.add(places.get(element) ?? "");
+        }
+        element.children.forEach((child) => {
+          below(child, unseen);
+        });
+      };
+      for (const { around, root } of cell.roots) {
+        around.forEach((element) => {
+          below(element, false);
+        });
+        below(root, false);
+      }
+      return [cell.key, found] as const;
+    })
+  );
+  return (row) => {
+    const at = row.at ?? [];
+    const unseen =
+      (row.outcome === "bound" || row.outcome === "literal") &&
+      !HIDING.has(row.property) &&
+      at.length > 0 &&
+      at.every(({ cell, declaration }) => hidden.get(cell)?.has(declaration.split("#")[0] ?? "") === true);
+    if (!unseen) {
+      record(row);
+    }
+  };
 }
 
 /** A captured declaration of an element as a row names it, or undefined for a synthetic one. */
@@ -252,30 +304,6 @@ function declarationsOf(element: CapturedElement): readonly number[] {
 }
 
 /**
- * Whether a declaration comes from a style sheet every page applies to every element: Tailwind's
- * preflight, Fuse's base layer or the browser's own.
- */
-function isBase(declaration: CapturedDeclaration): boolean {
-  return (
-    declaration.source === "preflight" || declaration.source === "user-agent" || declaration.layer === "base"
-  );
-}
-
-/**
- * Whether a declaration resets its longhands to their initial values from a style sheet every page
- * applies to every element, Tailwind's preflight, Fuse's base layer or the browser's own, as the
- * base layer's `margin: 0` does. A reset sets nothing a component draws, so the cascade leaves it out,
- * and a box reads such a longhand as unset.
- */
-export function isReset(
-  declaration: CapturedDeclaration,
-  index: number,
-  initial: readonly number[]
-): boolean {
-  return isBase(declaration) && initial.includes(index);
-}
-
-/**
  * Whether a child wins a declaration through its parent's class by a rule of the shape Tailwind
  * compiles a `space-x-*` or `space-y-*` to, `:where(.space-x-2 > :not(:last-child))`, which styles
  * every child of the class's element but the last.
@@ -318,14 +346,20 @@ function ownDeclarations(read: CellRead, path: readonly Placed[]): readonly numb
   return (own?.declarations ?? []).filter((index) => !withheld.has(index));
 }
 
-/** The declarations of an element as the cascade applies them, in the capture's order. */
+/**
+ * The declarations of an element's box as the cascade applies them, in the capture's order: the
+ * element's own, `box` "", or a pseudo-element's, as `::before`.
+ */
 function appliedOf(
   read: CellRead,
   declarations: readonly number[],
   path: readonly Placed[],
   keep: (declaration: CapturedDeclaration) => boolean,
-  initial: readonly number[] = path.at(-1)?.element.initial ?? []
+  box = ""
 ): Applied[] {
+  const target = path.at(-1);
+  // An element's `initial` lists its own declarations that reset a longhand, none of a pseudo-element's.
+  const initial = box === "" ? (target?.element.initial ?? []) : [];
   return declarations.flatMap((index, order): Applied[] => {
     const declaration = read.declarations[index];
     if (declaration === undefined || !keep(declaration) || isReset(declaration, index, initial)) {
@@ -339,14 +373,17 @@ function appliedOf(
     if (value === undefined) {
       return [];
     }
-    const origin =
-      owner.passed?.classes.has(declaration.className) === true ? owner.passed.origin : owner.origin;
-    const at = atOf(read, path.at(-1)?.element, index);
+    const at = atOf(read, target?.element, index);
     return [
       {
         part: owner.name,
         className: declaration.className,
-        origin,
+        origin: declarationOrigin(
+          owner,
+          target === undefined ? [] : (read.claims.get(target.element) ?? []),
+          box,
+          declaration
+        ),
         rank: 0,
         order,
         declarations: [{ property: declaration.property, value }],
@@ -444,7 +481,7 @@ function placeholderOf(read: CellRead, ledger: CellLedger, path: readonly Placed
     return [];
   }
   const text = (property: string) => inheritsProperty(property, read.context);
-  const applied = appliedOf(read, declarations, path, () => true, []);
+  const applied = appliedOf(read, declarations, path, () => true, "::placeholder");
   for (const {
     part,
     className,
@@ -520,7 +557,7 @@ export class CaptureSetCascade {
   constructor(source: CaptureSetSource) {
     this.#source = source;
     this.#context = source.context;
-    this.#origin = { record: source.record };
+    this.#origin = { record: drawnShown(source.capture, source.record) };
   }
 
   /**
@@ -554,7 +591,7 @@ export class CaptureSetCascade {
       drawn: new Map(),
       inner: new Map(),
       innerOwn: new Map(),
-      passedBelow: new Map(),
+      claims: new Map(),
       replaced: new Map(),
       rootOf: new Map(
         captured.roots.flatMap(({ around, root }) => around.map((each) => [each, root] as const))
@@ -685,7 +722,7 @@ function readPseudoElements(
     if (pseudo === "placeholder") {
       continue;
     }
-    const applied = withBorderLonghands(appliedOf(read, indexes, placed, () => true, []));
+    const applied = withBorderLonghands(appliedOf(read, indexes, placed, () => true, `::${pseudo}`));
     const pseudoLayer = ledger.add(inheritance(layer, read.context), applied, layer);
     const style = new LayerStyle(ledger, pseudoLayer, [...path, `::${pseudo}`]);
     const { paints, ...note } = pseudoVerdict(style, pseudo, read.context.variables);
@@ -982,7 +1019,7 @@ export class CaptureCellCascade {
 
   /** A box's element as the root's path places it. */
   #placed(element: CapturedElement, name: string): Placed {
-    return { element, name, origin: this.#ledger.scope.origin };
+    return { element, name, origin: this.#ledger.scope.origin, holders: [] };
   }
 
   /**
@@ -1003,7 +1040,7 @@ export class CaptureCellCascade {
       ...around.map((element) => ({ element, undrawn: AROUND_UNDRAWN, page: false })),
     ];
     for (const { element, undrawn, page } of elements) {
-      path.push({ element, name: undrawnName(element), origin });
+      path.push({ element, name: undrawnName(element), origin, holders: [] });
       const own = appliedOf(
         this.#read,
         element.declarations,
@@ -1041,7 +1078,7 @@ export class CaptureCellCascade {
       record: () => undefined,
     };
     const ledger = new CellLedger(scope);
-    const placed: Placed[] = [{ element: popup.root, name: "popup", origin: scope.origin }];
+    const placed: Placed[] = [{ element: popup.root, name: "popup", origin: scope.origin, holders: [] }];
     const layer = ledger.add(
       new Map(),
       appliedOf(this.#read, popup.root.declarations, placed, () => true),
@@ -1451,24 +1488,32 @@ class CaptureBoxCascade implements BoxCascade {
         ? spacing?.(withheld.map(({ property, value }) => ({ property, value })))
         : undefined;
     const note = even ? childSpacingNote(children) : UNEVEN_SPACING;
-    // The box's row of a class accounts for each child's declaration of it.
-    const childrenAt = (index: number): readonly CapturedAt[] =>
-      byChild.flatMap((held, at) =>
-        held.has(index) ? (atOf(this.#read, own.element.children[at], index) ?? []) : []
-      );
-    for (const { className, property, value, index } of withheld) {
-      const origin = own.passed?.classes.has(className) === true ? own.passed.origin : own.origin;
-      routed(
-        this.#layer.inPlace,
-        origin
-      )({
-        part: own.name,
-        className,
-        property,
-        value,
-        ...(spaced?.notes.get(property) ?? note),
-        at: childrenAt(index),
+    // The box's row of a class accounts for each child's declaration of it, and each child's
+    // declaration belongs to the set that owns it there, so one class can give rows to two sets.
+    for (const declaration of withheld) {
+      const { className, property, value, index } = declaration;
+      const byOrigin = new Map<Origin, CapturedAt[]>();
+      own.element.children.forEach((child, at) => {
+        if (byChild[at]?.has(index) !== true) {
+          return;
+        }
+        const origin = declarationOrigin(own, this.#read.claims.get(child) ?? [], "", declaration);
+        const each = atOf(this.#read, child, index);
+        byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), ...(each === undefined ? [] : [each])]);
       });
+      for (const [origin, at] of byOrigin) {
+        routed(
+          this.#layer.inPlace,
+          origin
+        )({
+          part: own.name,
+          className,
+          property,
+          value,
+          ...(spaced?.notes.get(property) ?? note),
+          at,
+        });
+      }
     }
     return spaced?.itemSpacing;
   }
@@ -1507,14 +1552,9 @@ class CaptureBoxCascade implements BoxCascade {
     }
     // An element that generates no box hands its parts to this box, so its own path is this box's.
     const noBox = elements.at(-1)?.measured?.noBox === true;
-    return this.#below(
-      elements,
-      part,
-      this.#ledger,
-      noBox ? this.path : [...this.path, element.key],
-      undefined,
-      noBox ? NO_BOX_UNDRAWN : undefined
-    );
+    return this.#below(elements, part, this.#ledger, noBox ? this.path : [...this.path, element.key], {
+      undrawn: noBox ? NO_BOX_UNDRAWN : undefined,
+    });
   }
 
   instance(
@@ -1545,11 +1585,18 @@ class CaptureBoxCascade implements BoxCascade {
     if (place !== undefined) {
       this.#read.instances.push({ place, set: element.set, cell });
     }
+    // An instance part's root enters the cell's claims once, however often its cascade runs, and
+    // each visit passes its own holder down its path.
+    if (!this.#read.inner.has(root)) {
+      for (const [below, claimed] of twinClaims(root, own, {
+        inner: capture.declarations,
+        composite: this.#read.declarations,
+      })) {
+        this.#read.claims.set(below, [claimed, ...(this.#read.claims.get(below) ?? [])]);
+      }
+    }
     this.#read.inner.set(root, passed);
     this.#read.innerOwn.set(root, { root: own, capture });
-    for (const [below, classes] of passedBelowRoot(root, own)) {
-      this.#read.passedBelow.set(below, { classes, origin: scope.passed.origin });
-    }
     const inner: CellScope = {
       cell: scope.cell,
       context: this.#ledger.scope.context,
@@ -1557,10 +1604,7 @@ class CaptureBoxCascade implements BoxCascade {
       record: scope.inPlace.inner.record,
       inPlace: scope.inPlace,
     };
-    return this.#below(found, part, this.#ledger.withScope(inner), [], {
-      classes: passed,
-      origin: scope.passed.origin,
-    });
+    return this.#below(found, part, this.#ledger.withScope(inner), [], { holder: scope.passed.origin });
   }
 
   /** Cascade the elements down to a part's, the last of `elements`, below this box. */
@@ -1569,15 +1613,21 @@ class CaptureBoxCascade implements BoxCascade {
     part: string,
     ledger: CellLedger,
     path: readonly string[],
-    passed: Placed["passed"],
-    undrawn?: string
+    {
+      undrawn,
+      holder,
+    }: {
+      readonly undrawn?: string | undefined;
+      /** The origin of the set that holds the instance part whose inner root is the part's element. */
+      readonly holder?: Origin;
+    } = {}
   ): BoxCascade {
     const { context } = this.#read;
     const { origin } = this.#ledger.scope;
     let parent = this.#layer;
     const placed = [...this.#placed];
     for (const between of elements.slice(0, -1)) {
-      placed.push({ element: between, name: undrawnName(between), origin });
+      placed.push(placedBelow(placed, between, undrawnName(between), origin));
       parent = this.#ledger.add(
         inheritance(parent, context),
         appliedOf(this.#read, between.declarations, placed, ({ property }) =>
@@ -1590,9 +1640,7 @@ class CaptureBoxCascade implements BoxCascade {
     const target = elements.at(-1);
     if (target !== undefined) {
       this.#claimed.add(target);
-      const own: Placed = { element: target, name: part, origin: ledger.scope.origin };
-      const passedHere = passed ?? this.#read.passedBelow.get(target);
-      placed.push(passedHere === undefined ? own : { ...own, passed: passedHere });
+      placed.push(placedBelow(placed, target, part, ledger.scope.origin, holder));
     }
     return new CaptureBoxCascade(this.#read, ledger, placed, parent, path, PLAIN, undrawn);
   }
@@ -1630,7 +1678,7 @@ class CaptureBoxCascade implements BoxCascade {
       return undefined;
     }
     this.#claimed.add(held);
-    const placed = [...this.#placed, { element: held, name: undrawnName(held), origin: box.origin }];
+    const placed = [...this.#placed, placedBelow(this.#placed, held, undrawnName(held), box.origin)];
     const layer = this.#ledger.add(
       inheritance(this.#layer, this.#read.context),
       appliedOf(this.#read, held.declarations, placed, () => true),
@@ -1701,7 +1749,7 @@ class CaptureBoxCascade implements BoxCascade {
           }
           continue;
         }
-        placed = [...placed, { element: held, name: undrawnName(held), origin: box.origin }];
+        placed = [...placed, placedBelow(placed, held, undrawnName(held), box.origin)];
         layer = this.#ledger.add(
           inheritance(layer, this.#read.context),
           appliedOf(this.#read, held.declarations, placed, () => true),
@@ -1781,7 +1829,7 @@ class CaptureBoxCascade implements BoxCascade {
     if (at >= 0) {
       this.#checkTextSide(found[0], `the icon ${slot.name}`, slot.side === "start" ? "before" : "after");
     }
-    return this.#below(found, slot.name, this.#ledger, [...this.path, slot.key], undefined).style;
+    return this.#below(found, slot.name, this.#ledger, [...this.path, slot.key]).style;
   }
 
   /**
@@ -1964,31 +2012,18 @@ function adopted(
 }
 
 /**
- * The elements below an instance part's inner root in the composite's capture that carry classes
- * beyond the ones the same element carries in the inner set's own capture, with those classes. The
- * walk pairs the two trees' children by position while their tags agree.
+ * An element placed below the last of `above`, inside the same instance parts, and inside one more
+ * where it is an instance part's inner root, whose holder this visit names.
  */
-function passedBelowRoot(
-  inPlace: CapturedElement,
-  own: CapturedElement
-): ReadonlyMap<CapturedElement, ReadonlySet<string>> {
-  const found = new Map<CapturedElement, ReadonlySet<string>>();
-  const visit = (here: CapturedElement, there: CapturedElement): void => {
-    for (const [index, child] of here.children.entries()) {
-      const twin = there.children[index];
-      if (twin === undefined || twin.tag !== child.tag) {
-        continue;
-      }
-      const ownClasses = new Set(twin.classes);
-      const extra = child.classes.filter((className) => !ownClasses.has(className));
-      if (extra.length > 0) {
-        found.set(child, new Set(extra));
-      }
-      visit(child, twin);
-    }
-  };
-  visit(inPlace, own);
-  return found;
+function placedBelow(
+  above: readonly Placed[],
+  element: CapturedElement,
+  name: string,
+  origin: Origin,
+  holder?: Origin
+): Placed {
+  const around = above.at(-1)?.holders ?? [];
+  return { element, name, origin, holders: holder === undefined ? around : [holder, ...around] };
 }
 
 /** Why the build draws a box's text, or its wrapping row, on one line. */

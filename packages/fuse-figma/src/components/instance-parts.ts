@@ -9,12 +9,15 @@
  * - `instance-diff.ts` diffs that root against the inner set's variant, and the instance layer carries
  *   the property values, overrides and sizing the diff finds. A difference no instance field carries
  *   lands in the coverage table as unmapped.
- * - Every declaration names its origin. The inner component's own classes are the inner set's
- *   coverage. The composite owns the classes the outer component passes and those of an outer box that
- *   style the inner root or a layer below it, and the mapper records the spec fields each read of them
- *   fills, so their rows say what the instance does with each: an override where a field they fill
- *   differs and an instance field carries it, unmapped where it differs and none does, and dropped
- *   where the inner variant draws the same. Every read in place that does not map lands too.
+ * - Every declaration names its origin. A declaration the inner set claims on the same box, host or
+ *   pseudo-element, of the element's twin is the inner set's coverage, and where instances nest the
+ *   innermost set that claims it owns it, as `capture/instance-twin.ts` decides. The composite owns
+ *   every other: a class the outer component passes, a variant of an inner class that only the
+ *   composite's markup turns on, and the classes of an outer box that style the inner root or a layer
+ *   below it. The mapper records the spec fields each read of them fills, so their rows say what the
+ *   instance does with each: an override where a field they fill differs and an instance field
+ *   carries it, unmapped where it differs and none does, and dropped where the inner variant draws
+ *   the same. Every read in place that does not map lands too.
  */
 import { isDeepStrictEqual } from "node:util";
 
@@ -197,8 +200,8 @@ export class InstanceParts {
 
   /**
    * Cascade an instance part's inner root directly below its parent box in an outer cell. The inner
-   * component owns its own classes, and the composite the ones it passes, as the composite's capture
-   * tells them apart.
+   * component owns the declarations it claims on the same box of each element's twin, and the
+   * composite every other, as `capture/instance-twin.ts` decides.
    *
    * @param part - The instance part.
    * @param parent - The cascade of the box that holds the part.

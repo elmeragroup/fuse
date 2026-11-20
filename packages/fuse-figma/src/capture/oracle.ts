@@ -10,9 +10,11 @@
 import { Result, Schema } from "effect";
 
 import ledger from "../../oracles/coverage.json" with { type: "json" };
-import { isReset, placesOf } from "./capture-cascade.ts";
+import { placesOf } from "./capture-cascade.ts";
 import type { CellAccounting, InstancePlace } from "./capture-cascade.ts";
 import type { CapturedCell, CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
+import { boxIdentity, keptDeclarations, rendersNothing, twinClaims } from "./instance-twin.ts";
+import type { KeptDeclaration } from "./instance-twin.ts";
 
 /** A row the ledger names, by its set, part, class and property, with why the kit keeps it. */
 const KeptRowSchema = Schema.Struct({
@@ -109,81 +111,16 @@ export type AccountedSet = {
 };
 
 /**
- * Whether an element's own winning declarations keep it and everything below it from rendering
- * anything visible: `display: none`, which generates no box for it or its descendants (CSS Display 3
- * §2.5), or a `clip-path: inset()` whose opposite insets meet on an element that generates a box,
- * which clips the box and its descendants to no area (CSS Masking 1 §6.1), as `sr-only` and Base UI's
- * visually hidden inputs clip theirs with `inset(50%)`. A `display: contents` element generates no
- * box, so its clip clips nothing and its children paint.
- */
-function rendersNothing(element: CapturedElement, declarations: readonly CapturedDeclaration[]): boolean {
-  const won = (longhand: string): string | undefined => wonBy(element.declarations, declarations, longhand);
-  const display = won("display")?.trim();
-  if (display === "none") {
-    return true;
-  }
-  const inset = /^inset\(([^)]*)\)$/.exec(won("clip-path")?.trim() ?? "");
-  if (display === "contents" || inset === null) {
-    return false;
-  }
-  const percents = (inset[1] ?? "")
-    .trim()
-    .split(/\s+/)
-    .map((each) => (each === "0" ? "0" : /^(-?[\d.]+)%$/.exec(each)?.[1]));
-  if (percents.some((each) => each === undefined)) {
-    return false;
-  }
-  const [top = 0, right = top, bottom = top, left = right] = percents.map(Number);
-  return top + bottom >= 100 || left + right >= 100;
-}
-
-/** The value of the declaration that wins a longhand among the given ones, or undefined. */
-function wonBy(
-  indexes: readonly number[],
-  declarations: readonly CapturedDeclaration[],
-  longhand: string
-): string | undefined {
-  return indexes
-    .map((index) => declarations[index])
-    .findLast((declaration) => declaration?.longhands.includes(longhand) === true)?.value;
-}
-
-/** An author declaration the check covers on one box of an element. */
-type CheckedDeclaration = {
-  /** The box it styles: "" for the element's own, `::before` for that pseudo-element's. */
-  readonly box: string;
-  /** Its index in the capture's declarations. */
-  readonly index: number;
-  readonly declaration: CapturedDeclaration;
-};
-
-/**
- * The declarations the check covers on an element that renders something, box by box: the element's
- * own, then each pseudo-element's, but none of a pseudo-element whose own `display` is `none`, which
- * generates no box (CSS Display 3 §2.5), so nothing it sets shows. The browser's own style sheet is no
- * author's and is left out, and so is a reset to the initial value. A set's own walk and an inner
- * set's claim on a composite's declaration both read this, so an inner set lends only what its own
- * walk checks.
+ * The declarations the check covers on an element that renders something, box by box: those the
+ * set's own build keeps there, as {@link keptDeclarations} lists them, but none from the browser's own
+ * style sheet, which is no author's.
  */
 function checkedDeclarations(
   element: CapturedElement,
   declarations: readonly CapturedDeclaration[]
-): readonly CheckedDeclaration[] {
-  const boxes = [
-    ["", element.declarations] as const,
-    ...Object.entries(element.pseudo)
-      .filter(([, indexes]) => wonBy(indexes, declarations, "display")?.trim() !== "none")
-      .map(([pseudo, indexes]) => [`::${pseudo}`, indexes] as const),
-  ];
-  return boxes.flatMap(([box, indexes]) =>
-    indexes.flatMap((index) => {
-      const declaration = declarations[index];
-      return declaration === undefined ||
-        declaration.source === "user-agent" ||
-        isReset(declaration, index, element.initial)
-        ? []
-        : [{ box, index, declaration }];
-    })
+): readonly KeptDeclaration[] {
+  return keptDeclarations(element, declarations).filter(
+    ({ declaration }) => declaration.source !== "user-agent"
   );
 }
 
@@ -201,87 +138,49 @@ function elementAt(cell: CapturedCell, place: string): CapturedElement | undefin
 }
 
 /**
- * The child of an inner element that stands for a composite's child: the one with the same
- * `data-slot`, or the same tag where the child carries none, at the same ordinal among the siblings
- * that match, since a composite can leave out a part the inner sample shows before it, as a menu row
- * without an icon holds its shortcut first.
+ * The place of the element whose class a declaration's rule selects through, `owner` steps above the
+ * element at `place`, as `0/root/0` for a declaration two steps below it at `0/root/0/0/1`.
  */
-function matchingChild(
-  composite: CapturedElement,
-  child: CapturedElement,
-  inner: CapturedElement
-): CapturedElement | undefined {
-  const slot = child.attributes["data-slot"];
-  const like = (each: CapturedElement): boolean =>
-    slot === undefined
-      ? each.attributes["data-slot"] === undefined && each.tag === child.tag
-      : each.attributes["data-slot"] === slot;
-  const ordinal = composite.children.filter(like).indexOf(child);
-  return inner.children.filter(like)[ordinal];
+function supplierOf(place: string, owner: number): string {
+  const steps = place.split("/");
+  return steps.slice(0, Math.max(2, steps.length - owner)).join("/");
+}
+
+/** Whether the element at `place` is the one at `root` or below it. */
+function holds(root: string, place: string): boolean {
+  return place === root || place.startsWith(`${root}/`);
 }
 
 /**
- * Whether the inner set an instance part shows owns a declaration of the composite's capture: its
- * own capture holds the same declaration, by class, property, value and source, at the element of
- * the inner cell that stands for the composite's, step by step below the inner root, as
- * {@link matchingChild} pairs them, and the inner set's own walk checks it there: no element on the
- * way renders nothing, and {@link checkedDeclarations} holds the inner declaration on the same box,
- * the element's own for the element's, the same pseudo-element's for a pseudo-element's. That set accounts for it in its own capture; anything else stays the
- * composite's to account for.
+ * What the inner set an instance part shows claims at each element at or below the part's inner root
+ * in a composite's cell, as {@link twinClaims} finds it for the capture build, so check 8 lets an
+ * inner set account for exactly the declarations the build gives its rows.
  */
-function ownedByInner(
-  declaration: CapturedDeclaration,
+function instanceClaims(
   cell: CapturedCell,
-  place: string,
-  box: string,
+  composite: readonly CapturedDeclaration[],
   instance: InstancePlace,
   setOf: (key: string) => AccountedSet | undefined
-): boolean {
+): ReadonlyMap<CapturedElement, ReadonlySet<string>> {
   const inner = setOf(instance.set)?.capture;
-  if (inner === undefined) {
-    return false;
-  }
-  // The inner set's walk skips an element that renders nothing, and everything below it, so it
-  // checks nothing there that could stand for a visible element of the composite's.
-  const shown = (each: CapturedElement | undefined): each is CapturedElement =>
-    each !== undefined && !rendersNothing(each, inner.declarations);
-  let composite = elementAt(cell, instance.place);
-  let target = inner.cells.find(({ key }) => key === instance.cell)?.roots[0]?.root;
-  if (!shown(target)) {
-    return false;
-  }
-  for (const step of place
-    .slice(instance.place.length)
-    .split("/")
-    .filter((each) => each !== "")) {
-    const child = composite?.children[Number(step)];
-    const next: CapturedElement | undefined =
-      composite === undefined || child === undefined ? undefined : matchingChild(composite, child, target);
-    if (!shown(next)) {
-      return false;
-    }
-    composite = child;
-    target = next;
-  }
-  return checkedDeclarations(target, inner.declarations).some(
-    (own) =>
-      own.box === box &&
-      own.declaration.className === declaration.className &&
-      own.declaration.property === declaration.property &&
-      own.declaration.value === declaration.value &&
-      own.declaration.source === declaration.source
-  );
+  const root = elementAt(cell, instance.place);
+  const own = inner?.cells.find(({ key }) => key === instance.cell)?.roots[0]?.root;
+  return inner === undefined || root === undefined || own === undefined
+    ? new Map()
+    : twinClaims(root, own, { inner: inner.declarations, composite });
 }
 
 /**
  * The author declarations a set's capture records that the set's build puts into no layer and no
  * inner set owns, which no coverage row then accounts for. Each captured element is checked by its
  * own identity, its cell and place, so a class another element carries does not stand in for it.
- * A declaration below an instance part's inner root that the inner set's own capture holds at the
- * same place is that set's, which its own check accounts for, whichever of the instances around the
- * element shows it; one no inner set holds there is the composite's, which passes it. The browser's own style sheet is no author's and is left out, and so is a reset to
- * the initial value. An element that renders nothing visible, and every element below it, is left
- * out too, and so is a pseudo-element whose `display` is `none`: no frame can show what it styles.
+ * A declaration at or below an instance part's inner root that the inner set claims there, as the
+ * capture build reads the claim, is that set's, which its own check accounts for, where the instance
+ * part's markup holds the element whose class supplied the declaration. One no such inner set claims
+ * is the composite's. The browser's
+ * own style sheet is no author's and is left out, and so is a reset to the initial value. An element
+ * that renders nothing visible, and every element below it, is left out too, and so is a
+ * pseudo-element whose `display` is `none`: no frame can show what it styles.
  *
  * @param key - The set's key.
  * @param setOf - Each built set's capture and accounting, by key.
@@ -300,21 +199,28 @@ export function unaccountedDeclarations(
   const found = new Map<string, Unreached>();
   for (const cell of capture.cells) {
     const accounting = set.accounting.get(cell.key);
-    const instances = (accounting?.instances ?? []).toSorted((a, b) => b.place.length - a.place.length);
+    const claims = (accounting?.instances ?? []).map((instance) => ({
+      root: instance.place,
+      claimed: instanceClaims(cell, capture.declarations, instance, setOf),
+    }));
     const places = placesOf(cell);
     const visit = (element: CapturedElement, below: boolean): void => {
       if (rendersNothing(element, capture.declarations)) {
         return;
       }
       const place = places.get(element) ?? "";
-      // Each instance part around the element, innermost first: a set an outer instance shows can
-      // pass the declaration to the instance inside it, as Input group passes its button's classes.
-      const holders = instances.filter((each) => place === each.place || place.startsWith(`${each.place}/`));
       // A pseudo-element's declarations are its own box's, so its place names it.
       for (const { box, index, declaration } of checkedDeclarations(element, capture.declarations)) {
         if (
           accounting?.accounted.has(`${place}#${String(index)}`) === true ||
-          holders.some((holder) => ownedByInner(declaration, cell, place, box, holder, setOf))
+          // Only an instance part whose markup holds the element that supplied the class claims it,
+          // the parts the build's ownership walk visits. A set an outer instance shows can pass the
+          // declaration to the instance inside it, as Input group passes its button's classes.
+          claims.some(
+            ({ root, claimed }) =>
+              holds(root, supplierOf(place, declaration.owner)) &&
+              claimed.get(element)?.has(boxIdentity(box, declaration)) === true
+          )
         ) {
           continue;
         }
