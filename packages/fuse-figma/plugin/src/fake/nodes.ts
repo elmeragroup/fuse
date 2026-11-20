@@ -32,7 +32,6 @@ import {
   fills,
   lengthOn,
   mapPoint,
-  measuredWidth,
   place,
   placesItself,
   readBackRotation,
@@ -74,12 +73,14 @@ import {
   write,
 } from "./state.ts";
 import type { BindableField, CharacterStyle, Made, NodeState, NodeType, Sizing } from "./state.ts";
+import { linkTextStyle } from "./styles.ts";
 import {
   alignmentOf,
   bindTextRange,
   charactersOf,
   distinctFonts,
   heldFonts,
+  measuredWidth,
   requireFont,
   requireHeldFonts,
   requireRange,
@@ -1119,6 +1120,17 @@ class FakeText extends FakeSceneNode {
     if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
       state.width = measuredWidth(value, first.fontSize);
     }
+  }
+
+  /** The linked local text style's id, or the empty string for none (rule 60). */
+  get textStyleId(): string {
+    return live(this).textStyleId;
+  }
+
+  /** Link a local text style, whose type every character then takes (rule 60). */
+  setTextStyleIdAsync(styleId: string): Promise<void> {
+    linkTextStyle(live(this), styleId);
+    return Promise.resolve();
   }
 
   get fontName(): FontName | PluginAPI["mixed"] {

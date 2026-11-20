@@ -146,6 +146,8 @@ const styleKit = (textStyles: readonly TextStyleSpec[]) => ({
   componentSets: [],
   fonts: [],
   textStyles,
+  // No page holds a set, so none has docs.
+  docs: [],
 });
 
 /** A synced file that holds the variables the two styles bind, and the kit applied to it. */

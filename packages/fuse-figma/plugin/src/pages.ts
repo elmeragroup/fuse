@@ -90,6 +90,7 @@ export const planPages = Effect.fnUntraced(function* (kit: KitSpec) {
     const siblings: Siblings = {
       byKey: keyed,
       unkeyedByName: found === undefined ? new Map() : indexSiblings(found.children).unkeyedByName,
+      adopted: new Set(),
     };
     listed.push({
       spec,
@@ -108,7 +109,7 @@ export const planPages = Effect.fnUntraced(function* (kit: KitSpec) {
   }
 
   // The move keeps the node, so its id and component key survive.
-  const keyOnly: Siblings = { byKey: keyed, unkeyedByName: new Map() };
+  const keyOnly: Siblings = { byKey: keyed, unkeyedByName: new Map(), adopted: new Set() };
   let moves = 0;
   for (const spec of topLevel) {
     const page = listed.find((candidate) => candidate.spec.key === spec.page);

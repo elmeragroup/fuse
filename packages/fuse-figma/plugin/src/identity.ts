@@ -68,11 +68,14 @@ export function placeOwned<Node extends SceneNode>(
 
 /**
  * Children indexed once for a walk that looks up many specs among them: the keyed ones by key,
- * and the ones without a key by name, each list in layer order.
+ * and the ones without a key by name, each list in layer order, and the unkeyed ones a lookup has
+ * adopted, which no later lookup adopts again.
  */
 export type Siblings<Item extends Keyed = BaseNode> = {
   readonly byKey: ReadonlyMap<string, readonly Item[]>;
   readonly unkeyedByName: ReadonlyMap<string, readonly Item[]>;
+  /** The unkeyed children a lookup has matched by name in this walk. */
+  readonly adopted: Set<Item>;
 };
 
 /**
@@ -94,15 +97,17 @@ export function indexSiblings<Item extends Keyed>(children: ReadonlyArray<Item>)
       list.push(node);
     }
   }
-  return { byKey, unkeyedByName };
+  return { byKey, unkeyedByName, adopted: new Set() };
 }
 
 /**
  * Find the child that the spec calls `key`, by its key and then by its name.
  *
- * A name match only counts for a child that carries no key, and the plan writes the key onto
- * it, so the match survives a later rename. Two children with the same key stop the run,
- * because the plugin cannot tell which one a designer meant to keep.
+ * A name match only counts for a child that carries no key and that no earlier lookup of the walk
+ * adopted, as two specs that share a name, such as a page's title and its `Examples` header, would
+ * otherwise both take one child. The plan writes the key onto the match, so it survives a later
+ * rename. Two children with the same key stop the run, because the plugin cannot tell which one a
+ * designer meant to keep.
  *
  * @param siblings - The children to search, indexed.
  * @param where - The parent's label, for messages.
@@ -139,8 +144,11 @@ export const findOwned = Effect.fnUntraced(function* <Item extends Keyed, Node e
     }
     return match;
   }
-  const named = siblings.unkeyedByName.get(name)?.find((node): node is Node => accept(node));
+  const named = siblings.unkeyedByName
+    .get(name)
+    ?.find((node): node is Node => accept(node) && !siblings.adopted.has(node));
   if (named !== undefined) {
+    siblings.adopted.add(named);
     change(yield* Plan, where, `adopt the ${noun} named ${name} as ${key}`, () => setKey(named, key));
   }
   return named;

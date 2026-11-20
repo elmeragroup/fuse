@@ -19,6 +19,7 @@ import {
   glyphRanges,
   layerAt,
   outOfLayout,
+  docNodes,
   topLevelSpecs,
   walkLayers,
 } from "./kit-spec.ts";
@@ -678,6 +679,87 @@ function checkPreviews(kit: KitSpec): void {
 }
 
 /**
+ * Refuse a documented kit whose docs are incomplete or contradict it: a page that holds a set and no
+ * docs record, or two; a record for a page the kit does not list or that holds no set; a record whose
+ * nodes sit on another page; labels that miss a set of the page, read one twice or read a set from
+ * another page; an example of a set or variant the page does not hold; a text style the kit does not
+ * define; and two doc nodes that share a key.
+ */
+function checkDocs(kit: KitSpec): void {
+  const styles = new Set(kit.textStyles.map((style) => style.key));
+  const pageNames = new Map(kit.pages.map((page) => [page.key, page.name]));
+  for (const page of kit.pages) {
+    const sets = kit.componentSets.filter((set) => set.page === page.key);
+    const records = kit.docs.filter((record) => record.page === page.key);
+    if (sets.length === 0) {
+      if (records.length > 0) {
+        throw contradiction(`The ${page.name} page holds no set, and the kit documents it.`);
+      }
+      continue;
+    }
+    const [record, ...others] = records;
+    if (record === undefined) {
+      throw contradiction(`The ${page.name} page has no docs.`);
+    }
+    if (others.length > 0) {
+      throw contradiction(`The ${page.name} page has ${String(records.length)} docs records.`);
+    }
+    for (const node of [record.title, ...record.labels, record.examplesHeader, record.example]) {
+      if (node.page !== page.key) {
+        throw contradiction(`${node.name} documents the ${page.name} page from another page.`);
+      }
+    }
+    for (const set of sets) {
+      const reading = record.labels.filter((labels) => labels.componentSet === set.key).length;
+      if (reading !== 1) {
+        throw contradiction(
+          reading === 0
+            ? `${set.name}: no labels frame reads the set.`
+            : `${set.name}: ${String(reading)} labels frames read the set.`
+        );
+      }
+    }
+    const foreign = record.labels.find((labels) => !sets.some((set) => set.key === labels.componentSet));
+    if (foreign !== undefined) {
+      throw contradiction(
+        `${foreign.name} reads the set ${foreign.componentSet}, which its page does not hold.`
+      );
+    }
+    const example = sets.find((set) => set.key === record.example.componentSet);
+    if (example === undefined) {
+      throw contradiction(
+        `The ${page.name} page's example shows ${record.example.componentSet}, which the page does not hold.`
+      );
+    }
+    if (!example.variants.some((variant) => variant.key === record.example.variant)) {
+      throw contradiction(
+        `The ${page.name} page's example shows ${record.example.variant}, which ${example.name} does not define.`
+      );
+    }
+    const used = [
+      record.title.style,
+      record.examplesHeader.style,
+      ...record.labels.flatMap((labels) => [labels.nameStyle, labels.axisStyle]),
+    ];
+    const missing = used.find((style) => !styles.has(style));
+    if (missing !== undefined) {
+      throw contradiction(
+        `The ${page.name} page's docs link the text style ${missing}, which the kit does not define.`
+      );
+    }
+  }
+  const unknown = kit.docs.find((record) => !pageNames.has(record.page));
+  if (unknown !== undefined) {
+    throw contradiction(`The kit documents the page ${unknown.page}, which it does not list.`);
+  }
+  const keys = docNodes(kit.docs).map((node) => node.key);
+  const twice = keys.find((key, index) => keys.indexOf(key) !== index);
+  if (twice !== undefined) {
+    throw contradiction(`Two doc nodes share the key ${twice}.`);
+  }
+}
+
+/**
  * Check the kit against itself.
  *
  * @param kit - The kit.
@@ -712,6 +794,7 @@ export function checkKitSpec(
     checkInstances(kit);
     checkGlyphs(kit);
     checkPreviews(kit);
+    checkDocs(kit);
     return Result.succeed(undefined);
   } catch (thrown) {
     if (thrown instanceof KitContradiction) {

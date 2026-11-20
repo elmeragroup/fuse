@@ -21,11 +21,13 @@ import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
 import { requireFont } from "./fonts.ts";
 import { planIconLibrary } from "./icons.ts";
+import { placePageContents, planPageDocs, retypesDocs } from "./page-docs.ts";
+import type { PageSet } from "./page-docs.ts";
 import { planPages, planRetiredPages } from "./pages.ts";
 import type { PlannedPage } from "./pages.ts";
 import { changeLines, performPlan, Plan, runPlan } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { placePageContents, planPreviews } from "./previews.ts";
+import { planPreviews } from "./previews.ts";
 import { currentRun, FigmaPlugin, GlyphFont, Kit, runPlugin } from "./services.ts";
 import type { PlanServices } from "./services.ts";
 import { planTextStyles } from "./text-styles.ts";
@@ -87,15 +89,31 @@ const planKit = Effect.fnUntraced(function* (kit: KitSpec) {
     setsByKey.set(spec.key, set);
   }
   const run = yield* currentRun;
+  // The doc texts link the text styles, so the styles plan before the pages.
+  const styles = yield* planTextStyles(kit.textStyles);
   for (const page of pages.listed) {
     const key = page.spec.key;
     const previews = kit.previews.filter((preview) => preview.page === key);
     const frames = yield* onPage(key, (planned) => planPreviews(planned, previews, setsByKey));
-    const row = [
-      ...sets.filter((set) => set.spec.page === key).map((set) => ({ name: set.spec.name, node: set.node })),
-      ...(kit.icons.page === key ? [{ name: kit.icons.name, node: library.frame }] : []),
+    const record = kit.docs.find((each) => each.page === key);
+    const docs = yield* onPage(key, (planned) => planPageDocs(planned, record, setsByKey, styles));
+    const row: PageSet[] = [
+      ...sets
+        .filter((set) => set.spec.page === key)
+        .map((set) => ({ name: set.spec.name, node: set.node, set })),
+      ...(kit.icons.page === key ? [{ name: kit.icons.name, node: library.frame, set: undefined }] : []),
     ];
-    placePageContents(run, page, row, frames, changed.has(key));
+    // A style the docs link that the plan retypes resizes their texts, so the page lays out again.
+    // A set that changes, or whose instance layers show one that does, lays its grid out again.
+    const resized = row.some((entry) => entry.set?.changed === true);
+    placePageContents(
+      run,
+      page,
+      row,
+      docs,
+      frames,
+      changed.has(key) || resized || retypesDocs(record, styles)
+    );
   }
 
   const first =
@@ -105,7 +123,6 @@ const planKit = Effect.fnUntraced(function* (kit: KitSpec) {
     throw new Error("The kit lists no page.");
   }
   planRetiredPages(run, pages.retired, first.node);
-  yield* planTextStyles(kit.textStyles);
   return first.node;
 });
 

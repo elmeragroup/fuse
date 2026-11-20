@@ -252,6 +252,8 @@ export type NodeState = {
   /** The lines a truncating text keeps, or null for all of them (rule 20). */
   maxLines: number | null;
   autoRename: boolean;
+  /** The id of the local text style a text layer links, or the empty string for none (rule 60). */
+  textStyleId: string;
 };
 
 /** The style a new text layer types in. */

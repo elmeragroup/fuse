@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { inventoryPage, KIT_PAGES, pageKey, previewedOn, previewsOn } from "../../test/kit-inventory.ts";
 import type { FakeFigma } from "./fake-figma.ts";
+import { keyOf } from "./identity.ts";
 import { appliedFile, kitFixture, kitPage } from "./kit-fixture.ts";
 import { FigmaPlugin } from "./services.ts";
 import { exportSnapshots } from "./snapshots.ts";
@@ -106,8 +107,9 @@ describe("Export snapshots from an applied file", () => {
         collection.name,
       ])
     );
+    // The page's first preview, by its key: the page holds the docs' frames too.
     const [badgePreview] = (await kitPage(file, pageKey(BADGE))).children.filter(
-      (node): node is FrameNode => node.type === "FRAME"
+      (node): node is FrameNode => node.type === "FRAME" && keyOf(node).startsWith("preview/")
     );
     expect(
       new Set(Object.keys(badgePreview?.resolvedVariableModes ?? {}).map((id) => names.get(id)))

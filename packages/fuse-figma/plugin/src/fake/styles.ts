@@ -29,12 +29,27 @@
  *      font loaded. A null binding unbinds the field and keeps its value.
  *    - A literal `lineHeight` or `letterSpacing` write drops that field's binding, as a `fontSize`
  *      write does.
+ * 60. A text layer links a local text style through `setTextStyleIdAsync`, as the typings say, since
+ *    the plugin's `dynamic-page` access makes `textStyleId` read-only. The typings say the link
+ *    "requires the font to be loaded". No probe has run it, and the fake assumes: the link needs every
+ *    font the layer holds and the style's font loaded, as a text write does (rule 7); every character
+ *    then takes the style's font, size and line height and drops its bindings, and a text that hugs
+ *    its characters takes their width at that size, by the fake's fixed advance (rule 31); and
+ *    `textStyleId` reads the linked style's id, or the empty string for none.
  */
 
 import { guard } from "./guard.ts";
 import { f32, SHARED_DATA_SEPARATOR } from "./state.ts";
-import type { FileState, TextStyleState } from "./state.ts";
-import { fontLoaded, weightedStyle } from "./text.ts";
+import { write } from "./state.ts";
+import type { FileState, NodeState, TextStyleState } from "./state.ts";
+import {
+  fontLoaded,
+  measuredWidth,
+  requireFont,
+  requireHeldFonts,
+  restyleWhole,
+  weightedStyle,
+} from "./text.ts";
 import { alias, fileVariable, requireType, resolveNumber, resolveString } from "./variables.ts";
 
 /** What a real file stored each of these characters in a description as (PT1). */
@@ -344,4 +359,32 @@ export function createTextStyle(file: FileState): TextStyle {
  */
 export function localTextStyles(file: FileState): TextStyle[] {
   return file.textStyles.filter((style) => !style.removed).map((style) => exposeStyle(file, style));
+}
+
+/**
+ * Link a text layer to a local text style (rule 60).
+ *
+ * @param state - The text layer.
+ * @param styleId - The style's id.
+ * @throws When the file has no such style, or a font the link needs is not loaded.
+ */
+export function linkTextStyle(state: NodeState, styleId: string): void {
+  const style = state.file.textStyles.find((candidate) => candidate.id === styleId && !candidate.removed);
+  if (style === undefined) {
+    throw new Error(`The file has no text style ${styleId} for ${state.id} to link.`);
+  }
+  requireHeldFonts(state, "textStyleId");
+  requireFont(state, style.font, "textStyleId");
+  write(state, "textStyleId");
+  state.textStyleId = styleId;
+  restyleWhole(state, () => ({
+    font: style.font,
+    fontSize: style.fontSize,
+    lineHeight: style.lineHeight,
+    bindings: new Map(),
+  }));
+  // A text that hugs its characters takes their width at the style's size (rule 31).
+  if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
+    state.width = measuredWidth(state.characters, style.fontSize);
+  }
 }

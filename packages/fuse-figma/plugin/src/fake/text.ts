@@ -428,3 +428,16 @@ export function fontUnavailable(file: FileState, font: FontNameInput): boolean {
       missing.family === font.family && (missing.style === undefined || missing.style === font.style)
   );
 }
+
+/**
+ * The width the fake gives a text that hugs its characters. It measures no glyphs, so each
+ * character takes half the font size, an approximation that keeps widths deterministic, and an
+ * empty text is 0 wide, as a real one is (rule 31).
+ *
+ * @param characters - The text's characters.
+ * @param fontSize - Their font size.
+ * @returns The width.
+ */
+export function measuredWidth(characters: string, fontSize: number): number {
+  return f32(characters.length * fontSize * 0.5);
+}

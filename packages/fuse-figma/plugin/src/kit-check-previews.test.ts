@@ -1,16 +1,17 @@
 /**
- * The kit check's hold on preview coverage of BOOLEAN properties.
+ * The kit check's hold on preview coverage of BOOLEAN properties, and on the docs every page carries.
  *
  * Unit under test: `checkKitSpec` over the built kit and over the kit with its Item previews edited.
- * Oracle: the rule that every BOOLEAN property is placed by some preview instance at `true` and by
+ * Oracles: the rule that every BOOLEAN property is placed by some preview instance at `true` and by
  * some at `false`, each instance at the value it sets or else at the property's default, written out
- * here for Item's `Media`, which starts true.
+ * here for Item's `Media`, which starts true; and the rule that every page that holds a set has a
+ * title and an example, and every set a labels frame, written out here for the Badge page.
  */
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";
-import type { KitSpec } from "../../src/components/kit-spec.ts";
+import type { KitSpec, PageDocsSpec } from "../../src/components/kit-spec.ts";
 import { base64Decode } from "./fake/paints.ts";
 import { kitFixture } from "./kit-fixture.ts";
 
@@ -53,5 +54,27 @@ describe("the kit check's preview coverage of BOOLEAN properties", () => {
   ])("refuses a kit whose every Item preview sets Media to %s", async (value, message) => {
     const { kit } = await kitFixture();
     expect(verdict(withItemMedia(kit, value))).toBe(message);
+  });
+});
+
+describe("the kit check's docs", () => {
+  /** The kit's docs as the build makes them, with the Badge page's record edited or dropped. */
+  const badgeEdited = (kit: KitSpec, edit: (record: PageDocsSpec) => readonly PageDocsSpec[]): KitSpec => ({
+    ...kit,
+    docs: kit.docs.flatMap((record) => (record.page === "page/badge" ? edit(record) : [record])),
+  });
+
+  it.each<readonly [string, (record: PageDocsSpec) => readonly PageDocsSpec[], string]>([
+    ["drops the Badge page's docs", () => [], "The Badge page has no docs."],
+    ["documents the Badge page twice", (record) => [record, record], "The Badge page has 2 docs records."],
+    ["labels no Badge set", (record) => [{ ...record, labels: [] }], "Badge: no labels frame reads the set."],
+  ])("refuses a kit that %s", async (_name, edit, message) => {
+    const { kit } = await kitFixture();
+    expect(verdict(badgeEdited(kit, edit))).toBe(message);
+  });
+
+  it("refuses a kit that documents no page", async () => {
+    const { kit } = await kitFixture();
+    expect(verdict({ ...kit, docs: [] })).toBe("The Button page has no docs.");
   });
 });

@@ -119,121 +119,146 @@ import { TOOLTIP_CONTENT_MANIFEST, TOOLTIP_OPEN_MANIFEST } from "./tooltip-kit";
 export type KitPage = {
   readonly slug: string;
   readonly name: string;
+  /**
+   * The key of the set whose default variant is the page's usage example, the set that draws the
+   * docs default demo where the page has one, such as Select (open) on the Select page.
+   */
+  readonly example: string;
 };
 
 /** The page Button, Icon button and Confirm button share. */
-const BUTTON_PAGE: KitPage = { slug: "button", name: "Button" };
+const BUTTON_PAGE: KitPage = { slug: "button", name: "Button", example: "button" };
 
 /** The page Toggle and Icon toggle share. */
-const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle" };
+const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle", example: "toggle-group" };
 
 /** The page Badge sits on alone. */
-const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
+const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge", example: "badge" };
 
 /** The page of Kbd's key cap and the group that combines caps. */
-const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
+const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd", example: "kbd-group" };
 
 /** The page of the radio controls, Radio icon button first, then Radio. */
-const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio" };
+const RADIO_PAGE: KitPage = { slug: "radio", name: "Radio", example: "radio-group" };
 
 /** The page Checkbox sits on alone. */
-const CHECKBOX_PAGE: KitPage = { slug: "checkbox", name: "Checkbox" };
+const CHECKBOX_PAGE: KitPage = { slug: "checkbox", name: "Checkbox", example: "checkbox" };
 
 /** The page Switch sits on alone. */
-const SWITCH_PAGE: KitPage = { slug: "switch", name: "Switch" };
+const SWITCH_PAGE: KitPage = { slug: "switch", name: "Switch", example: "switch" };
 
 /** The page Separator sits on alone. */
-const SEPARATOR_PAGE: KitPage = { slug: "separator", name: "Separator" };
+const SEPARATOR_PAGE: KitPage = { slug: "separator", name: "Separator", example: "separator" };
 
 /** The page Skeleton sits on alone. */
-const SKELETON_PAGE: KitPage = { slug: "skeleton", name: "Skeleton" };
+const SKELETON_PAGE: KitPage = { slug: "skeleton", name: "Skeleton", example: "skeleton" };
 
 /** The page Loader sits on alone. */
-const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader" };
+const LOADER_PAGE: KitPage = { slug: "loader", name: "Loader", example: "loader" };
 
 /**
  * The page of Field's text parts: the label, the description, the error, the legend and the title.
  * Label sat on a page of its own until they joined it.
  */
-const FIELD_PAGE: KitPage = { slug: "field", name: "Field" };
+const FIELD_PAGE: KitPage = { slug: "field", name: "Field", example: "label" };
 
 /** The page of Input, the Input group that Combobox and Command render, and the labelled Text field. */
-const INPUT_PAGE: KitPage = { slug: "input", name: "Input" };
+const INPUT_PAGE: KitPage = { slug: "input", name: "Input", example: "text-field" };
 
 /** The page of Textarea and the labelled Textarea field. */
-const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea" };
+const TEXTAREA_PAGE: KitPage = { slug: "textarea", name: "Textarea", example: "textarea-field" };
 
 /** The page of Alert dialog. */
-const ALERT_DIALOG_PAGE: KitPage = { slug: "alert-dialog", name: "Alert dialog" };
+const ALERT_DIALOG_PAGE: KitPage = {
+  slug: "alert-dialog",
+  name: "Alert dialog",
+  example: "alert-dialog-open",
+};
 
 /** The page of Dialog. */
-const DIALOG_PAGE: KitPage = { slug: "dialog", name: "Dialog" };
+const DIALOG_PAGE: KitPage = { slug: "dialog", name: "Dialog", example: "dialog-open" };
 
 /** The page of Tooltip. */
-const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip" };
+const TOOLTIP_PAGE: KitPage = { slug: "tooltip", name: "Tooltip", example: "tooltip-open" };
 
 /** The page of Toolbar. */
-const TOOLBAR_PAGE: KitPage = { slug: "toolbar", name: "Toolbar" };
+const TOOLBAR_PAGE: KitPage = { slug: "toolbar", name: "Toolbar", example: "toolbar" };
 
 /** The page of File upload's dropzone. */
-const FILE_UPLOAD_PAGE: KitPage = { slug: "file-upload", name: "File upload" };
+const FILE_UPLOAD_PAGE: KitPage = {
+  slug: "file-upload",
+  name: "File upload",
+  example: "file-upload-dropzone",
+};
 
 /** The page of Number field and its stepper. */
-const NUMBER_FIELD_PAGE: KitPage = { slug: "number-field", name: "Number field" };
+const NUMBER_FIELD_PAGE: KitPage = { slug: "number-field", name: "Number field", example: "number-field" };
 
 /** The page of Avatar and the group that stacks avatars. */
-const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar" };
+const AVATAR_PAGE: KitPage = { slug: "avatar", name: "Avatar", example: "avatar-group" };
 
 /** The page Meter sits on alone. */
-const METER_PAGE: KitPage = { slug: "meter", name: "Meter" };
+const METER_PAGE: KitPage = { slug: "meter", name: "Meter", example: "meter" };
 
 /** The page of Pagination's parts, the link, the edge links and the ellipsis, and the row of them. */
-const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination" };
+const PAGINATION_PAGE: KitPage = { slug: "pagination", name: "Pagination", example: "pagination-row" };
 
 /**
  * The page of Breadcrumb's parts, the link, the current page, the ellipsis and the separator, and the
  * trail of them. Its name keeps it apart from `BREADCRUMB_PAGE_MANIFEST`, the current page's set.
  */
-const BREADCRUMB_PARTS_PAGE: KitPage = { slug: "breadcrumb", name: "Breadcrumb" };
+const BREADCRUMB_PARTS_PAGE: KitPage = {
+  slug: "breadcrumb",
+  name: "Breadcrumb",
+  example: "breadcrumb-trail",
+};
 
 /**
  * The page of Select's parts: the trigger, the menu parts every menu family shares, the row, the
  * popup and the open Select.
  */
-const SELECT_PAGE: KitPage = { slug: "select", name: "Select" };
+const SELECT_PAGE: KitPage = { slug: "select", name: "Select", example: "select-open" };
 
 /** The page of Popover's popup and the open Popover. */
-const POPOVER_PAGE: KitPage = { slug: "popover", name: "Popover" };
+const POPOVER_PAGE: KitPage = { slug: "popover", name: "Popover", example: "popover-open" };
 
 /** The page of Dropdown menu's rows, its popups and the open menu. */
-const DROPDOWN_MENU_PAGE: KitPage = { slug: "dropdown-menu", name: "Dropdown menu" };
+const DROPDOWN_MENU_PAGE: KitPage = {
+  slug: "dropdown-menu",
+  name: "Dropdown menu",
+  example: "dropdown-menu-open",
+};
 
 /** The page Empty sits on alone. */
-const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
+const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty", example: "empty" };
 
 /** The page Link sits on alone. */
-const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
+const LINK_PAGE: KitPage = { slug: "link", name: "Link", example: "link" };
 
 /** The page of Item's rows, the row and the link row, until Item group joins them. */
-const ITEM_PAGE: KitPage = { slug: "item", name: "Item" };
+const ITEM_PAGE: KitPage = { slug: "item", name: "Item", example: "item" };
 
 /** The page Alert sits on alone. */
-const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert" };
+const ALERT_PAGE: KitPage = { slug: "alert", name: "Alert", example: "alert" };
 
 /** The page Accordion's item sits on alone, until a stacked accordion joins it. */
-const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion" };
+const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion", example: "accordion-item" };
 
 /** The page of Sidebar's rows and sections, and of the panel, expanded and collapsed to its icon rail. */
-const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar" };
+const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar", example: "sidebar" };
 
 /** The page of Combobox's open state: its row, its empty message, its popup and the open input. */
-const COMBOBOX_PAGE: KitPage = { slug: "combobox", name: "Combobox" };
+const COMBOBOX_PAGE: KitPage = { slug: "combobox", name: "Combobox", example: "combobox-open" };
 
 /** The page of Command's rows and list. The palette dialog waits for a dialog surface. */
-const COMMAND_PAGE: KitPage = { slug: "command", name: "Command" };
+const COMMAND_PAGE: KitPage = { slug: "command", name: "Command", example: "command-dialog-open" };
 
 /** The page of Navigation menu's triggers, links and open popup. */
-const NAVIGATION_MENU_PAGE: KitPage = { slug: "navigation-menu", name: "Navigation menu" };
+const NAVIGATION_MENU_PAGE: KitPage = {
+  slug: "navigation-menu",
+  name: "Navigation menu",
+  example: "navigation-menu-popup",
+};
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in

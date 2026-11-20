@@ -254,14 +254,6 @@ export function resize(state: NodeState, width: number, height: number): void {
   state.layoutAlign = "INHERIT";
 }
 
-/**
- * The width the fake gives a text that hugs its characters. It measures no glyphs, so each
- * character takes half the font size, and an empty text is 0 wide, as a real one is (rule 31).
- */
-export function measuredWidth(characters: string, fontSize: number): number {
-  return f32(characters.length * fontSize * 0.5);
-}
-
 /** Where a child's start and size land on one axis when its parent grows from `before` to `after`. */
 function constrainAxis(
   constraint: ConstraintType,

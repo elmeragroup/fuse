@@ -1,6 +1,6 @@
 /**
- * One component set: its variants, its text, boolean and swap properties and the grid the variants
- * sit in.
+ * One component set: its variants, its text, boolean and swap properties, and the grid the variants
+ * sit in, which the page layout measures and places with the headers around it (`page-docs.ts`).
  * The plugin edits an existing set in place, so the set and every variant keep their node
  * ids and component keys, and instances in other files keep following them.
  */
@@ -20,7 +20,7 @@ import { planBox } from "./box.ts";
 import { planChildren } from "./child-layers.ts";
 import type { LayerLinks, PropertyIds } from "./child-layers.ts";
 import { planSetProperty } from "./component-properties.ts";
-import { near, planScalar } from "./fields.ts";
+import { planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { fontLayers, requireNewSetFonts, requireNewTextFonts } from "./fonts.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -28,10 +28,9 @@ import { indexSiblings, placeOwned, planOwnedChildren, setKey } from "./identity
 import type { OwnedChild, Siblings } from "./identity.ts";
 import { innerSpecs } from "./instance-layers.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, create, existing, Plan, recordsAny } from "./plan.ts";
+import { create, existing, Plan } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
-import { settleInstances } from "./settle.ts";
 
 /** The gap between variants in the set's grid, and between the grid and the set's edge. */
 const GRID_GAP = 16;
@@ -64,11 +63,19 @@ type PlannedContents = {
 const isComponentSet = (node: BaseNode): node is ComponentSetNode => node.type === "COMPONENT_SET";
 const isComponent = (node: BaseNode): node is ComponentNode => node.type === "COMPONENT";
 
-/** A variant's place in the grid, and the set's size around the grid. */
-type GridLayout = {
+/**
+ * A set's grid, measured once from its variants' sizes when the operation that lays it out runs:
+ * each variant's place, the set's size around the grid, each column's left edge by its index on the
+ * column axis, and the height every row takes, which a row's top follows from.
+ */
+export type GridLayout = {
   readonly cells: readonly PlacedVariant[];
   readonly width: number;
   readonly height: number;
+  readonly columnX: readonly number[];
+  readonly rowHeight: number;
+  /** The top of a row, by its index among the combinations of the other axes. */
+  readonly rowY: (row: number) => number;
 };
 
 /** A variant component and where the grid puts it. */
@@ -84,80 +91,51 @@ function rowCount(spec: ComponentSetSpec, columnAxis: AxisSpec): number {
     .reduce((count, axis) => count * axis.values.length, 1);
 }
 
-function gridLayout(spec: ComponentSetSpec, nodeOf: (variant: VariantSpec) => ComponentNode): GridLayout {
+/**
+ * Measure a set's grid: each column as wide as its widest variant, or as the width its header needs
+ * where that is wider, so a header never runs into the next column's, and each row as tall as the
+ * tallest variant, with the grid's padding around and its gap between.
+ *
+ * @param spec - The component set.
+ * @param nodeOf - Each variant's component, at its size when the operation runs.
+ * @param headerWidths - The width each column's header takes, by the column's index, 0 for none.
+ * @returns The grid.
+ */
+export function gridLayout(
+  spec: ComponentSetSpec,
+  nodeOf: (variant: VariantSpec) => ComponentNode,
+  headerWidths: readonly number[]
+): GridLayout {
   const columnAxis = columnAxisOf(spec);
   const rows = rowCount(spec, columnAxis);
   const placed = spec.variants.map((variant) => ({ node: nodeOf(variant), ...gridCell(spec, variant) }));
   const columnWidths = columnAxis.values.map((_, column) =>
-    Math.max(0, ...placed.filter((cell) => cell.column === column).map((cell) => Math.ceil(cell.node.width)))
+    Math.max(
+      Math.ceil(headerWidths[column] ?? 0),
+      ...placed.filter((cell) => cell.column === column).map((cell) => Math.ceil(cell.node.width))
+    )
   );
   const rowHeight = Math.max(0, ...placed.map((cell) => Math.ceil(cell.node.height)));
   const columnX = columnWidths.map(
     (_, column) =>
       GRID_PADDING + columnWidths.slice(0, column).reduce((sum, width) => sum + width + GRID_GAP, 0)
   );
+  const rowY = (row: number): number => GRID_PADDING + row * (rowHeight + GRID_GAP);
   return {
     cells: placed.map((cell) => ({
       node: cell.node,
       x: columnX[cell.column] ?? GRID_PADDING,
-      y: GRID_PADDING + cell.row * (rowHeight + GRID_GAP),
+      y: rowY(cell.row),
     })),
     width:
       GRID_PADDING * 2 +
       columnWidths.reduce((sum, columnWidth) => sum + columnWidth, 0) +
       GRID_GAP * (columnWidths.length - 1),
     height: GRID_PADDING * 2 + rows * rowHeight + GRID_GAP * (rows - 1),
+    columnX,
+    rowHeight,
+    rowY,
   };
-}
-
-/**
- * Plan the grid. The grid reads the variants' sizes when its operation runs, after the writes
- * that change them, so a plan that changes anything in the set, or in a set whose variants its
- * instance layers show, lays the grid out again. It reads the instances inside each variant first,
- * the deepest first, since a variant sizes from its instances as they stand (`settle.ts`).
- */
-function planGrid(
-  run: Run,
-  set: ComponentSetNode,
-  spec: ComponentSetSpec,
-  variants: ReadonlyMap<string, Target<ComponentNode>>,
-  changed: boolean
-): void {
-  const nodeOf = (variant: VariantSpec): ComponentNode => {
-    const target = variants.get(variant.key);
-    if (target === undefined) {
-      throw new Error(`${spec.name}: the plan has no variant ${variant.key} to lay out.`);
-    }
-    const node = target.get();
-    settleInstances(node);
-    return node;
-  };
-  const settled =
-    !changed && spec.variants.every((variant) => variants.get(variant.key)?.existing !== undefined);
-  if (settled) {
-    const layout = gridLayout(spec, nodeOf);
-    if (
-      layout.cells.every((cell) => near(cell.node.x, cell.x) && near(cell.node.y, cell.y)) &&
-      near(set.width, layout.width) &&
-      near(set.height, layout.height)
-    ) {
-      return;
-    }
-  }
-  const columnAxis = columnAxisOf(spec);
-  change(
-    run.plan,
-    spec.name,
-    `lay out ${spec.variants.length} variants in ${columnAxis.values.length} columns and ${rowCount(spec, columnAxis)} rows`,
-    () => {
-      const layout = gridLayout(spec, nodeOf);
-      for (const cell of layout.cells) {
-        cell.node.x = cell.x;
-        cell.node.y = cell.y;
-      }
-      set.resizeWithoutConstraints(layout.width, layout.height);
-    }
-  );
 }
 
 /** A set's TEXT or BOOLEAN properties, each a name and the value it starts with. */
@@ -313,7 +291,7 @@ function holdsChanged(spec: ComponentSetSpec, sets: ReadonlyMap<string, PlannedS
 }
 
 /**
- * Plan a set's name, properties, variants and grid.
+ * Plan a set's name, properties and variants. The page layout lays out the grid.
  *
  * @param properties - The set's property ids by name, which this fills in, at once for a property the
  *   set holds and when its operation runs for one the run adds.
@@ -350,10 +328,10 @@ const planSetContents = Effect.fnUntraced(function* (
     return new Map(planned.map((child) => [child.spec.key, child.node]));
   });
   const [variants, recorded] = yield* Plan.watch(planVariants);
-  const gridded = recordsAny(run.plan, () =>
-    planGrid(run, set, spec, variants, recorded || holdsChanged(spec, sets))
-  );
-  const contents: PlannedContents = { variants, changed: recorded || gridded };
+  // The page layout lays the grid out, since a column takes its header's width as well as its
+  // variants'. A set changes where the plan writes to it, or to a set whose variants its instance
+  // layers show, either of which can resize its variants.
+  const contents: PlannedContents = { variants, changed: recorded || holdsChanged(spec, sets) };
   return contents;
 });
 
