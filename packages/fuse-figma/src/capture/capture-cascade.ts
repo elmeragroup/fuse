@@ -1387,7 +1387,12 @@ class CaptureBoxCascade implements BoxCascade {
     this.elementText = own?.element.text;
     // The capture records a `::marker` only where it sets such a `content`.
     this.markerContent = own === undefined ? undefined : own.element.pseudo.marker !== undefined;
-    this.measured = own === undefined ? undefined : measuredBox(own.element, read.declarations);
+    // The parent the capture measured is the box's frame only where the kit draws that element.
+    const above = placed.at(-2)?.element;
+    this.measured =
+      own === undefined
+        ? undefined
+        : measuredBox(own.element, read.declarations, above !== undefined && read.drawn.has(above));
   }
 
   spaceChildren(children: number | undefined, spacing?: ChildSpacing): NumberSpec | undefined {
@@ -1598,7 +1603,7 @@ class CaptureBoxCascade implements BoxCascade {
     );
     return {
       style: new LayerStyle(this.#ledger, layer, [...this.path, element.key]),
-      measured: measuredBox(held, this.#read.declarations),
+      measured: measuredBox(held, this.#read.declarations, false),
     };
   }
 
@@ -1886,9 +1891,14 @@ const MEASURED_UNDER_MAX_HEIGHT = "the capture measured it under its max-height"
 /**
  * What the capture measured of a box's element, as the mapping reads it. A `max-height` that reads
  * Base UI's measured `--available-height` is the page's room, not the box's, so the box's measured
- * height under it says nothing about the set.
+ * height under it says nothing about the set. `parentSpansBlock` speaks of the element's parent, so
+ * it holds only where `drawnParent` says the kit draws that parent as the box's frame.
  */
-function measuredBox(element: CapturedElement, declarations: readonly CapturedDeclaration[]): MeasuredBox {
+function measuredBox(
+  element: CapturedElement,
+  declarations: readonly CapturedDeclaration[],
+  drawnParent: boolean
+): MeasuredBox {
   const facts = element.measured;
   const maxHeight = element.declarations
     .map((index) => declarations[index])
@@ -1919,5 +1929,6 @@ function measuredBox(element: CapturedElement, declarations: readonly CapturedDe
     gridItems: facts?.gridItems,
     gridItem: facts?.gridItem,
     noBox: facts?.noBox === true,
+    parentSpansBlock: drawnParent && facts?.parentSpansBlock === true,
   };
 }

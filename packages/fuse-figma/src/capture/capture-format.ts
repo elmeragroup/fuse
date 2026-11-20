@@ -189,6 +189,12 @@ const MeasuredFactsSchema = Schema.Struct({
    * in flow (CSS Display 3 §2.5).
    */
   noBox: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * On an absolute element below the root: in every density and theme, its static parent's border
+   * box is the padding box of its containing block, an element above the parent, and stays so with
+   * that block grown, so the kit places the element in the parent's frame.
+   */
+  parentSpansBlock: Schema.optionalKey(Schema.Literal(true)),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

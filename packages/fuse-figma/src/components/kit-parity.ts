@@ -305,7 +305,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["sheet-content"],
     missing:
-      "The corner close and `Sheet.Body` of the default demo, the panel open over its scrim, the `left`, `top` and `bottom` sides, and the sizes other than md.",
+      "`Sheet.Body` of the default demo, the panel open over its scrim, the `left`, `top` and `bottom` sides, and the sizes other than md.",
     issue: MISSING_SETS,
   },
   show: { kind: "excluded", reason: "It renders its children only." },

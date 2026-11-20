@@ -204,6 +204,11 @@ export type MeasuredBox = {
   readonly gridItem: number | undefined;
   /** The element generates no box and adds nothing to its parent's flow but its children's boxes. */
   readonly noBox: boolean;
+  /**
+   * The box is absolute, and its frame's parent spans its containing block, an element above it, in
+   * every mode, as the capture measured.
+   */
+  readonly parentSpansBlock: boolean;
 };
 
 /**

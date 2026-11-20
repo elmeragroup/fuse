@@ -4,8 +4,13 @@
  * only where its main is auto layout (the Icon button moved from x 400 to 396 in a 448px popup), while
  * a plain frame whose bound size changed by mode kept its x and drifted to a 12px end inset. The build
  * has no rule that refuses such an instance, since every box it builds is auto layout
- * (`DirectionSpec` has no `NONE`). This test pins that for every MAX × MIN instance, and lists them,
- * so a new one, or a main without auto layout, forces that rule to be written.
+ * (`DirectionSpec` has no `NONE`). This test pins that every MAX × MIN instance shows an auto layout
+ * main, and lists them, so a new one, or a main without auto layout, forces that rule to be written.
+ *
+ * That holds in the outer component's own main. Probe PG14b (2026-11-19) found that in an instance of
+ * the outer component, as a designer places a Dialog or a Sheet and as the kit's previews show them,
+ * a density switch keeps the placed instance's x, so its end inset drifts by its size change (#790).
+ * This test does not cover that case.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -19,7 +24,7 @@ beforeAll(async () => {
 });
 
 describe("absolute MAX × MIN instances", () => {
-  it("show only mains with auto layout, which keep the end inset as density resizes them (W5-P14b)", () => {
+  it("show only mains with auto layout, which keep the end inset in the outer main as density resizes them (W5-P14b; #790 for instances)", () => {
     const anchored = spec.componentSets.flatMap(({ variants }) =>
       variants.flatMap((variant) =>
         instancesIn(variant.root.children)
@@ -37,6 +42,7 @@ describe("absolute MAX × MIN instances", () => {
         "icon-button/variant=ghost,size=icon-sm,state=rest",
         "HORIZONTAL",
       ],
+      ["sheet-content/side=right", "icon-button/variant=ghost,size=icon-sm,state=rest", "HORIZONTAL"],
     ]);
   });
 });

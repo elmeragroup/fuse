@@ -662,6 +662,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
           ? planPlacement(part.cascade.style, part.kind, {
               parent: reader,
               positionedBy: box.positionedBy,
+              parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
               flow: flowing.map((each) => each.cascade.style),
               layers: holder.layers.length,
               paddingBox: paddingBoxOf(absoluteRoom(holder)),

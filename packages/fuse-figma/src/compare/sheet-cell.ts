@@ -1,9 +1,9 @@
 /// <reference lib="dom" />
 /**
  * The client renderer of the `sheet-content` set: the docs "No close button" demo's Sheet mounted
- * open on the right side at the md size, with `showCloseButton={false}`, in a host as large as the
- * viewport the definition declares, its panel and scrim portalled into that host, which is their
- * containing block, as `viewport-host.ts` says. The page measures the panel alone and hides the scrim.
+ * open on the right side at the md size, with `showCloseButton` on only where the `Close button`
+ * property is, in a host as large as the viewport the definition declares, its panel and scrim
+ * portalled into that host, which is their containing block, as `viewport-host.ts` says. The page measures the panel alone and hides the scrim.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -16,6 +16,7 @@ import { Sheet } from "../../../fuse/dist/sheet.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import {
   SHEET_CLOSE_LABEL,
+  SHEET_CORNER_CLOSE_PROPERTY,
   SHEET_DESCRIPTION,
   SHEET_TITLE,
   SHEET_VIEWPORT,
@@ -23,8 +24,8 @@ import {
 import type { ClientCellRendering } from "./cell-renderers.ts";
 import { viewportHost } from "./viewport-host.ts";
 
-/** The demo's Sheet, open. */
-function openSheet() {
+/** The demo's Sheet, open, with the corner close where `turnedOn` names its property. */
+function openSheet(turnedOn: ReadonlySet<string>) {
   return viewportHost(SHEET_VIEWPORT, (host) =>
     createElement(LocaleProvider, {
       locale: "en-US",
@@ -32,7 +33,7 @@ function openSheet() {
         defaultOpen: true,
         children: createElement(Sheet.Content, {
           container: host,
-          showCloseButton: false,
+          showCloseButton: turnedOn.has(SHEET_CORNER_CLOSE_PROPERTY),
           children: [
             createElement(Sheet.Header, {
               key: "header",
@@ -57,5 +58,5 @@ function openSheet() {
 
 /** The open Sheet's panel. */
 export const sheetContent: ClientCellRendering = {
-  element: () => openSheet(),
+  element: (_cell, turnedOn) => openSheet(turnedOn),
 };

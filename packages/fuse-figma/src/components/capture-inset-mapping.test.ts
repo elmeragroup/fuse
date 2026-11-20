@@ -8,6 +8,9 @@
  * layer's distance to its parent's start, MAX to its end and STRETCH to both; CSS 2.1 §8.3.1, under
  * which two adjoining margins collapse to the larger; and the coverage contract, under which a part
  * the build cannot place, and a pseudo-element the capture did not measure, keep their rows unmapped.
+ * A static parent the capture measured as spanning the part's containing block (`parentSpansBlock`)
+ * has its outer edge on that block's padding edge, so each distance is the offset alone; a border on
+ * the parent, or a wrapper the kit does not draw between the two, breaks that.
  */
 import { describe, expect, it } from "vitest";
 
@@ -83,6 +86,41 @@ describe("an absolute part placed by its parent's edges", () => {
     ["both offsets beside a width of its own", "relative", "absolute left-0 right-0 top-0 w-4 h-4"],
   ])("leaves the place unmapped beside %s", async (_case, root, classes) => {
     const { variant, coverage } = await holding(root, classes);
+    expect(frameOf(variant?.root)?.placement).toBeUndefined();
+    expect(unmapped(coverage)).toContain("position");
+  });
+});
+
+/** A static root holding the corner close a containing block above it places, as Sheet's column does. */
+function spanning(root: string, measured: FixtureElement["measured"], wrapped: boolean) {
+  const own: FixtureElement = { slot: "mark", classes: "absolute top-4 right-4 size-[8px]" };
+  const mark: FixtureElement = measured === undefined ? own : { ...own, measured };
+  return buildCaptured(
+    chip({ parts: [part({ key: "mark", slot: "mark" })] }),
+    rest({ slot: "chip", classes: root, children: [wrapped ? { children: [mark] } : mark] })
+  );
+}
+
+describe("an absolute part whose containing block lies above its static parent", () => {
+  it("sits at its offsets alone, MAX across and MIN down, where the parent spans the block", async () => {
+    const { variant, coverage } = await spanning("w-[200px] h-[100px]", { parentSpansBlock: true }, false);
+    expect(frameOf(variant?.root)?.placement).toEqual(
+      edges({ kind: "end", end: 16 }, { kind: "start", start: 16 })
+    );
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it.each([
+    ["no measured span", "w-[200px] h-[100px]", undefined, false],
+    [
+      "a span beside a border on the parent",
+      "w-[200px] h-[100px] border-2",
+      { parentSpansBlock: true },
+      false,
+    ],
+    ["a span measured below an undrawn wrapper", "w-[200px] h-[100px]", { parentSpansBlock: true }, true],
+  ] as const)("leaves the place unmapped with %s", async (_case, root, measured, wrapped) => {
+    const { variant, coverage } = await spanning(root, measured, wrapped);
     expect(frameOf(variant?.root)?.placement).toBeUndefined();
     expect(unmapped(coverage)).toContain("position");
   });
