@@ -119,9 +119,12 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
       return boxRefs(layer);
     case "instance":
       return [
-        ...[fixedLength(layer.sizing.horizontal), fixedLength(layer.sizing.vertical), layer.minWidth].flatMap(
-          boundNumber
-        ),
+        ...[
+          fixedLength(layer.sizing.horizontal),
+          fixedLength(layer.sizing.vertical),
+          layer.minWidth,
+          layer.maxWidth,
+        ].flatMap(boundNumber),
         ...(layer.overrides ?? []).flatMap(overrideRefs),
       ];
   }

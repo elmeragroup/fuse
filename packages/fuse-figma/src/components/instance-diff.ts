@@ -20,6 +20,7 @@ import type {
   InstanceLayerSpec,
   InstanceOverride,
   InstancePropertiesSpec,
+  LimitsSpec,
   NestedPropertiesSpec,
   NumberSpec,
   SizingSpec,
@@ -60,6 +61,11 @@ export type InstanceDiff = {
    * instance takes as its own, undefined where the two agree.
    */
   readonly minWidth: NumberSpec | undefined;
+  /**
+   * The root's widest width built in place where it differs from the inner variant's, which the
+   * instance takes as its own, undefined where the two agree.
+   */
+  readonly maxWidth: NumberSpec | undefined;
   /** Each glyph turned half a turn in place that the instance swaps to its mirror, at its key path. */
   readonly mirrored: readonly Mirrored[];
   /** The differences no instance field carries. */
@@ -103,6 +109,8 @@ type Found = {
   readonly root: SizingSpec;
   /** The least width of the inner root built in place, which the instance takes, as {@link InstanceDiff} says. */
   minWidth: NumberSpec | undefined;
+  /** The widest width of the inner root built in place, which the instance takes, as {@link InstanceDiff} says. */
+  maxWidth: NumberSpec | undefined;
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
   readonly nested: NestedPropertiesSpec[];
@@ -139,7 +147,9 @@ type Found = {
  *   length or a hug (N4).
  * - A `minWidth` the root takes in place, where the variant's root has none and its other limits
  *   agree, is the instance's own, a field of the instance in its parent's auto layout as its sizing
- *   is: a popup that fills a column above its `min-w-36` keeps that minimum. The layers inside guard it, since a layer that sizes against the root's
+ *   is: a popup that fills a column above its `min-w-36` keeps that minimum. So is a `maxWidth` the
+ *   root takes in place that differs from the variant's, as a chip value's `max-w-56` caps its
+ *   Button, beside a carried `minWidth` or alone. The layers inside guard it, since a layer that sizes against the root's
  *   length draws another way where that length changes.
  * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
  *   width, as the text built in place hugs (PH2).
@@ -164,6 +174,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
     aligned: undefined,
     root: inPlace.sizing,
     minWidth: undefined,
+    maxWidth: undefined,
     text: new Map(),
     swap: new Map(),
     nested: [],
@@ -185,6 +196,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
         : [...found.overrides.slice(0, carried.at), carried.override, ...found.overrides.slice(carried.at)],
     sizing: inPlace.sizing,
     minWidth: found.minWidth,
+    maxWidth: found.maxWidth,
     mirrored: found.mirrored,
     unmapped: carried === undefined ? found.unmapped : [],
   };
@@ -290,24 +302,30 @@ function diffBox(
 }
 
 /**
- * Diff the root's limits: a `minWidth` the root takes in place and the variant's root does not
- * becomes the instance's, where the other limits agree, and any other difference stays unmapped.
+ * Diff the root's limits. A `minWidth` the root takes in place and the variant's root does not, and
+ * a `maxWidth` the root takes in place that differs from the variant's, as a chip value's `max-w-56`
+ * caps the Button it renders, become the instance's, one or both, where the other limits agree. Any
+ * other difference stays unmapped.
  */
-function diffRootLimits(found: Found, inPlace: BoxSpec["limits"], variant: BoxSpec["limits"]): void {
+function diffRootLimits(found: Found, inPlace: LimitsSpec, variant: LimitsSpec): void {
   if (isDeepStrictEqual(inPlace, variant)) {
     return;
   }
-  if (
-    inPlace.minWidth !== undefined &&
-    variant.minWidth === undefined &&
-    isDeepStrictEqual({ ...inPlace, minWidth: undefined }, { ...variant, minWidth: undefined })
-  ) {
-    found.minWidth = inPlace.minWidth;
+  const floored = inPlace.minWidth !== undefined && variant.minWidth === undefined;
+  const capped = inPlace.maxWidth !== undefined && !isDeepStrictEqual(inPlace.maxWidth, variant.maxWidth);
+  // The limits with the ones the instance carries left out, which must agree.
+  const rest = ({ minWidth, maxWidth, ...others }: LimitsSpec): LimitsSpec => ({
+    ...others,
+    minWidth: floored ? undefined : minWidth,
+    maxWidth: capped ? undefined : maxWidth,
+  });
+  if ((floored || capped) && isDeepStrictEqual(rest(inPlace), rest(variant))) {
+    found.minWidth = floored ? inPlace.minWidth : undefined;
+    found.maxWidth = capped ? inPlace.maxWidth : undefined;
     return;
   }
   noteUnmapped(found, [], "limits", inPlace, variant);
 }
-
 /** Whether a root fills its parent along its own direction, as the instance LD1 probed did. */
 function fillsAlong(root: BoxSpec): boolean {
   return (root.direction === "VERTICAL" ? root.sizing.vertical : root.sizing.horizontal).kind === "fill";
