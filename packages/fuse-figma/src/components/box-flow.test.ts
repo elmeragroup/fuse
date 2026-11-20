@@ -83,7 +83,15 @@ function stacksInlineChild(sample: {
     parent.style,
     {
       parts: [
-        { key: "child", name: "child", style: child.style, sizing: [], editable: false, onlyText: false },
+        {
+          key: "child",
+          name: "child",
+          style: child.style,
+          sizing: [],
+          editable: false,
+          onlyText: false,
+          optional: false,
+        },
       ],
       others: [],
       last: child.style,

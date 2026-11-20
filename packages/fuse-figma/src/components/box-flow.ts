@@ -245,6 +245,9 @@ export function readFlow(
         direction,
         free: box.freeAlongMain,
         fits: box.fitsAlongMain,
+        hugsRow: box.sizing.horizontal.kind === "hug",
+        hugsHeight: box.sizing.vertical.kind === "hug",
+        outOfFlow: box.outOfFlow,
       })
     : undefined;
   if (autoMargins === "centred") {
@@ -269,9 +272,10 @@ export function readFlow(
     !hugged &&
     autoMargins === undefined &&
     normalizeCss(reader.resolved("justify-content") ?? "") === "space-between";
-  // A label that fills before the margin leaves no free space, so the row packs at its start.
+  // A label that fills before the margin leaves no free space, so the row packs at its start, and so
+  // does a row whose layers after the first fill the rest of it in a frame of their own.
   const primaryAlign =
-    autoMargins === "label-fills"
+    autoMargins === "label-fills" || autoMargins === "rest-at-end"
       ? "MIN"
       : autoMargins === "spaced"
         ? (alignments.get("space-between")?.align ?? unset)
@@ -286,7 +290,13 @@ export function readFlow(
     primaryAlign,
     counterAlign,
     justify:
-      autoMargins !== undefined ? "SPACE_BETWEEN" : reader.has("justify-content") ? primaryAlign : "unset",
+      autoMargins === "rest-at-end"
+        ? "MIN"
+        : autoMargins !== undefined
+          ? "SPACE_BETWEEN"
+          : reader.has("justify-content")
+            ? primaryAlign
+            : "unset",
   };
   // A flex item sits in no line box, so `vertical-align` does not apply to it (CSS Flexbox 1 §3), as
   // an avatar's `align-middle` in an Avatar group.
@@ -300,6 +310,9 @@ export function readFlow(
   }
   if (autoMargins === "label-fills") {
     return { layout: { ...layout, labelFills: true }, self };
+  }
+  if (autoMargins === "rest-at-end") {
+    return { layout: { ...layout, restAtEnd: true }, self };
   }
   return { layout: spaceBetweenUnread ? { ...layout, spaceBetweenUnread: true } : layout, self };
 }
@@ -594,13 +607,14 @@ export type FlowLayers = {
   /**
    * The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read, and
    * whether it shows its own text and no icon or part, which `readCentredLone` in `auto-margins.ts`
-   * reads.
+   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads.
    */
   readonly parts: readonly (FlowLayer & {
     readonly style: LayerStyle;
     readonly sizing: Feed;
     readonly editable: boolean;
     readonly onlyText: boolean;
+    readonly optional: boolean;
   })[];
   readonly others: readonly FlowLayer[];
   /**

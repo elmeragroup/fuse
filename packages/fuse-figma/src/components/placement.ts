@@ -71,6 +71,12 @@ export type Layout = {
    */
   readonly labelFills?: true;
   /**
+   * True for a flex row whose first part's auto end margin takes the room before the parts after it,
+   * which the box mapping draws in a frame that fills the rest of the row and packs them at its end,
+   * as `readRestAtEnd` in `auto-margins.ts` reads it. Absent elsewhere.
+   */
+  readonly restAtEnd?: true;
+  /**
    * True for a flex column whose one layer sets `auto` margins on all four sides, which centre it on
    * both axes at its own width up to the column's, as `readCentredLone` in `auto-margins.ts` reads it.
    * Absent elsewhere.

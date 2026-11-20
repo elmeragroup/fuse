@@ -8,6 +8,7 @@ import type { MeasuredFacts } from "./capture-format.ts";
 import { clearFill } from "./clear-fill.ts";
 import { coincidingAround } from "./coinciding-around.ts";
 import type { Rect } from "./coinciding-around.ts";
+import { roomAlong } from "./flex-room.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
 import { EVERY_MODE } from "./page-modes.ts";
@@ -56,12 +57,15 @@ import type { PseudoPaint } from "./pseudo-boxes.ts";
  *   items sit on its one line in source order: each is one box whose own text keeps to one line,
  *   starts where the one before it ends or after it, within {@link LAYOUT_UNIT_PX}, and shares a band
  *   of the line with every other.
- * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which with
- *   those margins at zero leaves at least {@link FREE_SPACE_CLEARANCE_PX} between its last item and
- *   its content box's end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the
- *   margins take that room (CSS Flexbox 1 §8.1).
+ * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which wraps
+ *   in no mode of {@link EVERY_MODE}, since auto margins take the room of each line on its own (CSS
+ *   Flexbox 1 §9.5), and which with those margins at zero and its items packed at its start leaves at
+ *   least {@link FREE_SPACE_CLEARANCE_PX} between its last item and its content box's end, in every
+ *   mode once its faces have loaded, so the margins take that room (CSS Flexbox 1 §8.1).
+ *   The auto margins take the free space before `justify-content` does, so the room is the same
+ *   whatever `justify-content` the container sets.
  * - `fitsAlongMain`: a flex container as `freeAlongMain` takes one, whose items, with their auto
- *   margins at zero, leave at least {@link FIT_CLEARANCE_PX} between the last and its content box's
+ *   margins at zero and packed at its start, leave at least {@link FIT_CLEARANCE_PX} between the last and its content box's
  *   end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the line's items fit it
  *   and none shrinks (CSS Flexbox 1 §9.7).
  * - `basisAsDeclared`, on the root: a root whose computed `height` holds a percentage, as CSS Typed
@@ -597,27 +601,11 @@ const MEASURE_IN_PAGE = `async function () {
     });
   };
   for (const { path } of await holdsInEveryMode(lineBoxes, lineFits)) { put(path, "lineFits", true); }
-  // The room a flex line leaves along its direction past its items and the gaps between them, once
-  // the auto margins along it give their room back, or -Infinity for a line in neither direction.
-  const roomAlong = (element) => {
-    const style = getComputedStyle(element);
-    const row = style.flexDirection === "row";
-    if (!row && style.flexDirection !== "column") { return -Infinity; }
-    const writes = autoMargins(element).map(({ child, side }) => [child, "margin-" + side, "0px"]);
-    return withStyles(writes, () => {
-      const box = element.getBoundingClientRect();
-      const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
-      const end = row ? box.right - px("border-right-width") - px("padding-right") : box.bottom - px("border-bottom-width") - px("padding-bottom");
-      const used = Math.max(...[...element.children].filter(inFlow).map((child) => {
-        const edges = child.getBoundingClientRect();
-        const after = Number.parseFloat(getComputedStyle(child).getPropertyValue(row ? "margin-right" : "margin-bottom")) || 0;
-        return (row ? edges.right : edges.bottom) + after;
-      }));
-      return end - used;
-    });
-  };
+  // The room a flex line leaves along its direction, as \`flex-room.ts\` measures it.
+  const roomAlong = (${roomAlong.toString()});
+  const flexHelpers = { withStyles, autoMargins, inFlow };
   // One sweep measures each line's least room, which each fact compares with its own clearance.
-  for (const { path, least } of await leastInEveryMode(freeAlongMain, roomAlong)) {
+  for (const { path, least } of await leastInEveryMode(freeAlongMain, (element) => roomAlong(element, flexHelpers))) {
     if (least >= ${String(FREE_SPACE_CLEARANCE_PX)}) { put(path, "freeAlongMain", true); }
     if (least >= ${String(FIT_CLEARANCE_PX)}) { put(path, "fitsAlongMain", true); }
   }

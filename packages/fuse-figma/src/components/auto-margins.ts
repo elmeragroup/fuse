@@ -1,8 +1,9 @@
 /**
  * The auto margins of a flex box's layers that the build reads as the box's alignment, as
  * `readFlow` in `box-flow.ts` takes them: one auto margin between two layers or after a row's
- * label (#773), and auto margins on all four sides of a column's one layer. Each reading carries the
- * coverage note that names it. Any other auto margin stays unread, so it lands unmapped.
+ * label (#773), an auto end margin on the first of a row's three or more parts (#824), and auto
+ * margins on all four sides of a column's one layer. Each reading carries the coverage note that
+ * names it. Any other auto margin stays unread, so it lands unmapped.
  */
 import type { FlowLayers } from "./box-flow";
 import { setsMinimumWidth } from "./box-sizing";
@@ -12,9 +13,25 @@ import type { LayerStyle } from "./layer-style";
 
 /**
  * How a flex box's auto margins place its layers: `spaced` and `label-fills` as {@link readAutoStart}
- * reads them, and `centred` as {@link readCentredLone} reads it.
+ * reads them, `rest-at-end` as {@link readRestAtEnd} reads it, and `centred` as
+ * {@link readCentredLone} reads it.
  */
-export type AutoMarginPlacement = "spaced" | "label-fills" | "centred";
+export type AutoMarginPlacement = "spaced" | "label-fills" | "rest-at-end" | "centred";
+
+/**
+ * What the capture and the mapping know of a flex box's line: its direction, whether the capture
+ * measured it leaving room for the auto margins (`free`) and fitting its layers (`fits`) in every
+ * mode, whether the box hugs its length along a row and its height, and how many of its parts sit
+ * out of its flow.
+ */
+type FlexLine = {
+  readonly direction: FlexDirection;
+  readonly free: boolean;
+  readonly fits: boolean;
+  readonly hugsRow: boolean;
+  readonly hugsHeight: boolean;
+  readonly outOfFlow: number;
+};
 
 /**
  * Read the auto margins of a flex box's layers along its direction, and in a column, on all four
@@ -22,18 +39,20 @@ export type AutoMarginPlacement = "spaced" | "label-fills" | "centred";
  *
  * @param reader - The box's style.
  * @param flow - The box's layers in flow.
- * @param line - The box's direction, and whether the capture measured its flex line leaving room for
- *   the margins (`free`) and fitting its layers (`fits`) in every mode.
+ * @param line - What the capture and the mapping know of the box's flex line.
  * @returns How the margins place the box's layers, or undefined where they stay unread.
  */
 export function readAutoMargins(
   reader: LayerStyle,
   flow: FlowLayers,
-  line: { readonly direction: FlexDirection; readonly free: boolean; readonly fits: boolean }
+  line: FlexLine
 ): AutoMarginPlacement | undefined {
   const between = readAutoStart(reader, flow, line);
   if (between !== undefined) {
     return between;
+  }
+  if (readRestAtEnd(reader, flow, line)) {
+    return "rest-at-end";
   }
   return line.direction === "VERTICAL" && readCentredLone(reader, flow, line.free) ? "centred" : undefined;
 }
@@ -49,6 +68,14 @@ const AUTO_START_DOWN =
 /** How the coverage table names an auto start margin {@link readAutoStart} reads after the label. */
 const AUTO_START_AFTER_LABEL =
   "the auto margin takes the row's free space after the label, which fills that space in Figma and paints nothing past its text, so the layer ends the row";
+
+/** How the coverage table names the auto end margin {@link readRestAtEnd} reads on a row's first part. */
+const REST_AT_END =
+  "the auto margin takes the row's free space after the first layer, which a frame around the layers after it fills, packing them at its end";
+
+/** How the coverage table names the `justify-content` of a row whose first part's auto margin {@link readRestAtEnd} reads. */
+const REST_AT_END_JUSTIFY =
+  "the first layer's auto margin takes the row's free space before `justify-content` places the layers (CSS Flexbox 1 §8.1), so it has none to place";
 
 /** The `text-align` values that set a label's text from its left, where a filling label draws as one at its own width. */
 const FROM_LEFT: ReadonlySet<string> = new Set(["", "start", "left"]);
@@ -112,7 +139,7 @@ export type FlexDirection = Exclude<DirectionSpec, "GRID">;
 function readAutoStart(
   reader: LayerStyle,
   flow: FlowLayers,
-  line: { readonly direction: FlexDirection; readonly free: boolean; readonly fits: boolean }
+  line: FlexLine
 ): "spaced" | "label-fills" | undefined {
   const { direction, free, fits } = line;
   const { start, end } = MAIN_MARGINS[direction];
@@ -159,6 +186,79 @@ function readAutoStart(
     reader.feed("primaryAlign")
   );
   return placing;
+}
+
+/**
+ * Read an auto end margin on the first of a flex row's three or more parts, as Tour's footer sets
+ * Skip at its start by `me-auto` and Back and Next at its end. The margin takes the row's free space
+ * before `justify-content` distributes it (CSS Flexbox 1 §8.1), so the first part starts the row and
+ * the parts after it end the row with the gap between them, whatever `justify-content` the row sets.
+ * A Figma row cannot hold one layer at its start and two at its end, so the box mapping draws the
+ * parts after the first in a frame that fills the rest of the row and packs them at its end, as
+ * `end-frame.ts` draws it. The row then packs its two layers at its start with its gap.
+ *
+ * The capture must measure the row leaving the margin room in every mode (`freeAlongMain`), with its
+ * items packed at its start, so the room is the same whatever `justify-content` the row sets: where
+ * the parts and the gaps fill the row, the margin takes none and CSS keeps them where
+ * `justify-content` places them, which the frame would not. A part that grows takes the free space
+ * first (CSS Flexbox 1 §9.7), so that capture records no room either. The row must not hug its width,
+ * which leaves no room to fill, hold its own label or icons, or hold a part out of its flow, which
+ * would paint among the parts the frame moves. The first part must show in every instance: a
+ * BOOLEAN property that hides it takes its margin out of the row, so CSS places the others by
+ * `justify-content`, where the frame keeps them at its end. A row that hugs its height must leave
+ * each part's `align-self` unset: a part that stretches there, or one that sets another alignment
+ * and so lets the row stretch the rest, fills a frame that hugs only its own layers (PF), where CSS
+ * stretches it to the row's tallest item. The first part sets no start margin, and the parts after
+ * it set no margin along the row, which the frame would drop. Any other shape leaves the margin
+ * unread, so it lands unmapped.
+ *
+ * @param reader - The row's style.
+ * @param flow - The row's layers in flow.
+ * @param line - What the capture and the mapping know of the row's flex line.
+ * @returns True where the row draws its parts after the first at its end.
+ */
+function readRestAtEnd(reader: LayerStyle, flow: FlowLayers, line: FlexLine): boolean {
+  const [first, ...rest] = flow.parts;
+  const { start, end } = MAIN_MARGINS.HORIZONTAL;
+  const applies =
+    line.direction === "HORIZONTAL" &&
+    line.free &&
+    !line.hugsRow &&
+    line.outOfFlow === 0 &&
+    flow.others.length === 0 &&
+    first !== undefined &&
+    !first.optional &&
+    rest.length >= 2 &&
+    normalizeCss(first.style.resolved(end) ?? "") === "auto" &&
+    !first.style.has(start) &&
+    rest.every(({ style }) => !style.has(start) && !style.has(end)) &&
+    (!line.hugsHeight || flow.parts.every(({ style }) => selfAlignOf(style) === "auto"));
+  if (!applies) {
+    return false;
+  }
+  first.style.read(
+    end,
+    (value) => value,
+    () => ({ outcome: "literal", detail: REST_AT_END }),
+    reader.feed("primaryAlign")
+  );
+  reader.read(
+    "justify-content",
+    (value) => value,
+    () => ({ outcome: "dropped", detail: REST_AT_END_JUSTIFY }),
+    []
+  );
+  return true;
+}
+
+/**
+ * A part's `align-self`, `auto` where it sets none.
+ *
+ * @param style - The part's style.
+ * @returns The normalized value.
+ */
+function selfAlignOf(style: LayerStyle): string {
+  return normalizeCss(style.resolved("align-self") ?? "auto");
 }
 
 /** The `text-wrap-mode` values that let a text wrap, unset among them, which `white-space` also sets. */
