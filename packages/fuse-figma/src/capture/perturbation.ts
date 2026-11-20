@@ -61,8 +61,13 @@ export type ProbedBox = {
   /** Whether the box is `position: fixed`, so its container is the viewport the sample declares. */
   readonly fixedInViewport: boolean;
   /**
-   * Whether far longer text made the box exactly as wide as its parent's content box, so it fits its
-   * text up to the room it has and wraps there, as `w-fit` does.
+   * Whether far longer text made the box exactly as wide as the room its parent leaves it, so it fits
+   * its text up to that room and wraps there, as `w-fit` does. The room is the parent's content box,
+   * less, in a flex row on one line, the row's other in-flow items and the gaps between them, the
+   * room a shrinking item gives its overflow back to (CSS Flexbox 1 §9.7), as File upload's
+   * description has beside its trigger. A box out of the flow has the whole content box. The parent
+   * must keep its width as the text grows: one that widens with the text, as a `max-content` row
+   * does, sets no cap the box stops at.
    */
   readonly capsAtParent: boolean;
   /**
@@ -86,8 +91,8 @@ export type ProbedCell = {
  * `overflows` is a box its longer text pushed past its parent's content box, as text that cannot wrap
  * does, which tells hug from fill no more. `fill-viewport` is a `position: fixed` box that fills its
  * container, the viewport the sample declares, which draws fixed at that viewport's size. `fits` is a
- * box that widens with its text and stops at its parent's content box, as `w-fit` does: it hugs short
- * text and fills past it, so the probe cannot tell the two apart, and either kind agrees. `unknown`
+ * box that widens with its text and stops at the room its parent leaves it, as `w-fit` does: it hugs
+ * short text and fills past it, so the probe cannot tell the two apart, and either kind agrees. `unknown`
  * is a box without text whose root's container the probe could not widen, or whose container
  * follows the root's own text, so widening it shows nothing the page would do.
  */
@@ -306,6 +311,42 @@ export async function probeCells(
           Number.parseFloat(style.marginRight || "0")
         );
       };
+      // What a flex row on one line takes beside one of its in-flow items: its other in-flow items
+      // and the gaps between them, which leave the item the rest (CSS Flexbox 1 §9.7). An absolute or
+      // fixed box is out of the flow (§4.1), so the row takes nothing beside it. Elsewhere it is 0.
+      const outOfFlow = (style: CSSStyleDeclaration): boolean =>
+        style.position === "absolute" || style.position === "fixed";
+      const besideOf = (element: Element): number => {
+        const parent = element.parentElement;
+        const row = parent === null ? undefined : getComputedStyle(parent);
+        if (
+          parent === null ||
+          row === undefined ||
+          outOfFlow(getComputedStyle(element)) ||
+          !["flex", "inline-flex"].includes(row.display) ||
+          row.flexDirection !== "row" ||
+          row.flexWrap !== "nowrap"
+        ) {
+          return 0;
+        }
+        const flowing = [...parent.children].filter((child) => {
+          const style = getComputedStyle(child);
+          return style.display !== "none" && !outOfFlow(style);
+        });
+        const others = flowing
+          .filter((child) => child !== element)
+          .reduce((sum, child) => {
+            const style = getComputedStyle(child);
+            return (
+              sum +
+              child.getBoundingClientRect().width +
+              Number.parseFloat(style.marginLeft || "0") +
+              Number.parseFloat(style.marginRight || "0")
+            );
+          }, 0);
+        const gap = Number.parseFloat(row.columnGap);
+        return others + (Number.isNaN(gap) ? 0 : gap) * Math.max(0, flowing.length - 1);
+      };
       const boxesOf = (root: Element): Box[] =>
         [root, ...root.querySelectorAll("[data-slot]")].map((element) => ({
           slot: element.getAttribute("data-slot") ?? "",
@@ -418,6 +459,11 @@ export async function probeCells(
             return [];
           }
           return [root, ...root.querySelectorAll("[data-slot]")].map((element) => {
+            // Read before the text lengthens, so an item that shrinks beside a longer text does not
+            // leave the box a room that grows with it, and so is the parent's width, which a parent
+            // that fits its content widens with the text.
+            const beside = besideOf(element);
+            const before = roomOf(element);
             const lengthened: { node: Node; text: string; between: { element: Element; width: number }[] }[] =
               [];
             const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -457,10 +503,14 @@ export async function probeCells(
             for (const { node, text } of lengthened) {
               node.textContent = text;
             }
+            // A cap is a room that stays put: a parent that grew with the text set no limit the box
+            // stopped at.
             return {
               ...measured,
               longest: longest.width,
-              capped: Math.abs(longest.width - longest.parent) <= 1,
+              capped:
+                Math.abs(longest.parent - before) <= 1 &&
+                Math.abs(longest.width - (longest.parent - beside)) <= 1,
             };
           });
         })
