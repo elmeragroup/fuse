@@ -26,7 +26,6 @@ import type { CollectionSpec } from "../src/variable-set.ts";
  */
 const BUTTON_KIT = "../plugin/src/button-kit-fixture.ts";
 const FAKE_FIGMA = "../plugin/src/fake-figma.ts";
-const KIT_FIXTURE = "../plugin/src/kit-fixture.ts";
 
 /** The in-memory file, as far as the test reads it. */
 type FakeFile = { readonly figma: object };
@@ -34,13 +33,6 @@ type FakeFile = { readonly figma: object };
 type ButtonKitFixture = {
   readonly KIT: KitSpec;
   readonly fixture: (family: string, withPage?: boolean) => { readonly file: FakeFile };
-};
-
-type KitFixtureModule = {
-  readonly kitFixture: () => Promise<{
-    readonly kit: KitSpec;
-    readonly collections: readonly CollectionSpec[];
-  }>;
 };
 
 type FakeFigmaModule = {
@@ -233,10 +225,8 @@ describe("the plugin bundle", () => {
   // The snapshot export hands the thread back once after each preview frame, so the progress it
   // posted reaches the UI while it runs.
   it("plans and applies the whole kit without handing the thread back, and exports with a turn per preview", async () => {
-    // SAFETY: the path names kit-fixture.ts, whose `kitFixture` resolves to the built kit and the
-    // collections the token sync writes.
-    const { kitFixture } = (await import(KIT_FIXTURE)) as KitFixtureModule;
-    const { kit, collections } = await kitFixture();
+    const { fullKit } = await import("../plugin/test-support/kit-cache.ts");
+    const { kit, collections } = await fullKit();
     const plugin = load(
       await Effect.runPromise(bundlePlugin(kit)),
       fixtures.createFakeFigma({ collections })

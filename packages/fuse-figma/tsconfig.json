@@ -9,5 +9,5 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true
   },
-  "include": ["src", "test", "scripts", "vitest.config.ts"]
+  "include": ["src", "test", "plugin/test-support", "scripts", "vitest.config.ts"]
 }

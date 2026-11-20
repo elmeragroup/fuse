@@ -4,10 +4,11 @@
  */
 import { Effect } from "effect";
 
+import { deepFrozen } from "../plugin/test-support/frozen.ts";
+import { injectedKit } from "../plugin/test-support/kit-cache.ts";
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
 import type { ChildLayerSpec, ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
-import { deepFrozen } from "./frozen.ts";
 
 export { FILL, fixed, HUG, literal } from "./capture-fixtures.ts";
 
@@ -20,6 +21,13 @@ export type BuiltSets = {
 let built: Promise<BuiltSets> | undefined;
 
 async function buildSets(): Promise<BuiltSets> {
+  const cached = injectedKit();
+  if (cached !== undefined) {
+    return Object.freeze({
+      spec: Object.freeze({ componentSets: cached.kit.componentSets }),
+      coverage: cached.coverage,
+    });
+  }
   const sets = await Effect.runPromise(buildComponentSets());
   return deepFrozen({
     spec: { componentSets: sets.map((set) => set.componentSet) },
@@ -28,9 +36,9 @@ async function buildSets(): Promise<BuiltSets> {
 }
 
 /**
- * Build the kit's component sets and their coverage on the first call, deep frozen, without the
- * icon library or the previews. The suites a Vitest worker runs share one module registry
- * (`vitest.config.ts`), so each worker builds the sets once.
+ * The kit's component sets and their coverage, deep frozen, without the icon library or the
+ * previews. Every call in a worker returns the same values. The run's setup decides whether the
+ * run builds them once or each worker builds its own (`plugin/test-support/kit-setup.ts`).
  *
  * @returns The component sets, as the kit spec holds them, and their coverage rows.
  */
