@@ -38,6 +38,7 @@ export const KBD_LABEL = "K";
 export const KBD_MANIFEST: SetManifest = {
   key: "kbd",
   name: "Kbd",
+  api: { page: "kbd", parts: ["Kbd"] },
   slot: "kbd",
   axes: [{ name: "content", values: ["text", "icon"] }],
   columnAxis: "content",
@@ -84,6 +85,7 @@ function capManifest(key: string, label: string): InstanceManifest {
 export const KBD_GROUP_MANIFEST: SetManifest = {
   key: "kbd-group",
   name: "Kbd group",
+  api: { page: "kbd", parts: ["KbdGroup"] },
   slot: "kbd-group",
   axes: [{ name: "keys", values: ["2"] }],
   columnAxis: "keys",

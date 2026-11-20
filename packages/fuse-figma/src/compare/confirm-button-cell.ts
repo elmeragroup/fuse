@@ -4,11 +4,11 @@
  *
  * - `variant` and `size` set the props of the same name, and `disabled` sets `disabled`.
  * - ConfirmButton arms only on a press, which static markup cannot make, and it writes its own
- *   `data-armed` after the props it passes on. So an `armed=on` cell hands Button a
+ *   `data-armed` after the props it passes on. So an `armed=true` cell hands Button a
  *   `<button data-armed="true">` through `render`: Base UI merges that element's props over its
  *   own, which marks the root as a first press would and leaves every other attribute as it was.
  *   With no `armedChildren`, armed label or `aria-label`, a press changes nothing else.
- * - A disabled ConfirmButton disarms, so a disabled cell renders disarmed at `armed=on` too.
+ * - A disabled ConfirmButton disarms, so a disabled cell renders disarmed at `armed=true` too.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -45,7 +45,7 @@ export const confirmButton: CellRendering = {
     }
     const disabled = cell.state === "disabled";
     const props = { variant, size, disabled, onConfirm: () => undefined };
-    return cell.armed === "on" && !disabled
+    return cell.armed === "true" && !disabled
       ? createElement(ConfirmButton, { ...props, render: ARMED_ROOT }, CONFIRM_BUTTON_LABEL)
       : createElement(ConfirmButton, props, CONFIRM_BUTTON_LABEL);
   },

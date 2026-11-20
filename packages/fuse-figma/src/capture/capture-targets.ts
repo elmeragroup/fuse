@@ -2,7 +2,7 @@
  * The sets the capture renders: each kit entry, as its manifest names it.
  */
 
-import { matrixCells, previewWidthIn } from "../components/component-spec.ts";
+import { possibleCells, previewWidthIn } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { manifestDefinition } from "./manifest.ts";
@@ -45,7 +45,7 @@ export function captureTargets(only?: ReadonlySet<string>): readonly CaptureTarg
     const definition = manifestDefinition(manifest);
     const target: CaptureTarget = {
       ...manifest,
-      optional: new Set(optionalProperties(manifest, matrixCells(manifest.axes))),
+      optional: new Set(optionalProperties(manifest, possibleCells(manifest))),
       previewWidthFor: (cell) => previewWidthIn(definition, cell),
     };
     return [target];

@@ -244,8 +244,8 @@
   ],
   "cells": [
     {
-    "key": "popover-open/placement=below",
-    "cell": {"placement":"below"},
+    "key": "popover-open/side=bottom",
+    "cell": {"side":"bottom"},
     "roots": [
       {
         "around": [

@@ -27,7 +27,7 @@ export const RADIO_ROW_TEXT = "Fixed";
 
 /** The radio's cell: the row's checked value and state. */
 function radioCell(outer: Cell): Cell {
-  return { checked: outer.checked ?? "off", state: outer.state ?? "rest" };
+  return { checked: outer.checked ?? "false", state: outer.state ?? "rest" };
 }
 
 /** The row's text, which the `Label` property sets. */
@@ -48,12 +48,13 @@ const TEXT: LabelManifest = {
 export const RADIO_ROW_MANIFEST: SetManifest = {
   key: "radio-row",
   name: "Radio row",
+  api: { page: "radio-group", parts: ["RadioItem"] },
   slot: "field-item",
   statePart: "radio-group-item",
   axes: [
     // A horizontal group hugs its rows, and a vertical one stretches them.
     { name: "width", values: HUG_OR_FILL },
-    { name: "checked", values: ["off", "on"] },
+    { name: "checked", values: ["false", "true"] },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",

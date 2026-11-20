@@ -133,8 +133,8 @@
   ],
   "cells": [
     {
-    "key": "breadcrumb-page/current=page",
-    "cell": {"current":"page"},
+    "key": "breadcrumb-page/state=rest",
+    "cell": {"state":"rest"},
     "roots": [
       {
         "around": [

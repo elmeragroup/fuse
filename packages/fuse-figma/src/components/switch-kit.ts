@@ -27,10 +27,11 @@ function isSize(value: string | undefined): value is SwitchSize {
 export const SWITCH_MANIFEST: SetManifest = {
   key: "switch",
   name: "Switch",
+  api: { page: "switch", parts: ["Switch"] },
   slot: "switch",
   axes: [
     { name: "size", values: SIZES },
-    { name: "checked", values: ["off", "on"] },
+    { name: "checked", values: ["false", "true"] },
     { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",

@@ -50,6 +50,7 @@ function footerActionManifest(
 export const DIALOG_CONTENT_MANIFEST: SetManifest = {
   key: "dialog-content",
   name: "Dialog content",
+  api: { page: "dialog", parts: ["Dialog.Content"] },
   slot: "dialog-content",
   axes: [{ name: "content", values: ["basic", "footer-close"] }],
   columnAxis: "content",
@@ -95,6 +96,7 @@ export const DIALOG_CONTENT_MANIFEST: SetManifest = {
 export const DIALOG_OPEN_MANIFEST: SetManifest = {
   key: "dialog-open",
   name: "Dialog (open)",
+  api: { page: "dialog", parts: ["Dialog.Content"] },
   slot: "dialog-open",
   axes: [{ name: "placement", values: ["centered"] }],
   columnAxis: "placement",

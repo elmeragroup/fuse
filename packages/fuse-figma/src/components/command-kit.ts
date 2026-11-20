@@ -67,6 +67,7 @@ function shortcutManifest(highlighted: boolean): InstanceManifest {
 export const COMMAND_ITEM_MANIFEST: SetManifest = {
   key: "command-item",
   name: "Command item",
+  api: { page: "command", parts: ["Command.Item"] },
   slot: "command-item",
   elementSlot: (cell) => (cell.trailing === "caret" ? "command-page-trigger" : "command-item"),
   axes: [
@@ -94,6 +95,7 @@ export const COMMAND_ITEM_MANIFEST: SetManifest = {
 export const COMMAND_LIST_MANIFEST: SetManifest = {
   key: "command-list",
   name: "Command list",
+  api: { page: "command", parts: ["Command.List"] },
   slot: "command-list",
   axes: [{ name: "content", values: ["grouped"] }],
   columnAxis: "content",

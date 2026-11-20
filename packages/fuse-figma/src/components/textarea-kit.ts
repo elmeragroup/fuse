@@ -33,6 +33,7 @@ const TEXT: LabelManifest = {
 export const TEXTAREA_MANIFEST: SetManifest = {
   key: "textarea",
   name: "Textarea",
+  api: { page: "textarea", parts: ["Textarea"] },
   slot: "textarea",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: FIELD_BOX_AXES,

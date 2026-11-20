@@ -68,7 +68,7 @@ export function orientationFor(cell: Cell): Orientation {
 function rowCell(index: number, outer: Cell): Cell {
   return {
     width: orientationFor(outer) === "vertical" ? "fill" : "hug",
-    checked: index === 0 ? "on" : "off",
+    checked: index === 0 ? "true" : "false",
     state: outer.state ?? "rest",
   };
 }
@@ -95,6 +95,7 @@ function rowManifest(label: string, index: number): InstanceManifest {
 export const RADIO_GROUP_MANIFEST: SetManifest = {
   key: "radio-group",
   name: "Radio group",
+  api: { page: "radio-group", parts: ["RadioGroup"] },
   slot: "field",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [

@@ -208,8 +208,8 @@
   ],
   "cells": [
     {
-    "key": "dropdown-menu-open/placement=below",
-    "cell": {"placement":"below"},
+    "key": "dropdown-menu-open/side=bottom",
+    "cell": {"side":"bottom"},
     "roots": [
       {
         "around": [

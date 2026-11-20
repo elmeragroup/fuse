@@ -151,8 +151,8 @@
   ],
   "cells": [
     {
-    "key": "pagination-link/current=off,state=rest",
-    "cell": {"current":"off","state":"rest"},
+    "key": "pagination-link/isActive=false,state=rest",
+    "cell": {"isActive":"false","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -173,8 +173,8 @@
     ]
   },
     {
-    "key": "pagination-link/current=off,state=hover",
-    "cell": {"current":"off","state":"hover"},
+    "key": "pagination-link/isActive=false,state=hover",
+    "cell": {"isActive":"false","state":"hover"},
     "roots": [
       {
         "around": [],
@@ -195,8 +195,8 @@
     ]
   },
     {
-    "key": "pagination-link/current=off,state=focus",
-    "cell": {"current":"off","state":"focus"},
+    "key": "pagination-link/isActive=false,state=focus",
+    "cell": {"isActive":"false","state":"focus"},
     "roots": [
       {
         "around": [],
@@ -217,8 +217,8 @@
     ]
   },
     {
-    "key": "pagination-link/current=on,state=rest",
-    "cell": {"current":"on","state":"rest"},
+    "key": "pagination-link/isActive=true,state=rest",
+    "cell": {"isActive":"true","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -239,8 +239,8 @@
     ]
   },
     {
-    "key": "pagination-link/current=on,state=hover",
-    "cell": {"current":"on","state":"hover"},
+    "key": "pagination-link/isActive=true,state=hover",
+    "cell": {"isActive":"true","state":"hover"},
     "roots": [
       {
         "around": [],
@@ -261,8 +261,8 @@
     ]
   },
     {
-    "key": "pagination-link/current=on,state=focus",
-    "cell": {"current":"on","state":"focus"},
+    "key": "pagination-link/isActive=true,state=focus",
+    "cell": {"isActive":"true","state":"focus"},
     "roots": [
       {
         "around": [],

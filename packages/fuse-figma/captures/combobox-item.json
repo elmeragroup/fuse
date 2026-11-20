@@ -186,8 +186,8 @@
   ],
   "cells": [
     {
-    "key": "combobox-item/selected=off,state=rest",
-    "cell": {"selected":"off","state":"rest"},
+    "key": "combobox-item/selected=false,state=rest",
+    "cell": {"selected":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -258,8 +258,8 @@
     ]
   },
     {
-    "key": "combobox-item/selected=off,state=highlighted",
-    "cell": {"selected":"off","state":"highlighted"},
+    "key": "combobox-item/selected=false,state=highlighted",
+    "cell": {"selected":"false","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -330,8 +330,8 @@
     ]
   },
     {
-    "key": "combobox-item/selected=off,state=disabled",
-    "cell": {"selected":"off","state":"disabled"},
+    "key": "combobox-item/selected=false,state=disabled",
+    "cell": {"selected":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -402,8 +402,8 @@
     ]
   },
     {
-    "key": "combobox-item/selected=on,state=rest",
-    "cell": {"selected":"on","state":"rest"},
+    "key": "combobox-item/selected=true,state=rest",
+    "cell": {"selected":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -500,8 +500,8 @@
     ]
   },
     {
-    "key": "combobox-item/selected=on,state=highlighted",
-    "cell": {"selected":"on","state":"highlighted"},
+    "key": "combobox-item/selected=true,state=highlighted",
+    "cell": {"selected":"true","state":"highlighted"},
     "roots": [
       {
         "around": [
@@ -598,8 +598,8 @@
     ]
   },
     {
-    "key": "combobox-item/selected=on,state=disabled",
-    "cell": {"selected":"on","state":"disabled"},
+    "key": "combobox-item/selected=true,state=disabled",
+    "cell": {"selected":"true","state":"disabled"},
     "roots": [
       {
         "around": [

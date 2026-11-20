@@ -23,7 +23,7 @@ import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
-import { matrixCells, previewWidthIn, variantKey } from "./component-spec";
+import { possibleCells, previewWidthIn, variantKey } from "./component-spec";
 import type {
   BuildContext,
   BuiltComponent,
@@ -85,7 +85,7 @@ export function buildSetsInOrder(
 }
 
 /**
- * Build the component set for every cell of the definition's matrix.
+ * Build the component set for every cell of the definition's matrix the component can show.
  *
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.
@@ -115,7 +115,7 @@ export function buildComponentSet(
       full
     );
   };
-  const cells = matrixCells(definition.axes);
+  const cells = possibleCells(definition);
   const optional = optionalParts(definition, cells);
   const booleans = booleanPropertiesOf(definition.name, optional);
   const cascade = setCascade(definition, context, record, captured, inner);
@@ -432,7 +432,7 @@ export function inPlacementOrder(definition: ComponentDefinition, capture: SetCa
   const slots = anchoredPlacement(first, 0, capture.declarations).roots.map(
     ({ root }) => root.attributes["data-slot"]
   );
-  const [cell] = matrixCells(definition.axes);
+  const [cell] = possibleCells(definition);
   const rank = (part: (typeof parts)[number]): number =>
     "kind" in part && cell !== undefined ? slots.indexOf(instanceRootSlotOf(part, part.cell(cell))) : -1;
   return { ...definition, parts: parts.toSorted((left, right) => rank(left) - rank(right)) };

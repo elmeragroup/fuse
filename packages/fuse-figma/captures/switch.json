@@ -190,8 +190,8 @@
   ],
   "cells": [
     {
-    "key": "switch/size=default,checked=off,state=rest",
-    "cell": {"size":"default","checked":"off","state":"rest"},
+    "key": "switch/size=default,checked=false,state=rest",
+    "cell": {"size":"default","checked":"false","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -224,8 +224,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=off,state=focus",
-    "cell": {"size":"default","checked":"off","state":"focus"},
+    "key": "switch/size=default,checked=false,state=focus",
+    "cell": {"size":"default","checked":"false","state":"focus"},
     "roots": [
       {
         "around": [],
@@ -258,8 +258,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=off,state=disabled",
-    "cell": {"size":"default","checked":"off","state":"disabled"},
+    "key": "switch/size=default,checked=false,state=disabled",
+    "cell": {"size":"default","checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [],
@@ -292,8 +292,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=off,state=invalid",
-    "cell": {"size":"default","checked":"off","state":"invalid"},
+    "key": "switch/size=default,checked=false,state=invalid",
+    "cell": {"size":"default","checked":"false","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -340,8 +340,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=on,state=rest",
-    "cell": {"size":"default","checked":"on","state":"rest"},
+    "key": "switch/size=default,checked=true,state=rest",
+    "cell": {"size":"default","checked":"true","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -374,8 +374,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=on,state=focus",
-    "cell": {"size":"default","checked":"on","state":"focus"},
+    "key": "switch/size=default,checked=true,state=focus",
+    "cell": {"size":"default","checked":"true","state":"focus"},
     "roots": [
       {
         "around": [],
@@ -408,8 +408,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=on,state=disabled",
-    "cell": {"size":"default","checked":"on","state":"disabled"},
+    "key": "switch/size=default,checked=true,state=disabled",
+    "cell": {"size":"default","checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [],
@@ -442,8 +442,8 @@
     ]
   },
     {
-    "key": "switch/size=default,checked=on,state=invalid",
-    "cell": {"size":"default","checked":"on","state":"invalid"},
+    "key": "switch/size=default,checked=true,state=invalid",
+    "cell": {"size":"default","checked":"true","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -490,8 +490,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=off,state=rest",
-    "cell": {"size":"sm","checked":"off","state":"rest"},
+    "key": "switch/size=sm,checked=false,state=rest",
+    "cell": {"size":"sm","checked":"false","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -524,8 +524,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=off,state=focus",
-    "cell": {"size":"sm","checked":"off","state":"focus"},
+    "key": "switch/size=sm,checked=false,state=focus",
+    "cell": {"size":"sm","checked":"false","state":"focus"},
     "roots": [
       {
         "around": [],
@@ -558,8 +558,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=off,state=disabled",
-    "cell": {"size":"sm","checked":"off","state":"disabled"},
+    "key": "switch/size=sm,checked=false,state=disabled",
+    "cell": {"size":"sm","checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [],
@@ -592,8 +592,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=off,state=invalid",
-    "cell": {"size":"sm","checked":"off","state":"invalid"},
+    "key": "switch/size=sm,checked=false,state=invalid",
+    "cell": {"size":"sm","checked":"false","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -640,8 +640,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=on,state=rest",
-    "cell": {"size":"sm","checked":"on","state":"rest"},
+    "key": "switch/size=sm,checked=true,state=rest",
+    "cell": {"size":"sm","checked":"true","state":"rest"},
     "roots": [
       {
         "around": [],
@@ -674,8 +674,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=on,state=focus",
-    "cell": {"size":"sm","checked":"on","state":"focus"},
+    "key": "switch/size=sm,checked=true,state=focus",
+    "cell": {"size":"sm","checked":"true","state":"focus"},
     "roots": [
       {
         "around": [],
@@ -708,8 +708,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=on,state=disabled",
-    "cell": {"size":"sm","checked":"on","state":"disabled"},
+    "key": "switch/size=sm,checked=true,state=disabled",
+    "cell": {"size":"sm","checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [],
@@ -742,8 +742,8 @@
     ]
   },
     {
-    "key": "switch/size=sm,checked=on,state=invalid",
-    "cell": {"size":"sm","checked":"on","state":"invalid"},
+    "key": "switch/size=sm,checked=true,state=invalid",
+    "cell": {"size":"sm","checked":"true","state":"invalid"},
     "roots": [
       {
         "around": [

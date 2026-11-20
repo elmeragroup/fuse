@@ -96,7 +96,7 @@ function partManifest(
     case "label":
       return instance(
         MENU_GROUP_LABEL_MANIFEST,
-        { kind: node.inset === true ? "menu inset" : "menu" },
+        { kind: node.inset === true ? "menu-inset" : "menu" },
         () => ({
           text: { Label: node.label },
         })
@@ -108,7 +108,7 @@ function partManifest(
         key,
         of: MENU_SEPARATOR_MANIFEST,
         slot: "dropdown-menu-separator",
-        cell: () => ({ size: "default" }),
+        cell: () => ({ orientation: "horizontal" }),
         shownIn,
       };
     case "item":
@@ -116,7 +116,7 @@ function partManifest(
         DROPDOWN_MENU_ITEM_MANIFEST,
         {
           variant: node.destructive === true ? "destructive" : "default",
-          inset: node.inset === true ? "on" : "off",
+          inset: node.inset === true ? "true" : "false",
           state: node.disabled === true ? "disabled" : "rest",
         },
         () => itemProperties(node)
@@ -124,13 +124,13 @@ function partManifest(
     case "checkbox":
       return instance(
         DROPDOWN_MENU_CHECKBOX_ITEM_MANIFEST,
-        { checked: node.checked ? "on" : "off", state: "rest" },
+        { checked: node.checked ? "true" : "false", state: "rest" },
         () => ({ text: { Label: node.label } })
       );
     case "radio":
       return instance(
         DROPDOWN_MENU_RADIO_ITEM_MANIFEST,
-        { checked: node.value === group?.value ? "on" : "off", state: "rest" },
+        { checked: node.value === group?.value ? "true" : "false", state: "rest" },
         () => ({ text: { Label: node.label } })
       );
     case "sub-trigger":
@@ -147,6 +147,7 @@ function partManifest(
 export const DROPDOWN_MENU_POPUP_MANIFEST: SetManifest = {
   key: "dropdown-menu-popup",
   name: "Dropdown menu popup",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.Content"] },
   slot: "dropdown-menu-content",
   axes: [{ name: "content", values: DROPDOWN_POPUP_CONTENTS }],
   columnAxis: "content",
@@ -167,9 +168,10 @@ export const DROPDOWN_MENU_POPUP_MANIFEST: SetManifest = {
 export const DROPDOWN_MENU_OPEN_MANIFEST: SetManifest = {
   key: "dropdown-menu-open",
   name: "Dropdown menu (open)",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.Content"] },
   slot: "dropdown-menu-open",
-  axes: [{ name: "placement", values: ["below"] }],
-  columnAxis: "placement",
+  axes: [{ name: "side", values: ["bottom"] }],
+  columnAxis: "side",
   union: ["dropdown-menu-trigger", "dropdown-menu-content"],
   sideOffset: 4,
   label: undefined,
@@ -203,6 +205,7 @@ export const DROPDOWN_MENU_OPEN_MANIFEST: SetManifest = {
 export const DROPDOWN_MENU_SUB_CONTENT_MANIFEST: SetManifest = {
   key: "dropdown-menu-sub-content",
   name: "Dropdown menu sub content",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.SubContent"] },
   slot: "dropdown-menu-sub-content",
   axes: [{ name: "content", values: ["submenu"] }],
   columnAxis: "content",

@@ -43,10 +43,11 @@ const ICON: IconManifest = {
 export const RADIO_ICON_BUTTON_MANIFEST: SetManifest = {
   key: "radio-icon-button",
   name: "Radio icon button",
+  api: { page: "radio-group", parts: ["RadioIconButton"] },
   slot: "radio-icon-button",
   axes: [
     { name: "size", values: SIZES },
-    { name: "checked", values: ["off", "on"] },
+    { name: "checked", values: ["false", "true"] },
     { name: "state", values: ["rest", "hover", "focus", "disabled", "invalid"] },
   ],
   columnAxis: "state",

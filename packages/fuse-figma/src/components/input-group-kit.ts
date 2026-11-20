@@ -11,10 +11,11 @@
  * - `form=clear` is `Combobox.Input` with `showClear` and no trigger: a trailing addon holding the
  *   clear button, an `Icon button` instance with X. Base UI shows it while the Combobox holds a
  *   selection, so it draws beside the placeholder, as the docs multi-chips demo's filter does.
- * - `form=caret open` is `Combobox.Input` while its popup is open, which the open Combobox holds.
+ * - `form=caret-open` is `Combobox.Input` while its popup is open, which the open Combobox holds.
  *   The CaretDown turns half a turn there. Figma turns no layer inside an instance (PT), so the
- *   caret instance swaps to CaretUp, the CaretDown's proven half-turn mirror. The matrix crosses
- *   every form with every state, so the form is drawn disabled too, though an open Combobox never is.
+ *   caret instance swaps to CaretUp, the CaretDown's proven half-turn mirror. A Combobox opened
+ *   through `open` or `defaultOpen` stays open when it is disabled, so the set draws the form
+ *   disabled too.
  * - The control takes the states, and the root reads them from it. Only an invalid cell renders the
  *   group in a Field.
  * - The text is one TEXT property, `Text`, that starts as a placeholder.
@@ -29,11 +30,11 @@ import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
 
 /** The forms, Combobox's default input first, and its input while the popup is open last. */
-const FORMS = ["caret", "search", "clear", "caret open"] as const;
+const FORMS = ["caret", "search", "clear", "caret-open"] as const;
 
 /** Whether a cell shows Combobox's caret, closed or open. */
 function showsCaret(cell: Cell): boolean {
-  return cell.form === "caret" || cell.form === "caret open";
+  return cell.form === "caret" || cell.form === "caret-open";
 }
 
 /** Whether a cell's addon trails the control, as Combobox's does. */
@@ -76,7 +77,7 @@ function caretManifest(invalid: boolean, open: boolean): InstanceManifest {
     slot: "input-group-button",
     properties: () => ({ swap: { Icon: "CaretDown" } }),
     shownIn: (cell) =>
-      cell.form === (open ? "caret open" : "caret") && (cell.state === "invalid") === invalid,
+      cell.form === (open ? "caret-open" : "caret") && (cell.state === "invalid") === invalid,
   };
 }
 
@@ -88,6 +89,7 @@ function caretManifest(invalid: boolean, open: boolean): InstanceManifest {
 export const INPUT_GROUP_MANIFEST: SetManifest = {
   key: "input-group",
   name: "Input group",
+  api: { page: "input-group", parts: ["InputGroup.Root"] },
   slot: "input-group",
   statePart: "input-group-control",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,

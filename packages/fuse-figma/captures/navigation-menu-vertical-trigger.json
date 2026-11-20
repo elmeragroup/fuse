@@ -197,8 +197,8 @@
   ],
   "cells": [
     {
-    "key": "navigation-menu-vertical-trigger/state=rest,open=off",
-    "cell": {"state":"rest","open":"off"},
+    "key": "navigation-menu-vertical-trigger/state=rest,open=false",
+    "cell": {"state":"rest","open":"false"},
     "roots": [
       {
         "around": [
@@ -282,8 +282,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=rest,open=on",
-    "cell": {"state":"rest","open":"on"},
+    "key": "navigation-menu-vertical-trigger/state=rest,open=true",
+    "cell": {"state":"rest","open":"true"},
     "roots": [
       {
         "around": [
@@ -367,8 +367,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=hover,open=off",
-    "cell": {"state":"hover","open":"off"},
+    "key": "navigation-menu-vertical-trigger/state=hover,open=false",
+    "cell": {"state":"hover","open":"false"},
     "roots": [
       {
         "around": [
@@ -452,8 +452,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=hover,open=on",
-    "cell": {"state":"hover","open":"on"},
+    "key": "navigation-menu-vertical-trigger/state=hover,open=true",
+    "cell": {"state":"hover","open":"true"},
     "roots": [
       {
         "around": [
@@ -537,8 +537,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=focus,open=off",
-    "cell": {"state":"focus","open":"off"},
+    "key": "navigation-menu-vertical-trigger/state=focus,open=false",
+    "cell": {"state":"focus","open":"false"},
     "roots": [
       {
         "around": [
@@ -622,8 +622,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=focus,open=on",
-    "cell": {"state":"focus","open":"on"},
+    "key": "navigation-menu-vertical-trigger/state=focus,open=true",
+    "cell": {"state":"focus","open":"true"},
     "roots": [
       {
         "around": [
@@ -707,8 +707,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=disabled,open=off",
-    "cell": {"state":"disabled","open":"off"},
+    "key": "navigation-menu-vertical-trigger/state=disabled,open=false",
+    "cell": {"state":"disabled","open":"false"},
     "roots": [
       {
         "around": [
@@ -792,8 +792,8 @@
     ]
   },
     {
-    "key": "navigation-menu-vertical-trigger/state=disabled,open=on",
-    "cell": {"state":"disabled","open":"on"},
+    "key": "navigation-menu-vertical-trigger/state=disabled,open=true",
+    "cell": {"state":"disabled","open":"true"},
     "roots": [
       {
         "around": [

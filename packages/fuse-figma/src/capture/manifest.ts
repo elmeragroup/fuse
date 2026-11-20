@@ -1,9 +1,10 @@
 /**
  * A set's manifest: the intent the capture-backed build reads beside the capture. A manifest is an
  * allowlist. It names the props matrix, the sample content and the host it renders in, the property
- * names, the instance boundaries and keys, and the valid state combinations; for an open composite,
- * the elements its cells measure and the placement props its component declares. It holds no CSS
- * knowledge: no classes, no selectors, no layout values, no facts and no omissions, since the
+ * names, the instance boundaries and keys, and the valid state combinations, by naming the ones the
+ * component cannot show and the Fuse or Base UI behavior that rules each out. For an open composite
+ * it names the elements its cells measure and the placement props its component declares. It holds
+ * no CSS knowledge: no classes, no selectors, no layout values, no facts and no omissions, since the
  * capture holds what the browser made of them.
  *
  * Each manifest type below lists its fields, and {@link MANIFEST_FIELDS} lists the same fields by
@@ -14,6 +15,7 @@ import type {
   Cell,
   ComponentDefinition,
   IconSlot,
+  ImpossibleCells,
   InstanceDefinition,
   InstanceProperties,
   PartDefinition,
@@ -100,7 +102,19 @@ export type InstanceManifest = {
 };
 
 /**
- * A component set's manifest: its key and name, its root's `data-slot`, its props matrix, the parts
+ * The Fuse parts a set draws: its component's docs page, whose generated API reference is
+ * `apps/docs/src/app/(docs)/components/<page>/api.json`, and the parts whose props an axis of the set
+ * may mirror, the root's as well where a prop on the root shows on the part, as Select's `open` shows
+ * on its trigger.
+ */
+export type FuseParts = {
+  readonly page: string;
+  readonly parts: readonly [string, ...string[]];
+};
+
+/**
+ * A component set's manifest: its key and name, the Fuse parts it draws, its root's `data-slot`, its props matrix and the
+ * combinations it rules out, the parts
  * its states land on, the size of the host its sample renders in, its INSTANCE_SWAP properties, and
  * what it shows. An open composite adds the `data-slot` of each element its cells measure, and an
  * anchored one its component's `sideOffset`, as the component's `api.json` declares its default, and
@@ -109,9 +123,16 @@ export type InstanceManifest = {
 export type SetManifest = BoxManifest & {
   readonly key: string;
   readonly name: string;
+  readonly api: FuseParts;
   readonly slot: string;
   readonly elementSlot?: (cell: Cell) => string;
   readonly axes: readonly AxisSpec[];
+  /**
+   * The axis values no state of the component can show together, each with the Fuse or Base UI fact
+   * that rules it out. The set leaves those cells out, so it holds only the states the component
+   * reaches.
+   */
+  readonly impossible?: readonly ImpossibleCells[];
   readonly addedAxes?: ReadonlySet<string>;
   readonly columnAxis: string;
   readonly statePart?: string;
@@ -162,9 +183,11 @@ export const MANIFEST_FIELDS = {
   set: [
     "key",
     "name",
+    "api",
     "slot",
     "elementSlot",
     "axes",
+    "impossible",
     "addedAxes",
     "columnAxis",
     "statePart",
@@ -232,6 +255,7 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     union: _union,
     sideOffset,
     alignItemWithTrigger: _alignItemWithTrigger,
+    api: _api,
     ...rest
   } = manifest;
   const plain: ComponentDefinition = { ...rest, ...boxDefinition(manifest) };

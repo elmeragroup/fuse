@@ -33,6 +33,7 @@ const INPUT_LABEL: LabelManifest = {
 export const INPUT_MANIFEST: SetManifest = {
   key: "input",
   name: "Input",
+  api: { page: "input", parts: ["Input"] },
   slot: "input",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: FIELD_BOX_AXES,

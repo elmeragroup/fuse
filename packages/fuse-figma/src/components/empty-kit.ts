@@ -178,6 +178,7 @@ const CONTENT_MANIFEST: PartManifest = {
 export const EMPTY_MANIFEST: SetManifest = {
   key: "empty",
   name: "Empty",
+  api: { page: "empty", parts: ["Empty.Root"] },
   slot: "empty",
   axes: [{ name: "variant", values: VARIANTS }],
   columnAxis: "variant",

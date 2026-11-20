@@ -1324,8 +1324,8 @@
     ]
   },
     {
-    "key": "input-group/form=caret open,state=rest",
-    "cell": {"form":"caret open","state":"rest"},
+    "key": "input-group/form=caret-open,state=rest",
+    "cell": {"form":"caret-open","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1423,8 +1423,8 @@
     ]
   },
     {
-    "key": "input-group/form=caret open,state=focus",
-    "cell": {"form":"caret open","state":"focus"},
+    "key": "input-group/form=caret-open,state=focus",
+    "cell": {"form":"caret-open","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1522,8 +1522,8 @@
     ]
   },
     {
-    "key": "input-group/form=caret open,state=disabled",
-    "cell": {"form":"caret open","state":"disabled"},
+    "key": "input-group/form=caret-open,state=disabled",
+    "cell": {"form":"caret-open","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1621,8 +1621,8 @@
     ]
   },
     {
-    "key": "input-group/form=caret open,state=invalid",
-    "cell": {"form":"caret open","state":"invalid"},
+    "key": "input-group/form=caret-open,state=invalid",
+    "cell": {"form":"caret-open","state":"invalid"},
     "roots": [
       {
         "around": [

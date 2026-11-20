@@ -6,6 +6,7 @@
  */
 
 import type { CellAccounting } from "../capture/capture-cascade.ts";
+import { KitUnmappable } from "./build-errors.ts";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
 import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, SwapPropertySpec } from "./kit-spec";
@@ -300,6 +301,12 @@ export type ComponentDefinition = BoxDefinition & {
   readonly rootOverflow?: "visible";
   readonly axes: readonly AxisSpec[];
   /**
+   * The axis values the component cannot show together, each with the fact that rules it out. The
+   * set holds no cell with all of one combination's values. Undefined for a set that holds its whole
+   * matrix.
+   */
+  readonly impossible?: readonly ImpossibleCells[];
+  /**
    * The axes added to the set after a file first held it, as Select trigger gained `width`. Each
    * leaves its first value out of the variant key, so the variants the set held before keep their
    * keys and the plugin renames them in place to name the new axis. A real file kept each renamed
@@ -370,9 +377,75 @@ export function variantKey(
 }
 
 /** Every cell of the matrix, the first axis varying slowest. */
-export function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
+function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
   return axes.reduce<Cell[]>(
     (cells, axis) => cells.flatMap((cell) => axis.values.map((value) => ({ ...cell, [axis.name]: value }))),
     [{}]
   );
+}
+
+/**
+ * Axis values no state of the component can show together, and the Fuse or Base UI fact that rules
+ * them out, as Base UI's Select opens on no press while it is disabled. Every cell that holds each
+ * value `where` names is left out of the set.
+ */
+export type ImpossibleCells = {
+  readonly where: Cell;
+  readonly fact: string;
+};
+
+/** A set's axes and the combinations of their values it rules out. */
+type SparseMatrix = {
+  readonly axes: readonly AxisSpec[];
+  readonly impossible?: readonly ImpossibleCells[];
+};
+
+/**
+ * Whether the component can show a cell: whether the cell holds no combination the set rules out.
+ *
+ * @param set - The set's axes, and the combinations it rules out.
+ * @param cell - The cell.
+ * @returns False where the cell holds every value of one of the set's `impossible` combinations.
+ */
+export function isPossible(set: SparseMatrix, cell: Cell): boolean {
+  return !(set.impossible ?? []).some(({ where }) =>
+    Object.entries(where).every(([name, value]) => cell[name] === value)
+  );
+}
+
+/**
+ * Refuse an `impossible` entry that names no axis value, or an axis or value the set does not
+ * declare. An empty entry would leave out every cell, and a misspelled one none.
+ */
+function checkImpossible(set: SparseMatrix): void {
+  for (const { where } of set.impossible ?? []) {
+    const named = Object.entries(where);
+    if (named.length === 0) {
+      throw new KitUnmappable({
+        message: "An impossible entry names no axis value, so it rules out every cell.",
+      });
+    }
+    for (const [name, value] of named) {
+      const axis = set.axes.find((each) => each.name === name);
+      if (axis === undefined || !axis.values.includes(value)) {
+        throw new KitUnmappable({
+          message: `An impossible entry names ${name}=${value}, which the set's axes do not declare.`,
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Every cell of a set's matrix that the component can show, the first axis varying slowest: the
+ * matrix without the cells its `impossible` combinations name.
+ *
+ * @param set - The set's axes, and the combinations it rules out.
+ * @returns The cells.
+ * @throws `KitUnmappable` when an `impossible` entry names no axis value, or an axis or value the
+ *   set does not declare.
+ */
+export function possibleCells(set: SparseMatrix): readonly Cell[] {
+  checkImpossible(set);
+  return matrixCells(set.axes).filter((cell) => isPossible(set, cell));
 }

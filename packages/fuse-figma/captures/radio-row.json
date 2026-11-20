@@ -216,8 +216,8 @@
   ],
   "cells": [
     {
-    "key": "radio-row/width=hug,checked=off,state=rest",
-    "cell": {"width":"hug","checked":"off","state":"rest"},
+    "key": "radio-row/width=hug,checked=false,state=rest",
+    "cell": {"width":"hug","checked":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -326,8 +326,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=off,state=focus",
-    "cell": {"width":"hug","checked":"off","state":"focus"},
+    "key": "radio-row/width=hug,checked=false,state=focus",
+    "cell": {"width":"hug","checked":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -436,8 +436,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=off,state=disabled",
-    "cell": {"width":"hug","checked":"off","state":"disabled"},
+    "key": "radio-row/width=hug,checked=false,state=disabled",
+    "cell": {"width":"hug","checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -546,8 +546,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=off,state=invalid",
-    "cell": {"width":"hug","checked":"off","state":"invalid"},
+    "key": "radio-row/width=hug,checked=false,state=invalid",
+    "cell": {"width":"hug","checked":"false","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -656,8 +656,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=on,state=rest",
-    "cell": {"width":"hug","checked":"on","state":"rest"},
+    "key": "radio-row/width=hug,checked=true,state=rest",
+    "cell": {"width":"hug","checked":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -792,8 +792,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=on,state=focus",
-    "cell": {"width":"hug","checked":"on","state":"focus"},
+    "key": "radio-row/width=hug,checked=true,state=focus",
+    "cell": {"width":"hug","checked":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -928,8 +928,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=on,state=disabled",
-    "cell": {"width":"hug","checked":"on","state":"disabled"},
+    "key": "radio-row/width=hug,checked=true,state=disabled",
+    "cell": {"width":"hug","checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1064,8 +1064,8 @@
     ]
   },
     {
-    "key": "radio-row/width=hug,checked=on,state=invalid",
-    "cell": {"width":"hug","checked":"on","state":"invalid"},
+    "key": "radio-row/width=hug,checked=true,state=invalid",
+    "cell": {"width":"hug","checked":"true","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -1200,8 +1200,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=off,state=rest",
-    "cell": {"width":"fill","checked":"off","state":"rest"},
+    "key": "radio-row/width=fill,checked=false,state=rest",
+    "cell": {"width":"fill","checked":"false","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1322,8 +1322,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=off,state=focus",
-    "cell": {"width":"fill","checked":"off","state":"focus"},
+    "key": "radio-row/width=fill,checked=false,state=focus",
+    "cell": {"width":"fill","checked":"false","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1444,8 +1444,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=off,state=disabled",
-    "cell": {"width":"fill","checked":"off","state":"disabled"},
+    "key": "radio-row/width=fill,checked=false,state=disabled",
+    "cell": {"width":"fill","checked":"false","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -1566,8 +1566,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=off,state=invalid",
-    "cell": {"width":"fill","checked":"off","state":"invalid"},
+    "key": "radio-row/width=fill,checked=false,state=invalid",
+    "cell": {"width":"fill","checked":"false","state":"invalid"},
     "roots": [
       {
         "around": [
@@ -1688,8 +1688,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=on,state=rest",
-    "cell": {"width":"fill","checked":"on","state":"rest"},
+    "key": "radio-row/width=fill,checked=true,state=rest",
+    "cell": {"width":"fill","checked":"true","state":"rest"},
     "roots": [
       {
         "around": [
@@ -1836,8 +1836,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=on,state=focus",
-    "cell": {"width":"fill","checked":"on","state":"focus"},
+    "key": "radio-row/width=fill,checked=true,state=focus",
+    "cell": {"width":"fill","checked":"true","state":"focus"},
     "roots": [
       {
         "around": [
@@ -1984,8 +1984,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=on,state=disabled",
-    "cell": {"width":"fill","checked":"on","state":"disabled"},
+    "key": "radio-row/width=fill,checked=true,state=disabled",
+    "cell": {"width":"fill","checked":"true","state":"disabled"},
     "roots": [
       {
         "around": [
@@ -2132,8 +2132,8 @@
     ]
   },
     {
-    "key": "radio-row/width=fill,checked=on,state=invalid",
-    "cell": {"width":"fill","checked":"on","state":"invalid"},
+    "key": "radio-row/width=fill,checked=true,state=invalid",
+    "cell": {"width":"fill","checked":"true","state":"invalid"},
     "roots": [
       {
         "around": [

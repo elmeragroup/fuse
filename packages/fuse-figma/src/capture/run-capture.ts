@@ -36,7 +36,8 @@ import {
 } from "../compare/preview-page.ts";
 import type { CellContent } from "../compare/preview-page.ts";
 import type { PreviewTheme } from "../compare/preview-theme.ts";
-import { matrixCells, variantKey } from "../components/component-spec.ts";
+import { possibleCells, variantKey } from "../components/component-spec.ts";
+import type { ImpossibleCells } from "../components/component-spec.ts";
 import type { AxisSpec } from "../components/kit-spec.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH, CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
 import type {
@@ -78,6 +79,8 @@ export type CaptureTarget = {
   /** The `data-slot` the root carries in a cell where it is not `slot`, as a family stamps its own. */
   readonly elementSlot?: (cell: Readonly<Record<string, string>>) => string;
   readonly axes: readonly AxisSpec[];
+  /** The axis values the component cannot show together, whose cells the capture leaves out. */
+  readonly impossible?: readonly ImpossibleCells[];
   readonly addedAxes?: ReadonlySet<string>;
   readonly statePart?: string;
   /** The place of the element that takes the set's states, as the manifest's `statePlace` says. */
@@ -921,7 +924,7 @@ export const captureSet = Effect.fn("captureSet")(function* (
       )
     );
   }
-  const cells: readonly PlannedCell[] = matrixCells(target.axes).map((cell, index) => ({
+  const cells: readonly PlannedCell[] = possibleCells(target).map((cell, index) => ({
     cell,
     key: variantKey(target, cell),
     request: requestOf(target, renderer, cell, index),

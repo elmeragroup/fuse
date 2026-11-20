@@ -1,7 +1,7 @@
 /**
  * The renderer of the `toggle` and `icon-toggle` sets: each cell as the real Fuse `<Toggle>`.
  *
- * - `pressed=on` sets `defaultPressed`, and `disabled` sets `disabled`. The page renders static
+ * - `pressed=true` sets `defaultPressed`, and `disabled` sets `disabled`. The page renders static
  *   HTML, so the state the markup draws is the one the props start with.
  * - `icon=start` places `<Star data-icon="inline-start" />` before the label, and `icon=end`
  *   places `<Star data-icon="inline-end" />` after it, the icons the kit's swap properties
@@ -44,7 +44,7 @@ function toggleProps(cell: Cell) {
   return {
     variant,
     size,
-    defaultPressed: cell.pressed === "on",
+    defaultPressed: cell.pressed === "true",
     disabled: cell.state === "disabled",
   };
 }

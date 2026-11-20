@@ -7,7 +7,7 @@
  *   collapse demo's five rows, `Orders` active, each a `Sidebar menu button` instance that fills the
  *   menu column, expanded and collapsed to the icon rail, 2 cells. Collapsed, the label fades out and
  *   the rows move up by its height, so it draws in no layer, and each row is the menu button's
- *   `collapsed=on` variant.
+ *   `collapsed=true` variant.
  * - `Sidebar header`: `Sidebar.Header` holding the app frame demo's `Sidebar.Input`, an `Input`
  *   instance showing `Search orders`, expanded and collapsed, 2 cells.
  * - `Sidebar footer`: `Sidebar.Footer` holding a menu of one large menu button, as the landing
@@ -70,10 +70,10 @@ export const SIDEBAR_SUB_ROWS = [
 /** The rich menu demo's row that holds the first badge. */
 export const SIDEBAR_BADGE_ROW = { label: "Orders", icon: "Package" } as const;
 
-const collapsed = (cell: Cell): boolean => cell.collapsed === "on";
+const collapsed = (cell: Cell): boolean => cell.collapsed === "true";
 
 /** The axis a section's cells take: expanded and collapsed to the icon rail. */
-const COLLAPSED_AXES = [{ name: "collapsed", values: ["off", "on"] }];
+const COLLAPSED_AXES = [{ name: "collapsed", values: ["false", "true"] }];
 
 /** A menu row's label and icon, and its size and whether it is active where they are not the defaults. */
 type MenuRow = {
@@ -88,8 +88,8 @@ function menuButtonCell(outer: Cell, size: string, active: boolean): Cell {
   return {
     variant: "default",
     size,
-    collapsed: outer.collapsed ?? "off",
-    active: active || outer.active === "on" ? "on" : "off",
+    collapsed: outer.collapsed ?? "false",
+    isActive: active || outer.isActive === "true" ? "true" : "false",
     state: "rest",
   };
 }
@@ -141,6 +141,7 @@ function groupLabelManifest(rail: boolean): InstanceManifest {
 export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
   key: "sidebar-group",
   name: "Sidebar group",
+  api: { page: "sidebar", parts: ["Sidebar.Group"] },
   slot: "sidebar-group",
   axes: COLLAPSED_AXES,
   columnAxis: "collapsed",
@@ -168,6 +169,7 @@ export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
 export const SIDEBAR_HEADER_MANIFEST: SetManifest = {
   key: "sidebar-header",
   name: "Sidebar header",
+  api: { page: "sidebar", parts: ["Sidebar.Header"] },
   slot: "sidebar-header",
   axes: COLLAPSED_AXES,
   columnAxis: "collapsed",
@@ -192,6 +194,7 @@ export const SIDEBAR_HEADER_MANIFEST: SetManifest = {
 export const SIDEBAR_FOOTER_MANIFEST: SetManifest = {
   key: "sidebar-footer",
   name: "Sidebar footer",
+  api: { page: "sidebar", parts: ["Sidebar.Footer"] },
   slot: "sidebar-footer",
   axes: COLLAPSED_AXES,
   columnAxis: "collapsed",
@@ -211,6 +214,7 @@ export const SIDEBAR_FOOTER_MANIFEST: SetManifest = {
 export const SIDEBAR_MENU_SUB_MANIFEST: SetManifest = {
   key: "sidebar-menu-sub",
   name: "Sidebar sub menu",
+  api: { page: "sidebar", parts: ["Sidebar.MenuSub"] },
   slot: "sidebar-menu-sub",
   axes: [{ name: "rows", values: [String(SIDEBAR_SUB_ROWS.length)] }],
   columnAxis: "rows",
@@ -222,7 +226,7 @@ export const SIDEBAR_MENU_SUB_MANIFEST: SetManifest = {
         kind: "instance",
         key: "button",
         of: SIDEBAR_MENU_SUB_BUTTON_MANIFEST,
-        cell: () => ({ size, active: active ? "on" : "off", state: "rest" }),
+        cell: () => ({ size, isActive: active ? "true" : "false", state: "rest" }),
         properties: () => ({ text: { Label: label } }),
         shownIn: always,
         exposed: true,
@@ -239,9 +243,10 @@ export const SIDEBAR_MENU_SUB_MANIFEST: SetManifest = {
 export const SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST: SetManifest = {
   key: "sidebar-menu-item-with-badge",
   name: "Sidebar menu item with badge",
+  api: { page: "sidebar", parts: ["Sidebar.MenuItem", "Sidebar.MenuButton"] },
   slot: "sidebar-menu-item",
-  axes: [{ name: "active", values: ["off", "on"] }],
-  columnAxis: "active",
+  axes: [{ name: "isActive", values: ["false", "true"] }],
+  columnAxis: "isActive",
   label: undefined,
   iconsFor: () => [],
   parts: [
@@ -250,7 +255,7 @@ export const SIDEBAR_MENU_ITEM_WITH_BADGE_MANIFEST: SetManifest = {
       kind: "instance",
       key: "badge",
       of: SIDEBAR_MENU_BADGE_MANIFEST,
-      cell: (outer) => ({ state: outer.active === "on" ? "active" : "rest" }),
+      cell: (outer) => ({ state: outer.isActive === "true" ? "active" : "rest" }),
       shownIn: always,
       exposed: true,
     },

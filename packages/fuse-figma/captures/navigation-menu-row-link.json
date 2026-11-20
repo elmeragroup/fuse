@@ -159,8 +159,8 @@
   ],
   "cells": [
     {
-    "key": "navigation-menu-row-link/state=rest,active=off",
-    "cell": {"state":"rest","active":"off"},
+    "key": "navigation-menu-row-link/state=rest,active=false",
+    "cell": {"state":"rest","active":"false"},
     "roots": [
       {
         "around": [
@@ -231,8 +231,8 @@
     ]
   },
     {
-    "key": "navigation-menu-row-link/state=rest,active=on",
-    "cell": {"state":"rest","active":"on"},
+    "key": "navigation-menu-row-link/state=rest,active=true",
+    "cell": {"state":"rest","active":"true"},
     "roots": [
       {
         "around": [
@@ -303,8 +303,8 @@
     ]
   },
     {
-    "key": "navigation-menu-row-link/state=hover,active=off",
-    "cell": {"state":"hover","active":"off"},
+    "key": "navigation-menu-row-link/state=hover,active=false",
+    "cell": {"state":"hover","active":"false"},
     "roots": [
       {
         "around": [
@@ -375,8 +375,8 @@
     ]
   },
     {
-    "key": "navigation-menu-row-link/state=hover,active=on",
-    "cell": {"state":"hover","active":"on"},
+    "key": "navigation-menu-row-link/state=hover,active=true",
+    "cell": {"state":"hover","active":"true"},
     "roots": [
       {
         "around": [
@@ -447,8 +447,8 @@
     ]
   },
     {
-    "key": "navigation-menu-row-link/state=focus,active=off",
-    "cell": {"state":"focus","active":"off"},
+    "key": "navigation-menu-row-link/state=focus,active=false",
+    "cell": {"state":"focus","active":"false"},
     "roots": [
       {
         "around": [
@@ -519,8 +519,8 @@
     ]
   },
     {
-    "key": "navigation-menu-row-link/state=focus,active=on",
-    "cell": {"state":"focus","active":"on"},
+    "key": "navigation-menu-row-link/state=focus,active=true",
+    "cell": {"state":"focus","active":"true"},
     "roots": [
       {
         "around": [

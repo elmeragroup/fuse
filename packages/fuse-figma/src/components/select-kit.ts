@@ -22,7 +22,7 @@ import { MENU_CHECK, MENU_GROUP_LABEL_MANIFEST, MENU_SEPARATOR_MANIFEST } from "
 import { always } from "./popup-facts";
 import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 
-const isSelected = (cell: Cell): boolean => cell.selected === "on";
+const isSelected = (cell: Cell): boolean => cell.selected === "true";
 
 /** The text every row cell shows, the default of its `Label` property: the docs Basic demo's first row. */
 export const SELECT_ITEM_TEXT = "Apple";
@@ -73,9 +73,10 @@ const ITEM_PARTS: readonly PartManifest[] = [
 export const SELECT_ITEM_MANIFEST: SetManifest = {
   key: "select-item",
   name: "Select item",
+  api: { page: "select", parts: ["Select.Item"] },
   slot: "select-item",
   axes: [
-    { name: "selected", values: ["off", "on"] },
+    { name: "selected", values: ["false", "true"] },
     { name: "state", values: ["rest", "highlighted", "disabled"] },
   ],
   columnAxis: "state",
@@ -94,7 +95,7 @@ function rowManifest(label: string, shownIn: (cell: Cell) => boolean): InstanceM
     kind: "instance",
     key: `item-${label.toLowerCase()}`,
     of: SELECT_ITEM_MANIFEST,
-    cell: () => ({ selected: "off", state: "rest" }),
+    cell: () => ({ selected: "false", state: "rest" }),
     properties: () => ({ text: { Label: label } }),
     shownIn,
     exposed: true,
@@ -138,7 +139,7 @@ const LIST_MANIFEST: PartManifest = {
       kind: "instance",
       key: "separator",
       of: MENU_SEPARATOR_MANIFEST,
-      cell: () => ({ size: "default" }),
+      cell: () => ({ orientation: "horizontal" }),
       shownIn: isGrouped,
     };
     return [
@@ -155,6 +156,7 @@ const LIST_MANIFEST: PartManifest = {
 export const SELECT_POPUP_MANIFEST: SetManifest = {
   key: "select-popup",
   name: "Select popup",
+  api: { page: "select", parts: ["Select.Content"] },
   slot: "select-content",
   axes: [{ name: "content", values: ["flat", "grouped"] }],
   columnAxis: "content",
@@ -173,9 +175,10 @@ export const SELECT_POPUP_MANIFEST: SetManifest = {
 export const SELECT_OPEN_MANIFEST: SetManifest = {
   key: "select-open",
   name: "Select (open)",
+  api: { page: "select", parts: ["Select.Trigger", "Select.Content"] },
   slot: "select-open",
   axes: [
-    { name: "placement", values: ["below"] },
+    { name: "side", values: ["bottom"] },
     { name: "size", values: ["default", "sm"] },
   ],
   columnAxis: "size",
@@ -194,7 +197,7 @@ export const SELECT_OPEN_MANIFEST: SetManifest = {
         size: outer.size ?? "",
         state: "rest",
         content: "placeholder",
-        open: "on",
+        open: "true",
       }),
       shownIn: always,
     },

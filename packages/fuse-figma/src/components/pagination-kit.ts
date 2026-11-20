@@ -117,8 +117,9 @@ export const PAGINATION_ROW_PAGES = [PAGINATION_LINK_LABEL, "2", "3"] as const;
 export const PAGINATION_LINK_MANIFEST: SetManifest = {
   key: "pagination-link",
   name: "Pagination link",
+  api: { page: "pagination", parts: ["Pagination.Link"] },
   slot: "pagination-link",
-  axes: [{ name: "current", values: ["off", "on"] }, STATE_AXIS],
+  axes: [{ name: "isActive", values: ["false", "true"] }, STATE_AXIS],
   columnAxis: "state",
   label: LINK_LABEL,
   iconsFor: () => [],
@@ -134,6 +135,7 @@ export const PAGINATION_LINK_MANIFEST: SetManifest = {
 export const PAGINATION_EDGE_MANIFEST: SetManifest = {
   key: "pagination-edge",
   name: "Pagination edge",
+  api: { page: "pagination", parts: ["Pagination.Previous", "Pagination.Next"] },
   slot: "pagination-edge",
   elementSlot: (cell) => `pagination-${directionOf(cell)}`,
   axes: [{ name: "direction", values: ["previous", "next"] }, STATE_AXIS],
@@ -150,15 +152,17 @@ export const PAGINATION_EDGE_MANIFEST: SetManifest = {
 
 /**
  * The ellipsis's manifest, which the capture-backed build reads with
- * `captures/pagination-ellipsis.json`: `<Pagination.Ellipsis />`. The component takes no variant
- * props, so the set's one property, `size`, names the md control square it fills.
+ * `captures/pagination-ellipsis.json`: `<Pagination.Ellipsis />`, the md control square. The
+ * component takes no variant props, and the set has one static cell, so its one property is
+ * `state=rest`.
  */
 export const PAGINATION_ELLIPSIS_MANIFEST: SetManifest = {
   key: "pagination-ellipsis",
   name: "Pagination ellipsis",
+  api: { page: "pagination", parts: ["Pagination.Ellipsis"] },
   slot: "pagination-ellipsis",
-  axes: [{ name: "size", values: ["md"] }],
-  columnAxis: "size",
+  axes: [{ name: "state", values: ["rest"] }],
+  columnAxis: "state",
   label: undefined,
   iconsFor: () => [DOTS],
   swapProperties: [],
@@ -197,7 +201,7 @@ function pageManifest(number: string, current: boolean): InstanceManifest {
     kind: "instance",
     key: `page-${number}`,
     of: PAGINATION_LINK_MANIFEST,
-    cell: () => ({ current: current ? "on" : "off", state: "rest" }),
+    cell: () => ({ isActive: current ? "true" : "false", state: "rest" }),
     properties: () => ({ text: { Label: number } }),
     shownIn: () => true,
     exposed: true,
@@ -213,6 +217,7 @@ function pageManifest(number: string, current: boolean): InstanceManifest {
 export const PAGINATION_ROW_MANIFEST: SetManifest = {
   key: "pagination-row",
   name: "Pagination row",
+  api: { page: "pagination", parts: ["Pagination.Root"] },
   slot: "pagination",
   axes: [{ name: "pages", values: ["3"] }],
   columnAxis: "pages",

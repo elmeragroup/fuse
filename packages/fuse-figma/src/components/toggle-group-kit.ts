@@ -27,7 +27,7 @@ function itemCell(entry: (typeof TOGGLE_GROUP_ITEMS)[number], outer: Cell): Cell
     variant: outer.variant ?? "default",
     size: outer.size ?? "default",
     state: "rest",
-    pressed: entry.pressed ? "on" : "off",
+    pressed: entry.pressed ? "true" : "false",
     icon: "none",
   };
 }
@@ -53,6 +53,7 @@ function itemManifest(entry: (typeof TOGGLE_GROUP_ITEMS)[number]): InstanceManif
 export const TOGGLE_GROUP_MANIFEST: SetManifest = {
   key: "toggle-group",
   name: "Toggle group",
+  api: { page: "toggle-group", parts: ["ToggleGroup.Root"] },
   slot: "toggle-group",
   axes: TOGGLE_MANIFEST.axes.filter((axis) => axis.name === "variant" || axis.name === "size"),
   columnAxis: "size",

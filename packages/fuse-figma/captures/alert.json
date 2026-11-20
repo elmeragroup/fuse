@@ -234,8 +234,8 @@
   ],
   "cells": [
     {
-    "key": "alert/variant=default,described=off",
-    "cell": {"variant":"default","described":"off"},
+    "key": "alert/variant=default,described=false",
+    "cell": {"variant":"default","described":"false"},
     "roots": [
       {
         "around": [
@@ -347,8 +347,8 @@
     ]
   },
     {
-    "key": "alert/variant=default,described=on",
-    "cell": {"variant":"default","described":"on"},
+    "key": "alert/variant=default,described=true",
+    "cell": {"variant":"default","described":"true"},
     "roots": [
       {
         "around": [
@@ -473,8 +473,8 @@
     ]
   },
     {
-    "key": "alert/variant=destructive,described=off",
-    "cell": {"variant":"destructive","described":"off"},
+    "key": "alert/variant=destructive,described=false",
+    "cell": {"variant":"destructive","described":"false"},
     "roots": [
       {
         "around": [
@@ -586,8 +586,8 @@
     ]
   },
     {
-    "key": "alert/variant=destructive,described=on",
-    "cell": {"variant":"destructive","described":"on"},
+    "key": "alert/variant=destructive,described=true",
+    "cell": {"variant":"destructive","described":"true"},
     "roots": [
       {
         "around": [
@@ -712,8 +712,8 @@
     ]
   },
     {
-    "key": "alert/variant=warning,described=off",
-    "cell": {"variant":"warning","described":"off"},
+    "key": "alert/variant=warning,described=false",
+    "cell": {"variant":"warning","described":"false"},
     "roots": [
       {
         "around": [
@@ -825,8 +825,8 @@
     ]
   },
     {
-    "key": "alert/variant=warning,described=on",
-    "cell": {"variant":"warning","described":"on"},
+    "key": "alert/variant=warning,described=true",
+    "cell": {"variant":"warning","described":"true"},
     "roots": [
       {
         "around": [
@@ -951,8 +951,8 @@
     ]
   },
     {
-    "key": "alert/variant=success,described=off",
-    "cell": {"variant":"success","described":"off"},
+    "key": "alert/variant=success,described=false",
+    "cell": {"variant":"success","described":"false"},
     "roots": [
       {
         "around": [
@@ -1064,8 +1064,8 @@
     ]
   },
     {
-    "key": "alert/variant=success,described=on",
-    "cell": {"variant":"success","described":"on"},
+    "key": "alert/variant=success,described=true",
+    "cell": {"variant":"success","described":"true"},
     "roots": [
       {
         "around": [
@@ -1190,8 +1190,8 @@
     ]
   },
     {
-    "key": "alert/variant=info,described=off",
-    "cell": {"variant":"info","described":"off"},
+    "key": "alert/variant=info,described=false",
+    "cell": {"variant":"info","described":"false"},
     "roots": [
       {
         "around": [
@@ -1303,8 +1303,8 @@
     ]
   },
     {
-    "key": "alert/variant=info,described=on",
-    "cell": {"variant":"info","described":"on"},
+    "key": "alert/variant=info,described=true",
+    "cell": {"variant":"info","described":"true"},
     "roots": [
       {
         "around": [

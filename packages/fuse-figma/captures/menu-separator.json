@@ -123,8 +123,8 @@
   ],
   "cells": [
     {
-    "key": "menu-separator/size=default",
-    "cell": {"size":"default"},
+    "key": "menu-separator/orientation=horizontal",
+    "cell": {"orientation":"horizontal"},
     "roots": [
       {
         "around": [

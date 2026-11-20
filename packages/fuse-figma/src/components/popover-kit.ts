@@ -68,6 +68,7 @@ function fieldManifest(label: string): PartManifest {
 export const POPOVER_CONTENT_MANIFEST: SetManifest = {
   key: "popover-content",
   name: "Popover content",
+  api: { page: "popover", parts: ["Popover.Content"] },
   slot: "popover-content",
   axes: [{ name: "content", values: ["basic"] }],
   columnAxis: "content",
@@ -122,9 +123,10 @@ export const POPOVER_CONTENT_MANIFEST: SetManifest = {
 export const POPOVER_OPEN_MANIFEST: SetManifest = {
   key: "popover-open",
   name: "Popover (open)",
+  api: { page: "popover", parts: ["Popover.Content"] },
   slot: "popover-open",
-  axes: [{ name: "placement", values: ["below"] }],
-  columnAxis: "placement",
+  axes: [{ name: "side", values: ["bottom"] }],
+  columnAxis: "side",
   union: ["popover-trigger", "popover-content"],
   sideOffset: 4,
   label: undefined,

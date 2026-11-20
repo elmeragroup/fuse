@@ -4,7 +4,7 @@
  * which the root and the item fill as blocks. The item holds the docs Basic demo's first trigger
  * and panel.
  *
- * - `open=on` names the item in the root's `defaultValue`, so Base UI opens it without interaction:
+ * - `open=true` names the item in the root's `defaultValue`, so Base UI opens it without interaction:
  *   it marks the trigger `data-panel-open` and `aria-expanded="true"`, and mounts the panel with
  *   `--accordion-panel-height: auto`. A closed item renders no panel.
  * - `disabled` sets the item's `disabled`, which Base UI passes to the trigger as the native

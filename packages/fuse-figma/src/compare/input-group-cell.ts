@@ -8,7 +8,7 @@
  *   clear button for while the input stays empty. Each passes `w-full`, which replaces Combobox's
  *   `w-auto`: the set draws `InputGroup.Root` as it is, and the composites that hold it pass
  *   Combobox's own classes.
- * - `form=caret open` renders `form=caret` in a `defaultOpen` root, so Base UI stamps the caret trigger
+ * - `form=caret-open` renders `form=caret` in a `defaultOpen` root, so Base UI stamps the caret trigger
  *   open. The popup portals in an effect, which static markup never runs, so the cell shows the input
  *   alone.
  * - `form=search` renders the parts `Command.Input` composes, `InputGroup.Root` around an
@@ -59,8 +59,8 @@ function group(cell: Cell): ReactElement {
       createElement(Combobox.Input, { ...input, showClear: true, showTrigger: false })
     );
   }
-  // `form=caret open` opens the Combobox, whose popup portals nowhere in static markup.
-  const defaultOpen = cell.form === "caret open";
+  // `form=caret-open` opens the Combobox, whose popup portals nowhere in static markup.
+  const defaultOpen = cell.form === "caret-open";
   return createElement(
     Combobox.Root,
     { items: ITEMS, disabled, defaultOpen },

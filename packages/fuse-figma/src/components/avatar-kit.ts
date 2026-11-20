@@ -93,6 +93,7 @@ const AVATAR_PARTS: readonly PartManifest[] = [
 export const AVATAR_MANIFEST: SetManifest = {
   key: "avatar",
   name: "Avatar",
+  api: { page: "avatar", parts: ["Avatar.Root"] },
   slot: "avatar",
   axes: [
     { name: "content", values: ["fallback", "image"] },
@@ -137,6 +138,7 @@ function memberManifest(initials: string): InstanceManifest {
 export const AVATAR_GROUP_MANIFEST: SetManifest = {
   key: "avatar-group",
   name: "Avatar group",
+  api: { page: "avatar", parts: ["Avatar.Group"] },
   slot: "avatar-group",
   axes: [{ name: "avatars", values: [String(AVATAR_GROUP_INITIALS.length)] }],
   columnAxis: "avatars",

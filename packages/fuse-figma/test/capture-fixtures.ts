@@ -215,6 +215,7 @@ export function chip(fields: Partial<SetManifest> = {}): SetManifest {
   return {
     key: "chip",
     name: "Chip",
+    api: { page: "chip", parts: ["Chip"] },
     slot: "chip",
     axes: [{ name: "state", values: ["rest"] }],
     columnAxis: "state",

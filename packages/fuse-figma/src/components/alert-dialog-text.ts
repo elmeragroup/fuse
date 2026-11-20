@@ -1,8 +1,7 @@
 /**
  * The docs Alert dialog demos' copy, free of imports for the client bundle, which
  * `alert-dialog-kit.ts` draws and `compare/alert-dialog-cell.ts` renders: the Destructive demo's for
- * the destructive and pending cells, since that demo goes pending while it deletes, and the Neutral
- * demo's for the neutral cell.
+ * the destructive cells and the Neutral demo's for the neutral ones.
  */
 
 /** The copy of one Alert dialog cell. */

@@ -227,8 +227,8 @@
   ],
   "cells": [
     {
-    "key": "select-open/placement=below,size=default",
-    "cell": {"placement":"below","size":"default"},
+    "key": "select-open/side=bottom,size=default",
+    "cell": {"side":"bottom","size":"default"},
     "roots": [
       {
         "around": [
@@ -460,8 +460,8 @@
     ]
   },
     {
-    "key": "select-open/placement=below,size=sm",
-    "cell": {"placement":"below","size":"sm"},
+    "key": "select-open/side=bottom,size=sm",
+    "cell": {"side":"bottom","size":"sm"},
     "roots": [
       {
         "around": [

@@ -43,7 +43,7 @@ export function builtKit(): Promise<BuiltSets> {
  * The root of one variant.
  *
  * @param spec - The built component sets.
- * @param key - The variant's key, such as `checkbox/checked=on,state=rest`.
+ * @param key - The variant's key, such as `checkbox/checked=true,indeterminate=false,state=rest`.
  * @returns The variant's root.
  * @throws When the kit has no such variant.
  */

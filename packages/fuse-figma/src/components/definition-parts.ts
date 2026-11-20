@@ -10,7 +10,7 @@ import type {
   InstanceDefinition,
   PartDefinition,
 } from "./component-spec";
-import { matrixCells } from "./component-spec";
+import { possibleCells } from "./component-spec";
 
 /**
  * The frame parts directly below a box.
@@ -90,12 +90,12 @@ function renderedRootSlots(
   definition: ComponentDefinition,
   definitions: readonly ComponentDefinition[]
 ): ReadonlySet<string> {
-  const own = matrixCells(definition.axes).map((cell) => rootSlotOf(definition, cell));
+  const own = possibleCells(definition).map((cell) => rootSlotOf(definition, cell));
   const stamped = definitions.flatMap((outer) =>
     instancePartsOf(outer)
       .filter((part) => part.of.key === definition.key)
       .flatMap((part) =>
-        matrixCells(outer.axes)
+        possibleCells(outer)
           .filter((cell) => part.shownIn(cell))
           .flatMap((cell) => instanceRootSlotOf(part, part.cell(cell)) ?? [])
       )

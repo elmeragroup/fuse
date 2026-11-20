@@ -61,6 +61,7 @@ export function linkLooks(cell: Cell): LinkLooks {
 export const LINK_MANIFEST: SetManifest = {
   key: "link",
   name: "Link",
+  api: { page: "link", parts: ["Link"] },
   slot: "link",
   axes: [
     { name: "variant", values: VARIANTS },

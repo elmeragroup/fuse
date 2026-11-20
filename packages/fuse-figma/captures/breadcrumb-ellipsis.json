@@ -150,8 +150,8 @@
   ],
   "cells": [
     {
-    "key": "breadcrumb-ellipsis/size=20",
-    "cell": {"size":"20"},
+    "key": "breadcrumb-ellipsis/state=rest",
+    "cell": {"state":"rest"},
     "roots": [
       {
         "around": [

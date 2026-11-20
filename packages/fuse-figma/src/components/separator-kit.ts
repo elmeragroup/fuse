@@ -19,6 +19,7 @@ export const DEMO_LENGTHS = "data-horizontal:w-64 data-vertical:h-4 data-vertica
 export const SEPARATOR_MANIFEST: SetManifest = {
   key: "separator",
   name: "Separator",
+  api: { page: "separator", parts: ["Separator"] },
   slot: "separator",
   axes: [{ name: "orientation", values: ["horizontal", "vertical"] }],
   columnAxis: "orientation",

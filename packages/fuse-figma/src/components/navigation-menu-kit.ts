@@ -55,20 +55,20 @@ export const NAVIGATION_MENU_ROW_LINK_WIDTH = 256;
  * Whether a cell shows the trigger's popup open.
  *
  * @param cell - A trigger cell.
- * @returns True at `open=on`.
+ * @returns True at `open=true`.
  */
 export function showsOpen(cell: Cell): boolean {
-  return cell.open === "on";
+  return cell.open === "true";
 }
 
 /**
  * Whether a cell shows the link of the current page.
  *
  * @param cell - A link cell.
- * @returns True at `active=on`.
+ * @returns True at `active=true`.
  */
 export function showsActive(cell: Cell): boolean {
-  return cell.active === "on";
+  return cell.active === "true";
 }
 
 /** The CaretDown a trigger renders after its label. */
@@ -85,13 +85,13 @@ const CARET: IconManifest = {
 /** A trigger's axes: four states, closed and open. */
 const TRIGGER_AXES = [
   { name: "state", values: ["rest", "hover", "focus", "disabled"] },
-  { name: "open", values: ["off", "on"] },
+  { name: "open", values: ["false", "true"] },
 ];
 
 /** A link's axes: three states, inactive and active. */
 const LINK_AXES = [
   { name: "state", values: ["rest", "hover", "focus"] },
-  { name: "active", values: ["off", "on"] },
+  { name: "active", values: ["false", "true"] },
 ];
 
 /** A label holding its text in every cell, the default of the set's `Label` property. */
@@ -103,6 +103,7 @@ function textManifest(characters: string): LabelManifest {
 export const NAVIGATION_MENU_BAR_TRIGGER_MANIFEST: SetManifest = {
   key: "navigation-menu-bar-trigger",
   name: "Navigation menu bar trigger",
+  api: { page: "navigation-menu", parts: ["NavigationMenu.Trigger"] },
   slot: "navigation-menu-trigger",
   axes: TRIGGER_AXES,
   columnAxis: "state",
@@ -118,6 +119,7 @@ export const NAVIGATION_MENU_BAR_TRIGGER_MANIFEST: SetManifest = {
 export const NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST: SetManifest = {
   key: "navigation-menu-vertical-trigger",
   name: "Navigation menu vertical trigger",
+  api: { page: "navigation-menu", parts: ["NavigationMenu.Trigger"] },
   slot: "navigation-menu-trigger",
   axes: TRIGGER_AXES,
   columnAxis: "state",
@@ -130,6 +132,7 @@ export const NAVIGATION_MENU_VERTICAL_TRIGGER_MANIFEST: SetManifest = {
 export const NAVIGATION_MENU_BAR_LINK_MANIFEST: SetManifest = {
   key: "navigation-menu-bar-link",
   name: "Navigation menu bar link",
+  api: { page: "navigation-menu", parts: ["NavigationMenu.Link"] },
   slot: "navigation-menu-link",
   axes: LINK_AXES,
   columnAxis: "state",
@@ -142,6 +145,7 @@ export const NAVIGATION_MENU_BAR_LINK_MANIFEST: SetManifest = {
 export const NAVIGATION_MENU_ROW_LINK_MANIFEST: SetManifest = {
   key: "navigation-menu-row-link",
   name: "Navigation menu row link",
+  api: { page: "navigation-menu", parts: ["NavigationMenu.Link"] },
   slot: "navigation-menu-link",
   axes: LINK_AXES,
   columnAxis: "state",

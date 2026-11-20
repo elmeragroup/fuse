@@ -45,7 +45,7 @@ function triggerCell(outer: Cell): Cell {
     size: "default",
     state: outer.state ?? "rest",
     content: outer.content ?? "placeholder",
-    open: "off",
+    open: "false",
   };
 }
 
@@ -63,6 +63,7 @@ function triggerProperties(outer: Cell): InstanceProperties {
 export const SELECT_FIELD_MANIFEST: SetManifest = {
   key: "select-field",
   name: "Select field",
+  api: { page: "select-field", parts: ["SelectField"] },
   slot: "field",
   statePart: "select-trigger",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,

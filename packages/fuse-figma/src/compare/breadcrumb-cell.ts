@@ -8,7 +8,7 @@
  * - A `breadcrumb-ellipsis` cell renders `<Breadcrumb.Ellipsis />` in an item.
  * - A `breadcrumb-separator` cell renders `<Breadcrumb.Separator />` in the list, which draws its
  *   default CaretRight.
- * - A `breadcrumb-trail` cell renders the docs Basic demo's trail, and at `ellipsis=on` the
+ * - A `breadcrumb-trail` cell renders the docs Basic demo's trail, and at `ellipsis=true` the
  *   Ellipsis demo's, and the page measures the list.
  * - The list sets the type and the muted text color each part inherits, and the item makes the
  *   part a flex item, so the page measures the box the trail gives it.
@@ -65,12 +65,13 @@ export const breadcrumbSeparator: CellRendering = {
   element: () => inTrail(createElement(Breadcrumb.Separator)),
 };
 
-/** A `breadcrumb-trail` cell: the Basic demo's trail, or the Ellipsis demo's at `ellipsis=on`. */
+/** A `breadcrumb-trail` cell: the Basic demo's trail, or the Ellipsis demo's at `ellipsis=true`. */
 export const breadcrumbTrail: CellRendering = {
   element: (cell: Cell) => {
     const separator = () => createElement(Breadcrumb.Separator);
     const entry = (part: ReactElement) => createElement(Breadcrumb.Item, null, part);
-    const collapsed = cell.ellipsis === "on" ? [entry(createElement(Breadcrumb.Ellipsis)), separator()] : [];
+    const collapsed =
+      cell.ellipsis === "true" ? [entry(createElement(Breadcrumb.Ellipsis)), separator()] : [];
     return inTrail(
       entry(createElement(Breadcrumb.Link, { href: "/" }, BREADCRUMB_LINK_LABEL)),
       separator(),
