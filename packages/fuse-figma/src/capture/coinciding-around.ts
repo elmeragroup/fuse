@@ -1,7 +1,8 @@
 /**
  * How many of the elements around a root lie exactly behind it, which decides whose background the
- * root shows across its box. The capture's page function reads each element's boxes and paint, and
- * this function decides, so a test can hold the rule to boxes Chromium measured.
+ * root shows across its box. The capture's page function reads each element's boxes and paint,
+ * `page-facts.ts` judges the paint's fills, and this function decides, so a test can hold the rule
+ * to boxes Chromium measured.
  */
 
 /** A box in CSS pixels. */
@@ -39,8 +40,7 @@ export type AroundBox = {
  * @returns How many of them, innermost first, coincide with the root.
  */
 export function coincidingAround(root: Rect, around: readonly AroundBox[]): number {
-  // Two edges half a pixel apart meet, for subpixel layout. The capture's page runs this function
-  // from its source, so it holds every name it reads.
+  // Two edges half a pixel apart meet, for subpixel layout.
   const same = (a: number, b: number): boolean => Math.abs(a - b) <= 0.5;
   const index = around.findIndex(
     ({ padding, others }) =>

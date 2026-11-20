@@ -8,7 +8,9 @@ import { BRAND_CODES, BRANDS, THEME_IDENTITIES, themeAxisAttributes } from "@elm
 import type { Density } from "@elmeragroup/fuse/theme-catalog";
 
 import type { MeasuredFacts } from "./capture-format.ts";
+import { clearFill } from "./clear-fill.ts";
 import { coincidingAround } from "./coinciding-around.ts";
+import type { Rect } from "./coinciding-around.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
@@ -100,7 +102,8 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   box, so only a box that holds both draws what a Figma text that ends in an ellipsis draws.
  * - `coincidingAround`, on the root: how many of the elements around it, innermost first, lie
  *   exactly behind it, as {@link coincidingAround} decides from their boxes and the paint the page
- *   counts. An element's other child counts as reaching the root where its box or a box below it
+ *   counts. The page returns each background color it reads, and `clearFill` judges it by its
+ *   alpha outside the page. An element's other child counts as reaching the root where its box or a box below it
  *   meets the root's box. Wherever they lie, it also counts where it or an element below it holds
  *   text, is SVG or MathML, is a list item with a marker, is replaced through `content`, hosts an
  *   open shadow root, generates a `::before` or `::after` box, or has a shadow, filter, backdrop
@@ -164,28 +167,72 @@ export async function measuredFacts(
     throw new FactsUnmeasured(exceptionDetails.exception?.description ?? exceptionDetails.text);
   }
   // SAFETY: the page function returns facts by path, as plain JSON, each with the paint of the
-  // pseudo-elements it measured as absolute boxes beside them.
-  const measured = (result.value ?? {}) as Record<
-    string,
-    MeasuredFacts & { readonly pseudoPaint?: Record<string, PseudoPaint> }
-  >;
-  return new Map(Object.entries(measured).flatMap(([path, facts]) => pseudoPaints(path, facts)));
+  // pseudo-elements it measured as absolute boxes beside them, and the root's with the boxes and
+  // paint of the elements around it.
+  const measured = (result.value ?? {}) as Record<string, PageFacts>;
+  return new Map(Object.entries(measured).flatMap(([path, facts]) => judgedFacts(path, facts)));
 }
 
 /**
- * An element's facts with `pseudoBoxes` for each of its absolute `::before` and `::after` whose box
- * paints, as `paints` judges the paint the page read, in place of that paint.
+ * An element around the root as the page reads it: its padding box, and for each other child and
+ * its own paint over the root, whether the page counts it as reaching the root's box, whether it
+ * paints anything the page checks other than a fill, and, where it does not, the distinct computed
+ * `background-color` of it and every element below it.
  */
-function pseudoPaints(
+type AroundReading = {
+  readonly padding: Rect;
+  readonly others: readonly {
+    readonly reaches: boolean;
+    readonly paintsBesideFill: boolean;
+    readonly fills: readonly string[];
+  }[];
+};
+
+/**
+ * An element's facts as the page returns them: `coincidingAround` holds the readings Node judges
+ * into the fact, and `pseudoPaint` the paint Node judges into `pseudoBoxes`.
+ */
+type PageFacts = Omit<MeasuredFacts, "coincidingAround" | "pseudoBoxes"> & {
+  readonly coincidingAround?: { readonly root: Rect; readonly around: readonly AroundReading[] };
+  readonly pseudoPaint?: Record<string, PseudoPaint>;
+};
+
+/**
+ * An element's facts with the readings the page took judged into facts. `coincidingAround` takes
+ * the count {@link coincidingOf} judges from its readings, in the same place, so the facts keep the
+ * order the page put them in, and goes where the count is 0. `pseudoPaint` gives `pseudoBoxes` for each absolute `::before` and `::after` whose
+ * box paints, as `paints` judges it.
+ */
+function judgedFacts(
   path: string,
-  { pseudoPaint, ...facts }: MeasuredFacts & { readonly pseudoPaint?: Record<string, PseudoPaint> }
+  { pseudoPaint, ...facts }: PageFacts
 ): readonly (readonly [string, MeasuredFacts])[] {
+  const { coincidingAround: reading, ...rest } = facts;
+  const coinciding = reading === undefined ? 0 : coincidingOf(reading);
+  const judged: MeasuredFacts = coinciding > 0 ? { ...facts, coincidingAround: coinciding } : rest;
   const boxes = (["before", "after"] as const).filter((name) => {
     const paint = pseudoPaint?.[name];
     return paint !== undefined && paints(paint);
   });
-  const kept: MeasuredFacts = boxes.length === 0 ? facts : { ...facts, pseudoBoxes: boxes };
+  const kept: MeasuredFacts = boxes.length === 0 ? judged : { ...judged, pseudoBoxes: boxes };
   return Object.keys(kept).length === 0 ? [] : [[path, kept]];
+}
+
+/**
+ * How many of the elements around the root lie exactly behind it, as {@link coincidingAround}
+ * decides, where a child that paints nothing besides fills `clearFill` judges clear paints nothing.
+ */
+function coincidingOf({ root, around }: NonNullable<PageFacts["coincidingAround"]>): number {
+  return coincidingAround(
+    root,
+    around.map(({ padding, others }) => ({
+      padding,
+      others: others.map(({ reaches, paintsBesideFill, fills }) => {
+        const paintsNothing = !paintsBesideFill && fills.every(clearFill);
+        return { meets: !paintsNothing && reaches, paintsNothing };
+      }),
+    }))
+  );
 }
 
 /**
@@ -313,7 +360,6 @@ const MEASURE_IN_PAGE = `async function () {
   }
   const box = root.getBoundingClientRect();
   const rectOf = (rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
-  const clear = (color) => color === "transparent" || /[,/]\\s*0\\)$/.test(color);
   // Content an element draws whatever its box's paint says: a replaced element or form control, SVG
   // or MathML, a list item, an element its own content property replaces, an open shadow root's
   // tree, or a generated ::before or ::after box. Any of these counts as paint. \`draws\` is the part
@@ -327,14 +373,17 @@ const MEASURE_IN_PAGE = `async function () {
     return marks(style) || !["none", "normal"].includes(style.content) || each.shadowRoot !== null || generates(each);
   };
   const drawsContent = (each) => REPLACED.has(each.localName) || each.namespaceURI !== "http://www.w3.org/1999/xhtml" || getComputedStyle(each).display.includes("list-item") || draws(each);
-  const paintsNothing = (element) => [element, ...element.querySelectorAll("*")].every((each) => {
+  // Whether an element and every element below it paint none of what the page checks besides their
+  // fill, whose colors \`fillsOf\` lists for \`coincidingOf\` to judge outside the page.
+  const paintsBesideFill = (element) => ![element, ...element.querySelectorAll("*")].every((each) => {
     const style = getComputedStyle(each);
     const sides = ["top", "right", "bottom", "left"];
-    return !drawsContent(each) && clear(style.backgroundColor) && style.backgroundImage === "none" && style.borderImageSource === "none" && style.boxShadow === "none" && style.backdropFilter === "none" &&
+    return !drawsContent(each) && style.backgroundImage === "none" && style.borderImageSource === "none" && style.boxShadow === "none" && style.backdropFilter === "none" &&
       sides.every((side) => style.getPropertyValue("border-" + side + "-style") === "none" || Number.parseFloat(style.getPropertyValue("border-" + side + "-width")) === 0) &&
       (style.outlineStyle === "none" || Number.parseFloat(style.outlineWidth) === 0) &&
       [...each.childNodes].every((node) => node.nodeType !== 3 || (node.textContent ?? "").trim() === "");
   });
+  const fillsOf = (element) => [...new Set([element, ...element.querySelectorAll("*")].map((each) => getComputedStyle(each).backgroundColor))];
   const overlapsRoot = (edges) => edges.left < box.right && edges.right > box.left && edges.top < box.bottom && edges.bottom > box.top;
   const meetsRoot = (rect) => rect.width > 0 && rect.height > 0 && overlapsRoot(rect);
   const ownText = (element) => [...element.childNodes].filter((node) => node.nodeType === 3 && (node.textContent ?? "").trim() !== "");
@@ -358,20 +407,19 @@ const MEASURE_IN_PAGE = `async function () {
     const px = (name) => Number.parseFloat(style.getPropertyValue(name)) || 0;
     const padding = { left: edges.left + px("border-left-width"), top: edges.top + px("border-top-width"), right: edges.right - px("border-right-width"), bottom: edges.bottom - px("border-bottom-width") };
     const others = [...up.children].filter((each) => each !== below).map((each) => {
-      const nothing = paintsNothing(each);
-      return { meets: !nothing && reaches(each), paintsNothing: nothing };
+      const beside = paintsBesideFill(each);
+      return { reaches: reaches(each), paintsBesideFill: beside, fills: beside ? [] : fillsOf(each) };
     });
     // The element's own text, its marker, content that replaces it, a shadow root and a generated
     // box count as a child over the root, and so does its own paint that can cover the padding box
     // behind the root: an inset shadow (CSS Backgrounds 3 §7.1), a border image wider than its
     // border, or an outline, which a negative offset draws inside the box.
     const ownPaint = style.boxShadow.includes("inset") || style.borderImageSource !== "none" || (style.outlineStyle !== "none" && px("outline-width") !== 0);
-    const own = ownPaint || ownText(up).length > 0 || draws(up) ? [{ meets: true, paintsNothing: false }] : [];
+    const own = ownPaint || ownText(up).length > 0 || draws(up) ? [{ reaches: true, paintsBesideFill: true, fills: [] }] : [];
     around.push({ padding, others: [...others, ...own] });
     below = up;
   }
-  const coinciding = (${coincidingAround.toString()})(rectOf(box), around);
-  if (coinciding > 0) { put("", "coincidingAround", coinciding); }
+  put("", "coincidingAround", { root: rectOf(box), around });
   const width = root.getBoundingClientRect().width;
   if (Math.abs(maxContent(root) - width) <= 0.5) {
     const rows = elements.filter(({ element }) => element !== root && element.hasAttribute("data-slot") && element.parentElement !== null && texts(element).length > 0 && Math.abs(element.getBoundingClientRect().width - contentWidth(element.parentElement)) <= 0.5);
