@@ -178,7 +178,11 @@ function buildComponentSet(
       context.variables,
       definition.viewport
     );
-    const box = mapBox(definition, rootCascade, scope, room);
+    const ordered =
+      rootCascade.drawnSlots === undefined
+        ? definition
+        : inDrawnOrder(definition, rootCascade.drawnSlots, cell);
+    const box = mapBox(ordered, rootCascade, scope, room);
     const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
     const backdrop = behind && readBackdrop(behind, rootCascade.style, context.variables);
     const mapped = backdrop === undefined ? box : { ...box, fill: backdrop };
@@ -405,24 +409,22 @@ function sampleAnchorWidth(definition: ComponentDefinition, cell: Cell): string 
 
 /**
  * An anchored composite's definition with its instance parts in the order its placement rule draws
- * them: the popup first on the `top` and `left` sides, the anchor first otherwise, as
- * {@link anchoredPlacement} orders the roots its first cell measures.
+ * them in one cell, as the cell's root cascade lists their slots: the popup first on the `top` and
+ * `left` sides, the anchor first otherwise. A set whose cells open the popup on different sides, as
+ * `Tooltip (open)` does, orders each variant's layers its own way.
  *
  * @param definition - The composite's definition, as its manifest gives it.
- * @param capture - Its capture.
- * @returns The definition with its parts in drawn order.
+ * @param slots - The slots of the roots the cell draws, in drawn order.
+ * @param cell - The cell to order the parts for.
+ * @returns The definition with its parts in the cell's drawn order.
  */
-export function inPlacementOrder(definition: ComponentDefinition, capture: SetCapture): ComponentDefinition {
-  const [first] = capture.cells;
+function inDrawnOrder(
+  definition: ComponentDefinition,
+  slots: readonly (string | undefined)[],
+  cell: Cell
+): ComponentDefinition {
   const parts = definition.parts ?? [];
-  if (first === undefined) {
-    return definition;
-  }
-  const slots = anchoredPlacement(first, 0, capture.declarations).roots.map(
-    ({ root }) => root.attributes["data-slot"]
-  );
-  const [cell] = possibleCells(definition);
   const rank = (part: (typeof parts)[number]): number =>
-    "kind" in part && cell !== undefined ? slots.indexOf(instanceRootSlotOf(part, part.cell(cell))) : -1;
+    "kind" in part ? slots.indexOf(instanceRootSlotOf(part, part.cell(cell))) : -1;
   return { ...definition, parts: parts.toSorted((left, right) => rank(left) - rank(right)) };
 }

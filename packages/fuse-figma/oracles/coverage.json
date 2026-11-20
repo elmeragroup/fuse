@@ -2968,10 +2968,6 @@
     "tooltip-content": [
       {
         "part": "arrow",
-        "className": "data-[side=bottom]:top-1"
-      },
-      {
-        "part": "arrow",
         "className": "data-[side=inline-end]:top-1/2!"
       },
       {
@@ -2993,30 +2989,6 @@
       {
         "part": "arrow",
         "className": "data-[side=inline-start]:-translate-y-1/2"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=left]:top-1/2!"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=left]:-right-1"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=left]:-translate-y-1/2"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=right]:top-1/2!"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=right]:-left-1"
-      },
-      {
-        "part": "arrow",
-        "className": "data-[side=right]:-translate-y-1/2"
       }
     ],
     "date-field": [
@@ -6853,7 +6825,19 @@
         "tooltip-open/side=top 0/around/0",
         "tooltip-open/side=top 0/around/1",
         "tooltip-open/side=top 1/around/0",
-        "tooltip-open/side=top 1/around/1"
+        "tooltip-open/side=top 1/around/1",
+        "tooltip-open/side=bottom 0/around/0",
+        "tooltip-open/side=bottom 0/around/1",
+        "tooltip-open/side=bottom 1/around/0",
+        "tooltip-open/side=bottom 1/around/1",
+        "tooltip-open/side=left 0/around/0",
+        "tooltip-open/side=left 0/around/1",
+        "tooltip-open/side=left 1/around/0",
+        "tooltip-open/side=left 1/around/1",
+        "tooltip-open/side=right 0/around/0",
+        "tooltip-open/side=right 0/around/1",
+        "tooltip-open/side=right 1/around/0",
+        "tooltip-open/side=right 1/around/1"
       ]
     },
     {
@@ -6866,7 +6850,19 @@
         "tooltip-open/side=top 0/around/0",
         "tooltip-open/side=top 0/around/1",
         "tooltip-open/side=top 1/around/0",
-        "tooltip-open/side=top 1/around/1"
+        "tooltip-open/side=top 1/around/1",
+        "tooltip-open/side=bottom 0/around/0",
+        "tooltip-open/side=bottom 0/around/1",
+        "tooltip-open/side=bottom 1/around/0",
+        "tooltip-open/side=bottom 1/around/1",
+        "tooltip-open/side=left 0/around/0",
+        "tooltip-open/side=left 0/around/1",
+        "tooltip-open/side=left 1/around/0",
+        "tooltip-open/side=left 1/around/1",
+        "tooltip-open/side=right 0/around/0",
+        "tooltip-open/side=right 0/around/1",
+        "tooltip-open/side=right 1/around/0",
+        "tooltip-open/side=right 1/around/1"
       ]
     },
     {
@@ -6879,7 +6875,19 @@
         "tooltip-open/side=top 0/around/0",
         "tooltip-open/side=top 0/around/1",
         "tooltip-open/side=top 1/around/0",
-        "tooltip-open/side=top 1/around/1"
+        "tooltip-open/side=top 1/around/1",
+        "tooltip-open/side=bottom 0/around/0",
+        "tooltip-open/side=bottom 0/around/1",
+        "tooltip-open/side=bottom 1/around/0",
+        "tooltip-open/side=bottom 1/around/1",
+        "tooltip-open/side=left 0/around/0",
+        "tooltip-open/side=left 0/around/1",
+        "tooltip-open/side=left 1/around/0",
+        "tooltip-open/side=left 1/around/1",
+        "tooltip-open/side=right 0/around/0",
+        "tooltip-open/side=right 0/around/1",
+        "tooltip-open/side=right 1/around/0",
+        "tooltip-open/side=right 1/around/1"
       ]
     },
     {
@@ -6888,7 +6896,12 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/side=top 0/around/1"]
+      "at": [
+        "tooltip-open/side=top 0/around/1",
+        "tooltip-open/side=bottom 0/around/1",
+        "tooltip-open/side=left 0/around/1",
+        "tooltip-open/side=right 0/around/1"
+      ]
     },
     {
       "set": "tooltip-open",
@@ -6896,7 +6909,12 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/side=top 0/around/1"]
+      "at": [
+        "tooltip-open/side=top 0/around/1",
+        "tooltip-open/side=bottom 0/around/1",
+        "tooltip-open/side=left 0/around/1",
+        "tooltip-open/side=right 0/around/1"
+      ]
     },
     {
       "set": "tooltip-open",
@@ -6904,7 +6922,12 @@
       "className": "pt-12",
       "property": "padding-top",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/side=top 1/around/1"]
+      "at": [
+        "tooltip-open/side=top 1/around/1",
+        "tooltip-open/side=bottom 1/around/1",
+        "tooltip-open/side=left 1/around/1",
+        "tooltip-open/side=right 1/around/1"
+      ]
     },
     {
       "set": "tooltip-open",
@@ -6912,7 +6935,12 @@
       "className": "flex",
       "property": "display",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/side=top 1/around/1"]
+      "at": [
+        "tooltip-open/side=top 1/around/1",
+        "tooltip-open/side=bottom 1/around/1",
+        "tooltip-open/side=left 1/around/1",
+        "tooltip-open/side=right 1/around/1"
+      ]
     },
     {
       "set": "tooltip-open",
@@ -6920,7 +6948,7 @@
       "className": "justify-center",
       "property": "justify-content",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["tooltip-open/side=top 1/around/1"]
+      "at": ["tooltip-open/side=top 1/around/1", "tooltip-open/side=bottom 1/around/1"]
     },
     {
       "set": "alert-dialog-open",

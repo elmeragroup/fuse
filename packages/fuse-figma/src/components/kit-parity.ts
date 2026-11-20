@@ -433,7 +433,7 @@ export const KIT_PARITY = {
   tooltip: {
     kind: "partial",
     sets: ["tooltip-content", "tooltip-open"],
-    missing: "The `bottom`, `left`, `right`, `inline-start` and `inline-end` sides.",
+    missing: 'The popup aligned to its trigger\'s start or end, `align="start"` and `align="end"`.',
     issue: MISSING_SETS,
   },
   tour: {

@@ -425,24 +425,55 @@ export type EdgePlacementSpec<Axis extends AxisPlacementSpec = AxisPlacementSpec
   readonly vertical: Axis;
 };
 
+/** The edge of its parent that a frame placed by its centre hangs from. */
+export type PivotEdge = "top" | "right" | "bottom" | "left";
+
 /**
- * A frame outside its parent's auto layout placed by its centre: across, a fixed distance from the
- * parent's horizontal centre, and down, a fixed distance above the parent's bottom edge, as a
- * Tooltip's arrow hangs from its popup, turned 45°. CSS turns a box about its centre and leaves the
- * centre where it was, while Figma's `x` and `y` are the turned box's origin, which follow the turn and
- * the parent's size, so the spec holds the centre, and the plugin places the layer from it once its
- * turn is written and its parent's size has settled. CENTER across and MAX down keep the place as the
- * parent resizes.
+ * Each pivot edge's axes: the axis along the edge, where CENTER keeps the layer's offset from the
+ * parent's centre, and the end of the axis across it that the edge sits at, where MIN keeps a top or
+ * left inset and MAX a bottom or right one. The reader in `pivot-part.ts`, the plugin's writes and
+ * its read-back all take their axes from this table.
+ */
+export const PIVOT_EDGES = {
+  top: { along: "horizontal", from: "start", constraints: { horizontal: "CENTER", vertical: "MIN" } },
+  bottom: { along: "horizontal", from: "end", constraints: { horizontal: "CENTER", vertical: "MAX" } },
+  left: { along: "vertical", from: "start", constraints: { horizontal: "MIN", vertical: "CENTER" } },
+  right: { along: "vertical", from: "end", constraints: { horizontal: "MAX", vertical: "CENTER" } },
+} as const satisfies Record<
+  PivotEdge,
+  {
+    readonly along: "horizontal" | "vertical";
+    readonly from: "start" | "end";
+    readonly constraints: {
+      readonly horizontal: "CENTER" | "MIN" | "MAX";
+      readonly vertical: "CENTER" | "MIN" | "MAX";
+    };
+  }
+>;
+
+/**
+ * A frame outside its parent's auto layout, placed by its centre: a fixed distance from the
+ * parent's centre along one edge, and a fixed distance inside that edge, as a Tooltip's arrow hangs
+ * from the popup's edge that faces its trigger, turned 45°. CSS turns a box about its centre and
+ * leaves the centre where it was, while Figma's `x` and `y` are the turned box's origin, which follow
+ * the turn and the parent's size, so the spec holds the centre, and the plugin places the layer from
+ * it once its turn is written and its parent's size has settled. The constraints {@link PIVOT_EDGES}
+ * names keep the place as the parent resizes.
  */
 export type PivotSpec = {
   readonly kind: "pivot";
-  /** The pixels from the parent's horizontal centre to the layer's centre, rightward. */
-  readonly centerOffset: number;
-  /** The pixels from the layer's centre down to the parent's bottom edge. */
-  readonly bottomInset: number;
+  /** The parent's edge the layer hangs from. */
+  readonly edge: PivotEdge;
+  /**
+   * The pixels from the parent's centre to the layer's centre along the edge: rightward along a top
+   * or bottom edge, downward along a left or right one.
+   */
+  readonly along: number;
+  /** The pixels from the edge to the layer's centre, into the parent. */
+  readonly inset: number;
 };
 
-/** Where a frame sits outside its parent's auto layout: by its edges, or a turned frame by its centre. */
+/** Where a frame sits outside its parent's auto layout: by its edges, or by its centre. */
 export type PlacementSpec = EdgePlacementSpec | PivotSpec;
 
 /** The Figma constraint that keeps each axis's place, as {@link AxisPlacementSpec} names them. */

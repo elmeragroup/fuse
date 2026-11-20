@@ -373,10 +373,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "tooltip",
     name: "Tooltip",
     sets: [
-      // The Basic demo's popup.
-      { key: "tooltip-content", name: "Tooltip content", variants: 1, previewed: 1 },
-      // The popup open above its ghost icon Button trigger.
-      { key: "tooltip-open", name: "Tooltip (open)", variants: 1, previewed: 1 },
+      // The Basic demo's popup, its arrow on each side.
+      { key: "tooltip-content", name: "Tooltip content", variants: 4, previewed: 4 },
+      // The popup open on each side of its ghost icon Button trigger.
+      { key: "tooltip-open", name: "Tooltip (open)", variants: 4, previewed: 4 },
     ],
   },
   {

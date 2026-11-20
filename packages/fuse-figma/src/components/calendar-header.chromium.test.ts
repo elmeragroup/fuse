@@ -1,7 +1,6 @@
 import { createElement } from "react";
 import type { ReactElement } from "react";
 
-import { NodeServices } from "@effect/platform-node";
 /**
  * Unit under test: the Calendar and Range calendar sets' header and card, as the kit builds them: a
  * header that hugs its layers above a minimum width, spaces them out between its ends, and pads its
@@ -24,11 +23,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Calendar } from "../../../fuse/dist/calendar.js";
 import { RangeCalendar } from "../../../fuse/dist/range-calendar.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
+import { openFusePage } from "../../test/fuse-page.ts";
 import { EVERY_MODE } from "../capture/page-modes.ts";
-import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
-import type { PageAssets } from "../compare/page-assets.ts";
-import { ASSET_PATHS, PAGE_ORIGIN, STYLES_LAYERS } from "../compare/preview-page.ts";
-import { kitFontCss } from "../kit-fonts.ts";
 import { buildComponentSets } from "./build-kit.ts";
 import type { ChildLayerSpec, CounterAlignSpec, FrameLayerSpec, NumberSpec } from "./kit-spec.ts";
 
@@ -99,50 +95,14 @@ const SETS = [
   },
 ] as const;
 
-/** The page: every sample calendar, each in a slot of its own, on Fuse's styles and the kit's fonts. */
-function sweepDocument(): string {
-  const slots = SETS.flatMap(({ key, sample }) =>
+/** The page's body: every sample calendar, each in a slot of its own. */
+function sweepBody(): string {
+  return SETS.flatMap(({ key, sample }) =>
     SAMPLES.map(
       (month) =>
         `<div data-sample="${key}" data-month="${String(month)}" style="display:flex;margin:8px">${renderToStaticMarkup(createElement(LocaleProvider, { locale: "en-US", children: sample(month) }))}</div>`
     )
-  );
-  return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><style>
-@layer ${STYLES_LAYERS.join(", ")};
-@import url("${ASSET_PATHS.preflight}") layer(base);
-@import url("${ASSET_PATHS.styles}");
-@import url("${ASSET_PATHS.themes}");
-@import url("${ASSET_PATHS.fonts}");
-${kitFontCss("body")}
-body{margin:0;font-family:var(--font-sans)}
-</style></head><body>${slots.join("\n")}</body></html>`;
-}
-
-/** Serve the page and its assets from the page's origin. */
-async function serve(page: Page, assets: PageAssets, html: string): Promise<void> {
-  await page.route(`${PAGE_ORIGIN}/**`, async (route) => {
-    const { pathname } = new URL(route.request().url());
-    const css = new Map<string, string>([
-      [ASSET_PATHS.styles, assets.styles],
-      [ASSET_PATHS.themes, assets.themes],
-      [ASSET_PATHS.preflight, assets.preflight],
-      [ASSET_PATHS.fonts, assets.fontCss],
-    ]).get(pathname);
-    if (pathname === "/sweep.html") {
-      await route.fulfill({ body: html, contentType: "text/html; charset=utf-8" });
-    } else if (css !== undefined) {
-      await route.fulfill({ body: css, contentType: "text/css; charset=utf-8" });
-    } else if (pathname.startsWith(ASSET_PATHS.fontFiles)) {
-      const [name = "", file = ""] = pathname.slice(ASSET_PATHS.fontFiles.length).split("/");
-      const directory = assets.fontDirectories.get(name);
-      await (directory === undefined
-        ? route.fulfill({ status: 404 })
-        : route.fulfill({ path: `${directory}/${file}` }));
-    } else {
-      await route.fulfill({ status: 404 });
-    }
-  });
+  ).join("\n");
 }
 
 /** What the page measures of one sample calendar in one mode, in CSS pixels. */
@@ -299,15 +259,9 @@ beforeAll(async () => {
       ] as const;
     })
   );
-  const assets = await Effect.runPromise(
-    Effect.gen(function* () {
-      return yield* readPageAssets(yield* locateFuseBuild(), new Map());
-    }).pipe(Effect.provide(NodeServices.layer))
-  );
   browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
-  await serve(page, assets, sweepDocument());
-  await page.goto(`${PAGE_ORIGIN}/sweep.html`);
+  await openFusePage(page, { body: sweepBody() });
   measured = await measureEveryMode(page);
 }, 300_000);
 

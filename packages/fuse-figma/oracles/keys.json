@@ -2019,6 +2019,12 @@
     "toolbar/orientation=horizontal",
     "toolbar/orientation=vertical",
     "tooltip-content/content=basic",
+    "tooltip-content/content=basic,side=bottom",
+    "tooltip-content/content=basic,side=left",
+    "tooltip-content/content=basic,side=right",
+    "tooltip-open/side=bottom",
+    "tooltip-open/side=left",
+    "tooltip-open/side=right",
     "tooltip-open/side=top",
     "tour-popup/content=tip",
     "tour-step/content=step"
