@@ -43,6 +43,12 @@ export class KitToolFailed extends Data.TaggedError("KitToolFailed")<{
 /** A failure `buildKit` reports. */
 export type KitBuildError = KitContradiction | KitUnmappable | KitSourceInvalid | KitToolFailed;
 
+/** A probe, `figma:plugin --sets`, names a set the registry does not hold. */
+export class ProbeSetUnknown extends Data.TaggedError("ProbeSetUnknown")<{
+  readonly message: string;
+  readonly set: string;
+}> {}
+
 /**
  * Run a tool's promise as an Effect. A `KitSourceInvalid` the tool's callbacks threw keeps its
  * type, as the stylesheet loader `utility-css.ts` hands Tailwind does, and any other rejection

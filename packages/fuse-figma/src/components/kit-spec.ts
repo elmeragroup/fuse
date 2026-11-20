@@ -1055,6 +1055,12 @@ export type KitSpec = {
   readonly textStyles: readonly TextStyleSpec[];
   /** The docs of each component page, one record per page that holds a set. */
   readonly docs: readonly PageDocsSpec[];
+  /**
+   * Set on a probe, `figma:plugin --sets`, which holds a few of the kit's sets. Plan refuses a file
+   * that holds a kit set the probe lacks, such as one the whole kit was applied to, where it would
+   * delete every set the probe leaves out. Absent on the whole kit.
+   */
+  readonly probe?: true;
 };
 
 /**

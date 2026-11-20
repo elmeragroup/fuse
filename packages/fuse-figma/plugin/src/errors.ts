@@ -49,6 +49,16 @@ export class KitNotApplied extends Data.TaggedError("KitNotApplied")<{
   readonly key: string;
 }> {}
 
+/**
+ * A probe's Plan met a file that holds kit sets the probe lacks, such as one the whole kit was applied
+ * to, where it would delete them.
+ */
+export class ProbeOverKit extends Data.TaggedError("ProbeOverKit")<{
+  readonly message: string;
+  /** The names of the sets the probe would delete. */
+  readonly sets: readonly string[];
+}> {}
+
 /** The plugin UI posted a message the main thread does not handle. */
 export class UnknownRequest extends Data.TaggedError("UnknownRequest")<{
   readonly message: string;
@@ -62,4 +72,5 @@ export type PluginError =
   | LayerConflict
   | FontUnavailable
   | KitNotApplied
+  | ProbeOverKit
   | UnknownRequest;
