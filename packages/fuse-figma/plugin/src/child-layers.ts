@@ -8,7 +8,6 @@ import { Effect } from "effect";
 
 import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
-  AbsoluteSpec,
   BoxSpec,
   ChildLayerSpec,
   FrameLayerSpec,
@@ -19,15 +18,7 @@ import { planBox } from "./box.ts";
 import type { LayerParent } from "./box.ts";
 import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
-import {
-  changeTogetherIn,
-  near,
-  planNumber,
-  planPaints,
-  planScalar,
-  planVisibleLink,
-  solidPaint,
-} from "./fields.ts";
+import { near, planNumber, planPaints, planScalar, planVisibleLink, solidPaint } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { fontLayers, heldFonts, linkedLabels, requireNewTextFonts } from "./fonts.ts";
 import { glyphOf } from "./icons.ts";
@@ -36,7 +27,8 @@ import { planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import { innerSpecs, innerVariant, planInstance, planNewInstance } from "./instance-layers.ts";
 import { planPivotPlace, planPivotPositioning } from "./pivot.ts";
-import { change } from "./plan.ts";
+import { planLeaving, planPlace } from "./placing.ts";
+import { change, Plan } from "./plan.ts";
 import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
 import { planText } from "./text-layer.ts";
@@ -183,51 +175,6 @@ const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INST
 const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
 
 /**
- * Plan where a frame layer sits as one operation: in its parent's auto layout, or absolute at the
- * spec's place, following the parent's resize as its constraints say. Turning a layer absolute or
- * back moves it, as the typings say of `layoutPositioning`, and a resize of the parent moves an
- * absolute layer by its constraints (P8), so a turn or a parent's resize in this run writes its
- * constraints and place whatever they read now. The positioning comes before the layer's size, since
- * Figma refuses FILL on an absolute layer (P8).
- *
- * @param size - `unknown` when the run writes a field that can resize the parent or a box above it.
- */
-function planPositioning(
-  run: Run,
-  frame: FrameNode,
-  label: string,
-  absolute: AbsoluteSpec | undefined,
-  size: Held
-): void {
-  const positioning = absolute === undefined ? "AUTO" : "ABSOLUTE";
-  changeTogetherIn(run, label, (group) => {
-    const rewrite = frame.layoutPositioning !== positioning || size === "unknown";
-    planScalar(group, label, "layoutPositioning", frame.layoutPositioning, positioning, () => {
-      frame.layoutPositioning = positioning;
-    });
-    if (absolute === undefined) {
-      return;
-    }
-    const { horizontal, vertical } = absolute.constraints;
-    if (rewrite || frame.constraints.horizontal !== horizontal || frame.constraints.vertical !== vertical) {
-      change(group.plan, label, `constraints → ${horizontal} ${vertical}`, () => {
-        frame.constraints = { horizontal, vertical };
-      });
-    }
-    if (rewrite || !near(frame.x, absolute.x)) {
-      change(group.plan, label, `x → ${absolute.x}`, () => {
-        frame.x = absolute.x;
-      });
-    }
-    if (rewrite || !near(frame.y, absolute.y)) {
-      change(group.plan, label, `y → ${absolute.y}`, () => {
-        frame.y = absolute.y;
-      });
-    }
-  });
-}
-
-/**
  * Plan a frame layer: its name, where it sits, its box, the property that shows or hides it and its
  * turn, then the layers it holds.
  */
@@ -242,15 +189,20 @@ const planFrame = Effect.fnUntraced(function* (
   planScalar(run, label, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
-  // A frame placed by its centre turns absolute first, and its place comes last, after its turn.
-  if (spec.pivot === undefined) {
-    planPositioning(run, frame, label, spec.absolute, holder.size);
+  // A frame leaves the flow before its box, since Figma refuses FILL on an absolute layer (P8). A
+  // frame placed by its centre comes back to its place last, after its turn, and one placed by its
+  // parent's edges takes its place from its parent, after its siblings.
+  const { placement } = spec;
+  const pivot = placement?.kind === "pivot" ? placement : undefined;
+  let repositions = false;
+  if (placement?.kind === "pivot") {
+    repositions = planPivotPositioning(run, frame, label);
+  } else {
+    planLeaving(run, frame, label, placement);
   }
-  const repositions = spec.pivot !== undefined && planPivotPositioning(run, frame, label, spec.pivot);
   // A resize of the parent moves an absolute layer's size by its constraints after the plan read it,
   // as a turn of the parent moves a fill, so the layer's lengths are written whatever they read.
-  const outside = spec.absolute !== undefined || spec.pivot !== undefined;
-  const moved = outside && holder.size === "unknown" ? "unknown" : holder.held;
+  const moved = placement !== undefined && holder.size === "unknown" ? "unknown" : holder.held;
   const size = planBox(run, frame, label, spec, { kind: "frame", parent: moved });
   planVisibleLink(run, frame, label, spec.visibleProperty, links.properties);
   // A layer that follows a BOOLEAN property shows as its default says, so only the others are written.
@@ -261,19 +213,11 @@ const planFrame = Effect.fnUntraced(function* (
     });
   }
   const turns = planRotation(run, frame, label, spec.rotation);
-  if (spec.pivot !== undefined) {
+  if (pivot !== undefined) {
     // A size write moves the frame's centre about its origin, so the place is written after it, from
     // the size it leaves, whatever the centre reads now.
     const resizes = size === "unknown";
-    planPivotPlace(
-      run,
-      frame,
-      label,
-      spec.pivot,
-      spec.rotation,
-      repositions || turns || resizes,
-      holder.size
-    );
+    planPivotPlace(run, frame, label, pivot, spec.rotation, repositions || turns || resizes, holder.size);
   }
   yield* planChildren(frame, label, spec, links, holder.size === "unknown" ? "unknown" : size);
 });
@@ -377,7 +321,18 @@ export const planChildren = Effect.fnUntraced(function* (
     held: parent.layoutMode === box.direction ? "read" : "unknown",
     size,
   };
-  yield* planOwnedChildren(parent, label, "layer", box.children, (spec) =>
-    childKind(run, holder, label, spec, links)
+  const [planned, recorded] = yield* Plan.watch(
+    planOwnedChildren(parent, label, "layer", box.children, (spec) =>
+      childKind(run, holder, label, spec, links)
+    )
   );
+  // A layer placed by the parent's edges sits where the parent's size, which its other layers set,
+  // leaves it, so it is placed once they are planned.
+  const resized = size === "unknown" || recorded ? "unknown" : "read";
+  for (const { spec, node } of planned) {
+    const placement = spec.kind === "frame" || spec.kind === "instance" ? spec.placement : undefined;
+    if (placement?.kind === "edges") {
+      planPlace(run, node, `${label} / ${spec.name}`, placement, resized);
+    }
+  }
 });

@@ -636,6 +636,8 @@ export const LAYOUT_SIZING = {
   fixed: "FIXED",
   hug: "HUG",
   fill: "FILL",
+  // A length the placement sets is fixed, written by the place.
+  placed: "FIXED",
 } as const satisfies Record<SizeSpec["kind"], LayoutSizing["horizontal"]>;
 
 /** Each axis and the member that sizes it. */

@@ -101,6 +101,7 @@ import switchCapture from "../../captures/switch.json" with { type: "json" };
 import textField from "../../captures/text-field.json" with { type: "json" };
 import textareaField from "../../captures/textarea-field.json" with { type: "json" };
 import textarea from "../../captures/textarea.json" with { type: "json" };
+import timelineList from "../../captures/timeline-list.json" with { type: "json" };
 import toggleGroup from "../../captures/toggle-group.json" with { type: "json" };
 import toggle from "../../captures/toggle.json" with { type: "json" };
 import toolbar from "../../captures/toolbar.json" with { type: "json" };
@@ -163,6 +164,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["meter", meter],
   ["empty", empty],
   ["card", card],
+  ["timeline-list", timelineList],
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
   ["calendar-day", calendarDay],

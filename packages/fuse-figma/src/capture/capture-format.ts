@@ -146,6 +146,11 @@ const MeasuredFactsSchema = Schema.Struct({
    * popup's `min-width`, so Base UI widens the popup to the anchor.
    */
   anchorWiderThanMinimum: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * The element's `::before` and `::after` that paint and, in every density and theme, are absolute
+   * boxes laid out against the element, its containing block, so the kit draws each as a layer.
+   */
+  pseudoBoxes: Schema.optionalKey(Schema.Array(Schema.Literals(["before", "after"]))),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

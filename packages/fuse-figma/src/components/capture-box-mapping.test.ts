@@ -734,8 +734,8 @@ describe("a part centered by absolute position", () => {
 // Oracle: CSS 2.1 §10.1, §10.4 and §10.3.7 to §10.6.4. An absolute box's percentages take its
 // containing block, the padding box of its nearest positioned ancestor, sized after its own limits: a
 // bar that fills a 256px column up to `max-w-[128px]` is 128px wide, so 85% of it is 108.8px and
-// `h-full` 6px, at its top left. A percentage width keeps its share when the parent grows, which
-// Figma's SCALE draws, and a full height keeps both edges, which STRETCH draws (P8).
+// `h-full` 6px, at its top left. Each length is a share of the bar, which keeps it when the bar grows,
+// as Figma's SCALE draws (P8): a whole share keeps both of the bar's edges, as STRETCH would.
 describe("a part at its positioned parent's top left", () => {
   it("takes its share of a filling parent after the parent's maximum", async () => {
     const fill: PartManifest = part({ key: "fill", slot: "chip-fill" });
@@ -753,7 +753,12 @@ describe("a part at its positioned parent's top left", () => {
     expect(frameOf(frameOf(variant?.root))).toEqual(
       expect.objectContaining({
         sizing: fixedSize(literal(108.8), literal(6)),
-        absolute: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } },
+        placement: {
+          kind: "edges",
+          within: "parent",
+          horizontal: { kind: "scale", start: 0 },
+          vertical: { kind: "scale", start: 0 },
+        },
       })
     );
   });

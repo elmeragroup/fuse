@@ -41,14 +41,17 @@ export type InstanceMarginBox = {
 };
 
 /**
- * Whether a vertical margin of the part at `index` among a block box's layers in flow adjoins another
- * margin, so the two collapse (CSS 2.1 §8.3.1): the first and last part's margins adjoin the box's own,
- * and a part's top or bottom margin adjoins the bottom or top margin of the part before or after it.
- * A part out of flow, at `index` -1, adjoins nothing.
+ * Whether a vertical margin of the part at `index` among a block box's layers in flow collapses with
+ * another margin it adjoins (CSS 2.1 §8.3.1): the first part's top margin and the last part's bottom
+ * margin adjoin the box's own, and a part's top or bottom margin adjoins the bottom or top margin of
+ * the part before or after it. Only a margin of the part's that is not zero counts. Two adjoining
+ * margins collapse to the larger, so beside a margin of zero the part's margin keeps its length, as a
+ * timeline item's `mb-10` does above the next item's zero top margin. A part out of flow, at
+ * `index` -1, adjoins nothing.
  *
  * @param styles - The styles of the box's parts in flow, in order.
  * @param index - The part's place among them, or -1 for a part out of flow.
- * @returns True where a margin adjoins the part's.
+ * @returns True where a margin of the part's collapses with another.
  */
 export function adjoinsMargin(styles: readonly LayerStyle[], index: number): boolean {
   if (index === -1) {
@@ -56,11 +59,10 @@ export function adjoinsMargin(styles: readonly LayerStyle[], index: number): boo
   }
   const sets = (style: LayerStyle | undefined, property: string) =>
     style !== undefined && evaluateLength(style.resolved(property) ?? "0px") !== 0;
+  const own = styles[index];
   return (
-    index === 0 ||
-    index === styles.length - 1 ||
-    sets(styles[index - 1], "margin-bottom") ||
-    sets(styles[index + 1], "margin-top")
+    (sets(own, "margin-top") && (index === 0 || sets(styles[index - 1], "margin-bottom"))) ||
+    (sets(own, "margin-bottom") && (index === styles.length - 1 || sets(styles[index + 1], "margin-top")))
   );
 }
 

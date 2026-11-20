@@ -36,7 +36,6 @@ import type {
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
-import { planAnchoring } from "./anchoring.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
@@ -49,6 +48,7 @@ import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
 import { planInstanceSizing } from "./instance-sizing.ts";
+import { planLeaving } from "./placing.ts";
 import { changeLater, changeWith, planWhenRun } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
@@ -666,12 +666,13 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
   yield* planNested(instance, label, spec);
   // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
   // and comes back into it before.
-  if (spec.absolute === undefined) {
-    planAnchoring(run, instance, label, undefined, held);
+  if (spec.placement === undefined) {
+    planLeaving(run, instance, label, undefined);
   }
   planInstanceSizing(run, instance, label, spec.sizing, held);
-  if (spec.absolute !== undefined) {
-    planAnchoring(run, instance, label, spec.absolute, held);
+  // Its parent places a placed instance once the parent's other layers are planned.
+  if (spec.placement !== undefined) {
+    planLeaving(run, instance, label, spec.placement);
   }
   // An instance with no minimum of its own shows the inner variant's (PH3).
   planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);

@@ -113,6 +113,7 @@ import { SWITCH_MANIFEST } from "./switch-kit";
 import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA_MANIFEST } from "./textarea-kit";
+import { TIMELINE_LIST_MANIFEST } from "./timeline-list-kit";
 import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR_MANIFEST } from "./toolbar-kit";
@@ -255,6 +256,13 @@ const DATE_PICKER_PAGE: KitPage = { slug: "date-picker", name: "Date picker", ex
 
 /** The page Sheet content sits on alone. */
 const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
+
+/** The page Timeline list sits on alone. */
+const TIMELINE_LIST_PAGE: KitPage = {
+  slug: "timeline-list",
+  name: "Timeline list",
+  example: "timeline-list",
+};
 
 /** The page Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link", example: "link" };
@@ -851,5 +859,10 @@ export const KIT: readonly KitEntry[] = [
     page: DATE_PICKER_PAGE,
     previewCells: possibleCells(DATE_PICKER_MANIFEST),
     manifest: DATE_PICKER_MANIFEST,
+  },
+  {
+    page: TIMELINE_LIST_PAGE,
+    previewCells: possibleCells(TIMELINE_LIST_MANIFEST),
+    manifest: TIMELINE_LIST_MANIFEST,
   },
 ];

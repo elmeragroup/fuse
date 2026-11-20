@@ -6,6 +6,7 @@
  * assembles a set from the root of each cell.
  */
 
+import { placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
 import type { BoxCascade, PartElement } from "./box-cascade";
 import { readCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
@@ -93,6 +94,8 @@ import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
 import type { Feed, LayerStyle, SpecField } from "./layer-style";
 import { adjoinsMargin, foldNegativeMargin, wrapFrameMargins, wrapInstanceMargins } from "./margin-box";
 import type { FoldingBox } from "./margin-box";
+import { arrangePaint, inPaintOrder } from "./paint-order";
+import type { PaintedLayer } from "./paint-order";
 import {
   endsBesideLabel,
   endsInFlow,
@@ -102,6 +105,7 @@ import {
   slotAroundDot,
 } from "./placement";
 import type { Layout } from "./placement";
+import { pseudoParts } from "./pseudo-layers";
 import { stacksFirstOnTop } from "./stacking";
 import type { PaintedInstances } from "./stacking";
 import { tableDisplayDetail } from "./table-layout";
@@ -402,6 +406,8 @@ type ShownPart =
       readonly key: string;
       readonly name: string;
       readonly cascade: BoxCascade;
+      /** Set on a pseudo-element the box draws as a layer, which no DOM order or flow reads place. */
+      readonly pseudo?: true;
     }
   | CascadedInstance;
 
@@ -596,6 +602,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const last = shown.at(-1);
   const inFlowEnd =
     last?.kind === "frame" &&
+    last.pseudo !== true &&
     holder.layers.length === flowing.length &&
     endsInFlow(
       {
@@ -622,7 +629,60 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
   const minimum =
     across === undefined ? undefined : rowMinimum(limits.minWidth, room, reader, context.variables);
-  const mapped = shown.map((part): MappedPart => {
+  // An absolute part, frame or instance, is planned before it maps, so the sizing leaves a frame the
+  // length its place stretches it to, and reads its place once it maps.
+  const planned = new Map(
+    shown.flatMap((part) => {
+      const plan =
+        flowing.indexOf(part) === -1
+          ? planPlacement(part.cascade.style, part.kind, {
+              parent: reader,
+              positionedBy: box.positionedBy,
+              flow: flowing.map((each) => each.cascade.style),
+              layers: holder.layers.length,
+              paddingBox: paddingBoxOf(absoluteRoom(holder)),
+            })
+          : undefined;
+      return plan === undefined ? [] : [[part.cascade.style, plan] as const];
+    })
+  );
+  // A part's style says whether it is absolute, or in the flow and positioned itself.
+  const position = (part: ShownPart) => normalizeCss(part.cascade.style.resolved("position") ?? "static");
+  // An absolute part CSS paints where Figma's order cannot, as the paint order says, has no place.
+  const arrangement = arrangePaint([
+    ...before.map((part) => paintedPart(part, position(part))),
+    ...others.map((layer) => ({ key: layer.key, placed: false, positioned: false })),
+    ...trailing.map((part) => paintedPart(part, position(part))),
+  ]);
+  const plans = new Map(
+    shown.flatMap((part) => {
+      const plan = planned.get(part.cascade.style);
+      if (arrangement.unplaceable.has(part.key)) {
+        return [[part.cascade.style, UNPAINTABLE] as const];
+      }
+      return plan === undefined ? [] : [[part.cascade.style, plan] as const];
+    })
+  );
+  // A pseudo-element the kit draws only by its place, so one with no place draws no layer.
+  const unplaced = shown.filter(
+    (part) =>
+      part.kind === "frame" && part.pseudo === true && plans.get(part.cascade.style)?.kind !== "planned"
+  );
+  for (const part of unplaced) {
+    const plan = plans.get(part.cascade.style);
+    const why = plan?.kind === "refused" ? plan.why : "the pseudo-element is not absolute";
+    for (const property of part.cascade.style.ownProperties()) {
+      part.cascade.style.mark(
+        property,
+        "unmapped",
+        `the kit draws no layer for the pseudo-element: ${why}`,
+        []
+      );
+    }
+  }
+  const drawn = shown.filter((part) => !unplaced.includes(part));
+  const drawnBefore = before.filter((part) => !unplaced.includes(part));
+  const mapped = drawn.map((part): MappedPart => {
     const index = flowing.indexOf(part);
     const inFlow = (): Room => {
       const inside = roomInside(holder, layerIndex(index));
@@ -631,7 +691,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     };
     const room =
       index === -1
-        ? absoluteRoom(holder)
+        ? placedRoom(absoluteRoom(holder), part.cascade.style, plans.get(part.cascade.style))
         : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
     const styles = flowing.map((each) => each.cascade.style);
     // The one layer of a box leaves the box its size when it hides: a box fixed or filling on both
@@ -657,7 +717,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       layout.blocks && adjoinsMargin(styles, index),
       reader,
       // A fixed part sits out of the flow, so it is first where no part shows before it.
-      shown.indexOf(part) === 0,
+      drawn.indexOf(part) === 0,
       keepsRoom
     );
   });
@@ -716,7 +776,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
           placed?.layer.sizing.horizontal.kind === "fill",
       },
       leading.cascade.style,
-      huggedWidth(mapped[shown.indexOf(leading)]?.layer)
+      huggedWidth(mapped[drawn.indexOf(leading)]?.layer)
     )
       ? leading.cascade.style
       : undefined;
@@ -787,7 +847,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       positionedBy: box.positionedBy,
     },
     parts,
-    endInFlow
+    endInFlow,
+    plans
   );
   // Placement gives an absolute instance a new layer, which paints what the layer it replaces does.
   placement.layers.forEach((layer, index) => {
@@ -810,7 +871,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     placed?.counterAlign ?? (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and
   // the parts after the label last.
-  const first = placement.layers.slice(0, before.length);
+  const first = placement.layers.slice(0, drawnBefore.length);
   const laid: readonly ChildLayerSpec[] = [
     ...(sections === undefined
       ? first
@@ -822,7 +883,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
           ),
         })),
     ...after,
-    ...placement.layers.slice(before.length),
+    ...placement.layers.slice(drawnBefore.length),
   ];
   const children = joinFlushLayers(
     reader,
@@ -879,8 +940,38 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     style,
     paints,
   }));
-  return layout.blocks && stacksFirstOnTop(reader, stacks) ? { ...mappedBox, firstOnTop: true } : mappedBox;
+  const firstOnTop = layout.blocks && stacksFirstOnTop(reader, stacks);
+  // Each placed layer paints where CSS paints it among the in-flow ones, whose flow order stays. A box
+  // that paints its first layer on top reads its order the other way round, so it keeps the markup's.
+  const positioned = new Set(
+    flowing.flatMap((part) => (POSITIONED_IN_FLOW.has(position(part)) ? [part.key] : []))
+  );
+  const painting = arrangePaint(
+    children.map((child) => ({
+      key: child.key,
+      placed: outOfLayout(child),
+      positioned: positioned.has(child.key),
+    }))
+  );
+  const ordered =
+    firstOnTop || painting.unplaceable.size > 0 ? children : inPaintOrder(children, painting.order);
+  const painted: BoxSpec = { ...mappedBox, children: ordered };
+  return firstOnTop ? { ...painted, firstOnTop: true } : painted;
 }
+
+/** A part as the paint order reads it: absolute, or in the flow and positioned itself. */
+function paintedPart(part: ShownPart, position: string): PaintedLayer {
+  return { key: part.key, placed: position === "absolute", positioned: POSITIONED_IN_FLOW.has(position) };
+}
+
+/** The parent's padding box lengths an absolute part's percentages take, where the room knows them. */
+function paddingBoxOf(room: Room) {
+  const length = ({ percent }: Room["horizontal"]) => (percent.kind === "length" ? percent.value : undefined);
+  return { horizontal: length(room.horizontal), vertical: length(room.vertical) };
+}
+
+/** The positions of an in-flow box that is positioned, which paints among the absolute ones. */
+const POSITIONED_IN_FLOW: ReadonlySet<string> = new Set(["relative", "sticky"]);
 
 /**
  * Whether a flex row with no `justify-content` has room beside its layers, so CSS packs them at its
@@ -1017,7 +1108,12 @@ const FILL_ACROSS: SizeSpec = { kind: "fill" };
  */
 function leadingAbsolute(parts: readonly ShownPart[]): ShownPart | undefined {
   const [first] = parts;
-  return first?.kind === "frame" && parts.length === 1 && outOfFlow(first.cascade.style) ? first : undefined;
+  return first?.kind === "frame" &&
+    first.pseudo !== true &&
+    parts.length === 1 &&
+    outOfFlow(first.cascade.style)
+    ? first
+    : undefined;
 }
 
 /**
@@ -1031,7 +1127,7 @@ function leadingAbsolute(parts: readonly ShownPart[]): ShownPart | undefined {
  */
 function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope): readonly ShownPart[] {
   const { cell } = scope;
-  return (box.parts ?? [])
+  const elements = (box.parts ?? [])
     .filter((child) => child.shownIn(cell))
     .map((child): ShownPart => {
       if ("kind" in child) {
@@ -1040,6 +1136,22 @@ function cascadeParts(box: BoxDefinition, cascade: BoxCascade, scope: MapScope):
       const name = partName(child);
       return { kind: "frame", child, key: child.key, name, cascade: cascade.part(name, elementOf(child)) };
     });
+  const pseudo = pseudoParts(cascade).map(
+    ({ pseudo, child, cascade: own }): ShownPart & { readonly at: "before" | "after" } => ({
+      kind: "frame",
+      child,
+      key: child.key,
+      name: child.key,
+      cascade: own,
+      pseudo: true,
+      at: pseudo,
+    })
+  );
+  return [
+    ...pseudo.filter(({ at }) => at === "before"),
+    ...elements,
+    ...pseudo.filter(({ at }) => at === "after"),
+  ];
 }
 
 /** What finds a frame part's element: its key, its `data-slot`, or its place for a part without one. */

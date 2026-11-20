@@ -9,6 +9,8 @@ import type { Density } from "@elmeragroup/fuse/theme-catalog";
 
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
+import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
+import type { PseudoPaint } from "./pseudo-boxes.ts";
 
 /**
  * A mode a designer can pick for a kit frame, as the page stamps it: the density on `<html>`, and
@@ -107,6 +109,9 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   {@link TRACK_CLEARANCE_PX} narrower than its column at the captured width. The items' least
  *   widths then fit inside the content box, so the `auto` column is the content box's width (CSS
  *   Grid 1 §11.5, §11.8), on both platforms the capture runs on.
+ * - `pseudoBoxes`: each of an element's `::before` and `::after` that paints its box and, in every
+ *   mode of {@link EVERY_MODE} once its faces have loaded, is an absolute box laid out against the
+ *   element, as `pseudo-boxes.ts` decides.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -135,8 +140,29 @@ export async function measuredFacts(
   if (exceptionDetails !== undefined) {
     throw new FactsUnmeasured(exceptionDetails.exception?.description ?? exceptionDetails.text);
   }
-  // SAFETY: the page function returns facts by path, as plain JSON.
-  return new Map(Object.entries((result.value ?? {}) as Record<string, MeasuredFacts>));
+  // SAFETY: the page function returns facts by path, as plain JSON, each with the paint of the
+  // pseudo-elements it measured as absolute boxes beside them.
+  const measured = (result.value ?? {}) as Record<
+    string,
+    MeasuredFacts & { readonly pseudoPaint?: Record<string, PseudoPaint> }
+  >;
+  return new Map(Object.entries(measured).flatMap(([path, facts]) => pseudoPaints(path, facts)));
+}
+
+/**
+ * An element's facts with `pseudoBoxes` for each of its absolute `::before` and `::after` whose box
+ * paints, as `paints` judges the paint the page read, in place of that paint.
+ */
+function pseudoPaints(
+  path: string,
+  { pseudoPaint, ...facts }: MeasuredFacts & { readonly pseudoPaint?: Record<string, PseudoPaint> }
+): readonly (readonly [string, MeasuredFacts])[] {
+  const boxes = (["before", "after"] as const).filter((name) => {
+    const paint = pseudoPaint?.[name];
+    return paint !== undefined && paints(paint);
+  });
+  const kept: MeasuredFacts = boxes.length === 0 ? facts : { ...facts, pseudoBoxes: boxes };
+  return Object.keys(kept).length === 0 ? [] : [[path, kept]];
 }
 
 /**
@@ -618,6 +644,17 @@ const MEASURE_IN_PAGE = `async function () {
     for (const item of inline) {
       const path = pathOf.get(item);
       if (path !== undefined) { put(path, "inlineRow", true); }
+    }
+  }
+  // An absolute ::before or ::after laid out in every mode, with the paint its box computes to, which
+  // \`pseudoPaints\` judges outside the page.
+  const pseudoPaintOf = (${pseudoPaintOf.toString()});
+  const pseudoBox = (${pseudoBox.toString()});
+  for (const name of ["before", "after"]) {
+    const pseudo = "::" + name;
+    const boxes = elements.filter(({ element }) => pseudoBox(element, pseudo));
+    for (const { element, path } of await holdsInEveryMode(boxes, (each) => pseudoBox(each, pseudo))) {
+      put(path, "pseudoPaint", { ...(out[path]?.pseudoPaint ?? {}), [name]: pseudoPaintOf(element, pseudo) });
     }
   }
   return out;

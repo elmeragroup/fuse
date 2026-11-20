@@ -63,6 +63,13 @@ export type FixtureElement = {
   readonly written?: readonly Written[];
   /** What the capture measured of the element in the browser, as `ellipsisFits`. */
   readonly measured?: MeasuredFacts;
+  /**
+   * The declarations each pseudo-element of the element wins, by its name, such as `before`: the
+   * bare utilities of its classes, as a `before:` variant applies them, and declarations written out.
+   */
+  readonly pseudo?: Readonly<
+    Record<string, { readonly classes?: string; readonly written?: readonly Written[] }>
+  >;
   readonly children?: readonly FixtureElement[];
 };
 
@@ -89,6 +96,7 @@ function classesIn(elements: readonly FixtureElement[]): readonly string[] {
   return elements.flatMap((element) => [
     ...words(element.classes),
     ...words(element.fromParent),
+    ...Object.values(element.pseudo ?? {}).flatMap((own) => words(own.classes)),
     ...classesIn(element.children ?? []),
   ]);
 }
@@ -131,16 +139,9 @@ export async function buildCaptured(
     ])
   );
   const declarations: CapturedDeclaration[] = [];
-  const element = (fixture: FixtureElement): CapturedElement => {
-    const won = [
-      ...words(fixture.classes).flatMap((className) =>
-        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
-      ),
-      ...words(fixture.fromParent).flatMap((className) =>
-        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 1 }))
-      ),
-      ...(fixture.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
-    ];
+  const winners = (
+    won: readonly (Written & { readonly source: DeclarationSource; readonly owner: number })[]
+  ): readonly number[] => {
     // Each longhand has one winner, the last declaration that sets it.
     const longhandsOf = won.map(({ property, value }) =>
       property.startsWith("--") ? [property] : expandShorthand(property, value).map(([longhand]) => longhand)
@@ -166,6 +167,29 @@ export async function buildCaptured(
         }) - 1,
       ];
     });
+    return indexes;
+  };
+  const element = (fixture: FixtureElement): CapturedElement => {
+    const indexes = winners([
+      ...words(fixture.classes).flatMap((className) =>
+        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
+      ),
+      ...words(fixture.fromParent).flatMap((className) =>
+        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 1 }))
+      ),
+      ...(fixture.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
+    ]);
+    const pseudo = Object.fromEntries(
+      Object.entries(fixture.pseudo ?? {}).map(([name, own]) => [
+        name,
+        winners([
+          ...words(own.classes).flatMap((className) =>
+            compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
+          ),
+          ...(own.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
+        ]),
+      ])
+    );
     const captured: CapturedElement = {
       tag: fixture.tag ?? "div",
       attributes: fixture.slot === undefined ? {} : { "data-slot": fixture.slot },
@@ -173,7 +197,7 @@ export async function buildCaptured(
       text: fixture.text ?? "",
       declarations: indexes,
       initial: [],
-      pseudo: {},
+      pseudo,
       variables: {},
       unmatched: [],
       children: (fixture.children ?? []).map(element),

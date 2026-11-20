@@ -351,7 +351,12 @@ describe("a variant whose bar holds an absolute fill", () => {
   const FLOWING: FrameLayerSpec = { ...frame("button/fill", "Fill", []), sizing: fixedSides(217.6, 6) };
   const ABSOLUTE: FrameLayerSpec = {
     ...FLOWING,
-    absolute: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } },
+    placement: {
+      kind: "edges",
+      within: "parent",
+      horizontal: { kind: "scale", start: 0 },
+      vertical: { kind: "stretch", start: 0, end: 0 },
+    },
   };
   const barKit = (fill: FrameLayerSpec, width = 256) =>
     nestedKit([{ ...frame("button/bar", "Bar", [fill]), sizing: fixedSides(width, 6) }]);
@@ -392,7 +397,9 @@ describe("a variant whose bar holds an absolute fill", () => {
   it("turns a fill the auto layout placed absolute, writing its place whatever it reads, and converges", async () => {
     const { file } = await appliedBar(FLOWING);
     expect((await reconcileKit(file.figma, barKit(ABSOLUTE), false)).changes).toEqual([
-      "Button / size=md / Bar / Fill: layoutPositioning → ABSOLUTE, constraints → SCALE STRETCH, x → 0, y → 0",
+      "Button / size=md / Bar / Fill: layoutPositioning → ABSOLUTE",
+      "Button / size=md / Bar / Fill: constraints → SCALE STRETCH",
+      "Button / size=md / Bar / Fill: place → 0px from the left, scaling, 0px from the top to 0px from the bottom",
       ...RELAYOUT,
     ]);
     await reconcileKit(file.figma, barKit(ABSOLUTE), true);
@@ -418,6 +425,47 @@ describe("a variant whose bar holds an absolute fill", () => {
     await expect(reconcileKit(file.figma, filling, false)).rejects.toThrow(message);
     await expect(reconcileKit(file.figma, filling, true)).rejects.toThrow(message);
     expect(file.writes.slice(setup)).toEqual([]);
+  });
+});
+
+// Oracle: the placement's definition. A line 4px from its parent's left, stretched from 8px below its
+// top to 8px above its bottom, in a 100 × 40 parent, is 24px tall, a length the spec leaves to the
+// place, as the build leaves a stretch beside a parent whose height it cannot tell.
+describe("a frame its placement stretches to a length the spec leaves it", () => {
+  const LINE: FrameLayerSpec = {
+    ...frame("button/line", "Line", []),
+    sizing: { horizontal: { kind: "fixed", length: literal(1) }, vertical: { kind: "placed" } },
+    placement: {
+      kind: "edges",
+      within: "parent",
+      horizontal: { kind: "start", start: 4 },
+      vertical: { kind: "stretch", start: 8, end: 8 },
+    },
+  };
+  const parentKit = () =>
+    nestedKit([
+      {
+        ...frame("button/bar", "Bar", [LINE]),
+        sizing: {
+          horizontal: { kind: "fixed", length: literal(100) },
+          vertical: { kind: "fixed", length: literal(40) },
+        },
+      },
+    ]);
+
+  it("takes the parent's height less both distances in one Apply, and the next Plan lists nothing", async () => {
+    const { file } = fixture("Roboto");
+    await reconcileKit(file.figma, parentKit(), true);
+    file.reopen();
+    const line = childNamed(childNamed(await buttonVariant(file), "FRAME", "Bar"), "FRAME", "Line");
+    expect([line.layoutPositioning, line.x, line.y, line.width, line.height]).toEqual([
+      "ABSOLUTE",
+      4,
+      8,
+      1,
+      24,
+    ]);
+    expect(await reconcileKit(file.figma, parentKit(), false)).toEqual({ changes: [], warnings: [] });
   });
 });
 

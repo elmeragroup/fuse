@@ -1,13 +1,15 @@
+import { instancePlacement, leaveUnplaced, readPlacement, UNPAINTABLE } from "./absolute-placement";
+import type { PlacementPlan } from "./absolute-placement";
 /**
  * Where the parts of a box sit, read from the CSS that places them rather than from auto layout:
- * `position` and the centering pattern, an absolute part at its parent's top left, a translate
- * along a row and a `scale`. `box-transform.ts` reads a `rotate`, a transform at rest and an origin. `box-mapping.ts` maps each box,
+ * `position` and the centering pattern, an absolute part by its parent's edges, as
+ * `absolute-placement.ts` reads it for frames and instances alike, a translate along a row and a
+ * `scale`. `box-transform.ts` reads a `rotate`, a transform at rest and an origin. `box-mapping.ts` maps each box,
  * then hands this module the box's layout and the parts it mapped, and gets back the box's primary
  * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
  * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
-import { readAnchored } from "./anchored-part";
-import { listNames, marginsAcross, outOfFlow } from "./box-sizing";
+import { marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
 import {
   affineLength,
@@ -23,9 +25,8 @@ import {
   sumAffine,
 } from "./css-values";
 import type { AffineLength, VariableIndex, Viewport } from "./css-values";
-import { fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
+import { AXIS_CONSTRAINT, fixedLength, NO_LIMITS, strokeRoom, ZERO } from "./kit-spec";
 import type {
-  AbsoluteSpec,
   BoxSpec,
   ChildLayerSpec,
   CounterAlignSpec,
@@ -37,7 +38,7 @@ import type {
   SizeSpec,
   StrokeSpec,
 } from "./kit-spec";
-import type { CoverageNote, LayerStyle } from "./layer-style";
+import type { LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
 import { readPivot } from "./pivot-part";
 
@@ -122,32 +123,34 @@ export type Placement = {
 
 /**
  * Read where each part of a box sits, and the box's primary alignment. A part that centers itself
- * by absolute position, one absolute at the box's top left, or one moved along a row by a
- * translate, reads here. A translate on the one part of a flex row sets the row's alignment. An
- * instance sits where the flow puts it, so only its `relative` maps, or it sits absolutely at its
- * parent's end and centred down it, as {@link readAnchored} reads it.
+ * by absolute position, one placed by its parent's edges, a turned frame placed by its centre, or one
+ * moved along a row by a translate, reads here. A translate on the one part of a flex row sets the
+ * row's alignment. An instance sits where the flow puts it, so only its `relative` maps, or by its
+ * parent's edges or centre, as `absolute-placement.ts` reads it.
  *
  * @param parent - The box that holds the parts.
  * @param parts - The parts the cell renders in it, as mapped.
  * @param inFlowEnd - The style of the absolute part that draws in flow at the row's end, as
  *   {@link endsInFlow} found it, or undefined.
+ * @param plans - The places `absolute-placement.ts` planned for the box's absolute parts, frames and
+ *   instances, by each part's style.
  * @returns The box's primary alignment, the translate's where one maps, else the layout's, and the
  *   parts' layers in order.
  */
 export function placeParts(
   parent: ParentBox,
   parts: readonly PlacedPart[],
-  inFlowEnd: LayerStyle | undefined
+  inFlowEnd: LayerStyle | undefined,
+  plans: ReadonlyMap<LayerStyle, PlacementPlan> = new Map()
 ): Placement {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
-  const flow = parts.filter((part) => !outOfFlow(part.style)).map((part) => part.style);
   const layers = parts.map(({ style, layer }) => {
     if (style === inFlowEnd) {
       style.read(
         "position",
         (value) => value,
         () => ({ outcome: "literal", detail: IN_FLOW_END }),
-        style.feed("absolute")
+        style.feed("placement")
       );
       return layer;
     }
@@ -157,27 +160,34 @@ export function placeParts(
       if (position === "fixed") {
         return layer;
       }
-      if (position !== "absolute") {
+      const plan = plans.get(style);
+      if (plan === undefined) {
         readPosition(style, "other", undefined);
         return layer;
       }
-      const anchored = readAnchored(style, parent.style, flow, parent.layers);
-      return anchored === undefined ? layer : { ...layer, absolute: anchored };
+      const read = readPlacement(style, plan);
+      const placement = read.kind === "placed" ? instancePlacement(read.placement) : undefined;
+      if (placement === undefined) {
+        leaveUnplaced(style, read.kind === "refused" ? read.why : UNSIZED_INSTANCE);
+        return layer;
+      }
+      return { ...layer, placement };
+    }
+    if (plans.get(style) === UNPAINTABLE) {
+      leaveUnplaced(style, UNPAINTABLE.why);
+      return layer;
     }
     const pivot = readPivot(style, layer, parent);
     if (pivot !== undefined) {
-      return { ...layer, pivot };
+      return { ...layer, placement: pivot };
     }
-    const absolute = readAbsoluteStart(style, layer, parent.style);
-    switch (absolute.kind) {
-      case "absolute":
-        return { ...layer, absolute: absolute.at };
-      case "refused":
-        return layer;
-      case "other":
-        readPosition(style, centering, anchoredConstraints(layer.children));
-        return layer;
+    const plan = plans.get(style);
+    const read = plan === undefined ? undefined : readPlacement(style, plan);
+    if (read?.kind === "placed") {
+      return { ...layer, placement: read.placement };
     }
+    readPosition(style, centering, anchoredConstraints(layer.children));
+    return layer;
   });
   return { primaryAlign: alignAlongRow(parent, parts), layers };
 }
@@ -482,12 +492,17 @@ type ParentLayout = "centers-its-one-layer" | "other";
  */
 function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefined {
   for (const layer of layers) {
-    if (layer.kind === "instance" && layer.absolute !== undefined) {
-      return `${layer.absolute.constraints.horizontal} × ${layer.absolute.constraints.vertical}`;
+    if (layer.kind === "instance" && layer.placement !== undefined) {
+      const { horizontal, vertical } = layer.placement;
+      return `${AXIS_CONSTRAINT[horizontal.kind]} × ${AXIS_CONSTRAINT[vertical.kind]}`;
     }
   }
   return undefined;
 }
+
+/** Why an absolute instance whose place would set its length stays unplaced. */
+const UNSIZED_INSTANCE =
+  "an instance keeps the length its main gives it, which no stretched or scaled place sets";
 
 /**
  * A box's `translate` as shares of its own size, as `-translate-x-1/2` moves it back by half its
@@ -531,7 +546,7 @@ function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string 
           outcome: "literal",
           detail: "centered on its containing block, as its parent's auto layout centers it",
         }),
-        reader.feed("absolute")
+        reader.feed("placement")
       );
     }
     return;
@@ -669,83 +684,6 @@ function sumsTo(total: string, terms: readonly string[]): boolean {
   const whole = affineLength(total);
   const parts = terms.map(affineLength).filter((part): part is AffineLength => part !== undefined);
   return whole !== undefined && parts.length === terms.length && sameAffine(whole, sumAffine(parts));
-}
-
-/** How the coverage table names an absolute part's place. */
-const AT_TOP_LEFT =
-  "an absolute layer at its parent's top left, which keeps its share of the parent's width and stretches with its height";
-
-/** The properties whose zero, or absence, leaves a parent's padding box where its border box is. */
-const FLUSH = ["padding-top", "padding-right", "padding-bottom", "padding-left", "border-width"] as const;
-
-/** The limits that would hold an absolute part's share of its parent where Figma's constraints scale it. */
-const SHARE_BOUNDS = ["min-width", "max-width", "min-height", "max-height"] as const;
-
-/**
- * What {@link readAbsoluteStart} made of a part: an absolute layer at its parent's top left, a part
- * of that shape it refused and recorded as unmapped, or any other part, which the other readers
- * place.
- */
-type AbsoluteRead =
-  | { readonly kind: "absolute"; readonly at: AbsoluteSpec }
-  | { readonly kind: "refused" }
-  | { readonly kind: "other" };
-
-/**
- * Read `absolute top-0 left-0` as an absolute layer at its parent's top left, as a meter's fill sits
- * in its bar. The parent must be positioned, so it is the part's containing block, and hold no
- * padding or border, so its padding box, where the offsets start, is the frame Figma places the
- * layer in. The part's width must be a share of the parent's, which keeps its share as the parent
- * grows, as Figma's SCALE does, and its height the parent's whole height, as `100%` or `inherit` take
- * it, which keeps both edges, as STRETCH does (P8). The room the part had resolved both to literals.
- * A `min-*` or `max-*` on the part bounds its share, which CSS holds as the parent grows and Figma's
- * constraints would carry past, so such a part stays unmapped and its row names the bound. Every
- * other offset, length or parent leaves the position to the other readers.
- *
- * @param style - The part's style.
- * @param layer - The part, mapped in the room an absolute part has.
- * @param parent - The parent's style.
- * @returns The part's place, its refusal, or `other` where the pattern does not hold.
- */
-function readAbsoluteStart(style: LayerStyle, layer: FrameLayerSpec, parent: LayerStyle): AbsoluteRead {
-  const keyword = (reader: LayerStyle, property: string): string =>
-    normalizeCss(reader.resolved(property) ?? "");
-  const zero = (reader: LayerStyle, property: string): boolean =>
-    evaluateLength(reader.resolved(property) ?? "") === 0;
-  const holds =
-    keyword(style, "position") === "absolute" &&
-    !["", "static"].includes(keyword(parent, "position")) &&
-    FLUSH.every((property) => !parent.has(property) || zero(parent, property)) &&
-    zero(style, "top") &&
-    zero(style, "left") &&
-    !style.has("right") &&
-    !style.has("bottom") &&
-    evaluatePercentage(style.resolved("width") ?? "") !== undefined &&
-    fixedLength(layer.sizing.horizontal)?.kind === "literal" &&
-    (style.inherits("height") || evaluatePercentage(style.resolved("height") ?? "") === 1) &&
-    fixedLength(layer.sizing.vertical)?.kind === "literal";
-  if (!holds) {
-    return { kind: "other" };
-  }
-  const bounds = SHARE_BOUNDS.filter((property) => style.has(property));
-  const note: CoverageNote =
-    bounds.length === 0
-      ? { outcome: "literal", detail: AT_TOP_LEFT }
-      : {
-          outcome: "unmapped",
-          detail: `${listNames(bounds)} ${bounds.length === 1 ? "bounds" : "bound"} the layer's share of its parent, which Figma's constraints would carry past the bound as the parent resizes`,
-        };
-  for (const property of ["position", "top", "left"]) {
-    style.read(
-      property,
-      () => note,
-      (decided) => decided,
-      style.feed("absolute")
-    );
-  }
-  return bounds.length === 0
-    ? { kind: "absolute", at: { x: 0, y: 0, constraints: { horizontal: "SCALE", vertical: "STRETCH" } } }
-    : { kind: "refused" };
 }
 
 /**
