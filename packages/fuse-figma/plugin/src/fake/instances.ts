@@ -380,6 +380,9 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["boundVariables", ["boundVariables" as NodeChangeProperty]],
   ["characters", ["characters"]],
   ["textAlignHorizontal", ["textAlignHorizontal"]],
+  // On 2026-11-20 a real file listed `fontName` on an instance's text after a font write, and kept it
+  // listed after the main's face was written back (SW).
+  ["fontName", ["fontName"]],
   ["minWidth", ["minWidth"]],
   ["minHeight", ["minHeight"]],
   ["componentProperties", ["componentProperties"]],

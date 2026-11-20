@@ -1,5 +1,6 @@
 /**
- * Unit under test: `diffInstance` on a root's alignment along its direction. Oracle: probe LD1, run
+ * Unit under test: `diffInstance`, here on a root's alignment, a stroke's sides and a label's face.
+ * Each block names its oracle. The alignment's is probe LD1, run
  * in a real Figma file on 2026-11-19. An instance of a Button-like component that fills a vertical
  * auto layout, its `primaryAxisAlignItems` overridden from CENTER to MIN, listed the field in its
  * `overrides` and kept MIN through a variant switch, a TEXT property change, a density switch and
@@ -12,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 import { diffInstance } from "./instance-diff.ts";
 import { NO_LIMITS } from "./kit-spec.ts";
-import type { BoxSpec, ComponentRootSpec, FrameLayerSpec, SizingSpec } from "./kit-spec.ts";
+import type { BoxSpec, ComponentRootSpec, FrameLayerSpec, SizingSpec, TextLayerSpec } from "./kit-spec.ts";
 
 const ZERO = { kind: "literal", value: 0 } as const;
 
@@ -146,5 +147,48 @@ describe("a root's stroke on some sides, built in place", () => {
       }
     );
     expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["stroke"]]);
+  });
+});
+
+// Oracle: the Figma plugin typings, where an instance's text has a `fontName` of its own that
+// `overrides` lists, and CSS Fonts 4 §2.2, where a chip operator's `font-normal`, weight 400, takes
+// the family's Regular face where Button's label takes Medium. A weight bound to a variable picks
+// its face in each mode, which one font on the instance would not follow, so it stays unmapped.
+describe("a label's face, built in place", () => {
+  const LABEL: TextLayerSpec = {
+    kind: "text",
+    key: "label",
+    name: "label",
+    characters: "is",
+    textProperty: "Label",
+    fontFamily: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
+    fontStyle: "Medium",
+    fontSize: { kind: "literal", value: 14 },
+    lineHeight: { kind: "literal", value: 20 },
+    color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+    underline: undefined,
+    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+    align: { horizontal: "CENTER", vertical: "TOP" },
+    truncation: undefined,
+  };
+  const WEIGHT = {
+    variable: { collection: "Fuse tokens", name: "font-weight-label" },
+    faces: ["Regular", "Medium"],
+  } as const;
+  const held = (label: TextLayerSpec): ComponentRootSpec => ({ ...VARIANT, children: [label] });
+  const built = (label: TextLayerSpec): ComponentRootSpec =>
+    inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, children: [label] });
+
+  it("overrides a literal weight's face in the same family", () => {
+    const diff = diffInstance(built({ ...LABEL, fontStyle: "Regular" }), held(LABEL));
+    expect([diff.overrides, diff.unmapped]).toEqual([
+      [{ path: ["label"], field: "fontStyle", style: "Regular" }],
+      [],
+    ]);
+  });
+
+  it("stays unmapped where the variant's weight binds a variable", () => {
+    const diff = diffInstance(built({ ...LABEL, fontStyle: "Regular" }), held({ ...LABEL, weight: WEIGHT }));
+    expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["fontStyle", "weight"]]);
   });
 });
