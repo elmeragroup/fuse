@@ -83,7 +83,9 @@ export type VariableSource = typeof VariableSourceSchema.Type;
 
 /**
  * What the capture measured of an element in its cell, as facts that hold on any platform, never as
- * a box: each is recorded only where it holds by a margin no font's metrics move.
+ * a box: each is recorded only where it holds by a margin no font's metrics move. A fact said to hold
+ * in every mode holds in each color scheme and density with each legal theme, as the page stamps
+ * them in turn; the page reads every other fact in its own mode only.
  */
 const MeasuredFactsSchema = Schema.Struct({
   /**
@@ -112,51 +114,51 @@ const MeasuredFactsSchema = Schema.Struct({
   /** The element stays more than half a pixel under its `max-height`. */
   underMaxHeight: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * In every density and theme, the element is as wide with its `max-width` 24px lower, so the
+   * In every mode, the element is as wide with its `max-width` 24px lower, so the
    * maximum never narrows it.
    */
   underMaxWidth: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * A flex line whose items hold auto margins along it, which in every density and theme leaves at
+   * A flex line whose items hold auto margins along it, which in every mode leaves at
    * least 24px of free space for them, so they take room and push the items after them to its end.
    */
   freeAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * A flex line whose items hold auto margins along it, which in every density and theme fits its
-   * items with a pixel to spare once those margins are zero, so none of them shrinks.
+   * A flex line whose items hold auto margins along it, which in every mode fits its items with a
+   * pixel to spare once those margins are zero, so none of them shrinks.
    */
   fitsAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
    * A flex row of two or more items that grow, each as wide as its own max-content width in every
-   * density and theme, so none of them grows past its content.
+   * mode, so none of them grows past its content.
    */
   itemsAtContent: Schema.optionalKey(Schema.Literal(true)),
   /**
    * A root whose height is a percentage, where the first element above it whose height is a length
-   * is as tall as that length in every density and theme, so the percentage resolves against it.
+   * is as tall as that length in every mode, so the percentage resolves against it.
    */
   basisAsDeclared: Schema.optionalKey(Schema.Literal(true)),
   /**
    * An element with an aspect ratio and an `auto` height, whose border box is as tall as its width
-   * times the ratio and keeps its width, height and ratio in every density and theme, so the ratio
-   * sets its height. It holds the border box's width and height, in CSS pixels.
+   * times the ratio and keeps its width, height and ratio in every mode, so the ratio sets its
+   * height. It holds the border box's width and height, in CSS pixels.
    */
   ratioHeight: Schema.optionalKey(Schema.Struct({ width: Schema.Finite, height: Schema.Finite })),
   /**
    * A table box whose rows, cells or one child tile its content box with no space between, in every
-   * density and theme, so no column or row stretches a cell past what it holds.
+   * mode, so no column or row stretches a cell past what it holds.
    */
   tableTiles: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * A table row whose table collapses its borders in every density and theme, so its borders sit on
-   * the grid lines between the cells (CSS 2.1 §17.6.2) and take no room in its own box, and whose
-   * bordered edges no other box that shares them sets a border on (CSS 2.1 §17.6.2.1).
+   * A table row whose table collapses its borders in every mode, so its borders sit on the grid lines
+   * between the cells (CSS 2.1 §17.6.2) and take no room in its own box, and whose bordered edges no
+   * other box that shares them sets a border on (CSS 2.1 §17.6.2.1).
    */
   bordersCollapse: Schema.optionalKey(Schema.Literal(true)),
   /**
    * An item of a flex row whose own display is `inline`, which the row blockifies, where in every
-   * density and theme the row's items sit on its one line in source order, each one box with its
-   * own text on one line.
+   * mode the row's items sit on its one line in source order, each one box with its own text on one
+   * line.
    */
   inlineRow: Schema.optionalKey(Schema.Literal(true)),
   /**
@@ -176,47 +178,47 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   anchorWiderThanMinimum: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * The element's `::before` and `::after` that paint and, in every density and theme, are absolute
+   * The element's `::before` and `::after` that paint and, in every mode, are absolute
    * boxes laid out against the element, its containing block, so the kit draws each as a layer.
    */
   pseudoBoxes: Schema.optionalKey(Schema.Array(Schema.Literals(["before", "after"]))),
   /**
-   * On a grid of two or more columns: the columns, from 0, that in every density and theme are as
+   * On a grid of two or more columns: the columns, from 0, that in every mode are as
    * wide as their widest item at max-content, which a Figma HUG track draws.
    */
   gridHugs: Schema.optionalKey(Schema.Array(Schema.Finite)),
   /**
-   * On a grid of two or more columns: the columns, from 0, that in every density and theme are wider
+   * On a grid of two or more columns: the columns, from 0, that in every mode are wider
    * than each of their items at min-content by a clearance no platform's font moves, so an `auto`
    * floor under a flexible column binds nowhere.
    */
   gridHolds: Schema.optionalKey(Schema.Array(Schema.Finite)),
   /**
    * On a grid of two or more columns: for each column, the item, by its place among the grid's items,
-   * that in every density and theme is at least as wide as every other item in the column, or -1.
+   * that in every mode is at least as wide as every other item in the column, or -1.
    */
   gridWidest: Schema.optionalKey(Schema.Array(Schema.Finite)),
   /** The same for each row and the item at least as tall as every other item in it. */
   gridTallest: Schema.optionalKey(Schema.Array(Schema.Finite)),
-  /** On such a grid, how many items it lays out, the same in every density and theme. */
+  /** On such a grid, how many items it lays out, the same in every mode. */
   gridItems: Schema.optionalKey(Schema.Finite),
   /** On an item of such a grid, its place among the grid's items, from 0. */
   gridItem: Schema.optionalKey(Schema.Finite),
   /**
-   * In every density and theme, the element generates no box and adds nothing to its parent's flow
+   * In every mode, the element generates no box and adds nothing to its parent's flow
    * but its children's boxes: `display: contents`, no text of its own and no `::before` or `::after`
    * in flow (CSS Display 3 §2.5).
    */
   noBox: Schema.optionalKey(Schema.Literal(true)),
   /**
-   * On an absolute element below the root: in every density and theme, its static parent's border
+   * On an absolute element below the root: in every mode, its static parent's border
    * box is the padding box of its containing block, an element above the parent, and stays so with
    * that block grown, so the kit places the element in the parent's frame.
    */
   parentSpansBlock: Schema.optionalKey(Schema.Literal(true)),
   /**
    * On an absolute element below the root: the axes along which its border box is one length, within
-   * a 64th of a pixel, in every density and theme, so its place at its parent's end does not move as
+   * a 64th of a pixel, in every mode, so its place at its parent's end does not move as
    * a mode changes its length.
    */
   oneLength: Schema.optionalKey(Schema.Array(Schema.Literals(["horizontal", "vertical"]))),

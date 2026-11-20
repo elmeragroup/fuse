@@ -117,8 +117,8 @@ export type PlacementContext = {
    */
   readonly parentSpansBlock: boolean;
   /**
-   * The axes along which the capture measured the part one length in every density and theme
-   * (`oneLength`), empty where it measured none.
+   * The axes along which the capture measured the part one length in every mode (`oneLength`),
+   * empty where it measured none.
    */
   readonly oneLength: ReadonlySet<"horizontal" | "vertical">;
   /** The styles of the parts in the parent's flow, which a centre offset's parent height reads. */
