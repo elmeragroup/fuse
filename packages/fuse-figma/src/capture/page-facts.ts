@@ -75,6 +75,10 @@ const EVERY_MODE: readonly PageMode[] = DENSITIES.flatMap((density) =>
  *   those margins at zero leaves at least {@link FREE_SPACE_CLEARANCE_PX} between its last item and
  *   its content box's end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the
  *   margins take that room (CSS Flexbox 1 §8.1).
+ * - `fitsAlongMain`: a flex container as `freeAlongMain` takes one, whose items, with their auto
+ *   margins at zero, leave at least {@link FIT_CLEARANCE_PX} between the last and its content box's
+ *   end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the line's items fit it
+ *   and none shrinks (CSS Flexbox 1 §9.7).
  * - `ellipsisFits`: an element that ends its one line of text in an ellipsis, `text-overflow:
  *   ellipsis` on a box that hides its overflow and keeps to one line, whose content box is at least
  *   a pixel wider than its first character and the ellipsis together. Chromium keeps the first
@@ -168,6 +172,14 @@ const MAX_WIDTH_CLEARANCE_PX = 24;
  * {@link MAX_WIDTH_CLEARANCE_PX}, for the same reason and with the same evidence.
  */
 const FREE_SPACE_CLEARANCE_PX = 24;
+
+/**
+ * The least free space, in CSS pixels, a flex line must leave along its direction, with its auto
+ * margins at zero, for the page to record `fitsAlongMain`: the line's items fit it. It is the whole
+ * pixel {@link TRACK_CLEARANCE_PX} keeps for the same reason, so a line whose items come within the
+ * platforms' fraction of a pixel of its end records nothing.
+ */
+const FIT_CLEARANCE_PX = TRACK_CLEARANCE_PX;
 
 /**
  * Chromium's layout unit, 1/64 of a CSS pixel: a box's width moves by at least this much when its
@@ -405,18 +417,18 @@ const MEASURE_IN_PAGE = `async function () {
     await Promise.all([...faces].map((face) => document.fonts.load(face)));
     await document.fonts.ready;
   };
-  const holdsInEveryMode = async (candidates, holds) => {
-    if (candidates.length === 0) { return candidates; }
+  // Stamp the page in each mode, settle the mode's faces and visit it, then put the page's own mode
+  // back, whatever a visit throws.
+  const inEveryMode = async (visit) => {
     const html = document.documentElement;
     const body = document.body;
     const saved = [html, body].map((element) => [element, [...element.attributes].filter((attribute) => attribute.name.startsWith("data-")).map((attribute) => [attribute.name, attribute.value])]);
-    let kept = candidates;
     try {
       for (const mode of modes) {
         for (const [name, value] of Object.entries(mode.root)) { html.setAttribute(name, value); }
         for (const [name, value] of Object.entries(mode.body)) { body.setAttribute(name, value); }
         await settleFonts();
-        kept = kept.filter((candidate) => holds(candidate.element));
+        visit();
       }
     } finally {
       for (const [element, attributes] of saved) {
@@ -425,7 +437,22 @@ const MEASURE_IN_PAGE = `async function () {
       }
     }
     await settleFonts();
+  };
+  // The candidates that hold in every mode.
+  const holdsInEveryMode = async (candidates, holds) => {
+    if (candidates.length === 0) { return candidates; }
+    let kept = candidates;
+    await inEveryMode(() => { kept = kept.filter((candidate) => holds(candidate.element)); });
     return kept;
+  };
+  // Each candidate with the least value its measure takes across the modes.
+  const leastInEveryMode = async (candidates, measure) => {
+    const least = candidates.map((candidate) => ({ ...candidate, least: Infinity }));
+    if (least.length === 0) { return least; }
+    await inEveryMode(() => {
+      for (const candidate of least) { candidate.least = Math.min(candidate.least, measure(candidate.element)); }
+    });
+    return least;
   };
   // Write temporary styles on elements, measure, and put each \`style\` attribute back as it was.
   const withStyles = (writes, measure) => {
@@ -450,12 +477,12 @@ const MEASURE_IN_PAGE = `async function () {
       Math.abs(element.getBoundingClientRect().width - width) < ${String(LAYOUT_UNIT_PX)});
   };
   for (const { path } of await holdsInEveryMode(underMaxWidth, underMax)) { put(path, "underMaxWidth", true); }
-  // A flex line holds its items and the gaps between them with room to spare along its direction
-  // once the auto margins along it give their room back.
-  const freeAlong = (element) => {
+  // The room a flex line leaves along its direction past its items and the gaps between them, once
+  // the auto margins along it give their room back, or -Infinity for a line in neither direction.
+  const roomAlong = (element) => {
     const style = getComputedStyle(element);
     const row = style.flexDirection === "row";
-    if (!row && style.flexDirection !== "column") { return false; }
+    if (!row && style.flexDirection !== "column") { return -Infinity; }
     const writes = autoMargins(element).map(({ child, side }) => [child, "margin-" + side, "0px"]);
     return withStyles(writes, () => {
       const box = element.getBoundingClientRect();
@@ -466,10 +493,14 @@ const MEASURE_IN_PAGE = `async function () {
         const after = Number.parseFloat(getComputedStyle(child).getPropertyValue(row ? "margin-right" : "margin-bottom")) || 0;
         return (row ? edges.right : edges.bottom) + after;
       }));
-      return end - used >= ${String(FREE_SPACE_CLEARANCE_PX)};
+      return end - used;
     });
   };
-  for (const { path } of await holdsInEveryMode(freeAlongMain, freeAlong)) { put(path, "freeAlongMain", true); }
+  // One sweep measures each line's least room, which each fact compares with its own clearance.
+  for (const { path, least } of await leastInEveryMode(freeAlongMain, roomAlong)) {
+    if (least >= ${String(FREE_SPACE_CLEARANCE_PX)}) { put(path, "freeAlongMain", true); }
+    if (least >= ${String(FIT_CLEARANCE_PX)}) { put(path, "fitsAlongMain", true); }
+  }
   // A table box whose parts tile its content box with no space between, each part as the box lays
   // it out: a table or a row group its rows down it, each as wide as it, a row its cells across it,
   // each as tall as it, and a cell its one child, or its own text at the cell's own length, so no

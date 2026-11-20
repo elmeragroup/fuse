@@ -550,6 +550,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       lineFits: cascade.measured?.lineFits === true,
       trackFits: cascade.measured?.trackFits === true,
       freeAlongMain: cascade.measured?.freeAlongMain === true,
+      fitsAlongMain: cascade.measured?.fitsAlongMain === true,
       tableTiles: cascade.measured?.tableTiles === true,
     }
   );

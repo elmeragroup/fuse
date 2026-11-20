@@ -115,6 +115,11 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   freeAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * A flex line whose items hold auto margins along it, which in every density and theme fits its
+   * items with a pixel to spare once those margins are zero, so none of them shrinks.
+   */
+  fitsAlongMain: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * A table box whose rows, cells or one child tile its content box with no space between, in every
    * density and theme, so no column or row stretches a cell past what it holds.
    */

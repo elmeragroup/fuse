@@ -55,6 +55,90 @@
       "className": "bg-clip-padding",
       "property": "background-clip",
       "reason": "The panel's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
+    },
+    {
+      "set": "dropdown-menu-popup",
+      "part": "dropdown-menu-shortcut",
+      "className": "ml-auto",
+      "property": "margin-left",
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+    },
+    {
+      "set": "dropdown-menu-popup",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "sizing",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-popup",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "primaryAlign",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-popup",
+      "part": "dropdown-menu-item",
+      "className": "flex",
+      "property": "display",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-sub-content",
+      "part": "dropdown-menu-shortcut",
+      "className": "ml-auto",
+      "property": "margin-left",
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+    },
+    {
+      "set": "dropdown-menu-sub-content",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "sizing",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-sub-content",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "primaryAlign",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-sub-content",
+      "part": "dropdown-menu-item",
+      "className": "flex",
+      "property": "display",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-open",
+      "part": "dropdown-menu-shortcut",
+      "className": "ml-auto",
+      "property": "margin-left",
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every density and theme (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+    },
+    {
+      "set": "dropdown-menu-open",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "sizing",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-open",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "primaryAlign",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-open",
+      "part": "dropdown-menu-item",
+      "className": "flex",
+      "property": "display",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
     }
   ],
   "unbound": [
