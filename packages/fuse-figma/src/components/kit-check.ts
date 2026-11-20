@@ -20,6 +20,7 @@ import {
   glyphRanges,
   layerAt,
   outOfLayout,
+  rootOnlyOverride,
   shownLabels,
   docNodes,
   topLevelSpecs,
@@ -363,6 +364,10 @@ const OVERRIDE_TARGETS = {
   textAlign: "text",
   glyph: "icon",
   primaryAlign: "box",
+  paddingTop: "box",
+  paddingRight: "box",
+  paddingBottom: "box",
+  paddingLeft: "box",
 } as const satisfies Record<InstanceOverride["field"], LayerKind>;
 
 /** What a layer is, for an override: a box, the root or a frame, or another layer's kind. */
@@ -519,6 +524,11 @@ function checkInstances(kit: KitSpec): void {
           if (kind !== OVERRIDE_TARGETS[override.field]) {
             throw contradiction(
               `${where} overrides the ${override.field} of ${path}, a ${kind}, which takes none.`
+            );
+          }
+          if (rootOnlyOverride(override.field) && override.path.length > 0) {
+            throw contradiction(
+              `${where} overrides the ${override.field} of ${path}, a layer below the root, and the kit overrides that field on the root alone.`
             );
           }
         }

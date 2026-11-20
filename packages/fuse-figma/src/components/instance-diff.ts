@@ -2,7 +2,7 @@
  * The in-place diff of an instance part: what the inner component's root, built where the composite
  * renders it, draws differently from the inner set's variant, and what the instance layer carries for
  * each difference. A Figma instance takes everything from its main component but its property values,
- * the paints, stroke weights, font styles, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
+ * the paints, stroke weights, font styles, corners, shadows, root paddings and alignments it overrides, and its own sizing in its parent's auto
  * layout, so a difference the instance cannot carry stays unmapped, and the composite cannot drift
  * from its parts.
  */
@@ -130,6 +130,10 @@ type Found = {
  * - A solid stroke on some sides becomes an override of the four weights where the variant's stroke
  *   is solid with literal weights and both take their room in the layout alike, as a chip segment's
  *   `border-0 border-s` keeps the start edge of Button's 1px border.
+ * - A side's padding of the root becomes an override where it differs, its value or its variable, as
+ *   a chip segment's `[--button-px-floor:0px]` pads its Button by the size's plain inset where the
+ *   Button variant binds the inset at least the identity's floor (#858). A frame's padding below the
+ *   root stays unmapped where it differs.
  * - A text's face becomes an override where both texts take a literal weight in the same family, as
  *   a chip operator's `font-normal` shows Regular inside a Button whose label is Medium. A face a
  *   bound weight picks stays unmapped.
@@ -278,6 +282,16 @@ function diffBox(
       case "shadows":
         if (!isDeepStrictEqual(inPlace.shadows, variant.shadows)) {
           found.overrides.push({ path, field: "effects", shadows: inPlace.shadows });
+        }
+        break;
+      case "paddingTop":
+      case "paddingRight":
+      case "paddingBottom":
+      case "paddingLeft":
+        if (kind !== "root") {
+          diffField(found, path, field, built.get(field), held.get(field));
+        } else if (!isDeepStrictEqual(inPlace[field], variant[field])) {
+          found.overrides.push({ path, field, value: inPlace[field] });
         }
         break;
       case "children":

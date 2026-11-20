@@ -90,6 +90,11 @@ function overrideRefs(override: InstanceOverride): BoundRef[] {
     case "strokeSides":
     case "fontStyle":
       return [];
+    case "paddingTop":
+    case "paddingRight":
+    case "paddingBottom":
+    case "paddingLeft":
+      return boundNumber(override.value);
     default:
       return boundColor(override.color);
   }

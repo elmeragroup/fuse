@@ -1,12 +1,12 @@
 /**
  * The overrides an instance layer plans in its last stage: the paints, stroke weights, font styles,
- * corners, shadows and alignments the spec gives the instance and the layers below it, and the inner
+ * corners, shadows, paddings and alignments the spec gives the instance and the layers below it, and the inner
  * variant's own value for each one the instance holds and the spec dropped. `instance-layers.ts`
  * stages the instance and calls {@link planOverrides} once every operation that can replace a
  * sublayer has run.
  */
 
-import { layerAt, ringFill, shownLabel } from "../../src/components/kit-spec.ts";
+import { layerAt, ringFill, rootOnlyOverride, shownLabel } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
   InnerVariantSpec,
@@ -16,8 +16,9 @@ import type {
   InstanceOverrideValue,
   InstancePaintOverride,
   NumberSpec,
+  PaddingField,
 } from "../../src/components/kit-spec.ts";
-import { planStrokeSides, strokeWeightField } from "./box.ts";
+import { paddingField, planStrokeSides, strokeWeightField } from "./box.ts";
 import { planCorners, planEffects, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { heldFonts, requireFont, shownFace } from "./fonts.ts";
@@ -63,7 +64,15 @@ function writeOf(override: InstanceOverride): OverrideWrite {
   return value;
 }
 
-/** A box layer of an instance that takes a fill, stroke, corner or shadow override. */
+/** The side of a box each padding override names, as `paddingField` in `box.ts` takes it. */
+const SIDE_OF = {
+  paddingTop: "Top",
+  paddingRight: "Right",
+  paddingBottom: "Bottom",
+  paddingLeft: "Left",
+} as const satisfies Record<PaddingField, string>;
+
+/** A box layer of an instance that takes a fill, stroke, corner, shadow or padding override. */
 function boxOf(layer: HeldLayer, field: string): FrameNode | InstanceNode {
   const { node } = layer;
   if (node.type !== "FRAME" && node.type !== "INSTANCE") {
@@ -150,6 +159,14 @@ function planOverride(
       planCorners(run, box, label, write.value);
       return;
     }
+    case "paddingTop":
+    case "paddingRight":
+    case "paddingBottom":
+    case "paddingLeft": {
+      const box = boxOf(layer, write.field);
+      planNumber(run, box, label, paddingField(box, SIDE_OF[write.field]), write.value);
+      return;
+    }
     case "primaryAlign": {
       const box = boxOf(layer, write.field);
       planScalar(run, label, "primaryAxisAlignItems", box.primaryAxisAlignItems, write.value, () => {
@@ -232,6 +249,11 @@ function innerValue(
         return { field, shadows: layer.shadows };
       case "primaryAlign":
         return { field, value: layer.primaryAlign };
+      case "paddingTop":
+      case "paddingRight":
+      case "paddingBottom":
+      case "paddingLeft":
+        return { field, value: layer[field] };
       default:
         return undefined;
     }
@@ -304,6 +326,10 @@ const BOX_FIELDS: ReadonlyMap<NodeChangeProperty, InstanceOverride["field"]> = n
   ["bottomLeftRadius", "cornerRadius"],
   ["bottomRightRadius", "cornerRadius"],
   ["primaryAxisAlignItems", "primaryAlign"],
+  ["paddingTop", "paddingTop"],
+  ["paddingRight", "paddingRight"],
+  ["paddingBottom", "paddingBottom"],
+  ["paddingLeft", "paddingLeft"],
 ]);
 
 /** An override write on a layer of the instance. */
@@ -344,6 +370,11 @@ function droppedWrites(
       continue;
     }
     for (const field of fieldsOf(held.layer.node, held.glyph, overriddenFields)) {
+      // The kit overrides a padding on the root alone, so a padding a layer below holds is a
+      // designer's, which no spec drops.
+      if (rootOnlyOverride(field) && held.layer.path.length > 0) {
+        continue;
+      }
       const write = kept.has(`${pathKey(held.layer.path)}:${field}`)
         ? undefined
         : innerValue(root, held.layer.path, field);

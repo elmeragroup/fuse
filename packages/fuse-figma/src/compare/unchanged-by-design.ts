@@ -134,6 +134,10 @@ function overrideInTheme(override: InstanceOverride, paint: ThemeColor): Instanc
     case "primaryAlign":
     case "strokeSides":
     case "fontStyle":
+    case "paddingTop":
+    case "paddingRight":
+    case "paddingBottom":
+    case "paddingLeft":
       return override;
     case "effects":
       return {

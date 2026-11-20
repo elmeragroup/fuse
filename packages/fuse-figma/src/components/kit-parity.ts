@@ -155,8 +155,7 @@ export const KIT_PARITY = {
   "data-table-filter": {
     kind: "partial",
     sets: ["data-table-filter-bar"],
-    missing:
-      "The bar with chips and Clear (#821), the bar narrower than 36rem, the add menu and the value popover.",
+    missing: "A ghost chip, the bar narrower than 36rem, the add menu and the value popover.",
     issue: MISSING_SETS,
   },
   "date-field": {

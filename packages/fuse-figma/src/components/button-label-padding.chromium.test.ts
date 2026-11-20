@@ -22,6 +22,11 @@
  * The sync keeps each identity's floor in a table of its own, since the theme catalog does not
  * carry it, so a second check reads `--button-label-px-min` in Chromium under every pin and
  * compares it with the synced `button-label-px-min`.
+ *
+ * Data table filter bar's filtered cell holds Button instances: the chip's operator and value
+ * segments, which set `--button-px-floor: 0px`, and Clear, which keeps the floor. An instance draws
+ * its main's padding unless it overrides it, so a third check compares the padding each of them
+ * draws, its override's or its Button variant's, with the real bar's segments in Chromium.
  */
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Result } from "effect";
@@ -38,12 +43,14 @@ import type { BuiltSets } from "../../test/built-kit.ts";
 import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
 import { InMemoryFigma } from "../../test/in-memory-figma.ts";
 import { labelButton } from "../compare/button-cell.ts";
+import { dataTableFilterBar } from "../compare/data-table-filter-cell.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
 import { parsePreviewTheme, themeStamps } from "../compare/preview-theme.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { BUTTON_LABEL_SIZES } from "./button-kit.ts";
-import type { NumberSpec } from "./kit-spec.ts";
+import { walkLayers } from "./kit-spec.ts";
+import type { InstanceLayerSpec, NumberSpec } from "./kit-spec.ts";
 
 /** A frame's mode for each collection of the file, by collection name. */
 type Pin = Readonly<Record<string, string>>;
@@ -151,12 +158,45 @@ const CASES: readonly PaddingCase[] = IDENTITIES.flatMap((identity) =>
   )
 );
 
-/** Where the page shows each Button, and the element that reads the floor. */
+/** The Data table filter bar cell whose Button instances the third check measures. */
+const FILTER_VARIANT = "data-table-filter-bar/state=rest,filters=status";
+
+/** The bar's Button instances, by the key of their layer and the `data-slot` of their element. */
+const FILTER_BUTTONS = [
+  { key: "operator", slot: "data-table-filter-operator" },
+  { key: "value", slot: "data-table-filter-value" },
+  { key: "clear", slot: "data-table-filter-clear" },
+] as const;
+
+/** One row of the third check: a Button instance of the bar under the pins that take an identity and a density. */
+type FilterCase = {
+  readonly name: string;
+  readonly identity: (typeof IDENTITIES)[number]["mode"];
+  readonly density: (typeof DENSITIES)[number]["mode"];
+  /** The instance's index in `FILTER_BUTTONS`. */
+  readonly button: number;
+};
+
+const FILTER_CASES: readonly FilterCase[] = IDENTITIES.flatMap((identity) =>
+  DENSITIES.flatMap((density) =>
+    FILTER_BUTTONS.map((button, index) => ({
+      name: `${identity.label} / ${density.label} / ${button.key}`,
+      identity: identity.mode,
+      density: density.mode,
+      button: index,
+    }))
+  )
+);
+
+/** Where the page shows each Button and the filtered bar, and the element that reads the floor. */
 function tableDocument(css: string): string {
-  const slots = BUTTONS.map(
-    (button, index) =>
-      `<div data-button="${String(index)}">${renderToStaticMarkup(labelButton.element(button.properties, new Set()))}</div>`
-  );
+  const slots = [
+    ...BUTTONS.map(
+      (button, index) =>
+        `<div data-button="${String(index)}">${renderToStaticMarkup(labelButton.element(button.properties, new Set()))}</div>`
+    ),
+    `<div data-filter>${renderToStaticMarkup(dataTableFilterBar.element({ state: "rest", filters: "status" }, new Set()))}</div>`,
+  ];
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><style>
 @layer ${STYLES_LAYERS.join(", ")};
@@ -170,12 +210,14 @@ type Measured = {
   readonly floor: number;
   /** Each Button's sides, in `BUTTONS` order. */
   readonly sides: readonly { readonly left: number; readonly right: number }[];
+  /** The sides of each of the bar's Buttons, in `FILTER_BUTTONS` order. */
+  readonly filterSides: readonly { readonly left: number; readonly right: number }[];
 };
 
 /** Stamp each pin's theme in turn and read the floor and every case's side paddings. */
 function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readonly Measured[]> {
   return page.evaluate(
-    (pins) =>
+    ({ pins, slots }) =>
       pins.map((pin) => {
         for (const [name, value] of Object.entries(pin.root)) {
           document.documentElement.setAttribute(name, value);
@@ -195,9 +237,17 @@ function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readon
           const style = getComputedStyle(button);
           return { left: Number.parseFloat(style.paddingLeft), right: Number.parseFloat(style.paddingRight) };
         });
-        return { floor: floor.getBoundingClientRect().width, sides };
+        const filterSides = slots.map((slot) => {
+          const button = document.querySelector(`[data-filter] [data-slot="${slot}"]`);
+          if (button === null) {
+            throw new Error(`the bar holds no ${slot}`);
+          }
+          const style = getComputedStyle(button);
+          return { left: Number.parseFloat(style.paddingLeft), right: Number.parseFloat(style.paddingRight) };
+        });
+        return { floor: floor.getBoundingClientRect().width, sides, filterSides };
       }),
-    stamps
+    { pins: stamps, slots: FILTER_BUTTONS.map(({ slot }) => slot) }
   );
 }
 
@@ -289,4 +339,45 @@ describe("the synced Button label floor", () => {
     });
     expect(apart).toEqual([]);
   });
+});
+
+/**
+ * The padding an instance draws on a side: its own override's, or else its Button variant's root's,
+ * as an instance shows its main's fields until it overrides them.
+ */
+function drawnPadding(instance: InstanceLayerSpec, side: "paddingLeft" | "paddingRight"): NumberSpec {
+  const [own] = (instance.overrides ?? []).flatMap((override) =>
+    override.path.length === 0 && override.field === side ? [override.value] : []
+  );
+  return own ?? variantRoot(kit.spec, instance.variant)[side];
+}
+
+describe("Data table filter bar's Button instances", () => {
+  it.each(FILTER_CASES)(
+    "pad $name as Chromium pads the real bar's Button under every pin",
+    ({ identity, density, button }) => {
+      const key = FILTER_BUTTONS[button]?.key;
+      const instance = walkLayers(variantRoot(kit.spec, FILTER_VARIANT)).find(
+        (layer): layer is InstanceLayerSpec => layer.kind === "instance" && layer.key === key
+      );
+      if (instance === undefined) {
+        throw new Error(`${FILTER_VARIANT} holds no ${String(key)} instance`);
+      }
+      const taken = pins.flatMap((pin, index) =>
+        pin["Fuse identity"] === identity && pin["Fuse density"] === density ? [{ pin, index }] : []
+      );
+      expect(taken.map(({ pin }) => themeModes(pin)).toSorted()).toEqual(THEME_MODE_SET);
+      const apart = taken.flatMap(({ pin, index }) => {
+        const synced = {
+          left: pixels(figma, drawnPadding(instance, "paddingLeft"), pin),
+          right: pixels(figma, drawnPadding(instance, "paddingRight"), pin),
+        };
+        const computed = measured[index]?.filterSides[button];
+        return computed !== undefined && synced.left === computed.left && synced.right === computed.right
+          ? []
+          : [`${pinName(pin)}: synced ${JSON.stringify(synced)}, Chromium ${JSON.stringify(computed)}`];
+      });
+      expect(apart).toEqual([]);
+    }
+  );
 });

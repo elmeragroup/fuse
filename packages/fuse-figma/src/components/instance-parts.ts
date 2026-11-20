@@ -484,6 +484,10 @@ const OVERRIDDEN_FIELD = {
   fontStyle: "fontStyle",
   glyph: "color",
   primaryAlign: "primaryAlign",
+  paddingTop: "paddingTop",
+  paddingRight: "paddingRight",
+  paddingBottom: "paddingBottom",
+  paddingLeft: "paddingLeft",
 } as const satisfies Record<InstanceOverride["field"], SpecField>;
 
 /** Whether a feed's target is a spec field at a path. */

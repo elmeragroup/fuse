@@ -25,7 +25,17 @@ import { change, recordsAny } from "./plan.ts";
 /** A node that holds a box's layers: a variant component, or a frame layer below it. */
 export type LayerParent = ComponentNode | FrameNode;
 
-function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
+/**
+ * A side's padding as a number field.
+ *
+ * @param node - The box, or an instance layer that overrides its main's padding on that side.
+ * @param side - The side.
+ * @returns The field.
+ */
+export function paddingField(
+  node: LayerParent | InstanceNode,
+  side: "Top" | "Right" | "Bottom" | "Left"
+): NumberField {
   const name = `padding${side}` as const;
   return {
     name,

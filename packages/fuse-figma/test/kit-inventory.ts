@@ -520,7 +520,7 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   {
     slug: "data-table-filter",
     name: "Data table filter",
-    sets: [{ key: "data-table-filter-bar", name: "Data table filter bar", variants: 1, previewed: 1 }],
+    sets: [{ key: "data-table-filter-bar", name: "Data table filter bar", variants: 2, previewed: 2 }],
   },
   // The Beacon demo's tip: its title beside Close, its description and Done. The default demo's step
   // card at its first step: progress beside Close, title, description, Skip, Back and Next.

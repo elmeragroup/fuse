@@ -25,7 +25,8 @@ import { walkLayers } from "../../src/components/kit-spec.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed } from "./fake-fixtures.ts";
-import { applyTo, kitFixture } from "./kit-fixture.ts";
+import { keyOf } from "./identity.ts";
+import { appliedFile, applyTo, kitFixture, kitPage, setOn } from "./kit-fixture.ts";
 import { firstRow, onFirstRowButton } from "./list-detail-fixture.ts";
 import { reconcileKit } from "./reconcile.ts";
 
@@ -551,5 +552,51 @@ describe("an instance's widest width on an applied file", () => {
       [224, 60, []],
       [300, null, []],
     ]);
+  });
+});
+
+describe("an instance's root padding on an applied file", () => {
+  // Rule 64 lists an instance's own padding under its name, so the plan reads a held override and
+  // writes the main's binding back where the kit drops it.
+  it("overrides the main's side, goes back to the main's binding where the kit drops it, and each next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    const padded = withOverride(kit, {
+      path: [],
+      field: "paddingLeft",
+      value: { kind: "literal", value: 3 },
+    });
+    const { file, button } = await firstRow();
+    const main = await button.getMainComponentAsync();
+    const steps: (readonly [number, string | undefined, readonly string[]])[] = [];
+    for (const each of [padded, kit]) {
+      await reconcile(file, each, true);
+      steps.push([button.paddingLeft, button.boundVariables?.paddingLeft?.id, await reconcile(file, each)]);
+    }
+    expect(steps).toEqual([
+      [3, undefined, []],
+      [main?.paddingLeft, main?.boundVariables?.paddingLeft?.id, []],
+    ]);
+  });
+});
+
+describe("a padding inside an instance on an applied file", () => {
+  // The kit overrides a padding on the root alone, so one a designer sets on a frame below it is
+  // no override the kit dropped.
+  it("keeps a designer's inset on a frame inside an instance through Apply, and the next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    const file = await appliedFile();
+    const set = setOn(await kitPage(file, "page/radio"), "Radio row");
+    const variant = set.children.find(
+      (node) => keyOf(node) === "radio-row/width=hug,checked=true,state=rest"
+    );
+    if (variant?.type !== "COMPONENT") {
+      throw new Error("the Radio row set holds no checked variant at its hugging width");
+    }
+    const radio = childNamed(childNamed(variant, "FRAME", "label"), "INSTANCE", "radio-group-item");
+    const indicator = childNamed(radio, "FRAME", "radio-group-indicator");
+    indicator.paddingLeft = 3;
+    file.reopen();
+    await reconcile(file, kit, true);
+    expect([indicator.paddingLeft, await reconcile(file, kit)]).toEqual([3, []]);
   });
 });
