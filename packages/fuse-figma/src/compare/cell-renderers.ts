@@ -43,9 +43,9 @@ export type CellRenderer = {
   readonly entry: `dist/${string}.js`;
   /**
    * The real Fuse element for a parsed cell, with the states the markup draws set by props, and with
-   * the parts behind each BOOLEAN property of `turnedOn`, which starts false, rendered. A preview shows
-   * every property at its default, so the compare page turns none on; the markup check turns them on
-   * too, to check the parts they hide.
+   * the part behind each BOOLEAN property rendered exactly where `turnedOn` names the property, one
+   * that starts true included. The capture names every property, to map the parts they hide; the
+   * compare page names the ones an instance has on.
    */
   readonly element: (cell: Cell, turnedOn: ReadonlySet<string>) => ReactElement;
   /**
@@ -673,9 +673,6 @@ export function markedIcon(
   return createElement(icon, { ...props, key: marker });
 }
 
-/** No BOOLEAN property turned on, as a preview shows every property at its default. */
-const AT_DEFAULTS: ReadonlySet<string> = new Set();
-
 /**
  * Render a cell to static HTML. The page needs no hydration: CSS draws every state, the page
  * forces hover and focus as pseudo classes, and it writes `data-highlighted` on a highlighted row
@@ -683,14 +680,9 @@ const AT_DEFAULTS: ReadonlySet<string> = new Set();
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.
- * @param turnedOn - The BOOLEAN properties that start false whose parts the cell renders, none for the
- *   cell as its preview shows it.
+ * @param turnedOn - The BOOLEAN properties that are on, whose parts the cell renders.
  * @returns The element as an HTML string.
  */
-export function renderCellHtml(
-  renderer: CellRendering,
-  cell: Cell,
-  turnedOn: ReadonlySet<string> = AT_DEFAULTS
-): string {
+export function renderCellHtml(renderer: CellRendering, cell: Cell, turnedOn: ReadonlySet<string>): string {
   return renderToStaticMarkup(renderer.element(cell, turnedOn));
 }

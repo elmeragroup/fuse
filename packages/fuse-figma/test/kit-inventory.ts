@@ -136,8 +136,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [
       // Placeholder and value in 5 states.
       { key: "textarea", name: "Textarea", variants: 10, previewed: 10 },
-      // The labelled textarea in 5 states.
-      { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 5 },
+      // The labelled textarea in 5 states, and one with its Counter on.
+      { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 6 },
     ],
   },
   // The fallback and the image at 4 sizes.
@@ -179,8 +179,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "breadcrumb-ellipsis", name: "Breadcrumb ellipsis", variants: 1, previewed: 1 },
       // The 14px chevron alone.
       { key: "breadcrumb-separator", name: "Breadcrumb separator", variants: 1, previewed: 1 },
-      // The docs Basic demo's trail, and the Ellipsis demo's.
-      { key: "breadcrumb-trail", name: "Breadcrumb trail", variants: 2, previewed: 2 },
+      // The docs Basic demo's trail, and one with its Ellipsis on, the Ellipsis demo's.
+      { key: "breadcrumb-trail", name: "Breadcrumb trail", variants: 1, previewed: 2 },
     ],
   },
   {
@@ -217,8 +217,9 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "dropdown-menu",
     name: "Dropdown menu",
     sets: [
-      // Default and destructive, plain and inset, at rest, highlighted, focused and disabled.
-      { key: "dropdown-menu-item", name: "Dropdown menu item", variants: 16, previewed: 16 },
+      // Default and destructive, plain and inset, at rest, highlighted, focused and disabled, then one
+      // with its Shortcut off and one with its Icon on.
+      { key: "dropdown-menu-item", name: "Dropdown menu item", variants: 16, previewed: 18 },
       // Checked off and on, at rest, highlighted, focused and disabled.
       { key: "dropdown-menu-checkbox-item", name: "Dropdown menu checkbox item", variants: 8, previewed: 8 },
       { key: "dropdown-menu-radio-item", name: "Dropdown menu radio item", variants: 8, previewed: 8 },
@@ -260,22 +261,24 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "command-dialog-open", name: "Command dialog (open)", variants: 1, previewed: 1 },
     ],
   },
-  // The default, outline and dashed outline frames.
-  { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 3 }] },
+  // The default, outline and dashed outline frames, then one each with Media off, Description off and
+  // Actions on.
+  { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 6 }] },
   // 6 variants at 3 underlines (always, hover and none), in 3 states (rest, hover and focus).
   { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 54, previewed: 54 }] },
   {
     slug: "item",
     name: "Item",
     sets: [
-      // 3 variants at 3 sizes, without and with a description, with icon and image media.
-      { key: "item", name: "Item", variants: 36, previewed: 36 },
-      // The default and outline link rows in 4 states.
-      { key: "item-link", name: "Item link", variants: 8, previewed: 8 },
+      // 3 variants at 3 sizes, without and with a description, with icon and image media, then one with
+      // Media off and one with Actions off.
+      { key: "item", name: "Item", variants: 36, previewed: 38 },
+      // The default and outline link rows in 4 states, and one with Media off.
+      { key: "item-link", name: "Item link", variants: 8, previewed: 9 },
     ],
   },
-  // 5 tones without and with a description.
-  { slug: "alert", name: "Alert", sets: [{ key: "alert", name: "Alert", variants: 10, previewed: 10 }] },
+  // 5 tones without and with a description, and one with its Action on.
+  { slug: "alert", name: "Alert", sets: [{ key: "alert", name: "Alert", variants: 10, previewed: 11 }] },
   {
     slug: "accordion",
     name: "Accordion",
@@ -340,8 +343,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [
       // The increase stepper at rest, hovered, disabled and read-only.
       { key: "number-field-stepper", name: "Number field stepper", variants: 4, previewed: 4 },
-      // The labelled field in 5 states.
-      { key: "number-field", name: "Number field", variants: 5, previewed: 5 },
+      // The labelled field in 5 states, and one with its Denomination on.
+      { key: "number-field", name: "Number field", variants: 5, previewed: 6 },
     ],
   },
   {

@@ -117,8 +117,13 @@ const LIGHTNING: IconManifest = {
   swapProperty: "Icon",
 };
 
-/** The BOOLEAN property that hides the media. */
-const MEDIA_PROPERTY = { name: "Media", defaultValue: true };
+/** The BOOLEAN property that hides the media, which starts true. */
+export const ITEM_MEDIA_PROPERTY = "Media";
+
+/** The BOOLEAN property that hides the actions, which starts true. */
+export const ITEM_ACTIONS_PROPERTY = "Actions";
+
+const MEDIA_PROPERTY = { name: ITEM_MEDIA_PROPERTY, defaultValue: true };
 
 /**
  * The media and the content column of a row, for a set's look and texts. The media sits behind the
@@ -212,7 +217,7 @@ export const ITEM_MANIFEST: SetManifest = {
       key: "actions",
       slot: "item-actions",
       shownIn: always,
-      optional: { name: "Actions", defaultValue: true },
+      optional: { name: ITEM_ACTIONS_PROPERTY, defaultValue: true },
       label: {
         key: "text",
         name: "text",

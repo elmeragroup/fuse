@@ -38,13 +38,22 @@ export type InstanceImage = {
 
 /** One instance of a preview frame. */
 export type InstanceSnapshot = {
-  /** The instance's own key, `${previewKey}/${variantKey}`. */
+  /**
+   * The instance's own key: `${previewKey}/${variantKey}`, and for an instance that sets a BOOLEAN
+   * property off its default, `/` and each such property as `Name=true` or `Name=false`.
+   */
   readonly key: string;
   /**
    * The variant the instance shows: the key of its main component, such as
    * `button/variant=default,size=sm,state=rest,icon=none`.
    */
   readonly variant: string;
+  /**
+   * The instance's BOOLEAN property values by property name, each as the instance holds it. An
+   * export from before the plugin wrote them leaves it out, and the comparison then renders each
+   * property at its default.
+   */
+  readonly booleans?: Readonly<Record<string, boolean>>;
   /** `absoluteBoundingBox`: the instance's frame, without strokes or effects. */
   readonly box: CanvasRect;
   /** The export, or null when Figma draws nothing for the instance, such as a hidden one. */

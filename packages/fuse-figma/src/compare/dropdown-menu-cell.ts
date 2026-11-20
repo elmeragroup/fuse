@@ -38,8 +38,10 @@ import { Trash, User } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
 import {
   DROPDOWN_MENU_CHECKBOX_TEXT,
+  DROPDOWN_MENU_ICON_PROPERTY,
   DROPDOWN_MENU_ITEM_TEXT,
   DROPDOWN_MENU_RADIO_TEXT,
+  DROPDOWN_MENU_SHORTCUT_PROPERTY,
   DROPDOWN_MENU_SHORTCUT_TEXT,
   DROPDOWN_MENU_SUB_TRIGGER_TEXT,
   DROPDOWN_POPUPS,
@@ -108,7 +110,10 @@ function openRow(container: HTMLElement, row: ReactNode) {
   );
 }
 
-/** A row of an open menu, in a tone, inset or not, in a state, with its icon where `Icon` is on. */
+/**
+ * A row of an open menu, in a tone, inset or not, in a state, with its icon where `Icon` is on and
+ * its shortcut where `Shortcut` is.
+ */
 export const dropdownMenuItem: ClientCellRendering = {
   hostClasses: [ROW_WIDTH],
   element: (cell: Cell, turnedOn: ReadonlySet<string>, container: HTMLElement) =>
@@ -121,9 +126,11 @@ export const dropdownMenuItem: ClientCellRendering = {
           inset: cell.inset === "true",
           disabled: cell.state === "disabled",
         },
-        turnedOn.has("Icon") ? createElement(User) : null,
+        turnedOn.has(DROPDOWN_MENU_ICON_PROPERTY) ? createElement(User) : null,
         DROPDOWN_MENU_ITEM_TEXT,
-        createElement(DropdownMenu.Shortcut, null, DROPDOWN_MENU_SHORTCUT_TEXT)
+        turnedOn.has(DROPDOWN_MENU_SHORTCUT_PROPERTY)
+          ? createElement(DropdownMenu.Shortcut, null, DROPDOWN_MENU_SHORTCUT_TEXT)
+          : null
       )
     ),
   highlight: "focus",

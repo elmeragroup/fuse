@@ -29,6 +29,7 @@ const KitSnapshotSchema = Schema.Struct({
         Schema.Struct({
           key: Schema.String,
           variant: Schema.String,
+          booleans: Schema.optionalKey(Schema.Record(Schema.String, Schema.Boolean)),
           box: CanvasRect,
           image: Schema.NullOr(Schema.Struct({ renderBounds: CanvasRect, png: Schema.String })),
         })

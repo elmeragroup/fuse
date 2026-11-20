@@ -39,10 +39,39 @@ import type {
   KitSpec,
   ModeRef,
   PageSpec,
+  PreviewInstanceSpec,
   PreviewSpec,
 } from "./kit-spec";
 import { buildTextStyles } from "./text-styles";
 import { compileUtilities } from "./utility-css";
+
+/**
+ * The instances a preview group places: each preview cell at its BOOLEAN defaults, then, for each
+ * BOOLEAN property of the set, the first preview cell whose variant holds a layer the property links,
+ * with the property at its non-default value. So a preview shows every optional part in both states,
+ * and `checkKitSpec` refuses a property no preview places so.
+ *
+ * @param set - The built set, or undefined where the build made none.
+ * @param variants - The variant keys of the set's preview cells, in order.
+ * @returns The instances.
+ */
+export function previewInstances(
+  set: Omit<ComponentSetSpec, "page"> | undefined,
+  variants: readonly string[]
+): readonly PreviewInstanceSpec[] {
+  const links = (key: string, property: string): boolean => {
+    const root = set?.variants.find((variant) => variant.key === key)?.root;
+    return (
+      root !== undefined &&
+      walkLayers(root).some((layer) => layer.kind !== "text" && layer.visibleProperty === property)
+    );
+  };
+  const toggled = (set?.booleanProperties ?? []).flatMap(({ name, defaultValue }): PreviewInstanceSpec[] => {
+    const shown = variants.find((key) => links(key, name));
+    return shown === undefined ? [] : [{ variant: shown, booleans: { [name]: !defaultValue } }];
+  });
+  return [...variants.map((variant): PreviewInstanceSpec => ({ variant })), ...toggled];
+}
 
 /** A theme the previews pin: Fjordkraft private in one identity, color scheme and density. */
 function previewTheme(
@@ -422,6 +451,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     }
     themes.push({ ...theme, modes });
   }
+  const setsByKey = new Map(built.map(({ componentSet }) => [componentSet.key, componentSet]));
   const componentPages = [...new Map(registry.map(({ page }) => [page.slug, page])).values()];
   const previews = componentPages.flatMap((page) =>
     themes.map((theme): PreviewSpec => {
@@ -437,7 +467,10 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
             key: `${key}/${manifest.key}`,
             name: manifest.name,
             componentSet: manifest.key,
-            variants: previewCells.map((cell) => variantKey(manifest, cell)),
+            instances: previewInstances(
+              setsByKey.get(manifest.key),
+              previewCells.map((cell) => variantKey(manifest, cell))
+            ),
           })),
       };
     })

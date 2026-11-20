@@ -72,8 +72,10 @@ const TRAY: IconManifest = {
   swapProperty: "Icon",
 };
 
-/** The BOOLEAN property that hides the media. */
-const MEDIA_PROPERTY = { name: "Media", defaultValue: true };
+/** The BOOLEAN property that hides the media, which starts true. */
+export const EMPTY_MEDIA_PROPERTY = "Media";
+
+const MEDIA_PROPERTY = { name: EMPTY_MEDIA_PROPERTY, defaultValue: true };
 
 /** The title's text, which the `Title` property sets. */
 const TITLE_TEXT: LabelManifest = {
@@ -93,8 +95,10 @@ const DESCRIPTION_TEXT: LabelManifest = {
   shownIn: always,
 };
 
-/** The BOOLEAN property that hides the description. */
-const DESCRIPTION_PROPERTY = { name: "Description", defaultValue: true };
+/** The BOOLEAN property that hides the description, which starts true. */
+export const EMPTY_DESCRIPTION_PROPERTY = "Description";
+
+const DESCRIPTION_PROPERTY = { name: EMPTY_DESCRIPTION_PROPERTY, defaultValue: true };
 
 /** The BOOLEAN property that shows the actions, which starts false, so a published cell shows none. */
 export const EMPTY_ACTIONS_PROPERTY = "Actions";

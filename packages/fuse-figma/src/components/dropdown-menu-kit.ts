@@ -28,8 +28,10 @@ import type { FuseParts, IconManifest, LabelManifest, SetManifest } from "../cap
 import type { Cell } from "./component-spec";
 import {
   DROPDOWN_MENU_CHECKBOX_TEXT,
+  DROPDOWN_MENU_ICON_PROPERTY,
   DROPDOWN_MENU_ITEM_TEXT,
   DROPDOWN_MENU_RADIO_TEXT,
+  DROPDOWN_MENU_SHORTCUT_PROPERTY,
   DROPDOWN_MENU_SHORTCUT_TEXT,
   DROPDOWN_MENU_SUB_TRIGGER_TEXT,
   DROPDOWN_ROW_CELL_WIDTH,
@@ -82,7 +84,7 @@ const USER: IconManifest = {
   dataIcon: undefined,
   icon: "User",
   swapProperty: "Icon glyph",
-  optional: { name: "Icon", defaultValue: false },
+  optional: { name: DROPDOWN_MENU_ICON_PROPERTY, defaultValue: false },
 };
 
 /**
@@ -111,7 +113,7 @@ export const DROPDOWN_MENU_ITEM_MANIFEST: SetManifest = {
       slot: "dropdown-menu-shortcut",
       after: "label",
       shownIn: always,
-      optional: { name: "Shortcut", defaultValue: true },
+      optional: { name: DROPDOWN_MENU_SHORTCUT_PROPERTY, defaultValue: true },
       label: {
         key: "keys",
         name: "keys",

@@ -7,7 +7,7 @@
  * - The page is wider than `md:`, so the root takes its desktop padding, as the kit draws it.
  * - With the `Actions` property on, `<Empty.Content>` follows the header with the docs With actions
  *   demo's `<Button>Create order</Button>` and `<Button variant="secondary">Import orders</Button>`.
- *   A preview keeps the property at its default, false, so the compare page renders no content.
+ *   An instance at the property's default, false, renders no content.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -21,7 +21,9 @@ import { Tray } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
 import {
   EMPTY_ACTIONS_PROPERTY,
+  EMPTY_DESCRIPTION_PROPERTY,
   EMPTY_DESCRIPTION_TEXT,
+  EMPTY_MEDIA_PROPERTY,
   EMPTY_PREVIEW_WIDTH,
   EMPTY_PRIMARY_ACTION_LABEL,
   EMPTY_SECONDARY_ACTION_LABEL,
@@ -31,8 +33,8 @@ import {
 import type { CellRendering } from "./cell-renderers.ts";
 
 /**
- * An `empty` cell: the Basic demo's header in the cell's frame, and the With actions demo's content
- * where the `Actions` property is on.
+ * An `empty` cell: the Basic demo's header in the cell's frame, its media where `Media` is on and its
+ * description where `Description` is, and the With actions demo's content where `Actions` is.
  */
 export const empty: CellRendering = {
   element: (cell: Cell, turnedOn: ReadonlySet<string>) =>
@@ -45,9 +47,13 @@ export const empty: CellRendering = {
         createElement(
           Empty.Header,
           null,
-          createElement(Empty.Media, { variant: "icon" }, createElement(Tray, { "aria-hidden": true })),
+          turnedOn.has(EMPTY_MEDIA_PROPERTY)
+            ? createElement(Empty.Media, { variant: "icon" }, createElement(Tray, { "aria-hidden": true }))
+            : null,
           createElement(Empty.Title, null, EMPTY_TITLE_TEXT),
-          createElement(Empty.Description, null, EMPTY_DESCRIPTION_TEXT)
+          turnedOn.has(EMPTY_DESCRIPTION_PROPERTY)
+            ? createElement(Empty.Description, null, EMPTY_DESCRIPTION_TEXT)
+            : null
         ),
         turnedOn.has(EMPTY_ACTIONS_PROPERTY)
           ? createElement(

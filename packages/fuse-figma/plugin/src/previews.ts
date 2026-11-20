@@ -6,7 +6,14 @@
 
 import { Effect } from "effect";
 
-import type { NumberSpec, PreviewGroupSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
+import { previewInstanceKey } from "../../src/components/kit-spec.ts";
+import type {
+  NumberSpec,
+  PreviewGroupSpec,
+  PreviewInstanceSpec,
+  PreviewSpec,
+} from "../../src/components/kit-spec.ts";
+import { findProperty } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { near, planLayoutSizing, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
@@ -157,8 +164,60 @@ function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec)
 }
 
 /**
+ * Plan an instance's BOOLEAN properties: each at the value the preview gives it, or else at its
+ * default. A new instance starts at the defaults, so it writes only the values the preview sets. A held
+ * instance writes the values it does not hold, and one the run swaps writes them all, since the values
+ * it held belong to another main.
+ *
+ * @param run - The run.
+ * @param instance - The instance.
+ * @param label - The instance's label, for change lines.
+ * @param spec - What the preview places.
+ * @param set - The instance's set as the plan leaves it, whose ids the write finds when it runs.
+ * @param held - How the instance stands: new, swapped this run, or held.
+ */
+function planBooleans(
+  run: Run,
+  instance: InstanceNode,
+  label: string,
+  spec: PreviewInstanceSpec,
+  set: PlannedSet,
+  held: "new" | "swapped" | "held"
+): void {
+  const differ = (set.spec.booleanProperties ?? []).flatMap(({ name, defaultValue }) => {
+    const value = spec.booleans?.[name] ?? defaultValue;
+    switch (held) {
+      case "new":
+        return value === defaultValue ? [] : [{ name, value }];
+      case "swapped":
+        return [{ name, value }];
+      case "held": {
+        const found = findProperty(instance.componentProperties, "BOOLEAN", name);
+        return found?.[1].value === value ? [] : [{ name, value }];
+      }
+    }
+  });
+  if (differ.length === 0) {
+    return;
+  }
+  const described = differ.map(({ name, value }) => `${name} ${String(value)}`).join(", ");
+  change(run.plan, label, `properties → ${described}`, () => {
+    const values: { [id: string]: boolean } = {};
+    for (const { name, value } of differ) {
+      const id = set.properties.get(name);
+      if (id === undefined) {
+        throw new Error(`${label}: ${set.spec.name} has no ${name} property when the instance sets it.`);
+      }
+      values[id] = value;
+    }
+    instance.setProperties(values);
+  });
+}
+
+/**
  * Plan a group's instances. Each instance's key is the preview's key, `/` and the variant's key,
- * which starts with the set's key, so it nests under the group's key too.
+ * which starts with the set's key, so it nests under the group's key too, then `/` and the BOOLEAN
+ * values it sets off their defaults, as `previewInstanceKey` writes it.
  *
  * Each instance's sizing and fixed lengths are planned against its variant's root, a new instance's
  * included, as an instance layer's are (`planInstanceSizing`). An instance whose preview's modes give
@@ -177,8 +236,12 @@ function planInstances(
   spec: PreviewGroupSpec,
   set: PlannedSet
 ) {
-  const children = spec.variants.map((variant) => ({ key: `${previewKey}/${variant}`, variant }));
-  return planOwnedChildren(group, label, "instance", children, ({ key, variant }) => {
+  const children = spec.instances.map((instance) => ({
+    key: previewInstanceKey(previewKey, instance),
+    instance,
+  }));
+  return planOwnedChildren(group, label, "instance", children, ({ key, instance: placed }) => {
+    const { variant } = placed;
     const component = set.variants.get(variant);
     const root = set.spec.variants.find((candidate) => candidate.key === variant)?.root;
     if (component === undefined || root === undefined) {
@@ -196,6 +259,7 @@ function planInstances(
           const inner = yield* currentRun;
           if (origin === "new") {
             planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
+            planBooleans(inner, instance, key, placed, set, "new");
             return;
           }
           const main = yield* Effect.promise(() => instance.getMainComponentAsync());
@@ -206,6 +270,7 @@ function planInstances(
             );
           }
           planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
+          planBooleans(inner, instance, key, placed, set, swaps ? "swapped" : "held");
         }),
     } satisfies OwnedChild<InstanceNode, void>;
   });

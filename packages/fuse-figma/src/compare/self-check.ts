@@ -22,10 +22,11 @@
 import { Effect, Result } from "effect";
 import { join } from "node:path";
 
-import { buildComponentSets } from "../components/build-kit.ts";
+import { buildComponentSets, previewInstances } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
+import { previewInstanceKey } from "../components/kit-spec.ts";
 import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { CellRequest } from "./browser-render.ts";
@@ -174,8 +175,18 @@ export type SelfCheckResult = {
   readonly report: CompareReport;
 };
 
-/** The two cells the self-check changes, by preview and variant. */
+/**
+ * The two cells the self-check changes, by preview and variant. Each is the instance of the variant
+ * at its BOOLEAN defaults, as a preview may place the variant again with a property set.
+ */
 type Perturbed = { readonly preview: string; readonly variant: string };
+
+/** Whether an instance of a preview is the perturbed cell's. */
+function isPerturbed(perturbed: Perturbed, preview: string, instance: InstanceSnapshot): boolean {
+  return (
+    preview === perturbed.preview && instance.variant === perturbed.variant && instance.booleans === undefined
+  );
+}
 
 /**
  * Run the self-check.
@@ -187,14 +198,19 @@ type Perturbed = { readonly preview: string; readonly variant: string };
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
   const build = yield* locateFuseBuild();
   const fillMismatches: string[] = [];
-  const variants = KIT.flatMap(({ manifest, previewCells }) =>
-    previewCells.map((cell) => variantKey(manifest, cell))
-  );
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const renderers = yield* loadRenderers();
   const renderable = renderables(renderers);
   const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
+  const setsByKey = new Map(componentSets.map((set) => [set.key, set]));
+  // Every instance a preview frame places, those that set a BOOLEAN property off its default too.
+  const placed = KIT.flatMap(({ manifest, previewCells }) =>
+    previewInstances(
+      setsByKey.get(manifest.key),
+      previewCells.map((cell) => variantKey(manifest, cell))
+    )
+  );
   const assets = yield* readPageAssets(build, renderers);
   const previews: PreviewSnapshot[] = [];
   yield* Effect.scoped(
@@ -206,12 +222,17 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
         if (Result.isFailure(theme)) {
           throw theme.failure;
         }
-        const placeholders: InstanceSnapshot[] = variants.map((variant) => ({
-          key: `${preview.key}/${variant}`,
-          variant,
-          box: { x: 0, y: 0, width: 0, height: 0 },
-          image: null,
-        }));
+        const placeholders = placed.map((instance): InstanceSnapshot => {
+          const placeholder: InstanceSnapshot = {
+            key: previewInstanceKey(preview.key, instance),
+            variant: instance.variant,
+            box: { x: 0, y: 0, width: 0, height: 0 },
+            image: null,
+          };
+          return instance.booleans === undefined
+            ? placeholder
+            : { ...placeholder, booleans: instance.booleans };
+        });
         const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
         const { planned, unsupported } = planCells(placeholders, renderable, unchanged, options.layout);
         if (unsupported.length > 0) {
@@ -250,8 +271,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
           const box = {
             x: 100.5 + (index % 6) * 300,
             y: 40.25 + Math.floor(index / 6) * 120,
-            width:
-              cell.box.width + (preview.key === grown.preview && instance.variant === grown.variant ? 1 : 0),
+            width: cell.box.width + (isPerturbed(grown, preview.key, instance) ? 1 : 0),
             height: cell.box.height,
           };
           const margin = renderMargin(request, options.layout);
@@ -272,8 +292,7 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
               height: Math.ceil(renderBounds.height * DEVICE_SCALE),
             }
           );
-          const png =
-            preview.key === painted.preview && instance.variant === painted.variant ? paintSquare(cut) : cut;
+          const png = isPerturbed(painted, preview.key, instance) ? paintSquare(cut) : cut;
           return {
             ...instance,
             box,
@@ -311,7 +330,10 @@ function judgeSelfCheck(
   const lines: string[] = [...fillMismatches.map((line) => `fill: ${line}`)];
   const top = report.rows.slice(0, expectedTop.length);
   const topMatches = expectedTop.every(
-    (expected, index) => top[index]?.preview === expected.preview && top[index].variant === expected.variant
+    (expected, index) =>
+      top[index]?.preview === expected.preview &&
+      top[index].variant === expected.variant &&
+      top[index].booleans === undefined
   );
   for (const [index, row] of top.entries()) {
     lines.push(

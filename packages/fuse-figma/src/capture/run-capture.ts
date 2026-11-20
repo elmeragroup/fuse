@@ -143,14 +143,11 @@ export function requestOf(
   cell: Readonly<Record<string, string>>,
   index: number
 ): CellRequest {
-  const turnedOn = [...(target.optional ?? [])];
-  const content = (shown: Readonly<Record<string, string>>): CellContent => {
-    if (!isClientRenderer(renderer)) {
-      return { _tag: "Static", html: renderCellHtml(renderer, shown, target.optional) };
-    }
-    const client: CellContent = { _tag: "Client", set: target.key, cell: shown };
-    return turnedOn.length === 0 ? client : { ...client, turnedOn };
-  };
+  const turnedOn = target.optional ?? new Set<string>();
+  const content = (shown: Readonly<Record<string, string>>): CellContent =>
+    isClientRenderer(renderer)
+      ? { _tag: "Client", set: target.key, cell: shown, turnedOn: [...turnedOn] }
+      : { _tag: "Static", html: renderCellHtml(renderer, shown, turnedOn) };
   const root = rootInCell(target, cell);
   const forced = forcedPseudoClasses(cell, renderer.highlight);
   const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);

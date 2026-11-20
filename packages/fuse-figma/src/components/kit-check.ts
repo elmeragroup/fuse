@@ -625,7 +625,12 @@ function checkImages(decodeBase64: (text: string) => Uint8Array, set: ComponentS
   }
 }
 
-/** Refuse a preview that places a set the kit lacks, a set from another page or a variant the set lacks. */
+/**
+ * Refuse a preview that places a set the kit lacks, a set from another page, a variant the set lacks
+ * or a BOOLEAN property it lacks, and a BOOLEAN property no preview places at `true` and at `false`,
+ * each instance at the value it sets or else at the property's default, since a comparison would then
+ * never render one of its states.
+ */
 function checkPreviews(kit: KitSpec): void {
   for (const preview of kit.previews) {
     for (const group of preview.groups) {
@@ -639,10 +644,34 @@ function checkPreviews(kit: KitSpec): void {
         throw contradiction(`${preview.name} places ${set.name}, which sits on another page.`);
       }
       const variants = new Set(set.variants.map((variant) => variant.key));
-      for (const variant of group.variants) {
+      const booleans = new Set((set.booleanProperties ?? []).map((property) => property.name));
+      for (const { variant, booleans: values } of group.instances) {
         if (!variants.has(variant)) {
           throw contradiction(`${preview.name} places ${variant}, which ${set.name} does not define.`);
         }
+        const unknown = Object.keys(values ?? {}).find((name) => !booleans.has(name));
+        if (unknown !== undefined) {
+          throw contradiction(
+            `${preview.name} sets ${unknown} on ${variant}, which ${set.name} does not define.`
+          );
+        }
+      }
+    }
+  }
+  for (const set of kit.componentSets) {
+    const instances = kit.previews.flatMap((preview) =>
+      preview.groups.flatMap((group) => (group.componentSet === set.key ? group.instances : []))
+    );
+    for (const property of set.booleanProperties ?? []) {
+      // Each instance's value: the one it sets, or else the property's default.
+      const placed = new Set(
+        instances.map((instance) => instance.booleans?.[property.name] ?? property.defaultValue)
+      );
+      const missing = [true, false].filter((value) => !placed.has(value));
+      if (missing.length > 0) {
+        throw contradiction(
+          `${set.name}: no preview places its ${property.name} property at ${missing.map(String).join(" or ")}, so no comparison renders that state.`
+        );
       }
     }
   }

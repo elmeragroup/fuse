@@ -15,6 +15,7 @@ import { previewWidthIn } from "../components/component-spec.ts";
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import type { ComponentSetSpec } from "../components/kit-spec.ts";
+import { propertiesOn } from "../components/optional-parts.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE, forcesState } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, RenderedCell } from "./browser-render.ts";
@@ -75,6 +76,8 @@ export type ReportRow = {
   readonly variant: string;
   /** The variant's properties, for the report's filters. */
   readonly axes: Readonly<Record<string, string>>;
+  /** The instance's BOOLEAN property values, as its snapshot gives them, or none for an older export. */
+  readonly booleans?: Readonly<Record<string, boolean>>;
   readonly figmaBox: BoxSize;
   readonly browserBox: BoxSize;
   /** The mismatched pixel counts, or null when Figma drew nothing. */
@@ -204,10 +207,12 @@ export function planCells(
       });
       return;
     }
+    // Each BOOLEAN property at the instance's value, so a part a preview hides or shows renders so.
+    const turnedOn = propertiesOn(definition, instance.booleans);
     const content = (shown: Cell): CellContent =>
       isClientRenderer(renderer)
-        ? { _tag: "Client", set: definition.key, cell: shown }
-        : { _tag: "Static", html: renderCellHtml(renderer, shown) };
+        ? { _tag: "Client", set: definition.key, cell: shown, turnedOn: [...turnedOn] }
+        : { _tag: "Static", html: renderCellHtml(renderer, shown, turnedOn) };
     const forced = forcedPseudoClasses(cell, renderer.highlight);
     const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);
     const root = rootInCell(definition, cell);
@@ -471,7 +476,7 @@ const comparePreview = Effect.fnUntraced(function* (
             height,
           }
         : { figma: null, browser: browserPath, diff: null, width, height };
-    rows.push({
+    const row: ReportRow = {
       preview: preview.key,
       previewName: preview.name,
       variant: instance.variant,
@@ -482,7 +487,8 @@ const comparePreview = Effect.fnUntraced(function* (
       verdict: compared.verdict,
       unchangedByDesign: restsByDesign,
       images: pictures,
-    });
+    };
+    rows.push(instance.booleans === undefined ? row : { ...row, booleans: instance.booleans });
   }
   const outcome: PreviewOutcome = {
     rows,
