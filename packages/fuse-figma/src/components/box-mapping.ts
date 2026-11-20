@@ -42,7 +42,7 @@ import {
   unstretched,
   viewportRoom,
 } from "./box-sizing";
-import type { Holder, Room } from "./box-sizing";
+import type { Holder, Room, RowLayer } from "./box-sizing";
 import { dropIdleOrigin, readRotation } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
 import { centresBesideSpan, foldGap, holdsOnlyLabel, padCentred } from "./centred-row";
@@ -70,6 +70,8 @@ import { drawRestAtEnd } from "./end-frame";
 import { drawsAtRoom, fitsRowRoom } from "./fitting-part";
 import type { BesideLayer, FitPlace } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
+import { DECLARED_WIDTH } from "./flex-item-width";
+import type { DrawnWidth } from "./flex-item-width";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsEditableText, keyedCells, readGrid } from "./grid-layout";
@@ -620,7 +622,10 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         (label === undefined
           ? (onSide("start").at(-1)?.style ?? flowingBefore.at(-1)?.cascade.style)
           : undefined),
-      labelBeforeLast: label !== undefined && order.length > 2 && order.at(-2) === label.name,
+      labelBeforeLast:
+        label !== undefined &&
+        order.length > 2 &&
+        flowingBefore.length + others.indexOf(label) === order.length - 2,
     },
     {
       sizing,
@@ -648,6 +653,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const drawIcons = (side: IconSlot["side"]): readonly DrawnIcon[] =>
     onSide(side).map(({ style, icon }) => ({
       style,
+      name: icon.name,
       ...wrapIconMargins(style, icon, layout, context.variables),
     }));
   const start = drawIcons("start");
@@ -666,23 +672,46 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     elementChildren,
     spacedRow ? negativeRowSpacing(context.variables) : undefined
   );
+  const partLayer = ({ name, cascade: { style, elementTag } }: ShownPart): RowLayer => ({
+    kind: "part",
+    name,
+    share: partShare(style),
+    style,
+    tag: elementTag,
+  });
+  const iconLayer = ({ name, share, style }: DrawnIcon): RowLayer => ({
+    kind: "icon",
+    name,
+    share,
+    style,
+    tag: undefined,
+  });
   const holder: Holder = {
     style: reader,
     layout,
     sizing,
     limits,
     extent,
-    layers: order,
+    layers: [
+      ...flowingBefore.map(partLayer),
+      ...start.map(iconLayer),
+      ...(label === undefined
+        ? []
+        : [
+            {
+              kind: "label" as const,
+              name: label.name,
+              share: UNREAD_SHARE,
+              style: undefined,
+              tag: undefined,
+            },
+          ]),
+      ...end.map(iconLayer),
+      ...flowingAfter.map(partLayer),
+    ],
     widthCap: room.widthCap,
     unbounded: room.unbounded,
     widthKnown: known.horizontal,
-    shares: [
-      ...flowingBefore.map((part) => partShare(part.cascade.style)),
-      ...start.map(({ share }) => share),
-      ...(label === undefined ? [] : [UNREAD_SHARE]),
-      ...end.map(({ share }) => share),
-      ...flowingAfter.map((part) => partShare(part.cascade.style)),
-    ],
   };
   const growth = readItemSizing(
     holder,
@@ -882,6 +911,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     };
   });
   const mapped = fitted.map((each) => each.mapped);
+  const drawnWidths = new Map(mapped.map(({ style, width }) => [style, width]));
   // A first part that fits takes the room its row spaces out, as `fitsRowRoom` says.
   const spacedFit = fitted.find((each) => each.fit?.place === "spaced-first")?.fit;
   const parts = settledParts(reader, flow, mapped, scope);
@@ -906,6 +936,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       path: [...cascade.path, shown.key],
       fitsOneLine,
       ellipsisFits: labelSource.ellipsisFits,
+      drawnWidths,
       captured: cascade.capturedText(shown.textAttribute?.(cell)),
       runs: shown.textAttribute?.(cell) === undefined ? cascade.textRuns(shown.key) : undefined,
     };
@@ -952,7 +983,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...end.map(({ layer }) => layer),
   ];
   // The display reads once the layers are known, since a grid maps only around one item.
-  const textBlock = readDisplay(reader, holder.layers, label?.name, layout, clamp, {
+  const textBlock = readDisplay(reader, order, label?.name, layout, clamp, {
     width: across === undefined ? sizing.horizontal : FILL_ACROSS,
     inside,
     markers,
@@ -1447,6 +1478,7 @@ function mapPart(
       stacked: painted,
       style: part.cascade.style,
       paints: painted.fill !== undefined,
+      width: DECLARED_WIDTH,
     };
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
@@ -1487,7 +1519,18 @@ function mapPart(
       ? { ...wrapped, hidden: true as const }
       : wrapped;
   const framed = wrapped !== turned;
-  return { layer, stacked: layer, style: part.cascade.style, paints: own.fill !== undefined, framed };
+  const { horizontal } = frame.sizing;
+  return {
+    layer,
+    stacked: layer,
+    style: part.cascade.style,
+    paints: own.fill !== undefined,
+    framed,
+    width:
+      horizontal.kind === "fixed" && horizontal.length.kind === "literal"
+        ? { kind: "fixed", value: horizontal.length.value }
+        : DECLARED_WIDTH,
+  };
 }
 
 /**
@@ -1605,6 +1648,8 @@ type MappedPart = {
   readonly wrapped?: InstanceLayerSpec;
   /** Whether a frame part's layer is the frame that draws its margins. */
   readonly framed?: boolean;
+  /** The width the part draws, as a label beside it in a row reads it. */
+  readonly width: DrawnWidth;
 };
 
 /**
@@ -1676,7 +1721,7 @@ function labelBox(
   if (label === undefined) {
     return box;
   }
-  const element = cascade.labelElement({ last: holder.layers.at(-1) === label.name, key: label.key });
+  const element = cascade.labelElement({ last: holder.layers.at(-1)?.kind === "label", key: label.key });
   if (element === undefined) {
     return box;
   }
@@ -1697,7 +1742,7 @@ type MappedIcon = {
  * An icon as the box draws it once its layout is known: its style, the layer the box holds, which
  * draws its margins where they map, and the width it takes along a row, as `margin-box.ts` gives them.
  */
-type DrawnIcon = IconMarginBox & { readonly style: LayerStyle };
+type DrawnIcon = IconMarginBox & { readonly style: LayerStyle; readonly name: string };
 
 /**
  * What an icon's `display` makes of it, by the value Tailwind compiles. An icon in a flex box is a

@@ -9,11 +9,13 @@
 import type { CapturedText, TextRun } from "./box-cascade";
 import { describeColor } from "./box-paint";
 import { hugsUncapped, listNames, UNREAD_SHARE, widthCapInside } from "./box-sizing";
-import type { Holder, WidthCap } from "./box-sizing";
+import type { Holder, RowLayer, WidthCap } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import type { BuildContext, Cell, LabelDefinition } from "./component-spec";
 import { evaluateLength, evaluateNumber, inFont, normalizeCss, readColor, splitTopLevel } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { DECLARED_WIDTH, keepsOwnSize, widthHeldBy } from "./flex-item-width";
+import type { DrawnWidth, HoldingDeclaration } from "./flex-item-width";
 import { readFaceStyle } from "./italic-face";
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "./kit-spec";
 import type {
@@ -91,6 +93,11 @@ export type LabelScope = {
    * first character and the ellipsis, where the browser and a Figma text both draw it.
    */
   readonly ellipsisFits: boolean;
+  /**
+   * The width each part of the box's row draws once mapped, by the part's style, where its frame
+   * maps a fixed width with its limits folded in. Any other layer draws its `width` as declared.
+   */
+  readonly drawnWidths: ReadonlyMap<LayerStyle, DrawnWidth>;
   /**
    * The label's text run by run with the spans each run sits in, where a span below the box styles
    * some of it, as the box cascade's `textRuns` reads them, or undefined.
@@ -352,7 +359,7 @@ export function labelElementHolder(
     growing === undefined &&
     FROM_START.has(normalizeCss(element.resolved("text-align") ?? ""));
   const fills = row.sizing.horizontal.kind !== "hug";
-  const capped = ends && !fills && widthCapInside(row, row.layers.indexOf(label.name)).kind !== "none";
+  const capped = ends && !fills && widthCapInside(row, row.layers.findIndex(isLabel)).kind !== "none";
   if (!ends || capped) {
     for (const property of ELEMENT_LAYOUT) {
       element.mark(property, "unmapped", capped ? CAPPED_ELEMENT : UNENDED, []);
@@ -380,13 +387,12 @@ export function labelElementHolder(
     sizing: { horizontal: fills ? { kind: "fill" } : { kind: "hug" }, vertical: { kind: "hug" } },
     limits: NO_LIMITS,
     extent: { horizontal: undefined, vertical: undefined },
-    layers: [label.name],
+    layers: [{ kind: "label", name: label.name, share: UNREAD_SHARE, style: undefined, tag: undefined }],
     widthCap: { kind: "none" },
     // A row that hugs with nothing bounding it lays the element out at its max-content width.
     unbounded: hugsUncapped(row),
     // The rule above decides the element's sizing.
     widthKnown: true,
-    shares: [UNREAD_SHARE],
   };
 }
 
@@ -480,7 +486,8 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
           scope.variant,
           path,
           scope.fitsOneLine,
-          scope.ellipsisFits
+          scope.ellipsisFits,
+          scope.drawnWidths
         )
       : { ...readNativeLines(holder, lines, scope.variant, path), maxWidth: undefined, packsAtStart: false };
   const fills = layout.sizing.horizontal.kind !== "hug";
@@ -934,7 +941,7 @@ const CAPPED: Refusal = {
 };
 
 /**
- * Whether a flex row's text item draws as a text that fills the room the row's other layer leaves:
+ * The other layer of a flex row whose text item draws as a text that fills the room that layer leaves:
  * the label is the first of two layers that the row spaces between its ends, it sets its lines from
  * the start, and the other layer is as wide as a length says, or keeps its own width, as a Command
  * row's Kbd group shortcut does, which a Figma frame that hugs draws. The item then sits at the start,
@@ -952,17 +959,94 @@ const CAPPED: Refusal = {
  * label of several words wraps between them inside the room in CSS and Figma, as Chromium showed for the
  * Dropdown menu sub trigger on 2026-11-19, where `shrink-0` keeps the caret at its width. One word
  * wider than the room is the known limit above.
+ *
+ * This function finds the row's shape. The fill also needs the other layer to keep the width it
+ * draws, as {@link heldAfter} reads it apart. Where the build cannot establish that, a Figma layer
+ * keeps its size where CSS may not, so the label's sizing stays unmapped, with no one-word sample
+ * hugging instead.
+ *
+ * @returns The other layer, or undefined where the row has another shape.
  */
-function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): boolean {
-  const { layout, layers, shares } = holder;
-  return (
-    layout.direction === "HORIZONTAL" &&
+function spacedFirst(holder: Holder, across: Across): RowLayer | undefined {
+  const { layout, layers } = holder;
+  const [first, other] = layers;
+  return layout.direction === "HORIZONTAL" &&
     layout.justify === "SPACE_BETWEEN" &&
     layers.length === 2 &&
-    layers[0] === label.name &&
-    (shares[1]?.kind === "pixels" || shares[1]?.kind === "hugs") &&
+    first !== undefined &&
+    isLabel(first) &&
     across === "LEFT"
-  );
+    ? other
+    : undefined;
+}
+
+/** Whether a layer of a box's flow is the box's own label. */
+function isLabel(layer: RowLayer): boolean {
+  return layer.kind === "label";
+}
+
+/**
+ * The elements whose width does not follow a `width` they leave unset, so a Figma frame that hugs
+ * what it holds can draw another width: form controls and replaced elements, which take an
+ * intrinsic size (CSS Sizing 3 §5.1), and a `<button>`, whose user-agent style can size it.
+ */
+const INTRINSIC: ReadonlySet<string> = new Set([
+  "input",
+  "select",
+  "textarea",
+  "button",
+  "meter",
+  "progress",
+  "img",
+  "video",
+  "canvas",
+  "iframe",
+  "object",
+  "embed",
+]);
+
+/** Whether a margin along a row takes no room: unset or a length of 0. */
+function takesNoRoom(value: string | undefined): boolean {
+  return value === undefined || evaluateLength(value) === 0;
+}
+
+/**
+ * The declarations that hold the layer after a spaced row's label at the width that layer draws,
+ * however the label wraps, where the build can establish that it keeps that width. The layer's
+ * share must be a length or its own width, and `widthHeldBy` in `flex-item-width.ts` must read its
+ * flex, limits and box as holding it there. The row must not wrap, since a wrapped row sets each
+ * layer on a line of its own (CSS Flexbox 1 §9.3). The layer must take no margin along the row but
+ * the `auto` start margin that ends the row with it, since a margin of a length moves the room the
+ * label has, and an `auto` end margin sets the layer right after a short label (§8.1). A control or
+ * replaced element must set a literal `width`, since it otherwise takes its own intrinsic width. A
+ * part's `flex` that moves its size stays unmapped where the box reads its growth, so the label
+ * does not fill beside it either.
+ *
+ * @param row - The row's style.
+ * @param after - The layer after the label.
+ * @param drawn - The width the layer draws, as the box mapping reads it.
+ * @returns The declarations, or undefined where the build cannot establish that the layer keeps
+ *   the width it draws.
+ */
+function heldAfter(
+  row: LayerStyle,
+  after: RowLayer,
+  drawn: DrawnWidth
+): readonly HoldingDeclaration[] | undefined {
+  const { style, share, tag } = after;
+  const width = style?.resolved("width");
+  const fits =
+    style !== undefined &&
+    (share.kind === "pixels" || share.kind === "hugs") &&
+    ["", "nowrap"].includes(normalizeCss(row.resolved("flex-wrap") ?? "")) &&
+    (normalizeCss(style.resolved("margin-left") ?? "") === "auto" ||
+      takesNoRoom(style.resolved("margin-left"))) &&
+    takesNoRoom(style.resolved("margin-right")) &&
+    !(after.kind === "part" && style.has("flex") && !keepsOwnSize(style)) &&
+    (tag === undefined ||
+      !INTRINSIC.has(tag) ||
+      (width !== undefined && evaluateLength(width) !== undefined));
+  return fits ? widthHeldBy(style, drawn) : undefined;
 }
 
 /**
@@ -972,16 +1056,37 @@ function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): bo
  * lines from the start. The label then paints nothing past its text, so a fill draws what CSS draws
  * at any length of text that fits.
  */
-function fillsBeforeMargin(holder: Holder, label: LabelDefinition, across: Across): boolean {
+function fillsBeforeMargin(holder: Holder, across: Across): boolean {
   const { layout, layers } = holder;
   return (
     layout.direction === "HORIZONTAL" &&
     layout.labelFills === true &&
     layers.length > 2 &&
-    layers.at(-2) === label.name &&
+    layers.at(-2)?.kind === "label" &&
     across === "LEFT"
   );
 }
+
+/**
+ * Why a label first of a spaced row's two layers keeps its sizing unmapped where the build cannot
+ * establish that the layer after it keeps the width it draws, as {@link heldAfter} reads it. A Figma
+ * layer beside a filling text keeps its size, and CSS may size that layer otherwise.
+ *
+ * @param after - The name of the layer after the label.
+ */
+function narrowing(after: string): Refusal {
+  return {
+    anchor: "display",
+    detail: `the build could not establish that ${after} keeps its drawn width when the label wraps (CSS Flexbox 1 §9.7), so the label's sizing stays unmapped`,
+  };
+}
+
+/** What a declaration of the layer after the label notes where it keeps that layer's width, so the label fills. */
+const KEEPS_AFTER: CoverageNote = {
+  outcome: "literal",
+  detail:
+    "the layer keeps the width it draws however the label wraps (CSS Flexbox 1 §9.7), so the label before it fills the room it and the row's gap leave",
+};
 
 /** What a row's `justify-content` draws where its label fills the room as {@link spacedFirst} says. */
 const SPACED_FIRST =
@@ -1016,7 +1121,7 @@ function refuseItem(
   if (column && !style.has("align-items")) {
     return undefined;
   }
-  const others = layers.filter((name) => name !== label.name);
+  const others = layers.flatMap((layer) => (isLabel(layer) ? [] : [layer.name]));
   if (!column && others.length > 0) {
     return {
       anchor: "display",
@@ -1082,7 +1187,8 @@ function readLabelLayout(
   variant: string,
   path: readonly string[],
   fitsOneLine: string | undefined,
-  ellipsisFits: boolean
+  ellipsisFits: boolean,
+  drawnWidths: ReadonlyMap<LayerStyle, DrawnWidth>
 ): LabelLayout {
   const { style, sizing } = holder;
   const value = (property: string): string => normalizeCss(style.resolved(property) ?? "");
@@ -1101,7 +1207,7 @@ function readLabelLayout(
   const definite = sizing.horizontal.kind !== "hug";
   const cap: WidthCap =
     !definite && wrapping && !ellipsis && lines === undefined
-      ? widthCapInside(holder, holder.layers.indexOf(label.name))
+      ? widthCapInside(holder, holder.layers.findIndex(isLabel))
       : { kind: "none" };
   if (cap.kind === "unread" && holder.limits.maxWidth === undefined) {
     throw new KitUnmappable({
@@ -1130,16 +1236,40 @@ function readLabelLayout(
   // In place, a one-word text keeps its own width only where its variant's text does too, and takes
   // the variant's filling layout otherwise, which draws it as CSS does. A label a TEXT property sets
   // in a spaced row fills instead, as `spacedFirst` says, since a designer may type several words.
-  const spacedRow = !capped && placed !== undefined && item === "flex" && spacedFirst(holder, label, across);
+  const after = !capped && placed !== undefined && item === "flex" ? spacedFirst(holder, across) : undefined;
+  const spacedRow = after !== undefined;
+  // A typed label there never hugs as one word, so beside a layer that may change width it stays unmapped.
+  const holding =
+    after?.style === undefined
+      ? undefined
+      : heldAfter(style, after, drawnWidths.get(after.style) ?? DECLARED_WIDTH);
   const ownWidth =
     placed !== undefined &&
     item === "flex" &&
     !(spacedRow && label.textProperty !== undefined) &&
     neverWraps(style, characters.shown) &&
     (characters.built === undefined || neverWraps(style, characters.built));
-  const beforeMargin = definite && !capped && item === "flex" && fillsBeforeMargin(holder, label, across);
-  const spaced = beforeMargin || (spacedRow && !ownWidth);
-  const refusal = capped ? CAPPED : ownWidth || spaced ? undefined : placed;
+  const beforeMargin = definite && !capped && item === "flex" && fillsBeforeMargin(holder, across);
+  const keepsAfter = holding !== undefined && !ownWidth;
+  const spaced = beforeMargin || keepsAfter;
+  const refusal = capped
+    ? CAPPED
+    : ownWidth || spaced
+      ? undefined
+      : after !== undefined
+        ? narrowing(after.name)
+        : placed;
+  if (keepsAfter && after?.style !== undefined) {
+    for (const property of holding) {
+      style.readPlacing(
+        after.style,
+        property,
+        (written) => written,
+        () => KEEPS_AFTER,
+        style.feed("sizing", path)
+      );
+    }
+  }
   if (spaced) {
     style.read(
       "justify-content",
@@ -1263,7 +1393,7 @@ type LabelLayout = Pick<TextLayerSpec, "sizing" | "truncation"> & {
   readonly maxWidth: NumberSpec | undefined;
   /**
    * Whether the label fills the room its row's other layer and gap leave, as {@link spacedFirst}
-   * decides, so the row packs its layers at the start with its gap between them.
+   * and {@link heldAfter} decide, so the row packs its layers at the start with its gap between them.
    */
   readonly packsAtStart: boolean;
 };

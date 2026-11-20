@@ -458,31 +458,289 @@ describe("an auto start margin after a row's own text", () => {
 // the gap leave, so a typed label of several words wraps between them there and the caret ends the
 // row. Only a label that fills that room draws it in Figma, whose hugging text stays on one line, so
 // a one-word sample a TEXT property sets fills as a multi-word one does, and the row packs at its start.
+// The layer after the label must keep the width it draws, since a Figma layer keeps its size.
+// `fixed-icon.chromium.test.ts` measures the CSS facts by hand-derived widths: a 16px svg that can
+// shrink narrows once the label wraps, a `flex-shrink` of 0 or a `min-width` of its width keeps it,
+// a basis wins over its width, a minimum raises it, a maximum lowers it, a grow widens it, and a 24px
+// `border-box` frame with 16px padding on each side is 32px wide. `flex` spells its factors and basis
+// as CSS Flexbox 1 §7.1 says: `flex-initial` compiles to `0 auto`, `0 1 auto`, and `0 16px` is
+// `0 1 16px`. Where the layer keeps its width, the declarations that hold it are literal, and a limit
+// that leaves the width where it is takes no such row. Elsewhere the label's sizing stays unmapped,
+// under the row's `display`.
 describe("a two-layer row's one-word text before an ml-auto icon", () => {
-  it("fills the room the icon leaves, so a longer typed label wraps there", async () => {
-    const { variant } = await buildCaptured(
-      chip({
-        label: {
-          key: "label",
-          name: "label",
-          characters: "Share",
-          textProperty: "Label",
-          shownIn: () => true,
-        },
-        iconsFor: () => [{ ...ICON, side: "end" }],
-      }),
+  const LABEL = {
+    key: "label",
+    name: "label",
+    characters: "Share",
+    textProperty: "Label",
+    shownIn: () => true,
+  };
+  const ROW =
+    "flex w-[120px] items-center gap-[8px] px-[8px] font-sans text-[14px] leading-[20px] text-[#000000]";
+
+  /**
+   * Build the sub trigger's row with a typed one-word label before an icon winning the given classes,
+   * named as the given name says.
+   */
+  function buildSpaced(icon: string, name: string = ICON.name) {
+    return buildCaptured(
+      chip({ label: LABEL, iconsFor: () => [{ ...ICON, name, side: "end" }] }),
       rest({
         slot: "chip",
-        classes:
-          "flex w-[120px] items-center gap-[8px] px-[8px] font-sans text-[14px] leading-[20px] text-[#000000]",
+        classes: ROW,
         text: "Share",
         textIndex: 0,
         measured: { freeAlongMain: true },
-        children: [{ tag: "svg", classes: "ml-auto size-[16px] shrink-0" }],
+        children: [{ tag: "svg", classes: `ml-auto size-[16px] ${icon}` }],
       }),
       FONT_SANS
     );
+  }
+
+  /** Build the row, winning the given classes too, with the label before a frame part of the given tag and classes. */
+  function buildBesideFrame(frame: string, { tag = "div", row = "" }: { tag?: string; row?: string } = {}) {
+    return buildCaptured(
+      chip({ label: LABEL, parts: [{ ...part(), after: "label" }] }),
+      rest({
+        slot: "chip",
+        classes: `justify-between ${ROW} ${row}`,
+        text: "Share",
+        textIndex: 0,
+        measured: { freeAlongMain: true },
+        children: [{ tag, slot: "chip-dot", classes: frame }],
+      }),
+      FONT_SANS
+    );
+  }
+
+  type Coverage = Awaited<ReturnType<typeof buildSpaced>>["coverage"];
+
+  /** The property and outcome of each row each of the given classes has. */
+  function outcomes(coverage: Coverage, classes: string) {
+    return classes
+      .split(" ")
+      .map(
+        (className) =>
+          [className, notesOf(coverage, className).map(([property, outcome]) => [property, outcome])] as const
+      );
+  }
+
+  /** Each class and property the coverage notes as both unmapped and literal. */
+  function doublyNoted(coverage: Coverage) {
+    const noted = (outcome: string) =>
+      new Set(
+        coverage.filter((row) => row.outcome === outcome).map((row) => `${row.className} ${row.property}`)
+      );
+    const literal = noted("literal");
+    return [...noted("unmapped")].filter((key) => literal.has(key));
+  }
+
+  /** Whether the label fills, the row's alignment, and the unmapped rows. */
+  function drawn({ variant, coverage }: Awaited<ReturnType<typeof buildSpaced>>) {
+    return {
+      label: textOf(variant?.root)?.sizing.horizontal,
+      unmapped: coverage
+        .filter((row) => row.outcome === "unmapped")
+        .map((row) => [row.className, row.property]),
+    };
+  }
+
+  it.each([
+    ["shrink-0", "that never shrinks", [["shrink-0", [["flex-shrink", "literal"]]]]],
+    ["min-w-[16px]", "whose minimum width is its width", [["min-w-[16px]", [["min-width", "literal"]]]]],
+    ["flex-none", "that neither grows nor shrinks", [["flex-none", [["flex", "literal"]]]]],
+    ["flex-[0_0_auto]", "whose flex spells out none", [["flex-[0_0_auto]", [["flex", "literal"]]]]],
+    [
+      "flex-[0_0_16px]",
+      "whose flex sets its width as its basis",
+      [["flex-[0_0_16px]", [["flex", "literal"]]]],
+    ],
+    [
+      "flex-initial min-w-[16px]",
+      "whose flex of 0 auto shrinks no further than its minimum",
+      [
+        ["flex-initial", [["flex", "literal"]]],
+        ["min-w-[16px]", [["min-width", "literal"]]],
+      ],
+    ],
+    [
+      "flex-[0_16px] min-w-[16px]",
+      "whose two-value flex sets its width as its basis above its minimum",
+      [
+        ["flex-[0_16px]", [["flex", "literal"]]],
+        ["min-w-[16px]", [["min-width", "literal"]]],
+      ],
+    ],
+  ])(
+    "fills the room an icon %s leaves, %s, so a longer typed label wraps there",
+    async (icon, _case, rows) => {
+      const { variant, coverage } = await buildSpaced(icon);
+      expect([textOf(variant?.root)?.sizing.horizontal, variant?.root.primaryAlign]).toEqual([FILL, "MIN"]);
+      expect(outcomes(coverage, icon)).toEqual(rows);
+      expect(doublyNoted(coverage)).toEqual([]);
+    }
+  );
+
+  it("notes no row for a maximum above the icon's width, which leaves the width where it is", async () => {
+    const { variant, coverage } = await buildSpaced("shrink-0 max-w-[100px]");
+    expect(textOf(variant?.root)?.sizing.horizontal).toEqual(FILL);
+    expect(
+      notesOf(coverage, "max-w-[100px]").map(([property, outcome]) => [property, outcome])
+    ).not.toContainEqual(["max-width", "literal"]);
+  });
+
+  it.each([
+    ["", "can shrink"],
+    ["shrink-0 basis-[8px]", "starts from an 8px basis"],
+    ["min-w-[16px] basis-[32px]", "starts from a 32px basis"],
+    ["shrink-0 max-w-[8px]", "stops at an 8px maximum"],
+    ["min-w-[24px]", "takes its 24px minimum, where the icon draws its 16px width"],
+    ["grow shrink-0", "grows into the room a short label leaves"],
+    // `calc(1)` is a number, so the icon grows, and Chromium draws it 58.6px wide beside `Share`.
+    ["min-w-[16px] flex-[calc(1)_0]", "grows by a factor of calc(1)"],
+    // `calc(16)` is no length, so `flex` is invalid at computed-value time and falls back to `0 1 auto`.
+    // Chromium narrows the icon to 4.9px beside a label that wraps.
+    ["flex-[0_0_var(--basis)] [--basis:calc(16)]", "starts from a basis of calc(16)"],
+    // A border of style `none` is 0px wide (CSS Backgrounds 3 §4.3), so the 8px basis holds, and
+    // Chromium draws the icon 8px wide.
+    [
+      "min-w-0 box-border border-[8px] border-none flex-[0_0_8px]",
+      "starts from an 8px basis inside a border of style none",
+    ],
+  ])("leaves the label's sizing unmapped beside an icon %s that %s", async (icon) => {
+    const built = await buildSpaced(icon);
+    const { label, unmapped } = drawn(built);
+    expect(label).toEqual(HUG);
+    expect(unmapped).toContainEqual(["flex", "display"]);
+    const rows = outcomes(built.coverage, icon).flatMap(([, each]) => each);
+    expect(rows.map(([, outcome]) => outcome)).not.toContain("literal");
+  });
+
+  // The minimum sets the frame's own fixed width and holds the room the label fills beside it, so
+  // the one declaration notes both, in either order.
+  it("fills beside a frame whose 24px minimum folds into its fixed width", async () => {
+    const { variant, coverage } = await buildBesideFrame("flex size-[16px] min-w-[24px]");
     expect([textOf(variant?.root)?.sizing.horizontal, variant?.root.primaryAlign]).toEqual([FILL, "MIN"]);
+    const frame = variant?.root.children.find((layer) => layer.kind === "frame");
+    expect(frame?.kind === "frame" ? frame.sizing.horizontal : undefined).toEqual(fixed(literal(24)));
+    // One row notes the frame's own width, and one the room the label fills beside it, in either order.
+    const rows = coverage
+      .filter((row) => row.className === "min-w-[24px]")
+      .map(({ property, outcome, detail }) => ({
+        property,
+        outcome,
+        frame: detail.includes("fixed width"),
+        beside: detail.includes("label"),
+      }))
+      .toSorted((a, b) => Number(a.frame) - Number(b.frame));
+    expect(rows).toEqual([
+      { property: "min-width", outcome: "literal", frame: false, beside: true },
+      { property: "min-width", outcome: "literal", frame: true, beside: false },
+    ]);
+  });
+
+  // Chromium clamps a 32px basis to the 16px maximum, and the 16px minimum changes nothing. So the
+  // maximum holds the icon at its width and the minimum does not.
+  it("credits a maximum equal to the minimum that holds the icon's width, and not the minimum", async () => {
+    const { variant, coverage } = await buildSpaced("flex-[0_0_32px] min-w-[16px] max-w-[16px]");
+    expect(textOf(variant?.root)?.sizing.horizontal).toEqual(FILL);
+    expect(outcomes(coverage, "max-w-[16px]")).toEqual([["max-w-[16px]", [["max-width", "literal"]]]]);
+    expect(notesOf(coverage, "min-w-[16px]").map(([, outcome]) => outcome)).not.toContain("literal");
+    expect(doublyNoted(coverage)).toEqual([]);
+  });
+
+  it("reads an icon named as the label as the layer after it, which can shrink", async () => {
+    const built = await buildSpaced("", LABEL.name);
+    expect(drawn(built)).toEqual({ label: HUG, unmapped: [["flex", "display"]] });
+  });
+
+  // Each frame's CSS width can differ from the width it draws, or the build reads none for it, so a
+  // typed label of several words that wraps in CSS beside it has no Figma sizing that draws the same.
+  // Chromium draws a `box-sizing: initial` frame 20px wide around its 16px width and 4px of padding
+  // and an `<input>` 153px wide. A 4px margin takes 4px of the label's room, an `auto` end margin
+  // sets the frame right after a short label (CSS Flexbox 1 §8.1), and a wrapping row sets the
+  // layer on a second line under a long label (§9.3). A frame's `flex` of `0 1 auto` stays unmapped
+  // where the row reads its growth, so the room beside it is not one the build maps either.
+  it.each([
+    ["flex h-[16px] px-[8px]", "sets no width and can shrink", {}],
+    ["flex size-[16px] shrink-0", "sits in a row that wraps", { row: "flex-wrap" }],
+    ["flex size-[16px] shrink-0 mr-[4px]", "takes a 4px margin", {}],
+    ["flex flex-[0_0_auto] h-[16px] px-[8px] -mr-[4px]", "takes a -4px margin", {}],
+    ["block flex-[0_0_auto]", "is an input with no width", { tag: "input" }],
+    ["flex size-[16px] px-[2px] flex-[0_0_auto] [box-sizing:initial]", "sizes its content box", {}],
+    ["flex flex-[0_0_auto] h-[16px] px-[8px] mr-auto", "sets an auto end margin", {}],
+    ["flex size-[16px] flex-[0_1_auto] min-w-[16px]", "sets a flex its row leaves unmapped", {}],
+  ])("leaves the label's sizing unmapped beside a frame %s that %s", async (frame, _case, options) => {
+    const { label, unmapped } = drawn(await buildBesideFrame(frame, options));
+    expect(label).toEqual(HUG);
+    expect(unmapped).toContainEqual(["flex", "display"]);
+  });
+
+  // A `border-box` frame is never narrower than its padding: 16px on each side makes a 24px frame 32px wide.
+  it.each([
+    ["box-border flex size-[24px] flex-none", { label: FILL, unmapped: [] }],
+    ["box-border flex size-[24px] flex-none px-[16px]", { label: HUG, unmapped: [["flex", "display"]] }],
+  ])("sizes the label beside a frame %s", async (frame, expected) => {
+    expect(drawn(await buildBesideFrame(frame))).toEqual(expected);
+  });
+
+  // A widthless frame that neither grows nor shrinks hugs its text, whichever way its flex says so.
+  it.each([
+    [
+      "flex-none",
+      [
+        ["flex", "dropped"],
+        ["flex", "literal"],
+      ],
+    ],
+    [
+      "flex-[0_0_auto]",
+      [
+        ["flex", "dropped"],
+        ["flex", "literal"],
+      ],
+    ],
+    [
+      "flex-none shrink-0",
+      [
+        ["flex", "dropped"],
+        ["flex", "literal"],
+        ["flex-shrink", "literal"],
+      ],
+    ],
+  ])("fills beside a frame that hugs its text under %s", async (flex, rows) => {
+    const built = await buildBesideFrame(`flex whitespace-nowrap ${flex}`);
+    expect(drawn(built)).toEqual({ label: FILL, unmapped: [] });
+    expect(outcomes(built.coverage, flex).flatMap(([, each]) => each)).toEqual(rows);
+  });
+
+  it("reads the width the icon draws, not that of an absolute frame of the same name", async () => {
+    const built = await buildCaptured(
+      chip({
+        label: LABEL,
+        iconsFor: () => [{ ...ICON, name: "chip-dot", side: "end" }],
+        parts: [{ ...part(), after: "label" }],
+      }),
+      rest({
+        slot: "chip",
+        classes: `relative ${ROW}`,
+        text: "Share",
+        textIndex: 0,
+        measured: { freeAlongMain: true },
+        children: [
+          { tag: "svg", classes: "ml-auto size-[16px] min-w-[24px]" },
+          { tag: "div", slot: "chip-dot", classes: "absolute top-[0px] left-[0px] size-[24px]" },
+        ],
+      }),
+      FONT_SANS
+    );
+    expect(drawn(built)).toEqual({
+      label: HUG,
+      unmapped: [
+        ["flex", "display"],
+        ["min-w-[24px]", "min-width"],
+      ],
+    });
   });
 });
 
