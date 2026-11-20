@@ -8,7 +8,7 @@
  */
 
 import { createElement } from "react";
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { Table } from "../../../fuse/dist/table.js";
 import type { Cell } from "../components/component-spec.ts";
@@ -20,20 +20,26 @@ import {
 } from "../components/table-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
-/** A table holding the given children, in a host of the given width, or one that sets none. */
-function hosted(width: number | undefined, ...children: ReactElement[]): ReactElement {
+/** A table holding the given children, in a host with the given style, or one that sets none. */
+function hosted(style: CSSProperties | undefined, ...children: ReactElement[]): ReactElement {
   return createElement(
     "div",
-    width === undefined ? null : { style: { width: `${String(width)}px` } },
+    style === undefined ? null : { style },
     createElement(Table.Root, null, ...children)
   );
 }
 
-/** The `table-head` cell: the default demo's first head, alone in its header row. */
+/**
+ * The `table-head` cell: the default demo's first head, alone in its header row. The header gives the
+ * row a bottom rule, which Chromium paints on the first pixel row below the head. The `table-row` set
+ * draws that rule and the `table-head` set draws none, so the host clips the table at the head's
+ * height. The clip would also hide a bottom border of the head's own, which Fuse's head does not
+ * draw. A style on the row would replace the cascade's winner there, which the capture records.
+ */
 export const tableHead: CellRendering = {
   element: () =>
     hosted(
-      undefined,
+      { maxHeight: "var(--row-h-header)", overflow: "clip" },
       createElement(
         Table.Header,
         null,
@@ -56,8 +62,9 @@ export const tableCell: CellRendering = {
 };
 
 /**
- * The `table-row` cell: the default demo's header row, its first body row with a plain row after it,
- * or a body row alone, which is the body's last, marked selected as the selected-row demo marks one.
+ * The `table-row` cell: the default demo's header row, its first body row with a row after it, or a
+ * body row alone, which is the body's last, marked selected as the selected-row demo marks one. The
+ * row after a body row keeps it from being the body's last, whose rule Fuse removes.
  */
 export const tableRow: CellRendering = {
   element: (cell: Cell) => {
@@ -81,12 +88,18 @@ export const tableRow: CellRendering = {
       { key: "row", ...marked },
       ...TABLE_CELLS.map((text) => createElement(Table.Cell, { key: text }, text))
     );
-    const after = cell.row === "body" ? [createElement("tr", { key: "after" })] : [];
+    // The empty cell gives the following row enough height for the scroll container to show the
+    // preceding row's bottom border.
+    const after = cell.row === "body" ? [createElement("tr", { key: "after" }, createElement("td"))] : [];
     return hosted(undefined, createElement(Table.Body, null, row, ...after));
   },
 };
 
 /** The `table-caption` cell: the default demo's caption, under its table. */
 export const tableCaption: CellRendering = {
-  element: () => hosted(TABLE_CAPTION_PREVIEW_WIDTH, createElement(Table.Caption, null, TABLE_CAPTION)),
+  element: () =>
+    hosted(
+      { width: `${String(TABLE_CAPTION_PREVIEW_WIDTH)}px` },
+      createElement(Table.Caption, null, TABLE_CAPTION)
+    ),
 };

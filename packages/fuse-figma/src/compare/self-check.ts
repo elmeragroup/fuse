@@ -16,11 +16,14 @@
  * The kit's client cells, popups and open composites included, prove that a client cell mounts,
  * measures and forces its state the same way twice. A Select item at rest must also show no fill and
  * a highlighted one the theme's `accent`, which fails where a stray focus or highlight from the mount
- * draws.
+ * draws. The body-row crop must show the bottom rule across the row's full width. The head crop must
+ * contain paint inside the head's box and stay transparent outside it.
  */
 
 import { Effect, Result } from "effect";
 import { join } from "node:path";
+
+import * as Srgb from "@elmeragroup/color/srgb";
 
 import { previewInstances } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
@@ -28,13 +31,14 @@ import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { previewInstanceKey } from "../components/kit-spec.ts";
 import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
+import { TABLE_HEAD_MANIFEST, TABLE_ROW_MANIFEST } from "../components/table-kit.ts";
 import { DEVICE_SCALE } from "./browser-render.ts";
-import type { CellRequest } from "./browser-render.ts";
+import type { CellRequest, RenderedCell } from "./browser-render.ts";
 import { makeDirectory, writeText } from "./compare-files.ts";
 import type { PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
-import { crop, encodePng } from "./raster.ts";
-import type { Raster } from "./raster.ts";
+import { compose, crop, encodePng } from "./raster.ts";
+import type { Raster, Rgb } from "./raster.ts";
 import { parseSnapshot } from "./read-snapshot.ts";
 import { compareSnapshot, openCompareSession, planCells } from "./run-compare.ts";
 import type { CompareOptions, CompareReport } from "./run-compare.ts";
@@ -137,6 +141,121 @@ function fillMismatch(
     : `${where}: shows ${shown} where it paints ${fill.token}, rgb(${expected.join(" ")})`;
 }
 
+/** Whether a device pixel of a crop is painted. The page crops on a transparent background. */
+function isPainted(raster: Raster, x: number, y: number): boolean {
+  return (raster.data[(y * raster.width + x) * 4 + 3] ?? 0) > 0;
+}
+
+/**
+ * The device pixels a crop's measured box reaches, from its first column and row to past its last.
+ * The page places the box on whole CSS pixels, so its start edges fall on device pixels, and a
+ * fractional size ends partway into the last column or row.
+ */
+function boxPixels(rendered: RenderedCell, padding: number) {
+  const start = padding * DEVICE_SCALE;
+  const width = rendered.box.width * DEVICE_SCALE;
+  const height = rendered.box.height * DEVICE_SCALE;
+  return {
+    left: start,
+    top: start,
+    /** Past the last column the box covers whole. */
+    right: start + Math.floor(width),
+    /** Past the last column the box touches. */
+    rightTouched: start + Math.ceil(width),
+    bottom: start + Math.ceil(height),
+  };
+}
+
+/**
+ * How far a channel of the rule's pixel may stray from the border color laid over the theme's
+ * background, in 0..255 steps. The raster rounds each channel, and a translucent border's pixel
+ * rounds its alpha as well before it is laid over the background.
+ */
+const RULE_TOLERANCE = 2;
+
+/** A theme color as an sRGB color, or undefined where the theme resolves no literal for the token. */
+function themeColor(colorOf: TokenColorOf, token: string): Srgb.Srgb | undefined {
+  const color = colorOf(token);
+  if (color?.kind !== "literal") {
+    return undefined;
+  }
+  const { r, g, b, a } = color.color;
+  const made = Srgb.make({ r, g, b, alpha: a });
+  return made._tag === "ok" ? made.value : undefined;
+}
+
+/**
+ * Whether a Table cell's crop shows what the kit's set draws around the box, written by hand from
+ * Fuse's Table source. A body row is `border-b` and is not the body's last row, so a 1px rule in the
+ * preflight's `border` color runs under the whole row, on the `DEVICE_SCALE` device rows below its
+ * box, which the kit's `row=body` variant draws. The `table-head` set draws a head and its text and
+ * nothing past its box, while Fuse's header row is `border-b` too, so any paint outside the head's
+ * box is the row's.
+ *
+ * @param colorOf - The theme's color of a token, the rule's color and the background it lies on.
+ * @param backdrop - The preview's background, which the comparison lays every crop over.
+ * @returns Undefined when it does or the cell is no such Table cell, or a line that says what the
+ *   crop showed.
+ */
+function tableMismatch(
+  definition: string,
+  cell: Cell,
+  rendered: RenderedCell,
+  padding: number,
+  colorOf: TokenColorOf,
+  backdrop: Rgb,
+  where: string
+): string | undefined {
+  const { raster } = rendered;
+  const box = boxPixels(rendered, padding);
+  if (definition === TABLE_ROW_MANIFEST.key && cell.row === "body") {
+    const border = themeColor(colorOf, "border");
+    const background = themeColor(colorOf, "background");
+    if (border === undefined || background === undefined) {
+      return `${where}: the theme resolves no color for border or background`;
+    }
+    const ruled = Srgb.compositeOver(border, background);
+    const expected = [ruled.r, ruled.g, ruled.b].map((channel) => Math.round(channel * 255));
+    const size = { width: box.right - box.left, height: DEVICE_SCALE };
+    const strip = compose(size, backdrop, [
+      { raster: crop(raster, { x: box.left, y: box.bottom }, size), at: { x: 0, y: 0 } },
+    ]);
+    const gaps: { readonly x: number; readonly y: number; readonly shown: readonly number[] }[] = [];
+    for (let index = 0; index < strip.data.length; index += 4) {
+      const shown = [...strip.data.subarray(index, index + 3)];
+      if (shown.some((channel, at) => Math.abs(channel - (expected[at] ?? 0)) > RULE_TOLERANCE)) {
+        const pixel = index / 4;
+        gaps.push({
+          x: box.left + (pixel % size.width),
+          y: box.bottom + Math.floor(pixel / size.width),
+          shown,
+        });
+      }
+    }
+    const [first] = gaps;
+    return first === undefined
+      ? undefined
+      : `${where}: shows no border rule at ${String(gaps.length)} of ${String(size.width * size.height)} device pixels below the row, from ${String(first.x)},${String(first.y)}, rgb(${first.shown.join(" ")}) where the rule over the background is rgb(${expected.join(" ")})`;
+  }
+  if (definition === TABLE_HEAD_MANIFEST.key) {
+    let paintedInside = false;
+    for (let y = 0; y < raster.height; y += 1) {
+      for (let x = 0; x < raster.width; x += 1) {
+        const inside = x >= box.left && x < box.rightTouched && y >= box.top && y < box.bottom;
+        if (!isPainted(raster, x, y)) {
+          continue;
+        }
+        if (!inside) {
+          return `${where}: paints device pixel ${String(x)},${String(y)} outside the head's box`;
+        }
+        paintedInside = true;
+      }
+    }
+    return paintedInside ? undefined : `${where}: paints nothing inside the head's box`;
+  }
+  return undefined;
+}
+
 /**
  * The variant key of the first cell the kit's preview frames place in a state, in registry
  * order. A set with no `state` axis has no such cell and is passed over.
@@ -196,7 +315,7 @@ function isPerturbed(perturbed: Perturbed, preview: string, instance: InstanceSn
  *   not run, and dies when the kit's preview frames place a cell the comparison cannot render.
  */
 export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: CompareOptions) {
-  const fillMismatches: string[] = [];
+  const pixelMismatches: string[] = [];
   const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
   const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
   const previews: PreviewSnapshot[] = [];
@@ -248,20 +367,26 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
         );
         for (const { instance, cell, definition, request } of planned) {
           const fill = definition.key === SELECT_ITEM_MANIFEST.key ? selectItemFill(cell) : undefined;
-          const raster = rendered.cells.get(request.id)?.raster;
-          const mismatch =
-            fill === undefined || raster === undefined
-              ? undefined
-              : fillMismatch(
-                  raster,
-                  options.layout.padding,
-                  fill,
-                  colorOf,
-                  `${preview.key} ${instance.variant}`
-                );
-          if (mismatch !== undefined) {
-            fillMismatches.push(mismatch);
+          const shown = rendered.cells.get(request.id);
+          if (shown === undefined) {
+            continue;
           }
+          const where = `${preview.key} ${instance.variant}`;
+          const mismatches = [
+            fill === undefined
+              ? undefined
+              : fillMismatch(shown.raster, options.layout.padding, fill, colorOf, `fill: ${where}`),
+            tableMismatch(
+              definition.key,
+              cell,
+              shown,
+              options.layout.padding,
+              colorOf,
+              rendered.background,
+              `table: ${where}`
+            ),
+          ];
+          pixelMismatches.push(...mismatches.filter((line) => line !== undefined));
         }
         const instances = planned.map(({ instance, request }, index): InstanceSnapshot => {
           const cell = rendered.cells.get(request.id);
@@ -319,15 +444,15 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
       return yield* compareSnapshot(reread.success, options, session);
     })
   );
-  return judgeSelfCheck(report, [grown, painted], fillMismatches);
+  return judgeSelfCheck(report, [grown, painted], pixelMismatches);
 });
 
 function judgeSelfCheck(
   report: CompareReport,
   expectedTop: readonly Perturbed[],
-  fillMismatches: readonly string[]
+  pixelMismatches: readonly string[]
 ): SelfCheckResult {
-  const lines: string[] = [...fillMismatches.map((line) => `fill: ${line}`)];
+  const lines: string[] = [...pixelMismatches];
   const top = report.rows.slice(0, expectedTop.length);
   const topMatches = expectedTop.every(
     (expected, index) =>
@@ -365,7 +490,7 @@ function judgeSelfCheck(
     lines.push(`  skipped: ${entry.preview} ${entry.variant}: ${entry.reason}`);
   }
   const passed =
-    topMatches && failing.length === 0 && report.skipped.length === 0 && fillMismatches.length === 0;
+    topMatches && failing.length === 0 && report.skipped.length === 0 && pixelMismatches.length === 0;
   lines.push(
     passed
       ? "Self-check passed: the two changed cells lead the report and every other cell matches exactly."
