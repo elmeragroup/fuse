@@ -9,7 +9,14 @@ import type { CellAccounting } from "../capture/capture-cascade.ts";
 import { KitUnmappable } from "./build-errors.ts";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
-import type { AxisSpec, BooleanPropertySpec, ComponentSetSpec, FontSpec, SwapPropertySpec } from "./kit-spec";
+import type {
+  AxisSpec,
+  BooleanPropertySpec,
+  ComponentSetSpec,
+  FontSpec,
+  IconWeight,
+  SwapPropertySpec,
+} from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
 
 /**
@@ -36,6 +43,11 @@ export type IconSlot = {
   readonly dataIcon: "inline-start" | "inline-end" | undefined;
   /** The Fuse icon the layer shows, by its export name, such as `Plus`. */
   readonly icon: string;
+  /**
+   * The Phosphor weight the markup renders the icon in, as Checkbox card's checked icon is
+   * `CheckCircle` at `fill`, or undefined for the library's default weight.
+   */
+  readonly weight?: IconWeight;
   /** The INSTANCE_SWAP property that picks the icon, or undefined for a fixed icon. */
   readonly swapProperty: string | undefined;
   /**

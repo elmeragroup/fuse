@@ -117,7 +117,12 @@ export const KIT_PARITY = {
   carousel: { kind: "issue", issue: MISSING_SETS },
   chart: { kind: "excluded", reason: CHARTS },
   checkbox: { kind: "partial", sets: ["checkbox"], missing: "The invalid focus ring.", issue: MISSING_SETS },
-  "checkbox-card": { kind: "issue", issue: MISSING_SETS },
+  "checkbox-card": {
+    kind: "partial",
+    sets: ["checkbox-card"],
+    missing: "The `tags` badges, `children` below the description and `rightContent` at the card's end.",
+    issue: MISSING_SETS,
+  },
   code: {
     kind: "partial",
     sets: ["code"],

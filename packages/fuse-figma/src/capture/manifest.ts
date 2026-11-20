@@ -22,7 +22,7 @@ import type {
   PreviewLength,
 } from "../components/component-spec.ts";
 import type { Viewport } from "../components/css-values.ts";
-import type { AxisSpec, BooleanPropertySpec, SwapPropertySpec } from "../components/kit-spec.ts";
+import type { AxisSpec, BooleanPropertySpec, IconWeight, SwapPropertySpec } from "../components/kit-spec.ts";
 
 /**
  * A label: its key and layer name, the sample text or the text per cell, the TEXT property that
@@ -53,6 +53,8 @@ export type IconManifest = {
   readonly direct: boolean;
   readonly dataIcon: "inline-start" | "inline-end" | undefined;
   readonly icon: string;
+  /** The Phosphor weight the markup renders the icon in, where it is not the library's default. */
+  readonly weight?: IconWeight;
   readonly swapProperty: string | undefined;
   readonly optional?: BooleanPropertySpec;
 };
@@ -171,7 +173,7 @@ export type SetManifest = BoxManifest & {
  *   caption's.
  * - 448: a Card's host, the docs default demo's `max-w-md`, and Aspect ratio's, Code's and
  *   Attachment's.
- * - 384: a Field's width, the field boxes' and the Input group's host.
+ * - 384: a Field's width, the field boxes', the Input group's and Checkbox card's host.
  * - 320: a Command row's host.
  * - 256: a Meter's host, the `w-64` a container gives it.
  * - 160: a Dropdown menu row's host.
@@ -220,7 +222,7 @@ export const MANIFEST_FIELDS = {
     "textProperty",
     "charactersFor",
   ],
-  icon: ["key", "name", "side", "direct", "dataIcon", "icon", "swapProperty", "optional"],
+  icon: ["key", "name", "side", "direct", "dataIcon", "icon", "weight", "swapProperty", "optional"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** The definition the mapper walks for a manifest box's label and icons. */

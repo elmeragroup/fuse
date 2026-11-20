@@ -1188,3 +1188,21 @@ export function topLevelSpecs(
 export function iconKey(name: string): string {
   return `icon/${name}`;
 }
+
+/**
+ * A Phosphor weight the library draws an icon in besides its default bold: `fill`, the solid glyph
+ * Checkbox card's checked icon renders.
+ */
+export type IconWeight = "fill";
+
+/**
+ * The name of an icon in the library: its export name, and for a weight other than the default,
+ * the weight after it, as `CheckCircleFill`.
+ *
+ * @param name - The icon's export name.
+ * @param weight - The weight, or undefined for the default.
+ * @returns The library name.
+ */
+export function weightedIconName(name: string, weight: IconWeight | undefined): string {
+  return weight === undefined ? name : `${name}${weight.charAt(0).toUpperCase()}${weight.slice(1)}`;
+}

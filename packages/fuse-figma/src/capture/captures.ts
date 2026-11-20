@@ -23,6 +23,7 @@ import breadcrumbTrail from "../../captures/breadcrumb-trail.json" with { type: 
 import button from "../../captures/button.json" with { type: "json" };
 import calendarDay from "../../captures/calendar-day.json" with { type: "json" };
 import card from "../../captures/card.json" with { type: "json" };
+import checkboxCard from "../../captures/checkbox-card.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
 import code from "../../captures/code.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
@@ -184,6 +185,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["table-caption", tableCaption],
   ["timeline-list", timelineList],
   ["selection-item", selectionItem],
+  ["checkbox-card", checkboxCard],
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
   ["code", code],
