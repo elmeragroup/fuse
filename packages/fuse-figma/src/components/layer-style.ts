@@ -156,7 +156,12 @@ export type SpecField =
   | keyof IconLayerSpec
   | "layers"
   | "instance"
-  /** The frame a composite draws around an instance part for its margins, which the composite owns. */
+  /**
+   * What a composite draws around an instance part for its margins, which the composite owns: the
+   * frame around it for a margin of a length, or its place in the holding row for an auto margin.
+   * Where an inner root built in place draws that row, the row's own fields carry the auto margin in
+   * that root, as `readAround` feeds them.
+   */
   | "around";
 
 /**
@@ -770,6 +775,39 @@ export class LayerStyle {
     describe: (mapped: T) => CoverageNote,
     feed: Feed
   ): T | undefined {
+    return this.#read(property, map, describe, feed, undefined);
+  }
+
+  /**
+   * Read a property of an instance part's root that this box holds and draws itself, as an auto
+   * margin on the instance places it in the box. The read fills `around` on the instance's root, which
+   * the box owns, and `feed` on this box, which the inner root built in place that draws the box, if
+   * any, must carry in turn.
+   *
+   * @param held - The style of the instance part's root.
+   * @param property - The property.
+   * @param map - Maps the value onto a Figma field, or returns undefined where none reads it.
+   * @param describe - What the mapped value became, for the coverage table.
+   * @param feed - The spec fields the mapped value fills on this box.
+   * @returns The mapped value, or undefined when the property is unset or does not map.
+   */
+  readAround<T>(
+    held: LayerStyle,
+    property: string,
+    map: (value: string) => T | undefined,
+    describe: (mapped: T) => CoverageNote,
+    feed: Feed
+  ): T | undefined {
+    return held.#read(property, map, describe, held.feed("around"), { layer: this.#layer, feed });
+  }
+
+  #read<T>(
+    property: string,
+    map: (value: string) => T | undefined,
+    describe: (mapped: T) => CoverageNote,
+    feed: Feed,
+    holder: { readonly layer: Layer; readonly feed: Feed } | undefined
+  ): T | undefined {
     const entry = this.#layer.style.get(property);
     if (entry === undefined) {
       return undefined;
@@ -786,6 +824,7 @@ export class LayerStyle {
           }
         : describe(mapped);
     for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed]) {
+      holder?.layer.inPlace?.fed(source, holder.feed);
       this.#ledger.noteRead(source, note, feed, this.#layer);
     }
     return mapped;
