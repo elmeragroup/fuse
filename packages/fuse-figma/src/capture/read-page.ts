@@ -8,6 +8,7 @@
 import type { CDPSession } from "playwright";
 
 import type { MeasuredFacts } from "./capture-format.ts";
+import { lossyTexts, textsBelow } from "./element-content.ts";
 import { classNamesIn, physicalLonghand, selectorsIn } from "./winners.ts";
 import type { RawProperty, RawRule, RuleSource } from "./winners.ts";
 
@@ -21,6 +22,8 @@ export type RawElement = {
   readonly text: string;
   /** How many element children precede the first own text node, where the element has text. */
   readonly textIndex: number | undefined;
+  /** The element's text nodes between its element children, where `text` and `textIndex` lose some. */
+  readonly texts: readonly string[] | undefined;
   readonly rules: readonly RawRule[];
   /**
    * The rules matched on each of the element's pseudo-elements, each pseudo-element the page matched
@@ -238,6 +241,7 @@ async function readElement(
       .join("")
       .trim(),
     textIndex: textIndexOf(node),
+    texts: undefined,
     rules: [
       ...(matched.matchedCSSRules ?? []).map((match) => sourcedRule(match, sheets)),
       ...inlineRule(matched.inlineStyle),
@@ -347,7 +351,38 @@ export async function readCell(
     around.push(element);
     inside ||= slot;
   }
-  return { around, root: await readElement(cdp, sheets, node, true) };
+  const root = await readElement(cdp, sheets, node, true);
+  return { around, root: withTexts(root, await textsOf(cdp, node.nodeId)) };
+}
+
+/** The lossy texts of the element a node is and of each element below it, by element-ordinal path. */
+async function textsOf(cdp: CDPSession, nodeId: number): Promise<ReadonlyMap<string, readonly string[]>> {
+  const { object } = await cdp.send("DOM.resolveNode", { nodeId });
+  if (object.objectId === undefined) {
+    return new Map();
+  }
+  const { result } = await cdp.send("Runtime.callFunctionOn", {
+    objectId: object.objectId,
+    returnByValue: true,
+    functionDeclaration: `function () { return (${textsBelow.toString()})(this, ${lossyTexts.toString()}); }`,
+  });
+  // SAFETY: the function above returns an array of paths, each with an array of strings, by value.
+  return new Map((result.value ?? []) as readonly (readonly [string, readonly string[]])[]);
+}
+
+/** An element with the texts each element below it holds, by element-ordinal path. */
+function withTexts(
+  element: RawElement,
+  texts: ReadonlyMap<string, readonly string[]>,
+  path = ""
+): RawElement {
+  return {
+    ...element,
+    texts: texts.get(path),
+    children: element.children.map((child, index) =>
+      withTexts(child, texts, path === "" ? String(index) : `${path}/${String(index)}`)
+    ),
+  };
 }
 
 /** Every property name a cell's rules write, its pseudo-elements' included. */

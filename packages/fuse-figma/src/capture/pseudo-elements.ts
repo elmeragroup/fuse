@@ -280,6 +280,10 @@ export class PseudoBoxCascade implements BoxCascade {
     return { _tag: "Unresolved", reason: "a pseudo-element's box holds no label of the kit's" };
   }
 
+  textRuns(): undefined {
+    return undefined;
+  }
+
   icon(slot: IconSlot): LayerStyle {
     throw new Error(`a pseudo-element holds no icon, yet the mapping asked it for ${slot.key}`);
   }

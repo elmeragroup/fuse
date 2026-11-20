@@ -27,6 +27,7 @@ import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CALENDAR_DAY_MANIFEST } from "./calendar-day-kit";
 import { CARD_MANIFEST } from "./card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
+import { CODE_MANIFEST } from "./code-kit";
 import {
   COMBOBOX_EMPTY_MANIFEST,
   COMBOBOX_ITEM_MANIFEST,
@@ -272,6 +273,9 @@ const TIMELINE_LIST_PAGE: KitPage = {
   name: "Timeline list",
   example: "timeline-list",
 };
+
+/** The page Code sits on alone. */
+const CODE_PAGE: KitPage = { slug: "code", name: "Code", example: "code" };
 
 /** The page Selection item sits on alone. */
 const SELECTION_ITEM_PAGE: KitPage = {
@@ -898,4 +902,5 @@ export const KIT: readonly KitEntry[] = [
     previewCells: possibleCells(ASPECT_RATIO_MANIFEST),
     manifest: ASPECT_RATIO_MANIFEST,
   },
+  { page: CODE_PAGE, previewCells: possibleCells(CODE_MANIFEST), manifest: CODE_MANIFEST },
 ];

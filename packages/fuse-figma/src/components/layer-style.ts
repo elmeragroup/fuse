@@ -102,10 +102,13 @@ const NO_FIGMA_FORM = new Map([
  * breaks a word there. A list's `list-style-type`, `list-style-image` and `list-style-position` inherit
  * (CSS Lists 3 §3), so an item reads the marker its list sets. `cursor` inherits (CSS UI 4 §5.1), so
  * a box that generates no box, as a `display: contents` label, still sets the pointer over its parts.
+ * `direction` inherits (CSS Writing Modes 4 §2.1), so a label below a right-to-left box reads `start`
+ * and `end` at the right and the left.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
   "cursor",
+  "direction",
   "font-family",
   "font-size",
   "font-weight",
@@ -944,10 +947,35 @@ function computeStyle(
   for (const { source, entry } of entries) {
     style.set(
       source.property,
-      inheritedKeyword(source, parentOrOutside) ?? inheritedCurrentColor(source, inherited) ?? entry
+      inheritedKeyword(source, parentOrOutside) ??
+        inheritedCurrentColor(source, inherited) ??
+        parentFontSize(source, parentOrOutside) ??
+        entry
     );
   }
   return style;
+}
+
+/**
+ * `font-size: 1em` and `font-size: 100%` compute to the parent's font size, since an `em` or a
+ * percentage in `font-size` is the parent's (CSS Fonts 4 §2.5), as Tailwind's preflight sets `1em`
+ * on a `<code>` inside Code's `<pre>`. The entry keeps the declaration as its source and reads the
+ * parent's, as an `inherit` does.
+ *
+ * @returns The parent's font size under the declaration, or undefined for any other declaration or
+ *   where nothing outside the element sets a font size.
+ */
+function parentFontSize(
+  source: Provenance,
+  parentOf: (property: string) => StyleEntry | undefined
+): StyleEntry | undefined {
+  if (source.property !== "font-size" || !["1em", "100%"].includes(normalizeCss(source.value))) {
+    return undefined;
+  }
+  const parent = parentOf("font-size");
+  return parent === undefined
+    ? undefined
+    : { value: parent.value, source, consumed: [parent.source, ...parent.consumed], computed: true };
 }
 
 /** A declaration's value marked `!important`, which Tailwind prints after the value. */

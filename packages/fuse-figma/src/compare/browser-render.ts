@@ -223,9 +223,11 @@ export class CompareBrowser {
     } else if (pathname === ASSET_PATHS.fonts) {
       await route.fulfill({ body: this.#assets.fontCss, contentType: "text/css; charset=utf-8" });
     } else if (pathname.startsWith(ASSET_PATHS.fontFiles)) {
-      await route.fulfill({
-        path: join(this.#assets.fontDirectory, pathname.slice(ASSET_PATHS.fontFiles.length)),
-      });
+      const [name = "", file = ""] = pathname.slice(ASSET_PATHS.fontFiles.length).split("/");
+      const directory = this.#assets.fontDirectories.get(name);
+      await (directory === undefined
+        ? route.fulfill({ status: 404, body: `${pathname} is not a comparison font` })
+        : route.fulfill({ path: join(directory, file) }));
     } else if (css === undefined) {
       await route.fulfill({ status: 404, body: `${pathname} is not a comparison asset` });
     } else {

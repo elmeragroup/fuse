@@ -281,6 +281,11 @@ export type TextLayerSpec = {
   readonly lineHeight: LineHeightSpec;
   readonly color: ColorSpec;
   /**
+   * The runs of characters that take a color other than `color`, in order and apart, as Code's
+   * highlighter colors each token through a span of its own. Absent for a text in one color.
+   */
+  readonly ranges?: readonly TextRangeSpec[];
+  /**
    * The underline `text-decoration-line: underline` draws, or undefined for none. `offset` is
    * the `text-underline-offset` and `thickness` the `text-decoration-thickness`, both in pixels,
    * and an unset one keeps Figma's automatic one. `color` is the `text-decoration-color`, and an
@@ -305,6 +310,16 @@ export type TextLayerSpec = {
    * a text nothing caps.
    */
   readonly maxWidth?: NumberSpec;
+};
+
+/**
+ * A run of a text's characters in a color of its own: from `start`, the index of its first character,
+ * to `end`, the index after its last, as Figma's range methods count them.
+ */
+export type TextRangeSpec = {
+  readonly start: number;
+  readonly end: number;
+  readonly color: ColorSpec;
 };
 
 /**

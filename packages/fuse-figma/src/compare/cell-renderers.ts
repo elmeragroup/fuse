@@ -451,6 +451,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./card-cell.ts")).card,
   },
   {
+    set: "code",
+    entry: "dist/code.js",
+    load: async () => (await import("./code-cell.ts")).code,
+  },
+  {
     set: "timeline-list",
     entry: "dist/timeline-list.js",
     load: async () => (await import("./timeline-list-cell.ts")).timelineList,

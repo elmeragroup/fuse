@@ -455,6 +455,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Aspect ratio",
     sets: [{ key: "aspect-ratio", name: "Aspect ratio", variants: 7, previewed: 7 }],
   },
+  // The docs default demo's two lines, each token in its highlight color.
+  {
+    slug: "code",
+    name: "Code",
+    sets: [{ key: "code", name: "Code", variants: 1, previewed: 1 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

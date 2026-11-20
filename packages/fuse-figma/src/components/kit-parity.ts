@@ -112,7 +112,13 @@ export const KIT_PARITY = {
   chart: { kind: "excluded", reason: CHARTS },
   checkbox: { kind: "partial", sets: ["checkbox"], missing: "The invalid focus ring.", issue: MISSING_SETS },
   "checkbox-card": { kind: "issue", issue: MISSING_SETS },
-  code: { kind: "issue", issue: MISSING_SETS },
+  code: {
+    kind: "partial",
+    sets: ["code"],
+    missing:
+      "Other source text: the set draws the default demo's two lines with each token's color, and Figma does not color text a designer types in.",
+    issue: MISSING_SETS,
+  },
   collapsible: { kind: "excluded", reason: "It has no styles beyond its height transition." },
   combobox: {
     kind: "partial",

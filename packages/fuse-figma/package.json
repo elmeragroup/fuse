@@ -32,6 +32,7 @@
     "@elmeragroup/typescript-config": "workspace:*",
     "@figma/plugin-typings": "catalog:",
     "@fontsource/roboto": "catalog:",
+    "@fontsource/roboto-mono": "catalog:",
     "@types/node": "catalog:",
     "@types/pngjs": "catalog:",
     "@types/react": "catalog:",

@@ -23,6 +23,7 @@ import { childSpacingNote } from "../components/box-cascade.ts";
 import type {
   BoxCascade,
   CapturedText,
+  TextRun,
   ChildSpacing,
   InstanceScope,
   PartElement,
@@ -251,6 +252,16 @@ function declarationsOf(element: CapturedElement): readonly number[] {
 }
 
 /**
+ * Whether a declaration comes from a style sheet every page applies to every element: Tailwind's
+ * preflight, Fuse's base layer or the browser's own.
+ */
+function isBase(declaration: CapturedDeclaration): boolean {
+  return (
+    declaration.source === "preflight" || declaration.source === "user-agent" || declaration.layer === "base"
+  );
+}
+
+/**
  * Whether a declaration resets its longhands to their initial values from a style sheet every page
  * applies to every element, Tailwind's preflight, Fuse's base layer or the browser's own, as the
  * base layer's `margin: 0` does. A reset sets nothing a component draws, so the cascade leaves it out,
@@ -261,9 +272,7 @@ export function isReset(
   index: number,
   initial: readonly number[]
 ): boolean {
-  const reset =
-    declaration.source === "preflight" || declaration.source === "user-agent" || declaration.layer === "base";
-  return reset && initial.includes(index);
+  return isBase(declaration) && initial.includes(index);
 }
 
 /**
@@ -388,6 +397,20 @@ function ownMinimum(read: CellRead, positioner: CapturedElement): string | undef
   return popup?.declarations
     .map((index) => read.declarations[index])
     .findLast((declaration) => declaration?.longhands.includes("min-width") === true)?.value;
+}
+
+/**
+ * An element's text nodes joined between its element children: the text before each child, then
+ * the text after the last. The capture records them where `text` and `textIndex` lose some, and
+ * otherwise the element's text sits before the child its `textIndex` names, or after the last.
+ */
+function textsOf(element: CapturedElement): readonly string[] {
+  if (element.texts !== undefined) {
+    return element.texts;
+  }
+  const texts = Array.from({ length: element.children.length + 1 }, () => "");
+  texts[Math.min(element.textIndex ?? element.children.length, element.children.length)] = element.text;
+  return texts;
 }
 
 /** The name of an element the kit draws no layer for: its `data-slot`, or its tag. */
@@ -1601,6 +1624,7 @@ class CaptureBoxCascade implements BoxCascade {
       appliedOf(this.#read, held.declarations, placed, () => true),
       this.#layer
     );
+    this.#labelHolder = { element: held, placed, layer };
     return {
       style: new LayerStyle(this.#ledger, layer, [...this.path, element.key]),
       measured: measuredBox(held, this.#read.declarations, false),
@@ -1612,7 +1636,7 @@ class CaptureBoxCascade implements BoxCascade {
     if (element === undefined) {
       return { _tag: "Unresolved", reason: "the capture holds no element for the label's box" };
     }
-    const visible = normalizeCss(this.style.resolved("visibility") ?? "visible") === "visible";
+    const visible = this.#visible();
     if (attribute !== undefined) {
       const value = element.attributes[attribute];
       return value === undefined
@@ -1621,32 +1645,100 @@ class CaptureBoxCascade implements BoxCascade {
           ? { _tag: "Painted", source: "attribute", text: value }
           : { _tag: "Hidden" };
     }
-    const pieces: string[] = [];
-    let painted = visible;
-    // An element's own text sits after the element children its `textIndex` counts, and an element
-    // a layer draws holds a part's text, not the label's.
-    const walk = (at: CapturedElement, shown: boolean): void => {
-      const own = (): void => {
-        if (shown && at.text !== "") {
-          pieces.push(at.text);
-          painted = true;
+    const nodes = this.#labelNodes(element);
+    return visible || nodes.length > 0
+      ? { _tag: "Painted", source: "nodes", text: nodes.map((node) => node.text).join("") }
+      : { _tag: "Hidden" };
+  }
+
+  textRuns(label: string): readonly TextRun[] | undefined {
+    const box = this.#placed.at(-1);
+    const nodes = box === undefined ? [] : this.#labelNodes(box.element);
+    // An element below the box that sets a declaration of its own styles the text it holds. The
+    // element the label is held in sets the label's own style.
+    const holder = this.#labelHolder;
+    const styled = nodes.some((node) =>
+      node.within.some(
+        (element) =>
+          element !== holder?.element &&
+          element.declarations.some((index) => {
+            const declaration = this.#read.declarations[index];
+            return declaration !== undefined && !isBase(declaration);
+          })
+      )
+    );
+    if (box === undefined || !styled) {
+      return undefined;
+    }
+    // Each element cascades once, over the element above it, in document order. The label's own
+    // element has cascaded already, and its style is the label's, so no run lists it.
+    const cascaded = new Map<
+      CapturedElement,
+      { readonly placed: readonly Placed[]; readonly layer: Layer; readonly style?: LayerStyle }
+    >(holder === undefined ? [] : [[holder.element, holder]]);
+    return nodes.map(({ text, within }) => {
+      let placed: readonly Placed[] = this.#placed;
+      let layer = this.#layer;
+      const elements: LayerStyle[] = [];
+      for (const held of within) {
+        const known = cascaded.get(held);
+        if (known !== undefined) {
+          ({ placed, layer } = known);
+          if (known.style !== undefined) {
+            elements.push(known.style);
+          }
+          continue;
+        }
+        placed = [...placed, { element: held, name: undrawnName(held), origin: box.origin }];
+        layer = this.#ledger.add(
+          inheritance(layer, this.#read.context),
+          appliedOf(this.#read, held.declarations, placed, () => true),
+          layer
+        );
+        const style = new LayerStyle(this.#ledger, layer, [...this.path, label]);
+        cascaded.set(held, { placed, layer, style });
+        elements.push(style);
+      }
+      return { text, elements };
+    });
+  }
+
+  /** Whether the box's element is visible, as its resolved `visibility` says. */
+  #visible(): boolean {
+    return normalizeCss(this.style.resolved("visibility") ?? "visible") === "visible";
+  }
+
+  /**
+   * The text nodes that paint the box's label, in document order: the element's own and those of the
+   * elements below it that no layer draws, each where its element is visible, with the elements
+   * between the box and the node, outermost first. An element a layer draws holds a part's text, not
+   * the label's. The one text {@link BoxCascade.capturedText} reads and the runs
+   * {@link BoxCascade.textRuns} reads both come from this walk, so they agree on every node.
+   *
+   * @param element - The box's element.
+   * @returns The painted nodes, each with its text, which is never empty.
+   */
+  #labelNodes(
+    element: CapturedElement
+  ): readonly { readonly text: string; readonly within: readonly CapturedElement[] }[] {
+    const nodes: { readonly text: string; readonly within: readonly CapturedElement[] }[] = [];
+    const walk = (at: CapturedElement, shown: boolean, within: readonly CapturedElement[]): void => {
+      const own = (text: string): void => {
+        if (shown && text !== "") {
+          nodes.push({ text, within });
         }
       };
-      const index = at.textIndex ?? at.children.length;
-      at.children.forEach((child, place) => {
-        if (place === index) {
-          own();
-        }
-        if (!this.#read.drawn.has(child)) {
-          walk(child, declaredVisibility(child, this.#read.declarations) ?? shown);
+      const texts = textsOf(at);
+      at.children.forEach((held, place) => {
+        own(texts[place] ?? "");
+        if (!this.#read.drawn.has(held)) {
+          walk(held, declaredVisibility(held, this.#read.declarations) ?? shown, [...within, held]);
         }
       });
-      if (index >= at.children.length) {
-        own();
-      }
+      own(texts[at.children.length] ?? "");
     };
-    walk(element, visible);
-    return painted ? { _tag: "Painted", source: "nodes", text: pieces.join("") } : { _tag: "Hidden" };
+    walk(element, this.#visible(), []);
+    return nodes;
   }
 
   icon(slot: IconSlot): LayerStyle {
@@ -1717,6 +1809,11 @@ class CaptureBoxCascade implements BoxCascade {
 
   /** The elements the box's parts, instance parts and icons claimed so far. */
   readonly #claimed = new Set<CapturedElement>();
+
+  /** The element the box holds its label's text in, as {@link labelElement} cascades it, if any. */
+  #labelHolder:
+    | { readonly element: CapturedElement; readonly placed: readonly Placed[]; readonly layer: Layer }
+    | undefined;
 
   /** The box's icons not read yet, each as the elements from below the box down to its `<svg>`. */
   #icons: CapturedElement[][] | undefined;

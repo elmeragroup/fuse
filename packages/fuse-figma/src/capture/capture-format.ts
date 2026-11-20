@@ -225,6 +225,13 @@ export type CapturedElement = {
    * icon or part before its label sits below that index, and one after it at or above it.
    */
   readonly textIndex?: number;
+  /**
+   * The element's text nodes joined between its element children, as written, where `text` and
+   * `textIndex` lose some of them: the text before each child, then the text after the last. A text
+   * node of white space alone, which `text` trims away, or text on both sides of an element child
+   * records them, as Code's line feeds between its line spans do.
+   */
+  readonly texts?: readonly string[];
   /** The element's winning declarations, as indexes into the capture's `declarations`. */
   readonly declarations: readonly number[];
   /**
@@ -254,6 +261,7 @@ const CapturedElementSchema: Schema.Codec<CapturedElement> = Schema.Struct({
   classes: Schema.Array(Schema.String),
   text: Schema.String,
   textIndex: Schema.optionalKey(Schema.Finite),
+  texts: Schema.optionalKey(Schema.Array(Schema.String)),
   declarations: Schema.Array(Schema.Finite),
   initial: Schema.Array(Schema.Finite),
   pseudo: Schema.Record(Schema.String, Schema.Array(Schema.Finite)),
@@ -383,6 +391,7 @@ function printElement(element: CapturedElement, indent: string): string {
       ["classes", JSON.stringify(element.classes)],
       ["text", JSON.stringify(element.text)],
       ...(element.textIndex === undefined ? [] : [["textIndex", JSON.stringify(element.textIndex)] as const]),
+      ...(element.texts === undefined ? [] : [["texts", JSON.stringify(element.texts)] as const]),
       ["declarations", JSON.stringify(element.declarations)],
       ["initial", JSON.stringify(element.initial)],
       ["pseudo", JSON.stringify(element.pseudo)],

@@ -23,6 +23,7 @@ import button from "../../captures/button.json" with { type: "json" };
 import calendarDay from "../../captures/calendar-day.json" with { type: "json" };
 import card from "../../captures/card.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
+import code from "../../captures/code.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
 import comboboxItem from "../../captures/combobox-item.json" with { type: "json" };
 import comboboxOpen from "../../captures/combobox-open.json" with { type: "json" };
@@ -174,6 +175,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["selection-item", selectionItem],
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
+  ["code", code],
   ["calendar-day", calendarDay],
   ["date-field", dateField],
   ["date-picker", datePicker],

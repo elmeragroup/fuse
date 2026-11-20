@@ -119,7 +119,7 @@ export type CompareReport = {
   readonly threshold: number;
   /** True when Fuse's sources changed after its build, so the browser side may be out of date. */
   readonly fuseBuildStale: boolean;
-  readonly fontPackage: string;
+  readonly fontPackages: readonly string[];
   readonly previews: readonly ReportPreview[];
   /** Every compared cell, worst first. */
   readonly rows: readonly ReportRow[];
@@ -389,7 +389,7 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
     generatedAt: new Date().toISOString(),
     threshold: options.threshold,
     fuseBuildStale: build.stale,
-    fontPackage: assets.fontPackage,
+    fontPackages: assets.fontPackages,
     previews,
     rows: worstFirst(rows),
     skipped,

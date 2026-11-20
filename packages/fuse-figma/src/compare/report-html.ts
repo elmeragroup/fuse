@@ -189,7 +189,7 @@ export function renderReportHtml(report: CompareReport): string {
 Each cell lays the Figma export and the browser's Fuse component over the theme's background with their boxes' top-left corners aligned.
 Mismatch is the share of the browser box's area at ${String(report.snapshot.scale)}x whose pixels differ past pixelmatch's threshold of ${String(report.threshold)}.
 Tolerant leaves out the pixels pixelmatch takes for anti-aliasing; raw counts them. Δ is Figma's box minus the browser's, in pixels.
-Font: ${escape(report.fontPackage)}.</p>
+Fonts: ${escape(report.fontPackages.join(", "))}.</p>
 ${report.fuseBuildStale ? `<p class="warning">Fuse's sources changed after its build. Rebuild it with pnpm --filter @elmeragroup/fuse build and compare again.</p>` : ""}
 <h2>Summary</h2>
 <table>

@@ -50,7 +50,7 @@ export function checkUsedFonts(
     if (!faces.has(`${weight}|${family}`)) {
       return Result.fail(
         new FontNotLoaded(
-          `The cells' text uses ${family} at weight ${weight}, and the page has no loaded face for it. The comparison loads only @fontsource/roboto, so a theme whose --font-sans starts with another family needs that family added to page-assets.ts.`
+          `The cells' text uses ${family} at weight ${weight}, and the page has no loaded face for it. The comparison loads only @fontsource/roboto and @fontsource/roboto-mono, so a stack that starts with another family needs that family added to page-assets.ts.`
         )
       );
     }

@@ -106,6 +106,7 @@ function layerRefs(layer: ChildLayerSpec): BoundRef[] {
           layer.maxWidth,
         ].flatMap(boundNumber),
         ...boundColor(layer.color),
+        ...(layer.ranges ?? []).flatMap((range) => boundColor(range.color)),
         ...boundColor(layer.underline?.color),
       ];
     case "icon":

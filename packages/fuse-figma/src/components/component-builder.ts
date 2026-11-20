@@ -16,6 +16,7 @@ import {
 import type { OpenPlacement } from "../capture/capture-cascade";
 import type { SetCapture } from "../capture/capture-format";
 import { keptCapture } from "../capture/captures";
+import { kitFamily } from "../kit-fonts";
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
@@ -39,6 +40,7 @@ import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
 import type {
   ComponentRootSpec,
+  FontSpec,
   InstanceLayerSpec,
   ShadowSpec,
   TextPropertySpec,
@@ -100,7 +102,7 @@ export function buildComponentSet(
   captured: CapturedSource
 ): BuiltComponent {
   const coverage = new Map<string, CoverageRow>();
-  const fontStyles = new Set<string>();
+  const fonts = new Map<string, FontSpec>();
   // Each captured declaration a recorded row accounts for, by cell; the table keeps none of them.
   const accounted = new Map<string, Set<string>>();
   const record = ({ at = [], ...row }: RecordedRow): void => {
@@ -190,8 +192,9 @@ export function buildComponentSet(
     instances.settle();
     for (const layer of walkLayers(root)) {
       if (layer.kind === "text") {
-        for (const face of layer.weight?.faces ?? [layer.fontStyle]) {
-          fontStyles.add(face);
+        const family = kitFamily(layer.fontFamily);
+        for (const style of layer.weight?.faces ?? [layer.fontStyle]) {
+          fonts.set(`${family} ${style}`, { family, style });
         }
       }
     }
@@ -214,7 +217,7 @@ export function buildComponentSet(
     // A set without an optional part leaves the field out, so a set built before it keeps its spec.
     componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],
-    fontStyles: [...fontStyles],
+    fonts: [...fonts.values()],
     accounting: new Map(
       [...cascade.instancePlaces()].map(([cell, instances]) => [
         cell,

@@ -394,7 +394,8 @@ function captureElement(
     unmatched: options.matching === undefined ? [] : unmatchedClasses(element, options.matching),
     children,
   };
-  const placed = element.textIndex === undefined ? written : { ...written, textIndex: element.textIndex };
+  const indexed = element.textIndex === undefined ? written : { ...written, textIndex: element.textIndex };
+  const placed = element.texts === undefined ? indexed : { ...indexed, texts: element.texts };
   const measured = factsOfWinners(element.measured, kept);
   return measured === undefined ? placed : { ...placed, measured };
 }
