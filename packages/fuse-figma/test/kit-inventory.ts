@@ -528,6 +528,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Tour",
     sets: [{ key: "tour-popup", name: "Tour popup", variants: 1, previewed: 1 }],
   },
+  // The default demo's toast in each of its six statuses.
+  {
+    slug: "toast",
+    name: "Toast",
+    sets: [{ key: "toast", name: "Toast", variants: 6, previewed: 6 }],
+  },
 ];
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */

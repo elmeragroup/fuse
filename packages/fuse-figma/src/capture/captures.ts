@@ -121,6 +121,7 @@ import textField from "../../captures/text-field.json" with { type: "json" };
 import textareaField from "../../captures/textarea-field.json" with { type: "json" };
 import textarea from "../../captures/textarea.json" with { type: "json" };
 import timelineList from "../../captures/timeline-list.json" with { type: "json" };
+import toast from "../../captures/toast.json" with { type: "json" };
 import toggleGroup from "../../captures/toggle-group.json" with { type: "json" };
 import toggle from "../../captures/toggle.json" with { type: "json" };
 import toolbar from "../../captures/toolbar.json" with { type: "json" };
@@ -202,6 +203,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["list-detail", listDetail],
   ["data-table-filter-bar", dataTableFilterBar],
   ["tour-popup", tourPopup],
+  ["toast", toast],
   ["calendar-day", calendarDay],
   ["calendar", calendar],
   ["range-calendar", rangeCalendar],
