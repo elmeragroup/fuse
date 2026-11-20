@@ -139,6 +139,6 @@ describe("a label whose characters take colors of their own", () => {
       main?.runs.length,
       instances.length > 0,
       instances.every((each) => each.runs.join() === main?.runs.join()),
-    ]).toEqual([15, true, true]);
+    ]).toEqual([14, true, true]);
   });
 });

@@ -1280,12 +1280,20 @@ function writeUnderlineField<Field extends UnderlineField>(
 
 /**
  * The fills each character a text shows paints with: the paints a range write gave it, or the
- * layer's (rule 65). The whole `fills`, a range's fills and the segments all read these, so a
- * character a range write gave the layer's own paints reads the same as one it never touched.
+ * layer's, and a line break the fills of the character before it (rule 65). The whole `fills`, a
+ * range's fills and the segments all read these, so a character a range write gave the layer's own
+ * paints reads the same as one it never touched.
  */
 function characterFills(state: NodeState): readonly (readonly Paint[])[] {
   const layer = shown(state, "fills");
-  return shownStyles(state).map((style) => style.fills ?? layer);
+  const characters = charactersOf(state);
+  const painted: (readonly Paint[])[] = [];
+  shownStyles(state).forEach((style, index) => {
+    // A line break paints in the fill of the character before it, whatever its own (rule 65, NL1–NL3).
+    const before = painted.at(-1);
+    painted.push(characters[index] === "\n" && before !== undefined ? before : (style.fills ?? layer));
+  });
+  return painted;
 }
 
 /** The fills a run of characters shares, or `figma.mixed` where any two differ, bound variables included. */

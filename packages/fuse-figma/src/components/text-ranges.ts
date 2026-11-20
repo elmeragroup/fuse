@@ -10,6 +10,13 @@
  * a custom property set nowhere, as sugar-high's `var(--sh-space)` on a space, is invalid at
  * computed-value time and computes as `unset` (CSS Variables 1 §3.1), which on the inherited `color`
  * takes the parent's.
+ *
+ * Figma paints a line break in the fill of the character before it. In a live probe on 2026-11-20
+ * (NL1–NL4), coloring `;` in `ab;\ncd` red colored the break too, a fill written on the break alone
+ * was dropped, and the character after the break kept its own. So the ranges give each break the
+ * color of the character before it, which is what a Figma text holds and Plan reads back. No probe
+ * wrote a fill on a break that starts the text, so such a break takes the label's color, a cautious
+ * choice rather than a measured one.
  */
 import type { TextRun } from "./box-cascade";
 import { describeColor } from "./box-paint";
@@ -93,7 +100,7 @@ type SpanScope = { readonly variables: VariableIndex; readonly context: BuildCon
  * @param scope - The synced variables and the build's context.
  * @param where - The variant's key and the keys of the layers down to the label, for the error.
  * @returns The ranges, in order and apart, each run of one color joined, or none where every
- *   character takes the label's color.
+ *   character takes the label's color. A line break takes the color of the character before it.
  * @throws `KitUnmappable` where the runs' characters are not the label's as written, since a white
  *   space rule that collapses them leaves no index to place a range at.
  */
@@ -112,23 +119,27 @@ export function readRanges(
     });
   }
   const read = new Map<LayerStyle, RunColor | undefined>();
+  const shown: ColorSpec[] = [];
+  for (const run of runs) {
+    let own = color;
+    run.elements.forEach((style, index) => {
+      const span = readSpan(style, run.elements[index - 1] ?? box, scope, read);
+      own = span?.kind === "set" ? span.color : own;
+    });
+    // Indices count UTF-16 code units, as the label's `characters` and Figma's ranges do.
+    for (let index = 0; index < run.text.length; index += 1) {
+      shown.push(run.text[index] === "\n" ? (shown.at(-1) ?? color) : own);
+    }
+  }
   const same = (left: ColorSpec, right: ColorSpec): boolean => JSON.stringify(left) === JSON.stringify(right);
   const ranges: TextRangeSpec[] = [];
-  let start = 0;
-  for (const run of runs) {
-    let shown = color;
-    run.elements.forEach((style, index) => {
-      const own = readSpan(style, run.elements[index - 1] ?? box, scope, read);
-      shown = own?.kind === "set" ? own.color : shown;
-    });
-    const end = start + run.text.length;
+  shown.forEach((each, start) => {
     const last = ranges.at(-1);
-    if (last?.end === start && same(last.color, shown)) {
-      ranges[ranges.length - 1] = { ...last, end };
-    } else if (!same(shown, color)) {
-      ranges.push({ start, end, color: shown });
+    if (last?.end === start && same(last.color, each)) {
+      ranges[ranges.length - 1] = { ...last, end: start + 1 };
+    } else if (!same(each, color)) {
+      ranges.push({ start, end: start + 1, color: each });
     }
-    start = end;
-  }
+  });
   return ranges;
 }
