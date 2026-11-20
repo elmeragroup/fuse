@@ -1,9 +1,9 @@
-import { Effect, Result } from "effect";
+import { Result } from "effect";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { compileUtilities } from "./components/utility-css.ts";
+import { compileUtilityRules } from "../test/utility-rules.ts";
 import { fuseVariableSet } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
 
@@ -230,14 +230,12 @@ describe("fuseVariableSet", () => {
         scopes: strokes,
       },
     ] as const;
-    const compiled = await Effect.runPromise(compileUtilities(tints.map(({ utility }) => utility)));
+    const rules = await compileUtilityRules(tints.map(({ utility }) => utility));
     const brand = collection("Fuse brand");
     for (const { utility, role, tint, share, scopes } of tints) {
-      const mix = compiled.rules
+      const mix = rules
         .get(utility)
-        ?.declarations.findLast((declaration) =>
-          /^((border|background)-)?color$/.test(declaration.property)
-        )?.value;
+        ?.findLast((declaration) => /^((border|background)-)?color$/.test(declaration.property))?.value;
       expect(mix, utility).toBeDefined();
       expect(spec("Fuse tokens", tint)).toMatchObject({ type: "COLOR", scopes, webSyntax: mix });
       const leaves = brand.variables.filter((variable) => variable.name.endsWith(`/${tint}`));
@@ -258,13 +256,9 @@ describe("fuseVariableSet", () => {
   });
 
   it("syncs the tints a Frame and a RangeCalendar paint with, as their roles at the tint's alpha", async () => {
-    const compiled = await Effect.runPromise(
-      compileUtilities(["bg-muted/72", "bg-primary/20", "bg-primary/30"])
-    );
+    const rules = await compileUtilityRules(["bg-muted/72", "bg-primary/20", "bg-primary/30"]);
     const mixOf = (utility: string) =>
-      compiled.rules
-        .get(utility)
-        ?.declarations.findLast((declaration) => declaration.property === "background-color")?.value;
+      rules.get(utility)?.findLast((declaration) => declaration.property === "background-color")?.value;
     // TOKEN_PAINTS: muted is a surface and a line, and primary a surface, an ink and a line.
     expect(spec("Fuse tokens", "muted/72")).toMatchObject({
       type: "COLOR",
