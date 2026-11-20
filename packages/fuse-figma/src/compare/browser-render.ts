@@ -28,7 +28,7 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, CDPSession, Page, Route } from "playwright";
 
-import { cellClip, clipInsideSlot, measuredBox } from "./cell-measure.ts";
+import { cellClip, cropInSlot, measuredBox, slotBreach } from "./cell-measure.ts";
 import type { FallbackInteraction, ForcedPseudoClass } from "./cells.ts";
 import { checkUsedFonts } from "./font-check.ts";
 import type { FontNotLoaded } from "./font-check.ts";
@@ -53,7 +53,7 @@ import {
 import type { CellContent, PageCell, PageLayout, PageRect } from "./preview-page.ts";
 import type { PreviewTheme, ThemeStamps } from "./preview-theme.ts";
 import { themeStamps } from "./preview-theme.ts";
-import { crop, decodePng } from "./raster.ts";
+import { crop, decodePng, place } from "./raster.ts";
 import type { Raster, Rgb } from "./raster.ts";
 import type { BoxSize } from "./verdict.ts";
 
@@ -63,6 +63,8 @@ export const DEVICE_SCALE = 2;
 /** A cell to render: what its slot holds, the state to force, and its resting twin. */
 export type CellRequest = {
   readonly id: string;
+  /** The cell's variant key, which names it when the page cannot render it. */
+  readonly name: string;
   readonly content: CellContent;
   /**
    * The elements the page compares and crops, as selectors for elements inside the cell's slot, as
@@ -70,9 +72,9 @@ export type CellRequest = {
    * union is the cell's box. The resting twin's slot uses the same ones.
    */
   readonly measured: readonly string[];
-  /** How many slots the cell spans across, as `slotSpan` gives them. */
+  /** How many slots the cell spans across, as `cellRoom` gives them. */
   readonly span: number;
-  /** The height of the viewport the cell's root sits in, or undefined, as `slotRects` reads it. */
+  /** The height of the viewport the cell's root sits in, or undefined, as `cellRoom` gives it. */
   readonly height: number | undefined;
   /**
    * The element the page forces the cell's state on: the measured element, or the part inside it
@@ -322,6 +324,7 @@ export class CompareBrowser {
       }
       const { root } = await cdp.send("DOM.getDocument", { depth: -1, pierce: true });
       const forced = await forceStates(page, requests, { cdp, root: root.nodeId });
+      await checkSlots(page, slotsOf(layout, requests), layout.padding);
       return Result.succeed(await read({ page, cdp, forced, sheets, document: root }));
     } finally {
       await context.close();
@@ -356,6 +359,7 @@ export class CompareBrowser {
         return Result.fail(font.failure);
       }
       const forcedIds = await forceStates(page, requests);
+      await checkSlots(page, slotsOf(layout, requests), layout.padding);
       const cells = new Map<string, RenderedCell>();
       for (const [index, request] of requests.entries()) {
         const state: StateOutcome = !forcesState(request)
@@ -384,6 +388,103 @@ export class CompareBrowser {
  * vCPUs, so a few pages at a time keep them busy without starving the screenshots.
  */
 const PAGE_CONCURRENCY = 3;
+
+/**
+ * A slot the page checks: its cell's id, its measured elements, its rect, its cell's name, and
+ * whether it holds static markup or a client cell.
+ */
+type CheckedSlot = Pick<PageCell, "id" | "measured"> & {
+  readonly content: CellContent["_tag"];
+  readonly name: string;
+  readonly rect: PageRect;
+};
+
+/** Each slot on a page, the resting twins' included, as {@link checkSlots} checks them. */
+function slotsOf(layout: PageLayout, requests: readonly CellRequest[]): readonly CheckedSlot[] {
+  const pageCells = pageCellsOf(requests);
+  const rects = slotRects(layout, pageCells);
+  const names = new Map(
+    requests.flatMap(({ id, name }) => [
+      [id, name],
+      [`${REFERENCE_PREFIX}${id}`, `${name} at rest`],
+    ])
+  );
+  return pageCells.map(({ id, content, measured }, index) => ({
+    id,
+    content: content._tag,
+    measured,
+    name: names.get(id) ?? id,
+    rect: rects[index] ?? slotRect(layout, index),
+  }));
+}
+
+/**
+ * Read what each slot holds and stop the run when a cell reaches past its slot, as
+ * {@link slotBreach} decides. A slot's hosts are the elements it holds directly, or, in a client
+ * slot, the elements its `display: contents` mount root holds and the portals a popup appends after
+ * that root. Each counts by its border box, hidden or not, since its width is the room its cell
+ * takes. Two kinds of host are left out. One takes no box, as a `<style>` or a `display: contents`
+ * element, and reads as 0×0 at the page's corner. The other paints nothing, at `opacity: 0` or
+ * clipped by `clip-path: inset(50%)`, as Base UI's visually hidden `<input>` beside a Checkbox is,
+ * which Base UI places at the page's corner. Descendants are not read, since the slot clips their
+ * paint.
+ *
+ * @throws When a slot holds a cell that reaches past it, naming every such cell, which the cell's
+ *   renderer's `hostWidth`, its definition's width or its renderer's markup must fix; or when the
+ *   page laid out no element for a measured selector.
+ */
+async function checkSlots(page: Page, slots: readonly CheckedSlot[], padding: number): Promise<void> {
+  const read = await page.evaluate(
+    (cells) =>
+      cells.map(({ id, measured }) => {
+        const slot = document.querySelector(`[data-compare-cell="${id}"]`);
+        const children = slot === null ? [] : [...slot.children];
+        const [mount, ...portals] = slot?.hasAttribute("data-compare-client") === true ? children : [];
+        const hosts = (mount === undefined ? children : [...mount.children, ...portals]).flatMap((host) => {
+          const { x, y, width, height } = host.getBoundingClientRect();
+          const { clipPath, opacity } = getComputedStyle(host);
+          if ((width === 0 && height === 0) || clipPath === "inset(50%)" || opacity === "0") {
+            return [];
+          }
+          const part = host.getAttribute("data-slot");
+          const label = part === null ? host.localName : `${host.localName}[data-slot=${part}]`;
+          return [{ x, y, width, height, label }];
+        });
+        const elements = measured.map(({ selector, inDocument }) => ({
+          selector,
+          element: document.querySelector(inDocument),
+        }));
+        const boxes = elements.flatMap(({ element }) => {
+          if (element === null) {
+            return [];
+          }
+          const { x, y, width, height } = element.getBoundingClientRect();
+          return [{ x, y, width, height }];
+        });
+        const missing = elements.flatMap(({ selector, element }) => (element === null ? [selector] : []));
+        return { hosts, boxes, missing };
+      }),
+    // The screenshot finds each measured element by `cellSelector`, which takes a selector that
+    // starts with a combinator, so the check finds it the same way.
+    slots.map(({ id, measured }) => ({
+      id,
+      measured: measured.map((selector) => ({ selector, inDocument: cellSelector(id, selector) })),
+    }))
+  );
+  const breaches = slots.flatMap(({ id, content, name, rect }, index) => {
+    const { hosts = [], boxes = [], missing = [] } = read[index] ?? {};
+    if (missing.length > 0) {
+      throw new Error(`the page did not lay out ${missing.join(", ")} in cell ${id}`);
+    }
+    const breach = slotBreach({ name, slot: rect, content, hosts, measured: boxes }, padding);
+    return breach === undefined ? [] : [breach];
+  });
+  if (breaches.length > 0) {
+    throw new Error(
+      `Cells that reach past their slots, where they would lay out over the next cell or crop part of it; give each renderer the \`hostWidth\` of the host it mounts, and keep what a state moves inside the slot:\n${breaches.join("\n")}`
+    );
+  }
+}
 
 /** The cells a page holds for its requests: each request's cell, then each resting twin. */
 function pageCellsOf(requests: readonly CellRequest[]): PageCell[] {
@@ -612,8 +713,12 @@ async function measuredBoxes(page: Page, request: CellRequest): Promise<readonly
 
 /**
  * Screenshot one cell. A cell whose forced state did not take, `missing` on entry, is hovered or
- * focused for real first, as its request's `fallback` says, and let go after its screenshot. A
- * highlighted row has no real interaction to fall back on.
+ * focused for real first, as its request's `fallback` says, and let go after its screenshot. The
+ * page measures the cell after that interaction, so the crop holds the box the interaction gave it,
+ * and checks the slot again, since the interaction can move what the forced state did not. The
+ * page screenshots only the crop's part inside the slot, and the raster keeps the crop's size and
+ * origin with the strip past the slot transparent. A highlighted row has no real interaction to
+ * fall back on.
  */
 async function renderCell(
   page: Page,
@@ -622,11 +727,6 @@ async function renderCell(
   layout: PageLayout,
   slot: PageRect
 ): Promise<RenderedCell> {
-  const box = measuredBox(await measuredBoxes(page, request));
-  const clip = cellClip(request.id, slot, box, layout.padding);
-  if (request.content._tag === "Client") {
-    clipInsideSlot(request.id, slot, clip);
-  }
   const interact = forcedState === "missing" && !request.restsByDesign && request.fallback !== "none";
   const forcedOn = page.locator(cellSelector(request.id, request.forcedOn));
   if (interact && request.fallback === "hover") {
@@ -639,8 +739,25 @@ async function renderCell(
     : (await stateChanged(page, request))
       ? "interaction"
       : "missing";
-  const raster = decodePng(
-    await page.screenshot({ clip, omitBackground: true, animations: "disabled", caret: "hide" })
+  if (interact) {
+    const checked = {
+      id: request.id,
+      content: request.content._tag,
+      measured: request.measured,
+      name: request.name,
+      rect: slot,
+    };
+    await checkSlots(page, [checked], layout.padding);
+  }
+  const box = measuredBox(await measuredBoxes(page, request));
+  const clip = cellClip(request.id, slot, box, layout.padding);
+  const visible = cropInSlot(clip, slot);
+  const raster = place(
+    decodePng(
+      await page.screenshot({ clip: visible, omitBackground: true, animations: "disabled", caret: "hide" })
+    ),
+    { width: clip.width * DEVICE_SCALE, height: clip.height * DEVICE_SCALE },
+    { x: (visible.x - clip.x) * DEVICE_SCALE, y: (visible.y - clip.y) * DEVICE_SCALE }
   );
   if (interact) {
     await page.mouse.move(0, 0);

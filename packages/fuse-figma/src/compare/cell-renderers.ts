@@ -68,8 +68,9 @@ export type CellRenderer = {
   /**
    * The width of the host the element mounts, for a renderer whose host is wider than the measured
    * root. The page spans the cell over enough slots to hold it, so the host does not paint over the
-   * next cell. List detail's pane cell mounts the whole 768px demo and measures the 352px pane at its
-   * end. Undefined where the host is no wider than the root's preview width.
+   * next cell, and stops the run when a host lays out past its slot. List detail's pane cell
+   * mounts the whole 768px demo and measures the 352px pane at its end, and Action bar mounts a
+   * 576px host around its bar. Undefined where the host is no wider than the root's preview width.
    */
   readonly hostWidth?: number;
 };

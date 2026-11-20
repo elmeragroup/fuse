@@ -141,11 +141,43 @@ export function crop(raster: Raster, at: CanvasPoint, size: PixelSize): Raster {
     );
   }
   const data = new Uint8Array(size.width * size.height * 4);
-  for (let y = 0; y < size.height; y += 1) {
-    const from = ((y + at.y) * raster.width + at.x) * 4;
-    data.set(raster.data.subarray(from, from + size.width * 4), y * size.width * 4);
-  }
+  copyRows(raster, at, { width: size.width, data }, { x: 0, y: 0 }, size);
   return { width: size.width, height: size.height, data };
+}
+
+/**
+ * Set a picture on a transparent canvas, the inverse of {@link crop}. The picture must lie inside
+ * the canvas.
+ *
+ * @param raster - The picture.
+ * @param size - The canvas size.
+ * @param at - Where the picture's top-left corner lands.
+ * @returns The canvas, transparent outside the picture.
+ * @throws When the picture reaches outside the canvas, a defect in the caller's geometry.
+ */
+export function place(raster: Raster, size: PixelSize, at: CanvasPoint): Raster {
+  if (at.x < 0 || at.y < 0 || at.x + raster.width > size.width || at.y + raster.height > size.height) {
+    throw new Error(
+      `a ${raster.width}×${raster.height} picture at ${at.x},${at.y} reaches outside a ${size.width}×${size.height} canvas`
+    );
+  }
+  const data = new Uint8Array(size.width * size.height * 4);
+  copyRows(raster, { x: 0, y: 0 }, { width: size.width, data }, at, raster);
+  return { width: size.width, height: size.height, data };
+}
+
+/** Copy a `size` rectangle of `from`, at `fromAt`, into `to` at `toAt`, row by row. */
+function copyRows(
+  from: Raster,
+  fromAt: CanvasPoint,
+  to: { readonly width: number; readonly data: Uint8Array },
+  toAt: CanvasPoint,
+  size: PixelSize
+): void {
+  for (let y = 0; y < size.height; y += 1) {
+    const start = ((y + fromAt.y) * from.width + fromAt.x) * 4;
+    to.data.set(from.data.subarray(start, start + size.width * 4), ((y + toAt.y) * to.width + toAt.x) * 4);
+  }
 }
 
 /**
